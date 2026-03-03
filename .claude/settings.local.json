@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx shadcn@latest add button --yes)",
+      "Bash(npx shadcn@latest add dialog select input label --yes)",
+      "Bash(find \"src/app/\\(dashboard\\)\" -type f)",
+      "Bash(npx shadcn@latest add alert-dialog --yes)",
+      "Bash(node -e \":*)"
+    ]
+  }
+}
