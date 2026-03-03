@@ -56,6 +56,8 @@ export async function createCombo(
       notes:           (formData.get('notes') as string) || null,
       indicator_count: indicators.length || null,
       user_id:         user.id,
+      passes_guard:    null,
+      guard_failures:  null,
     })
     .select('id')
     .single()

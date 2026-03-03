@@ -89,59 +89,67 @@ function IndicatorList({
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium">Indikatoren</span>
-        <Button type="button" variant="outline" size="sm" onClick={addRow} disabled={options.length === 0}>
+        <Button type="button" variant="outline" size="sm" onClick={addRow}>
           <Plus className="size-3.5 mr-1" /> Hinzufügen
         </Button>
       </div>
 
       <input type="hidden" name="indicators_json" value={json} />
 
-      {options.length === 0 && rows.length === 0 && (
-        <p className="text-xs text-muted-foreground">Erst Indikatoren in der Bibliothek anlegen.</p>
+      {options.length === 0 && (
+        <p className="text-xs text-amber-600 dark:text-amber-400">
+          Erst Indikatoren in der Bibliothek anlegen, bevor du sie einer Combo hinzufügst.
+        </p>
       )}
 
-      {rows.map(row => (
-        <div key={row._key} className="flex gap-2 items-center rounded-md border border-border bg-muted/20 p-2">
-          {/* Indicator */}
-          <select
-            className={`${selectCls} flex-1 min-w-0`}
-            value={row.indicator_id}
-            onChange={e => setField(row._key, 'indicator_id', e.target.value)}
-          >
-            {options.map(o => (
-              <option key={o.id} value={o.id}>{o.name} · {o.author}</option>
-            ))}
-          </select>
+      <div className="space-y-2">
+        {rows.map(row => (
+          <div key={row._key} className="rounded-md border border-border bg-muted/20 p-2 space-y-1.5">
+            {/* Line 1: Indicator selector + remove button */}
+            <div className="flex gap-2 items-center">
+              <select
+                className="h-9 flex-1 rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                value={row.indicator_id}
+                onChange={e => setField(row._key, 'indicator_id', e.target.value)}
+              >
+                {options.length === 0
+                  ? <option value="">— Kein Indikator verfügbar —</option>
+                  : options.map(o => (
+                      <option key={o.id} value={o.id}>{o.name} · {o.author}</option>
+                    ))
+                }
+              </select>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
+                onClick={() => removeRow(row._key)}
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
 
-          {/* Role */}
-          <select
-            className={`${selectCls} w-36 shrink-0`}
-            value={row.role}
-            onChange={e => setField(row._key, 'role', e.target.value)}
-          >
-            {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-          </select>
-
-          {/* Settings override */}
-          <input
-            type="text"
-            placeholder="Settings"
-            className={`${inputCls} w-28 shrink-0`}
-            value={row.settings_override}
-            onChange={e => setField(row._key, 'settings_override', e.target.value)}
-          />
-
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
-            onClick={() => removeRow(row._key)}
-          >
-            <X className="size-4" />
-          </Button>
-        </div>
-      ))}
+            {/* Line 2: Role + Settings */}
+            <div className="flex gap-2 items-center">
+              <select
+                className="h-8 w-36 shrink-0 rounded-md border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                value={row.role}
+                onChange={e => setField(row._key, 'role', e.target.value)}
+              >
+                {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+              <input
+                type="text"
+                placeholder="Settings (optional)"
+                className="h-8 flex-1 rounded-md border border-input bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                value={row.settings_override}
+                onChange={e => setField(row._key, 'settings_override', e.target.value)}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -256,7 +264,7 @@ export function AddComboDialog({ indicatorOptions }: { indicatorOptions: Indicat
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-8">
-      <div className="w-full max-w-2xl rounded-xl border border-border bg-card shadow-xl">
+      <div className="w-full max-w-2xl rounded-xl border border-border bg-card shadow-xl overflow-hidden">
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <h2 className="text-base font-semibold">Neue Combo</h2>
           <Button variant="ghost" size="icon" onClick={() => setOpen(false)}><X className="size-4" /></Button>
@@ -309,7 +317,7 @@ export function EditComboDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-8">
-      <div className="w-full max-w-2xl rounded-xl border border-border bg-card shadow-xl">
+      <div className="w-full max-w-2xl rounded-xl border border-border bg-card shadow-xl overflow-hidden">
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <h2 className="text-base font-semibold">Combo bearbeiten</h2>
           <Button variant="ghost" size="icon" onClick={() => setOpen(false)}><X className="size-4" /></Button>

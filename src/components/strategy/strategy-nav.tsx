@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { href: '/strategy/indicators', label: 'Indikatoren' },
   { href: '/strategy/tests',      label: 'Backtests' },
   { href: '/strategy/combos',     label: 'Combos' },
+  { href: '/strategy/strategies', label: 'Strategien' },
 ]
 
 export function StrategyNav() {

@@ -5,7 +5,8 @@
       "Bash(npx shadcn@latest add dialog select input label --yes)",
       "Bash(find \"src/app/\\(dashboard\\)\" -type f)",
       "Bash(npx shadcn@latest add alert-dialog --yes)",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "Bash(python3 -c \":*)"
     ]
   }
 }
