@@ -137,3 +137,17 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Turbopack cache
+.turbo
+
+# Next.js / TS build artifacts
+.next/
+out/
+*.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
