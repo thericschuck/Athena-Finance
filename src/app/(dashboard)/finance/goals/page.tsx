@@ -3,7 +3,7 @@ import { Database } from '@/types/database'
 import { AddGoalDialog, EditGoalDialog, DeleteGoalButton } from '@/components/finance/goal-form'
 import { setGoalStatus } from './actions'
 import { Button } from '@/components/ui/button'
-import { CheckCircle2, Circle, PauseCircle } from 'lucide-react'
+import { CheckCircle2, Circle } from 'lucide-react'
 
 type Goal = Database['public']['Tables']['savings_goals']['Row']
 
@@ -59,7 +59,7 @@ const fmt = (n: number) =>
   new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(n)
 
 // ─── Sort config ─────────────────────────────────────────────────────────────
-const PRIORITY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 }
+const PRIORITY_RANK: Record<string, number> = { hoch: 0, mittel: 1, niedrig: 2 }
 
 function sortGoals(goals: Goal[]): Goal[] {
   return [...goals].sort((a, b) => {
@@ -73,15 +73,14 @@ function sortGoals(goals: Goal[]): Goal[] {
 
 // ─── Badge configs ────────────────────────────────────────────────────────────
 const PRIORITY_BADGE: Record<string, { label: string; classes: string }> = {
-  high:   { label: 'Hoch',    classes: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
-  medium: { label: 'Mittel',  classes: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-  low:    { label: 'Niedrig', classes: 'bg-muted text-muted-foreground' },
+  hoch:    { label: 'Hoch',    classes: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+  mittel:  { label: 'Mittel',  classes: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+  niedrig: { label: 'Niedrig', classes: 'bg-muted text-muted-foreground' },
 }
 
 const STATUS_ICON: Record<string, React.ReactNode> = {
-  open:   <Circle className="size-4 text-green-500" />,
-  closed: <CheckCircle2 className="size-4 text-muted-foreground" />,
-  paused: <PauseCircle className="size-4 text-amber-500" />,
+  offen:        <Circle className="size-4 text-green-500" />,
+  geschlossen:  <CheckCircle2 className="size-4 text-muted-foreground" />,
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -96,8 +95,8 @@ export default async function GoalsPage() {
     .order('created_at', { ascending: false })
 
   const all = goals ?? []
-  const active = sortGoals(all.filter(g => g.status !== 'closed'))
-  const closed = all.filter(g => g.status === 'closed')
+  const active = sortGoals(all.filter(g => g.status !== 'geschlossen'))
+  const closed = all.filter(g => g.status === 'geschlossen')
 
   const totalTarget  = active.reduce((s, g) => s + g.target_amount, 0)
   const totalMonthly = active.reduce((s, g) => s + (g.monthly_savings_rate ?? 0), 0)
@@ -149,15 +148,13 @@ function GoalCard({ goal }: { goal: Goal }) {
   const saved    = estimatedSavings(goal)
   const remaining = monthsRemaining(goal)
   const total    = totalMonths(goal)
-  const isClosed = goal.status === 'closed'
-  const isPaused = goal.status === 'paused'
+  const isClosed = goal.status === 'geschlossen'
 
   const priorityBadge = goal.priority ? PRIORITY_BADGE[goal.priority] : null
 
   // Bound server actions — no client state needed
-  const nextStatus     = isClosed ? 'open' : 'closed'
-  const toggleAction   = setGoalStatus.bind(null, goal.id, nextStatus)
-  const pauseAction    = setGoalStatus.bind(null, goal.id, isPaused ? 'open' : 'paused')
+  const nextStatus   = isClosed ? 'offen' : 'geschlossen'
+  const toggleAction = setGoalStatus.bind(null, goal.id, nextStatus)
 
   const barColor = isClosed
     ? 'bg-muted-foreground/40'
@@ -232,14 +229,6 @@ function GoalCard({ goal }: { goal: Goal }) {
         </form>
 
         <div className="flex items-center gap-1">
-          {/* Pause toggle (only for open goals) */}
-          {!isClosed && (
-            <form action={pauseAction}>
-              <Button type="submit" variant="ghost" size="icon-xs" className="text-muted-foreground" title={isPaused ? 'Fortsetzen' : 'Pausieren'}>
-                <PauseCircle className="size-3.5" />
-              </Button>
-            </form>
-          )}
           <EditGoalDialog goal={goal} />
           <DeleteGoalButton goal={goal} />
         </div>

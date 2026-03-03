@@ -13,100 +13,93 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import {
-  createGoal, updateGoal, deleteGoal, type GoalActionState,
-} from '@/app/(dashboard)/finance/goals/actions'
+  createAsset, updateAsset, deleteAsset, type AssetActionState,
+} from '@/app/(dashboard)/crypto/actions'
 import { Database } from '@/types/database'
 
-type Goal = Database['public']['Tables']['savings_goals']['Row']
-
-const PRIORITIES = [
-  { value: 'hoch',    label: 'Hoch' },
-  { value: 'mittel',  label: 'Mittel' },
-  { value: 'niedrig', label: 'Niedrig' },
-]
+type Asset = Database['public']['Tables']['assets']['Row']
 
 // ─── Shared form fields ───────────────────────────────────────────────────────
-function GoalFields({
-  goal, priority, setPriority,
-}: {
-  goal?: Goal
-  priority: string
-  setPriority: (v: string) => void
-}) {
+function AssetFields({ asset }: { asset?: Asset }) {
   return (
     <>
-      {goal && <input type="hidden" name="id" value={goal.id} />}
-      <input type="hidden" name="priority" value={priority} />
+      {asset && <input type="hidden" name="id" value={asset.id} />}
 
-      {/* Bezeichnung */}
-      <div className="space-y-1.5">
-        <Label htmlFor="g-desc">Bezeichnung *</Label>
-        <Input
-          id="g-desc" name="description"
-          defaultValue={goal?.description}
-          placeholder="z.B. Notfallfonds, Urlaub Japan"
-          required
-        />
-      </div>
-
-      {/* Zielbetrag + Rate */}
+      {/* Name + CoinGecko-ID */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor="g-target">Zielbetrag (€) *</Label>
+          <Label htmlFor="a-name">Name *</Label>
           <Input
-            id="g-target" name="target_amount" type="number"
-            step="0.01" min="0.01"
-            defaultValue={goal?.target_amount}
-            placeholder="0,00" required
+            id="a-name" name="name"
+            defaultValue={asset?.name}
+            placeholder="Bitcoin"
+            required
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="g-rate">Sparrate / Monat (€)</Label>
+          <Label htmlFor="a-symbol">CoinGecko-ID *</Label>
           <Input
-            id="g-rate" name="monthly_savings_rate" type="number"
+            id="a-symbol" name="symbol"
+            defaultValue={asset?.symbol ?? ''}
+            placeholder="bitcoin"
+            required
+          />
+          <p className="text-xs text-muted-foreground">z.B. bitcoin, ethereum, solana</p>
+        </div>
+      </div>
+
+      {/* Menge + Ø Kaufpreis */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="a-qty">Menge *</Label>
+          <Input
+            id="a-qty" name="quantity" type="number"
+            step="any" min="0"
+            defaultValue={asset?.quantity ?? ''}
+            placeholder="0.00"
+            required
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="a-price">Ø Kaufpreis (€)</Label>
+          <Input
+            id="a-price" name="avg_buy_price" type="number"
             step="0.01" min="0"
-            defaultValue={goal?.monthly_savings_rate ?? ''}
+            defaultValue={asset?.avg_buy_price ?? ''}
             placeholder="0,00"
           />
         </div>
       </div>
 
-      {/* Priorität + Zieldatum */}
+      {/* Portfolio + Exchange */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label>Priorität</Label>
-          <Select value={priority} onValueChange={setPriority}>
-            <SelectTrigger><SelectValue placeholder="Keine" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none__">Keine Priorität</SelectItem>
-              {PRIORITIES.map(p => (
-                <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor="a-portfolio">Portfolio</Label>
+          <Input
+            id="a-portfolio" name="portfolio_name"
+            defaultValue={asset?.portfolio_name ?? ''}
+            placeholder="Main, Eltern…"
+          />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="g-date">Zieldatum</Label>
+          <Label htmlFor="a-exchange">Börse / Wallet</Label>
           <Input
-            id="g-date" name="target_date" type="date"
-            defaultValue={goal?.target_date ?? ''}
+            id="a-exchange" name="exchange"
+            defaultValue={asset?.exchange ?? ''}
+            placeholder="Binance, Ledger…"
           />
         </div>
       </div>
 
       {/* Notes */}
       <div className="space-y-1.5">
-        <Label htmlFor="g-notes">Notizen</Label>
-        <textarea
-          id="g-notes" name="notes" rows={2}
-          defaultValue={goal?.notes ?? ''}
-          placeholder="Optionale Anmerkungen…"
-          className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        <Label htmlFor="a-notes">Notizen</Label>
+        <Input
+          id="a-notes" name="notes"
+          defaultValue={asset?.notes ?? ''}
+          placeholder="Optionale Anmerkungen"
         />
       </div>
     </>
@@ -114,19 +107,17 @@ function GoalFields({
 }
 
 // ─── Shared dialog wrapper ────────────────────────────────────────────────────
-function GoalDialog({
-  mode, goal, trigger,
+function AssetDialog({
+  mode, asset, trigger,
 }: {
   mode: 'create' | 'edit'
-  goal?: Goal
+  asset?: Asset
   trigger: React.ReactNode
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [priority, setPriority] = useState(goal?.priority ?? '__none__')
-
-  const action = mode === 'create' ? createGoal : updateGoal
-  const [state, formAction, isPending] = useActionState<GoalActionState, FormData>(action, null)
+  const action = mode === 'create' ? createAsset : updateAsset
+  const [state, formAction, isPending] = useActionState<AssetActionState, FormData>(action, null)
 
   useEffect(() => {
     if (state && 'success' in state) {
@@ -135,25 +126,15 @@ function GoalDialog({
     }
   }, [state, router])
 
-  function handleOpenChange(next: boolean) {
-    setOpen(next)
-    if (next) setPriority(goal?.priority ?? '__none__')
-  }
-
-  function handleAction(fd: FormData) {
-    if (fd.get('priority') === '__none__') fd.set('priority', '')
-    formAction(fd)
-  }
-
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{mode === 'create' ? 'Neues Sparziel' : 'Sparziel bearbeiten'}</DialogTitle>
+          <DialogTitle>{mode === 'create' ? 'Neues Asset' : 'Asset bearbeiten'}</DialogTitle>
         </DialogHeader>
-        <form action={handleAction} className="space-y-4 pt-2">
-          <GoalFields goal={goal} priority={priority} setPriority={setPriority} />
+        <form action={formAction} className="space-y-4 pt-2">
+          <AssetFields asset={asset} />
           {state && 'error' in state && (
             <p className="text-sm text-destructive">{state.error}</p>
           )}
@@ -172,32 +153,32 @@ function GoalDialog({
 }
 
 // ─── Public exports ───────────────────────────────────────────────────────────
-export function AddGoalDialog() {
+export function AddAssetDialog() {
   return (
-    <GoalDialog
+    <AssetDialog
       mode="create"
-      trigger={<Button size="sm"><Plus className="size-4" />Sparziel anlegen</Button>}
+      trigger={<Button size="sm"><Plus className="size-4" />Asset anlegen</Button>}
     />
   )
 }
 
-export function EditGoalDialog({ goal }: { goal: Goal }) {
+export function EditAssetDialog({ asset }: { asset: Asset }) {
   return (
-    <GoalDialog
-      mode="edit" goal={goal}
+    <AssetDialog
+      mode="edit" asset={asset}
       trigger={<Button variant="ghost" size="icon-sm"><Pencil className="size-3.5" /></Button>}
     />
   )
 }
 
-export function DeleteGoalButton({ goal }: { goal: Goal }) {
+export function DeleteAssetButton({ asset }: { asset: Asset }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
   function handleDelete() {
     startTransition(async () => {
-      const result = await deleteGoal(goal.id)
+      const result = await deleteAsset(asset.id)
       if (result.error) setError(result.error)
       else router.refresh()
     })
@@ -212,9 +193,9 @@ export function DeleteGoalButton({ goal }: { goal: Goal }) {
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Sparziel löschen?</AlertDialogTitle>
+          <AlertDialogTitle>Asset löschen?</AlertDialogTitle>
           <AlertDialogDescription>
-            <strong>{goal.description}</strong> wird unwiderruflich gelöscht.
+            <strong>{asset.name}</strong> und alle zugehörigen Bewertungen werden unwiderruflich gelöscht.
           </AlertDialogDescription>
         </AlertDialogHeader>
         {error && <p className="text-sm text-destructive px-1">{error}</p>}

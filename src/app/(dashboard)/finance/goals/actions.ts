@@ -23,7 +23,7 @@ export async function createGoal(
   const { error } = await supabase.from('savings_goals').insert({
     description,
     target_amount,
-    status: 'open',
+    status: 'offen',
     user_id: user.id,
     priority: (formData.get('priority') as string) || null,
     monthly_savings_rate: formData.get('monthly_savings_rate')
