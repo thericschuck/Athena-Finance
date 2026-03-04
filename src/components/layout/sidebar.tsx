@@ -8,6 +8,7 @@ import {
   CircleDollarSign,
   Target,
   BarChart3,
+  Settings,
   LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -20,6 +21,7 @@ const navItems = [
   { href: '/crypto', label: 'Crypto', icon: CircleDollarSign },
   { href: '/strategy', label: 'Strategy', icon: Target },
   { href: '/tpi', label: 'TPI', icon: BarChart3 },
+  { href: '/settings', label: 'Einstellungen', icon: Settings },
 ]
 
 interface SidebarProps {
