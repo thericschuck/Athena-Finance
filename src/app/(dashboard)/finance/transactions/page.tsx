@@ -4,7 +4,7 @@ import { TransactionFilters } from '@/components/finance/transaction-filters'
 import { Database } from '@/types/database'
 
 type TxRow = Database['public']['Tables']['transactions']['Row']
-type Account = { id: string; name: string; color: string | null }
+type Account = { id: string; name: string; color: string | null; currency: string }
 type Category = { id: string; name: string; color: string | null }
 
 type TransactionWithRelations = TxRow & {

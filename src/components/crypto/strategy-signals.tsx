@@ -80,7 +80,7 @@ function AssetWeightTable({
     const cgId  = newCoingeckoId.trim().toLowerCase()
     const pct   = parseFloat(newPct) || 0
     if (!sym || !cgId || pct <= 0) return
-    const next = [...rows, { symbol: sym, coingecko_id: cgId, pct }]
+    const next = [...rows, { symbol: sym, coingecko_id: cgId, pct, weight: pct / 100 }]
     setNewSymbol(''); setNewCoingeckoId(''); setNewPct('')
     update(next)
   }

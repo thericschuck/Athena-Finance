@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { getPrices } from '@/lib/crypto/coingecko'
+import type { Json } from '@/types/database'
 import {
   DEFAULT_STRATEGY_SIGNALS,
   DEFAULT_PORTFOLIO_ALLOCATIONS,
@@ -285,7 +286,7 @@ export async function saveStrategySignals(signals: StrategySignals): Promise<voi
     {
       user_id: user.id,
       key:     'strategy_signals',
-      value:   signals as unknown as Record<string, unknown>,
+      value:   signals as unknown as Json,
     },
     { onConflict: 'user_id,key' }
   )
@@ -318,7 +319,7 @@ export async function savePortfolioAllocations(allocations: PortfolioAllocations
     {
       user_id: user.id,
       key:     'portfolio_allocations',
-      value:   allocations as unknown as Record<string, unknown>,
+      value:   allocations as unknown as Json,
     },
     { onConflict: 'user_id,key' }
   )
@@ -353,7 +354,7 @@ export async function markRebalancingDone(): Promise<void> {
     {
       user_id: user.id,
       key:     'last_rebalancing',
-      value:   today as unknown as Record<string, unknown>,
+      value:   today as unknown as Json,
     },
     { onConflict: 'user_id,key' }
   )
