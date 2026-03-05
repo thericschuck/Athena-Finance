@@ -48,3 +48,62 @@ export async function createTransaction(
   revalidatePath('/finance/transactions')
   return { success: true }
 }
+
+export async function updateTransaction(
+  _prev: TransactionActionState,
+  formData: FormData
+): Promise<TransactionActionState> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Nicht eingeloggt' }
+
+  const id        = formData.get('id') as string
+  const date      = formData.get('date') as string
+  const type      = formData.get('type') as string
+  const account_id = formData.get('account_id') as string
+  const amountRaw = formData.get('amount') as string
+  const currency  = formData.get('currency') as string
+
+  if (!id)                                      return { error: 'ID fehlt' }
+  if (!date)                                    return { error: 'Datum ist erforderlich' }
+  if (!type)                                    return { error: 'Typ ist erforderlich' }
+  if (!account_id)                              return { error: 'Konto ist erforderlich' }
+  if (!amountRaw || isNaN(Number(amountRaw)))   return { error: 'Betrag ist ungültig' }
+  if (!currency)                                return { error: 'Währung ist erforderlich' }
+
+  const { error } = await supabase
+    .from('transactions')
+    .update({
+      date,
+      type,
+      account_id,
+      currency,
+      amount:      Math.abs(parseFloat(amountRaw)),
+      category_id: (formData.get('category_id') as string) || null,
+      description: (formData.get('description') as string) || null,
+      merchant:    (formData.get('merchant') as string) || null,
+    })
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/finance/transactions')
+  return { success: true }
+}
+
+export async function deleteTransaction(id: string): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Nicht eingeloggt' }
+
+  const { error } = await supabase
+    .from('transactions')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/finance/transactions')
+  return {}
+}

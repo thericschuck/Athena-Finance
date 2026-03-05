@@ -2,6 +2,10 @@ import { createClient } from '@/lib/supabase/server'
 import { TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, AlertCircle, Clock, Minus } from 'lucide-react'
 import { NetWorthChart } from '@/components/dashboard/net-worth-chart'
 import type { NetWorthSnapshot } from '@/components/dashboard/net-worth-chart'
+import { CryptoWidget } from '@/components/dashboard/crypto-widget'
+import { RebalancingAlert } from '@/components/dashboard/rebalancing-alert'
+import { getStrategySignals, getPortfolioAllocations, getLastRebalancing } from '@/app/(dashboard)/crypto/actions'
+import { calculateRebalancing } from '@/lib/crypto/rebalancing'
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 function fmtCurrency(n: number | null | undefined, currency = 'EUR'): string {
@@ -85,6 +89,10 @@ export default async function DashboardPage() {
     { data: contractsRaw },
     { data: monthRows },
     { data: snapshotsRaw },
+    { data: cryptoAssetsRaw },
+    cryptoSignals,
+    cryptoAllocations,
+    lastRebalancing,
   ] = await Promise.all([
     supabase.from('current_net_worth').select('*').eq('user_id', user!.id).maybeSingle(),
     supabase.from('accounts').select('*').eq('user_id', user!.id).eq('is_active', true).order('sort_order'),
@@ -93,6 +101,10 @@ export default async function DashboardPage() {
     supabase.from('contracts').select('id,name,provider,frequency,amount,currency,end_date,notice_days,auto_renews').eq('user_id', user!.id).eq('is_active', true),
     supabase.from('monthly_finance_summary').select('*').eq('user_id', user!.id).gte('month', yearMonth).lt('month', nextYearMonth).order('created_at', { ascending: false }).limit(1),
     supabase.from('net_worth_snapshots').select('snapshot_date,net_worth,total_checking,total_savings,total_cash,total_depot,total_crypto,total_bausparer,total_business,total_debts,total_assets').eq('user_id', user!.id).order('snapshot_date', { ascending: true }),
+    supabase.from('assets').select('id,symbol,name,portfolio_name,quantity,avg_buy_price').in('type', ['crypto', 'stable', 'fiat']).eq('user_id', user!.id),
+    getStrategySignals(user!.id),
+    getPortfolioAllocations(user!.id),
+    getLastRebalancing(user!.id),
   ])
 
   const accounts  = accountsRaw ?? []
@@ -106,6 +118,53 @@ export default async function DashboardPage() {
     if (!latestBal.has(b.account_id))
       latestBal.set(b.account_id, { balance: b.balance, currency: b.currency })
   }
+
+  // ── Crypto widget data ───────────────────────────────────────────────────────
+  const cryptoAssetIds = (cryptoAssetsRaw ?? []).map(a => a.id)
+  let cryptoValMap = new Map<string, { price_per_unit: number; total_value: number }>()
+  if (cryptoAssetIds.length > 0) {
+    const { data: cryptoVals } = await supabase
+      .from('asset_valuations')
+      .select('asset_id, price_per_unit, total_value')
+      .in('asset_id', cryptoAssetIds)
+      .order('valuation_date', { ascending: false })
+      .order('created_at', { ascending: false })
+    for (const v of cryptoVals ?? []) {
+      if (!cryptoValMap.has(v.asset_id)) cryptoValMap.set(v.asset_id, v)
+    }
+  }
+
+  const cryptoAssets = (cryptoAssetsRaw ?? []).map(a => {
+    const val = cryptoValMap.get(a.id)
+    return {
+      ...a,
+      current_price: val?.price_per_unit ?? null,
+      current_value: val?.total_value    ?? null,
+    }
+  })
+  const cryptoTotalValue = cryptoAssets.reduce((s, a) => s + (a.current_value ?? 0), 0)
+  const cryptoTotalCost  = cryptoAssets.reduce((s, a) => {
+    if (a.avg_buy_price == null || a.quantity == null) return s
+    return s + a.avg_buy_price * a.quantity
+  }, 0)
+
+  const rebResult        = calculateRebalancing(cryptoSignals, cryptoAllocations, cryptoAssets, cryptoTotalValue)
+  const rebalancingVolume = rebResult.rebalancing_volume
+
+  // Top 4 assets by value
+  const topAssets = [...cryptoAssets]
+    .filter(a => (a.current_value ?? 0) > 0)
+    .sort((a, b) => (b.current_value ?? 0) - (a.current_value ?? 0))
+    .slice(0, 4)
+    .map(a => {
+      // Prefer ticker from rebalancing rows; fall back to name or coingecko_id
+      const rebRow = rebResult.rows.find(r => r.coingecko_id === a.symbol)
+      return {
+        symbol: rebRow?.symbol ?? (a.name ?? a.symbol ?? '?'),
+        value:  a.current_value ?? 0,
+        pct:    cryptoTotalValue > 0 ? ((a.current_value ?? 0) / cryptoTotalValue) * 100 : 0,
+      }
+    })
 
   // Upcoming cancellation deadlines (within 45 days)
   type UpcomingContract = ContractRow & { renewalDate: Date; deadlineDate: Date; days: number }
@@ -135,8 +194,8 @@ export default async function DashboardPage() {
       {/* ── Net Worth Chart ───────────────────────────────────────────────────── */}
       <NetWorthChart snapshots={snapshots} />
 
-      {/* ── Row 1: Net Worth + Monthly Balance ────────────────────────────────── */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {/* ── Row 1: Net Worth + Monthly Balance + Crypto ───────────────────────── */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 
         {/* Net Worth Widget */}
         <Card className="p-5">
@@ -163,6 +222,15 @@ export default async function DashboardPage() {
             ))}
           </div>
         </Card>
+
+        {/* Crypto Widget */}
+        <CryptoWidget
+          totalValue={cryptoTotalValue}
+          totalCost={cryptoTotalCost > 0 ? cryptoTotalCost : null}
+          rebalancingVolume={rebalancingVolume}
+          lastRebalancing={lastRebalancing}
+          topAssets={topAssets}
+        />
 
         {/* Monthly Balance Widget */}
         <Card className="p-5">
@@ -227,6 +295,9 @@ export default async function DashboardPage() {
           )}
         </Card>
       </div>
+
+      {/* ── Rebalancing alert ─────────────────────────────────────────────────── */}
+      <RebalancingAlert rebalancingVolume={rebalancingVolume} lastRebalancing={lastRebalancing} />
 
       {/* ── Row 2: Accounts ───────────────────────────────────────────────────── */}
       <div>

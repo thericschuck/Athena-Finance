@@ -37,7 +37,13 @@ const navItems: NavItem[] = [
       { href: '/finance/goals',        label: 'Sparziele' },
     ],
   },
-  { href: '/crypto', label: 'Crypto', icon: CircleDollarSign },
+  {
+    href: '/crypto', label: 'Crypto', icon: CircleDollarSign,
+    children: [
+      { href: '/crypto',              label: 'Portfolio' },
+      { href: '/crypto/rebalancing',  label: 'Rebalancing' },
+    ],
+  },
   {
     href: '/strategy', label: 'Strategy', icon: Target,
     children: [

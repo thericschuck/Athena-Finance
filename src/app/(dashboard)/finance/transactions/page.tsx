@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
-import { AddTransactionDialog } from '@/components/finance/transaction-form'
+import { AddTransactionDialog, EditTransactionDialog, DeleteTransactionButton } from '@/components/finance/transaction-form'
 import { TransactionFilters } from '@/components/finance/transaction-filters'
 import { Database } from '@/types/database'
 
 type TxRow = Database['public']['Tables']['transactions']['Row']
+type Account = { id: string; name: string; color: string | null }
+type Category = { id: string; name: string; color: string | null }
 
 type TransactionWithRelations = TxRow & {
   account: { id: string; name: string; color: string | null } | null
@@ -127,11 +129,12 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Kategorie</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Beschreibung</th>
                 <th className="px-4 py-3 text-right font-medium text-muted-foreground">Betrag</th>
+                <th className="px-4 py-3 w-16"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {rows.map((tx) => (
-                <TransactionRow key={tx.id} tx={tx} />
+                <TransactionRow key={tx.id} tx={tx} accounts={accounts ?? []} categories={categories ?? []} />
               ))}
             </tbody>
           </table>
@@ -141,7 +144,7 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
   )
 }
 
-function TransactionRow({ tx }: { tx: TransactionWithRelations }) {
+function TransactionRow({ tx, accounts, categories }: { tx: TransactionWithRelations; accounts: Account[]; categories: Category[] }) {
   const typeCfg = TYPE_CONFIG[tx.type] ?? { label: tx.type, classes: 'bg-muted text-muted-foreground' }
   const { sign, display } = formatAmount(tx.amount, tx.currency, tx.type)
 
@@ -153,7 +156,7 @@ function TransactionRow({ tx }: { tx: TransactionWithRelations }) {
       : 'text-foreground'
 
   return (
-    <tr className="hover:bg-muted/30 transition-colors">
+    <tr className="group hover:bg-muted/30 transition-colors">
       {/* Datum */}
       <td className="px-4 py-3 text-muted-foreground tabular-nums">
         {formatDate(tx.date)}
@@ -199,6 +202,14 @@ function TransactionRow({ tx }: { tx: TransactionWithRelations }) {
       {/* Betrag */}
       <td className={`px-4 py-3 text-right font-medium tabular-nums ${amountColor}`}>
         {sign}{display}
+      </td>
+
+      {/* Aktionen */}
+      <td className="px-2 py-3">
+        <span className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <EditTransactionDialog tx={tx} accounts={accounts} categories={categories} />
+          <DeleteTransactionButton tx={tx} />
+        </span>
       </td>
     </tr>
   )
