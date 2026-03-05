@@ -8,7 +8,13 @@
       "Bash(node -e \":*)",
       "Bash(python3 -c \":*)",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d.get\\(''dependencies'',{}\\).get\\(''tw-animate-css'',''not found''\\)\\); print\\(d.get\\(''dependencies'',{}\\).get\\(''framer-motion'',''not found''\\)\\)\")",
-      "Bash(cat \"c:/Users/eschu/Desktop/Unternehmensstruktur/06-Projekte/Privat/athena-finance/src/app/\\(dashboard\\)/layout.tsx\")"
+      "Bash(cat \"c:/Users/eschu/Desktop/Unternehmensstruktur/06-Projekte/Privat/athena-finance/src/app/\\(dashboard\\)/layout.tsx\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); deps={**d.get\\(''dependencies'',{}\\), **d.get\\(''devDependencies'',{}\\)}; print\\(''next-themes:'', deps.get\\(''next-themes'',''NOT FOUND''\\)\\); print\\(''sonner:'', deps.get\\(''sonner'',''NOT FOUND''\\)\\)\")",
+      "Bash(npm install)",
+      "Bash(node -e \"const p=require\\(''./node_modules/next-themes/package.json''\\); console.log\\(''version:'', p.version\\); console.log\\(''exports:'', JSON.stringify\\(p.exports||p.main||''none'', null, 2\\)\\)\")",
+      "Bash(node -e \"const p=require\\(''./package.json''\\); console.log\\(''next:'', p.dependencies?.next || p.devDependencies?.next\\)\")",
+      "Bash(npm run build)",
+      "Bash(python3 -:*)"
     ]
   }
 }

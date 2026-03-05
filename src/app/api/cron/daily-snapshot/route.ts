@@ -220,8 +220,8 @@ export async function GET(req: NextRequest) {
           ? await fetchCryptoPrices(cryptoSymbols)
           : new Map<string, number>()
 
-        const portRows:  object[] = []
-        const evalRows: object[] = []
+        const portRows: Record<string, unknown>[] = []
+        const evalRows: Record<string, unknown>[] = []
 
         for (const asset of assets) {
           const qty = asset.quantity ?? 0
@@ -264,14 +264,14 @@ export async function GET(req: NextRequest) {
 
         const { error: portErr } = await supabase
           .from('portfolio_snapshots')
-          .upsert(portRows, { onConflict: 'asset_id,snapshot_date' })
+          .upsert(portRows as never[], { onConflict: 'asset_id,snapshot_date' })
 
         if (portErr) log.push(`  portfolio_snapshots ERR: ${portErr.message}`)
         else         log.push(`  portfolio_snapshots: ${portRows.length} rows`)
 
         const { error: evalErr } = await supabase
           .from('asset_valuations')
-          .upsert(evalRows, { onConflict: 'asset_id,valuation_date' })
+          .upsert(evalRows as never[], { onConflict: 'asset_id,valuation_date' })
 
         if (evalErr) log.push(`  asset_valuations ERR: ${evalErr.message}`)
         else         log.push(`  asset_valuations: ${evalRows.length} rows`)

@@ -10,7 +10,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import type { TooltipProps } from 'recharts'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export type NetWorthSnapshot = {
@@ -47,10 +46,15 @@ function fmtShort(n: number): string {
 }
 
 // ─── Custom Tooltip ───────────────────────────────────────────────────────────
-function ChartTooltip({ active, payload, label }: TooltipProps<number, string>) {
+type TooltipEntry = { payload: NetWorthSnapshot; value: number }
+function ChartTooltip({ active, payload, label }: {
+  active?: boolean
+  payload?: TooltipEntry[]
+  label?: string
+}) {
   if (!active || !payload?.length) return null
 
-  const d = payload[0]?.payload as NetWorthSnapshot | undefined
+  const d = payload[0]?.payload
   if (!d) return null
 
   const rows: [string, number | null][] = [
@@ -64,7 +68,7 @@ function ChartTooltip({ active, payload, label }: TooltipProps<number, string>) 
     ['Schulden',    d.total_debts],
   ]
 
-  const date = new Date(label).toLocaleDateString('de-DE', {
+  const date = new Date(label ?? '').toLocaleDateString('de-DE', {
     day: '2-digit', month: 'short', year: 'numeric',
   })
 

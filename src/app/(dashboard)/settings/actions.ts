@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import type { Json } from '@/types/database'
 
 export type SettingsState = { error: string } | { success: true } | null
 
@@ -15,7 +16,7 @@ async function upsertSettings(
   const rows = Object.entries(settings).map(([key, value]) => ({
     user_id: userId,
     key,
-    value,
+    value: value as Json,
   }))
   return supabase
     .from('user_settings')

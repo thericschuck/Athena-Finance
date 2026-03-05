@@ -136,7 +136,7 @@ export default async function IndicatorsPage({
                   <th className="px-4 py-2.5 font-medium">Name</th>
                   <th className="px-4 py-2.5 font-medium">Author</th>
                   <th className="px-4 py-2.5 font-medium">Typ</th>
-                  <th className="px-3 py-2.5 font-medium text-center" title="Repaints">
+                  <th className="px-3 py-2.5 font-medium text-center" aria-label="Repaints">
                     <Repeat2 className="size-3.5 mx-auto" />
                   </th>
                   <th className="px-3 py-2.5 font-medium text-center" title="Verboten">
@@ -206,14 +206,14 @@ function IndicatorRow({
       {/* Repaints */}
       <td className="px-3 py-3 text-center">
         {ind.repaints
-          ? <RefreshCw className="size-3.5 text-amber-500 mx-auto" title="Repaints" />
+          ? <RefreshCw className="size-3.5 text-amber-500 mx-auto" aria-label="Repaints" />
           : <span className="text-muted-foreground/30">—</span>}
       </td>
 
       {/* Forbidden */}
       <td className="px-3 py-3 text-center">
         {ind.is_forbidden
-          ? <ShieldX className="size-3.5 text-destructive mx-auto" title={ind.forbidden_reason ?? 'Verboten'} />
+          ? <ShieldX className="size-3.5 text-destructive mx-auto" aria-label={ind.forbidden_reason ?? 'Verboten'} />
           : <span className="text-muted-foreground/30">—</span>}
       </td>
 

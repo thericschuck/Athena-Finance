@@ -113,7 +113,7 @@ export default async function TestsPage({
   const params = await searchParams
 
   const sortKey   = (params.sort as SortKey) || SORT_DEFAULTS
-  const sortOrder = params.order === 'asc' ? 'asc' : 'desc'
+  const sortOrder = (params.order === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc'
   const assetClass = params.asset_class
   const minCg  = params.min_cg  ? parseFloat(params.min_cg)  : null
   const minCr  = params.min_cr  ? parseFloat(params.min_cr)  : null

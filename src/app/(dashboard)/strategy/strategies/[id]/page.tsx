@@ -103,10 +103,10 @@ export default async function StrategyDetailPage({
             <h1 className="text-2xl font-semibold tracking-tight">{strategy.name}</h1>
             <StatusBadge status={strategy.status} />
             {robustnessPasses === true && (
-              <CheckCircle2 className="size-5 text-green-500" title="Robustness: all pass" />
+              <CheckCircle2 className="size-5 text-green-500" aria-label="Robustness: all pass" />
             )}
             {robustnessPasses === false && (
-              <XCircle className="size-5 text-red-500" title="Robustness: failures" />
+              <XCircle className="size-5 text-red-500" aria-label="Robustness: failures" />
             )}
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">

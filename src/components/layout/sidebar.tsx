@@ -47,11 +47,9 @@ const navItems: NavItem[] = [
       { href: '/strategy/strategies', label: 'Strategien' },
     ],
   },
-  { href: '/tpi',     label: 'TPI',      icon: BarChart3 },
-  { href: '/history', label: 'Historie', icon: History },
-  { href: '/strategy', label: 'Strategy', icon: Target },
-  { href: '/tpi', label: 'TPI', icon: BarChart3 },
-  { href: '/settings', label: 'Einstellungen', icon: Settings },
+  { href: '/tpi',      label: 'TPI',           icon: BarChart3 },
+  { href: '/history',  label: 'Historie',      icon: History   },
+  { href: '/settings', label: 'Einstellungen', icon: Settings  },
 ]
 
 interface SidebarProps {

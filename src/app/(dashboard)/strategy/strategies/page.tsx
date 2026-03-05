@@ -119,7 +119,7 @@ export default async function StrategiesPage({
                     <h3 className="font-semibold truncate">{s.name}</h3>
                     <StatusBadge status={s.status} />
                     {readyIdSet.has(s.id) && (
-                      <CheckCircle2 className="size-3.5 text-green-500 shrink-0" title="Submission-ready" />
+                      <CheckCircle2 className="size-3.5 text-green-500 shrink-0" aria-label="Submission-ready" />
                     )}
                   </div>
                   <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
