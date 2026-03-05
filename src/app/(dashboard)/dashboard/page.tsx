@@ -62,7 +62,7 @@ function getNextRenewalDate(c: ContractRow): Date | null {
 
 // ─── Shared card wrapper ──────────────────────────────────────────────────────
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <div className={`rounded-lg border border-border bg-card ${className}`}>{children}</div>
+  return <div className={`rounded-lg border border-border bg-card card-hover ${className}`}>{children}</div>
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────

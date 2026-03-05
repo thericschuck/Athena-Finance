@@ -133,9 +133,9 @@ export function NetWorthChart({ snapshots }: { snapshots: NetWorthSnapshot[] }) 
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
+              className={`px-2.5 py-1 text-xs rounded font-medium transition-all duration-150 ${
                 filter === f
-                  ? 'bg-foreground text-background'
+                  ? 'bg-foreground text-background scale-105'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted'
               }`}
             >

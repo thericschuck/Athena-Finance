@@ -6,7 +6,9 @@
       "Bash(find \"src/app/\\(dashboard\\)\" -type f)",
       "Bash(npx shadcn@latest add alert-dialog --yes)",
       "Bash(node -e \":*)",
-      "Bash(python3 -c \":*)"
+      "Bash(python3 -c \":*)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d.get\\(''dependencies'',{}\\).get\\(''tw-animate-css'',''not found''\\)\\); print\\(d.get\\(''dependencies'',{}\\).get\\(''framer-motion'',''not found''\\)\\)\")",
+      "Bash(cat \"c:/Users/eschu/Desktop/Unternehmensstruktur/06-Projekte/Privat/athena-finance/src/app/\\(dashboard\\)/layout.tsx\")"
     ]
   }
 }

@@ -123,4 +123,86 @@
   body {
     @apply bg-background text-foreground;
   }
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  {
+  background: oklch(var(--border) / 1);
+  border-radius: 99px;
+  transition: background 0.2s;
+}
+::-webkit-scrollbar-thumb:hover { background: oklch(var(--muted-foreground) / 0.35); }
+
+/* ── Page transition ───────────────────────────────────────────────────────── */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(7px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter-active {
+  animation: pageEnter 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* ── Sidebar sub-nav: CSS grid expand/collapse ─────────────────────────────── */
+.subnav-container {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    opacity            0.18s ease;
+}
+.subnav-container.open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.subnav-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── Global interactive transitions ───────────────────────────────────────── */
+a, button {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+/* ── Card hover lift ───────────────────────────────────────────────────────── */
+.card-hover {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.card-hover:hover {
+  box-shadow: 0 4px 16px -2px oklch(0 0 0 / 0.08);
+  transform: translateY(-1px);
+}
+
+/* ── Table row hover ───────────────────────────────────────────────────────── */
+tbody tr {
+  transition: background-color 0.12s ease;
+}
+
+/* ── Focus ring smoothing ──────────────────────────────────────────────────── */
+:focus-visible {
+  transition: outline-offset 0.1s ease;
+}
+
+/* ── Shimmer for loading states ────────────────────────────────────────────── */
+@keyframes shimmer {
+  from { background-position: -400px 0; }
+  to   { background-position:  400px 0; }
+}
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    oklch(var(--muted) / 0.4) 25%,
+    oklch(var(--muted) / 0.8) 50%,
+    oklch(var(--muted) / 0.4) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite linear;
 }

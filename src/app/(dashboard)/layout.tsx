@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/layout/sidebar'
+import { PageWrapper } from '@/components/layout/page-wrapper'
 
 export default async function DashboardLayout({
   children,
@@ -19,9 +20,7 @@ export default async function DashboardLayout({
   return (
     <div className="flex h-screen bg-background">
       <Sidebar email={user.email ?? ''} />
-      <div className="flex min-w-0 flex-1 flex-col overflow-auto">
-        {children}
-      </div>
+      <PageWrapper>{children}</PageWrapper>
     </div>
   )
 }
