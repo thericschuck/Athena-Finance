@@ -9,6 +9,7 @@ import {
   Target,
   BarChart3,
   History,
+  Settings,
   LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -48,6 +49,9 @@ const navItems: NavItem[] = [
   },
   { href: '/tpi',     label: 'TPI',      icon: BarChart3 },
   { href: '/history', label: 'Historie', icon: History },
+  { href: '/strategy', label: 'Strategy', icon: Target },
+  { href: '/tpi', label: 'TPI', icon: BarChart3 },
+  { href: '/settings', label: 'Einstellungen', icon: Settings },
 ]
 
 interface SidebarProps {
