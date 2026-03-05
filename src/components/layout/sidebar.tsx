@@ -42,6 +42,7 @@ const navItems: NavItem[] = [
     children: [
       { href: '/crypto',              label: 'Portfolio' },
       { href: '/crypto/rebalancing',  label: 'Rebalancing' },
+      { href: '/crypto/assets',       label: 'Assets' },
     ],
   },
   {

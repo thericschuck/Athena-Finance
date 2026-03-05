@@ -5,7 +5,7 @@ import {
   EditContractDialog,
   DeleteContractButton,
 } from '@/components/finance/contract-form'
-import { CONTRACT_TYPES, FREQUENCIES } from '@/lib/finance/contract-constants'
+import { CONTRACT_TYPES, FREQUENCIES, TRANSFER_TYPES } from '@/lib/finance/contract-constants'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 
 type Contract = Database['public']['Tables']['contracts']['Row']
@@ -85,7 +85,11 @@ function fmtDate(d: Date) {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const TYPE_ORDER = ['subscription', 'insurance', 'utility', 'loan', 'rental', 'service', 'other']
+const TYPE_ORDER = [
+  'subscription', 'insurance', 'utility', 'loan', 'rental',
+  'transfer', 'savings_plan', 'building_savings',
+  'service', 'other',
+]
 
 const TYPE_LABEL = Object.fromEntries(CONTRACT_TYPES.map(t => [t.value, t.label]))
 const FREQ_LABEL = Object.fromEntries(FREQUENCIES.map(f => [f.value, f.label]))
@@ -198,21 +202,29 @@ function ContractGroup({
 function ContractRow({
   contract: c, accounts, categories,
 }: {
-  contract: Contract
+  contract: Contract & { to_account_id?: string | null }
   accounts: { id: string; name: string }[]
   categories: { id: string; name: string }[]
 }) {
-  const expired  = isNoticeExpired(c)
-  const nextDate = c.is_active ? nextBillingDate(c.start_date, c.frequency) : null
+  const expired     = isNoticeExpired(c)
+  const nextDate    = c.is_active ? nextBillingDate(c.start_date, c.frequency) : null
+  const isTransfer  = TRANSFER_TYPES.has(c.type)
+  const fromAccount = isTransfer ? accounts.find(a => a.id === c.account_id) : null
+  const toAccount   = isTransfer ? accounts.find(a => a.id === c.to_account_id) : null
 
   return (
     <tr className={`hover:bg-muted/30 transition-colors group ${!c.is_active ? 'opacity-50' : ''}`}>
-      {/* Name + provider */}
+      {/* Name + provider / transfer info */}
       <td className="px-4 py-3 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-medium text-foreground">{c.name}</span>
-          {c.provider && (
+          {!isTransfer && c.provider && (
             <span className="text-xs text-muted-foreground">{c.provider}</span>
+          )}
+          {isTransfer && (fromAccount || toAccount) && (
+            <span className="text-xs text-muted-foreground">
+              {fromAccount?.name ?? '—'} → {toAccount?.name ?? '—'}
+            </span>
           )}
 
           {/* Badges */}

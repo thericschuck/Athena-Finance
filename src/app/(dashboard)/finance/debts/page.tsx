@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { Database } from '@/types/database'
-import { AddDebtDialog, DebtPaymentDialog } from '@/components/finance/debt-payment-form'
+import { AddDebtDialog, DebtPaymentDialog, EditDebtDialog, DeleteDebtButton } from '@/components/finance/debt-payment-form'
 import { CalendarDays, TrendingDown, TrendingUp } from 'lucide-react'
 
 type Debt = Database['public']['Tables']['debts']['Row']
@@ -253,7 +253,11 @@ function DebtCard({ debt, accentColor }: { debt: Debt; accentColor: 'red' | 'gre
             </span>
           )}
         </div>
-        {debt.is_active && <DebtPaymentDialog debt={debt} />}
+        <div className="flex items-center gap-1">
+          {debt.is_active && <DebtPaymentDialog debt={debt} />}
+          <EditDebtDialog debt={debt} />
+          <DeleteDebtButton debt={debt} />
+        </div>
       </div>
     </div>
   )

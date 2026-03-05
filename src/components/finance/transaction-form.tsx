@@ -61,17 +61,24 @@ const CURRENCIES = ['EUR', 'USD', 'CHF', 'GBP', 'BTC', 'ETH']
 interface AddTransactionDialogProps {
   accounts: Account[]
   categories: Category[]
+  defaultAccountId?: string
 }
 
-export function AddTransactionDialog({ accounts, categories }: AddTransactionDialogProps) {
+export function AddTransactionDialog({ accounts, categories, defaultAccountId }: AddTransactionDialogProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
 
   // Select values (need hidden inputs for Server Action)
   const [type, setType] = useState('expense')
-  const [accountId, setAccountId] = useState('')
+  const [accountId, setAccountId] = useState(defaultAccountId ?? '')
   const [categoryId, setCategoryId] = useState('')
-  const [currency, setCurrency] = useState('EUR')
+  const [currency, setCurrency] = useState(() => {
+    if (defaultAccountId) {
+      const acc = accounts.find((a) => a.id === defaultAccountId)
+      if (acc) return acc.currency
+    }
+    return 'EUR'
+  })
 
   const [state, formAction, isPending] = useActionState<TransactionActionState, FormData>(
     createTransaction,
@@ -96,9 +103,10 @@ export function AddTransactionDialog({ accounts, categories }: AddTransactionDia
     setOpen(next)
     if (next) {
       setType('expense')
-      setAccountId('')
+      setAccountId(defaultAccountId ?? '')
       setCategoryId('')
-      setCurrency('EUR')
+      const acc = defaultAccountId ? accounts.find((a) => a.id === defaultAccountId) : null
+      setCurrency(acc?.currency ?? 'EUR')
     }
   }
 

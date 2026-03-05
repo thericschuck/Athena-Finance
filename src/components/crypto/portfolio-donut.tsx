@@ -69,6 +69,10 @@ function DonutCard({ title, subtitle, data }: { title: string; subtitle: string;
               outerRadius={95}
               paddingAngle={2}
               strokeWidth={0}
+              isAnimationActive={true}
+              animationBegin={0}
+              animationDuration={800}
+              animationEasing="ease-out"
             >
               {data.map((entry, i) => (
                 <Cell key={entry.coingecko_id} fill={getColor(entry.coingecko_id, i)} />

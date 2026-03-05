@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useRef, useEffect, useId } from 'react'
+import { useState, useRef, useEffect, useId, useMemo } from 'react'
 import { COIN_REGISTRY, type CoinEntry, type CoinType } from '@/lib/crypto/coin-registry'
+import { getCoinCatalog } from '@/app/(dashboard)/crypto/assets/actions'
 import { ChevronDown, Search, X } from 'lucide-react'
 
 // ─── Type badge ───────────────────────────────────────────────────────────────
@@ -27,9 +28,23 @@ interface Props {
 export function CoinCombobox({ defaultValue, onChange }: Props) {
   const id = useId()
 
-  // resolve initial selection from registry
+  const [catalogCoins, setCatalogCoins] = useState<CoinEntry[]>([])
+
+  // Load user's custom catalog entries on mount
+  useEffect(() => {
+    getCoinCatalog().then(setCatalogCoins).catch(() => {})
+  }, [])
+
+  // Merge COIN_REGISTRY with custom catalog (deduped by symbol)
+  const allCoins = useMemo(() => {
+    const seen = new Set(COIN_REGISTRY.map(c => c.symbol.toUpperCase()))
+    const extra = catalogCoins.filter(c => !seen.has(c.symbol.toUpperCase()))
+    return [...COIN_REGISTRY, ...extra]
+  }, [catalogCoins])
+
+  // resolve initial selection from merged list
   const initial = defaultValue
-    ? COIN_REGISTRY.find(c =>
+    ? allCoins.find(c =>
         c.coingecko_id === defaultValue ||
         c.symbol.toLowerCase() === defaultValue.toLowerCase()
       ) ?? null
@@ -54,12 +69,12 @@ export function CoinCombobox({ defaultValue, onChange }: Props) {
   }, [])
 
   const filtered = query.trim()
-    ? COIN_REGISTRY.filter(c =>
+    ? allCoins.filter(c =>
         c.symbol.toLowerCase().includes(query.toLowerCase()) ||
         c.name.toLowerCase().includes(query.toLowerCase()) ||
         (c.coingecko_id ?? '').toLowerCase().includes(query.toLowerCase())
       )
-    : COIN_REGISTRY
+    : allCoins
 
   function select(coin: CoinEntry) {
     setSelected(coin)

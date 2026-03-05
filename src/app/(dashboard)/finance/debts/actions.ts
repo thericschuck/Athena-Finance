@@ -57,6 +57,69 @@ export async function createDebt(
   return { success: true }
 }
 
+// ─── Update a debt entry ──────────────────────────────────────────────────────
+export async function updateDebt(
+  _prev: DebtActionState,
+  formData: FormData
+): Promise<DebtActionState> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Nicht eingeloggt' }
+
+  const id             = formData.get('id') as string
+  const name           = (formData.get('name') as string)?.trim()
+  const originalAmount = parseFloat(formData.get('original_amount') as string)
+  const currency       = formData.get('currency') as string
+
+  if (!id)   return { error: 'ID fehlt' }
+  if (!name) return { error: 'Name ist erforderlich' }
+  if (isNaN(originalAmount) || originalAmount <= 0)
+    return { error: 'Betrag muss größer als 0 sein' }
+
+  const outstandingRaw = formData.get('outstanding') as string
+  const outstanding = outstandingRaw && !isNaN(parseFloat(outstandingRaw))
+    ? parseFloat(outstandingRaw)
+    : originalAmount
+
+  const { error } = await supabase
+    .from('debts')
+    .update({
+      name,
+      original_amount: originalAmount,
+      outstanding,
+      currency,
+      creditor:        (formData.get('creditor') as string) || null,
+      interest_rate:   formData.get('interest_rate') ? parseFloat(formData.get('interest_rate') as string) : null,
+      monthly_payment: formData.get('monthly_payment') ? parseFloat(formData.get('monthly_payment') as string) : null,
+      due_date:        (formData.get('due_date') as string) || null,
+      notes:           (formData.get('notes') as string) || null,
+      updated_at:      new Date().toISOString(),
+    })
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/finance/debts')
+  return { success: true }
+}
+
+// ─── Delete a debt entry ──────────────────────────────────────────────────────
+export async function deleteDebt(id: string): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Nicht eingeloggt' }
+
+  const { error } = await supabase
+    .from('debts')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/finance/debts')
+  return {}
+}
+
 // ─── Record a payment against a debt ─────────────────────────────────────────
 export async function recordPayment(
   _prev: DebtActionState,

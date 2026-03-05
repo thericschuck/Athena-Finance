@@ -19,7 +19,7 @@ import {
   createContract, updateContract, deleteContract, type ContractActionState,
 } from '@/app/(dashboard)/finance/contracts/actions'
 import { Database } from '@/types/database'
-import { CONTRACT_TYPES, FREQUENCIES } from '@/lib/finance/contract-constants'
+import { CONTRACT_TYPES, FREQUENCIES, TRANSFER_TYPES } from '@/lib/finance/contract-constants'
 
 type Contract = Database['public']['Tables']['contracts']['Row']
 type Account  = Pick<Database['public']['Tables']['accounts']['Row'],  'id' | 'name'>
@@ -30,37 +30,44 @@ const CURRENCIES = ['EUR', 'USD', 'CHF', 'GBP']
 // ─── Shared form fields ───────────────────────────────────────────────────────
 function ContractFields({
   contract, type, setType, frequency, setFrequency, currency, setCurrency,
-  accountId, setAccountId, categoryId, setCategoryId,
+  accountId, setAccountId, toAccountId, setToAccountId, categoryId, setCategoryId,
   accounts, categories,
 }: {
   contract?: Contract
-  type: string;       setType: (v: string) => void
-  frequency: string;  setFrequency: (v: string) => void
-  currency: string;   setCurrency: (v: string) => void
-  accountId: string;  setAccountId: (v: string) => void
-  categoryId: string; setCategoryId: (v: string) => void
+  type: string;          setType: (v: string) => void
+  frequency: string;     setFrequency: (v: string) => void
+  currency: string;      setCurrency: (v: string) => void
+  accountId: string;     setAccountId: (v: string) => void
+  toAccountId: string;   setToAccountId: (v: string) => void
+  categoryId: string;    setCategoryId: (v: string) => void
   accounts: Account[]
   categories: Category[]
 }) {
+  const isTransfer = TRANSFER_TYPES.has(type)
+
   return (
     <>
       {contract && <input type="hidden" name="id" value={contract.id} />}
-      <input type="hidden" name="type"        value={type} />
-      <input type="hidden" name="frequency"   value={frequency} />
-      <input type="hidden" name="currency"    value={currency} />
-      <input type="hidden" name="account_id"  value={accountId} />
-      <input type="hidden" name="category_id" value={categoryId} />
+      <input type="hidden" name="type"           value={type} />
+      <input type="hidden" name="frequency"      value={frequency} />
+      <input type="hidden" name="currency"       value={currency} />
+      <input type="hidden" name="account_id"     value={accountId} />
+      <input type="hidden" name="to_account_id"  value={isTransfer ? toAccountId : ''} />
+      <input type="hidden" name="category_id"    value={categoryId} />
 
       {/* Name + Anbieter */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label htmlFor="c-name">Name *</Label>
-          <Input id="c-name" name="name" defaultValue={contract?.name} placeholder="z.B. Netflix" required />
+          <Input id="c-name" name="name" defaultValue={contract?.name}
+            placeholder={isTransfer ? 'z.B. Monatliche Depoteinzahlung' : 'z.B. Netflix'} required />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="c-provider">Anbieter</Label>
-          <Input id="c-provider" name="provider" defaultValue={contract?.provider ?? ''} placeholder="z.B. Netflix Inc." />
-        </div>
+        {!isTransfer && (
+          <div className="space-y-1.5">
+            <Label htmlFor="c-provider">Anbieter</Label>
+            <Input id="c-provider" name="provider" defaultValue={contract?.provider ?? ''} placeholder="z.B. Netflix Inc." />
+          </div>
+        )}
       </div>
 
       {/* Typ + Intervall */}
@@ -141,10 +148,10 @@ function ContractFields({
         </div>
       </div>
 
-      {/* Konto + Kategorie */}
+      {/* Konto + Zielkonto (bei Transfer) oder Kategorie */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label>Konto</Label>
+          <Label>{isTransfer ? 'Quellkonto' : 'Konto'}</Label>
           <Select value={accountId} onValueChange={setAccountId}>
             <SelectTrigger><SelectValue placeholder="Kein Konto" /></SelectTrigger>
             <SelectContent>
@@ -153,16 +160,29 @@ function ContractFields({
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-1.5">
-          <Label>Kategorie</Label>
-          <Select value={categoryId} onValueChange={setCategoryId}>
-            <SelectTrigger><SelectValue placeholder="Keine" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none__">Keine</SelectItem>
-              {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
+        {isTransfer ? (
+          <div className="space-y-1.5">
+            <Label>Zielkonto *</Label>
+            <Select value={toAccountId} onValueChange={setToAccountId}>
+              <SelectTrigger><SelectValue placeholder="Zielkonto wählen…" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Kein Zielkonto</SelectItem>
+                {accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            <Label>Kategorie</Label>
+            <Select value={categoryId} onValueChange={setCategoryId}>
+              <SelectTrigger><SelectValue placeholder="Keine" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Keine</SelectItem>
+                {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       {/* Notes */}
@@ -194,17 +214,19 @@ function ContractDialog({
   const router = useRouter()
   const [open, setOpen] = useState(false)
 
-  const initType     = contract?.type      ?? 'subscription'
-  const initFreq     = contract?.frequency ?? 'monthly'
-  const initCurrency = contract?.currency  ?? 'EUR'
-  const initAccount  = contract?.account_id  ?? '__none__'
-  const initCategory = contract?.category_id ?? '__none__'
+  const initType       = contract?.type         ?? 'subscription'
+  const initFreq       = contract?.frequency    ?? 'monthly'
+  const initCurrency   = contract?.currency     ?? 'EUR'
+  const initAccount    = contract?.account_id   ?? '__none__'
+  const initToAccount  = (contract as Contract & { to_account_id?: string | null })?.to_account_id ?? '__none__'
+  const initCategory   = contract?.category_id  ?? '__none__'
 
-  const [type,       setType]       = useState(initType)
-  const [frequency,  setFrequency]  = useState(initFreq)
-  const [currency,   setCurrency]   = useState(initCurrency)
-  const [accountId,  setAccountId]  = useState(initAccount)
-  const [categoryId, setCategoryId] = useState(initCategory)
+  const [type,         setType]         = useState(initType)
+  const [frequency,    setFrequency]    = useState(initFreq)
+  const [currency,     setCurrency]     = useState(initCurrency)
+  const [accountId,    setAccountId]    = useState(initAccount)
+  const [toAccountId,  setToAccountId]  = useState(initToAccount)
+  const [categoryId,   setCategoryId]   = useState(initCategory)
 
   const action = mode === 'create' ? createContract : updateContract
   const [state, formAction, isPending] = useActionState<ContractActionState, FormData>(action, null)
@@ -220,13 +242,14 @@ function ContractDialog({
     setOpen(next)
     if (next) {
       setType(initType); setFrequency(initFreq); setCurrency(initCurrency)
-      setAccountId(initAccount); setCategoryId(initCategory)
+      setAccountId(initAccount); setToAccountId(initToAccount); setCategoryId(initCategory)
     }
   }
 
   function handleAction(fd: FormData) {
-    if (fd.get('account_id')  === '__none__') fd.set('account_id',  '')
-    if (fd.get('category_id') === '__none__') fd.set('category_id', '')
+    if (fd.get('account_id')    === '__none__') fd.set('account_id',    '')
+    if (fd.get('to_account_id') === '__none__') fd.set('to_account_id', '')
+    if (fd.get('category_id')   === '__none__') fd.set('category_id',   '')
     formAction(fd)
   }
 
@@ -244,6 +267,7 @@ function ContractDialog({
             frequency={frequency} setFrequency={setFrequency}
             currency={currency} setCurrency={setCurrency}
             accountId={accountId} setAccountId={setAccountId}
+            toAccountId={toAccountId} setToAccountId={setToAccountId}
             categoryId={categoryId} setCategoryId={setCategoryId}
           />
           {state && 'error' in state && (

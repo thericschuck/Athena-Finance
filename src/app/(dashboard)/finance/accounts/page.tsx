@@ -1,16 +1,18 @@
 import { createClient } from '@/lib/supabase/server'
-import { AddAccountDialog } from '@/components/finance/account-form'
+import Link from 'next/link'
+import { AddAccountDialog, EditAccountDialog, DeleteAccountButton } from '@/components/finance/account-form'
 import { Database } from '@/types/database'
 
 type Account = Database['public']['Tables']['accounts']['Row']
 
 const TYPE_LABELS: Record<string, string> = {
-  checking: 'Girokonto',
-  savings: 'Sparkonto',
-  investment: 'Depot',
-  crypto: 'Krypto',
-  cash: 'Bargeld',
-  credit: 'Kreditkarte',
+  checking:         'Girokonto',
+  savings:          'Sparkonto',
+  building_savings: 'Bausparvertrag',
+  investment:       'Depot',
+  crypto:           'Krypto',
+  cash:             'Bargeld',
+  credit:           'Kreditkarte',
 }
 
 export default async function AccountsPage() {
@@ -60,6 +62,7 @@ function AccountTable({ accounts }: { accounts: Account[] }) {
             <th className="px-4 py-3 text-left font-medium text-muted-foreground">Institution</th>
             <th className="px-4 py-3 text-left font-medium text-muted-foreground">Währung</th>
             <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
+            <th className="px-4 py-3" />
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
@@ -74,7 +77,7 @@ function AccountTable({ accounts }: { accounts: Account[] }) {
 
 function AccountRow({ account }: { account: Account }) {
   return (
-    <tr className="hover:bg-muted/30 transition-colors">
+    <tr className="hover:bg-muted/30 transition-colors group">
       {/* Name + color dot */}
       <td className="px-4 py-3">
         <div className="flex items-center gap-2.5">
@@ -82,7 +85,12 @@ function AccountRow({ account }: { account: Account }) {
             className="size-2.5 rounded-full shrink-0"
             style={{ backgroundColor: account.color ?? '#94a3b8' }}
           />
-          <span className="font-medium text-foreground">{account.name}</span>
+          <Link
+              href={`/finance/accounts/${account.id}`}
+              className="font-medium text-foreground hover:underline"
+            >
+              {account.name}
+            </Link>
         </div>
       </td>
 
@@ -114,6 +122,14 @@ function AccountRow({ account }: { account: Account }) {
         >
           {account.is_active ? 'Aktiv' : 'Inaktiv'}
         </span>
+      </td>
+
+      {/* Actions */}
+      <td className="px-4 py-3 w-20">
+        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <EditAccountDialog account={account} />
+          <DeleteAccountButton account={account} />
+        </div>
       </td>
     </tr>
   )

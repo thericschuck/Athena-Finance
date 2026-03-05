@@ -39,3 +39,57 @@ export async function createAccount(
   revalidatePath('/finance/accounts')
   return { success: true }
 }
+
+export async function updateAccount(
+  _prev: AccountActionState,
+  formData: FormData
+): Promise<AccountActionState> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Nicht eingeloggt' }
+
+  const id       = formData.get('id') as string
+  const name     = formData.get('name') as string
+  const type     = formData.get('type') as string
+  const currency = formData.get('currency') as string
+
+  if (!id)           return { error: 'ID fehlt' }
+  if (!name?.trim()) return { error: 'Name ist erforderlich' }
+  if (!type)         return { error: 'Typ ist erforderlich' }
+  if (!currency)     return { error: 'Währung ist erforderlich' }
+
+  const { error } = await supabase
+    .from('accounts')
+    .update({
+      name:        name.trim(),
+      type,
+      currency,
+      institution: (formData.get('institution') as string) || null,
+      color:       (formData.get('color') as string) || null,
+      iban:        (formData.get('iban') as string) || null,
+      is_active:   formData.get('is_active') === 'true',
+      updated_at:  new Date().toISOString(),
+    })
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/finance/accounts')
+  return { success: true }
+}
+
+export async function deleteAccount(id: string): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Nicht eingeloggt' }
+
+  const { error } = await supabase
+    .from('accounts')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/finance/accounts')
+  return {}
+}

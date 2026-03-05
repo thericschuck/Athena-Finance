@@ -37,9 +37,10 @@ function buildPayload(formData: FormData, userId: string) {
     notice_days: parseOptionalInt(formData.get('notice_days')) ?? 0,
     billing_day: parseOptionalInt(formData.get('billing_day')),
     auto_renews: formData.get('auto_renews') === 'on',
-    account_id: (formData.get('account_id') as string) || null,
-    category_id: (formData.get('category_id') as string) || null,
-    notes: (formData.get('notes') as string) || null,
+    account_id:    (formData.get('account_id')    as string) || null,
+    to_account_id: (formData.get('to_account_id') as string) || null,
+    category_id:   (formData.get('category_id')   as string) || null,
+    notes:         (formData.get('notes')          as string) || null,
     user_id: userId,
   }
 }
