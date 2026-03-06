@@ -16,9 +16,9 @@ import { Label } from '@/components/ui/label'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { PiggyBank, Pencil, Plus, Trash2 } from 'lucide-react'
 import {
-  createGoal, updateGoal, deleteGoal, type GoalActionState,
+  createGoal, updateGoal, deleteGoal, addGoalPayment, type GoalActionState,
 } from '@/app/(dashboard)/finance/goals/actions'
 import { Database } from '@/types/database'
 
@@ -187,6 +187,74 @@ export function EditGoalDialog({ goal }: { goal: Goal }) {
       mode="edit" goal={goal}
       trigger={<Button variant="ghost" size="icon-sm"><Pencil className="size-3.5" /></Button>}
     />
+  )
+}
+
+export function GoalPaymentDialog({ goal }: { goal: Goal }) {
+  const router = useRouter()
+  const [open, setOpen] = useState(false)
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+  const [amount, setAmount] = useState('')
+
+  function handleOpenChange(next: boolean) {
+    setOpen(next)
+    if (next) { setAmount(''); setError(null) }
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const parsed = parseFloat(amount)
+    if (isNaN(parsed) || parsed <= 0) { setError('Bitte einen gültigen Betrag eingeben'); return }
+    startTransition(async () => {
+      const result = await addGoalPayment(goal.id, parsed)
+      if (result.error) setError(result.error)
+      else { setOpen(false); router.refresh() }
+    })
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-foreground">
+          <PiggyBank className="size-3.5" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-xs">
+        <DialogHeader>
+          <DialogTitle>Einzahlung erfassen</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="pay-goal-name" className="text-xs text-muted-foreground">Sparziel</Label>
+            <p id="pay-goal-name" className="text-sm font-medium">{goal.description}</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="pay-goal-amount">Betrag (€) *</Label>
+            <Input
+              id="pay-goal-amount"
+              type="number"
+              step="0.01"
+              min="0.01"
+              placeholder="0,00"
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              autoFocus
+              required
+            />
+          </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <div className="flex justify-end gap-2 pt-1">
+            <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
+              Abbrechen
+            </Button>
+            <Button type="submit" size="sm" disabled={isPending}>
+              {isPending ? 'Wird gespeichert…' : 'Einzahlung buchen'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 

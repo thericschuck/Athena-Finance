@@ -1,36 +1,23 @@
 import { createClient } from '@/lib/supabase/server'
 import { Database } from '@/types/database'
-import { AddGoalDialog, EditGoalDialog, DeleteGoalButton } from '@/components/finance/goal-form'
+import { AddGoalDialog, EditGoalDialog, DeleteGoalButton, GoalPaymentDialog } from '@/components/finance/goal-form'
 import { setGoalStatus } from './actions'
 import { Button } from '@/components/ui/button'
 import { CheckCircle2, Circle } from 'lucide-react'
 
-type Goal = Database['public']['Tables']['savings_goals']['Row']
+type GoalRow = Database['public']['Tables']['savings_goals']['Row']
+type Goal = GoalRow & { current_amount: number }
 
 // ─── Calculations ─────────────────────────────────────────────────────────────
-function monthsElapsed(createdAt: string): number {
-  const start = new Date(createdAt)
-  const now = new Date()
-  return Math.max(
-    0,
-    (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth())
-  )
-}
-
-function estimatedSavings(goal: Goal): number {
-  if (!goal.monthly_savings_rate) return 0
-  return Math.min(goal.target_amount, goal.monthly_savings_rate * monthsElapsed(goal.created_at))
-}
-
 function progressPct(goal: Goal): number {
   if (goal.target_amount <= 0) return 0
-  return Math.min(100, Math.round((estimatedSavings(goal) / goal.target_amount) * 100))
+  return Math.min(100, Math.round((goal.current_amount / goal.target_amount) * 100))
 }
 
 /** Months remaining until goal reached at current rate */
 function monthsRemaining(goal: Goal): number | null {
   if (!goal.monthly_savings_rate || goal.monthly_savings_rate <= 0) return null
-  const remaining = goal.target_amount - estimatedSavings(goal)
+  const remaining = goal.target_amount - goal.current_amount
   if (remaining <= 0) return 0
   return Math.ceil(remaining / goal.monthly_savings_rate)
 }
@@ -94,7 +81,7 @@ export default async function GoalsPage() {
     .eq('user_id', user!.id)
     .order('created_at', { ascending: false })
 
-  const all = goals ?? []
+  const all = (goals ?? []) as Goal[]
   const active = sortGoals(all.filter(g => g.status !== 'geschlossen'))
   const closed = all.filter(g => g.status === 'geschlossen')
 
@@ -145,7 +132,7 @@ export default async function GoalsPage() {
 // ─── Goal card ────────────────────────────────────────────────────────────────
 function GoalCard({ goal }: { goal: Goal }) {
   const pct      = progressPct(goal)
-  const saved    = estimatedSavings(goal)
+  const saved    = goal.current_amount
   const remaining = monthsRemaining(goal)
   const total    = totalMonths(goal)
   const isClosed = goal.status === 'geschlossen'
@@ -229,6 +216,7 @@ function GoalCard({ goal }: { goal: Goal }) {
         </form>
 
         <div className="flex items-center gap-1">
+          <GoalPaymentDialog goal={goal} />
           <EditGoalDialog goal={goal} />
           <DeleteGoalButton goal={goal} />
         </div>

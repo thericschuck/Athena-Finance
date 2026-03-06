@@ -73,11 +73,11 @@ const STATUS_LABEL: Record<string, string> = {
 // ─── Group section ────────────────────────────────────────────────────────────
 function GroupSection({ group, rebalancingRows }: { group: Group; rebalancingRows?: RebalancingRow[] }) {
   const groupValue = group.assets.reduce((s, a) => s + (a.current_value ?? 0), 0)
-  const groupCost  = group.assets.reduce((s, a) => {
-    if (a.avg_buy_price == null) return s
-    return s + a.avg_buy_price * (a.quantity ?? 0)
-  }, 0)
-  const groupPnL = groupCost > 0 ? groupValue - groupCost : null
+  // P&L only for assets with a known cost basis
+  const pricedAssets = group.assets.filter(a => a.avg_buy_price != null)
+  const groupCost    = pricedAssets.reduce((s, a) => s + a.avg_buy_price! * (a.quantity ?? 0), 0)
+  const pricedValue  = pricedAssets.reduce((s, a) => s + (a.current_value ?? 0), 0)
+  const groupPnL = groupCost > 0 ? pricedValue - groupCost : null
 
   const subKey      = getSubPortfolio(group.name)
   const groupRebRows = rebalancingRows?.filter(r => r.sub_portfolio === subKey) ?? []
@@ -256,11 +256,11 @@ function AssetRow({
 // ─── Sum row ──────────────────────────────────────────────────────────────────
 function SumRow({ assets, groupRebRows, hasReb }: { assets: AssetWithPrice[]; groupRebRows: RebalancingRow[]; hasReb: boolean }) {
   const totalValue   = assets.reduce((s, a) => s + (a.current_value ?? 0), 0)
-  const totalCost    = assets.reduce((s, a) => {
-    if (a.avg_buy_price == null) return s
-    return s + a.avg_buy_price * (a.quantity ?? 0)
-  }, 0)
-  const totalPnL     = totalCost > 0 ? totalValue - totalCost : null
+  // Only include assets with known cost basis in P&L to avoid inflated numbers
+  const pricedAssets = assets.filter(a => a.avg_buy_price != null)
+  const totalCost    = pricedAssets.reduce((s, a) => s + a.avg_buy_price! * (a.quantity ?? 0), 0)
+  const pricedValue  = pricedAssets.reduce((s, a) => s + (a.current_value ?? 0), 0)
+  const totalPnL     = totalCost > 0 ? pricedValue - totalCost : null
   const totalPnLPct  = totalPnL != null && totalCost > 0 ? (totalPnL / totalCost) * 100 : null
   const isPositive   = totalPnL != null && totalPnL >= 0
   const pnlClass     = isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'

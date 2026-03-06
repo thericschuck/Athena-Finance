@@ -122,12 +122,12 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows }:
   }
 
   // ─── Derived totals ──────────────────────────────────────────────────────────
-  const totalValue = assets.reduce((s, a) => s + (a.current_value ?? 0), 0)
-  const totalCost  = assets.reduce((s, a) => {
-    if (a.avg_buy_price == null || a.quantity == null) return s
-    return s + a.avg_buy_price * a.quantity
-  }, 0)
-  const totalPnL    = totalCost > 0 ? totalValue - totalCost : null
+  const totalValue   = assets.reduce((s, a) => s + (a.current_value ?? 0), 0)
+  // P&L only for assets with a known cost basis (fiat/stables without avg_buy_price excluded)
+  const pricedAssets = assets.filter(a => a.avg_buy_price != null && a.quantity != null)
+  const totalCost    = pricedAssets.reduce((s, a) => s + a.avg_buy_price! * a.quantity!, 0)
+  const pricedValue  = pricedAssets.reduce((s, a) => s + (a.current_value ?? 0), 0)
+  const totalPnL    = totalCost > 0 ? pricedValue - totalCost : null
   const totalPnLPct = totalPnL != null && totalCost > 0 ? (totalPnL / totalCost) * 100 : null
   const isPositive  = totalPnL != null && totalPnL >= 0
 

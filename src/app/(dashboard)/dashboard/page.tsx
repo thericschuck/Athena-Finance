@@ -1,72 +1,54 @@
 import { createClient } from '@/lib/supabase/server'
-import { TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, AlertCircle, Clock, Minus } from 'lucide-react'
-import { NetWorthChart } from '@/components/dashboard/net-worth-chart'
-import type { NetWorthSnapshot } from '@/components/dashboard/net-worth-chart'
+import Link from 'next/link'
+import { TrendingUp, TrendingDown, AlertCircle, Clock, Minus, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import { CryptoWidget } from '@/components/dashboard/crypto-widget'
 import { RebalancingAlert } from '@/components/dashboard/rebalancing-alert'
 import { getStrategySignals, getPortfolioAllocations, getLastRebalancing } from '@/app/(dashboard)/crypto/actions'
 import { calculateRebalancing } from '@/lib/crypto/rebalancing'
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
-function fmtCurrency(n: number | null | undefined, currency = 'EUR'): string {
-  if (n == null) return '—'
-  return new Intl.NumberFormat('de-DE', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+const fmt = (n: number, currency = 'EUR') =>
+  new Intl.NumberFormat('de-DE', {
+    style: 'currency', currency,
+    minimumFractionDigits: 0, maximumFractionDigits: 0,
   }).format(n)
-}
 
-function fmtDate(d: string | Date | null): string {
-  if (!d) return '—'
-  return new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
+const fmtDate = (d: string | Date | null) =>
+  d ? new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : '—'
 
 function daysUntil(d: Date): number {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = new Date(); today.setHours(0, 0, 0, 0)
   return Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 }
 
 // ─── Contract renewal helpers ─────────────────────────────────────────────────
 type ContractRow = {
-  id: string
-  name: string
-  provider: string | null
-  frequency: string
-  amount: number
-  currency: string
-  end_date: string | null
-  notice_days: number
-  auto_renews: boolean
+  id: string; name: string; provider: string | null; frequency: string
+  amount: number; currency: string; end_date: string | null
+  notice_days: number; auto_renews: boolean
 }
-
-function addFrequency(d: Date, frequency: string): void {
-  switch (frequency) {
-    case 'weekly':    d.setDate(d.getDate() + 7);         break
-    case 'biweekly':  d.setDate(d.getDate() + 14);        break
-    case 'monthly':   d.setMonth(d.getMonth() + 1);       break
-    case 'quarterly': d.setMonth(d.getMonth() + 3);       break
-    case 'biannual':  d.setMonth(d.getMonth() + 6);       break
-    case 'yearly':    d.setFullYear(d.getFullYear() + 1); break
-  }
+function addFrequency(d: Date, f: string) {
+  if (f === 'weekly')    d.setDate(d.getDate() + 7)
+  else if (f === 'biweekly')  d.setDate(d.getDate() + 14)
+  else if (f === 'monthly')   d.setMonth(d.getMonth() + 1)
+  else if (f === 'quarterly') d.setMonth(d.getMonth() + 3)
+  else if (f === 'biannual')  d.setMonth(d.getMonth() + 6)
+  else if (f === 'yearly')    d.setFullYear(d.getFullYear() + 1)
 }
-
-function getNextRenewalDate(c: ContractRow): Date | null {
+function getNextRenewal(c: ContractRow): Date | null {
   if (!c.end_date) return null
   const today = new Date(); today.setHours(0, 0, 0, 0)
-  const renewal = new Date(c.end_date)
-  if (renewal >= today) return renewal
+  const d = new Date(c.end_date)
+  if (d >= today) return d
   if (!c.auto_renews) return null
   let i = 0
-  while (renewal < today && i++ < 200) addFrequency(renewal, c.frequency)
-  return renewal >= today ? renewal : null
+  while (d < today && i++ < 200) addFrequency(d, c.frequency)
+  return d >= today ? d : null
 }
 
-// ─── Shared card wrapper ──────────────────────────────────────────────────────
+// ─── Shared card ──────────────────────────────────────────────────────────────
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <div className={`rounded-lg border border-border bg-card card-hover ${className}`}>{children}</div>
+  return <div className={`rounded-lg border border-border bg-card ${className}`}>{children}</div>
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -75,33 +57,28 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   const now = new Date()
-  const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  const nextYearMonth = now.getMonth() === 11
-    ? `${now.getFullYear() + 1}-01`
-    : `${now.getFullYear()}-${String(now.getMonth() + 2).padStart(2, '0')}`
+  const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
 
-  // ── Parallel data fetching ──────────────────────────────────────────────────
+  // ── Parallel data fetching ────────────────────────────────────────────────
   const [
-    { data: netWorth },
     { data: accountsRaw },
-    { data: allBalances },
-    { data: positions },
-    { data: contractsRaw },
-    { data: monthRows },
-    { data: snapshotsRaw },
+    { data: txAll },
+    { data: txMonth },
+    { data: debtsRaw },
+    { data: goalsRaw },
     { data: cryptoAssetsRaw },
+    { data: contractsRaw },
     cryptoSignals,
     cryptoAllocations,
     lastRebalancing,
   ] = await Promise.all([
-    supabase.from('current_net_worth').select('*').eq('user_id', user!.id).maybeSingle(),
-    supabase.from('accounts').select('*').eq('user_id', user!.id).eq('is_active', true).order('sort_order'),
-    supabase.from('account_balances').select('account_id, balance, currency, snapshot_date').order('snapshot_date', { ascending: false }),
-    supabase.from('open_positions').select('id,symbol,pair_id,direction,leverage,entry_price,strategy_name,opened_at').eq('user_id', user!.id).eq('status', 'open').order('opened_at', { ascending: false }).limit(10),
+    supabase.from('accounts').select('id, name, type, color, currency, is_active').eq('user_id', user!.id).eq('is_active', true).order('sort_order'),
+    supabase.from('transactions').select('account_id, type, amount, currency').eq('user_id', user!.id),
+    supabase.from('transactions').select('type, amount').eq('user_id', user!.id).gte('date', monthStart),
+    supabase.from('debts').select('outstanding, type').eq('user_id', user!.id).eq('is_active', true),
+    supabase.from('savings_goals').select('current_amount, target_amount, description, status').eq('user_id', user!.id).eq('status', 'offen'),
+    supabase.from('assets').select('id, symbol, name, portfolio_name, quantity, avg_buy_price').in('type', ['crypto', 'stable', 'fiat']).eq('user_id', user!.id),
     supabase.from('contracts').select('id,name,provider,frequency,amount,currency,end_date,notice_days,auto_renews').eq('user_id', user!.id).eq('is_active', true),
-    supabase.from('monthly_finance_summary').select('*').eq('user_id', user!.id).gte('month', yearMonth).lt('month', nextYearMonth).order('created_at', { ascending: false }).limit(1),
-    supabase.from('net_worth_snapshots').select('snapshot_date,net_worth,total_checking,total_savings,total_cash,total_depot,total_crypto,total_bausparer,total_business,total_debts,total_assets').eq('user_id', user!.id).order('snapshot_date', { ascending: true }),
-    supabase.from('assets').select('id,symbol,name,portfolio_name,quantity,avg_buy_price').in('type', ['crypto', 'stable', 'fiat']).eq('user_id', user!.id),
     getStrategySignals(user!.id),
     getPortfolioAllocations(user!.id),
     getLastRebalancing(user!.id),
@@ -109,68 +86,74 @@ export default async function DashboardPage() {
 
   const accounts  = accountsRaw ?? []
   const contracts = (contractsRaw ?? []) as ContractRow[]
-  const month     = (monthRows ?? [])[0] ?? null
-  const snapshots = (snapshotsRaw ?? []) as NetWorthSnapshot[]
+  const debts     = debtsRaw ?? []
+  const goals     = goalsRaw ?? []
 
-  // Latest balance per account (balances are already sorted desc by snapshot_date)
-  const latestBal = new Map<string, { balance: number; currency: string }>()
-  for (const b of (allBalances ?? [])) {
-    if (!latestBal.has(b.account_id))
-      latestBal.set(b.account_id, { balance: b.balance, currency: b.currency })
+  // ── Account balances from transactions ────────────────────────────────────
+  const balMap = new Map<string, number>()
+  for (const tx of (txAll ?? [])) {
+    const cur = balMap.get(tx.account_id) ?? 0
+    if (tx.type === 'income')   balMap.set(tx.account_id, cur + tx.amount)
+    if (tx.type === 'expense')  balMap.set(tx.account_id, cur - tx.amount)
+    // transfers / investments: neutral for simple balance sum
   }
 
-  // ── Crypto widget data ───────────────────────────────────────────────────────
+  // ── Monthly income / expenses ─────────────────────────────────────────────
+  let monthIncome = 0, monthExpense = 0
+  for (const tx of (txMonth ?? [])) {
+    if (tx.type === 'income')  monthIncome  += tx.amount
+    if (tx.type === 'expense') monthExpense += tx.amount
+  }
+  const monthNet = monthIncome - monthExpense
+
+  // ── Crypto portfolio ──────────────────────────────────────────────────────
   const cryptoAssetIds = (cryptoAssetsRaw ?? []).map(a => a.id)
   let cryptoValMap = new Map<string, { price_per_unit: number; total_value: number }>()
   if (cryptoAssetIds.length > 0) {
-    const { data: cryptoVals } = await supabase
+    const { data: vals } = await supabase
       .from('asset_valuations')
       .select('asset_id, price_per_unit, total_value')
       .in('asset_id', cryptoAssetIds)
       .order('valuation_date', { ascending: false })
       .order('created_at', { ascending: false })
-    for (const v of cryptoVals ?? []) {
+    for (const v of vals ?? []) {
       if (!cryptoValMap.has(v.asset_id)) cryptoValMap.set(v.asset_id, v)
     }
   }
+  const cryptoAssets = (cryptoAssetsRaw ?? []).map(a => ({
+    ...a,
+    current_price: cryptoValMap.get(a.id)?.price_per_unit ?? null,
+    current_value: cryptoValMap.get(a.id)?.total_value ?? null,
+  }))
+  const cryptoTotal     = cryptoAssets.reduce((s, a) => s + (a.current_value ?? 0), 0)
+  const cryptoTotalCost = cryptoAssets.reduce((s, a) =>
+    a.avg_buy_price != null && a.quantity != null ? s + a.avg_buy_price * a.quantity : s, 0)
 
-  const cryptoAssets = (cryptoAssetsRaw ?? []).map(a => {
-    const val = cryptoValMap.get(a.id)
-    return {
-      ...a,
-      current_price: val?.price_per_unit ?? null,
-      current_value: val?.total_value    ?? null,
-    }
-  })
-  const cryptoTotalValue = cryptoAssets.reduce((s, a) => s + (a.current_value ?? 0), 0)
-  const cryptoTotalCost  = cryptoAssets.reduce((s, a) => {
-    if (a.avg_buy_price == null || a.quantity == null) return s
-    return s + a.avg_buy_price * a.quantity
-  }, 0)
+  // ── Net Worth ─────────────────────────────────────────────────────────────
+  const financeTotal  = accounts.reduce((s, a) => s + (balMap.get(a.id) ?? 0), 0)
+  // borrowed = I owe → reduces net worth; lent = others owe me → increases net worth
+  const borrowedTotal = (debtsRaw ?? []).filter(d => d.type === 'borrowed').reduce((s, d) => s + (d.outstanding ?? 0), 0)
+  const lentTotal     = (debtsRaw ?? []).filter(d => d.type === 'lent').reduce((s, d) => s + (d.outstanding ?? 0), 0)
+  const savingsTotal  = goals.reduce((s, g) => s + ((g as unknown as { current_amount: number }).current_amount ?? 0), 0)
+  const netWorth      = financeTotal + cryptoTotal + savingsTotal + lentTotal - borrowedTotal
 
-  const rebResult        = calculateRebalancing(cryptoSignals, cryptoAllocations, cryptoAssets, cryptoTotalValue)
+  // ── Rebalancing ───────────────────────────────────────────────────────────
+  const rebResult        = calculateRebalancing(cryptoSignals, cryptoAllocations, cryptoAssets, cryptoTotal)
   const rebalancingVolume = rebResult.rebalancing_volume
-
-  // Top 4 assets by value
   const topAssets = [...cryptoAssets]
     .filter(a => (a.current_value ?? 0) > 0)
     .sort((a, b) => (b.current_value ?? 0) - (a.current_value ?? 0))
     .slice(0, 4)
     .map(a => {
-      // Prefer ticker from rebalancing rows; fall back to name or coingecko_id
       const rebRow = rebResult.rows.find(r => r.coingecko_id === a.symbol)
-      return {
-        symbol: rebRow?.symbol ?? (a.name ?? a.symbol ?? '?'),
-        value:  a.current_value ?? 0,
-        pct:    cryptoTotalValue > 0 ? ((a.current_value ?? 0) / cryptoTotalValue) * 100 : 0,
-      }
+      return { symbol: rebRow?.symbol ?? (a.name ?? a.symbol ?? '?'), value: a.current_value ?? 0, pct: cryptoTotal > 0 ? ((a.current_value ?? 0) / cryptoTotal) * 100 : 0 }
     })
 
-  // Upcoming cancellation deadlines (within 45 days)
+  // ── Contract renewals ─────────────────────────────────────────────────────
   type UpcomingContract = ContractRow & { renewalDate: Date; deadlineDate: Date; days: number }
   const upcoming: UpcomingContract[] = contracts
     .map(c => {
-      const renewalDate = getNextRenewalDate(c)
+      const renewalDate = getNextRenewal(c)
       if (!renewalDate) return null
       const deadlineDate = new Date(renewalDate)
       deadlineDate.setDate(deadlineDate.getDate() - c.notice_days)
@@ -179,11 +162,10 @@ export default async function DashboardPage() {
     .filter((c): c is UpcomingContract => c !== null && c.days <= 45)
     .sort((a, b) => a.days - b.days)
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="p-8 space-y-8 max-w-6xl">
-
-      {/* Page header */}
+      {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
@@ -191,120 +173,98 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {/* ── Net Worth Chart ───────────────────────────────────────────────────── */}
-      <NetWorthChart snapshots={snapshots} />
-
-      {/* ── Row 1: Net Worth + Monthly Balance + Crypto ───────────────────────── */}
+      {/* ── Row 1: Net Worth + Monat + Crypto ───────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 
-        {/* Net Worth Widget */}
+        {/* Net Worth */}
         <Card className="p-5">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Net Worth</p>
-          <p className="text-4xl font-bold tabular-nums tracking-tight">
-            {fmtCurrency(netWorth?.net_worth)}
+          <p className={`text-4xl font-bold tabular-nums tracking-tight ${netWorth < 0 ? 'text-red-600 dark:text-red-400' : ''}`}>
+            {fmt(netWorth)}
           </p>
-          {netWorth?.snapshot_date && (
-            <p className="text-xs text-muted-foreground mt-1">Stand {fmtDate(netWorth.snapshot_date)}</p>
-          )}
           <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2.5">
             {([
-              ['Assets',   netWorth?.total_assets, false],
-              ['Crypto',   netWorth?.total_crypto,  false],
-              ['Depot',    netWorth?.total_depot,   false],
-              ['Schulden', netWorth?.total_debts,   true],
-            ] as [string, number | null | undefined, boolean][]).map(([label, val, red]) => (
+              ['Finanzen',        financeTotal,   'neutral'],
+              ['Krypto',          cryptoTotal,    'neutral'],
+              ['Sparziele',       savingsTotal,   'neutral'],
+              ['Ich schulde',     borrowedTotal,  'red'],
+              ['Mir geschuldet',  lentTotal,      lentTotal > 0 ? 'green' : 'neutral'],
+            ] as [string, number, 'neutral' | 'red' | 'green'][]).filter(([, val]) => val > 0).map(([label, val, color]) => (
               <div key={label}>
                 <p className="text-xs text-muted-foreground">{label}</p>
-                <p className={`text-sm font-semibold tabular-nums ${red ? 'text-red-600 dark:text-red-400' : ''}`}>
-                  {fmtCurrency(val)}
+                <p className={`text-sm font-semibold tabular-nums ${
+                  color === 'red'   ? 'text-red-600 dark:text-red-400' :
+                  color === 'green' ? 'text-green-600 dark:text-green-400' : ''
+                }`}>
+                  {color === 'red' ? '−' : ''}{fmt(val)}
                 </p>
               </div>
             ))}
           </div>
         </Card>
 
-        {/* Crypto Widget */}
-        <CryptoWidget
-          totalValue={cryptoTotalValue}
-          totalCost={cryptoTotalCost > 0 ? cryptoTotalCost : null}
-          rebalancingVolume={rebalancingVolume}
-          lastRebalancing={lastRebalancing}
-          topAssets={topAssets}
-        />
-
-        {/* Monthly Balance Widget */}
+        {/* Monatsbilanz */}
         <Card className="p-5">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
             {now.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}
           </p>
-
-          {month ? (
+          {monthIncome === 0 && monthExpense === 0 ? (
+            <p className="text-sm text-muted-foreground">Noch keine Transaktionen diesen Monat.</p>
+          ) : (
             <>
-              {/* Net balance */}
               <div className="flex items-center gap-2 mb-4">
-                <p className={`text-4xl font-bold tabular-nums tracking-tight ${month.net_balance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                  {fmtCurrency(month.net_balance)}
+                <p className={`text-4xl font-bold tabular-nums tracking-tight ${monthNet >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {monthNet >= 0 ? '+' : ''}{fmt(monthNet)}
                 </p>
-                {month.net_balance >= 0
+                {monthNet >= 0
                   ? <TrendingUp  className="size-5 text-green-500" />
                   : <TrendingDown className="size-5 text-red-500"  />
                 }
               </div>
-
-              {/* Income vs Expenses */}
-              <div className="flex gap-5 mb-4">
+              <div className="flex gap-5">
                 <div className="flex items-start gap-1.5">
                   <ArrowUpRight className="size-4 text-green-500 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-xs text-muted-foreground">Einnahmen</p>
-                    <p className="text-sm font-semibold tabular-nums text-green-600 dark:text-green-400">
-                      {fmtCurrency(month.total_income)}
-                    </p>
+                    <p className="text-sm font-semibold tabular-nums text-green-600 dark:text-green-400">{fmt(monthIncome)}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-1.5">
                   <ArrowDownRight className="size-4 text-red-500 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-xs text-muted-foreground">Ausgaben</p>
-                    <p className="text-sm font-semibold tabular-nums text-red-600 dark:text-red-400">
-                      {fmtCurrency(month.total_expenses)}
-                    </p>
+                    <p className="text-sm font-semibold tabular-nums text-red-600 dark:text-red-400">{fmt(monthExpense)}</p>
                   </div>
                 </div>
               </div>
-
-              {/* Category breakdown */}
-              <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-xs border-t border-border pt-3">
-                {([
-                  ['Gehalt',       month.salary],
-                  ['Lebensmittel', month.food],
-                  ['Freizeit',     month.leisure],
-                  ['Abos',         month.subscriptions],
-                  ['Sparen',       month.savings_transfer],
-                  ['Sonstiges',    month.other_expenses],
-                ] as [string, number][]).filter(([, v]) => v > 0).map(([label, val]) => (
-                  <div key={label}>
-                    <p className="text-muted-foreground">{label}</p>
-                    <p className="font-medium text-foreground tabular-nums">{fmtCurrency(val)}</p>
-                  </div>
-                ))}
-              </div>
             </>
-          ) : (
-            <p className="text-sm text-muted-foreground">Keine Zusammenfassung für diesen Monat vorhanden.</p>
           )}
         </Card>
+
+        {/* Crypto */}
+        <CryptoWidget
+          totalValue={cryptoTotal}
+          totalCost={cryptoTotalCost > 0 ? cryptoTotalCost : null}
+          rebalancingVolume={rebalancingVolume}
+          lastRebalancing={lastRebalancing}
+          topAssets={topAssets}
+        />
       </div>
 
-      {/* ── Rebalancing alert ─────────────────────────────────────────────────── */}
+      {/* ── Rebalancing alert ──────────────────────────────────────────────────── */}
       <RebalancingAlert rebalancingVolume={rebalancingVolume} lastRebalancing={lastRebalancing} />
 
-      {/* ── Row 2: Accounts ───────────────────────────────────────────────────── */}
+      {/* ── Konten ────────────────────────────────────────────────────────────── */}
       <div>
-        <h2 className="text-sm font-semibold mb-3">
-          Konten
-          <span className="ml-2 text-xs font-normal text-muted-foreground">{accounts.length} aktiv</span>
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold">
+            Konten
+            <span className="ml-2 text-xs font-normal text-muted-foreground">{accounts.length} aktiv</span>
+          </h2>
+          <Link href="/finance/accounts" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+            Alle ansehen →
+          </Link>
+        </div>
 
         {accounts.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border py-10 text-center">
@@ -313,105 +273,90 @@ export default async function DashboardPage() {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {accounts.map(a => {
-              const bal = latestBal.get(a.id)
-              const neg = (bal?.balance ?? 0) < 0
+              const bal = balMap.get(a.id) ?? 0
+              const neg = bal < 0
+              const hasTransactions = txAll?.some(t => t.account_id === a.id) ?? false
               return (
-                <Card key={a.id} className="p-4">
-                  <div className="flex items-center gap-2 mb-2 min-w-0">
-                    {a.color && (
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
-                    )}
-                    <p className="text-xs text-muted-foreground font-medium truncate">{a.name}</p>
-                  </div>
-                  <p className={`text-xl font-bold tabular-nums leading-tight ${neg ? 'text-red-600 dark:text-red-400' : ''}`}>
-                    {bal != null
-                      ? new Intl.NumberFormat('de-DE', {
-                          style: 'currency',
-                          currency: bal.currency,
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        }).format(bal.balance)
-                      : '—'}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5 capitalize">{a.type}</p>
-                </Card>
+                <Link key={a.id} href={`/finance/accounts/${a.id}`}>
+                  <Card className="p-4 hover:border-primary/50 transition-colors cursor-pointer">
+                    <div className="flex items-center gap-2 mb-2 min-w-0">
+                      {a.color && <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: a.color }} />}
+                      <p className="text-xs text-muted-foreground font-medium truncate">{a.name}</p>
+                    </div>
+                    <p className={`text-xl font-bold tabular-nums leading-tight ${neg ? 'text-red-600 dark:text-red-400' : ''}`}>
+                      {hasTransactions
+                        ? new Intl.NumberFormat('de-DE', { style: 'currency', currency: a.currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(bal)
+                        : '—'}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5 capitalize">{a.type}</p>
+                  </Card>
+                </Link>
               )
             })}
           </div>
         )}
       </div>
 
-      {/* ── Row 3: Open Positions + Contract Renewals ─────────────────────────── */}
+      {/* ── Sparziele + Vertragsfristen ────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 
-        {/* Open Positions */}
+        {/* Sparziele */}
         <div>
-          <h2 className="text-sm font-semibold mb-3">
-            Offene Positionen
-            {positions && positions.length > 0 && (
-              <span className="ml-2 text-xs font-normal text-muted-foreground">{positions.length}</span>
-            )}
-          </h2>
-
-          {!positions || positions.length === 0 ? (
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold">
+              Sparziele
+              {goals.length > 0 && <span className="ml-2 text-xs font-normal text-muted-foreground">{goals.length} aktiv</span>}
+            </h2>
+            <Link href="/finance/goals" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              Alle ansehen →
+            </Link>
+          </div>
+          {goals.length === 0 ? (
             <div className="rounded-lg border border-dashed border-border py-10 text-center">
-              <p className="text-sm text-muted-foreground">Keine offenen Positionen</p>
+              <p className="text-sm text-muted-foreground">Keine aktiven Sparziele</p>
             </div>
           ) : (
-            <Card className="overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/40 text-muted-foreground text-xs">
-                      <th className="px-3 py-2 text-left font-medium">Symbol</th>
-                      <th className="px-3 py-2 text-left font-medium">Richtung</th>
-                      <th className="px-3 py-2 text-right font-medium">Entry</th>
-                      <th className="px-3 py-2 text-left font-medium hidden sm:table-cell">Strategie</th>
-                      <th className="px-3 py-2 text-left font-medium hidden sm:table-cell">Eröffnet</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {positions.map((p, i) => (
-                      <tr
-                        key={p.id}
-                        className={`hover:bg-muted/20 transition-colors ${i < positions.length - 1 ? 'border-b border-border' : ''}`}
-                      >
-                        <td className="px-3 py-2.5 font-semibold">{p.symbol ?? p.pair_id ?? '—'}</td>
-                        <td className="px-3 py-2.5">
-                          <span className={`text-xs font-medium ${p.direction === 'long' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                            {p.direction?.toUpperCase() ?? '—'}
-                          </span>
-                          {p.leverage && p.leverage > 1 && (
-                            <span className="text-xs text-muted-foreground ml-1">{p.leverage}x</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">
-                          {p.entry_price?.toLocaleString('de-DE') ?? '—'}
-                        </td>
-                        <td className="px-3 py-2.5 text-muted-foreground text-xs truncate max-w-[110px] hidden sm:table-cell">
-                          {p.strategy_name ?? '—'}
-                        </td>
-                        <td className="px-3 py-2.5 text-muted-foreground text-xs hidden sm:table-cell">
-                          {p.opened_at ? new Date(p.opened_at).toLocaleDateString('de-DE') : '—'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
+            <div className="space-y-2">
+              {goals.slice(0, 5).map((g, i) => {
+                const current = (g as unknown as { current_amount: number }).current_amount ?? 0
+                const missing = Math.max(0, g.target_amount - current)
+                const pct = Math.min(100, Math.round((current / g.target_amount) * 100))
+                const done = pct >= 100
+                return (
+                  <Card key={i} className="px-4 py-3">
+                    <div className="flex items-center justify-between mb-1.5 gap-2">
+                      <p className="text-sm font-medium truncate">{g.description}</p>
+                      {done ? (
+                        <span className="text-xs font-medium text-green-600 dark:text-green-400 shrink-0">Erreicht ✓</span>
+                      ) : (
+                        <p className="text-xs text-muted-foreground shrink-0 tabular-nums">
+                          noch <span className="text-foreground font-medium">{fmt(missing)}</span>
+                        </p>
+                      )}
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${done ? 'bg-green-500' : 'bg-primary'}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                      <span>{fmt(current)} gespart</span>
+                      <span>{pct}% von {fmt(g.target_amount)}</span>
+                    </div>
+                  </Card>
+                )
+              })}
+            </div>
           )}
         </div>
 
-        {/* Upcoming Contract Renewals */}
+        {/* Vertragsfristen */}
         <div>
           <h2 className="text-sm font-semibold mb-3">
             Kündbarkeit in Kürze
-            {upcoming.length > 0 && (
-              <span className="ml-2 text-xs font-normal text-muted-foreground">{upcoming.length}</span>
-            )}
+            {upcoming.length > 0 && <span className="ml-2 text-xs font-normal text-muted-foreground">{upcoming.length}</span>}
           </h2>
-
           {upcoming.length === 0 ? (
             <div className="rounded-lg border border-dashed border-border py-10 text-center">
               <p className="text-sm text-muted-foreground">Keine Verträge in den nächsten 45 Tagen kündbar</p>
@@ -422,45 +367,35 @@ export default async function DashboardPage() {
                 const overdue = c.days < 0
                 const urgent  = c.days >= 0 && c.days <= 7
                 const warning = c.days > 7  && c.days <= 14
-
                 return (
                   <div
                     key={c.id}
                     className={`rounded-lg border px-4 py-3 flex items-center justify-between gap-3 ${
-                      overdue || urgent
-                        ? 'border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-950/20'
-                        : warning
-                        ? 'border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/20'
-                        : 'border-border bg-card'
+                      overdue || urgent ? 'border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-950/20'
+                      : warning        ? 'border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/20'
+                      : 'border-border bg-card'
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      {overdue || urgent
-                        ? <AlertCircle className="size-4 text-red-500 shrink-0"             />
-                        : warning
-                        ? <Clock       className="size-4 text-amber-500 shrink-0"           />
-                        : <Minus       className="size-4 text-muted-foreground/40 shrink-0" />
-                      }
+                      {overdue || urgent ? <AlertCircle className="size-4 text-red-500 shrink-0" />
+                        : warning        ? <Clock       className="size-4 text-amber-500 shrink-0" />
+                        :                  <Minus       className="size-4 text-muted-foreground/40 shrink-0" />}
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">{c.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {c.provider ? `${c.provider} · ` : ''}
-                          {fmtCurrency(c.amount, c.currency)}/{c.frequency}
+                          {c.provider ? `${c.provider} · ` : ''}{fmt(c.amount, c.currency)}/{c.frequency}
                         </p>
                       </div>
                     </div>
-
                     <div className="text-right shrink-0">
                       <p className={`text-sm font-semibold tabular-nums ${
-                        overdue || urgent ? 'text-red-600 dark:text-red-400'   :
-                        warning           ? 'text-amber-600 dark:text-amber-400' :
-                        'text-muted-foreground'
+                        overdue || urgent ? 'text-red-600 dark:text-red-400'
+                        : warning        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-muted-foreground'
                       }`}>
                         {overdue ? `${Math.abs(c.days)}d überfällig` : `${c.days}d`}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        bis {c.deadlineDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
-                      </p>
+                      <p className="text-xs text-muted-foreground">bis {fmtDate(c.deadlineDate)}</p>
                     </div>
                   </div>
                 )
@@ -468,7 +403,6 @@ export default async function DashboardPage() {
             </div>
           )}
         </div>
-
       </div>
     </div>
   )

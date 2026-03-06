@@ -1,0 +1,2 @@
+ALTER TABLE savings_goals
+  ADD COLUMN IF NOT EXISTS current_amount NUMERIC DEFAULT 0 NOT NULL;

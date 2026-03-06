@@ -91,6 +91,40 @@ export async function setGoalStatus(id: string, newStatus: string): Promise<void
   revalidatePath('/finance/goals')
 }
 
+// ─── Add payment (increment current_amount) ───────────────────────────────────
+export async function addGoalPayment(
+  goalId: string,
+  amount: number
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Nicht eingeloggt' }
+
+  const { data: goal, error: fetchErr } = await supabase
+    .from('savings_goals')
+    .select('current_amount, target_amount')
+    .eq('id', goalId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (fetchErr || !goal) return { error: 'Sparziel nicht gefunden' }
+
+  const newAmount = Math.min(
+    ((goal as unknown as { current_amount: number }).current_amount ?? 0) + amount,
+    goal.target_amount
+  )
+
+  const { error } = await supabase
+    .from('savings_goals')
+    .update({ current_amount: newAmount, updated_at: new Date().toISOString() })
+    .eq('id', goalId)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/finance/goals')
+  return {}
+}
+
 // ─── Delete ───────────────────────────────────────────────────────────────────
 export async function deleteGoal(id: string): Promise<{ error?: string }> {
   const supabase = await createClient()
