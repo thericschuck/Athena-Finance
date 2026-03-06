@@ -87,7 +87,7 @@ export default async function StrategyDetailPage({
   const robustnessPasses = robustness?.all_tests_pass
 
   return (
-    <div className="p-8 space-y-6 max-w-4xl">
+    <div className="p-4 sm:p-8 space-y-6 max-w-4xl">
       {/* Back link */}
       <Link
         href="/strategy/strategies"

@@ -6,7 +6,7 @@ export default async function CryptoAssetsPage() {
   const customCoins = await getCoinCatalog()
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 sm:p-8 space-y-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Asset-Katalog</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">

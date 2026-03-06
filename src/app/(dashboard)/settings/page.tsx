@@ -12,7 +12,7 @@ export default async function SettingsPage() {
   ])
 
   return (
-    <div className="p-8 max-w-5xl">
+    <div className="p-4 sm:p-8 max-w-5xl">
       <h1 className="text-2xl font-semibold tracking-tight mb-6">Einstellungen</h1>
       <SettingsShell
         initialProfile={profile ?? { id: user!.id, display_name: null, avatar_url: null, timezone: 'Europe/Berlin', currency: 'EUR' }}

@@ -58,7 +58,7 @@ export default async function RebalancingPage() {
   ])
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 sm:p-8 space-y-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Rebalancing</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">

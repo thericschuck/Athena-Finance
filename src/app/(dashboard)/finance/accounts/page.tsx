@@ -21,15 +21,29 @@ export default async function AccountsPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const { data: accounts } = await supabase
-    .from('accounts')
-    .select('*')
-    .eq('user_id', user!.id)
-    .order('sort_order', { ascending: true })
-    .order('created_at', { ascending: true })
+  const [{ data: accounts }, { data: transactions }] = await Promise.all([
+    supabase
+      .from('accounts')
+      .select('*')
+      .eq('user_id', user!.id)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true }),
+    supabase
+      .from('transactions')
+      .select('account_id, amount, type')
+      .eq('user_id', user!.id),
+  ])
+
+  // Compute balance per account from transactions
+  const balanceMap = new Map<string, number>()
+  for (const tx of transactions ?? []) {
+    const cur = balanceMap.get(tx.account_id) ?? 0
+    if (tx.type === 'income')  balanceMap.set(tx.account_id, cur + tx.amount)
+    if (tx.type === 'expense') balanceMap.set(tx.account_id, cur - tx.amount)
+  }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 sm:p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -45,29 +59,30 @@ export default async function AccountsPage() {
       {!accounts || accounts.length === 0 ? (
         <EmptyState />
       ) : (
-        <AccountTable accounts={accounts} />
+        <AccountTable accounts={accounts} balanceMap={balanceMap} />
       )}
     </div>
   )
 }
 
-function AccountTable({ accounts }: { accounts: Account[] }) {
+function AccountTable({ accounts, balanceMap }: { accounts: Account[]; balanceMap: Map<string, number> }) {
   return (
-    <div className="rounded-lg border border-border bg-card overflow-hidden">
+    <div className="rounded-lg border border-border bg-card overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border bg-muted/40">
             <th className="px-4 py-3 text-left font-medium text-muted-foreground">Name</th>
             <th className="px-4 py-3 text-left font-medium text-muted-foreground">Typ</th>
-            <th className="px-4 py-3 text-left font-medium text-muted-foreground">Institution</th>
+            <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden sm:table-cell">Institution</th>
             <th className="px-4 py-3 text-left font-medium text-muted-foreground">Währung</th>
+            <th className="px-4 py-3 text-right font-medium text-muted-foreground">Kontostand</th>
             <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
             <th className="px-4 py-3" />
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
           {accounts.map((account) => (
-            <AccountRow key={account.id} account={account} />
+            <AccountRow key={account.id} account={account} balance={balanceMap.get(account.id) ?? null} />
           ))}
         </tbody>
       </table>
@@ -75,7 +90,7 @@ function AccountTable({ accounts }: { accounts: Account[] }) {
   )
 }
 
-function AccountRow({ account }: { account: Account }) {
+function AccountRow({ account, balance }: { account: Account; balance: number | null }) {
   return (
     <tr className="hover:bg-muted/30 transition-colors group">
       {/* Name + color dot */}
@@ -100,7 +115,7 @@ function AccountRow({ account }: { account: Account }) {
       </td>
 
       {/* Institution */}
-      <td className="px-4 py-3 text-muted-foreground">
+      <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
         {account.institution ?? '—'}
       </td>
 
@@ -109,6 +124,19 @@ function AccountRow({ account }: { account: Account }) {
         <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium">
           {account.currency}
         </span>
+      </td>
+
+      {/* Kontostand */}
+      <td className="px-4 py-3 text-right tabular-nums">
+        {balance === null ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          <span className={balance < 0 ? 'text-red-600 dark:text-red-400' : ''}>
+            {['BTC', 'ETH'].includes(account.currency)
+              ? `${balance.toFixed(6)} ${account.currency}`
+              : new Intl.NumberFormat('de-DE', { style: 'currency', currency: account.currency, minimumFractionDigits: 2 }).format(balance)}
+          </span>
+        )}
       </td>
 
       {/* Status */}
@@ -126,7 +154,7 @@ function AccountRow({ account }: { account: Account }) {
 
       {/* Actions */}
       <td className="px-4 py-3 w-20">
-        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center justify-end gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
           <EditAccountDialog account={account} />
           <DeleteAccountButton account={account} />
         </div>

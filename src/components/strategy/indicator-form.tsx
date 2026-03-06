@@ -122,6 +122,17 @@ function IndicatorFields({
           className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
       </div>
+
+      {/* Code */}
+      <div className="space-y-1.5">
+        <Label htmlFor="i-code">Code</Label>
+        <textarea
+          id="i-code" name="code" rows={6}
+          defaultValue={(ind as any)?.code ?? ''}
+          placeholder="//@version=5&#10;indicator(…)"
+          className="w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-xs font-mono placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        />
+      </div>
     </>
   )
 }

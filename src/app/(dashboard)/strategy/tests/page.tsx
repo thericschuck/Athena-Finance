@@ -165,7 +165,7 @@ export default async function TestsPage({
   const sortThProps = { currentSort: sortKey, currentOrder: sortOrder, searchParams: baseParams }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 sm:p-8 space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Backtests</h1>

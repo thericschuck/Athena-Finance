@@ -93,7 +93,7 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
   const rows = (transactions ?? []) as TransactionWithRelations[]
 
   return (
-    <div className="p-8 space-y-5">
+    <div className="p-4 sm:p-8 space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -119,15 +119,15 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
       {rows.length === 0 ? (
         <EmptyState hasFilters={Object.values(filters).some(Boolean)} />
       ) : (
-        <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/40">
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground w-24">Datum</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Typ</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Konto</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Kategorie</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Beschreibung</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden sm:table-cell">Kategorie</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden md:table-cell">Beschreibung</th>
                 <th className="px-4 py-3 text-right font-medium text-muted-foreground">Betrag</th>
                 <th className="px-4 py-3 w-16"></th>
               </tr>
@@ -185,12 +185,12 @@ function TransactionRow({ tx, accounts, categories }: { tx: TransactionWithRelat
       </td>
 
       {/* Kategorie */}
-      <td className="px-4 py-3 text-muted-foreground">
+      <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
         {tx.category?.name ?? '—'}
       </td>
 
       {/* Beschreibung / Händler */}
-      <td className="px-4 py-3 max-w-xs">
+      <td className="px-4 py-3 max-w-xs hidden md:table-cell">
         <span className="truncate block text-foreground">
           {tx.merchant || tx.description || <span className="text-muted-foreground">—</span>}
         </span>
@@ -206,7 +206,7 @@ function TransactionRow({ tx, accounts, categories }: { tx: TransactionWithRelat
 
       {/* Aktionen */}
       <td className="px-2 py-3">
-        <span className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <span className="flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
           <EditTransactionDialog tx={tx} accounts={accounts} categories={categories} />
           <DeleteTransactionButton tx={tx} />
         </span>

@@ -35,6 +35,7 @@ export async function createIndicator(
     forbidden_reason: (formData.get('forbidden_reason') as string) || null,
     tv_url:           (formData.get('tv_url') as string) || null,
     notes:            (formData.get('notes') as string) || null,
+    code:             (formData.get('code') as string) || null,
     user_id:          user.id,
   })
 
@@ -73,6 +74,7 @@ export async function updateIndicator(
       forbidden_reason: (formData.get('forbidden_reason') as string) || null,
       tv_url:           (formData.get('tv_url') as string) || null,
       notes:            (formData.get('notes') as string) || null,
+      code:             (formData.get('code') as string) || null,
       updated_at:       new Date().toISOString(),
     })
     .eq('id', id)
