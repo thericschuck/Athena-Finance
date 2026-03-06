@@ -181,7 +181,7 @@ export default async function DashboardPage() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="p-8 space-y-8 max-w-6xl">
+    <div className="p-4 sm:p-8 space-y-8 max-w-6xl">
 
       {/* Page header */}
       <div>

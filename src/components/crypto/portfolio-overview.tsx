@@ -133,7 +133,7 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows }:
 
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 sm:p-8 space-y-8">
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>

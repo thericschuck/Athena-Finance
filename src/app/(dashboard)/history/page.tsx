@@ -349,7 +349,7 @@ export default async function HistoryPage({
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="p-8 space-y-6 max-w-[1400px]">
+    <div className="p-4 sm:p-8 space-y-6 max-w-[1400px]">
 
       {/* Header */}
       <div>

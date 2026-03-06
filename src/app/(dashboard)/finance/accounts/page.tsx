@@ -29,7 +29,7 @@ export default async function AccountsPage() {
     .order('created_at', { ascending: true })
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 sm:p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -53,13 +53,13 @@ export default async function AccountsPage() {
 
 function AccountTable({ accounts }: { accounts: Account[] }) {
   return (
-    <div className="rounded-lg border border-border bg-card overflow-hidden">
+    <div className="rounded-lg border border-border bg-card overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border bg-muted/40">
             <th className="px-4 py-3 text-left font-medium text-muted-foreground">Name</th>
             <th className="px-4 py-3 text-left font-medium text-muted-foreground">Typ</th>
-            <th className="px-4 py-3 text-left font-medium text-muted-foreground">Institution</th>
+            <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden sm:table-cell">Institution</th>
             <th className="px-4 py-3 text-left font-medium text-muted-foreground">Währung</th>
             <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
             <th className="px-4 py-3" />
@@ -100,7 +100,7 @@ function AccountRow({ account }: { account: Account }) {
       </td>
 
       {/* Institution */}
-      <td className="px-4 py-3 text-muted-foreground">
+      <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
         {account.institution ?? '—'}
       </td>
 
@@ -126,7 +126,7 @@ function AccountRow({ account }: { account: Account }) {
 
       {/* Actions */}
       <td className="px-4 py-3 w-20">
-        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center justify-end gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
           <EditAccountDialog account={account} />
           <DeleteAccountButton account={account} />
         </div>

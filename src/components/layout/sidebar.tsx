@@ -11,6 +11,7 @@ import {
   History,
   Settings,
   LogOut,
+  X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -61,18 +62,35 @@ const navItems: NavItem[] = [
 
 interface SidebarProps {
   email: string
+  mobileOpen?: boolean
+  onMobileClose?: () => void
 }
 
-export function Sidebar({ email }: SidebarProps) {
+export function Sidebar({ email, mobileOpen = false, onMobileClose }: SidebarProps) {
   const pathname = usePathname()
 
   return (
-    <aside className="flex h-screen w-56 flex-col border-r border-sidebar-border bg-sidebar shrink-0">
+    <aside
+      className={cn(
+        'flex flex-col border-r border-sidebar-border bg-sidebar',
+        'fixed inset-y-0 left-0 z-50 w-72 h-full',
+        'transition-transform duration-200 ease-in-out',
+        mobileOpen ? 'translate-x-0' : '-translate-x-full',
+        'md:static md:h-screen md:w-56 md:translate-x-0 md:shrink-0',
+      )}
+    >
       {/* Logo */}
       <div className="flex h-14 items-center border-b border-sidebar-border px-4">
-        <span className="text-sm font-semibold text-sidebar-foreground tracking-tight">
+        <span className="flex-1 text-sm font-semibold text-sidebar-foreground tracking-tight">
           Athena Finance
         </span>
+        <button
+          className="md:hidden rounded-md p-1.5 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+          onClick={onMobileClose}
+          aria-label="Schliessen"
+        >
+          <X className="size-5" />
+        </button>
       </div>
 
       {/* Navigation */}
