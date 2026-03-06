@@ -76,7 +76,7 @@ export default async function DashboardPage() {
     supabase.from('transactions').select('account_id, type, amount, currency').eq('user_id', user!.id),
     supabase.from('transactions').select('type, amount').eq('user_id', user!.id).gte('date', monthStart),
     supabase.from('debts').select('outstanding, type').eq('user_id', user!.id).eq('is_active', true),
-    supabase.from('savings_goals').select('current_amount, target_amount, description, status').eq('user_id', user!.id).eq('status', 'offen'),
+    supabase.from('savings_goals').select('*').eq('user_id', user!.id).eq('status', 'offen'),
     supabase.from('assets').select('id, symbol, name, portfolio_name, quantity, avg_buy_price').in('type', ['crypto', 'stable', 'fiat']).eq('user_id', user!.id),
     supabase.from('contracts').select('id,name,provider,frequency,amount,currency,end_date,notice_days,auto_renews').eq('user_id', user!.id).eq('is_active', true),
     getStrategySignals(user!.id),
@@ -84,10 +84,12 @@ export default async function DashboardPage() {
     getLastRebalancing(user!.id),
   ])
 
+  type GoalDash = { current_amount: number; target_amount: number; description: string; status: string }
+
   const accounts  = accountsRaw ?? []
   const contracts = (contractsRaw ?? []) as ContractRow[]
   const debts     = debtsRaw ?? []
-  const goals     = goalsRaw ?? []
+  const goals     = (goalsRaw ?? []) as unknown as GoalDash[]
 
   // ── Account balances from transactions ────────────────────────────────────
   const balMap = new Map<string, number>()
@@ -134,7 +136,7 @@ export default async function DashboardPage() {
   // borrowed = I owe → reduces net worth; lent = others owe me → increases net worth
   const borrowedTotal = (debtsRaw ?? []).filter(d => d.type === 'borrowed').reduce((s, d) => s + (d.outstanding ?? 0), 0)
   const lentTotal     = (debtsRaw ?? []).filter(d => d.type === 'lent').reduce((s, d) => s + (d.outstanding ?? 0), 0)
-  const savingsTotal  = goals.reduce((s, g) => s + ((g as unknown as { current_amount: number }).current_amount ?? 0), 0)
+  const savingsTotal  = goals.reduce((s, g) => s + (g.current_amount ?? 0), 0)
   const netWorth      = financeTotal + cryptoTotal + savingsTotal + lentTotal - borrowedTotal
 
   // ── Rebalancing ───────────────────────────────────────────────────────────
@@ -318,7 +320,7 @@ export default async function DashboardPage() {
           ) : (
             <div className="space-y-2">
               {goals.slice(0, 5).map((g, i) => {
-                const current = (g as unknown as { current_amount: number }).current_amount ?? 0
+                const current = g.current_amount ?? 0
                 const missing = Math.max(0, g.target_amount - current)
                 const pct = Math.min(100, Math.round((current / g.target_amount) * 100))
                 const done = pct >= 100

@@ -102,17 +102,15 @@ export async function addGoalPayment(
 
   const { data: goal, error: fetchErr } = await supabase
     .from('savings_goals')
-    .select('current_amount, target_amount')
+    .select('*')
     .eq('id', goalId)
     .eq('user_id', user.id)
     .single()
 
   if (fetchErr || !goal) return { error: 'Sparziel nicht gefunden' }
 
-  const newAmount = Math.min(
-    ((goal as unknown as { current_amount: number }).current_amount ?? 0) + amount,
-    goal.target_amount
-  )
+  const currentAmount = ((goal as unknown as Record<string, number>)['current_amount']) ?? 0
+  const newAmount = Math.min(currentAmount + amount, goal.target_amount)
 
   const { error } = await supabase
     .from('savings_goals')

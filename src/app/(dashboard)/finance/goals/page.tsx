@@ -81,7 +81,7 @@ export default async function GoalsPage() {
     .eq('user_id', user!.id)
     .order('created_at', { ascending: false })
 
-  const all = (goals ?? []) as Goal[]
+  const all = (goals ?? []) as unknown as Goal[]
   const active = sortGoals(all.filter(g => g.status !== 'geschlossen'))
   const closed = all.filter(g => g.status === 'geschlossen')
 
