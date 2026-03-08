@@ -22,7 +22,8 @@ import {
 } from '@/app/(dashboard)/finance/goals/actions'
 import { Database } from '@/types/database'
 
-type Goal = Database['public']['Tables']['savings_goals']['Row']
+type GoalRow = Database['public']['Tables']['savings_goals']['Row']
+type Goal = GoalRow & { current_amount: number; savings_rate_start_date: string | null }
 
 const PRIORITIES = [
   { value: 'hoch',    label: 'Hoch' },
@@ -38,6 +39,10 @@ function GoalFields({
   priority: string
   setPriority: (v: string) => void
 }) {
+  const today = new Date().toISOString().split('T')[0]
+  const [rate, setRate] = useState(goal?.monthly_savings_rate?.toString() ?? '')
+  const hasRate = parseFloat(rate) > 0
+
   return (
     <>
       {goal && <input type="hidden" name="id" value={goal.id} />}
@@ -70,11 +75,26 @@ function GoalFields({
           <Input
             id="g-rate" name="monthly_savings_rate" type="number"
             step="0.01" min="0"
-            defaultValue={goal?.monthly_savings_rate ?? ''}
+            value={rate}
+            onChange={e => setRate(e.target.value)}
             placeholder="0,00"
           />
         </div>
       </div>
+
+      {/* Start date — only shown when rate is set */}
+      {hasRate && (
+        <div className="space-y-1.5">
+          <Label htmlFor="g-rate-start">Sparrate gilt ab</Label>
+          <Input
+            id="g-rate-start" name="savings_rate_start_date" type="date"
+            defaultValue={goal?.savings_rate_start_date ?? today}
+          />
+          <p className="text-xs text-muted-foreground">
+            Ab diesem Datum wird geprüft, ob du deinem Sparplan folgst
+          </p>
+        </div>
+      )}
 
       {/* Priorität + Zieldatum */}
       <div className="grid grid-cols-2 gap-3">

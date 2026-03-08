@@ -13,6 +13,7 @@ import {
   type SubPortfolioAsset,
   type StrategySignal,
 } from '@/lib/crypto/rebalancing-defaults'
+import { CoinCombobox } from '@/components/crypto/coin-combobox'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface Props {
@@ -50,10 +51,11 @@ function AssetWeightTable({
   onChange: (next: SubPortfolioAsset[]) => void
 }) {
   // Store weights as % (0–100) locally for easy editing
-  const [rows, setRows]       = useState(() => assets.map(a => ({ ...a, pct: +(a.weight * 100).toFixed(2) })))
+  const [rows, setRows]           = useState(() => assets.map(a => ({ ...a, pct: +(a.weight * 100).toFixed(2) })))
   const [newSymbol, setNewSymbol]         = useState('')
   const [newCoingeckoId, setNewCoingeckoId] = useState('')
   const [newPct, setNewPct]               = useState('')
+  const [coinKey, setCoinKey]             = useState(0) // reset combobox after add
 
   const sum     = rows.reduce((s, r) => s + (r.pct || 0), 0)
   const isValid = Math.abs(sum - 100) < 0.1
@@ -82,6 +84,7 @@ function AssetWeightTable({
     if (!sym || !cgId || pct <= 0) return
     const next = [...rows, { symbol: sym, coingecko_id: cgId, pct, weight: pct / 100 }]
     setNewSymbol(''); setNewCoingeckoId(''); setNewPct('')
+    setCoinKey(k => k + 1)
     update(next)
   }
 
@@ -127,20 +130,34 @@ function AssetWeightTable({
 
       {/* Add row */}
       <div className="flex gap-2 items-end pt-1">
-        <div className="space-y-1">
-          <Label className="text-xs">Symbol</Label>
-          <Input placeholder="ETH" value={newSymbol} onChange={e => setNewSymbol(e.target.value)} className="h-7 w-20" />
-        </div>
         <div className="space-y-1 flex-1">
-          <Label className="text-xs">CoinGecko-ID</Label>
-          <Input placeholder="ethereum" value={newCoingeckoId} onChange={e => setNewCoingeckoId(e.target.value)} className="h-7" />
+          <Label className="text-xs">Coin</Label>
+          <CoinCombobox
+            key={coinKey}
+            defaultValue={newCoingeckoId || null}
+            onChange={coin => {
+              setNewSymbol(coin.symbol.toUpperCase())
+              setNewCoingeckoId(coin.coingecko_id)
+            }}
+          />
         </div>
         <div className="space-y-1">
           <Label className="text-xs">Gewicht %</Label>
-          <Input type="number" placeholder="25" value={newPct} onChange={e => setNewPct(e.target.value)} className="h-7 w-20" />
+          <Input
+            type="number" placeholder="25"
+            value={newPct}
+            onChange={e => setNewPct(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && addRow()}
+            className="h-9 w-20"
+          />
         </div>
-        <Button variant="outline" size="sm" onClick={addRow} className="h-7">
+        <Button
+          variant="outline" size="sm"
+          onClick={addRow}
+          disabled={!newSymbol || !newCoingeckoId || !(parseFloat(newPct) > 0)}
+        >
           <Plus className="size-3.5" />
+          Hinzufügen
         </Button>
       </div>
     </div>

@@ -3,10 +3,10 @@ import { Database } from '@/types/database'
 import { AddGoalDialog, EditGoalDialog, DeleteGoalButton, GoalPaymentDialog } from '@/components/finance/goal-form'
 import { setGoalStatus } from './actions'
 import { Button } from '@/components/ui/button'
-import { CheckCircle2, Circle } from 'lucide-react'
+import { CheckCircle2, Circle, TrendingDown, TrendingUp } from 'lucide-react'
 
 type GoalRow = Database['public']['Tables']['savings_goals']['Row']
-type Goal = GoalRow & { current_amount: number }
+type Goal = GoalRow & { current_amount: number; savings_rate_start_date: string | null }
 
 // ─── Calculations ─────────────────────────────────────────────────────────────
 function progressPct(goal: Goal): number {
@@ -22,10 +22,30 @@ function monthsRemaining(goal: Goal): number | null {
   return Math.ceil(remaining / goal.monthly_savings_rate)
 }
 
-/** Total months to reach goal from scratch */
-function totalMonths(goal: Goal): number | null {
-  if (!goal.monthly_savings_rate || goal.monthly_savings_rate <= 0) return null
-  return Math.ceil(goal.target_amount / goal.monthly_savings_rate)
+/**
+ * How many complete monthly payments should have been made since savings_rate_start_date.
+ * A payment "counts" once you've reached the day-of-month of the start date.
+ */
+function monthsElapsed(startDate: string): number {
+  const start = new Date(startDate)
+  const now   = new Date()
+  const diff  = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth())
+  // Only count the current month if we've passed the day-of-month
+  return now.getDate() >= start.getDate() ? diff : Math.max(0, diff - 1)
+}
+
+/** Expected saved amount based on savings plan (null if no rate/start date) */
+function expectedSaved(goal: Goal): number | null {
+  if (!goal.monthly_savings_rate || !goal.savings_rate_start_date) return null
+  const months = monthsElapsed(goal.savings_rate_start_date)
+  return months * goal.monthly_savings_rate
+}
+
+/** Gap: positive = ahead, negative = behind plan */
+function savingsGap(goal: Goal): number | null {
+  const expected = expectedSaved(goal)
+  if (expected === null) return null
+  return goal.current_amount - expected
 }
 
 function formatDuration(months: number): string {
@@ -53,7 +73,6 @@ function sortGoals(goals: Goal[]): Goal[] {
     const pa = PRIORITY_RANK[a.priority ?? ''] ?? 3
     const pb = PRIORITY_RANK[b.priority ?? ''] ?? 3
     if (pa !== pb) return pa - pb
-    // Same priority → least progress first (most urgent)
     return progressPct(a) - progressPct(b)
   })
 }
@@ -131,15 +150,14 @@ export default async function GoalsPage() {
 
 // ─── Goal card ────────────────────────────────────────────────────────────────
 function GoalCard({ goal }: { goal: Goal }) {
-  const pct      = progressPct(goal)
-  const saved    = goal.current_amount
+  const pct       = progressPct(goal)
+  const saved     = goal.current_amount
   const remaining = monthsRemaining(goal)
-  const total    = totalMonths(goal)
-  const isClosed = goal.status === 'geschlossen'
+  const gap       = savingsGap(goal)
+  const isClosed  = goal.status === 'geschlossen'
 
   const priorityBadge = goal.priority ? PRIORITY_BADGE[goal.priority] : null
 
-  // Bound server actions — no client state needed
   const nextStatus   = isClosed ? 'offen' : 'geschlossen'
   const toggleAction = setGoalStatus.bind(null, goal.id, nextStatus)
 
@@ -154,7 +172,7 @@ function GoalCard({ goal }: { goal: Goal }) {
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          {STATUS_ICON[goal.status] ?? STATUS_ICON['open']}
+          {STATUS_ICON[goal.status] ?? STATUS_ICON['offen']}
           <p className="font-medium text-foreground truncate">{goal.description}</p>
         </div>
         {priorityBadge && (
@@ -178,6 +196,11 @@ function GoalCard({ goal }: { goal: Goal }) {
         </div>
       </div>
 
+      {/* Savings plan tracker */}
+      {gap !== null && !isClosed && (
+        <SavingsPlanBadge gap={gap} />
+      )}
+
       {/* Stats row */}
       <div className="grid grid-cols-2 gap-2 text-xs">
         {goal.monthly_savings_rate && (
@@ -192,10 +215,10 @@ function GoalCard({ goal }: { goal: Goal }) {
             <p className="font-medium">{formatDuration(remaining)}</p>
           </div>
         )}
-        {total !== null && (
+        {goal.savings_rate_start_date && (
           <div>
-            <p className="text-muted-foreground">Gesamtdauer</p>
-            <p className="font-medium">{formatDuration(total)}</p>
+            <p className="text-muted-foreground">Sparplan seit</p>
+            <p className="font-medium">{formatDate(goal.savings_rate_start_date)}</p>
           </div>
         )}
         {goal.target_date && (
@@ -208,7 +231,6 @@ function GoalCard({ goal }: { goal: Goal }) {
 
       {/* Actions */}
       <div className="flex items-center justify-between gap-1 pt-1 border-t border-border">
-        {/* Status toggle */}
         <form action={toggleAction}>
           <Button type="submit" variant="ghost" size="xs" className="text-muted-foreground">
             {isClosed ? 'Wieder öffnen' : 'Als erreicht markieren'}
@@ -221,6 +243,33 @@ function GoalCard({ goal }: { goal: Goal }) {
           <DeleteGoalButton goal={goal} />
         </div>
       </div>
+    </div>
+  )
+}
+
+// ─── Savings plan indicator ───────────────────────────────────────────────────
+function SavingsPlanBadge({ gap }: { gap: number }) {
+  const fmt = (n: number) =>
+    new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(Math.abs(n))
+
+  // Small buffer: ±5 € counts as "on track"
+  if (gap >= -5) {
+    return (
+      <div className="flex items-center gap-1.5 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-2.5 py-1.5 text-xs text-green-700 dark:text-green-400">
+        <TrendingUp className="size-3.5 shrink-0" />
+        <span>
+          {gap >= 5
+            ? <><strong>{fmt(gap)}</strong> voraus</>
+            : 'Sparplan eingehalten'}
+        </span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-1.5 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-2.5 py-1.5 text-xs text-amber-700 dark:text-amber-400">
+      <TrendingDown className="size-3.5 shrink-0" />
+      <span><strong>{fmt(gap)}</strong> im Rückstand</span>
     </div>
   )
 }

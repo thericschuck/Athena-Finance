@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { AddTransactionDialog, EditTransactionDialog, DeleteTransactionButton } from '@/components/finance/transaction-form'
+import { AccountBalanceChart, type AccountBalancePoint } from '@/components/finance/account-balance-chart'
 import { Database } from '@/types/database'
 import { ChevronLeft } from 'lucide-react'
 
@@ -58,7 +59,7 @@ export default async function AccountDetailPage({ params }: PageProps) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [{ data: account }, { data: accounts }, { data: categories }, { data: transactions }] = await Promise.all([
+  const [{ data: account }, { data: accounts }, { data: categories }, { data: transactions }, { data: balanceHistory }] = await Promise.all([
     supabase
       .from('accounts')
       .select('*')
@@ -83,6 +84,11 @@ export default async function AccountDetailPage({ params }: PageProps) {
       .eq('account_id', id)
       .order('date', { ascending: false })
       .order('created_at', { ascending: false }),
+    supabase
+      .from('account_balances')
+      .select('snapshot_date, balance')
+      .eq('account_id', id)
+      .order('snapshot_date'),
   ])
 
   if (!account) notFound()
@@ -93,6 +99,11 @@ export default async function AccountDetailPage({ params }: PageProps) {
   const income  = rows.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
   const expense = rows.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
   const net     = income - expense
+
+  const balancePoints: AccountBalancePoint[] = (balanceHistory ?? []).map(b => ({
+    snapshot_date: b.snapshot_date,
+    balance:       b.balance,
+  }))
 
   return (
     <div className="p-4 sm:p-8 space-y-6">
@@ -127,6 +138,9 @@ export default async function AccountDetailPage({ params }: PageProps) {
           defaultAccountId={id}
         />
       </div>
+
+      {/* Balance chart */}
+      <AccountBalanceChart points={balancePoints} currency={currency} />
 
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-4">

@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Database } from '@/types/database'
 import {
@@ -8,15 +9,9 @@ import {
 import { CONTRACT_TYPES, FREQUENCIES, TRANSFER_TYPES } from '@/lib/finance/contract-constants'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 
-type Contract = Database['public']['Tables']['contracts']['Row']
+type Contract = Database['public']['Tables']['contracts']['Row'] & { to_account_id?: string | null }
 
 // ─── Date utilities ───────────────────────────────────────────────────────────
-function addMonths(date: Date, n: number): Date {
-  const d = new Date(date)
-  d.setMonth(d.getMonth() + n)
-  return d
-}
-
 function nextBillingDate(startDate: string, frequency: string): Date {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -33,9 +28,8 @@ function nextBillingDate(startDate: string, frequency: string): Date {
   if (intervalDays[frequency]) {
     const days = intervalDays[frequency]
     const diff = Math.floor((today.getTime() - start.getTime()) / 86400000)
-    const periods = Math.floor(diff / days)
     const next = new Date(start)
-    next.setDate(next.getDate() + (periods + 1) * days)
+    next.setDate(next.getDate() + (Math.floor(diff / days) + 1) * days)
     return next
   }
 
@@ -43,27 +37,20 @@ function nextBillingDate(startDate: string, frequency: string): Date {
   const monthsDiff =
     (today.getFullYear() - start.getFullYear()) * 12 +
     (today.getMonth() - start.getMonth())
-  const skip = Math.max(0, Math.floor(monthsDiff / months))
-  const next = addMonths(start, skip * months)
-  // Fine-tune: advance until strictly after today
-  while (next <= today) {
-    next.setMonth(next.getMonth() + months)
-  }
+  const next = new Date(start)
+  next.setMonth(next.getMonth() + Math.max(0, Math.floor(monthsDiff / months)) * months)
+  while (next <= today) next.setMonth(next.getMonth() + months)
   return next
 }
 
-/** true when the notice deadline for cancellation has passed */
 function isNoticeExpired(contract: Contract): boolean {
   if (!contract.end_date || contract.notice_days == null) return false
-  const end = new Date(contract.end_date)
-  const deadline = new Date(end)
+  const deadline = new Date(contract.end_date)
   deadline.setDate(deadline.getDate() - contract.notice_days)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  return deadline <= today
+  deadline.setHours(0, 0, 0, 0)
+  return deadline <= new Date()
 }
 
-/** Normalise any amount to a monthly equivalent */
 function toMonthly(amount: number, frequency: string): number {
   const map: Record<string, number> = {
     weekly: 52 / 12, biweekly: 26 / 12,
@@ -87,10 +74,8 @@ function fmtDate(d: Date) {
 // ─── Constants ────────────────────────────────────────────────────────────────
 const TYPE_ORDER = [
   'subscription', 'insurance', 'utility', 'loan', 'rental',
-  'transfer', 'savings_plan', 'building_savings',
-  'service', 'other',
+  'transfer', 'savings_plan', 'building_savings', 'service', 'other',
 ]
-
 const TYPE_LABEL = Object.fromEntries(CONTRACT_TYPES.map(t => [t.value, t.label]))
 const FREQ_LABEL = Object.fromEntries(FREQUENCIES.map(f => [f.value, f.label]))
 
@@ -100,27 +85,32 @@ export default async function ContractsPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   const [{ data: contracts }, { data: accounts }, { data: categories }] = await Promise.all([
-    supabase.from('contracts').select('*').eq('user_id', user!.id)
-      .order('name', { ascending: true }),
+    supabase.from('contracts').select('*').eq('user_id', user!.id).order('name'),
     supabase.from('accounts').select('id, name').eq('user_id', user!.id).order('sort_order'),
     supabase.from('categories').select('id, name').eq('user_id', user!.id).order('name'),
   ])
 
-  const all = contracts ?? []
+  const all    = (contracts ?? []) as Contract[]
   const active = all.filter(c => c.is_active)
+  const accs   = accounts ?? []
 
-  // Total monthly cost (active, EUR-only for simplicity)
   const monthlyTotal = active
     .filter(c => c.currency === 'EUR')
-    .reduce((sum, c) => sum + toMonthly(c.amount, c.frequency), 0)
+    .reduce((s, c) => s + toMonthly(c.amount, c.frequency), 0)
 
-  // Group by type, preserving TYPE_ORDER
+  // Per-account monthly breakdown
+  const byAccount = new Map<string, { name: string; monthly: number }>()
+  for (const c of active.filter(c => c.currency === 'EUR' && c.account_id)) {
+    const acc = accs.find(a => a.id === c.account_id)
+    const key = c.account_id!
+    if (!byAccount.has(key)) byAccount.set(key, { name: acc?.name ?? 'Unbekannt', monthly: 0 })
+    byAccount.get(key)!.monthly += toMonthly(c.amount, c.frequency)
+  }
+  const accountBreakdown = Array.from(byAccount.values()).sort((a, b) => b.monthly - a.monthly)
+
   const grouped = new Map<string, Contract[]>()
   for (const t of TYPE_ORDER) grouped.set(t, [])
-  for (const c of all) {
-    const key = TYPE_ORDER.includes(c.type) ? c.type : 'other'
-    grouped.get(key)!.push(c)
-  }
+  for (const c of all) grouped.get(TYPE_ORDER.includes(c.type) ? c.type : 'other')!.push(c)
 
   const warningCount = all.filter(c => c.is_active && isNoticeExpired(c)).length
 
@@ -140,10 +130,27 @@ export default async function ContractsPage() {
             )}
           </p>
         </div>
-        <AddContractDialog accounts={accounts ?? []} categories={categories ?? []} />
+        <AddContractDialog accounts={accs} categories={categories ?? []} />
       </div>
 
-      {/* Groups */}
+      {/* Per-account breakdown */}
+      {accountBreakdown.length > 0 && (
+        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+          <h2 className="text-sm font-medium text-muted-foreground">Fixkosten nach Konto</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {accountBreakdown.map(({ name, monthly }) => (
+              <div key={name} className="space-y-0.5">
+                <p className="text-xs text-muted-foreground truncate">{name}</p>
+                <p className="text-base font-semibold tabular-nums">
+                  {fmtEur(monthly)}
+                  <span className="text-xs font-normal text-muted-foreground">/Mo.</span>
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {all.length === 0 ? (
         <EmptyState />
       ) : (
@@ -154,7 +161,7 @@ export default async function ContractsPage() {
                 key={type}
                 title={TYPE_LABEL[type] ?? type}
                 contracts={items}
-                accounts={accounts ?? []}
+                accounts={accs}
                 categories={categories ?? []}
               />
             )
@@ -186,10 +193,7 @@ function ContractGroup({
         <table className="w-full text-sm">
           <tbody className="divide-y divide-border">
             {contracts.map(c => (
-              <ContractRow
-                key={c.id} contract={c}
-                accounts={accounts} categories={categories}
-              />
+              <ContractRow key={c.id} contract={c} accounts={accounts} categories={categories} />
             ))}
           </tbody>
         </table>
@@ -202,63 +206,61 @@ function ContractGroup({
 function ContractRow({
   contract: c, accounts, categories,
 }: {
-  contract: Contract & { to_account_id?: string | null }
+  contract: Contract
   accounts: { id: string; name: string }[]
   categories: { id: string; name: string }[]
 }) {
-  const expired     = isNoticeExpired(c)
-  const nextDate    = c.is_active ? nextBillingDate(c.start_date, c.frequency) : null
-  const isTransfer  = TRANSFER_TYPES.has(c.type)
-  const fromAccount = isTransfer ? accounts.find(a => a.id === c.account_id) : null
-  const toAccount   = isTransfer ? accounts.find(a => a.id === c.to_account_id) : null
+  const expired    = isNoticeExpired(c)
+  const nextDate   = c.is_active ? nextBillingDate(c.start_date, c.frequency) : null
+  const isTransfer = TRANSFER_TYPES.has(c.type)
+  const fromAcc    = isTransfer ? accounts.find(a => a.id === c.account_id) : null
+  const toAcc      = isTransfer ? accounts.find(a => a.id === c.to_account_id) : null
 
   return (
     <tr className={`hover:bg-muted/30 transition-colors group ${!c.is_active ? 'opacity-50' : ''}`}>
-      {/* Name + provider / transfer info */}
+      {/* Name */}
       <td className="px-4 py-3 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-medium text-foreground">{c.name}</span>
+          <Link
+            href={`/finance/contracts/${c.id}`}
+            className="font-medium text-foreground hover:underline underline-offset-2"
+          >
+            {c.name}
+          </Link>
           {!isTransfer && c.provider && (
             <span className="text-xs text-muted-foreground">{c.provider}</span>
           )}
-          {isTransfer && (fromAccount || toAccount) && (
+          {isTransfer && (fromAcc || toAcc) && (
             <span className="text-xs text-muted-foreground">
-              {fromAccount?.name ?? '—'} → {toAccount?.name ?? '—'}
+              {fromAcc?.name ?? '—'} → {toAcc?.name ?? '—'}
             </span>
           )}
-
-          {/* Badges */}
           {!c.is_active && (
-            <span className="text-xs rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
-              Inaktiv
-            </span>
+            <span className="text-xs rounded-full bg-muted px-2 py-0.5 text-muted-foreground">Inaktiv</span>
           )}
           {c.is_active && expired && (
             <span className="inline-flex items-center gap-1 text-xs rounded-full bg-destructive/10 px-2 py-0.5 font-medium text-destructive">
-              <AlertTriangle className="size-3" />
-              Kündigung überfällig
+              <AlertTriangle className="size-3" />Kündigung überfällig
             </span>
           )}
           {c.is_active && c.auto_renews && !expired && (
-            <span className="text-xs text-muted-foreground/60 flex items-center gap-0.5">
+            <span className="text-muted-foreground/60 flex items-center gap-0.5 text-xs">
               <RefreshCw className="size-2.5" />
             </span>
           )}
         </div>
         {nextDate && (
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Nächste Zahlung: {fmtDate(nextDate)}
-          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">Nächste Zahlung: {fmtDate(nextDate)}</p>
         )}
       </td>
 
-      {/* Betrag + Intervall */}
+      {/* Betrag */}
       <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap">
         <span className="font-medium">{fmtCurrency(c.amount, c.currency)}</span>
         <span className="text-muted-foreground text-xs ml-1">/ {FREQ_LABEL[c.frequency] ?? c.frequency}</span>
       </td>
 
-      {/* Enddatum / Kündigungsfrist */}
+      {/* Enddatum */}
       <td className="px-4 py-3 whitespace-nowrap">
         {c.end_date ? (
           <span className={`text-xs ${expired && c.is_active ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>

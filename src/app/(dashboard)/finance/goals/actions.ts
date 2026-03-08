@@ -20,18 +20,23 @@ export async function createGoal(
   if (!description) return { error: 'Bezeichnung ist erforderlich' }
   if (isNaN(target_amount) || target_amount <= 0) return { error: 'Zielbetrag muss größer als 0 sein' }
 
+  const rateRaw = formData.get('monthly_savings_rate') as string
+  const rate    = rateRaw ? parseFloat(rateRaw) : null
+  const hasRate = rate && rate > 0
+
   const { error } = await supabase.from('savings_goals').insert({
     description,
     target_amount,
     status: 'offen',
     user_id: user.id,
     priority: (formData.get('priority') as string) || null,
-    monthly_savings_rate: formData.get('monthly_savings_rate')
-      ? parseFloat(formData.get('monthly_savings_rate') as string)
+    monthly_savings_rate: hasRate ? rate : null,
+    savings_rate_start_date: hasRate
+      ? (formData.get('savings_rate_start_date') as string) || new Date().toISOString().split('T')[0]
       : null,
     target_date: (formData.get('target_date') as string) || null,
     notes: (formData.get('notes') as string) || null,
-  })
+  } as never)
 
   if (error) return { error: error.message }
   revalidatePath('/finance/goals')
@@ -55,19 +60,24 @@ export async function updateGoal(
   if (!description) return { error: 'Bezeichnung ist erforderlich' }
   if (isNaN(target_amount) || target_amount <= 0) return { error: 'Zielbetrag muss größer als 0 sein' }
 
+  const rateRaw = formData.get('monthly_savings_rate') as string
+  const rate    = rateRaw ? parseFloat(rateRaw) : null
+  const hasRate = rate && rate > 0
+
   const { error } = await supabase
     .from('savings_goals')
     .update({
       description,
       target_amount,
       priority: (formData.get('priority') as string) || null,
-      monthly_savings_rate: formData.get('monthly_savings_rate')
-        ? parseFloat(formData.get('monthly_savings_rate') as string)
+      monthly_savings_rate: hasRate ? rate : null,
+      savings_rate_start_date: hasRate
+        ? (formData.get('savings_rate_start_date') as string) || new Date().toISOString().split('T')[0]
         : null,
       target_date: (formData.get('target_date') as string) || null,
       notes: (formData.get('notes') as string) || null,
       updated_at: new Date().toISOString(),
-    })
+    } as never)
     .eq('id', id)
     .eq('user_id', user.id)
 

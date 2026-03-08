@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { TrendingUp, TrendingDown, AlertCircle, Clock, Minus, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import { CryptoWidget } from '@/components/dashboard/crypto-widget'
 import { RebalancingAlert } from '@/components/dashboard/rebalancing-alert'
+import { FixedCostsWidget } from '@/components/finance/fixed-costs-widget'
+import { NetWorthChart } from '@/components/dashboard/net-worth-chart'
 import { getStrategySignals, getPortfolioAllocations, getLastRebalancing } from '@/app/(dashboard)/crypto/actions'
 import { calculateRebalancing } from '@/lib/crypto/rebalancing'
 
@@ -25,7 +27,15 @@ function daysUntil(d: Date): number {
 type ContractRow = {
   id: string; name: string; provider: string | null; frequency: string
   amount: number; currency: string; end_date: string | null
-  notice_days: number; auto_renews: boolean
+  notice_days: number; auto_renews: boolean; account_id: string | null
+}
+
+function toMonthly(amount: number, frequency: string): number {
+  const map: Record<string, number> = {
+    weekly: 52 / 12, biweekly: 26 / 12,
+    monthly: 1, quarterly: 1 / 3, biannual: 1 / 6, yearly: 1 / 12,
+  }
+  return amount * (map[frequency] ?? 1)
 }
 function addFrequency(d: Date, f: string) {
   if (f === 'weekly')    d.setDate(d.getDate() + 7)
@@ -78,11 +88,21 @@ export default async function DashboardPage() {
     supabase.from('debts').select('outstanding, type').eq('user_id', user!.id).eq('is_active', true),
     supabase.from('savings_goals').select('*').eq('user_id', user!.id).eq('status', 'offen'),
     supabase.from('assets').select('id, symbol, name, portfolio_name, quantity, avg_buy_price').in('type', ['crypto', 'stable', 'fiat']).eq('user_id', user!.id),
-    supabase.from('contracts').select('id,name,provider,frequency,amount,currency,end_date,notice_days,auto_renews').eq('user_id', user!.id).eq('is_active', true),
+    supabase.from('contracts').select('id,name,provider,frequency,amount,currency,end_date,notice_days,auto_renews,account_id').eq('user_id', user!.id).eq('is_active', true),
     getStrategySignals(user!.id),
     getPortfolioAllocations(user!.id),
     getLastRebalancing(user!.id),
   ])
+
+  // Net worth snapshots for chart (last 2 years)
+  const snapshotFrom = new Date()
+  snapshotFrom.setFullYear(snapshotFrom.getFullYear() - 2)
+  const { data: netWorthSnapshots } = await supabase
+    .from('net_worth_snapshots')
+    .select('snapshot_date,net_worth,total_checking,total_savings,total_cash,total_depot,total_crypto,total_bausparer,total_business,total_debts,total_assets')
+    .eq('user_id', user!.id)
+    .gte('snapshot_date', snapshotFrom.toISOString().split('T')[0])
+    .order('snapshot_date')
 
   type GoalDash = { current_amount: number; target_amount: number; description: string; status: string }
 
@@ -150,6 +170,14 @@ export default async function DashboardPage() {
       const rebRow = rebResult.rows.find(r => r.coingecko_id === a.symbol)
       return { symbol: rebRow?.symbol ?? (a.name ?? a.symbol ?? '?'), value: a.current_value ?? 0, pct: cryptoTotal > 0 ? ((a.current_value ?? 0) / cryptoTotal) * 100 : 0 }
     })
+
+  // ── Fixed costs widget data ───────────────────────────────────────────────
+  const contractsForWidget = contracts
+    .filter(c => c.currency === 'EUR')
+    .map(c => ({ id: c.id, name: c.name, monthly: toMonthly(c.amount, c.frequency), accountId: c.account_id }))
+    .sort((a, b) => b.monthly - a.monthly)
+
+  const fixedCostsTotal = contractsForWidget.reduce((s, c) => s + c.monthly, 0)
 
   // ── Contract renewals ─────────────────────────────────────────────────────
   type UpcomingContract = ContractRow & { renewalDate: Date; deadlineDate: Date; days: number }
@@ -253,6 +281,9 @@ export default async function DashboardPage() {
         />
       </div>
 
+      {/* ── Net Worth Chart ───────────────────────────────────────────────────── */}
+      <NetWorthChart snapshots={netWorthSnapshots ?? []} />
+
       {/* ── Rebalancing alert ──────────────────────────────────────────────────── */}
       <RebalancingAlert rebalancingVolume={rebalancingVolume} lastRebalancing={lastRebalancing} />
 
@@ -299,8 +330,8 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      {/* ── Sparziele + Vertragsfristen ────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      {/* ── Sparziele + Vertragsfristen + Fixkosten ───────────────────────────── */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
         {/* Sparziele */}
         <div>
@@ -352,6 +383,13 @@ export default async function DashboardPage() {
             </div>
           )}
         </div>
+
+        {/* Fixkosten */}
+        <FixedCostsWidget
+          totalMonthly={fixedCostsTotal}
+          contracts={contractsForWidget}
+          accounts={accounts.map(a => ({ id: a.id, name: a.name }))}
+        />
 
         {/* Vertragsfristen */}
         <div>

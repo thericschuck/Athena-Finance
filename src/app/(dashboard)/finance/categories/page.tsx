@@ -1,3 +1,4 @@
+import React from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { Database } from '@/types/database'
 import {
@@ -93,10 +94,9 @@ export default async function CategoriesPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {tree.map((parent) => (
-                <>
+                <React.Fragment key={parent.id}>
                   {/* Parent row */}
                   <CategoryRow
-                    key={parent.id}
                     category={parent}
                     allCategories={flat}
                     isParent
@@ -110,7 +110,7 @@ export default async function CategoriesPage() {
                       isParent={false}
                     />
                   ))}
-                </>
+                </React.Fragment>
               ))}
             </tbody>
           </table>
