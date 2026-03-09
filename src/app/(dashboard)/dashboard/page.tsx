@@ -290,6 +290,50 @@ export default async function DashboardPage() {
       {/* ── Net Worth Chart ───────────────────────────────────────────────────── */}
       <NetWorthChart snapshots={netWorthSnapshots ?? []} />
 
+      {/* ── Depots ────────────────────────────────────────────────────────────── */}
+      {depotSummaries.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold">
+              Depots
+              <span className="ml-2 text-xs font-normal text-muted-foreground">{depotSummaries.length}</span>
+            </h2>
+            <Link href="/depot" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              Zum Depot →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {depotSummaries.map(d => {
+              const hasValue = d.depotValue !== null && d.depotValue > 0
+              return (
+                <Link key={d.id} href="/depot">
+                  <Card className="p-4 hover:border-primary/50 transition-colors cursor-pointer">
+                    <div className="flex items-center gap-2 mb-2 min-w-0">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+                      <p className="text-xs text-muted-foreground font-medium truncate">{d.name}</p>
+                      <span className="text-xs text-muted-foreground font-mono ml-auto shrink-0">{d.isin}</span>
+                    </div>
+                    <p className="text-xl font-bold tabular-nums leading-tight">
+                      {hasValue ? fmtCurrency(d.depotValue!, 'EUR', locale) : '—'}
+                    </p>
+                    <div className="flex items-center justify-between mt-1">
+                      <p className="text-xs text-muted-foreground tabular-nums">
+                        {d.totalShares > 0 ? `${d.totalShares.toFixed(4)} Anteile` : 'Keine Anteile'}
+                      </p>
+                      {d.returnPct !== null && (
+                        <p className={`text-xs font-medium tabular-nums ${d.returnPct >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                          {d.returnPct >= 0 ? '+' : ''}{d.returnPct.toFixed(2)} %
+                        </p>
+                      )}
+                    </div>
+                  </Card>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── Rebalancing alert ──────────────────────────────────────────────────── */}
       <RebalancingAlert rebalancingVolume={rebalancingVolume} lastRebalancing={lastRebalancing} locale={locale} dateFormat={dateFormat} />
 

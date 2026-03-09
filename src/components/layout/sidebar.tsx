@@ -164,8 +164,11 @@ export function Sidebar({ email, displayName, avatarUrl, mobileOpen = false, onM
 
       {/* Footer */}
       <div className="border-t border-sidebar-border px-2 py-3 space-y-1">
-        {/* Avatar + Name */}
-        <div className="flex items-center gap-2.5 px-2 py-1.5">
+        {/* Avatar + Name → Settings */}
+        <Link
+          href="/settings"
+          className="flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-sidebar-accent transition-colors group"
+        >
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -175,17 +178,17 @@ export function Sidebar({ email, displayName, avatarUrl, mobileOpen = false, onM
               onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
             />
           ) : (
-            <div className="size-7 rounded-full bg-sidebar-accent flex items-center justify-center text-xs font-semibold text-sidebar-accent-foreground shrink-0 select-none">
+            <div className="size-7 rounded-full bg-sidebar-accent flex items-center justify-center text-xs font-semibold text-sidebar-accent-foreground shrink-0 select-none group-hover:bg-sidebar-border transition-colors">
               {getInitials(displayName, email)}
             </div>
           )}
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             {displayName && (
               <p className="truncate text-xs font-medium text-sidebar-foreground leading-tight">{displayName}</p>
             )}
             <p className="truncate text-xs text-muted-foreground leading-tight">{email}</p>
           </div>
-        </div>
+        </Link>
         <form>
           <Button
             formAction={signOut}

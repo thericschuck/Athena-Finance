@@ -7,7 +7,7 @@ import {
   DeleteContractButton,
 } from '@/components/finance/contract-form'
 import { CONTRACT_TYPES, FREQUENCIES, TRANSFER_TYPES } from '@/lib/finance/contract-constants'
-import { AlertTriangle, RefreshCw, TrendingUp } from 'lucide-react'
+import { AlertTriangle, RefreshCw, TrendingUp, ExternalLink } from 'lucide-react'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency as fmtCurrencyLib, fmtDate as fmtDateLib } from '@/lib/format'
 import type { SavingsPlan } from '@/app/actions/depot'
@@ -336,18 +336,20 @@ function ContractRow({
   )
 }
 
-// ─── Depot-Sparplan Row (read-only) ───────────────────────────────────────────
+// ─── Depot-Sparplan Row ───────────────────────────────────────────────────────
 function SavingsPlanRow({ plan, locale }: { plan: SavingsPlan; locale: string }) {
   const today = new Date()
   const nextExecution = new Date(today.getFullYear(), today.getMonth(), plan.execution_day)
   if (nextExecution <= today) nextExecution.setMonth(nextExecution.getMonth() + 1)
 
   return (
-    <tr className={`hover:bg-muted/30 transition-colors ${!plan.is_active ? 'opacity-50' : ''}`}>
+    <tr className={`hover:bg-muted/30 transition-colors group ${!plan.is_active ? 'opacity-50' : ''}`}>
       <td className="px-4 py-3 min-w-0">
         <div className="flex items-center gap-2">
           <TrendingUp className="size-3.5 text-muted-foreground shrink-0" />
-          <span className="font-medium text-foreground">{plan.fund_name}</span>
+          <Link href="/depot" className="font-medium text-foreground hover:underline underline-offset-2">
+            {plan.fund_name}
+          </Link>
           <span className="text-xs text-muted-foreground font-mono">{plan.isin}</span>
           {!plan.is_active && (
             <span className="text-xs rounded-full bg-muted px-2 py-0.5 text-muted-foreground">Pausiert</span>
@@ -364,7 +366,15 @@ function SavingsPlanRow({ plan, locale }: { plan: SavingsPlan; locale: string })
       <td className="px-4 py-3 whitespace-nowrap">
         <span className="text-xs text-muted-foreground">Depot · Automatisch</span>
       </td>
-      <td className="px-4 py-3 w-20" />
+      <td className="px-4 py-3 w-20">
+        <div className="flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+          <Link href="/depot" title="Im Depot bearbeiten">
+            <button className="rounded p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+              <ExternalLink className="size-3.5" />
+            </button>
+          </Link>
+        </div>
+      </td>
     </tr>
   )
 }
