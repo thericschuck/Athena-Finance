@@ -177,8 +177,12 @@ export function calculateRebalancing(
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-export function formatDiffQty(qty: number, symbol: string): string {
-  if (Math.abs(qty) < 0.000001) return '✓ Balanced'
+export function formatDiffQty(qty: number, symbol: string, diffEur = 0): string {
+  if (Math.abs(qty) < 0.000001) {
+    // qty=0 but significant EUR difference → price missing
+    if (Math.abs(diffEur) > 1) return '⚠ Kein Preis'
+    return '✓ Balanced'
+  }
   const absQty   = Math.abs(qty)
   const decimals = absQty < 0.01 ? 6 : 4
   const sign     = qty > 0 ? '+' : ''

@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { AddAccountDialog, EditAccountDialog, DeleteAccountButton } from '@/components/finance/account-form'
 import { Database } from '@/types/database'
+import { getSettings } from '@/lib/settings'
+import { fmtCurrency } from '@/lib/format'
 
 type Account = Database['public']['Tables']['accounts']['Row']
 
@@ -21,7 +23,7 @@ export default async function AccountsPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const [{ data: accounts }, { data: transactions }] = await Promise.all([
+  const [{ data: accounts }, { data: transactions }, settings] = await Promise.all([
     supabase
       .from('accounts')
       .select('*')
@@ -32,7 +34,10 @@ export default async function AccountsPage() {
       .from('transactions')
       .select('account_id, amount, type')
       .eq('user_id', user!.id),
+    getSettings(user!.id),
   ])
+
+  const locale = (settings.number_format as string) ?? 'de-DE'
 
   // Compute balance per account from transactions
   const balanceMap = new Map<string, number>()
@@ -59,13 +64,13 @@ export default async function AccountsPage() {
       {!accounts || accounts.length === 0 ? (
         <EmptyState />
       ) : (
-        <AccountTable accounts={accounts} balanceMap={balanceMap} />
+        <AccountTable accounts={accounts} balanceMap={balanceMap} locale={locale} />
       )}
     </div>
   )
 }
 
-function AccountTable({ accounts, balanceMap }: { accounts: Account[]; balanceMap: Map<string, number> }) {
+function AccountTable({ accounts, balanceMap, locale }: { accounts: Account[]; balanceMap: Map<string, number>; locale: string }) {
   return (
     <div className="rounded-lg border border-border bg-card overflow-x-auto">
       <table className="w-full text-sm">
@@ -82,7 +87,7 @@ function AccountTable({ accounts, balanceMap }: { accounts: Account[]; balanceMa
         </thead>
         <tbody className="divide-y divide-border">
           {accounts.map((account) => (
-            <AccountRow key={account.id} account={account} balance={balanceMap.get(account.id) ?? null} />
+            <AccountRow key={account.id} account={account} balance={balanceMap.get(account.id) ?? null} locale={locale} />
           ))}
         </tbody>
       </table>
@@ -90,7 +95,7 @@ function AccountTable({ accounts, balanceMap }: { accounts: Account[]; balanceMa
   )
 }
 
-function AccountRow({ account, balance }: { account: Account; balance: number | null }) {
+function AccountRow({ account, balance, locale }: { account: Account; balance: number | null; locale: string }) {
   return (
     <tr className="hover:bg-muted/30 transition-colors group">
       {/* Name + color dot */}
@@ -134,7 +139,7 @@ function AccountRow({ account, balance }: { account: Account; balance: number | 
           <span className={balance < 0 ? 'text-red-600 dark:text-red-400' : ''}>
             {['BTC', 'ETH'].includes(account.currency)
               ? `${balance.toFixed(6)} ${account.currency}`
-              : new Intl.NumberFormat('de-DE', { style: 'currency', currency: account.currency, minimumFractionDigits: 2 }).format(balance)}
+              : fmtCurrency(balance, account.currency, locale, { fractionDigits: 2 })}
           </span>
         )}
       </td>

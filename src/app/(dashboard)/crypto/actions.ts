@@ -56,6 +56,21 @@ export async function createAsset(
 
   if (insertError) return { error: insertError.message }
 
+  // Audit log
+  await supabase.from('asset_audit_log').insert({
+    user_id:      user.id,
+    asset_id:     asset.id,
+    asset_name:   name,
+    asset_symbol: coingeckoId,
+    action:       'created',
+    changes: {
+      quantity:      quantity,
+      avg_buy_price: avgBuyPrice,
+      portfolio_name: (formData.get('portfolio_name') as string) || null,
+      exchange:       (formData.get('exchange') as string) || null,
+    },
+  })
+
   // Fetch/assign initial valuation
   try {
     const isFiat = coinType === 'fiat'
@@ -99,22 +114,58 @@ export async function updateAsset(
   if (!coingeckoId)                       return { error: 'CoinGecko-ID ist erforderlich' }
   if (isNaN(quantity) || quantity <= 0)   return { error: 'Menge muss größer als 0 sein' }
 
+  // Fetch current values for diff
+  const { data: current } = await supabase
+    .from('assets')
+    .select('name, symbol, quantity, avg_buy_price, portfolio_name, exchange, notes')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single()
+
+  const newAvgBuyPrice  = formData.get('avg_buy_price') ? parseFloat(formData.get('avg_buy_price') as string) : null
+  const newPortfolio    = (formData.get('portfolio_name') as string) || null
+  const newExchange     = (formData.get('exchange') as string) || null
+  const newNotes        = (formData.get('notes') as string) || null
+
   const { error } = await supabase
     .from('assets')
     .update({
       name,
       symbol:         coingeckoId,
       quantity,
-      portfolio_name: (formData.get('portfolio_name') as string) || null,
-      avg_buy_price:  formData.get('avg_buy_price') ? parseFloat(formData.get('avg_buy_price') as string) : null,
-      exchange:       (formData.get('exchange') as string) || null,
-      notes:          (formData.get('notes') as string) || null,
+      portfolio_name: newPortfolio,
+      avg_buy_price:  newAvgBuyPrice,
+      exchange:       newExchange,
+      notes:          newNotes,
       updated_at:     new Date().toISOString(),
     })
     .eq('id', id)
     .eq('user_id', user.id)
 
   if (error) return { error: error.message }
+
+  // Audit log — only record changed fields
+  if (current) {
+    const changes: Record<string, { from: unknown; to: unknown }> = {}
+    if (current.quantity      !== quantity)        changes.quantity      = { from: current.quantity,      to: quantity }
+    if (current.avg_buy_price !== newAvgBuyPrice)  changes.avg_buy_price = { from: current.avg_buy_price, to: newAvgBuyPrice }
+    if (current.portfolio_name !== newPortfolio)   changes.portfolio_name = { from: current.portfolio_name, to: newPortfolio }
+    if (current.exchange       !== newExchange)    changes.exchange       = { from: current.exchange,       to: newExchange }
+    if (current.name           !== name)           changes.name           = { from: current.name,           to: name }
+    if (current.notes          !== newNotes)       changes.notes          = { from: current.notes,          to: newNotes }
+
+    if (Object.keys(changes).length > 0) {
+      await supabase.from('asset_audit_log').insert({
+        user_id:      user.id,
+        asset_id:     id,
+        asset_name:   name,
+        asset_symbol: coingeckoId,
+        action:       'updated',
+        changes,
+      })
+    }
+  }
+
   revalidatePath('/crypto')
   return { success: true }
 }
@@ -125,6 +176,14 @@ export async function deleteAsset(id: string): Promise<{ error?: string }> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
+  // Fetch before delete for audit log
+  const { data: current } = await supabase
+    .from('assets')
+    .select('name, symbol, quantity, avg_buy_price, portfolio_name')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single()
+
   const { error } = await supabase
     .from('assets')
     .delete()
@@ -132,6 +191,22 @@ export async function deleteAsset(id: string): Promise<{ error?: string }> {
     .eq('user_id', user.id)
 
   if (error) return { error: error.message }
+
+  if (current) {
+    await supabase.from('asset_audit_log').insert({
+      user_id:      user.id,
+      asset_id:     null,
+      asset_name:   current.name,
+      asset_symbol: current.symbol ?? '',
+      action:       'deleted',
+      changes: {
+        quantity:      current.quantity,
+        avg_buy_price: current.avg_buy_price,
+        portfolio_name: current.portfolio_name,
+      },
+    })
+  }
+
   revalidatePath('/crypto')
   return {}
 }

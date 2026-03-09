@@ -6,7 +6,14 @@ import { usePathname } from 'next/navigation'
 import { Sidebar } from '@/components/layout/sidebar'
 import { PageWrapper } from '@/components/layout/page-wrapper'
 
-export function AppShell({ children, email }: { children: React.ReactNode; email: string }) {
+export function AppShell({
+  children, email, displayName, avatarUrl,
+}: {
+  children: React.ReactNode
+  email: string
+  displayName: string | null
+  avatarUrl: string | null
+}) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
 
@@ -25,7 +32,13 @@ export function AppShell({ children, email }: { children: React.ReactNode; email
         />
       )}
 
-      <Sidebar email={email} mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
+      <Sidebar
+        email={email}
+        displayName={displayName}
+        avatarUrl={avatarUrl}
+        mobileOpen={mobileOpen}
+        onMobileClose={() => setMobileOpen(false)}
+      />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* Mobile top bar */}

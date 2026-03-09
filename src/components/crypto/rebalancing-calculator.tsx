@@ -236,7 +236,7 @@ export function RebalancingCalculator({
                       {fmtDiffEur(row.diff_eur)}
                     </td>
                     <td className={`px-4 py-3 text-sm ${diffClass}`}>
-                      {formatDiffQty(row.diff_qty, row.symbol)}
+                      {formatDiffQty(row.diff_qty, row.symbol, row.diff_eur)}
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={row.status} />

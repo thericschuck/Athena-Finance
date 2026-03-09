@@ -32,18 +32,37 @@ export async function saveProfile(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
+  let avatarUrl = (formData.get('avatar_url') as string) || null
+
+  // Handle file upload to Supabase Storage
+  const file = formData.get('avatar_file') as File | null
+  if (file && file.size > 0) {
+    const ext      = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+    const filePath = `${user.id}/avatar.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file, { upsert: true, contentType: file.type })
+
+    if (uploadError) return { error: `Bild-Upload fehlgeschlagen: ${uploadError.message}` }
+
+    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath)
+    avatarUrl = publicUrl
+  }
+
   const { error } = await supabase
     .from('user_profiles')
     .upsert({
       id:           user.id,
       display_name: (formData.get('display_name') as string) || null,
-      avatar_url:   (formData.get('avatar_url') as string) || null,
+      avatar_url:   avatarUrl,
       timezone:     (formData.get('timezone') as string) || 'Europe/Berlin',
       currency:     (formData.get('currency') as string) || 'EUR',
       updated_at:   new Date().toISOString(),
     })
 
   if (error) return { error: error.message }
+  revalidatePath('/', 'layout')
   REVALIDATE()
   return { success: true }
 }

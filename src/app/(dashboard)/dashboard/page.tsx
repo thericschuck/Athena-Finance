@@ -7,16 +7,8 @@ import { FixedCostsWidget } from '@/components/finance/fixed-costs-widget'
 import { NetWorthChart } from '@/components/dashboard/net-worth-chart'
 import { getStrategySignals, getPortfolioAllocations, getLastRebalancing } from '@/app/(dashboard)/crypto/actions'
 import { calculateRebalancing } from '@/lib/crypto/rebalancing'
-
-// ─── Formatters ───────────────────────────────────────────────────────────────
-const fmt = (n: number, currency = 'EUR') =>
-  new Intl.NumberFormat('de-DE', {
-    style: 'currency', currency,
-    minimumFractionDigits: 0, maximumFractionDigits: 0,
-  }).format(n)
-
-const fmtDate = (d: string | Date | null) =>
-  d ? new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : '—'
+import { getSettings } from '@/lib/settings'
+import { fmtCurrency, fmtDateShort } from '@/lib/format'
 
 function daysUntil(d: Date): number {
   const today = new Date(); today.setHours(0, 0, 0, 0)
@@ -66,6 +58,13 @@ export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  const settings    = await getSettings(user!.id)
+  const locale      = (settings.number_format as string) ?? 'de-DE'
+  const dateFormat  = (settings.date_format   as string) ?? 'dd.MM.yyyy'
+
+  const fmt     = (n: number, currency = 'EUR') => fmtCurrency(n, currency, locale)
+  const fmtDate = (d: string | Date | null)      => fmtDateShort(d, dateFormat)
+
   const now = new Date()
   const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
 
@@ -82,7 +81,7 @@ export default async function DashboardPage() {
     cryptoAllocations,
     lastRebalancing,
   ] = await Promise.all([
-    supabase.from('accounts').select('id, name, type, color, currency, is_active').eq('user_id', user!.id).eq('is_active', true).order('sort_order'),
+    supabase.from('accounts').select('id, name, type, color, currency, is_active').eq('user_id', user!.id).order('sort_order'),
     supabase.from('transactions').select('account_id, type, amount, currency').eq('user_id', user!.id),
     supabase.from('transactions').select('type, amount').eq('user_id', user!.id).gte('date', monthStart),
     supabase.from('debts').select('outstanding, type').eq('user_id', user!.id).eq('is_active', true),
@@ -106,7 +105,8 @@ export default async function DashboardPage() {
 
   type GoalDash = { current_amount: number; target_amount: number; description: string; status: string }
 
-  const accounts  = accountsRaw ?? []
+  const accounts       = accountsRaw ?? []
+  const activeAccounts = accounts.filter(a => a.is_active)
   const contracts = (contractsRaw ?? []) as ContractRow[]
   const debts     = debtsRaw ?? []
   const goals     = (goalsRaw ?? []) as unknown as GoalDash[]
@@ -199,7 +199,7 @@ export default async function DashboardPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          {now.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+          {now.toLocaleDateString(locale, { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
         </p>
       </div>
 
@@ -236,7 +236,7 @@ export default async function DashboardPage() {
         {/* Monatsbilanz */}
         <Card className="p-5">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
-            {now.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}
+            {now.toLocaleDateString(locale, { month: 'long', year: 'numeric' })}
           </p>
           {monthIncome === 0 && monthExpense === 0 ? (
             <p className="text-sm text-muted-foreground">Noch keine Transaktionen diesen Monat.</p>
@@ -292,20 +292,20 @@ export default async function DashboardPage() {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold">
             Konten
-            <span className="ml-2 text-xs font-normal text-muted-foreground">{accounts.length} aktiv</span>
+            <span className="ml-2 text-xs font-normal text-muted-foreground">{activeAccounts.length} aktiv</span>
           </h2>
           <Link href="/finance/accounts" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
             Alle ansehen →
           </Link>
         </div>
 
-        {accounts.length === 0 ? (
+        {activeAccounts.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border py-10 text-center">
             <p className="text-sm text-muted-foreground">Keine aktiven Konten.</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {accounts.map(a => {
+            {activeAccounts.map(a => {
               const bal = balMap.get(a.id) ?? 0
               const neg = bal < 0
               const hasTransactions = txAll?.some(t => t.account_id === a.id) ?? false
@@ -318,7 +318,7 @@ export default async function DashboardPage() {
                     </div>
                     <p className={`text-xl font-bold tabular-nums leading-tight ${neg ? 'text-red-600 dark:text-red-400' : ''}`}>
                       {hasTransactions
-                        ? new Intl.NumberFormat('de-DE', { style: 'currency', currency: a.currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(bal)
+                        ? fmtCurrency(bal, a.currency, locale)
                         : '—'}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5 capitalize">{a.type}</p>

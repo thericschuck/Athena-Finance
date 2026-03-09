@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { PortfolioOverview, type AssetWithPrice } from '@/components/crypto/portfolio-overview'
 import { getStrategySignals, getPortfolioAllocations } from '@/app/(dashboard)/crypto/actions'
 import { calculateRebalancing } from '@/lib/crypto/rebalancing'
+import { History } from 'lucide-react'
 
 export default async function CryptoPage() {
   const supabase = await createClient()
@@ -10,6 +11,7 @@ export default async function CryptoPage() {
   const [
     { data: rawAssets },
     { data: snapshots },
+    { data: auditLog },
     signals,
     allocations,
   ] = await Promise.all([
@@ -29,6 +31,12 @@ export default async function CryptoPage() {
         return d.toISOString().split('T')[0]
       })())
       .order('snapshot_date'),
+    supabase
+      .from('asset_audit_log')
+      .select('*')
+      .eq('user_id', user!.id)
+      .order('created_at', { ascending: false })
+      .limit(50),
     getStrategySignals(user!.id),
     getPortfolioAllocations(user!.id),
   ])
@@ -71,10 +79,127 @@ export default async function CryptoPage() {
   const rebalancingResult = calculateRebalancing(signals, allocations, assets, totalValue)
 
   return (
-    <PortfolioOverview
-      initialAssets={assets}
-      snapshots={snapshots ?? []}
-      rebalancingRows={rebalancingResult.rows}
-    />
+    <>
+      <PortfolioOverview
+        initialAssets={assets}
+        snapshots={snapshots ?? []}
+        rebalancingRows={rebalancingResult.rows}
+      />
+      <AssetAuditLog entries={auditLog ?? []} />
+    </>
+  )
+}
+
+// ─── Audit Log ────────────────────────────────────────────────────────────────
+type AuditEntry = {
+  id: string
+  asset_name: string
+  asset_symbol: string
+  action: string
+  changes: Record<string, { from: unknown; to: unknown }> | Record<string, unknown> | null
+  created_at: string
+}
+
+const ACTION_LABEL: Record<string, { label: string; cls: string }> = {
+  created: { label: 'Erstellt',  cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+  updated: { label: 'Geändert',  cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+  deleted: { label: 'Gelöscht',  cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+}
+
+const FIELD_LABEL: Record<string, string> = {
+  quantity:      'Menge',
+  avg_buy_price: 'Ø Kaufpreis',
+  portfolio_name:'Portfolio',
+  exchange:      'Exchange',
+  name:          'Name',
+  notes:         'Notizen',
+}
+
+function fmtVal(val: unknown): string {
+  if (val === null || val === undefined) return '—'
+  if (typeof val === 'number') return val.toLocaleString('de-DE', { maximumFractionDigits: 8 })
+  return String(val)
+}
+
+function fmtTs(iso: string): string {
+  return new Date(iso).toLocaleString('de-DE', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  })
+}
+
+function AssetAuditLog({ entries }: { entries: AuditEntry[] }) {
+  if (entries.length === 0) return null
+
+  return (
+    <div className="px-4 sm:px-8 pb-8">
+      <div className="flex items-center gap-2 mb-3">
+        <History className="size-4 text-muted-foreground" />
+        <h2 className="text-sm font-semibold">Änderungsprotokoll</h2>
+        <span className="text-xs text-muted-foreground">(letzte {entries.length} Einträge)</span>
+      </div>
+
+      <div className="rounded-lg border border-border overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/40 text-left text-muted-foreground">
+                <th className="px-4 py-2.5 font-medium">Datum</th>
+                <th className="px-4 py-2.5 font-medium">Asset</th>
+                <th className="px-4 py-2.5 font-medium">Aktion</th>
+                <th className="px-4 py-2.5 font-medium">Änderungen</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((e, i) => {
+                const cfg = ACTION_LABEL[e.action] ?? { label: e.action, cls: 'bg-muted text-muted-foreground' }
+                const isLast = i === entries.length - 1
+
+                // For 'updated': changes is { field: { from, to } }
+                // For 'created'/'deleted': changes is flat { field: value }
+                const changeLines: string[] = []
+                if (e.changes) {
+                  if (e.action === 'updated') {
+                    for (const [field, diff] of Object.entries(e.changes)) {
+                      const d = diff as { from: unknown; to: unknown }
+                      const label = FIELD_LABEL[field] ?? field
+                      changeLines.push(`${label}: ${fmtVal(d.from)} → ${fmtVal(d.to)}`)
+                    }
+                  } else {
+                    for (const [field, val] of Object.entries(e.changes)) {
+                      if (val !== null && val !== undefined) {
+                        const label = FIELD_LABEL[field] ?? field
+                        changeLines.push(`${label}: ${fmtVal(val)}`)
+                      }
+                    }
+                  }
+                }
+
+                return (
+                  <tr key={e.id} className={`hover:bg-muted/30 transition-colors ${!isLast ? 'border-b border-border' : ''}`}>
+                    <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">{fmtTs(e.created_at)}</td>
+                    <td className="px-4 py-2.5 font-medium">{e.asset_name}
+                      <span className="ml-1.5 text-xs text-muted-foreground font-normal uppercase">{e.asset_symbol}</span>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${cfg.cls}`}>
+                        {cfg.label}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-muted-foreground text-xs">
+                      {changeLines.length === 0 ? '—' : (
+                        <ul className="space-y-0.5">
+                          {changeLines.map((l, j) => <li key={j}>{l}</li>)}
+                        </ul>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   )
 }

@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
 
 export type UserProfile = {
@@ -20,14 +21,14 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
   return data ?? null
 }
 
-export async function getSettings(userId: string): Promise<SettingsMap> {
+export const getSettings = cache(async (userId: string): Promise<SettingsMap> => {
   const supabase = await createClient()
   const { data } = await supabase
     .from('user_settings')
     .select('key, value')
     .eq('user_id', userId)
   return Object.fromEntries((data ?? []).map(r => [r.key, r.value]))
-}
+})
 
 export async function getSetting(userId: string, key: string): Promise<unknown> {
   const supabase = await createClient()

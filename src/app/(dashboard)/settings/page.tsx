@@ -17,6 +17,7 @@ export default async function SettingsPage() {
       <SettingsShell
         initialProfile={profile ?? { id: user!.id, display_name: null, avatar_url: null, timezone: 'Europe/Berlin', currency: 'EUR' }}
         initialSettings={settings}
+        email={user!.email ?? ''}
       />
     </div>
   )

@@ -62,11 +62,18 @@ const navItems: NavItem[] = [
 
 interface SidebarProps {
   email: string
+  displayName: string | null
+  avatarUrl: string | null
   mobileOpen?: boolean
   onMobileClose?: () => void
 }
 
-export function Sidebar({ email, mobileOpen = false, onMobileClose }: SidebarProps) {
+function getInitials(name: string | null, email: string): string {
+  const src = name?.trim() || email
+  return src.slice(0, 2).toUpperCase()
+}
+
+export function Sidebar({ email, displayName, avatarUrl, mobileOpen = false, onMobileClose }: SidebarProps) {
   const pathname = usePathname()
 
   return (
@@ -155,7 +162,28 @@ export function Sidebar({ email, mobileOpen = false, onMobileClose }: SidebarPro
 
       {/* Footer */}
       <div className="border-t border-sidebar-border px-2 py-3 space-y-1">
-        <p className="truncate px-2 py-1 text-xs text-muted-foreground">{email}</p>
+        {/* Avatar + Name */}
+        <div className="flex items-center gap-2.5 px-2 py-1.5">
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={avatarUrl}
+              alt="Avatar"
+              className="size-7 rounded-full object-cover shrink-0 border border-sidebar-border"
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+            />
+          ) : (
+            <div className="size-7 rounded-full bg-sidebar-accent flex items-center justify-center text-xs font-semibold text-sidebar-accent-foreground shrink-0 select-none">
+              {getInitials(displayName, email)}
+            </div>
+          )}
+          <div className="min-w-0">
+            {displayName && (
+              <p className="truncate text-xs font-medium text-sidebar-foreground leading-tight">{displayName}</p>
+            )}
+            <p className="truncate text-xs text-muted-foreground leading-tight">{email}</p>
+          </div>
+        </div>
         <form>
           <Button
             formAction={signOut}

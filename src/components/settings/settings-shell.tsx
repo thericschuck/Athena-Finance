@@ -22,9 +22,11 @@ type TabId = typeof TABS[number]['id']
 export function SettingsShell({
   initialProfile,
   initialSettings,
+  email,
 }: {
   initialProfile: UserProfile
   initialSettings: SettingsMap
+  email: string
 }) {
   const [active, setActive] = useState<TabId>('profil')
 
@@ -50,7 +52,7 @@ export function SettingsShell({
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        {active === 'profil'             && <ProfileForm       initialProfile={initialProfile} />}
+        {active === 'profil'             && <ProfileForm       initialProfile={initialProfile} email={email} />}
         {active === 'darstellung'        && <AppearanceForm    initialSettings={initialSettings} />}
         {active === 'finanzen'           && <FinanceForm       initialSettings={initialSettings} />}
         {active === 'trading'            && <TradingForm       initialSettings={initialSettings} />}
