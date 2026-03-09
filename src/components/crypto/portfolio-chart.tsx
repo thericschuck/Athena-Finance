@@ -13,7 +13,7 @@ export type SnapshotRow = {
   value_eur: number
 }
 
-const PERIODS = ['1M', '3M', '6M', '1J', 'All'] as const
+const PERIODS = ['1W', '1M', '3M', '6M', '1J', 'All'] as const
 type Period = typeof PERIODS[number]
 
 const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4']
@@ -21,7 +21,8 @@ const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4'
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function cutoffDate(period: Period): string {
   const d = new Date()
-  if (period === '1M') d.setMonth(d.getMonth() - 1)
+  if (period === '1W') d.setDate(d.getDate() - 7)
+  else if (period === '1M') d.setMonth(d.getMonth() - 1)
   else if (period === '3M') d.setMonth(d.getMonth() - 3)
   else if (period === '6M') d.setMonth(d.getMonth() - 6)
   else if (period === '1J') d.setFullYear(d.getFullYear() - 1)
@@ -31,7 +32,7 @@ function cutoffDate(period: Period): string {
 
 function formatXTick(dateStr: string, period: Period): string {
   const [y, m, d] = dateStr.split('-')
-  return period === '1M' || period === '3M' ? `${d}.${m}.` : `${m}/${y.slice(2)}`
+  return period === '1W' || period === '1M' || period === '3M' ? `${d}.${m}.` : `${m}/${y.slice(2)}`
 }
 
 function formatY(value: number): string {

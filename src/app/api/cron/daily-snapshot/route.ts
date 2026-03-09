@@ -127,9 +127,10 @@ function accountBucket(type: string): NwBucket {
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
-  // Verify cron secret
+  // Verify cron secret (skip in local dev)
+  const isDev = process.env.NODE_ENV === 'development'
   const token = req.headers.get('authorization')?.replace('Bearer ', '')
-  if (token !== process.env.CRON_SECRET) {
+  if (!isDev && token !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -241,7 +242,6 @@ export async function GET(req: NextRequest) {
             user_id:       uid,
             quantity:      qty,
             price_eur:     round2(priceEur),
-            value_eur:     valueEur,
             snapshot_date: date,
             portfolio_name: asset.portfolio_name ?? null,
             source:        'cron',
@@ -262,9 +262,13 @@ export async function GET(req: NextRequest) {
           }
         }
 
+        // Delete today's entries first (no unique constraint → can't upsert)
+        await supabase.from('portfolio_snapshots').delete()
+          .eq('user_id', uid).eq('snapshot_date', date)
+
         const { error: portErr } = await supabase
           .from('portfolio_snapshots')
-          .upsert(portRows as never[], { onConflict: 'asset_id,snapshot_date' })
+          .insert(portRows as never[])
 
         if (portErr) log.push(`  portfolio_snapshots ERR: ${portErr.message}`)
         else         log.push(`  portfolio_snapshots: ${portRows.length} rows`)
@@ -315,8 +319,6 @@ export async function GET(req: NextRequest) {
             user_id:         uid,
             snapshot_date:   date,
             source:          'cron',
-            net_worth,
-            total_assets,
             total_depot,
             total_crypto,
             total_checking:  round2(nw.total_checking),
@@ -328,14 +330,14 @@ export async function GET(req: NextRequest) {
           }, { onConflict: 'user_id,snapshot_date' })
 
         if (nwErr) log.push(`  net_worth_snapshots ERR: ${nwErr.message}`)
-        else       log.push(`  net_worth: €${net_worth.toFixed(0)}  (assets €${total_assets.toFixed(0)}, debts €${nw.total_debts.toFixed(0)}, crypto €${total_crypto.toFixed(0)}, depot €${total_depot.toFixed(0)})`)
+        else       log.push(`  net_worth: €${net_worth.toFixed(0)}  (assets €${total_assets.toFixed(0)}, debts €${round2(nw.total_debts).toFixed(0)}, crypto €${total_crypto.toFixed(0)}, depot €${total_depot.toFixed(0)})`)
       }
 
       // ── Step 4: Monthly Finance Summary ─────────────────────────────────────
       {
         const now        = new Date()
-        const ym         = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-        const monthStart = `${ym}-01`
+        const ym         = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+        const monthStart = ym
         const monthEnd   = now.getMonth() === 11
           ? `${now.getFullYear() + 1}-01-01`
           : `${now.getFullYear()}-${String(now.getMonth() + 2).padStart(2, '0')}-01`
@@ -370,7 +372,7 @@ export async function GET(req: NextRequest) {
           else          s.total_expenses = round2(s.total_expenses + amt)
         }
 
-        s.net_balance = round2(s.total_income - s.total_expenses)
+        const { net_balance: _nb, ...sWithoutNet } = s
 
         const { error: mfsErr } = await supabase
           .from('monthly_finance_summary')
@@ -378,7 +380,7 @@ export async function GET(req: NextRequest) {
             user_id: uid,
             month:   ym,
             source:  'cron',
-            ...s,
+            ...sWithoutNet,
           }, { onConflict: 'user_id,month' })
 
         if (mfsErr) log.push(`  monthly_finance_summary ERR: ${mfsErr.message}`)

@@ -233,30 +233,13 @@ export async function refreshPrices(): Promise<{ error?: string; updated?: numbe
     source:         'coingecko',
   }))
 
-  const snapshotInserts = matched.map(a => ({
-    asset_id:       a.id,
-    portfolio_name: a.portfolio_name,
-    price_eur:      prices[a.symbol!.toLowerCase()],
-    quantity:       a.quantity ?? 0,
-    snapshot_date:  today,
-    source:         'manual',
-    user_id:        user.id,
-  }))
-
   const ids = matched.map(a => a.id)
 
-  await Promise.all([
-    supabase.from('asset_valuations').delete().in('asset_id', ids).eq('valuation_date', today),
-    supabase.from('portfolio_snapshots').delete().in('asset_id', ids).eq('snapshot_date', today),
-  ])
+  await supabase.from('asset_valuations').delete().in('asset_id', ids).eq('valuation_date', today)
 
-  const [{ error: e1 }, { error: e2 }] = await Promise.all([
-    supabase.from('asset_valuations').insert(valuationInserts),
-    supabase.from('portfolio_snapshots').insert(snapshotInserts),
-  ])
+  const { error: e1 } = await supabase.from('asset_valuations').insert(valuationInserts)
 
   if (e1) return { error: e1.message }
-  if (e2) return { error: e2.message }
 
   revalidatePath('/crypto')
   return { updated: matched.length }

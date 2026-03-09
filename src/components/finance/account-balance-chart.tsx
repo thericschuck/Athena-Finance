@@ -10,10 +10,12 @@ export type AccountBalancePoint = {
   balance:       number
 }
 
-type FilterKey = '1M' | '3M' | '6M' | '1J' | 'All'
+type FilterKey = '1W' | '1M' | '3M' | '6M' | '1J' | 'All'
+const FILTERS: FilterKey[] = ['1W', '1M', '3M', '6M', '1J', 'All']
 
 function cutoff(key: FilterKey): Date | null {
   const d = new Date()
+  if (key === '1W') { d.setDate(d.getDate() - 7);        return d }
   if (key === '1M') { d.setMonth(d.getMonth() - 1);      return d }
   if (key === '3M') { d.setMonth(d.getMonth() - 3);      return d }
   if (key === '6M') { d.setMonth(d.getMonth() - 6);      return d }
@@ -32,6 +34,14 @@ function fmtShort(n: number) {
   if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (Math.abs(n) >= 1_000)     return `${(n / 1_000).toFixed(0)}k`
   return String(Math.round(n))
+}
+
+function xFormatter(v: string, key: FilterKey): string {
+  const d = new Date(v)
+  if (key === '1W' || key === '1M') {
+    return d.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })
+  }
+  return d.toLocaleDateString('de-DE', { month: 'short', year: '2-digit' })
 }
 
 function ChartTooltip({ active, payload, label }: {
@@ -73,7 +83,6 @@ export function AccountBalanceChart({
     )
   }
 
-  const FILTERS: FilterKey[] = ['1M', '3M', '6M', '1J', 'All']
   const isPositive = (data.at(-1)?.balance ?? 0) >= 0
 
   return (
@@ -107,19 +116,19 @@ export function AccountBalanceChart({
               <stop offset="95%" stopColor={isPositive ? 'hsl(var(--primary))' : 'hsl(var(--destructive))'} stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
           <XAxis
             dataKey="snapshot_date"
-            tickFormatter={v => new Date(v).toLocaleDateString('de-DE', { month: 'short', year: '2-digit' })}
-            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+            tickFormatter={v => xFormatter(v, filter)}
+            tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
             axisLine={false} tickLine={false} minTickGap={40}
           />
           <YAxis
             tickFormatter={v => fmtShort(v as number)}
-            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+            tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
             axisLine={false} tickLine={false} width={48}
           />
-          <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }} />
+          <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'currentColor', strokeOpacity: 0.2, strokeWidth: 1 }} />
           <Area
             type="monotone"
             dataKey="balance"

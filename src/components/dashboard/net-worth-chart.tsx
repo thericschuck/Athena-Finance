@@ -26,7 +26,8 @@ export type NetWorthSnapshot = {
   total_assets:     number | null
 }
 
-type FilterKey = '3M' | '6M' | '1J' | 'All'
+type FilterKey = '1W' | '1M' | '3M' | '6M' | '1J' | 'All'
+const FILTERS: FilterKey[] = ['1W', '1M', '3M', '6M', '1J', 'All']
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function fmtCurrency(n: number | null | undefined): string {
@@ -43,6 +44,24 @@ function fmtShort(n: number): string {
   if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (Math.abs(n) >= 1_000)     return `${(n / 1_000).toFixed(0)}k`
   return String(n)
+}
+
+function cutoff(key: FilterKey): Date | null {
+  const d = new Date()
+  if (key === '1W') { d.setDate(d.getDate() - 7);       return d }
+  if (key === '1M') { d.setMonth(d.getMonth() - 1);     return d }
+  if (key === '3M') { d.setMonth(d.getMonth() - 3);     return d }
+  if (key === '6M') { d.setMonth(d.getMonth() - 6);     return d }
+  if (key === '1J') { d.setFullYear(d.getFullYear() - 1); return d }
+  return null
+}
+
+function xFormatter(v: string, key: FilterKey): string {
+  const d = new Date(v)
+  if (key === '1W' || key === '1M') {
+    return d.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })
+  }
+  return d.toLocaleDateString('de-DE', { month: 'short', year: '2-digit' })
 }
 
 // ─── Custom Tooltip ───────────────────────────────────────────────────────────
@@ -94,17 +113,6 @@ function ChartTooltip({ active, payload, label }: {
   )
 }
 
-// ─── Filter helpers ───────────────────────────────────────────────────────────
-function cutoff(key: FilterKey): Date | null {
-  const d = new Date()
-  switch (key) {
-    case '3M': d.setMonth(d.getMonth() - 3);     return d
-    case '6M': d.setMonth(d.getMonth() - 6);     return d
-    case '1J': d.setFullYear(d.getFullYear() - 1); return d
-    default:   return null
-  }
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 export function NetWorthChart({ snapshots }: { snapshots: NetWorthSnapshot[] }) {
   const [filter, setFilter] = useState<FilterKey>('1J')
@@ -125,11 +133,8 @@ export function NetWorthChart({ snapshots }: { snapshots: NetWorthSnapshot[] }) 
     )
   }
 
-  const FILTERS: FilterKey[] = ['3M', '6M', '1J', 'All']
-
   return (
     <div className="rounded-lg border border-border bg-card p-5">
-      {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Net Worth Verlauf</p>
         <div className="flex gap-1">
@@ -149,7 +154,6 @@ export function NetWorthChart({ snapshots }: { snapshots: NetWorthSnapshot[] }) 
         </div>
       </div>
 
-      {/* Chart */}
       <ResponsiveContainer width="100%" height={220}>
         <AreaChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
           <defs>
@@ -158,25 +162,23 @@ export function NetWorthChart({ snapshots }: { snapshots: NetWorthSnapshot[] }) 
               <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}    />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
           <XAxis
             dataKey="snapshot_date"
-            tickFormatter={v =>
-              new Date(v).toLocaleDateString('de-DE', { month: 'short', year: '2-digit' })
-            }
-            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+            tickFormatter={v => xFormatter(v, filter)}
+            tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
             axisLine={false}
             tickLine={false}
             minTickGap={40}
           />
           <YAxis
             tickFormatter={v => fmtShort(v as number)}
-            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+            tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
             axisLine={false}
             tickLine={false}
             width={48}
           />
-          <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }} />
+          <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'currentColor', strokeOpacity: 0.2, strokeWidth: 1 }} />
           <Area
             type="monotone"
             dataKey="value"
