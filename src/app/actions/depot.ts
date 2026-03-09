@@ -374,36 +374,117 @@ export async function executeSavingsPlanPayment(
   }
 }
 
-// ─── Summary (for accounts page) ─────────────────────────────────────────────
+// ─── Depots ───────────────────────────────────────────────────────────────────
 
-export async function getDepotSummary(): Promise<DepotSummary | null> {
+export type Depot = {
+  id: string
+  user_id: string
+  name: string
+  isin: string
+  created_at: string
+}
+
+export async function getDepots(): Promise<Depot[]> {
   const { supabase, user } = await getAuthUser()
-  if (!user) return null
+  if (!user) return []
 
-  const isin = 'DE0008491051'
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase as any)
+    .from('depots')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
 
-  const [{ data: transactions }, { data: cache }] = await Promise.all([
+  return (data ?? []) as Depot[]
+}
+
+export async function createDepot(
+  name: string,
+  isin: string
+): Promise<{ success: boolean; error?: string; id?: string }> {
+  const { supabase, user } = await getAuthUser()
+  if (!user) return { success: false, error: 'Nicht eingeloggt' }
+
+  if (!name.trim()) return { success: false, error: 'Name ist erforderlich' }
+  if (!isin.trim()) return { success: false, error: 'ISIN ist erforderlich' }
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
+      .from('depots')
+      .insert({ user_id: user.id, name: name.trim(), isin: isin.trim().toUpperCase() })
+      .select('id')
+      .single()
+    if (error) return { success: false, error: error.message }
+    return { success: true, id: data.id }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Unbekannter Fehler' }
+  }
+}
+
+export async function deleteDepot(id: string): Promise<{ success: boolean; error?: string }> {
+  const { supabase, user } = await getAuthUser()
+  if (!user) return { success: false, error: 'Nicht eingeloggt' }
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+      .from('depots')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id)
+    if (error) return { success: false, error: error.message }
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Unbekannter Fehler' }
+  }
+}
+
+// ─── Summary (for accounts page & dashboard) ──────────────────────────────────
+
+export type DepotWithSummary = Depot & DepotSummary
+
+export async function getDepotsSummaries(): Promise<DepotWithSummary[]> {
+  const { supabase, user } = await getAuthUser()
+  if (!user) return []
+
+  const depots = await getDepots()
+  if (!depots.length) return []
+
+  const isins = depots.map(d => d.isin)
+
+  const [{ data: transactions }, { data: caches }] = await Promise.all([
     supabase
       .from('depot_transactions')
-      .select('amount_eur, shares')
-      .eq('isin', isin)
-      .eq('user_id', user.id),
+      .select('isin, amount_eur, shares')
+      .eq('user_id', user.id)
+      .in('isin', isins),
     supabase
       .from('fund_price_cache')
-      .select('price')
-      .eq('isin', isin)
-      .single(),
+      .select('isin, price')
+      .in('isin', isins),
   ])
 
-  if (!transactions || transactions.length === 0) return null
+  return depots.map(depot => {
+    const txs       = (transactions ?? []).filter(t => t.isin === depot.isin)
+    const cache     = caches?.find(c => c.isin === depot.isin)
+    const totalShares   = txs.reduce((s, t) => s + Number(t.shares), 0)
+    const totalInvested = txs.reduce((s, t) => s + Number(t.amount_eur), 0)
+    const livePrice     = cache?.price ? Number(cache.price) : null
+    const depotValue    = livePrice && totalShares > 0 ? totalShares * livePrice : null
+    const returnPct     = depotValue && totalInvested > 0
+      ? ((depotValue - totalInvested) / totalInvested) * 100
+      : null
+    return { ...depot, totalShares, totalInvested, livePrice, depotValue, returnPct }
+  })
+}
 
-  const totalShares   = transactions.reduce((s, t) => s + Number(t.shares), 0)
-  const totalInvested = transactions.reduce((s, t) => s + Number(t.amount_eur), 0)
-  const livePrice     = cache?.price ? Number(cache.price) : null
-  const depotValue    = livePrice ? totalShares * livePrice : null
-  const returnPct     = depotValue && totalInvested > 0
-    ? ((depotValue - totalInvested) / totalInvested) * 100
-    : null
+// kept for backwards compat – uses first depot with transactions
+export async function getDepotSummary(): Promise<DepotSummary | null> {
+  const summaries = await getDepotsSummaries()
+  const first = summaries.find(s => s.totalShares > 0)
+  if (!first) return null
 
+  const { totalShares, totalInvested, livePrice, depotValue, returnPct } = first
   return { totalShares, totalInvested, livePrice, depotValue, returnPct }
 }

@@ -4,7 +4,8 @@ import { AddAccountDialog, EditAccountDialog, DeleteAccountButton } from '@/comp
 import { Database } from '@/types/database'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency } from '@/lib/format'
-import { getDepotSummary } from '@/app/actions/depot'
+import { getDepotsSummaries } from '@/app/actions/depot'
+import type { DepotWithSummary } from '@/app/actions/depot'
 
 type Account = Database['public']['Tables']['accounts']['Row']
 
@@ -24,7 +25,7 @@ export default async function AccountsPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const [{ data: accounts }, { data: transactions }, settings, depot] = await Promise.all([
+  const [{ data: accounts }, { data: transactions }, settings, depots] = await Promise.all([
     supabase
       .from('accounts')
       .select('*')
@@ -36,7 +37,7 @@ export default async function AccountsPage() {
       .select('account_id, amount, type')
       .eq('user_id', user!.id),
     getSettings(user!.id),
-    getDepotSummary(),
+    getDepotsSummaries(),
   ])
 
   const locale = (settings.number_format as string) ?? 'de-DE'
@@ -69,31 +70,14 @@ export default async function AccountsPage() {
         <AccountTable accounts={accounts} balanceMap={balanceMap} locale={locale} />
       )}
 
-      {/* Depot card */}
-      {depot && (
-        <Link href="/depot" className="block">
-          <div className="rounded-lg border border-border bg-card px-4 py-3 hover:bg-muted/30 transition-colors">
-            <div className="flex items-center gap-3">
-              <span className="size-2.5 rounded-full shrink-0 bg-[#3b82f6]" />
-              <div className="min-w-0">
-                <p className="font-medium text-foreground">UniGlobal Depot</p>
-                <p className="text-xs text-muted-foreground">DE0008491051 · Raiffeisenbank</p>
-              </div>
-              <div className="ml-auto text-right shrink-0">
-                <p className="font-medium text-foreground">
-                  {depot.depotValue !== null
-                    ? fmtCurrency(depot.depotValue, 'EUR', locale, { fractionDigits: 2 })
-                    : '–'}
-                </p>
-                {depot.returnPct !== null && (
-                  <p className="text-xs" style={{ color: depot.returnPct >= 0 ? '#3fb950' : '#f85149' }}>
-                    {depot.returnPct >= 0 ? '+' : ''}{depot.returnPct.toFixed(2)} %
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </Link>
+      {/* Depot cards */}
+      {depots.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="text-sm font-semibold text-foreground">Depots</h2>
+          {depots.map(d => (
+            <DepotCard key={d.id} depot={d} locale={locale} />
+          ))}
+        </div>
       )}
     </div>
   )
@@ -194,6 +178,34 @@ function AccountRow({ account, balance, locale }: { account: Account; balance: n
         </div>
       </td>
     </tr>
+  )
+}
+
+function DepotCard({ depot, locale }: { depot: DepotWithSummary; locale: string }) {
+  return (
+    <Link href="/depot" className="block">
+      <div className="rounded-lg border border-border bg-card px-4 py-3 hover:bg-muted/30 transition-colors">
+        <div className="flex items-center gap-3">
+          <span className="size-2.5 rounded-full shrink-0 bg-[#3b82f6]" />
+          <div className="min-w-0">
+            <p className="font-medium text-foreground">{depot.name}</p>
+            <p className="text-xs text-muted-foreground font-mono">{depot.isin}</p>
+          </div>
+          <div className="ml-auto text-right shrink-0">
+            <p className="font-medium text-foreground">
+              {depot.depotValue !== null
+                ? fmtCurrency(depot.depotValue, 'EUR', locale, { fractionDigits: 2 })
+                : '–'}
+            </p>
+            {depot.returnPct !== null && (
+              <p className="text-xs" style={{ color: depot.returnPct >= 0 ? '#3fb950' : '#f85149' }}>
+                {depot.returnPct >= 0 ? '+' : ''}{depot.returnPct.toFixed(2)} %
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    </Link>
   )
 }
 

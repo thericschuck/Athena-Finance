@@ -16,8 +16,11 @@ import {
   toggleSavingsPlan,
   deleteSavingsPlan,
   executeSavingsPlanPayment,
+  getDepots,
+  createDepot,
+  deleteDepot,
 } from '@/app/actions/depot'
-import type { DepotTransaction, PortfolioHistoryPoint, SavingsPlan } from '@/app/actions/depot'
+import type { DepotTransaction, PortfolioHistoryPoint, SavingsPlan, Depot } from '@/app/actions/depot'
 import { checkDueSavingsPlans } from '@/lib/depot/savingsPlanChecker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,16 +30,11 @@ import {
   AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Trash2, Zap } from 'lucide-react'
+import { ChevronDown, Plus, Trash2, Zap } from 'lucide-react'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const DEFAULT_FUND = {
-  isin: 'DE0008491051',
-  name: 'UniGlobal',
-  currency: 'EUR',
-  defaultMonthlyAmount: 50,
-}
+const DEFAULT_MONTHLY_AMOUNT = 50
 
 type FormTab   = 'deposit' | 'initial' | 'savings_plan'
 type ChartTab  = 'Wert' | 'Anteile' | 'Cost Basis' | 'Rendite'
@@ -117,52 +115,94 @@ function ChartTooltip({ active, payload, label }: {
 export function DepotDashboard() {
   const today = new Date().toISOString().split('T')[0]
 
-  // Live price
-  const [livePrice, setLivePrice]             = useState<number | null>(null)
-  const [livePriceFetchedAt, setFetchedAt]    = useState<string | null>(null)
-  const [isLive, setIsLive]                   = useState(false)
-  const livePricePreFilled                    = useRef(false)
+  // ─── Depot management ───────────────────────────────────────────────────────
+  const [depots, setDepots]               = useState<Depot[]>([])
+  const [activeDepot, setActiveDepot]     = useState<Depot | null>(null)
+  const [depotsLoading, setDepotsLoading] = useState(true)
+  const [showDepotPicker, setShowDepotPicker]   = useState(false)
+  const [showNewDepotForm, setShowNewDepotForm] = useState(false)
+  const [newDepotName, setNewDepotName]   = useState('')
+  const [newDepotIsin, setNewDepotIsin]   = useState('')
+  const [newDepotError, setNewDepotError] = useState<string | null>(null)
+  const [newDepotBusy, setNewDepotBusy]   = useState(false)
+  const [depotToDelete, setDepotToDelete] = useState<Depot | null>(null)
+  const depotPickerRef = useRef<HTMLDivElement>(null)
 
-  // Form tabs
+  // ─── Live price ─────────────────────────────────────────────────────────────
+  const [livePrice, setLivePrice]          = useState<number | null>(null)
+  const [livePriceFetchedAt, setFetchedAt] = useState<string | null>(null)
+  const [isLive, setIsLive]                = useState(false)
+  const livePricePreFilled                 = useRef(false)
+
+  // ─── Form tabs ──────────────────────────────────────────────────────────────
   const [formTab, setFormTab] = useState<FormTab>('deposit')
 
-  // Deposit form
+  // ─── Deposit form ───────────────────────────────────────────────────────────
   const [depDate, setDepDate]     = useState(today)
-  const [depAmount, setDepAmount] = useState(String(DEFAULT_FUND.defaultMonthlyAmount))
+  const [depAmount, setDepAmount] = useState(String(DEFAULT_MONTHLY_AMOUNT))
   const [depPrice, setDepPrice]   = useState('')
   const [depNotes, setDepNotes]   = useState('')
   const [depError, setDepError]   = useState<string | null>(null)
   const [depBusy, setDepBusy]     = useState(false)
 
-  // Initial holding form
+  // ─── Initial holding form ───────────────────────────────────────────────────
   const [initShares, setInitShares] = useState('')
   const [initPrice, setInitPrice]   = useState('')
   const [initDate, setInitDate]     = useState(today)
   const [initError, setInitError]   = useState<string | null>(null)
   const [initBusy, setInitBusy]     = useState(false)
 
-  // Savings plan form
-  const [planAmount, setPlanAmount] = useState(String(DEFAULT_FUND.defaultMonthlyAmount))
+  // ─── Savings plan form ──────────────────────────────────────────────────────
+  const [planAmount, setPlanAmount] = useState(String(DEFAULT_MONTHLY_AMOUNT))
   const [planDay, setPlanDay]       = useState('1')
   const [planStart, setPlanStart]   = useState(today)
   const [planError, setPlanError]   = useState<string | null>(null)
   const [planBusy, setPlanBusy]     = useState(false)
 
-  // Data
+  // ─── Data ───────────────────────────────────────────────────────────────────
   const [transactions, setTransactions] = useState<DepotTransaction[]>([])
   const [history, setHistory]           = useState<PortfolioHistoryPoint[]>([])
   const [savingsPlans, setSavingsPlans] = useState<SavingsPlan[]>([])
   const [duePlans, setDuePlans]         = useState<SavingsPlan[]>([])
-  const [loading, setLoading]           = useState(true)
+  const [loading, setLoading]           = useState(false)
 
-  // Chart
+  // ─── Chart ──────────────────────────────────────────────────────────────────
   const [chartTab, setChartTab] = useState<ChartTab>('Wert')
 
-  // ─── Live price polling ─────────────────────────────────────────────────────
+  // ─── Load depots (once on mount) ────────────────────────────────────────────
   useEffect(() => {
+    getDepots().then(list => {
+      setDepots(list)
+      if (list.length > 0) setActiveDepot(list[0])
+      setDepotsLoading(false)
+    })
+  }, [])
+
+  // ─── Close depot picker on outside click ────────────────────────────────────
+  useEffect(() => {
+    if (!showDepotPicker) return
+    function handleOutside(e: MouseEvent) {
+      if (depotPickerRef.current && !depotPickerRef.current.contains(e.target as Node)) {
+        setShowDepotPicker(false)
+        setShowNewDepotForm(false)
+        setNewDepotError(null)
+      }
+    }
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [showDepotPicker])
+
+  // ─── Live price polling (restarts when active depot changes) ────────────────
+  useEffect(() => {
+    if (!activeDepot) return
+    setLivePrice(null)
+    setFetchedAt(null)
+    setIsLive(false)
+    livePricePreFilled.current = false
+
     const fetchPrice = async () => {
       try {
-        const res  = await fetch(`/api/depot/live-price?isin=${DEFAULT_FUND.isin}`)
+        const res  = await fetch(`/api/depot/live-price?isin=${activeDepot.isin}`)
         const data = await res.json()
         if (data.price) {
           setLivePrice(Number(data.price))
@@ -178,22 +218,24 @@ export function DepotDashboard() {
     fetchPrice()
     const interval = setInterval(fetchPrice, 5 * 60_000)
     return () => clearInterval(interval)
-  }, [])
+  }, [activeDepot])
 
-  // ─── Load data ──────────────────────────────────────────────────────────────
+  // ─── Load transaction data ───────────────────────────────────────────────────
   const loadData = useCallback(async () => {
+    if (!activeDepot) return
     setLoading(true)
-    const [txs, hist, plans] = await Promise.all([
-      getDepotTransactions(DEFAULT_FUND.isin),
-      getPortfolioHistory(DEFAULT_FUND.isin),
+    const [txs, hist, allPlans] = await Promise.all([
+      getDepotTransactions(activeDepot.isin),
+      getPortfolioHistory(activeDepot.isin),
       getSavingsPlans(),
     ])
+    const plans = allPlans.filter(p => p.isin === activeDepot.isin)
     setTransactions(txs)
     setHistory(hist)
     setSavingsPlans(plans)
     setDuePlans(checkDueSavingsPlans(plans, txs))
     setLoading(false)
-  }, [])
+  }, [activeDepot])
 
   useEffect(() => { loadData() }, [loadData])
 
@@ -221,21 +263,51 @@ export function DepotDashboard() {
   }
 
   // ─── Handlers ───────────────────────────────────────────────────────────────
+  async function handleDeleteDepot() {
+    if (!depotToDelete) return
+    await deleteDepot(depotToDelete.id)
+    const list = await getDepots()
+    setDepots(list)
+    if (activeDepot?.id === depotToDelete.id) {
+      setActiveDepot(list[0] ?? null)
+    }
+    setDepotToDelete(null)
+  }
+
+  async function handleCreateDepot(e: React.FormEvent) {
+    e.preventDefault()
+    setNewDepotError(null)
+    setNewDepotBusy(true)
+    const result = await createDepot(newDepotName.trim(), newDepotIsin.trim())
+    setNewDepotBusy(false)
+    if (!result.success) { setNewDepotError(result.error ?? 'Fehler'); return }
+    const list = await getDepots()
+    setDepots(list)
+    const created = list.find(d => d.id === result.id)
+    if (created) setActiveDepot(created)
+    setNewDepotName('')
+    setNewDepotIsin('')
+    setShowNewDepotForm(false)
+    setShowDepotPicker(false)
+  }
+
   async function handleDeposit(e: React.FormEvent) {
     e.preventDefault(); setDepError(null); setDepBusy(true)
+    if (!activeDepot) return
     const result = await addManualDeposit(
-      DEFAULT_FUND.isin, DEFAULT_FUND.name,
+      activeDepot.isin, activeDepot.name,
       parseFloat(depAmount), parseFloat(depPrice), depDate, depNotes || undefined
     )
     setDepBusy(false)
     if (!result.success) { setDepError(result.error ?? 'Fehler'); return }
-    setDepAmount(String(DEFAULT_FUND.defaultMonthlyAmount))
+    setDepAmount(String(DEFAULT_MONTHLY_AMOUNT))
     setDepNotes('')
     await loadData()
   }
 
   async function handleInitial(e: React.FormEvent) {
     e.preventDefault(); setInitError(null); setInitBusy(true)
+    if (!activeDepot) return
     const priceToUse = initPrice ? parseFloat(initPrice) : livePrice
     if (!priceToUse) {
       setInitError('Kein Live-Kurs verfügbar – bitte Kurs manuell eingeben')
@@ -243,7 +315,7 @@ export function DepotDashboard() {
       return
     }
     const result = await addInitialHolding(
-      DEFAULT_FUND.isin, DEFAULT_FUND.name,
+      activeDepot.isin, activeDepot.name,
       parseFloat(initShares), priceToUse, initDate
     )
     setInitBusy(false)
@@ -254,13 +326,14 @@ export function DepotDashboard() {
 
   async function handleCreatePlan(e: React.FormEvent) {
     e.preventDefault(); setPlanError(null); setPlanBusy(true)
+    if (!activeDepot) return
     const result = await createSavingsPlan(
-      DEFAULT_FUND.isin, DEFAULT_FUND.name,
+      activeDepot.isin, activeDepot.name,
       parseFloat(planAmount), parseInt(planDay), planStart
     )
     setPlanBusy(false)
     if (!result.success) { setPlanError(result.error ?? 'Fehler'); return }
-    setPlanAmount(String(DEFAULT_FUND.defaultMonthlyAmount))
+    setPlanAmount(String(DEFAULT_MONTHLY_AMOUNT))
     setPlanDay('1')
     setPlanStart(today)
     await loadData()
@@ -294,15 +367,132 @@ export function DepotDashboard() {
     ? { dot: 'bg-[#3fb950]', label: 'LIVE',        color: 'text-[#3fb950]' }
     : { dot: 'bg-[#e3b341]', label: 'Verzögert',   color: 'text-[#e3b341]' }
 
+  // ─── Empty state: no depots yet ──────────────────────────────────────────────
+  if (!depotsLoading && depots.length === 0) {
+    return (
+      <div className="p-4 sm:p-8 min-h-screen bg-[#0d1117] flex items-center justify-center">
+        <div className="rounded-xl border border-[#30363d] bg-[#161b22] p-8 max-w-sm w-full">
+          <h2 className="text-lg font-semibold text-[#c9d1d9] mb-1">Erstes Depot anlegen</h2>
+          <p className="text-sm text-[#8b949e] mb-5">
+            Trage Name und ISIN deines Fonds ein, um zu beginnen.
+          </p>
+          <form onSubmit={handleCreateDepot} className="space-y-3">
+            <input
+              placeholder="Name (z.B. UniGlobal Depot)"
+              value={newDepotName} onChange={e => setNewDepotName(e.target.value)}
+              className="w-full text-sm rounded-md bg-[#0d1117] border border-[#30363d] text-[#c9d1d9] px-3 py-2 outline-none focus:border-[#58a6ff]"
+              required
+            />
+            <input
+              placeholder="ISIN (z.B. DE0008491051)"
+              value={newDepotIsin} onChange={e => setNewDepotIsin(e.target.value)}
+              className="w-full text-sm rounded-md bg-[#0d1117] border border-[#30363d] text-[#c9d1d9] px-3 py-2 outline-none focus:border-[#58a6ff] font-mono"
+              required
+            />
+            {newDepotError && <p className="text-xs text-[#f85149]">{newDepotError}</p>}
+            <button
+              type="submit" disabled={newDepotBusy}
+              className="w-full rounded-md bg-[#238636] hover:bg-[#2ea043] text-white text-sm px-3 py-2 transition-colors disabled:opacity-50"
+            >
+              {newDepotBusy ? 'Anlegen …' : 'Depot anlegen'}
+            </button>
+          </form>
+        </div>
+      </div>
+    )
+  }
+
   // ─── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="p-4 sm:p-8 min-h-screen bg-[#0d1117]">
 
       {/* Header */}
       <div className="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-[#c9d1d9]">Depot</h1>
-          <p className="text-sm text-[#8b949e] mt-0.5">{DEFAULT_FUND.name} · {DEFAULT_FUND.isin}</p>
+
+        {/* Depot switcher */}
+        <div className="relative" ref={depotPickerRef}>
+          <button
+            onClick={() => { setShowDepotPicker(!showDepotPicker); setShowNewDepotForm(false) }}
+            className="flex items-start gap-1 text-left"
+          >
+            <div>
+              <h1 className="text-xl font-semibold text-[#c9d1d9]">Depot</h1>
+              <p className="text-sm text-[#8b949e] mt-0.5 flex items-center gap-1">
+                {activeDepot ? `${activeDepot.name} · ${activeDepot.isin}` : '—'}
+                <ChevronDown className={`size-3 transition-transform ${showDepotPicker ? 'rotate-180' : ''}`} />
+              </p>
+            </div>
+          </button>
+
+          {/* Dropdown */}
+          {showDepotPicker && (
+            <div className="absolute top-full left-0 mt-2 w-72 rounded-xl border border-[#30363d] bg-[#161b22] shadow-xl z-50 overflow-hidden">
+              {depots.map(d => (
+                <div
+                  key={d.id}
+                  className={`flex items-center group transition-colors hover:bg-[#30363d]/60 ${d.id === activeDepot?.id ? 'bg-[#30363d]/40' : ''}`}
+                >
+                  <button
+                    onClick={() => { setActiveDepot(d); setShowDepotPicker(false) }}
+                    className="flex-1 px-4 py-3 text-left"
+                  >
+                    <p className="text-sm text-[#c9d1d9] font-medium">{d.name}</p>
+                    <p className="text-xs text-[#8b949e] font-mono">{d.isin}</p>
+                  </button>
+                  <button
+                    onClick={e => { e.stopPropagation(); setDepotToDelete(d); setShowDepotPicker(false) }}
+                    className="pr-3 opacity-0 group-hover:opacity-100 transition-opacity text-[#8b949e] hover:text-[#f85149]"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+              ))}
+
+              <div className="border-t border-[#30363d]" />
+
+              {!showNewDepotForm ? (
+                <button
+                  onClick={() => setShowNewDepotForm(true)}
+                  className="w-full px-4 py-3 text-left text-sm text-[#58a6ff] hover:bg-[#30363d]/60 transition-colors flex items-center gap-2"
+                >
+                  <Plus className="size-4" />
+                  Neues Depot
+                </button>
+              ) : (
+                <form onSubmit={handleCreateDepot} className="p-4 space-y-2">
+                  <p className="text-xs font-medium text-[#c9d1d9] mb-2">Neues Depot</p>
+                  <input
+                    placeholder="Name (z.B. UniGlobal)"
+                    value={newDepotName} onChange={e => setNewDepotName(e.target.value)}
+                    className="w-full text-sm rounded-md bg-[#0d1117] border border-[#30363d] text-[#c9d1d9] px-3 py-1.5 outline-none focus:border-[#58a6ff]"
+                    autoFocus required
+                  />
+                  <input
+                    placeholder="ISIN"
+                    value={newDepotIsin} onChange={e => setNewDepotIsin(e.target.value)}
+                    className="w-full text-sm rounded-md bg-[#0d1117] border border-[#30363d] text-[#c9d1d9] px-3 py-1.5 outline-none focus:border-[#58a6ff] font-mono"
+                    required
+                  />
+                  {newDepotError && <p className="text-xs text-[#f85149]">{newDepotError}</p>}
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      type="submit" disabled={newDepotBusy}
+                      className="flex-1 text-xs rounded-md bg-[#238636] hover:bg-[#2ea043] text-white px-3 py-1.5 transition-colors disabled:opacity-50"
+                    >
+                      {newDepotBusy ? 'Anlegen …' : 'Anlegen'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowNewDepotForm(false); setNewDepotError(null) }}
+                      className="text-xs rounded-md bg-[#30363d] hover:bg-[#30363d]/80 text-[#c9d1d9] px-3 py-1.5 transition-colors"
+                    >
+                      Abbrechen
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Live price badge */}
@@ -465,7 +655,6 @@ export function DepotDashboard() {
               {/* ── Tab: Sparplan ───────────────────────────────────────────── */}
               {formTab === 'savings_plan' && (
                 <div className="space-y-5">
-                  {/* New plan form */}
                   <form onSubmit={handleCreatePlan} className="space-y-3">
                     <p className="text-xs font-medium text-[#c9d1d9]">Neuen Sparplan anlegen</p>
                     <div>
@@ -493,7 +682,6 @@ export function DepotDashboard() {
                     </Button>
                   </form>
 
-                  {/* Existing plans */}
                   {savingsPlans.length > 0 && (
                     <div className="space-y-2 border-t border-[#30363d] pt-4">
                       <p className="text-xs font-medium text-[#c9d1d9]">Aktive Sparpläne</p>
@@ -722,6 +910,22 @@ export function DepotDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Delete depot confirmation */}
+      <AlertDialog open={depotToDelete !== null} onOpenChange={open => { if (!open) setDepotToDelete(null) }}>
+        <AlertDialogContent className="bg-[#161b22] border-[#30363d]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[#c9d1d9]">Depot löschen?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[#8b949e]">
+              {depotToDelete?.name} ({depotToDelete?.isin}) wird dauerhaft gelöscht. Transaktionen bleiben erhalten.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-[#30363d] text-[#c9d1d9] bg-transparent hover:bg-[#30363d]">Abbrechen</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteDepot} className="bg-[#da3633] hover:bg-[#f85149] text-white border-0">Löschen</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

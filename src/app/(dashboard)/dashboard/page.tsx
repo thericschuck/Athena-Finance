@@ -6,6 +6,7 @@ import { RebalancingAlert } from '@/components/dashboard/rebalancing-alert'
 import { FixedCostsWidget } from '@/components/finance/fixed-costs-widget'
 import { NetWorthChart } from '@/components/dashboard/net-worth-chart'
 import { getStrategySignals, getPortfolioAllocations, getLastRebalancing } from '@/app/(dashboard)/crypto/actions'
+import { getDepotsSummaries } from '@/app/actions/depot'
 import { calculateRebalancing } from '@/lib/crypto/rebalancing'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency, fmtDateShort } from '@/lib/format'
@@ -80,6 +81,7 @@ export default async function DashboardPage() {
     cryptoSignals,
     cryptoAllocations,
     lastRebalancing,
+    depotSummaries,
   ] = await Promise.all([
     supabase.from('accounts').select('id, name, type, color, currency, is_active').eq('user_id', user!.id).order('sort_order'),
     supabase.from('transactions').select('account_id, type, amount, currency').eq('user_id', user!.id),
@@ -91,6 +93,7 @@ export default async function DashboardPage() {
     getStrategySignals(user!.id),
     getPortfolioAllocations(user!.id),
     getLastRebalancing(user!.id),
+    getDepotsSummaries(),
   ])
 
   // Net worth snapshots for chart (last 2 years)
@@ -157,7 +160,8 @@ export default async function DashboardPage() {
   const borrowedTotal = (debtsRaw ?? []).filter(d => d.type === 'borrowed').reduce((s, d) => s + (d.outstanding ?? 0), 0)
   const lentTotal     = (debtsRaw ?? []).filter(d => d.type === 'lent').reduce((s, d) => s + (d.outstanding ?? 0), 0)
   const savingsTotal  = goals.reduce((s, g) => s + (g.current_amount ?? 0), 0)
-  const netWorth      = financeTotal + cryptoTotal + savingsTotal + lentTotal - borrowedTotal
+  const depotTotal    = depotSummaries.reduce((s, d) => s + (d.depotValue ?? 0), 0)
+  const netWorth      = financeTotal + cryptoTotal + savingsTotal + lentTotal + depotTotal - borrowedTotal
 
   // ── Rebalancing ───────────────────────────────────────────────────────────
   const rebResult        = calculateRebalancing(cryptoSignals, cryptoAllocations, cryptoAssets, cryptoTotal)
@@ -215,6 +219,7 @@ export default async function DashboardPage() {
           <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2.5">
             {([
               ['Finanzen',        financeTotal,   'neutral'],
+              ['Depot',           depotTotal,     'neutral'],
               ['Krypto',          cryptoTotal,    'neutral'],
               ['Sparziele',       savingsTotal,   'neutral'],
               ['Ich schulde',     borrowedTotal,  'red'],
