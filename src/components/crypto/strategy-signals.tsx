@@ -137,7 +137,7 @@ function AssetWeightTable({
             defaultValue={newCoingeckoId || null}
             onChange={coin => {
               setNewSymbol(coin.symbol.toUpperCase())
-              setNewCoingeckoId(coin.coingecko_id)
+              setNewCoingeckoId(coin.coingecko_id ?? '')
             }}
           />
         </div>
