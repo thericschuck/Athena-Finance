@@ -284,6 +284,28 @@ export async function GET(req: NextRequest) {
       total_depot  = round2(total_depot)
       total_crypto = round2(total_crypto)
 
+      // ── Step 2b: Depot-Modul (depots + depot_transactions + fund_price_cache) ─
+      {
+        const [{ data: depotTxs }, { data: priceCache }] = await Promise.all([
+          supabase.from('depot_transactions').select('isin, shares').eq('user_id', uid),
+          supabase.from('fund_price_cache').select('isin, price'),
+        ])
+
+        if (depotTxs?.length) {
+          const priceMap = new Map((priceCache ?? []).map(p => [p.isin, Number(p.price)]))
+          const sharesByIsin = new Map<string, number>()
+          for (const tx of depotTxs) {
+            sharesByIsin.set(tx.isin, (sharesByIsin.get(tx.isin) ?? 0) + Number(tx.shares))
+          }
+          let depotModuleValue = 0
+          for (const [isin, shares] of sharesByIsin) {
+            depotModuleValue += shares * (priceMap.get(isin) ?? 0)
+          }
+          total_depot = round2(total_depot + depotModuleValue)
+          log.push(`  depot_module: €${depotModuleValue.toFixed(0)}`)
+        }
+      }
+
       // ── Step 3: Net Worth Snapshot ───────────────────────────────────────────
       {
         const nw = {

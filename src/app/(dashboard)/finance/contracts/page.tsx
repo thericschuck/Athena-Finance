@@ -7,20 +7,20 @@ import {
   DeleteContractButton,
 } from '@/components/finance/contract-form'
 import { CONTRACT_TYPES, FREQUENCIES, TRANSFER_TYPES } from '@/lib/finance/contract-constants'
-import { AlertTriangle, RefreshCw } from 'lucide-react'
+import { AlertTriangle, RefreshCw, TrendingUp } from 'lucide-react'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency as fmtCurrencyLib, fmtDate as fmtDateLib } from '@/lib/format'
+import type { SavingsPlan } from '@/app/actions/depot'
 
 type Contract = Database['public']['Tables']['contracts']['Row'] & { to_account_id?: string | null }
 
 // ─── Date utilities ───────────────────────────────────────────────────────────
-function nextBillingDate(startDate: string, frequency: string): Date {
+function nextBillingDate(startDate: string, frequency: string, billingDay?: number | null): Date {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
   const start = new Date(startDate)
   start.setHours(0, 0, 0, 0)
-  if (start > today) return start
 
   const intervalDays: Record<string, number> = { weekly: 7, biweekly: 14 }
   const intervalMonths: Record<string, number> = {
@@ -28,6 +28,7 @@ function nextBillingDate(startDate: string, frequency: string): Date {
   }
 
   if (intervalDays[frequency]) {
+    if (start > today) return start
     const days = intervalDays[frequency]
     const diff = Math.floor((today.getTime() - start.getTime()) / 86400000)
     const next = new Date(start)
@@ -36,6 +37,23 @@ function nextBillingDate(startDate: string, frequency: string): Date {
   }
 
   const months = intervalMonths[frequency] ?? 1
+
+  if (billingDay && billingDay >= 1 && billingDay <= 31) {
+    // Nächste Occurrence des Abrechnungstags (frühestens morgen, frühestens ab Startdatum)
+    const earliest = start > today
+      ? start
+      : new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1)
+
+    // Versuche aktuellen Monat
+    const thisMonth = new Date(today.getFullYear(), today.getMonth(), billingDay)
+    if (thisMonth >= earliest) return thisMonth
+
+    // Nächster Intervall-Zyklus
+    return new Date(today.getFullYear(), today.getMonth() + months, billingDay)
+  }
+
+  // Kein billing_day: aus start_date-Muster berechnen
+  if (start > today) return start
   const monthsDiff =
     (today.getFullYear() - start.getFullYear()) * 12 +
     (today.getMonth() - start.getMonth())
@@ -86,16 +104,18 @@ export default async function ContractsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [{ data: contracts }, { data: accounts }, { data: categories }, settings] = await Promise.all([
+  const [{ data: contracts }, { data: accounts }, { data: categories }, { data: savingsPlansRaw }, settings] = await Promise.all([
     supabase.from('contracts').select('*').eq('user_id', user!.id).order('name'),
     supabase.from('accounts').select('id, name').eq('user_id', user!.id).order('sort_order'),
     supabase.from('categories').select('id, name').eq('user_id', user!.id).order('name'),
+    supabase.from('savings_plans').select('*').eq('user_id', user!.id).order('created_at'),
     getSettings(user!.id),
   ])
 
   const locale = (settings.number_format as string) ?? 'de-DE'
   const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
 
+  const savingsPlans = (savingsPlansRaw ?? []) as SavingsPlan[]
   const all    = (contracts ?? []) as Contract[]
   const active = all.filter(c => c.is_active)
   const accs   = accounts ?? []
@@ -157,7 +177,7 @@ export default async function ContractsPage() {
         </div>
       )}
 
-      {all.length === 0 ? (
+      {all.length === 0 && savingsPlans.length === 0 ? (
         <EmptyState />
       ) : (
         <div className="space-y-8">
@@ -173,6 +193,27 @@ export default async function ContractsPage() {
                 dateFormat={dateFormat}
               />
             )
+          )}
+
+          {/* Depot-Sparpläne (read-only) */}
+          {savingsPlans.length > 0 && (
+            <section className="space-y-2">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground px-1">
+                Depot-Sparpläne
+                <span className="ml-2 font-normal normal-case tracking-normal text-muted-foreground/70">
+                  ({savingsPlans.length})
+                </span>
+              </h2>
+              <div className="rounded-lg border border-border bg-card overflow-hidden">
+                <table className="w-full text-sm">
+                  <tbody className="divide-y divide-border">
+                    {savingsPlans.map(plan => (
+                      <SavingsPlanRow key={plan.id} plan={plan} locale={locale} />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
           )}
         </div>
       )}
@@ -223,7 +264,7 @@ function ContractRow({
   dateFormat: string
 }) {
   const expired    = isNoticeExpired(c)
-  const nextDate   = c.is_active ? nextBillingDate(c.start_date, c.frequency) : null
+  const nextDate   = c.is_active ? nextBillingDate(c.start_date, c.frequency, c.billing_day) : null
   const isTransfer = TRANSFER_TYPES.has(c.type)
   const fromAcc    = isTransfer ? accounts.find(a => a.id === c.account_id) : null
   const toAcc      = isTransfer ? accounts.find(a => a.id === c.to_account_id) : null
@@ -291,6 +332,39 @@ function ContractRow({
           <DeleteContractButton contract={c} />
         </div>
       </td>
+    </tr>
+  )
+}
+
+// ─── Depot-Sparplan Row (read-only) ───────────────────────────────────────────
+function SavingsPlanRow({ plan, locale }: { plan: SavingsPlan; locale: string }) {
+  const today = new Date()
+  const nextExecution = new Date(today.getFullYear(), today.getMonth(), plan.execution_day)
+  if (nextExecution <= today) nextExecution.setMonth(nextExecution.getMonth() + 1)
+
+  return (
+    <tr className={`hover:bg-muted/30 transition-colors ${!plan.is_active ? 'opacity-50' : ''}`}>
+      <td className="px-4 py-3 min-w-0">
+        <div className="flex items-center gap-2">
+          <TrendingUp className="size-3.5 text-muted-foreground shrink-0" />
+          <span className="font-medium text-foreground">{plan.fund_name}</span>
+          <span className="text-xs text-muted-foreground font-mono">{plan.isin}</span>
+          {!plan.is_active && (
+            <span className="text-xs rounded-full bg-muted px-2 py-0.5 text-muted-foreground">Pausiert</span>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground mt-0.5 pl-5">
+          Nächste Ausführung: {nextExecution.toLocaleDateString('de-DE')} · Tag {plan.execution_day} des Monats
+        </p>
+      </td>
+      <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap">
+        <span className="font-medium">{fmtCurrencyLib(plan.monthly_amount, 'EUR', locale)}</span>
+        <span className="text-muted-foreground text-xs ml-1">/ Monat</span>
+      </td>
+      <td className="px-4 py-3 whitespace-nowrap">
+        <span className="text-xs text-muted-foreground">Depot · Automatisch</span>
+      </td>
+      <td className="px-4 py-3 w-20" />
     </tr>
   )
 }
