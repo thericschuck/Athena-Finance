@@ -1,8 +1,6 @@
 import Link from 'next/link'
 import { TrendingUp, TrendingDown } from 'lucide-react'
-
-const fmtEur = (n: number) =>
-  new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
+import { fmtCurrency } from '@/lib/format'
 
 export interface CryptoWidgetTopAsset {
   symbol: string
@@ -16,9 +14,11 @@ interface Props {
   rebalancingVolume: number
   lastRebalancing:   string | null
   topAssets:         CryptoWidgetTopAsset[]
+  locale:            string
 }
 
-export function CryptoWidget({ totalValue, totalCost, rebalancingVolume, lastRebalancing, topAssets }: Props) {
+export function CryptoWidget({ totalValue, totalCost, rebalancingVolume, lastRebalancing, topAssets, locale }: Props) {
+  const fmtEur = (n: number) => fmtCurrency(n, 'EUR', locale)
   const pnl       = totalCost != null && totalCost > 0 ? totalValue - totalCost : null
   const pnlPct    = pnl != null && totalCost && totalCost > 0 ? (pnl / totalCost) * 100 : null
   const isPositive = pnl != null && pnl >= 0

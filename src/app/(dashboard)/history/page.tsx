@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { getSettings } from '@/lib/settings'
+import { fmtCurrency, fmtNumber, fmtDate as fmtDateLib } from '@/lib/format'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const TABS     = ['networth', 'accounts', 'portfolio', 'monthly'] as const
@@ -14,26 +16,18 @@ const TAB_LABELS: Record<Tab, string> = {
 }
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
-function fmtEur(n: number | null | undefined): string {
+function fmtEur(n: number | null | undefined, locale: string): string {
   if (n == null) return '—'
-  return new Intl.NumberFormat('de-DE', {
-    style: 'currency', currency: 'EUR',
-    minimumFractionDigits: 0, maximumFractionDigits: 0,
-  }).format(n)
+  return fmtCurrency(n, 'EUR', locale, { fractionDigits: 0 })
 }
 
-function fmtNum(n: number | null | undefined, decimals = 4): string {
+function fmtNum(n: number | null | undefined, decimals = 4, locale = 'de-DE'): string {
   if (n == null) return '—'
-  return new Intl.NumberFormat('de-DE', {
-    minimumFractionDigits: 0, maximumFractionDigits: decimals,
-  }).format(n)
+  return fmtNumber(n, locale, decimals)
 }
 
-function fmtDate(s: string | null): string {
-  if (!s) return '—'
-  return new Date(s).toLocaleDateString('de-DE', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-  })
+function fmtDate(s: string | null, dateFormat: string): string {
+  return fmtDateLib(s, dateFormat)
 }
 
 // ─── Shared UI primitives ─────────────────────────────────────────────────────
@@ -101,6 +95,10 @@ export default async function HistoryPage({
   const { data: { user } } = await supabase.auth.getUser()
   const uid = user!.id
 
+  const settings = await getSettings(uid)
+  const locale = (settings.number_format as string) ?? 'de-DE'
+  const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
+
   // ── Fetch data for active tab ──────────────────────────────────────────────
   let content: React.ReactNode = null
 
@@ -136,19 +134,19 @@ export default async function HistoryPage({
           <tbody>
             {(data ?? []).map((r, i) => (
               <tr key={r.id} className={`border-b border-border/50 hover:bg-muted/20 ${i % 2 === 0 ? '' : 'bg-muted/10'}`}>
-                <Td>{fmtDate(r.snapshot_date)}</Td>
+                <Td>{fmtDate(r.snapshot_date, dateFormat)}</Td>
                 <Td right mono>
-                  <span className="font-semibold">{fmtEur(r.net_worth)}</span>
+                  <span className="font-semibold">{fmtEur(r.net_worth, locale)}</span>
                 </Td>
-                <Td right mono>{fmtEur(r.total_assets)}</Td>
-                <Td right mono dim>{fmtEur(r.total_checking)}</Td>
-                <Td right mono dim>{fmtEur(r.total_savings)}</Td>
-                <Td right mono dim>{fmtEur(r.total_cash)}</Td>
-                <Td right mono dim>{fmtEur(r.total_depot)}</Td>
-                <Td right mono dim>{fmtEur(r.total_crypto)}</Td>
-                <Td right mono dim>{fmtEur(r.total_bausparer)}</Td>
-                <Td right mono dim>{fmtEur(r.total_business)}</Td>
-                <Td right mono red>{fmtEur(r.total_debts)}</Td>
+                <Td right mono>{fmtEur(r.total_assets, locale)}</Td>
+                <Td right mono dim>{fmtEur(r.total_checking, locale)}</Td>
+                <Td right mono dim>{fmtEur(r.total_savings, locale)}</Td>
+                <Td right mono dim>{fmtEur(r.total_cash, locale)}</Td>
+                <Td right mono dim>{fmtEur(r.total_depot, locale)}</Td>
+                <Td right mono dim>{fmtEur(r.total_crypto, locale)}</Td>
+                <Td right mono dim>{fmtEur(r.total_bausparer, locale)}</Td>
+                <Td right mono dim>{fmtEur(r.total_business, locale)}</Td>
+                <Td right mono red>{fmtEur(r.total_debts, locale)}</Td>
                 <Td dim>{r.source}</Td>
               </tr>
             ))}
@@ -196,7 +194,7 @@ export default async function HistoryPage({
               const neg  = r.balance < 0
               return (
                 <tr key={r.id} className={`border-b border-border/50 hover:bg-muted/20 ${i % 2 === 0 ? '' : 'bg-muted/10'}`}>
-                  <Td>{fmtDate(r.snapshot_date)}</Td>
+                  <Td>{fmtDate(r.snapshot_date, dateFormat)}</Td>
                   <Td>
                     <span className="flex items-center gap-2">
                       {acct?.color && (
@@ -207,7 +205,7 @@ export default async function HistoryPage({
                   </Td>
                   <Td dim>{acct?.type ?? '—'}</Td>
                   <Td right mono red={neg}>
-                    <span className={neg ? '' : 'font-medium'}>{fmtNum(r.balance, 2)}</span>
+                    <span className={neg ? '' : 'font-medium'}>{fmtNum(r.balance, 2, locale)}</span>
                   </Td>
                   <Td dim>{r.currency}</Td>
                   <Td dim>{r.source}</Td>
@@ -260,15 +258,15 @@ export default async function HistoryPage({
               const asset = assetMap.get(r.asset_id)
               return (
                 <tr key={r.id} className={`border-b border-border/50 hover:bg-muted/20 ${i % 2 === 0 ? '' : 'bg-muted/10'}`}>
-                  <Td>{fmtDate(r.snapshot_date)}</Td>
+                  <Td>{fmtDate(r.snapshot_date, dateFormat)}</Td>
                   <Td>{asset?.name ?? '—'}</Td>
                   <Td dim>{asset?.symbol ?? '—'}</Td>
                   <Td dim>{asset?.type ?? '—'}</Td>
                   <Td dim>{r.portfolio_name ?? '—'}</Td>
-                  <Td right mono>{fmtNum(r.quantity, 6)}</Td>
-                  <Td right mono dim>{fmtEur(r.price_eur)}</Td>
+                  <Td right mono>{fmtNum(r.quantity, 6, locale)}</Td>
+                  <Td right mono dim>{fmtEur(r.price_eur, locale)}</Td>
                   <Td right mono>
-                    <span className="font-medium">{fmtEur(r.value_eur)}</span>
+                    <span className="font-medium">{fmtEur(r.value_eur, locale)}</span>
                   </Td>
                   <Td dim>{r.source}</Td>
                 </tr>
@@ -318,24 +316,24 @@ export default async function HistoryPage({
                     <span className="font-medium">{r.month}</span>
                   </Td>
                   <Td right mono>
-                    <span className="text-green-600 dark:text-green-400 font-medium">{fmtEur(r.total_income)}</span>
+                    <span className="text-green-600 dark:text-green-400 font-medium">{fmtEur(r.total_income, locale)}</span>
                   </Td>
                   <Td right mono>
-                    <span className="text-red-600 dark:text-red-400">{fmtEur(r.total_expenses)}</span>
+                    <span className="text-red-600 dark:text-red-400">{fmtEur(r.total_expenses, locale)}</span>
                   </Td>
                   <Td right mono>
                     <span className={pos ? 'text-green-600 dark:text-green-400 font-semibold' : 'text-red-600 dark:text-red-400 font-semibold'}>
-                      {pos ? '+' : ''}{fmtEur(r.net_balance)}
+                      {pos ? '+' : ''}{fmtEur(r.net_balance, locale)}
                     </span>
                   </Td>
-                  <Td right mono dim>{fmtEur(r.salary)}</Td>
-                  <Td right mono dim>{fmtEur(r.food)}</Td>
-                  <Td right mono dim>{fmtEur(r.leisure)}</Td>
-                  <Td right mono dim>{fmtEur(r.subscriptions)}</Td>
-                  <Td right mono dim>{fmtEur(r.savings_transfer)}</Td>
-                  <Td right mono dim>{fmtEur(r.pocket_money)}</Td>
-                  <Td right mono dim>{fmtEur(r.other_income)}</Td>
-                  <Td right mono dim>{fmtEur(r.other_expenses)}</Td>
+                  <Td right mono dim>{fmtEur(r.salary, locale)}</Td>
+                  <Td right mono dim>{fmtEur(r.food, locale)}</Td>
+                  <Td right mono dim>{fmtEur(r.leisure, locale)}</Td>
+                  <Td right mono dim>{fmtEur(r.subscriptions, locale)}</Td>
+                  <Td right mono dim>{fmtEur(r.savings_transfer, locale)}</Td>
+                  <Td right mono dim>{fmtEur(r.pocket_money, locale)}</Td>
+                  <Td right mono dim>{fmtEur(r.other_income, locale)}</Td>
+                  <Td right mono dim>{fmtEur(r.other_expenses, locale)}</Td>
                   <Td dim>{r.source}</Td>
                 </tr>
               )

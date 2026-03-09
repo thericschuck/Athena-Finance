@@ -6,6 +6,8 @@ import {
   EditCategoryDialog,
   DeleteCategoryButton,
 } from '@/components/finance/category-form'
+import { getSettings } from '@/lib/settings'
+import { fmtCurrency } from '@/lib/format'
 
 type Category = Database['public']['Tables']['categories']['Row']
 type CategoryNode = Category & { children: CategoryNode[] }
@@ -53,13 +55,17 @@ export default async function CategoriesPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const { data: categories } = await supabase
-    .from('categories')
-    .select('*')
-    .eq('user_id', user!.id)
-    .order('sort_order', { ascending: true })
-    .order('name', { ascending: true })
+  const [{ data: categories }, settings] = await Promise.all([
+    supabase
+      .from('categories')
+      .select('*')
+      .eq('user_id', user!.id)
+      .order('sort_order', { ascending: true })
+      .order('name', { ascending: true }),
+    getSettings(user!.id),
+  ])
 
+  const locale = (settings.number_format as string) ?? 'de-DE'
   const flat = categories ?? []
   const tree = buildTree(flat)
 
@@ -100,6 +106,7 @@ export default async function CategoriesPage() {
                     category={parent}
                     allCategories={flat}
                     isParent
+                    locale={locale}
                   />
                   {/* Child rows */}
                   {parent.children.map((child) => (
@@ -108,6 +115,7 @@ export default async function CategoriesPage() {
                       category={child}
                       allCategories={flat}
                       isParent={false}
+                      locale={locale}
                     />
                   ))}
                 </React.Fragment>
@@ -124,10 +132,12 @@ function CategoryRow({
   category,
   allCategories,
   isParent,
+  locale,
 }: {
   category: CategoryNode
   allCategories: Category[]
   isParent: boolean
+  locale: string
 }) {
   const typeCfg =
     TYPE_CONFIG[category.type] ?? { label: category.type, classes: 'bg-muted text-muted-foreground' }
@@ -177,10 +187,7 @@ function CategoryRow({
       {/* Budget */}
       <td className="px-4 py-3 text-muted-foreground tabular-nums">
         {category.budget_monthly != null
-          ? new Intl.NumberFormat('de-DE', {
-              style: 'currency',
-              currency: 'EUR',
-            }).format(category.budget_monthly)
+          ? fmtCurrency(category.budget_monthly, 'EUR', locale)
           : '—'}
       </td>
 

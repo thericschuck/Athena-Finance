@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { getSettings } from '@/lib/settings'
+import { fmtCurrency, fmtDate } from '@/lib/format'
 import { Database } from '@/types/database'
 import { AddDebtDialog, DebtPaymentDialog, EditDebtDialog, DeleteDebtButton } from '@/components/finance/debt-payment-form'
 import { CalendarDays, TrendingDown, TrendingUp } from 'lucide-react'
@@ -9,13 +11,11 @@ interface PageProps {
   searchParams: Promise<{ all?: string }>
 }
 
-const fmt = (amount: number, currency: string) =>
-  new Intl.NumberFormat('de-DE', { style: 'currency', currency }).format(amount)
+const fmt = (amount: number, currency: string, locale: string) =>
+  fmtCurrency(amount, currency, locale)
 
-function formatDate(dateStr: string) {
-  return new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: 'short', year: 'numeric' }).format(
-    new Date(dateStr)
-  )
+function formatDate(dateStr: string, dateFormat: string) {
+  return fmtDate(dateStr, dateFormat)
 }
 
 function isOverdue(dueDate: string | null): boolean {
@@ -31,6 +31,10 @@ export default async function DebtsPage({ searchParams }: PageProps) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
+
+  const settings = await getSettings(user!.id)
+  const locale = (settings.number_format as string) ?? 'de-DE'
+  const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
 
   let query = supabase
     .from('debts')
@@ -77,6 +81,7 @@ export default async function DebtsPage({ searchParams }: PageProps) {
             currency="EUR"
             color="red"
             icon={<TrendingDown className="size-4" />}
+            locale={locale}
           />
           <SummaryCard
             label="Mir wird geschuldet"
@@ -84,6 +89,7 @@ export default async function DebtsPage({ searchParams }: PageProps) {
             currency="EUR"
             color="green"
             icon={<TrendingUp className="size-4" />}
+            locale={locale}
           />
         </div>
       )}
@@ -94,10 +100,10 @@ export default async function DebtsPage({ searchParams }: PageProps) {
       ) : (
         <div className="space-y-8">
           {borrowed.length > 0 && (
-            <DebtSection title="Ich schulde" debts={borrowed} accentColor="red" />
+            <DebtSection title="Ich schulde" debts={borrowed} accentColor="red" locale={locale} dateFormat={dateFormat} />
           )}
           {lent.length > 0 && (
-            <DebtSection title="Mir wird geschuldet" debts={lent} accentColor="green" />
+            <DebtSection title="Mir wird geschuldet" debts={lent} accentColor="green" locale={locale} dateFormat={dateFormat} />
           )}
         </div>
       )}
@@ -114,12 +120,14 @@ function SummaryCard({
   currency,
   color,
   icon,
+  locale,
 }: {
   label: string
   amount: number
   currency: string
   color: 'red' | 'green'
   icon: React.ReactNode
+  locale: string
 }) {
   const bg = color === 'red' ? 'bg-red-50 dark:bg-red-900/20' : 'bg-green-50 dark:bg-green-900/20'
   const text = color === 'red' ? 'text-red-700 dark:text-red-400' : 'text-green-700 dark:text-green-400'
@@ -131,7 +139,7 @@ function SummaryCard({
         {label}
       </div>
       <p className={`text-xl font-semibold tabular-nums ${text}`}>
-        {fmt(amount, currency)}
+        {fmt(amount, currency, locale)}
       </p>
     </div>
   )
@@ -144,10 +152,14 @@ function DebtSection({
   title,
   debts,
   accentColor,
+  locale,
+  dateFormat,
 }: {
   title: string
   debts: Debt[]
   accentColor: 'red' | 'green'
+  locale: string
+  dateFormat: string
 }) {
   return (
     <section className="space-y-3">
@@ -156,7 +168,7 @@ function DebtSection({
       </h2>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {debts.map((debt) => (
-          <DebtCard key={debt.id} debt={debt} accentColor={accentColor} />
+          <DebtCard key={debt.id} debt={debt} accentColor={accentColor} locale={locale} dateFormat={dateFormat} />
         ))}
       </div>
     </section>
@@ -166,7 +178,7 @@ function DebtSection({
 // ─────────────────────────────────────────────────────────────
 // Debt card
 // ─────────────────────────────────────────────────────────────
-function DebtCard({ debt, accentColor }: { debt: Debt; accentColor: 'red' | 'green' }) {
+function DebtCard({ debt, accentColor, locale, dateFormat }: { debt: Debt; accentColor: 'red' | 'green'; locale: string; dateFormat: string }) {
   const paid = debt.original_amount - debt.outstanding
   const progress =
     debt.original_amount > 0
@@ -217,7 +229,7 @@ function DebtCard({ debt, accentColor }: { debt: Debt; accentColor: 'red' | 'gre
         </div>
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>{progress}% bezahlt</span>
-          <span>{fmt(paid, debt.currency)} / {fmt(debt.original_amount, debt.currency)}</span>
+          <span>{fmt(paid, debt.currency, locale)} / {fmt(debt.original_amount, debt.currency, locale)}</span>
         </div>
       </div>
 
@@ -226,13 +238,13 @@ function DebtCard({ debt, accentColor }: { debt: Debt; accentColor: 'red' | 'gre
         <div>
           <p className="text-xs text-muted-foreground">Ausstehend</p>
           <p className="text-lg font-semibold tabular-nums text-foreground">
-            {fmt(debt.outstanding, debt.currency)}
+            {fmt(debt.outstanding, debt.currency, locale)}
           </p>
         </div>
         {debt.monthly_payment && (
           <div className="text-right">
             <p className="text-xs text-muted-foreground">Rate/Monat</p>
-            <p className="text-sm font-medium tabular-nums">{fmt(debt.monthly_payment, debt.currency)}</p>
+            <p className="text-sm font-medium tabular-nums">{fmt(debt.monthly_payment, debt.currency, locale)}</p>
           </div>
         )}
       </div>
@@ -248,7 +260,7 @@ function DebtCard({ debt, accentColor }: { debt: Debt; accentColor: 'red' | 'gre
               className={`flex items-center gap-1 ${overdue && debt.is_active ? 'text-destructive font-medium' : ''}`}
             >
               <CalendarDays className="size-3" />
-              {formatDate(debt.due_date)}
+              {formatDate(debt.due_date, dateFormat)}
               {overdue && debt.is_active && ' · überfällig'}
             </span>
           )}

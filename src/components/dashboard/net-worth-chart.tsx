@@ -10,6 +10,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+import { useSettings } from '@/components/providers/settings-context'
+import { fmtCurrency as libFmtCurrency } from '@/lib/format'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export type NetWorthSnapshot = {
@@ -30,16 +32,6 @@ type FilterKey = '1W' | '1M' | '3M' | '6M' | '1J' | 'All'
 const FILTERS: FilterKey[] = ['1W', '1M', '3M', '6M', '1J', 'All']
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function fmtCurrency(n: number | null | undefined): string {
-  if (n == null) return '—'
-  return new Intl.NumberFormat('de-DE', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(n)
-}
-
 function fmtShort(n: number): string {
   if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (Math.abs(n) >= 1_000)     return `${(n / 1_000).toFixed(0)}k`
@@ -56,14 +48,6 @@ function cutoff(key: FilterKey): Date | null {
   return null
 }
 
-function xFormatter(v: string, key: FilterKey): string {
-  const d = new Date(v)
-  if (key === '1W' || key === '1M') {
-    return d.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })
-  }
-  return d.toLocaleDateString('de-DE', { month: 'short', year: '2-digit' })
-}
-
 // ─── Custom Tooltip ───────────────────────────────────────────────────────────
 type TooltipEntry = { payload: NetWorthSnapshot; value: number }
 function ChartTooltip({ active, payload, label }: {
@@ -71,6 +55,8 @@ function ChartTooltip({ active, payload, label }: {
   payload?: TooltipEntry[]
   label?: string
 }) {
+  const { locale } = useSettings()
+
   if (!active || !payload?.length) return null
 
   const d = payload[0]?.payload
@@ -87,7 +73,7 @@ function ChartTooltip({ active, payload, label }: {
     ['Schulden',    d.total_debts],
   ]
 
-  const date = new Date(label ?? '').toLocaleDateString('de-DE', {
+  const date = new Date(label ?? '').toLocaleDateString(locale, {
     day: '2-digit', month: 'short', year: 'numeric',
   })
 
@@ -95,7 +81,7 @@ function ChartTooltip({ active, payload, label }: {
     <div className="rounded-lg border border-border bg-popover p-3 shadow-md text-xs min-w-[160px]">
       <p className="font-semibold text-foreground mb-2">{date}</p>
       <p className="text-sm font-bold tabular-nums text-foreground mb-2">
-        {fmtCurrency(d.net_worth)}
+        {d.net_worth == null ? '—' : libFmtCurrency(d.net_worth, 'EUR', locale, { fractionDigits: 0 })}
       </p>
       <div className="space-y-1 border-t border-border pt-2">
         {rows
@@ -104,7 +90,7 @@ function ChartTooltip({ active, payload, label }: {
             <div key={label} className="flex justify-between gap-4">
               <span className="text-muted-foreground">{label}</span>
               <span className={`tabular-nums font-medium ${(val ?? 0) < 0 ? 'text-red-500' : 'text-foreground'}`}>
-                {fmtCurrency(val)}
+                {val == null ? '—' : libFmtCurrency(val, 'EUR', locale, { fractionDigits: 0 })}
               </span>
             </div>
           ))}
@@ -115,7 +101,16 @@ function ChartTooltip({ active, payload, label }: {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export function NetWorthChart({ snapshots }: { snapshots: NetWorthSnapshot[] }) {
+  const { locale } = useSettings()
   const [filter, setFilter] = useState<FilterKey>('1J')
+
+  const xFormatter = (v: string, key: FilterKey): string => {
+    const d = new Date(v)
+    if (key === '1W' || key === '1M') {
+      return d.toLocaleDateString(locale, { day: '2-digit', month: 'short' })
+    }
+    return d.toLocaleDateString(locale, { month: 'short', year: '2-digit' })
+  }
 
   const data = useMemo(() => {
     const from = cutoff(filter)

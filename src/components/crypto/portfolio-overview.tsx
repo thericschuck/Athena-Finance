@@ -12,6 +12,8 @@ import { AssetTable } from '@/components/crypto/asset-table'
 import { PortfolioDonut } from '@/components/crypto/portfolio-donut'
 import { Database } from '@/types/database'
 import type { RebalancingRow } from '@/lib/crypto/rebalancing'
+import { useSettings } from '@/components/providers/settings-context'
+import { fmtCurrency } from '@/lib/format'
 
 type AssetRow = Database['public']['Tables']['assets']['Row']
 
@@ -21,10 +23,6 @@ export type AssetWithPrice = AssetRow & {
   current_value: number | null
   last_updated: string | null   // valuation_date from asset_valuations
 }
-
-// ─── Formatters ───────────────────────────────────────────────────────────────
-const fmtEur = (n: number) =>
-  new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(n)
 
 function fmtSecondsAgo(s: number): string {
   if (s < 60) return `${s}s`
@@ -41,6 +39,8 @@ interface Props {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows }: Props) {
+  const { locale } = useSettings()
+  const fmtEur = (n: number) => fmtCurrency(n, 'EUR', locale)
   const router = useRouter()
 
   const [assets, setAssets]               = useState<AssetWithPrice[]>(initialAssets)

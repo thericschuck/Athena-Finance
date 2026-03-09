@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { getSettings } from '@/lib/settings'
+import { fmtDate as fmtDateLib } from '@/lib/format'
 import { PortfolioOverview, type AssetWithPrice } from '@/components/crypto/portfolio-overview'
 import { getStrategySignals, getPortfolioAllocations } from '@/app/(dashboard)/crypto/actions'
 import { calculateRebalancing } from '@/lib/crypto/rebalancing'
@@ -14,6 +16,7 @@ export default async function CryptoPage() {
     { data: auditLog },
     signals,
     allocations,
+    settings,
   ] = await Promise.all([
     supabase
       .from('assets')
@@ -39,7 +42,11 @@ export default async function CryptoPage() {
       .limit(50),
     getStrategySignals(user!.id),
     getPortfolioAllocations(user!.id),
+    getSettings(user!.id),
   ])
+
+  const locale = (settings.number_format as string) ?? 'de-DE'
+  const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
 
   const assetIds = (rawAssets ?? []).map(a => a.id)
 
@@ -85,7 +92,7 @@ export default async function CryptoPage() {
         snapshots={snapshots ?? []}
         rebalancingRows={rebalancingResult.rows}
       />
-      <AssetAuditLog entries={auditLog ?? []} />
+      <AssetAuditLog entries={auditLog ?? []} locale={locale} dateFormat={dateFormat} />
     </>
   )
 }
@@ -115,20 +122,17 @@ const FIELD_LABEL: Record<string, string> = {
   notes:         'Notizen',
 }
 
-function fmtVal(val: unknown): string {
+function fmtVal(val: unknown, locale: string): string {
   if (val === null || val === undefined) return '—'
-  if (typeof val === 'number') return val.toLocaleString('de-DE', { maximumFractionDigits: 8 })
+  if (typeof val === 'number') return val.toLocaleString(locale, { maximumFractionDigits: 8 })
   return String(val)
 }
 
-function fmtTs(iso: string): string {
-  return new Date(iso).toLocaleString('de-DE', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  })
+function fmtTs(iso: string, dateFormat: string): string {
+  return fmtDateLib(iso, dateFormat) + ' ' + new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
 }
 
-function AssetAuditLog({ entries }: { entries: AuditEntry[] }) {
+function AssetAuditLog({ entries, locale, dateFormat }: { entries: AuditEntry[]; locale: string; dateFormat: string }) {
   if (entries.length === 0) return null
 
   return (
@@ -163,13 +167,13 @@ function AssetAuditLog({ entries }: { entries: AuditEntry[] }) {
                     for (const [field, diff] of Object.entries(e.changes)) {
                       const d = diff as { from: unknown; to: unknown }
                       const label = FIELD_LABEL[field] ?? field
-                      changeLines.push(`${label}: ${fmtVal(d.from)} → ${fmtVal(d.to)}`)
+                      changeLines.push(`${label}: ${fmtVal(d.from, locale)} → ${fmtVal(d.to, locale)}`)
                     }
                   } else {
                     for (const [field, val] of Object.entries(e.changes)) {
                       if (val !== null && val !== undefined) {
                         const label = FIELD_LABEL[field] ?? field
-                        changeLines.push(`${label}: ${fmtVal(val)}`)
+                        changeLines.push(`${label}: ${fmtVal(val, locale)}`)
                       }
                     }
                   }
@@ -177,7 +181,7 @@ function AssetAuditLog({ entries }: { entries: AuditEntry[] }) {
 
                 return (
                   <tr key={e.id} className={`hover:bg-muted/30 transition-colors ${!isLast ? 'border-b border-border' : ''}`}>
-                    <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">{fmtTs(e.created_at)}</td>
+                    <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">{fmtTs(e.created_at, dateFormat)}</td>
                     <td className="px-4 py-2.5 font-medium">{e.asset_name}
                       <span className="ml-1.5 text-xs text-muted-foreground font-normal uppercase">{e.asset_symbol}</span>
                     </td>

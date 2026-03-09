@@ -15,18 +15,8 @@ import type {
   StrategySignals as StrategySignalsType,
   PortfolioAllocations,
 } from '@/lib/crypto/rebalancing-defaults'
-
-// ─── Formatters ───────────────────────────────────────────────────────────────
-const fmtEur = (n: number) =>
-  new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(n)
-
-const fmtPct = (n: number) =>
-  `${n.toFixed(1).replace('.', ',')} %`
-
-const fmtDiffEur = (n: number) => {
-  const sign = n > 0 ? '+' : n < 0 ? '' : ''
-  return `${sign}${fmtEur(n)}`
-}
+import { useSettings } from '@/components/providers/settings-context'
+import { fmtCurrency } from '@/lib/format'
 
 function fmtDate(iso: string): string {
   const [y, m, d] = iso.split('T')[0].split('-')
@@ -90,6 +80,11 @@ interface Props {
 export function RebalancingCalculator({
   assets, initialSignals, initialAllocations, totalValue, lastRebalancing: initLast,
 }: Props) {
+  const { locale } = useSettings()
+  const fmtEur     = (n: number) => fmtCurrency(n, 'EUR', locale)
+  const fmtPct     = (n: number) => `${n.toFixed(1).replace('.', new Intl.NumberFormat(locale).format(1.1)[1])} %`
+  const fmtDiffEur = (n: number) => `${n > 0 ? '+' : ''}${fmtEur(n)}`
+
   const [signals,     setSignals]     = useState<StrategySignalsType>(initialSignals)
   const [allocations, setAllocations] = useState<PortfolioAllocations>(initialAllocations)
   const [threshold,   setThreshold]   = useState(5)

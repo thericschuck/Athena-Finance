@@ -33,6 +33,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Database } from '@/types/database'
+import { useSettings } from '@/components/providers/settings-context'
+import { fmtCurrency } from '@/lib/format'
 
 type Debt = Database['public']['Tables']['debts']['Row']
 
@@ -43,8 +45,7 @@ const DEBT_TYPES = [
 
 const CURRENCIES = ['EUR', 'USD', 'CHF', 'GBP']
 
-const fmt = (amount: number, currency: string) =>
-  new Intl.NumberFormat('de-DE', { style: 'currency', currency }).format(amount)
+// fmt used in DebtPaymentDialog — locale injected there via useSettings
 
 // ─────────────────────────────────────────────
 // Add Debt Dialog
@@ -385,6 +386,8 @@ export function DeleteDebtButton({ debt }: { debt: Debt }) {
 // Payment Dialog
 // ─────────────────────────────────────────────
 export function DebtPaymentDialog({ debt }: { debt: Debt }) {
+  const { locale } = useSettings()
+  const fmt = (amount: number, currency: string) => fmtCurrency(amount, currency, locale)
   const router = useRouter()
   const [open, setOpen] = useState(false)
 

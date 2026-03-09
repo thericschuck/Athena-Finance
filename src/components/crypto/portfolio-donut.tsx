@@ -3,6 +3,8 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import type { AssetWithPrice } from '@/components/crypto/portfolio-overview'
 import type { RebalancingRow } from '@/lib/crypto/rebalancing'
+import { useSettings } from '@/components/providers/settings-context'
+import { fmtCurrency } from '@/lib/format'
 
 // ─── Colors ───────────────────────────────────────────────────────────────────
 const COIN_COLORS: Record<string, string> = {
@@ -25,18 +27,15 @@ function getColor(coingeckoId: string, index: number): string {
   return COIN_COLORS[coingeckoId] ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length]
 }
 
-// ─── Formatters ───────────────────────────────────────────────────────────────
-const fmtEur = (n: number) =>
-  new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
-
 // ─── Custom tooltip ───────────────────────────────────────────────────────────
 function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<{ name: string; value: number; payload: DonutEntry }> }) {
+  const { locale } = useSettings()
   if (!active || !payload?.length) return null
   const d = payload[0]
   return (
     <div className="rounded-lg border border-border bg-popover px-3 py-2 shadow-lg text-sm">
       <p className="font-medium">{d.name}</p>
-      <p className="text-muted-foreground tabular-nums">{d.payload.pct.toFixed(1)} % · {fmtEur(d.value)}</p>
+      <p className="text-muted-foreground tabular-nums">{d.payload.pct.toFixed(1)} % · {fmtCurrency(d.value, 'EUR', locale)}</p>
     </div>
   )
 }
@@ -109,6 +108,8 @@ interface Props {
 }
 
 export function PortfolioDonut({ assets, rebalancingRows }: Props) {
+  const { locale } = useSettings()
+  const fmtEur = (n: number) => fmtCurrency(n, 'EUR', locale)
   // Build label map from rebalancing rows (coingecko_id → ticker symbol like "BTC")
   const labelMap = new Map<string, string>()
   for (const r of rebalancingRows) {

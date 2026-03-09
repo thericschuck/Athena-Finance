@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { CheckCircle2, ExternalLink } from 'lucide-react'
 import { AddStrategyDialog } from '@/components/strategy/strategy-form'
 import { DeleteStrategyButton } from '@/components/strategy/strategy-form'
+import { getSettings } from '@/lib/settings'
 
 // ─── Badge helpers ────────────────────────────────────────────────────────────
 const STATUS_STYLE: Record<string, string> = {
@@ -33,6 +34,10 @@ export default async function StrategiesPage({
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  const settings = await getSettings(user!.id)
+  const locale = (settings.number_format as string) ?? 'de-DE'
+  const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
 
   // Load combos for form selector
   const { data: combosRaw } = await supabase
@@ -134,7 +139,7 @@ export default async function StrategiesPage({
               <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                 <span>Pine v{s.pine_version}</span>
                 <span>v{s.version}</span>
-                <span>${s.initial_capital.toLocaleString('de-DE')}</span>
+                <span>${s.initial_capital.toLocaleString(locale)}</span>
                 {s.process_on_close && <span className="text-amber-600 dark:text-amber-400">PoC</span>}
                 {s.combo_id && comboMap.has(s.combo_id) && (
                   <span className="truncate max-w-[120px]">{comboMap.get(s.combo_id)}</span>
@@ -162,7 +167,7 @@ export default async function StrategiesPage({
                 )}
                 {s.submission_date && (
                   <span className="text-xs text-muted-foreground">
-                    {new Date(s.submission_date).toLocaleDateString('de-DE')}
+                    {new Date(s.submission_date).toLocaleDateString(locale)}
                   </span>
                 )}
               </div>

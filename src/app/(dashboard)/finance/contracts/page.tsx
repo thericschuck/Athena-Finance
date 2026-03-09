@@ -8,6 +8,8 @@ import {
 } from '@/components/finance/contract-form'
 import { CONTRACT_TYPES, FREQUENCIES, TRANSFER_TYPES } from '@/lib/finance/contract-constants'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
+import { getSettings } from '@/lib/settings'
+import { fmtCurrency as fmtCurrencyLib, fmtDate as fmtDateLib } from '@/lib/format'
 
 type Contract = Database['public']['Tables']['contracts']['Row'] & { to_account_id?: string | null }
 
@@ -60,15 +62,15 @@ function toMonthly(amount: number, frequency: string): number {
 }
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
-const fmtEur = (n: number) =>
-  new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(n)
+const fmtEur = (n: number, locale: string) =>
+  fmtCurrencyLib(n, 'EUR', locale)
 
-function fmtCurrency(n: number, currency: string) {
-  return new Intl.NumberFormat('de-DE', { style: 'currency', currency }).format(n)
+function fmtCurrency(n: number, currency: string, locale: string) {
+  return fmtCurrencyLib(n, currency, locale)
 }
 
-function fmtDate(d: Date) {
-  return new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: 'short', year: 'numeric' }).format(d)
+function fmtDate(d: Date, dateFormat: string) {
+  return fmtDateLib(d, dateFormat)
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -84,11 +86,15 @@ export default async function ContractsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [{ data: contracts }, { data: accounts }, { data: categories }] = await Promise.all([
+  const [{ data: contracts }, { data: accounts }, { data: categories }, settings] = await Promise.all([
     supabase.from('contracts').select('*').eq('user_id', user!.id).order('name'),
     supabase.from('accounts').select('id, name').eq('user_id', user!.id).order('sort_order'),
     supabase.from('categories').select('id, name').eq('user_id', user!.id).order('name'),
+    getSettings(user!.id),
   ])
+
+  const locale = (settings.number_format as string) ?? 'de-DE'
+  const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
 
   const all    = (contracts ?? []) as Contract[]
   const active = all.filter(c => c.is_active)
@@ -121,7 +127,7 @@ export default async function ContractsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Verträge & Abos</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            {active.length} aktive Verträge · monatlich ca. {fmtEur(monthlyTotal)}
+            {active.length} aktive Verträge · monatlich ca. {fmtEur(monthlyTotal, locale)}
             {warningCount > 0 && (
               <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">
                 <AlertTriangle className="size-3" />
@@ -142,7 +148,7 @@ export default async function ContractsPage() {
               <div key={name} className="space-y-0.5">
                 <p className="text-xs text-muted-foreground truncate">{name}</p>
                 <p className="text-base font-semibold tabular-nums">
-                  {fmtEur(monthly)}
+                  {fmtEur(monthly, locale)}
                   <span className="text-xs font-normal text-muted-foreground">/Mo.</span>
                 </p>
               </div>
@@ -163,6 +169,8 @@ export default async function ContractsPage() {
                 contracts={items}
                 accounts={accs}
                 categories={categories ?? []}
+                locale={locale}
+                dateFormat={dateFormat}
               />
             )
           )}
@@ -174,12 +182,14 @@ export default async function ContractsPage() {
 
 // ─── Group ────────────────────────────────────────────────────────────────────
 function ContractGroup({
-  title, contracts, accounts, categories,
+  title, contracts, accounts, categories, locale, dateFormat,
 }: {
   title: string
   contracts: Contract[]
   accounts: { id: string; name: string }[]
   categories: { id: string; name: string }[]
+  locale: string
+  dateFormat: string
 }) {
   return (
     <section className="space-y-2">
@@ -193,7 +203,7 @@ function ContractGroup({
         <table className="w-full text-sm">
           <tbody className="divide-y divide-border">
             {contracts.map(c => (
-              <ContractRow key={c.id} contract={c} accounts={accounts} categories={categories} />
+              <ContractRow key={c.id} contract={c} accounts={accounts} categories={categories} locale={locale} dateFormat={dateFormat} />
             ))}
           </tbody>
         </table>
@@ -204,11 +214,13 @@ function ContractGroup({
 
 // ─── Row ──────────────────────────────────────────────────────────────────────
 function ContractRow({
-  contract: c, accounts, categories,
+  contract: c, accounts, categories, locale, dateFormat,
 }: {
   contract: Contract
   accounts: { id: string; name: string }[]
   categories: { id: string; name: string }[]
+  locale: string
+  dateFormat: string
 }) {
   const expired    = isNoticeExpired(c)
   const nextDate   = c.is_active ? nextBillingDate(c.start_date, c.frequency) : null
@@ -250,13 +262,13 @@ function ContractRow({
           )}
         </div>
         {nextDate && (
-          <p className="text-xs text-muted-foreground mt-0.5">Nächste Zahlung: {fmtDate(nextDate)}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Nächste Zahlung: {fmtDate(nextDate, dateFormat)}</p>
         )}
       </td>
 
       {/* Betrag */}
       <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap">
-        <span className="font-medium">{fmtCurrency(c.amount, c.currency)}</span>
+        <span className="font-medium">{fmtCurrency(c.amount, c.currency, locale)}</span>
         <span className="text-muted-foreground text-xs ml-1">/ {FREQ_LABEL[c.frequency] ?? c.frequency}</span>
       </td>
 
@@ -264,7 +276,7 @@ function ContractRow({
       <td className="px-4 py-3 whitespace-nowrap">
         {c.end_date ? (
           <span className={`text-xs ${expired && c.is_active ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
-            Bis {fmtDate(new Date(c.end_date))}
+            Bis {fmtDate(new Date(c.end_date), dateFormat)}
             {c.notice_days > 0 && ` · ${c.notice_days}d Frist`}
           </span>
         ) : (

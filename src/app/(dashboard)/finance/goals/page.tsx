@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { getSettings } from '@/lib/settings'
+import { fmtCurrency, fmtDate } from '@/lib/format'
 import { Database } from '@/types/database'
 import { AddGoalDialog, EditGoalDialog, DeleteGoalButton, GoalPaymentDialog } from '@/components/finance/goal-form'
 import { setGoalStatus } from './actions'
@@ -56,14 +58,12 @@ function formatDuration(months: number): string {
   return rem === 0 ? `${years} J.` : `${years} J. ${rem} Mon.`
 }
 
-function formatDate(dateStr: string) {
-  return new Intl.DateTimeFormat('de-DE', { month: 'short', year: 'numeric' }).format(
-    new Date(dateStr)
-  )
+function formatDate(dateStr: string, dateFormat: string) {
+  return fmtDate(dateStr, dateFormat)
 }
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(n)
+const fmt = (n: number, locale: string) =>
+  fmtCurrency(n, 'EUR', locale)
 
 // ─── Sort config ─────────────────────────────────────────────────────────────
 const PRIORITY_RANK: Record<string, number> = { hoch: 0, mittel: 1, niedrig: 2 }
@@ -94,11 +94,17 @@ export default async function GoalsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: goals } = await supabase
-    .from('savings_goals')
-    .select('*')
-    .eq('user_id', user!.id)
-    .order('created_at', { ascending: false })
+  const [{ data: goals }, settings] = await Promise.all([
+    supabase
+      .from('savings_goals')
+      .select('*')
+      .eq('user_id', user!.id)
+      .order('created_at', { ascending: false }),
+    getSettings(user!.id),
+  ])
+
+  const locale = (settings.number_format as string) ?? 'de-DE'
+  const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
 
   const all = (goals ?? []) as unknown as Goal[]
   const active = sortGoals(all.filter(g => g.status !== 'geschlossen'))
@@ -114,7 +120,7 @@ export default async function GoalsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Sparziele</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            {active.length} aktive Ziele · Gesamt {fmt(totalTarget)} · {fmt(totalMonthly)}/Monat
+            {active.length} aktive Ziele · Gesamt {fmt(totalTarget, locale)} · {fmt(totalMonthly, locale)}/Monat
           </p>
         </div>
         <AddGoalDialog />
@@ -126,7 +132,7 @@ export default async function GoalsPage() {
       {active.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {active.map(goal => (
-            <GoalCard key={goal.id} goal={goal} />
+            <GoalCard key={goal.id} goal={goal} locale={locale} dateFormat={dateFormat} />
           ))}
         </div>
       )}
@@ -139,7 +145,7 @@ export default async function GoalsPage() {
           </h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {closed.map(goal => (
-              <GoalCard key={goal.id} goal={goal} />
+              <GoalCard key={goal.id} goal={goal} locale={locale} dateFormat={dateFormat} />
             ))}
           </div>
         </section>
@@ -149,7 +155,7 @@ export default async function GoalsPage() {
 }
 
 // ─── Goal card ────────────────────────────────────────────────────────────────
-function GoalCard({ goal }: { goal: Goal }) {
+function GoalCard({ goal, locale, dateFormat }: { goal: Goal; locale: string; dateFormat: string }) {
   const pct       = progressPct(goal)
   const saved     = goal.current_amount
   const remaining = monthsRemaining(goal)
@@ -192,13 +198,13 @@ function GoalCard({ goal }: { goal: Goal }) {
         </div>
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>{pct}%</span>
-          <span>{fmt(saved)} / {fmt(goal.target_amount)}</span>
+          <span>{fmt(saved, locale)} / {fmt(goal.target_amount, locale)}</span>
         </div>
       </div>
 
       {/* Savings plan tracker */}
       {gap !== null && !isClosed && (
-        <SavingsPlanBadge gap={gap} />
+        <SavingsPlanBadge gap={gap} locale={locale} />
       )}
 
       {/* Stats row */}
@@ -206,7 +212,7 @@ function GoalCard({ goal }: { goal: Goal }) {
         {goal.monthly_savings_rate && (
           <div>
             <p className="text-muted-foreground">Sparrate</p>
-            <p className="font-medium">{fmt(goal.monthly_savings_rate)}/Mo.</p>
+            <p className="font-medium">{fmt(goal.monthly_savings_rate, locale)}/Mo.</p>
           </div>
         )}
         {remaining !== null && remaining > 0 && (
@@ -218,13 +224,13 @@ function GoalCard({ goal }: { goal: Goal }) {
         {goal.savings_rate_start_date && (
           <div>
             <p className="text-muted-foreground">Sparplan seit</p>
-            <p className="font-medium">{formatDate(goal.savings_rate_start_date)}</p>
+            <p className="font-medium">{formatDate(goal.savings_rate_start_date, dateFormat)}</p>
           </div>
         )}
         {goal.target_date && (
           <div>
             <p className="text-muted-foreground">Zieldatum</p>
-            <p className="font-medium">{formatDate(goal.target_date)}</p>
+            <p className="font-medium">{formatDate(goal.target_date, dateFormat)}</p>
           </div>
         )}
       </div>
@@ -248,9 +254,9 @@ function GoalCard({ goal }: { goal: Goal }) {
 }
 
 // ─── Savings plan indicator ───────────────────────────────────────────────────
-function SavingsPlanBadge({ gap }: { gap: number }) {
+function SavingsPlanBadge({ gap, locale }: { gap: number; locale: string }) {
   const fmt = (n: number) =>
-    new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(Math.abs(n))
+    fmtCurrency(Math.abs(n), 'EUR', locale)
 
   // Small buffer: ±5 € counts as "on track"
   if (gap >= -5) {

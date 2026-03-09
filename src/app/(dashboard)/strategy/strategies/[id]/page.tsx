@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { ArrowLeft, CheckCircle2, XCircle, Minus, ExternalLink } from 'lucide-react'
 import { ChecklistPanel, ChecklistState } from '@/components/strategy/checklist-panel'
 import { EditStrategyDialog, DeleteStrategyButton } from '@/components/strategy/strategy-form'
+import { getSettings } from '@/lib/settings'
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
 const STATUS_STYLE: Record<string, string> = {
@@ -60,12 +61,17 @@ export default async function StrategyDetailPage({
     { data: checklist },
     { data: robustness },
     { data: combosRaw },
+    settings,
   ] = await Promise.all([
     supabase.from('strategies').select('*').eq('id', id).eq('user_id', user!.id).single(),
     supabase.from('submission_checklist').select('*').eq('strategy_id', id).maybeSingle(),
     supabase.from('robustness_status').select('*').eq('strategy_id', id).maybeSingle(),
     supabase.from('combos').select('id, name').eq('user_id', user!.id).order('name'),
+    getSettings(user!.id),
   ])
+
+  const locale = (settings.number_format as string) ?? 'de-DE'
+  const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
 
   if (!strategy) notFound()
 
@@ -115,7 +121,7 @@ export default async function StrategyDetailPage({
             <span className="px-1.5 py-0.5 bg-muted rounded text-xs">{strategy.asset_class}</span>
             <span>Pine v{strategy.pine_version}</span>
             <span>v{strategy.version}</span>
-            <span>${strategy.initial_capital.toLocaleString('de-DE')}</span>
+            <span>${strategy.initial_capital.toLocaleString(locale)}</span>
             {strategy.process_on_close && (
               <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
                 Process on Close
@@ -127,7 +133,7 @@ export default async function StrategyDetailPage({
               <span>Combo: <span className="text-foreground">{comboName}</span></span>
             )}
             {strategy.submission_date && (
-              <span>Submission: <span className="text-foreground">{new Date(strategy.submission_date).toLocaleDateString('de-DE')}</span></span>
+              <span>Submission: <span className="text-foreground">{new Date(strategy.submission_date).toLocaleDateString(locale)}</span></span>
             )}
             {strategy.tv_script_url && (
               <a

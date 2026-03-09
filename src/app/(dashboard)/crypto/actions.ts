@@ -56,8 +56,9 @@ export async function createAsset(
 
   if (insertError) return { error: insertError.message }
 
-  // Audit log
-  await supabase.from('asset_audit_log').insert({
+  // Audit log (table not yet in generated types → cast)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase as any).from('asset_audit_log').insert({
     user_id:      user.id,
     asset_id:     asset.id,
     asset_name:   name,
@@ -155,7 +156,8 @@ export async function updateAsset(
     if (current.notes          !== newNotes)       changes.notes          = { from: current.notes,          to: newNotes }
 
     if (Object.keys(changes).length > 0) {
-      await supabase.from('asset_audit_log').insert({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).from('asset_audit_log').insert({
         user_id:      user.id,
         asset_id:     id,
         asset_name:   name,
@@ -193,7 +195,8 @@ export async function deleteAsset(id: string): Promise<{ error?: string }> {
   if (error) return { error: error.message }
 
   if (current) {
-    await supabase.from('asset_audit_log').insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('asset_audit_log').insert({
       user_id:      user.id,
       asset_id:     null,
       asset_name:   current.name,

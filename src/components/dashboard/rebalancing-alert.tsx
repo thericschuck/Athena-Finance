@@ -1,15 +1,15 @@
 import Link from 'next/link'
 import { AlertTriangle } from 'lucide-react'
-
-const fmtEur = (n: number) =>
-  new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
+import { fmtCurrency, fmtDate } from '@/lib/format'
 
 interface Props {
   rebalancingVolume: number
   lastRebalancing:   string | null
+  locale:            string
+  dateFormat:        string
 }
 
-export function RebalancingAlert({ rebalancingVolume, lastRebalancing }: Props) {
+export function RebalancingAlert({ rebalancingVolume, lastRebalancing, locale, dateFormat }: Props) {
   if (rebalancingVolume < 1) return null
 
   return (
@@ -18,11 +18,11 @@ export function RebalancingAlert({ rebalancingVolume, lastRebalancing }: Props) 
         <AlertTriangle className="size-5 text-amber-600 dark:text-amber-400 shrink-0" />
         <div>
           <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-            Rebalancing empfohlen — {fmtEur(rebalancingVolume)} Handelsvolumen
+            Rebalancing empfohlen — {fmtCurrency(rebalancingVolume, 'EUR', locale)} Handelsvolumen
           </p>
           {lastRebalancing && (
             <p className="text-xs text-amber-600 dark:text-amber-400">
-              Letztes Rebalancing: {new Date(lastRebalancing).toLocaleDateString('de-DE')}
+              Letztes Rebalancing: {fmtDate(lastRebalancing, dateFormat)}
             </p>
           )}
         </div>

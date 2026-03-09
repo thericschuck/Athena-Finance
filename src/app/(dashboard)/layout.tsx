@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AppShell } from '@/components/layout/app-shell'
 import { getProfile, getSettings } from '@/lib/settings'
-import { SettingsApplier } from '@/components/layout/settings-applier'
+import { SettingsProvider } from '@/components/providers/settings-context'
 
 export default async function DashboardLayout({
   children,
@@ -24,8 +24,7 @@ export default async function DashboardLayout({
   ])
 
   return (
-    <>
-      <SettingsApplier settings={settings} />
+    <SettingsProvider settings={settings} currency={profile?.currency ?? 'EUR'}>
       <AppShell
         email={user.email ?? ''}
         displayName={profile?.display_name ?? null}
@@ -33,6 +32,6 @@ export default async function DashboardLayout({
       >
         {children}
       </AppShell>
-    </>
+    </SettingsProvider>
   )
 }

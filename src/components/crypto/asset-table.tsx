@@ -3,25 +3,23 @@
 import { EditAssetDialog, DeleteAssetButton } from '@/components/crypto/asset-form'
 import type { AssetWithPrice } from '@/components/crypto/portfolio-overview'
 import type { RebalancingRow } from '@/lib/crypto/rebalancing'
+import { useSettings } from '@/components/providers/settings-context'
+import { fmtCurrency, fmtDateShort } from '@/lib/format'
 
-// ─── Formatters ───────────────────────────────────────────────────────────────
-const fmtEur = (n: number) =>
-  new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(n)
-
-const fmtQty = (n: number) =>
-  new Intl.NumberFormat('de-DE', {
-    maximumFractionDigits: n < 1 ? 8 : 4,
-    minimumFractionDigits: 0,
-  }).format(n)
-
-function fmtPct(n: number): string {
-  const sign = n >= 0 ? '+' : ''
-  return `${sign}${n.toFixed(2).replace('.', ',')} %`
-}
-
-function fmtDate(dateStr: string): string {
-  const [, m, d] = dateStr.split('-')
-  return `${d}.${m}.`
+// ─── Locale-aware formatters (called with locale from context) ────────────────
+function mkFmt(locale: string) {
+  return {
+    eur: (n: number) => fmtCurrency(n, 'EUR', locale),
+    qty: (n: number) => new Intl.NumberFormat(locale, {
+      maximumFractionDigits: n < 1 ? 8 : 4,
+      minimumFractionDigits: 0,
+    }).format(n),
+    pct: (n: number) => {
+      const sign = n >= 0 ? '+' : ''
+      return `${sign}${new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} %`
+    },
+    date: (s: string) => fmtDateShort(s),
+  }
 }
 
 // ─── Group ordering ───────────────────────────────────────────────────────────
@@ -71,7 +69,8 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 // ─── Group section ────────────────────────────────────────────────────────────
-function GroupSection({ group, rebalancingRows }: { group: Group; rebalancingRows?: RebalancingRow[] }) {
+function GroupSection({ group, rebalancingRows, locale }: { group: Group; rebalancingRows?: RebalancingRow[]; locale: string }) {
+  const fmt = mkFmt(locale)
   const groupValue = group.assets.reduce((s, a) => s + (a.current_value ?? 0), 0)
   // P&L only for assets with a known cost basis
   const pricedAssets = group.assets.filter(a => a.avg_buy_price != null)
@@ -92,10 +91,10 @@ function GroupSection({ group, rebalancingRows }: { group: Group; rebalancingRow
         <div className="flex items-center gap-3">
           {groupPnL != null && (
             <span className={`text-xs font-medium ${groupPnL >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-              {groupPnL >= 0 ? '+' : ''}{fmtEur(groupPnL)}
+              {groupPnL >= 0 ? '+' : ''}{fmt.eur(groupPnL)}
             </span>
           )}
-          <span className="text-sm font-medium">{fmtEur(groupValue)}</span>
+          <span className="text-sm font-medium">{fmt.eur(groupValue)}</span>
         </div>
       </div>
 
@@ -131,10 +130,11 @@ function GroupSection({ group, rebalancingRows }: { group: Group; rebalancingRow
                   isLast={i === group.assets.length - 1}
                   rebRow={rebRow}
                   hasReb={hasReb}
+                  locale={locale}
                 />
               )
             })}
-            <SumRow assets={group.assets} groupRebRows={groupRebRows} hasReb={hasReb} />
+            <SumRow assets={group.assets} groupRebRows={groupRebRows} hasReb={hasReb} locale={locale} />
           </tbody>
         </table>
       </div>
@@ -144,13 +144,15 @@ function GroupSection({ group, rebalancingRows }: { group: Group; rebalancingRow
 
 // ─── Asset row ────────────────────────────────────────────────────────────────
 function AssetRow({
-  asset, isLast, rebRow, hasReb,
+  asset, isLast, rebRow, hasReb, locale,
 }: {
   asset:   AssetWithPrice
   isLast:  boolean
   rebRow?: RebalancingRow
   hasReb:  boolean
+  locale:  string
 }) {
+  const fmt = mkFmt(locale)
   const quantity     = asset.quantity ?? 0
   const currentPrice = asset.current_price
   const currentValue = asset.current_value
@@ -190,21 +192,21 @@ function AssetRow({
 
       {/* Menge */}
       <td className="px-4 py-3 text-right font-mono text-xs tabular-nums">
-        {fmtQty(quantity)}
+        {fmt.qty(quantity)}
       </td>
 
       {/* Ø Kaufpreis */}
       <td className="px-4 py-3 text-right text-muted-foreground">
-        {asset.avg_buy_price != null ? fmtEur(asset.avg_buy_price) : '—'}
+        {asset.avg_buy_price != null ? fmt.eur(asset.avg_buy_price) : '—'}
       </td>
 
       {/* Akt. Preis */}
       <td className="px-4 py-3 text-right">
         {currentPrice != null ? (
           <div>
-            <p>{fmtEur(currentPrice)}</p>
+            <p>{fmt.eur(currentPrice)}</p>
             {asset.last_updated && (
-              <p className="text-xs text-muted-foreground">{fmtDate(asset.last_updated)}</p>
+              <p className="text-xs text-muted-foreground">{fmt.date(asset.last_updated)}</p>
             )}
           </div>
         ) : '—'}
@@ -212,26 +214,26 @@ function AssetRow({
 
       {/* Wert */}
       <td className="px-4 py-3 text-right font-medium">
-        {currentValue != null ? fmtEur(currentValue) : '—'}
+        {currentValue != null ? fmt.eur(currentValue) : '—'}
       </td>
 
       {/* P&L € */}
       <td className={`px-4 py-3 text-right font-medium ${pnlAbs != null ? pnlClass : ''}`}>
-        {pnlAbs != null ? `${isPositive ? '+' : ''}${fmtEur(pnlAbs)}` : '—'}
+        {pnlAbs != null ? `${isPositive ? '+' : ''}${fmt.eur(pnlAbs)}` : '—'}
       </td>
 
       {/* P&L % */}
       <td className={`px-4 py-3 text-right text-sm ${pnlPct != null ? pnlClass : ''}`}>
-        {pnlPct != null ? fmtPct(pnlPct) : '—'}
+        {pnlPct != null ? fmt.pct(pnlPct) : '—'}
       </td>
 
       {/* Rebalancing columns */}
       {hasReb && <>
         <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
-          {rebRow ? fmtEur(rebRow.target_eur) : '—'}
+          {rebRow ? fmt.eur(rebRow.target_eur) : '—'}
         </td>
         <td className={`px-4 py-3 text-right tabular-nums font-medium ${diffClass}`}>
-          {rebRow ? `${rebRow.diff_eur >= 0 ? '+' : ''}${fmtEur(rebRow.diff_eur)}` : '—'}
+          {rebRow ? `${rebRow.diff_eur >= 0 ? '+' : ''}${fmt.eur(rebRow.diff_eur)}` : '—'}
         </td>
         <td className="px-4 py-3">
           {rebRow ? (
@@ -254,7 +256,8 @@ function AssetRow({
 }
 
 // ─── Sum row ──────────────────────────────────────────────────────────────────
-function SumRow({ assets, groupRebRows, hasReb }: { assets: AssetWithPrice[]; groupRebRows: RebalancingRow[]; hasReb: boolean }) {
+function SumRow({ assets, groupRebRows, hasReb, locale }: { assets: AssetWithPrice[]; groupRebRows: RebalancingRow[]; hasReb: boolean; locale: string }) {
+  const fmt = mkFmt(locale)
   const totalValue   = assets.reduce((s, a) => s + (a.current_value ?? 0), 0)
   // Only include assets with known cost basis in P&L to avoid inflated numbers
   const pricedAssets = assets.filter(a => a.avg_buy_price != null)
@@ -274,19 +277,19 @@ function SumRow({ assets, groupRebRows, hasReb }: { assets: AssetWithPrice[]; gr
   return (
     <tr className="border-t border-border bg-muted/20 font-semibold text-sm">
       <td className="px-4 py-2.5 text-muted-foreground" colSpan={4}>Gesamt</td>
-      <td className="px-4 py-2.5 text-right">{fmtEur(totalValue)}</td>
+      <td className="px-4 py-2.5 text-right">{fmt.eur(totalValue)}</td>
       <td className={`px-4 py-2.5 text-right ${totalPnL != null ? pnlClass : ''}`}>
-        {totalPnL != null ? `${isPositive ? '+' : ''}${fmtEur(totalPnL)}` : '—'}
+        {totalPnL != null ? `${isPositive ? '+' : ''}${fmt.eur(totalPnL)}` : '—'}
       </td>
       <td className={`px-4 py-2.5 text-right ${totalPnLPct != null ? pnlClass : ''}`}>
-        {totalPnLPct != null ? fmtPct(totalPnLPct) : '—'}
+        {totalPnLPct != null ? fmt.pct(totalPnLPct) : '—'}
       </td>
       {hasReb && <>
         <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">
-          {groupRebRows.length > 0 ? fmtEur(totalTarget) : '—'}
+          {groupRebRows.length > 0 ? fmt.eur(totalTarget) : '—'}
         </td>
         <td className={`px-4 py-2.5 text-right tabular-nums ${groupRebRows.length > 0 ? diffClass : ''}`}>
-          {groupRebRows.length > 0 ? `${totalDiff >= 0 ? '+' : ''}${fmtEur(totalDiff)}` : '—'}
+          {groupRebRows.length > 0 ? `${totalDiff >= 0 ? '+' : ''}${fmt.eur(totalDiff)}` : '—'}
         </td>
         <td />
       </>}
@@ -297,11 +300,12 @@ function SumRow({ assets, groupRebRows, hasReb }: { assets: AssetWithPrice[]; gr
 
 // ─── Public export ────────────────────────────────────────────────────────────
 export function AssetTable({ assets, rebalancingRows }: { assets: AssetWithPrice[]; rebalancingRows?: RebalancingRow[] }) {
+  const { locale } = useSettings()
   const groups = groupAssets(assets)
   return (
     <div className="space-y-6">
       {groups.map(group => (
-        <GroupSection key={group.name} group={group} rebalancingRows={rebalancingRows} />
+        <GroupSection key={group.name} group={group} rebalancingRows={rebalancingRows} locale={locale} />
       ))}
     </div>
   )

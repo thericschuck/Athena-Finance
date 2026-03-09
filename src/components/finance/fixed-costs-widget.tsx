@@ -5,6 +5,8 @@ import Link from 'next/link'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
+import { useSettings } from '@/components/providers/settings-context'
+import { fmtCurrency } from '@/lib/format'
 
 interface ContractEntry {
   id:        string
@@ -19,10 +21,9 @@ interface Props {
   accounts:          { id: string; name: string }[]
 }
 
-const fmtEur = (n: number) =>
-  new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(n)
-
 export function FixedCostsWidget({ totalMonthly, contracts, accounts }: Props) {
+  const { locale } = useSettings()
+  const fmtEur = (n: number) => fmtCurrency(n, 'EUR', locale)
   const [selectedAccount, setSelectedAccount] = useState<string>('__all__')
 
   const filtered = selectedAccount === '__all__'

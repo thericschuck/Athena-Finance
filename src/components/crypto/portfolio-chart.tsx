@@ -5,6 +5,8 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
 } from 'recharts'
+import { useSettings } from '@/components/providers/settings-context'
+import { fmtCurrency } from '@/lib/format'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export type SnapshotRow = {
@@ -41,15 +43,13 @@ function formatY(value: number): string {
   return `€${value}`
 }
 
-const fmtEur = (n: number) =>
-  new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(n)
-
 // ─── Custom Tooltip ───────────────────────────────────────────────────────────
 function CustomTooltip({ active, payload, label }: {
   active?: boolean
   payload?: Array<{ dataKey: string; value: number; color: string }>
   label?: string
 }) {
+  const { locale } = useSettings()
   if (!active || !payload?.length || !label) return null
   const [y, m, d] = label.split('-')
   const total = payload.reduce((s, e) => s + (e.value ?? 0), 0)
@@ -65,13 +65,13 @@ function CustomTooltip({ active, payload, label }: {
             <span className="size-2 rounded-full shrink-0" style={{ background: entry.color }} />
             <span className="text-muted-foreground">{entry.dataKey}</span>
           </div>
-          <span className="font-medium tabular-nums">{fmtEur(entry.value)}</span>
+          <span className="font-medium tabular-nums">{fmtCurrency(entry.value, 'EUR', locale)}</span>
         </div>
       ))}
       {payload.length > 1 && (
         <div className="flex items-center justify-between gap-4 pt-1 border-t border-border">
           <span className="text-muted-foreground">Gesamt</span>
-          <span className="font-semibold tabular-nums">{fmtEur(total)}</span>
+          <span className="font-semibold tabular-nums">{fmtCurrency(total, 'EUR', locale)}</span>
         </div>
       )}
     </div>

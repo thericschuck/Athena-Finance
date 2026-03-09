@@ -5,16 +5,11 @@ import { Database } from '@/types/database'
 import { EditContractDialog, DeleteContractButton } from '@/components/finance/contract-form'
 import { CONTRACT_TYPES, FREQUENCIES, TRANSFER_TYPES } from '@/lib/finance/contract-constants'
 import { ArrowLeft, RefreshCw, AlertTriangle } from 'lucide-react'
+import { getSettings } from '@/lib/settings'
+import { fmtCurrency, fmtDate as libFmtDate } from '@/lib/format'
 
 type Contract    = Database['public']['Tables']['contracts']['Row'] & { to_account_id?: string | null }
 type Transaction = Database['public']['Tables']['transactions']['Row']
-
-// ─── Formatters ───────────────────────────────────────────────────────────────
-const fmtEur = (n: number, currency = 'EUR') =>
-  new Intl.NumberFormat('de-DE', { style: 'currency', currency }).format(n)
-
-const fmtDate = (d: string) =>
-  new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(d))
 
 function toMonthly(amount: number, frequency: string): number {
   const map: Record<string, number> = {
@@ -38,13 +33,20 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
     { data: transactions },
     { data: accounts },
     { data: categories },
+    settings,
   ] = await Promise.all([
     supabase.from('contracts').select('*').eq('id', id).eq('user_id', user!.id).single(),
     supabase.from('transactions').select('*').eq('contract_id', id).eq('user_id', user!.id)
       .order('date', { ascending: false }),
     supabase.from('accounts').select('id, name').eq('user_id', user!.id).order('sort_order'),
     supabase.from('categories').select('id, name').eq('user_id', user!.id).order('name'),
+    getSettings(user!.id),
   ])
+
+  const locale     = (settings.number_format as string) ?? 'de-DE'
+  const dateFormat = (settings.date_format   as string) ?? 'dd.MM.yyyy'
+  const fmtEur  = (n: number, currency = 'EUR') => fmtCurrency(n, currency, locale)
+  const fmtDate = (d: string) => libFmtDate(d, dateFormat)
 
   if (!contract) notFound()
 

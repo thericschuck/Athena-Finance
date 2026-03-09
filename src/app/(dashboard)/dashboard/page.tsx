@@ -278,6 +278,7 @@ export default async function DashboardPage() {
           rebalancingVolume={rebalancingVolume}
           lastRebalancing={lastRebalancing}
           topAssets={topAssets}
+          locale={locale}
         />
       </div>
 
@@ -285,7 +286,7 @@ export default async function DashboardPage() {
       <NetWorthChart snapshots={netWorthSnapshots ?? []} />
 
       {/* ── Rebalancing alert ──────────────────────────────────────────────────── */}
-      <RebalancingAlert rebalancingVolume={rebalancingVolume} lastRebalancing={lastRebalancing} />
+      <RebalancingAlert rebalancingVolume={rebalancingVolume} lastRebalancing={lastRebalancing} locale={locale} dateFormat={dateFormat} />
 
       {/* ── Konten ────────────────────────────────────────────────────────────── */}
       <div>

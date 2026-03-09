@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { getSettings } from '@/lib/settings'
+import { fmtCurrency, fmtDate } from '@/lib/format'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { AddTransactionDialog, EditTransactionDialog, DeleteTransactionButton } from '@/components/finance/transaction-form'
@@ -33,21 +35,21 @@ const TYPE_CONFIG: Record<string, { label: string; classes: string }> = {
   investment: { label: 'Investition', classes: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
 }
 
-function formatAmount(amount: number, currency: string, type: string) {
+function formatAmount(amount: number, currency: string, type: string, locale: string) {
   const sign = type === 'income' ? '+' : type === 'expense' ? '-' : ''
   const display = ['BTC', 'ETH'].includes(currency)
     ? `${amount.toFixed(6)} ${currency}`
-    : new Intl.NumberFormat('de-DE', { style: 'currency', currency, minimumFractionDigits: 2 }).format(amount)
+    : fmtCurrency(amount, currency, locale, { fractionDigits: 2 })
   return { sign, display }
 }
 
-function formatCurrency(amount: number, currency: string) {
+function formatCurrency(amount: number, currency: string, locale: string) {
   if (['BTC', 'ETH'].includes(currency)) return `${amount.toFixed(6)} ${currency}`
-  return new Intl.NumberFormat('de-DE', { style: 'currency', currency, minimumFractionDigits: 2 }).format(amount)
+  return fmtCurrency(amount, currency, locale, { fractionDigits: 2 })
 }
 
-function formatDate(dateStr: string) {
-  return new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(dateStr))
+function formatDate(dateStr: string, dateFormat: string) {
+  return fmtDate(dateStr, dateFormat)
 }
 
 interface PageProps {
@@ -59,7 +61,7 @@ export default async function AccountDetailPage({ params }: PageProps) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [{ data: account }, { data: accounts }, { data: categories }, { data: transactions }, { data: balanceHistory }] = await Promise.all([
+  const [{ data: account }, { data: accounts }, { data: categories }, { data: transactions }, { data: balanceHistory }, settings] = await Promise.all([
     supabase
       .from('accounts')
       .select('*')
@@ -89,7 +91,11 @@ export default async function AccountDetailPage({ params }: PageProps) {
       .select('snapshot_date, balance')
       .eq('account_id', id)
       .order('snapshot_date'),
+    getSettings(user!.id),
   ])
+
+  const locale = (settings.number_format as string) ?? 'de-DE'
+  const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
 
   if (!account) notFound()
 
@@ -144,11 +150,11 @@ export default async function AccountDetailPage({ params }: PageProps) {
 
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-4">
-        <SummaryCard label="Einnahmen" value={formatCurrency(income, currency)} color="text-green-600 dark:text-green-400" />
-        <SummaryCard label="Ausgaben"  value={formatCurrency(expense, currency)} color="text-red-600 dark:text-red-400" />
+        <SummaryCard label="Einnahmen" value={formatCurrency(income, currency, locale)} color="text-green-600 dark:text-green-400" />
+        <SummaryCard label="Ausgaben"  value={formatCurrency(expense, currency, locale)} color="text-red-600 dark:text-red-400" />
         <SummaryCard
           label="Saldo"
-          value={`${net >= 0 ? '+' : ''}${formatCurrency(net, currency)}`}
+          value={`${net >= 0 ? '+' : ''}${formatCurrency(net, currency, locale)}`}
           color={net >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}
         />
       </div>
@@ -174,7 +180,7 @@ export default async function AccountDetailPage({ params }: PageProps) {
             </thead>
             <tbody className="divide-y divide-border">
               {rows.map((tx) => (
-                <TransactionRow key={tx.id} tx={tx} accounts={accounts ?? []} categories={categories ?? []} />
+                <TransactionRow key={tx.id} tx={tx} accounts={accounts ?? []} categories={categories ?? []} locale={locale} dateFormat={dateFormat} />
               ))}
             </tbody>
           </table>
@@ -193,9 +199,9 @@ function SummaryCard({ label, value, color }: { label: string; value: string; co
   )
 }
 
-function TransactionRow({ tx, accounts, categories }: { tx: TransactionWithRelations; accounts: Account[]; categories: Category[] }) {
+function TransactionRow({ tx, accounts, categories, locale, dateFormat }: { tx: TransactionWithRelations; accounts: Account[]; categories: Category[]; locale: string; dateFormat: string }) {
   const typeCfg = TYPE_CONFIG[tx.type] ?? { label: tx.type, classes: 'bg-muted text-muted-foreground' }
-  const { sign, display } = formatAmount(tx.amount, tx.currency, tx.type)
+  const { sign, display } = formatAmount(tx.amount, tx.currency, tx.type, locale)
   const amountColor =
     tx.type === 'income'   ? 'text-green-600 dark:text-green-400'
     : tx.type === 'expense' ? 'text-red-600 dark:text-red-400'
@@ -203,7 +209,7 @@ function TransactionRow({ tx, accounts, categories }: { tx: TransactionWithRelat
 
   return (
     <tr className="group hover:bg-muted/30 transition-colors">
-      <td className="px-4 py-3 text-muted-foreground tabular-nums">{formatDate(tx.date)}</td>
+      <td className="px-4 py-3 text-muted-foreground tabular-nums">{formatDate(tx.date, dateFormat)}</td>
       <td className="px-4 py-3">
         <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${typeCfg.classes}`}>
           {typeCfg.label}

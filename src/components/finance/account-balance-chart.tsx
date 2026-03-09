@@ -4,6 +4,8 @@ import { useState, useMemo } from 'react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
+import { useSettings } from '@/components/providers/settings-context'
+import { fmtCurrency as libFmtCurrency } from '@/lib/format'
 
 export type AccountBalancePoint = {
   snapshot_date: string
@@ -23,38 +25,25 @@ function cutoff(key: FilterKey): Date | null {
   return null
 }
 
-function fmtEur(n: number) {
-  return new Intl.NumberFormat('de-DE', {
-    style: 'currency', currency: 'EUR',
-    minimumFractionDigits: 0, maximumFractionDigits: 0,
-  }).format(n)
-}
-
 function fmtShort(n: number) {
   if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (Math.abs(n) >= 1_000)     return `${(n / 1_000).toFixed(0)}k`
   return String(Math.round(n))
 }
 
-function xFormatter(v: string, key: FilterKey): string {
-  const d = new Date(v)
-  if (key === '1W' || key === '1M') {
-    return d.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })
-  }
-  return d.toLocaleDateString('de-DE', { month: 'short', year: '2-digit' })
-}
-
 function ChartTooltip({ active, payload, label }: {
   active?: boolean; payload?: { value: number }[]; label?: string
 }) {
+  const { locale } = useSettings()
+
   if (!active || !payload?.length) return null
-  const date = new Date(label ?? '').toLocaleDateString('de-DE', {
+  const date = new Date(label ?? '').toLocaleDateString(locale, {
     day: '2-digit', month: 'short', year: 'numeric',
   })
   return (
     <div className="rounded-lg border border-border bg-popover p-3 shadow-md text-xs min-w-[140px]">
       <p className="text-muted-foreground mb-1">{date}</p>
-      <p className="text-sm font-bold tabular-nums text-foreground">{fmtEur(payload[0].value)}</p>
+      <p className="text-sm font-bold tabular-nums text-foreground">{libFmtCurrency(payload[0].value, 'EUR', locale, { fractionDigits: 0 })}</p>
     </div>
   )
 }
@@ -66,7 +55,16 @@ export function AccountBalanceChart({
   points:   AccountBalancePoint[]
   currency?: string
 }) {
+  const { locale } = useSettings()
   const [filter, setFilter] = useState<FilterKey>('1J')
+
+  const xFormatter = (v: string, key: FilterKey): string => {
+    const d = new Date(v)
+    if (key === '1W' || key === '1M') {
+      return d.toLocaleDateString(locale, { day: '2-digit', month: 'short' })
+    }
+    return d.toLocaleDateString(locale, { month: 'short', year: '2-digit' })
+  }
 
   const data = useMemo(() => {
     const from = cutoff(filter)

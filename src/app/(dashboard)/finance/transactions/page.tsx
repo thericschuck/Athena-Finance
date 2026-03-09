@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { AddTransactionDialog, EditTransactionDialog, DeleteTransactionButton } from '@/components/finance/transaction-form'
 import { TransactionFilters } from '@/components/finance/transaction-filters'
 import { Database } from '@/types/database'
+import { getSettings } from '@/lib/settings'
+import { fmtCurrency, fmtDateShort } from '@/lib/format'
 
 type TxRow = Database['public']['Tables']['transactions']['Row']
 type Account = { id: string; name: string; color: string | null; currency: string }
@@ -29,24 +31,17 @@ const TYPE_CONFIG: Record<string, { label: string; classes: string }> = {
   investment: { label: 'Investition', classes: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
 }
 
-function formatAmount(amount: number, currency: string, type: string) {
+function formatAmount(amount: number, currency: string, type: string, locale: string) {
   const sign = type === 'income' ? '+' : type === 'expense' ? '-' : ''
-  const formatted = new Intl.NumberFormat('de-DE', {
-    style: 'currency',
-    currency: ['BTC', 'ETH'].includes(currency) ? 'EUR' : currency,
-    minimumFractionDigits: 2,
-  }).format(amount)
   // For crypto, replace currency symbol with ticker
   const display = ['BTC', 'ETH'].includes(currency)
     ? `${amount.toFixed(6)} ${currency}`
-    : formatted
+    : fmtCurrency(amount, currency, locale, { fractionDigits: 2 })
   return { sign, display }
 }
 
-function formatDate(dateStr: string) {
-  return new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: 'short' }).format(
-    new Date(dateStr)
-  )
+function formatDate(dateStr: string, dateFormat: string) {
+  return fmtDateShort(dateStr, dateFormat)
 }
 
 export default async function TransactionsPage({ searchParams }: PageProps) {
@@ -57,7 +52,7 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
   } = await supabase.auth.getUser()
 
   // Load accounts + categories for dropdowns and filter bar
-  const [{ data: accounts }, { data: categories }] = await Promise.all([
+  const [{ data: accounts }, { data: categories }, settings] = await Promise.all([
     supabase
       .from('accounts')
       .select('id, name, color, currency')
@@ -69,7 +64,11 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
       .select('id, name, color')
       .eq('user_id', user!.id)
       .order('sort_order'),
+    getSettings(user!.id),
   ])
+
+  const locale = (settings.number_format as string) ?? 'de-DE'
+  const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
 
   // Build transactions query with optional filters
   let query = supabase
@@ -134,7 +133,7 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
             </thead>
             <tbody className="divide-y divide-border">
               {rows.map((tx) => (
-                <TransactionRow key={tx.id} tx={tx} accounts={accounts ?? []} categories={categories ?? []} />
+                <TransactionRow key={tx.id} tx={tx} accounts={accounts ?? []} categories={categories ?? []} locale={locale} dateFormat={dateFormat} />
               ))}
             </tbody>
           </table>
@@ -144,9 +143,9 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
   )
 }
 
-function TransactionRow({ tx, accounts, categories }: { tx: TransactionWithRelations; accounts: Account[]; categories: Category[] }) {
+function TransactionRow({ tx, accounts, categories, locale, dateFormat }: { tx: TransactionWithRelations; accounts: Account[]; categories: Category[]; locale: string; dateFormat: string }) {
   const typeCfg = TYPE_CONFIG[tx.type] ?? { label: tx.type, classes: 'bg-muted text-muted-foreground' }
-  const { sign, display } = formatAmount(tx.amount, tx.currency, tx.type)
+  const { sign, display } = formatAmount(tx.amount, tx.currency, tx.type, locale)
 
   const amountColor =
     tx.type === 'income'
@@ -159,7 +158,7 @@ function TransactionRow({ tx, accounts, categories }: { tx: TransactionWithRelat
     <tr className="group hover:bg-muted/30 transition-colors">
       {/* Datum */}
       <td className="px-4 py-3 text-muted-foreground tabular-nums">
-        {formatDate(tx.date)}
+        {formatDate(tx.date, dateFormat)}
       </td>
 
       {/* Typ */}
