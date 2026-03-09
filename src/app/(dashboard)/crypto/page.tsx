@@ -92,7 +92,7 @@ export default async function CryptoPage() {
         snapshots={snapshots ?? []}
         rebalancingRows={rebalancingResult.rows}
       />
-      <AssetAuditLog entries={auditLog ?? []} locale={locale} dateFormat={dateFormat} />
+      <AssetAuditLog entries={(auditLog ?? []) as AuditEntry[]} locale={locale} dateFormat={dateFormat} />
     </>
   )
 }
