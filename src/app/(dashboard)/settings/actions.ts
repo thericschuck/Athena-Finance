@@ -77,6 +77,7 @@ export async function saveAppearance(
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { error } = await upsertSettings(supabase, user.id, {
+    theme_preset:      (formData.get('theme_preset') as string) || null,
     theme:             formData.get('theme') as string || 'system',
     primary_color:     formData.get('primary_color') as string || '#00B4D8',
     sidebar_collapsed: formData.get('sidebar_collapsed') === 'true',
@@ -86,6 +87,7 @@ export async function saveAppearance(
   })
 
   if (error) return { error: error.message }
+  revalidatePath('/', 'layout')
   REVALIDATE()
   return { success: true }
 }

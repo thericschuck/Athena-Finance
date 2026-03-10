@@ -4,6 +4,7 @@ import { fmtCurrency, fmtDate } from '@/lib/format'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { AddTransactionDialog, EditTransactionDialog, DeleteTransactionButton } from '@/components/finance/transaction-form'
+import { ExportTransactionsButton, ImportTransactionsDialog } from '@/components/finance/transaction-csv'
 import { AccountBalanceChart, type AccountBalancePoint } from '@/components/finance/account-balance-chart'
 import { Database } from '@/types/database'
 import { ChevronLeft } from 'lucide-react'
@@ -28,12 +29,6 @@ const TYPE_LABELS: Record<string, string> = {
   other:            'Sonstiges',
 }
 
-const TYPE_CONFIG: Record<string, { label: string; classes: string }> = {
-  expense:    { label: 'Ausgabe',     classes: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-  income:     { label: 'Einnahme',    classes: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-  transfer:   { label: 'Transfer',    classes: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-  investment: { label: 'Investition', classes: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
-}
 
 function formatAmount(amount: number, currency: string, type: string, locale: string) {
   const net = type === 'income' ? amount : type === 'expense' ? -amount : amount
@@ -148,11 +143,15 @@ export default async function AccountDetailPage({ params }: PageProps) {
             </p>
           </div>
         </div>
-        <AddTransactionDialog
-          accounts={accounts ?? []}
-          categories={categories ?? []}
-          defaultAccountId={id}
-        />
+        <div className="flex items-center gap-2">
+          <ExportTransactionsButton accountId={id} />
+          <ImportTransactionsDialog accountId={id} accountName={account.name} />
+          <AddTransactionDialog
+            accounts={accounts ?? []}
+            categories={categories ?? []}
+            defaultAccountId={id}
+          />
+        </div>
       </div>
 
       {/* Balance chart */}
@@ -181,7 +180,6 @@ export default async function AccountDetailPage({ params }: PageProps) {
             <thead>
               <tr className="border-b border-border bg-muted/40">
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground w-32">Datum</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Typ</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Kategorie</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Beschreibung</th>
                 <th className="px-4 py-3 text-right font-medium text-muted-foreground">Betrag</th>
@@ -210,7 +208,6 @@ function SummaryCard({ label, value, color }: { label: string; value: string; co
 }
 
 function TransactionRow({ tx, accounts, categories, locale, dateFormat }: { tx: TransactionWithRelations; accounts: Account[]; categories: Category[]; locale: string; dateFormat: string }) {
-  const typeCfg = TYPE_CONFIG[tx.type] ?? { label: tx.type, classes: 'bg-muted text-muted-foreground' }
   const { sign, display, net } = formatAmount(tx.amount, tx.currency, tx.type, locale)
   const amountColor =
     net > 0 ? 'text-green-600 dark:text-green-400'
@@ -220,11 +217,6 @@ function TransactionRow({ tx, accounts, categories, locale, dateFormat }: { tx: 
   return (
     <tr className="group hover:bg-muted/30 transition-colors">
       <td className="px-4 py-3 text-muted-foreground tabular-nums">{formatDate(tx.date, dateFormat)}</td>
-      <td className="px-4 py-3">
-        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${typeCfg.classes}`}>
-          {typeCfg.label}
-        </span>
-      </td>
       <td className="px-4 py-3 text-muted-foreground">{tx.category?.name ?? '—'}</td>
       <td className="px-4 py-3 max-w-xs">
         <span className="truncate block text-foreground">

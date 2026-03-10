@@ -186,6 +186,204 @@ tbody tr {
   transition: background-color 0.12s ease;
 }
 
+/* ── Theme Presets ──────────────────────────────────────────────────────────── */
+
+/* Obsidian Terminal – Dark · Monospace · Bloomberg */
+[data-theme="obsidian"] {
+  --background: #030303;
+  --foreground: #e2e8f0;
+  --card: #0c0c0c;
+  --card-foreground: #e2e8f0;
+  --popover: #0c0c0c;
+  --popover-foreground: #e2e8f0;
+  --primary: #00d4ff;
+  --primary-foreground: #000a0f;
+  --secondary: #141414;
+  --secondary-foreground: #94a3b8;
+  --muted: #141414;
+  --muted-foreground: #64748b;
+  --accent: #0a2030;
+  --accent-foreground: #00d4ff;
+  --destructive: #ff3333;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.06);
+  --ring: rgba(0, 212, 255, 0.5);
+  --radius: 0.2rem;
+  --sidebar: #060606;
+  --sidebar-foreground: #94a3b8;
+  --sidebar-primary: #00d4ff;
+  --sidebar-primary-foreground: #000a0f;
+  --sidebar-accent: #141414;
+  --sidebar-accent-foreground: #e2e8f0;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-ring: rgba(0, 212, 255, 0.3);
+}
+[data-theme="obsidian"] body {
+  font-family: var(--font-space-mono), ui-monospace, monospace;
+  letter-spacing: -0.01em;
+}
+
+/* Aurum – Dark · Serif · Luxury Finance */
+[data-theme="aurum"] {
+  --background: #0c0800;
+  --foreground: #f0e6c8;
+  --card: #130d00;
+  --card-foreground: #f0e6c8;
+  --popover: #130d00;
+  --popover-foreground: #f0e6c8;
+  --primary: #d4a017;
+  --primary-foreground: #0c0800;
+  --secondary: #1e1500;
+  --secondary-foreground: #c8b887;
+  --muted: #1e1500;
+  --muted-foreground: #8a7a50;
+  --accent: #2a1e00;
+  --accent-foreground: #d4a017;
+  --destructive: #c0392b;
+  --border: rgba(212, 160, 23, 0.2);
+  --input: rgba(212, 160, 23, 0.1);
+  --ring: rgba(212, 160, 23, 0.4);
+  --radius: 0.5rem;
+  --sidebar: #080500;
+  --sidebar-foreground: #c8b887;
+  --sidebar-primary: #d4a017;
+  --sidebar-primary-foreground: #0c0800;
+  --sidebar-accent: #1e1500;
+  --sidebar-accent-foreground: #f0e6c8;
+  --sidebar-border: rgba(212, 160, 23, 0.15);
+  --sidebar-ring: rgba(212, 160, 23, 0.3);
+}
+[data-theme="aurum"] body {
+  font-family: var(--font-playfair), Georgia, serif;
+}
+
+/* Arctic – Light · Clean · Nordic SaaS */
+[data-theme="arctic"] {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #dbeafe;
+  --accent-foreground: #1e40af;
+  --destructive: #dc2626;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: rgba(37, 99, 235, 0.3);
+  --radius: 0.5rem;
+  --sidebar: #f1f5f9;
+  --sidebar-foreground: #475569;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e2e8f0;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: rgba(37, 99, 235, 0.2);
+}
+
+/* Void – Dark · Neon · Deep Space */
+[data-theme="void"] {
+  --background: #05050f;
+  --foreground: #e0e7ff;
+  --card: #0a0a1e;
+  --card-foreground: #e0e7ff;
+  --popover: #0a0a1e;
+  --popover-foreground: #e0e7ff;
+  --primary: #818cf8;
+  --primary-foreground: #05050f;
+  --secondary: #0f0f2d;
+  --secondary-foreground: #a5b4fc;
+  --muted: #0f0f2d;
+  --muted-foreground: #6366f1;
+  --accent: #1e1b4b;
+  --accent-foreground: #a5b4fc;
+  --destructive: #f43f5e;
+  --border: rgba(129, 140, 248, 0.2);
+  --input: rgba(129, 140, 248, 0.1);
+  --ring: rgba(129, 140, 248, 0.5);
+  --radius: 0.4rem;
+  --sidebar: #030310;
+  --sidebar-foreground: #a5b4fc;
+  --sidebar-primary: #818cf8;
+  --sidebar-primary-foreground: #05050f;
+  --sidebar-accent: #0f0f2d;
+  --sidebar-accent-foreground: #e0e7ff;
+  --sidebar-border: rgba(129, 140, 248, 0.15);
+  --sidebar-ring: rgba(129, 140, 248, 0.3);
+}
+
+/* Copper Wire – Dark · Industrial · Warm */
+[data-theme="copper"] {
+  --background: #0a0502;
+  --foreground: #f0e0c0;
+  --card: #130900;
+  --card-foreground: #f0e0c0;
+  --popover: #130900;
+  --popover-foreground: #f0e0c0;
+  --primary: #c86820;
+  --primary-foreground: #0a0502;
+  --secondary: #1e0f04;
+  --secondary-foreground: #c8a880;
+  --muted: #1e0f04;
+  --muted-foreground: #8a6840;
+  --accent: #2e1808;
+  --accent-foreground: #c86820;
+  --destructive: #cc3300;
+  --border: rgba(200, 104, 32, 0.2);
+  --input: rgba(200, 104, 32, 0.1);
+  --ring: rgba(200, 104, 32, 0.4);
+  --radius: 0.3rem;
+  --sidebar: #070300;
+  --sidebar-foreground: #c8a880;
+  --sidebar-primary: #c86820;
+  --sidebar-primary-foreground: #0a0502;
+  --sidebar-accent: #1e0f04;
+  --sidebar-accent-foreground: #f0e0c0;
+  --sidebar-border: rgba(200, 104, 32, 0.15);
+  --sidebar-ring: rgba(200, 104, 32, 0.3);
+}
+
+/* Sakura – Light · Serif · Editorial */
+[data-theme="sakura"] {
+  --background: #fffaf8;
+  --foreground: #1a0f13;
+  --card: #ffffff;
+  --card-foreground: #1a0f13;
+  --popover: #ffffff;
+  --popover-foreground: #1a0f13;
+  --primary: #e84077;
+  --primary-foreground: #ffffff;
+  --secondary: #fdf0f4;
+  --secondary-foreground: #1a0f13;
+  --muted: #fdf0f4;
+  --muted-foreground: #9a6070;
+  --accent: #fce4ed;
+  --accent-foreground: #c02555;
+  --destructive: #dc2626;
+  --border: #f0d6e0;
+  --input: #f0d6e0;
+  --ring: rgba(232, 64, 119, 0.3);
+  --radius: 0.75rem;
+  --sidebar: #fdf6f8;
+  --sidebar-foreground: #6a3040;
+  --sidebar-primary: #e84077;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #fce4ed;
+  --sidebar-accent-foreground: #1a0f13;
+  --sidebar-border: #f0d6e0;
+  --sidebar-ring: rgba(232, 64, 119, 0.2);
+}
+[data-theme="sakura"] body {
+  font-family: var(--font-lora), Georgia, serif;
+}
+
 /* ── Compact tables ────────────────────────────────────────────────────────── */
 [data-compact="true"] table td,
 [data-compact="true"] table th {

@@ -17,18 +17,19 @@ export async function createTransaction(
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const date = formData.get('date') as string
-  const type = formData.get('type') as string
   const account_id = formData.get('account_id') as string
   const amountRaw = formData.get('amount') as string
   const currency = formData.get('currency') as string
+  const isTransfer = formData.get('is_transfer') === 'true'
+  const transferTo = (formData.get('transfer_to') as string) || null
 
   if (!date) return { error: 'Datum ist erforderlich' }
-  if (!type) return { error: 'Typ ist erforderlich' }
   if (!account_id) return { error: 'Konto ist erforderlich' }
   if (!amountRaw || isNaN(Number(amountRaw))) return { error: 'Betrag ist ungültig' }
   if (!currency) return { error: 'Währung ist erforderlich' }
 
-  const amount = parseFloat(amountRaw)
+  const type = isTransfer ? 'transfer' : (parseFloat(amountRaw) >= 0 ? 'income' : 'expense')
+  const amount = Math.abs(parseFloat(amountRaw))
 
   const { error } = await supabase.from('transactions').insert({
     date,
@@ -36,6 +37,7 @@ export async function createTransaction(
     account_id,
     currency,
     amount,
+    transfer_to: isTransfer ? transferTo : null,
     category_id: (formData.get('category_id') as string) || null,
     description: (formData.get('description') as string) || null,
     merchant: (formData.get('merchant') as string) || null,
@@ -59,17 +61,20 @@ export async function updateTransaction(
 
   const id        = formData.get('id') as string
   const date      = formData.get('date') as string
-  const type      = formData.get('type') as string
   const account_id = formData.get('account_id') as string
   const amountRaw = formData.get('amount') as string
   const currency  = formData.get('currency') as string
+  const isTransfer = formData.get('is_transfer') === 'true'
+  const transferTo = (formData.get('transfer_to') as string) || null
 
   if (!id)                                      return { error: 'ID fehlt' }
   if (!date)                                    return { error: 'Datum ist erforderlich' }
-  if (!type)                                    return { error: 'Typ ist erforderlich' }
   if (!account_id)                              return { error: 'Konto ist erforderlich' }
   if (!amountRaw || isNaN(Number(amountRaw)))   return { error: 'Betrag ist ungültig' }
   if (!currency)                                return { error: 'Währung ist erforderlich' }
+
+  const type = isTransfer ? 'transfer' : (parseFloat(amountRaw) >= 0 ? 'income' : 'expense')
+  const amount = Math.abs(parseFloat(amountRaw))
 
   const { error } = await supabase
     .from('transactions')
@@ -78,7 +83,8 @@ export async function updateTransaction(
       type,
       account_id,
       currency,
-      amount:      parseFloat(amountRaw),
+      amount,
+      transfer_to: isTransfer ? transferTo : null,
       category_id: (formData.get('category_id') as string) || null,
       description: (formData.get('description') as string) || null,
       merchant:    (formData.get('merchant') as string) || null,

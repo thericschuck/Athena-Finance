@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { AddTransactionDialog, EditTransactionDialog, DeleteTransactionButton } from '@/components/finance/transaction-form'
 import { TransactionFilters } from '@/components/finance/transaction-filters'
+import { ExportTransactionsButton } from '@/components/finance/transaction-csv'
 import { Database } from '@/types/database'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency, fmtDateShort } from '@/lib/format'
@@ -24,12 +25,6 @@ interface PageProps {
   }>
 }
 
-const TYPE_CONFIG: Record<string, { label: string; classes: string }> = {
-  expense:    { label: 'Ausgabe',     classes: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-  income:     { label: 'Einnahme',    classes: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-  transfer:   { label: 'Transfer',    classes: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-  investment: { label: 'Investition', classes: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
-}
 
 function formatAmount(amount: number, currency: string, type: string, locale: string) {
   // net = financial impact on the account (+income, -expense). Negative amounts flip the direction.
@@ -103,10 +98,13 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
             {Object.values(filters).some(Boolean) && ' (gefiltert)'}
           </p>
         </div>
-        <AddTransactionDialog
-          accounts={accounts ?? []}
-          categories={categories ?? []}
-        />
+        <div className="flex items-center gap-2">
+          <ExportTransactionsButton />
+          <AddTransactionDialog
+            accounts={accounts ?? []}
+            categories={categories ?? []}
+          />
+        </div>
       </div>
 
       {/* Filters */}
@@ -124,7 +122,6 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
             <thead>
               <tr className="border-b border-border bg-muted/40">
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground w-24">Datum</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Typ</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Konto</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden sm:table-cell">Kategorie</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden md:table-cell">Beschreibung</th>
@@ -145,7 +142,6 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
 }
 
 function TransactionRow({ tx, accounts, categories, locale, dateFormat }: { tx: TransactionWithRelations; accounts: Account[]; categories: Category[]; locale: string; dateFormat: string }) {
-  const typeCfg = TYPE_CONFIG[tx.type] ?? { label: tx.type, classes: 'bg-muted text-muted-foreground' }
   const { sign, display, net } = formatAmount(tx.amount, tx.currency, tx.type, locale)
 
   const amountColor =
@@ -160,13 +156,6 @@ function TransactionRow({ tx, accounts, categories, locale, dateFormat }: { tx: 
         {formatDate(tx.date, dateFormat)}
       </td>
 
-      {/* Typ */}
-      <td className="px-4 py-3">
-        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${typeCfg.classes}`}>
-          {typeCfg.label}
-        </span>
-      </td>
-
       {/* Konto */}
       <td className="px-4 py-3">
         {tx.account ? (
@@ -176,6 +165,11 @@ function TransactionRow({ tx, accounts, categories, locale, dateFormat }: { tx: 
               style={{ backgroundColor: tx.account.color ?? '#94a3b8' }}
             />
             <span className="text-muted-foreground">{tx.account.name}</span>
+            {tx.type === 'transfer' && (
+              <span className="inline-flex rounded-full px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                Transfer
+              </span>
+            )}
           </span>
         ) : (
           <span className="text-muted-foreground">—</span>
