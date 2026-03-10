@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Database } from '@/types/database'
 import { ExternalLink, ShieldX, RefreshCw, Repeat2 } from 'lucide-react'
 import { AddIndicatorDialog, EditIndicatorDialog, DeleteIndicatorButton } from '@/components/strategy/indicator-form'
-import { IndicatorExportDialog } from '@/components/strategy/indicator-export-dialog'
+import { IndicatorExportDialog, IndicatorImportDialog } from '@/components/strategy/indicator-export-dialog'
 import { BacktestsDialog } from '@/components/strategy/performance-form'
 import { IndicatorFilters } from '@/components/strategy/indicator-filters'
 import { Suspense } from 'react'
@@ -118,6 +118,7 @@ export default async function IndicatorsPage({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <IndicatorImportDialog />
           <IndicatorExportDialog />
           <AddIndicatorDialog />
         </div>

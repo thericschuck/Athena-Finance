@@ -7,7 +7,6 @@ import {
   TrendingUp,
   CircleDollarSign,
   Target,
-  BarChart3,
   Briefcase,
   History,
   Settings,
@@ -57,7 +56,6 @@ const navItems: NavItem[] = [
     ],
   },
   { href: '/depot',    label: 'Depot',         icon: Briefcase },
-  { href: '/tpi',      label: 'TPI',           icon: BarChart3 },
   { href: '/history',  label: 'Historie',      icon: History   },
   { href: '/settings', label: 'Einstellungen', icon: Settings  },
 ]
