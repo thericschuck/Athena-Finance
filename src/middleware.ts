@@ -24,7 +24,15 @@ export async function middleware(request: NextRequest) {
   )
 
   // Refresh session – must not run logic between createServerClient and getUser()
-  await supabase.auth.getUser()
+  const { error } = await supabase.auth.getUser()
+
+  // Invalid refresh token → clear session and redirect to login
+  if (error?.code === 'refresh_token_not_found' || error?.status === 400) {
+    await supabase.auth.signOut()
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
 
   return supabaseResponse
 }

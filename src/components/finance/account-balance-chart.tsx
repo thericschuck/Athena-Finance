@@ -51,9 +51,11 @@ function ChartTooltip({ active, payload, label }: {
 export function AccountBalanceChart({
   points,
   currency = 'EUR',
+  color,
 }: {
-  points:   AccountBalancePoint[]
+  points:    AccountBalancePoint[]
   currency?: string
+  color?:    string | null
 }) {
   const { locale } = useSettings()
   const [filter, setFilter] = useState<FilterKey>('1J')
@@ -82,6 +84,9 @@ export function AccountBalanceChart({
   }
 
   const isPositive = (data.at(-1)?.balance ?? 0) >= 0
+  const lineColor = isPositive
+    ? (color ?? 'hsl(var(--primary))')
+    : 'hsl(var(--destructive))'
 
   return (
     <div className="rounded-lg border border-border bg-card p-5">
@@ -110,8 +115,8 @@ export function AccountBalanceChart({
         <AreaChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="balGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor={isPositive ? 'hsl(var(--primary))' : 'hsl(var(--destructive))'} stopOpacity={0.15} />
-              <stop offset="95%" stopColor={isPositive ? 'hsl(var(--primary))' : 'hsl(var(--destructive))'} stopOpacity={0} />
+              <stop offset="5%"  stopColor={lineColor} stopOpacity={0.15} />
+              <stop offset="95%" stopColor={lineColor} stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
@@ -130,11 +135,11 @@ export function AccountBalanceChart({
           <Area
             type="monotone"
             dataKey="balance"
-            stroke={isPositive ? 'hsl(var(--primary))' : 'hsl(var(--destructive))'}
+            stroke={lineColor}
             strokeWidth={2}
             fill="url(#balGrad)"
             dot={false}
-            activeDot={{ r: 4 }}
+            activeDot={{ r: 4, fill: lineColor }}
           />
         </AreaChart>
       </ResponsiveContainer>

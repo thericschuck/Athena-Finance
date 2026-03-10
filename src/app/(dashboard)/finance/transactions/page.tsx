@@ -32,12 +32,13 @@ const TYPE_CONFIG: Record<string, { label: string; classes: string }> = {
 }
 
 function formatAmount(amount: number, currency: string, type: string, locale: string) {
-  const sign = type === 'income' ? '+' : type === 'expense' ? '-' : ''
-  // For crypto, replace currency symbol with ticker
+  // net = financial impact on the account (+income, -expense). Negative amounts flip the direction.
+  const net = type === 'income' ? amount : type === 'expense' ? -amount : amount
+  const sign = net > 0 ? '+' : net < 0 ? '-' : ''
   const display = ['BTC', 'ETH'].includes(currency)
-    ? `${amount.toFixed(6)} ${currency}`
-    : fmtCurrency(amount, currency, locale, { fractionDigits: 2 })
-  return { sign, display }
+    ? `${Math.abs(amount).toFixed(6)} ${currency}`
+    : fmtCurrency(Math.abs(amount), currency, locale, { fractionDigits: 2 })
+  return { sign, display, net }
 }
 
 function formatDate(dateStr: string, dateFormat: string) {
@@ -145,14 +146,12 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
 
 function TransactionRow({ tx, accounts, categories, locale, dateFormat }: { tx: TransactionWithRelations; accounts: Account[]; categories: Category[]; locale: string; dateFormat: string }) {
   const typeCfg = TYPE_CONFIG[tx.type] ?? { label: tx.type, classes: 'bg-muted text-muted-foreground' }
-  const { sign, display } = formatAmount(tx.amount, tx.currency, tx.type, locale)
+  const { sign, display, net } = formatAmount(tx.amount, tx.currency, tx.type, locale)
 
   const amountColor =
-    tx.type === 'income'
-      ? 'text-green-600 dark:text-green-400'
-      : tx.type === 'expense'
-      ? 'text-red-600 dark:text-red-400'
-      : 'text-foreground'
+    net > 0 ? 'text-green-600 dark:text-green-400'
+    : net < 0 ? 'text-red-600 dark:text-red-400'
+    : 'text-foreground'
 
   return (
     <tr className="group hover:bg-muted/30 transition-colors">

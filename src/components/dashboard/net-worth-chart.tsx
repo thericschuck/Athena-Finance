@@ -30,7 +30,7 @@ const FILTERS: FilterKey[] = ['1W', '1M', '3M', '6M', '1J', 'All']
 const VIEWS: ViewKey[]     = ['Gesamt', 'Konten', 'Depot', 'Krypto']
 
 const VIEW_COLOR: Record<ViewKey, string> = {
-  Gesamt: 'hsl(var(--primary))',
+  Gesamt: '#6366f1',
   Konten: '#3b82f6',
   Depot:  '#10b981',
   Krypto: '#f59e0b',
@@ -55,7 +55,7 @@ function cutoff(key: FilterKey): Date | null {
 
 function viewValue(s: NetWorthSnapshot, view: ViewKey): number {
   switch (view) {
-    case 'Konten': return (s.total_checking ?? 0) + (s.total_savings ?? 0) + (s.total_cash ?? 0) + (s.total_bausparer ?? 0) + (s.total_business ?? 0)
+    case 'Konten': return (s.net_worth ?? 0) + (s.total_debts ?? 0) - (s.total_depot ?? 0) - (s.total_crypto ?? 0)
     case 'Depot':  return s.total_depot  ?? 0
     case 'Krypto': return s.total_crypto ?? 0
     default:       return s.net_worth    ?? 0
@@ -90,7 +90,7 @@ function ChartTooltip({ active, payload, label, view }: {
       ['Schulden',   d.total_debts ? -d.total_debts : null],
     ] :
     view === 'Konten' ? [
-      ['Girokonto',  d.total_checking],
+      ['Konten/Inv.', d.total_checking],
       ['Sparkonto',  d.total_savings],
       ['Cash',       d.total_cash],
       ['Bausparer',  d.total_bausparer],

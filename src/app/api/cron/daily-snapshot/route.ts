@@ -113,15 +113,17 @@ type NwBucket = 'checking' | 'savings' | 'cash' | 'bausparer' | 'business' | 'de
 
 function accountBucket(type: string): NwBucket {
   switch (type) {
-    case 'checking':  return 'checking'
-    case 'savings':   return 'savings'
-    case 'cash':      return 'cash'
-    case 'bausparer': return 'bausparer'
-    case 'business':  return 'business'
+    case 'checking':
+    case 'investment':       return 'checking'
+    case 'savings':          return 'savings'
+    case 'cash':             return 'cash'
+    case 'bausparer':
+    case 'building_savings': return 'bausparer'
+    case 'business':         return 'business'
     case 'loan':
     case 'credit':
-    case 'debt':      return 'debts'
-    default:          return null
+    case 'debt':             return 'debts'
+    default:                 return null
   }
 }
 

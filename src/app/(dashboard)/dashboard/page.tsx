@@ -111,7 +111,6 @@ export default async function DashboardPage() {
   const accounts       = accountsRaw ?? []
   const activeAccounts = accounts.filter(a => a.is_active)
   const contracts = (contractsRaw ?? []) as ContractRow[]
-  const debts     = debtsRaw ?? []
   const goals     = (goalsRaw ?? []) as unknown as GoalDash[]
 
   // ── Account balances from transactions ────────────────────────────────────
@@ -162,6 +161,42 @@ export default async function DashboardPage() {
   const savingsTotal  = goals.reduce((s, g) => s + (g.current_amount ?? 0), 0)
   const depotTotal    = depotSummaries.reduce((s, d) => s + (d.depotValue ?? 0), 0)
   const netWorth      = financeTotal + cryptoTotal + savingsTotal + lentTotal + depotTotal - borrowedTotal
+
+  // ── Today's snapshot for chart (live data point) ──────────────────────────
+  // Mirror the accountBucket logic from the cron job
+  function liveAccountBucket(type: string): string | null {
+    switch (type) {
+      case 'checking':
+      case 'investment':       return 'checking'
+      case 'savings':          return 'savings'
+      case 'cash':             return 'cash'
+      case 'bausparer':
+      case 'building_savings': return 'bausparer'
+      case 'business':         return 'business'
+      default:                 return null
+    }
+  }
+  const liveBuckets: Record<string, number> = { checking: 0, savings: 0, cash: 0, bausparer: 0, business: 0 }
+  for (const a of accounts) {
+    const bucket = liveAccountBucket(a.type)
+    if (bucket) liveBuckets[bucket] = (liveBuckets[bucket] ?? 0) + (balMap.get(a.id) ?? 0)
+  }
+  const todayDateStr = now.toISOString().split('T')[0]
+  const todaySnapshot = {
+    snapshot_date:   todayDateStr,
+    net_worth:       netWorth,
+    total_checking:  liveBuckets.checking,
+    total_savings:   liveBuckets.savings,
+    total_cash:      liveBuckets.cash,
+    total_depot:     depotTotal,
+    total_crypto:    cryptoTotal,
+    total_bausparer: liveBuckets.bausparer,
+    total_business:  liveBuckets.business,
+    total_debts:     borrowedTotal,
+    total_assets:    0,
+  }
+  const existingSnapshots = netWorthSnapshots ?? []
+  const snapshotsWithToday = existingSnapshots.filter(s => s.snapshot_date !== todayDateStr).concat(todaySnapshot)
 
   // ── Rebalancing ───────────────────────────────────────────────────────────
   const rebResult        = calculateRebalancing(cryptoSignals, cryptoAllocations, cryptoAssets, cryptoTotal)
@@ -288,7 +323,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── Net Worth Chart ───────────────────────────────────────────────────── */}
-      <NetWorthChart snapshots={netWorthSnapshots ?? []} />
+      <NetWorthChart snapshots={snapshotsWithToday} />
 
       {/* ── Depots ────────────────────────────────────────────────────────────── */}
       {depotSummaries.length > 0 && (

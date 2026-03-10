@@ -28,7 +28,7 @@ export async function createTransaction(
   if (!amountRaw || isNaN(Number(amountRaw))) return { error: 'Betrag ist ungültig' }
   if (!currency) return { error: 'Währung ist erforderlich' }
 
-  const amount = Math.abs(parseFloat(amountRaw))
+  const amount = parseFloat(amountRaw)
 
   const { error } = await supabase.from('transactions').insert({
     date,
@@ -78,7 +78,7 @@ export async function updateTransaction(
       type,
       account_id,
       currency,
-      amount:      Math.abs(parseFloat(amountRaw)),
+      amount:      parseFloat(amountRaw),
       category_id: (formData.get('category_id') as string) || null,
       description: (formData.get('description') as string) || null,
       merchant:    (formData.get('merchant') as string) || null,
