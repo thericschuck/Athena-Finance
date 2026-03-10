@@ -38,7 +38,8 @@ export async function POST(req: NextRequest) {
 
     const { data: inserted, error } = await supabase
       .from('indicators')
-      .insert(toInsert)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .insert(toInsert as any)
       .select('id')
       .single()
 
@@ -68,7 +69,8 @@ export async function POST(req: NextRequest) {
     if (backtestRows.length > 0) {
       const { data: insertedBacktests, error: btError } = await supabase
         .from('indicator_performance')
-        .insert(backtestRows)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .insert(backtestRows as any)
         .select('id')
 
       if (!btError) {
