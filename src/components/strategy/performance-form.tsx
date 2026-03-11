@@ -44,21 +44,37 @@ function NumField({ id, name, label, defaultValue, placeholder, step = '0.01' }:
 }
 
 // ─── Shared performance form fields ──────────────────────────────────────────
+type IndicatorOption = { id: string; name: string }
+
 function PerfFields({
   perf,
   indicatorId,
+  indicators,
   defaultAssetClass,
   defaultTimeframe,
 }: {
   perf?: Perf
-  indicatorId: string
+  indicatorId?: string
+  indicators?: IndicatorOption[]
   defaultAssetClass?: string
   defaultTimeframe?: string
 }) {
   return (
     <>
       {perf && <input type="hidden" name="id" value={perf.id} />}
-      <input type="hidden" name="indicator_id" value={indicatorId} />
+      {indicatorId
+        ? <input type="hidden" name="indicator_id" value={indicatorId} />
+        : (
+          <div className="space-y-1.5">
+            <Label htmlFor="p-ind">Indikator *</Label>
+            <select id="p-ind" name="indicator_id" required
+              className="h-9 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring">
+              <option value="">— Indikator wählen —</option>
+              {(indicators ?? []).map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+            </select>
+          </div>
+        )
+      }
 
       {/* Asset + Asset Class */}
       <div className="grid grid-cols-2 gap-3">
@@ -134,11 +150,12 @@ function PerfFields({
 
 // ─── Shared dialog wrapper ────────────────────────────────────────────────────
 function PerfDialog({
-  mode, perf, indicatorId, trigger, defaultAssetClass, defaultTimeframe,
+  mode, perf, indicatorId, indicators, trigger, defaultAssetClass, defaultTimeframe,
 }: {
   mode:               'create' | 'edit'
   perf?:              Perf
-  indicatorId:        string
+  indicatorId?:       string
+  indicators?:        IndicatorOption[]
   trigger:            React.ReactNode
   defaultAssetClass?: string
   defaultTimeframe?:  string
@@ -163,6 +180,7 @@ function PerfDialog({
           <PerfFields
             perf={perf}
             indicatorId={indicatorId}
+            indicators={indicators}
             defaultAssetClass={mode === 'create' ? defaultAssetClass : undefined}
             defaultTimeframe={mode === 'create' ? defaultTimeframe : undefined}
           />
@@ -316,5 +334,26 @@ export function BacktestsDialog({
         )}
       </DialogContent>
     </Dialog>
+  )
+}
+
+// ─── Standalone "add backtest" dialog for the tests overview page ─────────────
+export function AddBacktestStandaloneDialog({
+  indicators,
+  defaultAssetClass,
+  defaultTimeframe,
+}: {
+  indicators:         IndicatorOption[]
+  defaultAssetClass?: string
+  defaultTimeframe?:  string
+}) {
+  return (
+    <PerfDialog
+      mode="create"
+      indicators={indicators}
+      defaultAssetClass={defaultAssetClass}
+      defaultTimeframe={defaultTimeframe}
+      trigger={<Button size="sm"><Plus className="size-4" />Backtest hinzufügen</Button>}
+    />
   )
 }
