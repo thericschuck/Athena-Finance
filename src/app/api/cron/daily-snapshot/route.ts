@@ -127,9 +127,258 @@ function accountBucket(type: string): NwBucket {
   }
 }
 
+// ─── Snapshot logic for a single user + date ──────────────────────────────────
+async function runSnapshotForUser(
+  supabase: ReturnType<typeof getAdmin>,
+  uid: string,
+  date: string,
+  cryptoPriceCache: Map<string, number> | null,
+  log: string[],
+): Promise<Map<string, number> | null> {
+  // ── Step 1: Account Balances ───────────────────────────────────────────────
+  const { data: accounts } = await supabase
+    .from('accounts')
+    .select('id, type, currency')
+    .eq('user_id', uid)
+    .eq('is_active', true)
+
+  const balMap = new Map<string, number>()
+  for (const a of accounts ?? []) balMap.set(a.id, 0)
+
+  if (accounts?.length) {
+    const { data: txns } = await supabase
+      .from('transactions')
+      .select('account_id, amount, amount_base, type, fx_rate, transfer_to')
+      .eq('user_id', uid)
+      .lte('date', date)
+
+    for (const t of txns ?? []) {
+      if (!balMap.has(t.account_id)) continue
+      const amt = t.amount_base ?? t.amount * (t.fx_rate ?? 1)
+      if (t.type === 'income') {
+        balMap.set(t.account_id, (balMap.get(t.account_id) ?? 0) + amt)
+      } else if (t.type === 'expense') {
+        balMap.set(t.account_id, (balMap.get(t.account_id) ?? 0) - amt)
+      } else if (t.type === 'transfer') {
+        balMap.set(t.account_id, (balMap.get(t.account_id) ?? 0) - amt)
+        if (t.transfer_to && balMap.has(t.transfer_to)) {
+          balMap.set(t.transfer_to, (balMap.get(t.transfer_to) ?? 0) + amt)
+        }
+      }
+    }
+
+    const balRows = (accounts ?? []).map(a => ({
+      account_id:    a.id,
+      balance:       round2(balMap.get(a.id) ?? 0),
+      currency:      a.currency,
+      snapshot_date: date,
+      source:        'cron',
+    }))
+
+    const { error: balErr } = await supabase
+      .from('account_balances')
+      .upsert(balRows, { onConflict: 'account_id,snapshot_date' })
+
+    if (balErr) log.push(`  account_balances ERR: ${balErr.message}`)
+    else        log.push(`  account_balances: ${balRows.length} rows`)
+  }
+
+  // ── Step 2: Portfolio Snapshots + Asset Valuations ─────────────────────────
+  const { data: assets } = await supabase
+    .from('assets')
+    .select('id, type, symbol, quantity, avg_buy_price, currency, portfolio_name')
+    .eq('user_id', uid)
+    .not('quantity', 'is', null)
+    .gt('quantity', 0)
+
+  let total_depot  = 0
+  let total_crypto = 0
+
+  if (assets?.length) {
+    // Use passed cache or fetch fresh prices
+    let cryptoPrices = cryptoPriceCache
+    if (!cryptoPrices) {
+      const cryptoSymbols = assets
+        .filter(a => a.type === 'crypto' && a.symbol)
+        .map(a => a.symbol!)
+        .filter((v, i, arr) => arr.indexOf(v) === i)
+      cryptoPrices = cryptoSymbols.length
+        ? await fetchCryptoPrices(cryptoSymbols)
+        : new Map<string, number>()
+    }
+
+    const portRows: Record<string, unknown>[] = []
+    const evalRows: Record<string, unknown>[] = []
+
+    for (const asset of assets) {
+      const qty = asset.quantity ?? 0
+      let priceEur: number
+      if (asset.type === 'crypto' && asset.symbol) {
+        priceEur = cryptoPrices.get(asset.symbol.toUpperCase()) ?? 0
+      } else {
+        priceEur = asset.avg_buy_price ?? 0
+      }
+      const valueEur = round2(qty * priceEur)
+
+      portRows.push({
+        asset_id:       asset.id,
+        user_id:        uid,
+        quantity:       qty,
+        price_eur:      round2(priceEur),
+        snapshot_date:  date,
+        portfolio_name: asset.portfolio_name ?? null,
+        source:         'cron',
+      })
+      evalRows.push({
+        asset_id:       asset.id,
+        price_per_unit: round2(priceEur),
+        total_value:    valueEur,
+        valuation_date: date,
+        source:         asset.type === 'crypto' ? 'coingecko' : 'manual',
+      })
+
+      if (asset.type === 'crypto') {
+        total_crypto += valueEur
+      } else if (['depot', 'etf', 'stock', 'fund'].includes(asset.type)) {
+        total_depot += valueEur
+      }
+    }
+
+    await supabase.from('portfolio_snapshots').delete()
+      .eq('user_id', uid).eq('snapshot_date', date)
+
+    const { error: portErr } = await supabase
+      .from('portfolio_snapshots')
+      .insert(portRows as never[])
+    if (portErr) log.push(`  portfolio_snapshots ERR: ${portErr.message}`)
+    else         log.push(`  portfolio_snapshots: ${portRows.length} rows`)
+
+    const { error: evalErr } = await supabase
+      .from('asset_valuations')
+      .upsert(evalRows as never[], { onConflict: 'asset_id,valuation_date' })
+    if (evalErr) log.push(`  asset_valuations ERR: ${evalErr.message}`)
+    else         log.push(`  asset_valuations: ${evalRows.length} rows`)
+  }
+
+  total_depot  = round2(total_depot)
+  total_crypto = round2(total_crypto)
+
+  // ── Step 2b: Depot-Modul ───────────────────────────────────────────────────
+  {
+    const [{ data: depotTxs }, { data: priceCache }] = await Promise.all([
+      supabase.from('depot_transactions').select('isin, shares').eq('user_id', uid),
+      supabase.from('fund_price_cache').select('isin, price'),
+    ])
+    if (depotTxs?.length) {
+      const priceMap    = new Map((priceCache ?? []).map(p => [p.isin, Number(p.price)]))
+      const sharesByIsin = new Map<string, number>()
+      for (const tx of depotTxs) {
+        sharesByIsin.set(tx.isin, (sharesByIsin.get(tx.isin) ?? 0) + Number(tx.shares))
+      }
+      let depotModuleValue = 0
+      for (const [isin, shares] of sharesByIsin) {
+        depotModuleValue += shares * (priceMap.get(isin) ?? 0)
+      }
+      total_depot = round2(total_depot + depotModuleValue)
+      log.push(`  depot_module: €${depotModuleValue.toFixed(0)}`)
+    }
+  }
+
+  // ── Step 3: Net Worth Snapshot ─────────────────────────────────────────────
+  {
+    const nw = {
+      total_checking:  0,
+      total_savings:   0,
+      total_cash:      0,
+      total_bausparer: 0,
+      total_business:  0,
+      total_debts:     0,
+    }
+    for (const acct of accounts ?? []) {
+      const bal    = balMap.get(acct.id) ?? 0
+      const bucket = accountBucket(acct.type)
+      if (!bucket) continue
+      if (bucket === 'debts') {
+        nw.total_debts += Math.abs(bal)
+      } else {
+        (nw as Record<string, number>)[`total_${bucket}`] += bal
+      }
+    }
+    const total_assets = round2(
+      nw.total_checking + nw.total_savings + nw.total_cash +
+      nw.total_bausparer + nw.total_business + total_depot + total_crypto
+    )
+    const net_worth = round2(total_assets - nw.total_debts)
+
+    const { error: nwErr } = await supabase
+      .from('net_worth_snapshots')
+      .upsert({
+        user_id:         uid,
+        snapshot_date:   date,
+        source:          'cron',
+        total_depot,
+        total_crypto,
+        total_checking:  round2(nw.total_checking),
+        total_savings:   round2(nw.total_savings),
+        total_cash:      round2(nw.total_cash),
+        total_bausparer: round2(nw.total_bausparer),
+        total_business:  round2(nw.total_business),
+        total_debts:     round2(nw.total_debts),
+      }, { onConflict: 'user_id,snapshot_date' })
+
+    if (nwErr) log.push(`  net_worth_snapshots ERR: ${nwErr.message}`)
+    else       log.push(`  net_worth: €${net_worth.toFixed(0)}  (assets €${total_assets.toFixed(0)}, debts €${round2(nw.total_debts).toFixed(0)}, crypto €${total_crypto.toFixed(0)}, depot €${total_depot.toFixed(0)})`)
+  }
+
+  // ── Step 4: Monthly Finance Summary (use date, not new Date()) ─────────────
+  {
+    const d   = new Date(date + 'T12:00:00Z')
+    const ym  = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-01`
+    const monthStart = ym
+    const monthEnd   = d.getUTCMonth() === 11
+      ? `${d.getUTCFullYear() + 1}-01-01`
+      : `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 2).padStart(2, '0')}-01`
+
+    const { data: txns } = await supabase
+      .from('transactions')
+      .select('amount, amount_base, type, fx_rate, category_id, categories(name, type)')
+      .eq('user_id', uid)
+      .gte('date', monthStart)
+      .lt('date', monthEnd)
+      .neq('type', 'transfer')
+
+    const s: MonthlySummaryFields = {
+      salary: 0, food: 0, leisure: 0, subscriptions: 0,
+      savings_transfer: 0, pocket_money: 0,
+      other_income: 0, other_expenses: 0,
+      total_income: 0, total_expenses: 0, net_balance: 0,
+    }
+    for (const t of txns ?? []) {
+      const amt     = t.amount_base ?? t.amount * (t.fx_rate ?? 1)
+      const catArr  = t.categories
+      const cat     = Array.isArray(catArr) ? catArr[0] : catArr
+      const catName = (cat as { name?: string } | null)?.name ?? ''
+      const catType = (cat as { type?: string } | null)?.type ?? t.type
+      const { bucket, isIncome } = classifyTx(catName, catType)
+      s[bucket] = round2(s[bucket] + amt)
+      if (isIncome) s.total_income  = round2(s.total_income  + amt)
+      else          s.total_expenses = round2(s.total_expenses + amt)
+    }
+
+    const { net_balance: _nb, ...sWithoutNet } = s
+    const { error: mfsErr } = await supabase
+      .from('monthly_finance_summary')
+      .upsert({ user_id: uid, month: ym, source: 'cron', ...sWithoutNet }, { onConflict: 'user_id,month' })
+
+    if (mfsErr) log.push(`  monthly_finance_summary ERR: ${mfsErr.message}`)
+    else        log.push(`  monthly_summary [${ym}]: income €${s.total_income.toFixed(0)}, expenses €${s.total_expenses.toFixed(0)}`)
+  }
+
+  return null
+}
+
 // ─── Handler ──────────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
-  // Verify cron secret (skip in local dev)
   const isDev = process.env.NODE_ENV === 'development'
   const token = req.headers.get('authorization')?.replace('Bearer ', '')
   if (!isDev && token !== process.env.CRON_SECRET) {
@@ -137,278 +386,70 @@ export async function GET(req: NextRequest) {
   }
 
   const supabase = getAdmin()
-  const date     = isoDate()
-  const log: string[] = [`[${date}] daily-snapshot start`]
+  const log: string[] = []
 
   try {
-    // ── List all users ─────────────────────────────────────────────────────────
     const { data: { users }, error: usersErr } = await supabase.auth.admin.listUsers()
     if (usersErr) throw usersErr
     log.push(`users: ${users.length}`)
 
-    for (const user of users) {
-      const uid = user.id
-      log.push(`\n── ${uid} ──`)
+    // ── Determine which dates to process ──────────────────────────────────────
+    const dateParam = req.nextUrl.searchParams.get('date')
+    let datesToRun: string[]
 
-      // ── Step 1: Account Balances ─────────────────────────────────────────────
-      const { data: accounts } = await supabase
-        .from('accounts')
-        .select('id, type, currency')
-        .eq('user_id', uid)
-        .eq('is_active', true)
+    if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+      // Explicit date (manual backfill)
+      datesToRun = [dateParam]
+    } else {
+      // Normal cron: always run today + catch up any missing days in last 3 days
+      const today = isoDate()
+      const candidateDates = [1, 2, 3].map(n => {
+        const d = new Date()
+        d.setUTCDate(d.getUTCDate() - n)
+        return d.toISOString().slice(0, 10)
+      })
 
-      // Running balance per account from all transactions up to today
-      const balMap = new Map<string, number>()
-      for (const a of accounts ?? []) balMap.set(a.id, 0)
-
-      if (accounts?.length) {
-        const { data: txns } = await supabase
-          .from('transactions')
-          .select('account_id, amount, amount_base, type, fx_rate, transfer_to')
-          .eq('user_id', uid)
-          .lte('date', date)
-
-        for (const t of txns ?? []) {
-          if (!balMap.has(t.account_id)) continue
-          const amt = t.amount_base ?? t.amount * (t.fx_rate ?? 1)
-
-          if (t.type === 'income') {
-            balMap.set(t.account_id, (balMap.get(t.account_id) ?? 0) + amt)
-          } else if (t.type === 'expense') {
-            balMap.set(t.account_id, (balMap.get(t.account_id) ?? 0) - amt)
-          } else if (t.type === 'transfer') {
-            balMap.set(t.account_id, (balMap.get(t.account_id) ?? 0) - amt)
-            if (t.transfer_to && balMap.has(t.transfer_to)) {
-              balMap.set(t.transfer_to, (balMap.get(t.transfer_to) ?? 0) + amt)
-            }
-          }
-        }
-
-        const balRows = (accounts ?? []).map(a => ({
-          account_id:    a.id,
-          balance:       round2(balMap.get(a.id) ?? 0),
-          currency:      a.currency,
-          snapshot_date: date,
-          source:        'cron',
-        }))
-
-        const { error: balErr } = await supabase
-          .from('account_balances')
-          .upsert(balRows, { onConflict: 'account_id,snapshot_date' })
-
-        if (balErr) log.push(`  account_balances ERR: ${balErr.message}`)
-        else        log.push(`  account_balances: ${balRows.length} rows`)
-      }
-
-      // ── Step 2: Portfolio Snapshots + Asset Valuations ───────────────────────
-      const { data: assets } = await supabase
-        .from('assets')
-        .select('id, type, symbol, quantity, avg_buy_price, currency, portfolio_name')
-        .eq('user_id', uid)
-        .not('quantity', 'is', null)
-        .gt('quantity', 0)
-
-      // track value by asset type for net worth calc
-      let total_depot  = 0
-      let total_crypto = 0
-
-      if (assets?.length) {
-        // Fetch live crypto prices in one batch
-        const cryptoSymbols = assets
-          .filter(a => a.type === 'crypto' && a.symbol)
-          .map(a => a.symbol!)
-          .filter((v, i, arr) => arr.indexOf(v) === i)
-
-        const cryptoPrices = cryptoSymbols.length
-          ? await fetchCryptoPrices(cryptoSymbols)
-          : new Map<string, number>()
-
-        const portRows: Record<string, unknown>[] = []
-        const evalRows: Record<string, unknown>[] = []
-
-        for (const asset of assets) {
-          const qty = asset.quantity ?? 0
-          let priceEur: number
-
-          if (asset.type === 'crypto' && asset.symbol) {
-            priceEur = cryptoPrices.get(asset.symbol.toUpperCase()) ?? 0
-          } else {
-            // Depot / ETF / fund: use avg_buy_price as last known value
-            priceEur = asset.avg_buy_price ?? 0
-          }
-
-          const valueEur = round2(qty * priceEur)
-
-          portRows.push({
-            asset_id:      asset.id,
-            user_id:       uid,
-            quantity:      qty,
-            price_eur:     round2(priceEur),
-            snapshot_date: date,
-            portfolio_name: asset.portfolio_name ?? null,
-            source:        'cron',
-          })
-
-          evalRows.push({
-            asset_id:       asset.id,
-            price_per_unit: round2(priceEur),
-            total_value:    valueEur,
-            valuation_date: date,
-            source:         asset.type === 'crypto' ? 'coingecko' : 'manual',
-          })
-
-          if (asset.type === 'crypto') {
-            total_crypto += valueEur
-          } else if (['depot', 'etf', 'stock', 'fund'].includes(asset.type)) {
-            total_depot += valueEur
-          }
-        }
-
-        // Delete today's entries first (no unique constraint → can't upsert)
-        await supabase.from('portfolio_snapshots').delete()
-          .eq('user_id', uid).eq('snapshot_date', date)
-
-        const { error: portErr } = await supabase
-          .from('portfolio_snapshots')
-          .insert(portRows as never[])
-
-        if (portErr) log.push(`  portfolio_snapshots ERR: ${portErr.message}`)
-        else         log.push(`  portfolio_snapshots: ${portRows.length} rows`)
-
-        const { error: evalErr } = await supabase
-          .from('asset_valuations')
-          .upsert(evalRows as never[], { onConflict: 'asset_id,valuation_date' })
-
-        if (evalErr) log.push(`  asset_valuations ERR: ${evalErr.message}`)
-        else         log.push(`  asset_valuations: ${evalRows.length} rows`)
-      }
-
-      total_depot  = round2(total_depot)
-      total_crypto = round2(total_crypto)
-
-      // ── Step 2b: Depot-Modul (depots + depot_transactions + fund_price_cache) ─
-      {
-        const [{ data: depotTxs }, { data: priceCache }] = await Promise.all([
-          supabase.from('depot_transactions').select('isin, shares').eq('user_id', uid),
-          supabase.from('fund_price_cache').select('isin, price'),
-        ])
-
-        if (depotTxs?.length) {
-          const priceMap = new Map((priceCache ?? []).map(p => [p.isin, Number(p.price)]))
-          const sharesByIsin = new Map<string, number>()
-          for (const tx of depotTxs) {
-            sharesByIsin.set(tx.isin, (sharesByIsin.get(tx.isin) ?? 0) + Number(tx.shares))
-          }
-          let depotModuleValue = 0
-          for (const [isin, shares] of sharesByIsin) {
-            depotModuleValue += shares * (priceMap.get(isin) ?? 0)
-          }
-          total_depot = round2(total_depot + depotModuleValue)
-          log.push(`  depot_module: €${depotModuleValue.toFixed(0)}`)
-        }
-      }
-
-      // ── Step 3: Net Worth Snapshot ───────────────────────────────────────────
-      {
-        const nw = {
-          total_checking:  0,
-          total_savings:   0,
-          total_cash:      0,
-          total_bausparer: 0,
-          total_business:  0,
-          total_debts:     0,
-        }
-
-        for (const acct of accounts ?? []) {
-          const bal     = balMap.get(acct.id) ?? 0
-          const bucket  = accountBucket(acct.type)
-          if (!bucket) continue
-
-          if (bucket === 'debts') {
-            nw.total_debts += Math.abs(bal)
-          } else {
-            (nw as Record<string, number>)[`total_${bucket}`] += bal
-          }
-        }
-
-        const total_assets = round2(
-          nw.total_checking + nw.total_savings + nw.total_cash +
-          nw.total_bausparer + nw.total_business + total_depot + total_crypto
-        )
-        const net_worth = round2(total_assets - nw.total_debts)
-
-        const { error: nwErr } = await supabase
+      // Check which past days already have a net_worth_snapshot for the first user
+      const firstUid = users[0]?.id
+      let missingDates: string[] = []
+      if (firstUid && candidateDates.length) {
+        const { data: existing } = await supabase
           .from('net_worth_snapshots')
-          .upsert({
-            user_id:         uid,
-            snapshot_date:   date,
-            source:          'cron',
-            total_depot,
-            total_crypto,
-            total_checking:  round2(nw.total_checking),
-            total_savings:   round2(nw.total_savings),
-            total_cash:      round2(nw.total_cash),
-            total_bausparer: round2(nw.total_bausparer),
-            total_business:  round2(nw.total_business),
-            total_debts:     round2(nw.total_debts),
-          }, { onConflict: 'user_id,snapshot_date' })
+          .select('snapshot_date')
+          .eq('user_id', firstUid)
+          .in('snapshot_date', candidateDates)
 
-        if (nwErr) log.push(`  net_worth_snapshots ERR: ${nwErr.message}`)
-        else       log.push(`  net_worth: €${net_worth.toFixed(0)}  (assets €${total_assets.toFixed(0)}, debts €${round2(nw.total_debts).toFixed(0)}, crypto €${total_crypto.toFixed(0)}, depot €${total_depot.toFixed(0)})`)
+        const existingSet = new Set((existing ?? []).map(r => r.snapshot_date))
+        missingDates = candidateDates.filter(d => !existingSet.has(d))
       }
 
-      // ── Step 4: Monthly Finance Summary ─────────────────────────────────────
-      {
-        const now        = new Date()
-        const ym         = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
-        const monthStart = ym
-        const monthEnd   = now.getMonth() === 11
-          ? `${now.getFullYear() + 1}-01-01`
-          : `${now.getFullYear()}-${String(now.getMonth() + 2).padStart(2, '0')}-01`
+      // Run missing past days first (oldest→newest), then today
+      datesToRun = [...missingDates.sort(), today]
+      if (missingDates.length) log.push(`catch-up: ${missingDates.join(', ')}`)
+    }
 
-        const { data: txns } = await supabase
-          .from('transactions')
-          .select('amount, amount_base, type, fx_rate, category_id, categories(name, type)')
-          .eq('user_id', uid)
-          .gte('date', monthStart)
-          .lt('date', monthEnd)
-          .neq('type', 'transfer') // exclude internal transfers from P&L
+    // ── Run snapshot for each date ─────────────────────────────────────────────
+    for (const date of datesToRun) {
+      log.push(`\n=== ${date} ===`)
 
-        const s: MonthlySummaryFields = {
-          salary: 0, food: 0, leisure: 0, subscriptions: 0,
-          savings_transfer: 0, pocket_money: 0,
-          other_income: 0, other_expenses: 0,
-          total_income: 0, total_expenses: 0, net_balance: 0,
-        }
+      // Fetch crypto prices once per date run (shared across users)
+      const cryptoSymbolSet = new Set<string>()
+      for (const user of users) {
+        const { data: assets } = await supabase
+          .from('assets')
+          .select('symbol, type')
+          .eq('user_id', user.id)
+          .eq('type', 'crypto')
+          .not('symbol', 'is', null)
+        for (const a of assets ?? []) if (a.symbol) cryptoSymbolSet.add(a.symbol.toUpperCase())
+      }
+      const cryptoPrices = cryptoSymbolSet.size
+        ? await fetchCryptoPrices([...cryptoSymbolSet])
+        : new Map<string, number>()
 
-        for (const t of txns ?? []) {
-          const amt     = t.amount_base ?? t.amount * (t.fx_rate ?? 1)
-          const catArr  = t.categories
-          const cat     = Array.isArray(catArr) ? catArr[0] : catArr
-          const catName = (cat as { name?: string } | null)?.name ?? ''
-          const catType = (cat as { type?: string } | null)?.type ?? t.type
-
-          const { bucket, isIncome } = classifyTx(catName, catType)
-
-          s[bucket] = round2(s[bucket] + amt)
-
-          if (isIncome) s.total_income  = round2(s.total_income  + amt)
-          else          s.total_expenses = round2(s.total_expenses + amt)
-        }
-
-        const { net_balance: _nb, ...sWithoutNet } = s
-
-        const { error: mfsErr } = await supabase
-          .from('monthly_finance_summary')
-          .upsert({
-            user_id: uid,
-            month:   ym,
-            source:  'cron',
-            ...sWithoutNet,
-          }, { onConflict: 'user_id,month' })
-
-        if (mfsErr) log.push(`  monthly_finance_summary ERR: ${mfsErr.message}`)
-        else        log.push(`  monthly_summary [${ym}]: income €${s.total_income.toFixed(0)}, expenses €${s.total_expenses.toFixed(0)}, net €${s.net_balance.toFixed(0)}`)
+      for (const user of users) {
+        log.push(`\n── ${user.id} ──`)
+        await runSnapshotForUser(supabase, user.id, date, cryptoPrices, log)
       }
     }
 

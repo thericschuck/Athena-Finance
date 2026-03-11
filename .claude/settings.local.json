@@ -33,7 +33,8 @@
       "Bash(powershell -Command \"\\(Get-Content ''c:\\\\Users\\\\eschu\\\\Desktop\\\\Unternehmensstruktur\\\\06-Projekte\\\\Privat\\\\athena-finance\\\\src\\\\types\\\\database.ts'' -Raw\\) | Out-String | Select-String -Pattern ''transactions:'' -Context 0,40\")",
       "Bash(npx tsc --noEmit)",
       "Bash(xargs grep:*)",
-      "Bash(ls src/app/\\\\\\(dashboard\\\\\\)/settings/)"
+      "Bash(ls src/app/\\\\\\(dashboard\\\\\\)/settings/)",
+      "Bash(grep -r \"snapshot_date\\\\|valuation_date\" /c/Users/eschu/Desktop/Unternehmensstruktur/06-Projekte/Privat/athena-finance/src --include=*.ts --include=*.tsx)"
     ],
     "additionalDirectories": [
       "c:\\Users\\eschu\\Desktop\\Unternehmensstruktur\\06-Projekte\\Privat\\athena-finance\\src\\app\\(dashboard)\\finance\\contracts"

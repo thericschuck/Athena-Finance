@@ -8,6 +8,10 @@ export function PageWrapper({ children }: { children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
   const [navigating, setNavigating] = useState(false)
 
+  // Keep a ref to the current pathname so the click handler always sees the latest value
+  const pathnameRef = useRef(pathname)
+  useEffect(() => { pathnameRef.current = pathname }, [pathname])
+
   // Intercept clicks on internal <a> tags → show bar immediately
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -19,7 +23,8 @@ export function PageWrapper({ children }: { children: React.ReactNode }) {
         href.startsWith('http') ||
         href.startsWith('#') ||
         href.startsWith('mailto:') ||
-        anchor.getAttribute('target') === '_blank'
+        anchor.getAttribute('target') === '_blank' ||
+        href === pathnameRef.current  // same page → no navigation happens
       ) return
       setNavigating(true)
     }
