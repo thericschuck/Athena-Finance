@@ -38,6 +38,8 @@ export default async function StrategiesPage({
   const settings = await getSettings(user!.id)
   const locale = (settings.number_format as string) ?? 'de-DE'
   const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
+  const defaultAssetClass = (settings.default_asset_class as string) ?? 'major'
+  const defaultTimeframe  = (settings.default_timeframe  as string) ?? ''
 
   // Load combos for form selector
   const { data: combosRaw } = await supabase
@@ -91,7 +93,7 @@ export default async function StrategiesPage({
             <CheckCircle2 className="size-3.5 inline mr-1.5 -mt-0.5" />
             Submission-ready
           </Link>
-          <AddStrategyDialog comboOptions={comboOptions} />
+          <AddStrategyDialog comboOptions={comboOptions} defaultAssetClass={defaultAssetClass} defaultTimeframe={defaultTimeframe} />
         </div>
       </div>
 

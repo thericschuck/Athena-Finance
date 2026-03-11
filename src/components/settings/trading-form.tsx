@@ -14,7 +14,7 @@ const ASSET_CLASSES = [
   { value: 'alt',   label: 'Alt' },
 ]
 
-const TIMEFRAMES = ['1m', '5m', '15m', '30m', '1h', '4h', '1D', '1W']
+const TIMEFRAMES = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1D', '3D', '1W']
 
 export function TradingForm({ initialSettings }: { initialSettings: SettingsMap }) {
   const [state, action, pending] = useActionState<SettingsState, FormData>(saveTrading, null)
@@ -29,7 +29,9 @@ export function TradingForm({ initialSettings }: { initialSettings: SettingsMap 
     <form action={action} className="space-y-6">
       <div>
         <h2 className="text-base font-semibold">Trading</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">Standard-Parameter für deine Trading-Setups</p>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Vorbelegung für neue Strategien und Indikator-Backtests
+        </p>
       </div>
 
       <div className="space-y-4">
@@ -43,6 +45,7 @@ export function TradingForm({ initialSettings }: { initialSettings: SettingsMap 
           >
             {ASSET_CLASSES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
           </select>
+          <p className="text-xs text-muted-foreground">Vorausgefüllt in neuen Strategien und Backtest-Einträgen</p>
         </div>
 
         {/* Default timeframe */}
@@ -58,38 +61,7 @@ export function TradingForm({ initialSettings }: { initialSettings: SettingsMap 
           <datalist id="timeframe-list">
             {TIMEFRAMES.map(tf => <option key={tf} value={tf} />)}
           </datalist>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          {/* Risk per trade */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium">Risiko pro Trade (%)</label>
-            <input
-              name="risk_per_trade_pct"
-              type="number"
-              step="0.1"
-              min="0"
-              max="100"
-              defaultValue={(initialSettings.risk_per_trade_pct as number) ?? ''}
-              className={inputCls}
-              placeholder="z.B. 1.0"
-            />
-            <p className="text-xs text-muted-foreground">% des Portfolios</p>
-          </div>
-
-          {/* Max open trades */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium">Max. offene Trades</label>
-            <input
-              name="max_open_trades"
-              type="number"
-              step="1"
-              min="1"
-              defaultValue={(initialSettings.max_open_trades as number) ?? ''}
-              className={inputCls}
-              placeholder="z.B. 5"
-            />
-          </div>
+          <p className="text-xs text-muted-foreground">Vorausgefüllt in neuen Strategien und Backtest-Einträgen</p>
         </div>
       </div>
 

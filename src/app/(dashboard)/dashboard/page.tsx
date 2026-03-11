@@ -59,9 +59,10 @@ export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const settings    = await getSettings(user!.id)
-  const locale      = (settings.number_format as string) ?? 'de-DE'
-  const dateFormat  = (settings.date_format   as string) ?? 'dd.MM.yyyy'
+  const settings      = await getSettings(user!.id)
+  const locale        = (settings.number_format  as string) ?? 'de-DE'
+  const dateFormat    = (settings.date_format    as string) ?? 'dd.MM.yyyy'
+  const monthlyBudget = (settings.monthly_budget as number) ?? null
 
   const fmt     = (n: number, currency = 'EUR') => fmtCurrency(n, currency, locale)
   const fmtDate = (d: string | Date | null)      => fmtDateShort(d, dateFormat)
@@ -307,6 +308,32 @@ export default async function DashboardPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Budget bar */}
+              {monthlyBudget != null && monthlyBudget > 0 && (
+                <div className="mt-4 space-y-1">
+                  {(() => {
+                    const pct = Math.min(100, Math.round((monthExpense / monthlyBudget) * 100))
+                    const over = monthExpense > monthlyBudget
+                    return (
+                      <>
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>Budget</span>
+                          <span className={over ? 'text-red-500 font-medium' : ''}>
+                            {fmt(monthExpense)} / {fmt(monthlyBudget)} ({pct}%)
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${over ? 'bg-red-500' : pct > 80 ? 'bg-amber-500' : 'bg-primary'}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </>
+                    )
+                  })()}
+                </div>
+              )}
             </>
           )}
         </Card>

@@ -44,7 +44,17 @@ function NumField({ id, name, label, defaultValue, placeholder, step = '0.01' }:
 }
 
 // ─── Shared performance form fields ──────────────────────────────────────────
-function PerfFields({ perf, indicatorId }: { perf?: Perf; indicatorId: string }) {
+function PerfFields({
+  perf,
+  indicatorId,
+  defaultAssetClass,
+  defaultTimeframe,
+}: {
+  perf?: Perf
+  indicatorId: string
+  defaultAssetClass?: string
+  defaultTimeframe?: string
+}) {
   return (
     <>
       {perf && <input type="hidden" name="id" value={perf.id} />}
@@ -60,7 +70,7 @@ function PerfFields({ perf, indicatorId }: { perf?: Perf; indicatorId: string })
           <Label htmlFor="p-class">Asset-Klasse *</Label>
           <Input
             id="p-class" name="asset_class" list="asset-class-list"
-            defaultValue={perf?.asset_class} placeholder="Crypto" required
+            defaultValue={perf?.asset_class ?? defaultAssetClass} placeholder="Crypto" required
           />
           <datalist id="asset-class-list">
             {ASSET_CLASSES.map(c => <option key={c} value={c} />)}
@@ -74,7 +84,7 @@ function PerfFields({ perf, indicatorId }: { perf?: Perf; indicatorId: string })
           <Label htmlFor="p-tf">Timeframe *</Label>
           <Input
             id="p-tf" name="timeframe" list="tf-list"
-            defaultValue={perf?.timeframe} placeholder="4h" required
+            defaultValue={perf?.timeframe ?? defaultTimeframe} placeholder="4h" required
           />
           <datalist id="tf-list">
             {TIMEFRAMES.map(t => <option key={t} value={t} />)}
@@ -123,11 +133,15 @@ function PerfFields({ perf, indicatorId }: { perf?: Perf; indicatorId: string })
 }
 
 // ─── Shared dialog wrapper ────────────────────────────────────────────────────
-function PerfDialog({ mode, perf, indicatorId, trigger }: {
-  mode:        'create' | 'edit'
-  perf?:       Perf
-  indicatorId: string
-  trigger:     React.ReactNode
+function PerfDialog({
+  mode, perf, indicatorId, trigger, defaultAssetClass, defaultTimeframe,
+}: {
+  mode:               'create' | 'edit'
+  perf?:              Perf
+  indicatorId:        string
+  trigger:            React.ReactNode
+  defaultAssetClass?: string
+  defaultTimeframe?:  string
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -146,7 +160,12 @@ function PerfDialog({ mode, perf, indicatorId, trigger }: {
           <DialogTitle>{mode === 'create' ? 'Backtest hinzufügen' : 'Backtest bearbeiten'}</DialogTitle>
         </DialogHeader>
         <form action={formAction} className="space-y-4 pt-2">
-          <PerfFields perf={perf} indicatorId={indicatorId} />
+          <PerfFields
+            perf={perf}
+            indicatorId={indicatorId}
+            defaultAssetClass={mode === 'create' ? defaultAssetClass : undefined}
+            defaultTimeframe={mode === 'create' ? defaultTimeframe : undefined}
+          />
           {state && 'error' in state && <p className="text-sm text-destructive">{state.error}</p>}
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>Abbrechen</Button>
@@ -161,7 +180,14 @@ function PerfDialog({ mode, perf, indicatorId, trigger }: {
 }
 
 // ─── Backtests overview dialog ────────────────────────────────────────────────
-export function BacktestsDialog({ ind, perfs }: { ind: Indicator; perfs: Perf[] }) {
+export function BacktestsDialog({
+  ind, perfs, defaultAssetClass, defaultTimeframe,
+}: {
+  ind: Indicator
+  perfs: Perf[]
+  defaultAssetClass?: string
+  defaultTimeframe?:  string
+}) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [deleting, startDelete] = useTransition()
@@ -191,6 +217,8 @@ export function BacktestsDialog({ ind, perfs }: { ind: Indicator; perfs: Perf[] 
             <span>Backtests — {ind.name}</span>
             <PerfDialog
               mode="create" indicatorId={ind.id}
+              defaultAssetClass={defaultAssetClass}
+              defaultTimeframe={defaultTimeframe}
               trigger={<Button size="sm"><Plus className="size-4" />Hinzufügen</Button>}
             />
           </DialogTitle>

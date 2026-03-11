@@ -201,7 +201,15 @@ function StrategyFormBody({
 }
 
 // ─── Add Dialog ───────────────────────────────────────────────────────────────
-export function AddStrategyDialog({ comboOptions }: { comboOptions: ComboOption[] }) {
+export function AddStrategyDialog({
+  comboOptions,
+  defaultAssetClass,
+  defaultTimeframe,
+}: {
+  comboOptions: ComboOption[]
+  defaultAssetClass?: string
+  defaultTimeframe?: string
+}) {
   const [open, setOpen] = useState(false)
   const [state, action, pending] = useActionState(createStrategy, null)
 
@@ -226,6 +234,7 @@ export function AddStrategyDialog({ comboOptions }: { comboOptions: ComboOption[
         </div>
         <form action={action}>
           <StrategyFormBody
+            defaults={{ asset_class: defaultAssetClass ?? 'major', timeframe: defaultTimeframe ?? '' }}
             comboOptions={comboOptions}
             state={state}
             pending={pending}

@@ -217,7 +217,6 @@ export function AppearanceForm({ initialSettings }: { initialSettings: SettingsM
   const [themePreset,     setThemePreset]     = useState<PresetId>((initialSettings.theme_preset as PresetId) ?? '')
   const [selectedTheme,   setSelectedTheme]   = useState((initialSettings.theme as string) ?? 'system')
   const [primaryColor,    setPrimaryColor]    = useState((initialSettings.primary_color as string) ?? '#00B4D8')
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(!!(initialSettings.sidebar_collapsed))
   const [compactTables,   setCompactTables]   = useState(!!(initialSettings.compact_tables))
   const [numberFormat,    setNumberFormat]    = useState((initialSettings.number_format as string) ?? 'de-DE')
   const [dateFormat,      setDateFormat]      = useState((initialSettings.date_format as string) ?? 'dd.MM.yyyy')
@@ -260,8 +259,7 @@ export function AppearanceForm({ initialSettings }: { initialSettings: SettingsM
       <input type="hidden" name="theme_preset"      value={themePreset} />
       <input type="hidden" name="theme"             value={selectedTheme} />
       <input type="hidden" name="primary_color"     value={primaryColor} />
-      <input type="hidden" name="sidebar_collapsed" value={String(sidebarCollapsed)} />
-      <input type="hidden" name="compact_tables"    value={String(compactTables)} />
+      <input type="hidden" name="compact_tables" value={String(compactTables)} />
       <input type="hidden" name="number_format"     value={numberFormat} />
       <input type="hidden" name="date_format"       value={dateFormat} />
 
@@ -347,14 +345,6 @@ export function AppearanceForm({ initialSettings }: { initialSettings: SettingsM
       {/* Toggles */}
       <div className="space-y-3">
         <label className="text-sm font-medium">Optionen</label>
-
-        <div className="flex items-center justify-between rounded-md border border-border bg-card px-4 py-3">
-          <div>
-            <p className="text-sm font-medium">Sidebar eingeklappt</p>
-            <p className="text-xs text-muted-foreground">Sidebar standardmäßig minimiert anzeigen</p>
-          </div>
-          <Toggle checked={sidebarCollapsed} onChange={setSidebarCollapsed} />
-        </div>
 
         <div className="flex items-center justify-between rounded-md border border-border bg-card px-4 py-3">
           <div>

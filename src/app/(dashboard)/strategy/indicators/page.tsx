@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getSettings } from '@/lib/settings'
 import { Database } from '@/types/database'
 import { ExternalLink, ShieldX, RefreshCw, Repeat2 } from 'lucide-react'
 import { AddIndicatorDialog, EditIndicatorDialog, DeleteIndicatorButton } from '@/components/strategy/indicator-form'
@@ -44,6 +45,10 @@ export default async function IndicatorsPage({
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  const settings = await getSettings(user!.id)
+  const defaultAssetClass = (settings.default_asset_class as string) ?? 'major'
+  const defaultTimeframe  = (settings.default_timeframe  as string) ?? ''
 
   // Build indicator query
   let query = supabase
@@ -160,6 +165,8 @@ export default async function IndicatorsPage({
                     ind={ind}
                     perfs={perfs}
                     isLast={i === enriched.length - 1}
+                    defaultAssetClass={defaultAssetClass}
+                    defaultTimeframe={defaultTimeframe}
                   />
                 ))}
               </tbody>
@@ -173,11 +180,13 @@ export default async function IndicatorsPage({
 
 // ─── Table row ────────────────────────────────────────────────────────────────
 function IndicatorRow({
-  ind, perfs, isLast,
+  ind, perfs, isLast, defaultAssetClass, defaultTimeframe,
 }: {
-  ind:    IndicatorWithCobra
-  perfs:  Perf[]
-  isLast: boolean
+  ind:               IndicatorWithCobra
+  perfs:             Perf[]
+  isLast:            boolean
+  defaultAssetClass?: string
+  defaultTimeframe?:  string
 }) {
   return (
     <tr className={`group hover:bg-muted/30 transition-colors ${!isLast ? 'border-b border-border' : ''} ${ind.is_forbidden ? 'opacity-50' : ''}`}>
@@ -234,7 +243,7 @@ function IndicatorRow({
 
       {/* Tests count / Backtests dialog */}
       <td className="px-4 py-3 text-center">
-        <BacktestsDialog ind={ind} perfs={perfs} />
+        <BacktestsDialog ind={ind} perfs={perfs} defaultAssetClass={defaultAssetClass} defaultTimeframe={defaultTimeframe} />
       </td>
 
       {/* Actions */}

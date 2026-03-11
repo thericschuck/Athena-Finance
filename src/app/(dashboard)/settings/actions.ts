@@ -77,13 +77,12 @@ export async function saveAppearance(
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { error } = await upsertSettings(supabase, user.id, {
-    theme_preset:      (formData.get('theme_preset') as string) || null,
-    theme:             formData.get('theme') as string || 'system',
-    primary_color:     formData.get('primary_color') as string || '#00B4D8',
-    sidebar_collapsed: formData.get('sidebar_collapsed') === 'true',
-    compact_tables:    formData.get('compact_tables') === 'true',
-    number_format:     formData.get('number_format') as string || 'de-DE',
-    date_format:       formData.get('date_format') as string || 'dd.MM.yyyy',
+    theme_preset:   (formData.get('theme_preset') as string) || null,
+    theme:          formData.get('theme') as string || 'system',
+    primary_color:  formData.get('primary_color') as string || '#00B4D8',
+    compact_tables: formData.get('compact_tables') === 'true',
+    number_format:  formData.get('number_format') as string || 'de-DE',
+    date_format:    formData.get('date_format') as string || 'dd.MM.yyyy',
   })
 
   if (error) return { error: error.message }
@@ -105,12 +104,12 @@ export async function saveFinance(
   const taxRate       = formData.get('default_tax_rate') as string
 
   const { error } = await upsertSettings(supabase, user.id, {
-    monthly_budget:         monthlyBudget ? parseFloat(monthlyBudget) : null,
-    default_tax_rate:       taxRate ? parseFloat(taxRate) : null,
-    savings_auto_transfer:  formData.get('savings_auto_transfer') === 'true',
+    monthly_budget:   monthlyBudget ? parseFloat(monthlyBudget) : null,
+    default_tax_rate: taxRate ? parseFloat(taxRate) : null,
   })
 
   if (error) return { error: error.message }
+  revalidatePath('/', 'layout')
   REVALIDATE()
   return { success: true }
 }
@@ -124,8 +123,8 @@ export async function saveTrading(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const riskPct      = formData.get('risk_per_trade_pct') as string
-  const maxTrades    = formData.get('max_open_trades') as string
+  const riskPct   = formData.get('risk_per_trade_pct') as string
+  const maxTrades = formData.get('max_open_trades') as string
 
   const { error } = await upsertSettings(supabase, user.id, {
     default_asset_class: formData.get('default_asset_class') as string || 'major',
@@ -135,29 +134,7 @@ export async function saveTrading(
   })
 
   if (error) return { error: error.message }
-  REVALIDATE()
-  return { success: true }
-}
-
-// ─── Notifications ────────────────────────────────────────────────────────────
-export async function saveNotifications(
-  _prev: SettingsState,
-  formData: FormData
-): Promise<SettingsState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Nicht eingeloggt' }
-
-  const threshold = formData.get('price_alert_threshold_pct') as string
-
-  const { error } = await upsertSettings(supabase, user.id, {
-    email_weekly_report:       formData.get('email_weekly_report') === 'true',
-    email_price_alerts:        formData.get('email_price_alerts') === 'true',
-    email_strategy_signals:    formData.get('email_strategy_signals') === 'true',
-    price_alert_threshold_pct: threshold ? parseFloat(threshold) : null,
-  })
-
-  if (error) return { error: error.message }
+  revalidatePath('/', 'layout')
   REVALIDATE()
   return { success: true }
 }
