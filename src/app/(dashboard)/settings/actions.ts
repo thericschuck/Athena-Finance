@@ -114,6 +114,35 @@ export async function saveFinance(
   return { success: true }
 }
 
+// ─── Password ─────────────────────────────────────────────────────────────────
+export async function changePassword(
+  _prev: SettingsState,
+  formData: FormData
+): Promise<SettingsState> {
+  const supabase    = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Nicht eingeloggt' }
+
+  const current = formData.get('current_password') as string
+  const next    = formData.get('new_password') as string
+  const confirm = formData.get('confirm_password') as string
+
+  if (!current || !next || !confirm) return { error: 'Alle Felder ausfüllen' }
+  if (next.length < 8) return { error: 'Passwort muss mindestens 8 Zeichen haben' }
+  if (next !== confirm) return { error: 'Neue Passwörter stimmen nicht überein' }
+
+  // Verify current password
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email:    user.email!,
+    password: current,
+  })
+  if (signInError) return { error: 'Aktuelles Passwort ist falsch' }
+
+  const { error } = await supabase.auth.updateUser({ password: next })
+  if (error) return { error: error.message }
+  return { success: true }
+}
+
 // ─── Trading ──────────────────────────────────────────────────────────────────
 export async function saveTrading(
   _prev: SettingsState,

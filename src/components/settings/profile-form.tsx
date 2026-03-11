@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { saveProfile, SettingsState } from '@/app/(dashboard)/settings/actions'
+import { saveProfile, changePassword, SettingsState } from '@/app/(dashboard)/settings/actions'
 import { Button } from '@/components/ui/button'
 import type { UserProfile } from '@/lib/settings'
 import { Camera, X } from 'lucide-react'
@@ -25,6 +25,48 @@ const selectCls = 'h-9 w-full rounded-md border border-input bg-background px-2.
 function getInitials(name: string | null, email: string): string {
   const src = name?.trim() || email
   return src.slice(0, 2).toUpperCase()
+}
+
+function PasswordForm() {
+  const [state, action, pending] = useActionState<SettingsState, FormData>(changePassword, null)
+  const formRef = useRef<HTMLFormElement>(null)
+
+  useEffect(() => {
+    if (!state) return
+    if ('success' in state) {
+      toast.success('Passwort geändert')
+      formRef.current?.reset()
+    }
+    if ('error' in state) toast.error(state.error)
+  }, [state])
+
+  return (
+    <form ref={formRef} action={action} className="space-y-4 pt-6 border-t border-border">
+      <div>
+        <h2 className="text-base font-semibold">Passwort ändern</h2>
+        <p className="text-sm text-muted-foreground mt-0.5">Mindestens 8 Zeichen</p>
+      </div>
+
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium">Aktuelles Passwort</label>
+          <input name="current_password" type="password" autoComplete="current-password" className={inputCls} required />
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium">Neues Passwort</label>
+          <input name="new_password" type="password" autoComplete="new-password" className={inputCls} required minLength={8} />
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium">Passwort bestätigen</label>
+          <input name="confirm_password" type="password" autoComplete="new-password" className={inputCls} required minLength={8} />
+        </div>
+      </div>
+
+      <Button type="submit" variant="outline" disabled={pending}>
+        {pending ? 'Ändern…' : 'Passwort ändern'}
+      </Button>
+    </form>
+  )
 }
 
 export function ProfileForm({ initialProfile, email }: { initialProfile: UserProfile; email: string }) {
@@ -56,6 +98,7 @@ export function ProfileForm({ initialProfile, email }: { initialProfile: UserPro
   }
 
   return (
+    <>
     <form action={action} className="space-y-6">
       <div>
         <h2 className="text-base font-semibold">Profil</h2>
@@ -155,5 +198,9 @@ export function ProfileForm({ initialProfile, email }: { initialProfile: UserPro
         {pending ? 'Speichern…' : 'Speichern'}
       </Button>
     </form>
+
+    <PasswordForm />
+    </>
   )
 }
+
