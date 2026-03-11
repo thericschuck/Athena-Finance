@@ -31,9 +31,27 @@ export function SettingsShell({
   const [active, setActive] = useState<TabId>('profil')
 
   return (
-    <div className="flex gap-8">
-      {/* Sidebar nav */}
-      <nav className="flex flex-col gap-0.5 w-44 shrink-0">
+    <div className="flex flex-col gap-6 sm:flex-row sm:gap-8">
+      {/* Mobile: horizontal scrollable tab strip */}
+      <nav className="flex overflow-x-auto gap-1 border-b border-border pb-1 -mx-4 px-4 sm:hidden shrink-0">
+        {TABS.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActive(tab.id)}
+            className={cn(
+              'whitespace-nowrap px-3 py-2 rounded-md text-sm transition-colors shrink-0',
+              active === tab.id
+                ? 'bg-accent text-accent-foreground font-medium'
+                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </nav>
+
+      {/* Desktop: vertical sidebar nav */}
+      <nav className="hidden sm:flex flex-col gap-0.5 w-44 shrink-0">
         {TABS.map(tab => (
           <button
             key={tab.id}
