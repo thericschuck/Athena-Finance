@@ -20,10 +20,12 @@ export const COINGECKO_IDS: Record<string, string> = {
 }
 
 const BASE = 'https://api.coingecko.com/api/v3'
+const BATCH_SIZE = 25
 
 /**
  * Fetch EUR prices for a list of CoinGecko IDs.
  * Fiat symbols (eur, usd, chf, gbp) are resolved locally without an API call.
+ * Requests are split into batches of 25 to avoid silent truncation by CoinGecko's free API.
  */
 export async function getPrices(
   coingeckoIds: string[]
@@ -45,22 +47,44 @@ export async function getPrices(
 
   if (cryptoIds.length === 0) return result
 
-  const res = await fetch(
-    `${BASE}/simple/price?ids=${cryptoIds.join(',')}&vs_currencies=eur`,
-    { cache: 'no-store' }
-  )
-
-  if (!res.ok) {
-    throw new Error(`CoinGecko error: ${res.status} ${res.statusText}`)
+  // Split into chunks to avoid silent truncation on CoinGecko free tier
+  const chunks: string[][] = []
+  for (let i = 0; i < cryptoIds.length; i += BATCH_SIZE) {
+    chunks.push(cryptoIds.slice(i, i + BATCH_SIZE))
   }
 
-  const data: Record<string, { eur: number }> = await res.json()
-
-  for (const [id, v] of Object.entries(data)) {
-    if (v.eur != null) result[id] = v.eur
+  for (let i = 0; i < chunks.length; i++) {
+    if (i > 0) await new Promise(r => setTimeout(r, 600)) // respect rate limit between batches
+    const res = await fetch(
+      `${BASE}/simple/price?ids=${chunks[i].join(',')}&vs_currencies=eur`,
+      { cache: 'no-store' }
+    )
+    if (!res.ok) throw new Error(`CoinGecko error: ${res.status} ${res.statusText}`)
+    const data: Record<string, { eur: number }> = await res.json()
+    for (const [id, v] of Object.entries(data)) {
+      if (v.eur != null) result[id] = v.eur
+    }
   }
 
   return result
+}
+
+/** Returns the current EUR→USD exchange rate (e.g. 1.08). Falls back to 1.08 on error. */
+export async function getEurUsdRate(): Promise<number> {
+  try {
+    const res = await fetch(
+      `${BASE}/simple/price?ids=bitcoin&vs_currencies=eur,usd`,
+      { cache: 'no-store' }
+    )
+    if (!res.ok) return 1.08
+    const data: Record<string, { eur?: number; usd?: number }> = await res.json()
+    const eur = data?.bitcoin?.eur
+    const usd = data?.bitcoin?.usd
+    if (eur && usd && eur > 0) return usd / eur
+    return 1.08
+  } catch {
+    return 1.08
+  }
 }
 
 export type CoinInfoResult =

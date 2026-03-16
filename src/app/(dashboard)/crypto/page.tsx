@@ -4,6 +4,7 @@ import { fmtDate as fmtDateLib } from '@/lib/format'
 import { PortfolioOverview, type AssetWithPrice } from '@/components/crypto/portfolio-overview'
 import { getStrategySignals, getPortfolioAllocations } from '@/app/(dashboard)/crypto/actions'
 import { calculateRebalancing } from '@/lib/crypto/rebalancing'
+import { getEurUsdRate } from '@/lib/crypto/coingecko'
 import { History } from 'lucide-react'
 
 export default async function CryptoPage() {
@@ -17,6 +18,7 @@ export default async function CryptoPage() {
     signals,
     allocations,
     settings,
+    eurUsdRate,
   ] = await Promise.all([
     supabase
       .from('assets')
@@ -43,6 +45,7 @@ export default async function CryptoPage() {
     getStrategySignals(user!.id),
     getPortfolioAllocations(user!.id),
     getSettings(user!.id),
+    getEurUsdRate(),
   ])
 
   const locale = (settings.number_format as string) ?? 'de-DE'
@@ -91,6 +94,7 @@ export default async function CryptoPage() {
         initialAssets={assets}
         snapshots={snapshots ?? []}
         rebalancingRows={rebalancingResult.rows}
+        eurUsdRate={eurUsdRate}
       />
       <AssetAuditLog entries={(auditLog ?? []) as AuditEntry[]} locale={locale} dateFormat={dateFormat} />
     </>

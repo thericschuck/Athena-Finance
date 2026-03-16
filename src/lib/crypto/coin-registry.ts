@@ -27,6 +27,7 @@ export const COIN_REGISTRY: CoinEntry[] = [
   { symbol: 'DOGE',  name: 'Dogecoin',           coingecko_id: 'dogecoin',           type: 'crypto' },
   { symbol: 'SUI',   name: 'Sui',                coingecko_id: 'sui',                type: 'crypto' },
   { symbol: 'CVX',   name: 'Convex Finance',     coingecko_id: 'convex-finance',     type: 'crypto' },
+  { symbol: 'PAXG',  name: 'PAX Gold',           coingecko_id: 'pax-gold',           type: 'crypto' },
   { symbol: 'LTC',   name: 'Litecoin',           coingecko_id: 'litecoin',           type: 'crypto' },
   { symbol: 'ATOM',  name: 'Cosmos',             coingecko_id: 'cosmos',             type: 'crypto' },
   { symbol: 'OP',    name: 'Optimism',           coingecko_id: 'optimism',           type: 'crypto' },

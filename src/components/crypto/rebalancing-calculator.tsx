@@ -214,6 +214,7 @@ export function RebalancingCalculator({
                   >
                     <td className="px-4 py-3">
                       <p className="font-medium">{row.symbol}</p>
+                      <p className="text-xs text-muted-foreground/60">{row.coingecko_id}</p>
                     </td>
                     <td className="px-4 py-3">
                       <SubBadge row={row} />

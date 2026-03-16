@@ -35,10 +35,11 @@ interface Props {
   initialAssets:    AssetWithPrice[]
   snapshots:        SnapshotRow[]
   rebalancingRows?: RebalancingRow[]
+  eurUsdRate?:      number
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows }: Props) {
+export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, eurUsdRate }: Props) {
   const { locale } = useSettings()
   const fmtEur = (n: number) => fmtCurrency(n, 'EUR', locale)
   const router = useRouter()
@@ -191,7 +192,7 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows }:
 
       {/* IST vs ZIEL donuts */}
       {rebalancingRows && rebalancingRows.length > 0 && (
-        <PortfolioDonut assets={assets} rebalancingRows={rebalancingRows} />
+        <PortfolioDonut assets={assets} rebalancingRows={rebalancingRows} eurUsdRate={eurUsdRate} />
       )}
 
       {/* Asset table */}

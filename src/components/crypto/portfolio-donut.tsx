@@ -20,6 +20,7 @@ const COIN_COLORS: Record<string, string> = {
   'matic-network':    '#8247E5',
   'ripple':           '#346AA9',
   'litecoin':         '#BFBBBB',
+  'pax-gold':         '#D4AF37',
 }
 const FALLBACK_COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899']
 
@@ -49,7 +50,17 @@ interface DonutEntry {
 }
 
 // ─── Single donut card ────────────────────────────────────────────────────────
-function DonutCard({ title, subtitle, data }: { title: string; subtitle: string; data: DonutEntry[] }) {
+function DonutCard({
+  title, subtitle, data, eurUsdRate,
+}: {
+  title: string
+  subtitle: string
+  data: DonutEntry[]
+  eurUsdRate?: number
+}) {
+  const { locale } = useSettings()
+  const fmtUsd = (n: number) => fmtCurrency(n, 'USD', locale)
+
   return (
     <div className="rounded-lg border border-border bg-card p-5 space-y-4">
       <div>
@@ -85,15 +96,21 @@ function DonutCard({ title, subtitle, data }: { title: string; subtitle: string;
       {/* Legend */}
       <div className="space-y-1.5">
         {data.map((d, i) => (
-          <div key={`${d.coingecko_id}-${i}`} className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-1.5">
+          <div key={`${d.coingecko_id}-${i}`} className="flex items-center justify-between text-xs gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
               <span
                 className="w-2.5 h-2.5 rounded-full shrink-0"
                 style={{ backgroundColor: getColor(d.coingecko_id, i) }}
               />
               <span className="font-medium">{d.label}</span>
             </div>
-            <span className="text-muted-foreground tabular-nums">{d.pct.toFixed(1).replace('.', ',')} %</span>
+            <div className="flex items-center gap-2 tabular-nums text-muted-foreground shrink-0">
+              {eurUsdRate && (
+                <span className="text-[10px] opacity-70">{fmtUsd(d.value * eurUsdRate)}</span>
+              )}
+              <span>{fmtCurrency(d.value, 'EUR', locale)}</span>
+              <span className="opacity-60">{d.pct.toFixed(1).replace('.', ',')} %</span>
+            </div>
           </div>
         ))}
       </div>
@@ -105,11 +122,13 @@ function DonutCard({ title, subtitle, data }: { title: string; subtitle: string;
 interface Props {
   assets:          AssetWithPrice[]
   rebalancingRows: RebalancingRow[]
+  eurUsdRate?:     number
 }
 
-export function PortfolioDonut({ assets, rebalancingRows }: Props) {
+export function PortfolioDonut({ assets, rebalancingRows, eurUsdRate }: Props) {
   const { locale } = useSettings()
   const fmtEur = (n: number) => fmtCurrency(n, 'EUR', locale)
+  const fmtUsd = eurUsdRate ? (n: number) => fmtCurrency(n, 'USD', locale) : null
   // Build label map from rebalancing rows (coingecko_id → ticker symbol like "BTC")
   const labelMap = new Map<string, string>()
   for (const r of rebalancingRows) {
@@ -133,12 +152,12 @@ export function PortfolioDonut({ assets, rebalancingRows }: Props) {
     .filter(d => d.value > 0)
     .sort((a, b) => b.value - a.value)
 
-  // ── ZIEL data: sum target_pct per coingecko_id from rebalancing rows ────────
+  // ── ZIEL data: sum target_eur per coingecko_id from rebalancing rows ─────────
   const zielMap = new Map<string, { label: string; value: number }>()
   for (const r of rebalancingRows) {
     const existing = zielMap.get(r.coingecko_id)
-    if (existing) existing.value += r.target_pct
-    else zielMap.set(r.coingecko_id, { label: r.symbol, value: r.target_pct })
+    if (existing) existing.value += r.target_eur
+    else zielMap.set(r.coingecko_id, { label: r.symbol, value: r.target_eur })
   }
   const totalZiel = Array.from(zielMap.values()).reduce((s, v) => s + v.value, 0)
   const zielData: DonutEntry[] = Array.from(zielMap.entries())
@@ -158,15 +177,17 @@ export function PortfolioDonut({ assets, rebalancingRows }: Props) {
       {istData.length > 0 && (
         <DonutCard
           title="Aktuelle Verteilung"
-          subtitle={fmtEur(totalIst)}
+          subtitle={`${fmtEur(totalIst)}${eurUsdRate && fmtUsd ? ` · ${fmtUsd(totalIst * eurUsdRate)}` : ''}`}
           data={istData}
+          eurUsdRate={eurUsdRate}
         />
       )}
       {zielData.length > 0 && (
         <DonutCard
           title="Ziel-Verteilung"
-          subtitle="Zielallokation"
+          subtitle={`${fmtEur(totalZiel)}${eurUsdRate && fmtUsd ? ` · ${fmtUsd(totalZiel * eurUsdRate)}` : ''}`}
           data={zielData}
+          eurUsdRate={eurUsdRate}
         />
       )}
     </div>

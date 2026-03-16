@@ -102,7 +102,30 @@ export function calculateRebalancing(
     { key: 'high_beta', weight: highBetaWeight,   assets: allocations.high_beta.assets },
   ]
 
-  // Step 3: Build rows
+  // Step 3a: Pre-compute which coingecko_ids appear in more than one sub-portfolio
+  //          (to avoid double-counting when falling back to global assets)
+  const coinSubPortfolioCount = new Map<string, number>()
+  for (const sp of subPortfolios) {
+    if (sp.weight <= 0) continue
+    for (const alloc of sp.assets) {
+      const id = alloc.coingecko_id.toLowerCase()
+      coinSubPortfolioCount.set(id, (coinSubPortfolioCount.get(id) ?? 0) + 1)
+    }
+  }
+
+  // Step 3b: Global asset value map (sum across all portfolio_names)
+  const globalValueMap = new Map<string, number>()
+  const globalQtyMap   = new Map<string, number>()
+  const globalPriceMap = new Map<string, number>()
+  for (const a of assets) {
+    const id = a.symbol?.toLowerCase()
+    if (!id) continue
+    if (a.current_value) globalValueMap.set(id, (globalValueMap.get(id) ?? 0) + a.current_value)
+    if (a.quantity)      globalQtyMap.set(id,   (globalQtyMap.get(id)   ?? 0) + a.quantity)
+    if ((a.current_price ?? 0) > 0 && !globalPriceMap.has(id)) globalPriceMap.set(id, a.current_price!)
+  }
+
+  // Step 3c: Build rows
   const rows: RebalancingRow[] = []
 
   for (const sp of subPortfolios) {
@@ -111,18 +134,28 @@ export function calculateRebalancing(
     for (const alloc of sp.assets) {
       const target_pct = sp.weight * alloc.weight * 100
       const target_eur = totalValue * sp.weight * alloc.weight
+      const cgId       = alloc.coingecko_id.toLowerCase()
 
-      // Match assets: same CoinGecko ID + matching portfolio_name
+      // Primary match: same CoinGecko ID + matching portfolio_name
       const matched = assets.filter(a =>
-        a.symbol?.toLowerCase() === alloc.coingecko_id.toLowerCase() &&
+        a.symbol?.toLowerCase() === cgId &&
         matchesPortfolio(a.portfolio_name, sp.key)
       )
 
-      const current_eur   = matched.reduce((s, a) => s + (a.current_value ?? 0), 0)
-      const current_qty   = matched.reduce((s, a) => s + (a.quantity      ?? 0), 0)
+      // Fallback: if no portfolio-specific match AND coin is unambiguous (only in 1 sub-portfolio),
+      // use total global value to avoid showing 0 € for misnamed portfolio entries
+      const useGlobalFallback = matched.length === 0 && (coinSubPortfolioCount.get(cgId) ?? 0) <= 1
+
+      const current_eur = useGlobalFallback
+        ? (globalValueMap.get(cgId) ?? 0)
+        : matched.reduce((s, a) => s + (a.current_value ?? 0), 0)
+      const current_qty   = useGlobalFallback
+        ? (globalQtyMap.get(cgId) ?? 0)
+        : matched.reduce((s, a) => s + (a.quantity ?? 0), 0)
       const current_price =
         matched.find(a => (a.current_price ?? 0) > 0)?.current_price
-        ?? priceByCoingeckoId.get(alloc.coingecko_id.toLowerCase())
+        ?? globalPriceMap.get(cgId)
+        ?? priceByCoingeckoId.get(cgId)
         ?? 0
 
       const diff_eur = target_eur - current_eur
@@ -162,9 +195,9 @@ export function calculateRebalancing(
     }
   }
 
-  // Step 4: Summary
-  const total_buy_eur  = rows.reduce((s, r) => r.diff_eur > 0  ? s + r.diff_eur         : s, 0)
-  const total_sell_eur = rows.reduce((s, r) => r.diff_eur < 0  ? s + Math.abs(r.diff_eur) : s, 0)
+  // Step 4: Summary — only count rows that need action (outside threshold)
+  const total_buy_eur  = rows.reduce((s, r) => r.action === 'buy'  ? s + r.diff_eur          : s, 0)
+  const total_sell_eur = rows.reduce((s, r) => r.action === 'sell' ? s + Math.abs(r.diff_eur) : s, 0)
 
   return {
     rows,
