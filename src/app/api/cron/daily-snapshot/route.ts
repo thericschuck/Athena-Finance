@@ -401,9 +401,9 @@ export async function GET(req: NextRequest) {
       // Explicit date (manual backfill)
       datesToRun = [dateParam]
     } else {
-      // Normal cron: always run today + catch up any missing days in last 3 days
+      // Normal cron: always run today + catch up any missing days in last 14 days
       const today = isoDate()
-      const candidateDates = [1, 2, 3].map(n => {
+      const candidateDates = Array.from({ length: 14 }, (_, i) => i + 1).map(n => {
         const d = new Date()
         d.setUTCDate(d.getUTCDate() - n)
         return d.toISOString().slice(0, 10)

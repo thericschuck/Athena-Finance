@@ -1,12 +1,1 @@
-{
-  "crons": [
-{
-      "path": "/api/cron/book-contracts",
-      "schedule": "0 4 * * *"
-    },
-    {
-      "path": "/api/cron/execute-savings-plans",
-      "schedule": "0 10 * * *"
-    }
-  ]
-}
+{}

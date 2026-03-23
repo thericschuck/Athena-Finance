@@ -81,10 +81,13 @@ export async function updateDebt(
     ? parseFloat(outstandingRaw)
     : originalAmount
 
+  const type = formData.get('type') as string
+
   const { error } = await supabase
     .from('debts')
     .update({
       name,
+      type,
       original_amount: originalAmount,
       outstanding,
       currency,
