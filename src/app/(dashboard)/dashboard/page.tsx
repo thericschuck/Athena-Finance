@@ -133,7 +133,7 @@ export default async function DashboardPage() {
 
   // ── Crypto portfolio ──────────────────────────────────────────────────────
   const cryptoAssetIds = (cryptoAssetsRaw ?? []).map(a => a.id)
-  let cryptoValMap = new Map<string, { price_per_unit: number; total_value: number }>()
+  const cryptoValMap = new Map<string, { price_per_unit: number; total_value: number }>()
   if (cryptoAssetIds.length > 0) {
     const { data: vals } = await supabase
       .from('asset_valuations')
