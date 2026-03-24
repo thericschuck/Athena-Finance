@@ -5,6 +5,8 @@ import { CryptoWidget } from '@/components/dashboard/crypto-widget'
 import { RebalancingAlert } from '@/components/dashboard/rebalancing-alert'
 import { FixedCostsWidget } from '@/components/finance/fixed-costs-widget'
 import { NetWorthChart } from '@/components/dashboard/net-worth-chart'
+import { PortfolioDonut } from '@/components/dashboard/portfolio-donut'
+import { FinanceAnalytics } from '@/components/dashboard/finance-analytics'
 import { getStrategySignals, getPortfolioAllocations, getLastRebalancing } from '@/app/(dashboard)/crypto/actions'
 import { getDepotsSummaries } from '@/app/actions/depot'
 import { calculateRebalancing } from '@/lib/crypto/rebalancing'
@@ -96,6 +98,18 @@ export default async function DashboardPage() {
     getLastRebalancing(user!.id),
     getDepotsSummaries(),
   ])
+
+  // Monthly finance summaries (last 12 months)
+  // month is stored as "YYYY-MM-01" (full date string) by the cron
+  const twelveMonthsAgo = new Date()
+  twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12)
+  const fromMonth = `${twelveMonthsAgo.getFullYear()}-${String(twelveMonthsAgo.getMonth() + 1).padStart(2, '0')}-01`
+  const { data: monthlySummaries } = await supabase
+    .from('monthly_finance_summary')
+    .select('*')
+    .eq('user_id', user!.id)
+    .gte('month', fromMonth)
+    .order('month')
 
   // Net worth snapshots for chart (last 2 years)
   const snapshotFrom = new Date()
@@ -351,6 +365,22 @@ export default async function DashboardPage() {
 
       {/* ── Net Worth Chart ───────────────────────────────────────────────────── */}
       <NetWorthChart snapshots={snapshotsWithToday} />
+
+      {/* ── Portfolio Donut ───────────────────────────────────────────────────── */}
+      <div className="max-w-xs">
+        <PortfolioDonut
+          financeTotal={financeTotal}
+          depotTotal={depotTotal}
+          cryptoTotal={cryptoTotal}
+          savingsTotal={savingsTotal}
+          locale={locale}
+        />
+      </div>
+
+      {/* ── Finanzanalyse ─────────────────────────────────────────────────────── */}
+      {monthlySummaries && monthlySummaries.length > 0 && (
+        <FinanceAnalytics summaries={monthlySummaries} locale={locale} />
+      )}
 
       {/* ── Depots ────────────────────────────────────────────────────────────── */}
       {depotSummaries.length > 0 && (
