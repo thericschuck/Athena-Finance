@@ -8,9 +8,25 @@ import {
 } from 'recharts'
 import { AlertTriangle, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { fmtCurrency } from '@/lib/format'
-import { Database } from '@/types/database'
 
-type Summary = Database['public']['Tables']['monthly_finance_summary']['Row']
+type Summary = {
+  id:               string
+  user_id:          string
+  month:            string
+  salary:           number
+  food:             number
+  leisure:          number
+  subscriptions:    number
+  savings_transfer: number
+  pocket_money:     number
+  other_income:     number
+  other_expenses:   number
+  total_income:     number
+  total_expenses:   number
+  net_balance:      number | null
+  source:           string
+  created_at:       string
+}
 
 type Props = {
   summaries: Summary[]
@@ -88,7 +104,7 @@ function IncomeExpenseChart({ summaries, locale }: { summaries: Summary[]; local
           <YAxis tickFormatter={abbr} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
           <ReTooltip
             contentStyle={TOOLTIP_STYLE}
-            formatter={(val: number | undefined, name: string) => [fmt(val ?? 0), name]}
+            formatter={(val: number | undefined, name: string | undefined) => [fmt(val ?? 0), name ?? '']}
           />
           <ReferenceLine y={0} stroke="hsl(var(--border))" />
           <Bar dataKey="Einnahmen" fill="#10b981" radius={[3, 3, 0, 0]} maxBarSize={32} opacity={0.85} />
@@ -128,7 +144,7 @@ function CategoryChart({ summaries, locale }: { summaries: Summary[]; locale: st
           <YAxis tickFormatter={abbr} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
           <ReTooltip
             contentStyle={TOOLTIP_STYLE}
-            formatter={(val: number | undefined, name: string) => [fmt(val ?? 0), name]}
+            formatter={(val: number | undefined, name: string | undefined) => [fmt(val ?? 0), name ?? '']}
           />
           <Legend
             iconType="circle"
