@@ -55,7 +55,7 @@ export function PortfolioDonut({ financeTotal, depotTotal, cryptoTotal, savingsT
                 {data.map((d, i) => <Cell key={i} fill={d.color} />)}
               </Pie>
               <Tooltip
-                formatter={(val: number) => [fmt(val), '']}
+                formatter={(val: number | undefined) => [fmt(val ?? 0), '' as const]}
                 contentStyle={{
                   background: 'hsl(var(--card))',
                   border: '1px solid hsl(var(--border))',
