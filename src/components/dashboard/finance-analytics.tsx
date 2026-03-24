@@ -1,10 +1,10 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, Tooltip as ReTooltip,
   ResponsiveContainer, CartesianGrid, ReferenceLine,
-  BarChart, Legend,
+  BarChart,
 } from 'recharts'
 import { AlertTriangle, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { fmtCurrency } from '@/lib/format'
@@ -116,9 +116,21 @@ function IncomeExpenseChart({ summaries, locale }: { summaries: Summary[]; local
   )
 }
 
+const ALL_CATS = ['Lebensmittel', 'Freizeit', 'Abos', 'Taschengeld', 'Sonstiges'] as const
+type Cat = typeof ALL_CATS[number]
+
 // ─── 2. Ausgaben nach Kategorien ───────────────────────────────────────────────
 function CategoryChart({ summaries, locale }: { summaries: Summary[]; locale: string }) {
   const fmt = (n: number) => fmtCurrency(n, 'EUR', locale)
+  const [active, setActive] = useState<Set<Cat>>(new Set(ALL_CATS))
+
+  function toggle(cat: Cat) {
+    setActive(prev => {
+      const next = new Set(prev)
+      next.has(cat) ? next.delete(cat) : next.add(cat)
+      return next
+    })
+  }
 
   const data = [...summaries]
     .sort((a, b) => a.month.localeCompare(b.month))
@@ -132,11 +144,24 @@ function CategoryChart({ summaries, locale }: { summaries: Summary[]; locale: st
       Sonstiges:      m.other_expenses,
     }))
 
-  const cats = ['Lebensmittel', 'Freizeit', 'Abos', 'Taschengeld', 'Sonstiges'] as const
-
   return (
     <Card>
       <SectionTitle>Ausgaben nach Kategorie</SectionTitle>
+      {/* Category toggles */}
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {ALL_CATS.map(cat => (
+          <button
+            key={cat}
+            onClick={() => toggle(cat)}
+            className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border transition-opacity
+              ${active.has(cat) ? 'opacity-100' : 'opacity-30'}`}
+            style={{ borderColor: CAT_COLORS[cat], color: CAT_COLORS[cat] }}
+          >
+            <span className="size-1.5 rounded-full shrink-0" style={{ background: CAT_COLORS[cat] }} />
+            {cat}
+          </button>
+        ))}
+      </div>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={data} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
@@ -146,12 +171,7 @@ function CategoryChart({ summaries, locale }: { summaries: Summary[]; locale: st
             contentStyle={TOOLTIP_STYLE}
             formatter={(val: number | undefined, name: string | undefined) => [fmt(val ?? 0), name ?? '']}
           />
-          <Legend
-            iconType="circle"
-            iconSize={8}
-            wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
-          />
-          {cats.map(cat => (
+          {ALL_CATS.filter(cat => active.has(cat)).map(cat => (
             <Bar key={cat} dataKey={cat} stackId="a" fill={CAT_COLORS[cat]} maxBarSize={36} />
           ))}
         </BarChart>
