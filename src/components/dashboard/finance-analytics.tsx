@@ -88,7 +88,7 @@ function IncomeExpenseChart({ summaries, locale }: { summaries: Summary[]; local
           <YAxis tickFormatter={abbr} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
           <ReTooltip
             contentStyle={TOOLTIP_STYLE}
-            formatter={(val: number, name: string) => [fmt(val), name]}
+            formatter={(val: number | undefined, name: string) => [fmt(val ?? 0), name]}
           />
           <ReferenceLine y={0} stroke="hsl(var(--border))" />
           <Bar dataKey="Einnahmen" fill="#10b981" radius={[3, 3, 0, 0]} maxBarSize={32} opacity={0.85} />
@@ -128,7 +128,7 @@ function CategoryChart({ summaries, locale }: { summaries: Summary[]; locale: st
           <YAxis tickFormatter={abbr} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
           <ReTooltip
             contentStyle={TOOLTIP_STYLE}
-            formatter={(val: number, name: string) => [fmt(val), name]}
+            formatter={(val: number | undefined, name: string) => [fmt(val ?? 0), name]}
           />
           <Legend
             iconType="circle"
