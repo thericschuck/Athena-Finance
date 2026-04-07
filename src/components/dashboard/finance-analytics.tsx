@@ -3,10 +3,9 @@
 import { useMemo, useState } from 'react'
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, Tooltip as ReTooltip,
-  ResponsiveContainer, CartesianGrid, ReferenceLine,
-  BarChart,
+  ResponsiveContainer, CartesianGrid, ReferenceLine, BarChart,
 } from 'recharts'
-import { AlertTriangle, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { AlertTriangle, TrendingUp, Minus } from 'lucide-react'
 import { fmtCurrency } from '@/lib/format'
 
 type Summary = {
@@ -28,19 +27,14 @@ type Summary = {
   created_at:       string
 }
 
-type Props = {
-  summaries: Summary[]
-  locale:    string
-}
+type Props = { summaries: Summary[]; locale: string }
 
 function monthLabel(month: string, locale: string) {
-  // month can be "2026-03" or "2026-03-01" — normalise to a valid date string
   const dateStr = month.length <= 7 ? month + '-01' : month.slice(0, 10)
   return new Date(dateStr + 'T12:00:00').toLocaleDateString(locale, { month: 'short', year: '2-digit' })
 }
 
 function netBal(m: Summary) {
-  // net_balance may not be stored by the cron — compute from totals as fallback
   return m.net_balance ?? (m.total_income - m.total_expenses)
 }
 
@@ -50,15 +44,14 @@ function abbr(n: number) {
 }
 
 const CAT_COLORS: Record<string, string> = {
-  Gehalt:     '#10b981',
   Lebensmittel: '#f59e0b',
-  Freizeit:   '#8b5cf6',
-  Abos:       '#3b82f6',
-  Taschengeld: '#ec4899',
-  Sonstiges:  '#6b7280',
+  Freizeit:     '#8b5cf6',
+  Abos:         '#3b82f6',
+  Taschengeld:  '#ec4899',
+  Sonstiges:    '#94a3b8',
 }
 
-// ─── Card wrapper ──────────────────────────────────────────────────────────────
+// ─── Shared card wrapper ────────────────────────────────────────────────────────
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={`rounded-lg border border-border bg-card p-5 ${className}`}>
@@ -71,13 +64,29 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   return <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-4">{children}</p>
 }
 
-// ─── Tooltip styles ────────────────────────────────────────────────────────────
-const TOOLTIP_STYLE = {
-  background: 'hsl(var(--card))',
-  border: '1px solid hsl(var(--border))',
-  borderRadius: '8px',
-  fontSize: '12px',
-  color: 'hsl(var(--foreground))',
+// ─── Custom Tooltip (theme-aware via Tailwind, not hsl(var())) ─────────────────
+function ChartTooltip({ active, payload, label, fmt }: {
+  active?: boolean
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  payload?: any[]
+  label?: string
+  fmt: (n: number) => string
+}) {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="rounded-lg border border-border bg-popover shadow-lg p-3 text-xs min-w-37.5">
+      <p className="font-semibold text-popover-foreground mb-2">{label}</p>
+      {payload.map((entry: { name: string; value: number; color: string }) => (
+        <div key={entry.name} className="flex items-center justify-between gap-3 mt-1">
+          <span className="flex items-center gap-1.5 text-muted-foreground">
+            <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: entry.color }} />
+            {entry.name}
+          </span>
+          <span className="tabular-nums font-medium text-popover-foreground">{fmt(entry.value ?? 0)}</span>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 // ─── 1. Einnahmen vs. Ausgaben ─────────────────────────────────────────────────
@@ -100,16 +109,30 @@ function IncomeExpenseChart({ summaries, locale }: { summaries: Summary[]; local
       <ResponsiveContainer width="100%" height={200}>
         <ComposedChart data={data} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-          <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-          <YAxis tickFormatter={abbr} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+          <XAxis
+            dataKey="label"
+            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+            axisLine={false} tickLine={false}
+          />
+          <YAxis
+            tickFormatter={abbr}
+            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+            axisLine={false} tickLine={false}
+          />
           <ReTooltip
-            contentStyle={TOOLTIP_STYLE}
-            formatter={(val: number | undefined, name: string | undefined) => [fmt(val ?? 0), name ?? '']}
+            content={<ChartTooltip fmt={fmt} />}
+            cursor={{ fill: 'hsl(var(--muted))', fillOpacity: 0.4 }}
           />
           <ReferenceLine y={0} stroke="hsl(var(--border))" />
-          <Bar dataKey="Einnahmen" fill="#10b981" radius={[3, 3, 0, 0]} maxBarSize={32} opacity={0.85} />
-          <Bar dataKey="Ausgaben"  fill="#ef4444" radius={[3, 3, 0, 0]} maxBarSize={32} opacity={0.85} />
-          <Line dataKey="Netto" stroke="hsl(var(--foreground))" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+          <Bar dataKey="Einnahmen" fill="#10b981" fillOpacity={0.85} radius={[3, 3, 0, 0]} maxBarSize={32} />
+          <Bar dataKey="Ausgaben"  fill="#ef4444" fillOpacity={0.85} radius={[3, 3, 0, 0]} maxBarSize={32} />
+          <Line
+            dataKey="Netto"
+            stroke="#6366f1"
+            strokeWidth={2}
+            dot={{ r: 3, fill: '#6366f1', strokeWidth: 0 }}
+            activeDot={{ r: 5, fill: '#6366f1' }}
+          />
         </ComposedChart>
       </ResponsiveContainer>
     </Card>
@@ -136,25 +159,25 @@ function CategoryChart({ summaries, locale }: { summaries: Summary[]; locale: st
     .sort((a, b) => a.month.localeCompare(b.month))
     .slice(-6)
     .map(m => ({
-      label:          monthLabel(m.month, locale),
-      Lebensmittel:   m.food,
-      Freizeit:       m.leisure,
-      Abos:           m.subscriptions,
-      Taschengeld:    m.pocket_money,
-      Sonstiges:      m.other_expenses,
+      label:        monthLabel(m.month, locale),
+      Lebensmittel: m.food,
+      Freizeit:     m.leisure,
+      Abos:         m.subscriptions,
+      Taschengeld:  m.pocket_money,
+      Sonstiges:    m.other_expenses,
     }))
 
   return (
     <Card>
       <SectionTitle>Ausgaben nach Kategorie</SectionTitle>
-      {/* Category toggles */}
       <div className="flex flex-wrap gap-1.5 mb-3">
         {ALL_CATS.map(cat => (
           <button
             key={cat}
             onClick={() => toggle(cat)}
-            className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border transition-opacity
-              ${active.has(cat) ? 'opacity-100' : 'opacity-30'}`}
+            className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border transition-opacity ${
+              active.has(cat) ? 'opacity-100' : 'opacity-25'
+            }`}
             style={{ borderColor: CAT_COLORS[cat], color: CAT_COLORS[cat] }}
           >
             <span className="size-1.5 rounded-full shrink-0" style={{ background: CAT_COLORS[cat] }} />
@@ -165,14 +188,22 @@ function CategoryChart({ summaries, locale }: { summaries: Summary[]; locale: st
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={data} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-          <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-          <YAxis tickFormatter={abbr} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+          <XAxis
+            dataKey="label"
+            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+            axisLine={false} tickLine={false}
+          />
+          <YAxis
+            tickFormatter={abbr}
+            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+            axisLine={false} tickLine={false}
+          />
           <ReTooltip
-            contentStyle={TOOLTIP_STYLE}
-            formatter={(val: number | undefined, name: string | undefined) => [fmt(val ?? 0), name ?? '']}
+            content={<ChartTooltip fmt={fmt} />}
+            cursor={{ fill: 'hsl(var(--muted))', fillOpacity: 0.4 }}
           />
           {ALL_CATS.filter(cat => active.has(cat)).map(cat => (
-            <Bar key={cat} dataKey={cat} stackId="a" fill={CAT_COLORS[cat]} maxBarSize={36} />
+            <Bar key={cat} dataKey={cat} stackId="a" fill={CAT_COLORS[cat]} fillOpacity={0.85} maxBarSize={36} />
           ))}
         </BarChart>
       </ResponsiveContainer>
@@ -180,104 +211,112 @@ function CategoryChart({ summaries, locale }: { summaries: Summary[]; locale: st
   )
 }
 
-// ─── 3. Monatliche Abweichung + Extremereignisse ───────────────────────────────
+// ─── 3. Monatliche Abweichung ──────────────────────────────────────────────────
 function DeviationTable({ summaries, locale }: { summaries: Summary[]; locale: string }) {
   const fmt = (n: number) => fmtCurrency(n, 'EUR', locale)
 
   const sorted = [...summaries].sort((a, b) => b.month.localeCompare(a.month))
+  const multiMonth = sorted.length > 1
 
   const { avg, stddev } = useMemo(() => {
     if (sorted.length === 0) return { avg: 0, stddev: 0 }
-    const a = sorted.reduce((s, m) => s + netBal(m), 0) / sorted.length
+    const a  = sorted.reduce((s, m) => s + netBal(m), 0) / sorted.length
     const sd = Math.sqrt(sorted.reduce((s, m) => s + (netBal(m) - a) ** 2, 0) / sorted.length)
     return { avg: a, stddev: sd }
   }, [sorted])
 
-  const extremeThreshold = Math.max(stddev * 1.5, Math.abs(avg) * 0.3)
+  const extremeThreshold = multiMonth ? Math.max(stddev * 1.5, Math.abs(avg) * 0.3) : 0
 
   return (
     <Card>
-      <SectionTitle>Monatliche Abweichung · Ø {fmt(avg)}/Monat</SectionTitle>
+      <SectionTitle>
+        Monatliche Abweichung
+        {multiMonth && <span className="ml-1 normal-case font-normal">· Ø {fmt(avg)} / Monat</span>}
+      </SectionTitle>
       <div className="space-y-1.5">
         {sorted.map(m => {
-          const nb         = netBal(m)
-          const dev        = nb - avg
-          const devPct     = avg !== 0 ? (dev / Math.abs(avg)) * 100 : 0
-          const isExtreme  = Math.abs(dev) > extremeThreshold
-          const isPositive = nb >= 0
-          const isGoodMonth = dev > extremeThreshold
-          const isBadMonth  = dev < -extremeThreshold
+          const nb          = netBal(m)
+          const dev         = nb - avg
+          const isPositive  = nb >= 0
+          const isGoodMonth = multiMonth && dev >  extremeThreshold
+          const isBadMonth  = multiMonth && dev < -extremeThreshold
 
           return (
             <div
               key={m.month}
-              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm
-                ${isBadMonth  ? 'bg-red-50    dark:bg-red-950/20    border border-red-200   dark:border-red-900/40' :
-                  isGoodMonth ? 'bg-green-50  dark:bg-green-950/20  border border-green-200 dark:border-green-900/40' :
-                                'bg-muted/20 border border-transparent'}`}
+              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm border ${
+                isBadMonth  ? 'bg-red-500/10   border-red-500/25'   :
+                isGoodMonth ? 'bg-green-500/10 border-green-500/25' :
+                              'bg-muted/20 border-transparent'
+              }`}
             >
-              {/* Extreme icon */}
+              {/* Icon */}
               <div className="w-4 shrink-0">
                 {isBadMonth  ? <AlertTriangle className="size-3.5 text-red-500"   /> :
                  isGoodMonth ? <TrendingUp    className="size-3.5 text-green-500" /> :
                                <Minus className="size-3 text-muted-foreground/30" />}
               </div>
 
-              {/* Month */}
-              <span className="w-16 shrink-0 text-xs font-medium">
+              {/* Monat */}
+              <span className="w-16 shrink-0 text-xs font-medium text-foreground">
                 {monthLabel(m.month, locale)}
               </span>
 
-              {/* Income / Expense */}
+              {/* Einnahmen / Ausgaben */}
               <span className="flex-1 text-xs text-muted-foreground hidden sm:block">
-                <span className="text-green-600 dark:text-green-400">{fmt(m.total_income)}</span>
+                <span className="text-green-500">{fmt(m.total_income)}</span>
                 {' / '}
-                <span className="text-red-600 dark:text-red-400">{fmt(m.total_expenses)}</span>
+                <span className="text-red-500">{fmt(m.total_expenses)}</span>
               </span>
 
-              {/* Net balance */}
-              <span className={`w-24 text-right text-xs font-semibold tabular-nums shrink-0
-                ${isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {/* Netto */}
+              <span className={`w-24 text-right text-xs font-semibold tabular-nums shrink-0 ${
+                isPositive ? 'text-green-500' : 'text-red-500'
+              }`}>
                 {isPositive ? '+' : ''}{fmt(nb)}
               </span>
 
-              {/* Deviation */}
-              <span className={`w-16 text-right text-xs tabular-nums shrink-0
-                ${dev > 0 ? 'text-green-600 dark:text-green-400' :
-                  dev < 0 ? 'text-red-500'   : 'text-muted-foreground'}`}>
-                {dev > 0 ? '+' : ''}{devPct.toFixed(0)}%
-              </span>
+              {/* Abweichung vs. Ø – nur mit mehreren Monaten sinnvoll */}
+              {multiMonth && (
+                <span className={`w-24 text-right text-xs tabular-nums shrink-0 ${
+                  dev > 0 ? 'text-green-500' :
+                  dev < 0 ? 'text-red-500'   : 'text-muted-foreground'
+                }`}>
+                  {dev > 0 ? '+' : ''}{fmt(dev)}
+                </span>
+              )}
             </div>
           )
         })}
       </div>
-      {extremeThreshold > 0 && (
+
+      {multiMonth && extremeThreshold > 0 && (
         <p className="mt-3 text-xs text-muted-foreground">
-          Extremereignis = Abweichung &gt; {fmt(extremeThreshold)} vom Durchschnitt
+          Extremereignis · Abweichung &gt; {fmt(extremeThreshold)} vom Ø
         </p>
       )}
     </Card>
   )
 }
 
-// ─── Main export ───────────────────────────────────────────────────────────────
+// ─── Export ────────────────────────────────────────────────────────────────────
 export function FinanceAnalytics({ summaries, locale }: Props) {
   if (summaries.length === 0) return null
 
   return (
     <div className="space-y-4">
-      <h2 className="text-sm font-semibold">
+      <h2 className="text-sm font-semibold text-foreground">
         Finanzanalyse
-        <span className="ml-2 text-xs font-normal text-muted-foreground">letzte {summaries.length} Monate</span>
+        <span className="ml-2 text-xs font-normal text-muted-foreground">
+          letzte {summaries.length} Monat{summaries.length !== 1 ? 'e' : ''}
+        </span>
       </h2>
 
-      {/* Row 1: Income/Expense + Categories */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <IncomeExpenseChart summaries={summaries} locale={locale} />
         <CategoryChart      summaries={summaries} locale={locale} />
       </div>
 
-      {/* Row 2: Deviation table */}
       <DeviationTable summaries={summaries} locale={locale} />
     </div>
   )

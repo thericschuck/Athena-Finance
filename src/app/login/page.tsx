@@ -1,4 +1,16 @@
 import { signIn, signUp } from './actions'
+import Link from 'next/link'
+import { TrendingUp } from 'lucide-react'
+
+const INPUT_STYLE = `
+  .af-input { width: 100%; border-radius: 9px; border: 1px solid #1e2130; background-color: #13161e; padding: 10px 14px; font-size: 14px; color: #f3f0ea; outline: none; box-sizing: border-box; transition: border-color 0.15s ease; font-family: inherit; }
+  .af-input::placeholder { color: #374151; }
+  .af-input:focus { border-color: rgba(240,217,140,0.4); }
+  .af-btn-primary { width: 100%; border-radius: 9px; background-color: #f0d98c; padding: 11px 16px; font-size: 14px; font-weight: 700; color: #0d0f14; border: none; cursor: pointer; letter-spacing: -0.01em; transition: opacity 0.15s ease; font-family: inherit; }
+  .af-btn-primary:hover { opacity: 0.9; }
+  .af-btn-secondary { width: 100%; border-radius: 9px; background-color: transparent; padding: 11px 16px; font-size: 14px; font-weight: 500; color: #9ca3af; border: 1px solid #1e2130; cursor: pointer; transition: border-color 0.15s ease, color 0.15s ease; font-family: inherit; }
+  .af-btn-secondary:hover { border-color: #374151; color: #d1d5db; }
+`
 
 interface LoginPageProps {
   searchParams: Promise<{ error?: string; message?: string }>
@@ -8,31 +20,45 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const { error, message } = await searchParams
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-sm">
-        {/* Logo / Heading */}
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-semibold text-gray-900">Athena Finance</h1>
-          <p className="mt-1 text-sm text-gray-500">Melde dich an oder erstelle ein Konto</p>
+    <main style={{ minHeight: '100vh', backgroundColor: '#08090e', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', fontFamily: 'var(--font-geist-sans)' }}>
+      <style dangerouslySetInnerHTML={{ __html: INPUT_STYLE }} />
+
+      {/* Back to landing */}
+      <div style={{ position: 'absolute', top: '20px', left: '24px' }}>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+          <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: 'linear-gradient(135deg, #f0d98c, #a8782a)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <TrendingUp size={13} color="#0d0f14" strokeWidth={2.5} />
+          </div>
+          <span style={{ fontSize: '14px', fontWeight: 700, color: '#f3f0ea', letterSpacing: '-0.01em' }}>Athena Finance</span>
+        </Link>
+      </div>
+
+      <div style={{ width: '100%', maxWidth: '380px' }}>
+        {/* Heading */}
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#f3f0ea', marginBottom: '8px', letterSpacing: '-0.025em', fontFamily: 'var(--font-playfair)' }}>
+            Willkommen zurück
+          </h1>
+          <p style={{ fontSize: '14px', color: '#6b7280' }}>Melde dich an oder erstelle ein neues Konto</p>
         </div>
 
-        {/* Feedback messages */}
+        {/* Feedback */}
         {error && (
-          <div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700 border border-red-200">
+          <div style={{ marginBottom: '16px', borderRadius: '10px', backgroundColor: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', padding: '12px 16px', fontSize: '13px', color: '#fca5a5' }}>
             {error}
           </div>
         )}
         {message && (
-          <div className="mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700 border border-green-200">
+          <div style={{ marginBottom: '16px', borderRadius: '10px', backgroundColor: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', padding: '12px 16px', fontSize: '13px', color: '#86efac' }}>
             {message}
           </div>
         )}
 
-        {/* Form */}
-        <div className="rounded-xl border border-gray-200 bg-white px-8 py-8 shadow-sm">
-          <form className="space-y-4">
+        {/* Card */}
+        <div style={{ borderRadius: '16px', border: '1px solid #1e2130', backgroundColor: '#0d0f14', padding: '28px', boxShadow: '0 24px 48px rgba(0,0,0,0.5)' }}>
+          <form style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#9ca3af', marginBottom: '7px' }}>
                 E-Mail
               </label>
               <input
@@ -42,12 +68,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 required
                 autoComplete="email"
                 placeholder="du@example.com"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                className="af-input"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#9ca3af', marginBottom: '7px' }}>
                 Passwort
               </label>
               <input
@@ -57,22 +83,16 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 required
                 autoComplete="current-password"
                 placeholder="••••••••"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                className="af-input"
               />
             </div>
 
-            <div className="flex flex-col gap-2 pt-2">
-              <button
-                formAction={signIn}
-                className="w-full rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 transition-colors"
-              >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '4px' }}>
+              <button formAction={signIn} className="af-btn-primary">
                 Einloggen
               </button>
-              <button
-                formAction={signUp}
-                className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 transition-colors"
-              >
-                Registrieren
+              <button formAction={signUp} className="af-btn-secondary">
+                Neues Konto erstellen
               </button>
             </div>
           </form>

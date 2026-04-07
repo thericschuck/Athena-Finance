@@ -34,10 +34,15 @@
       "Bash(npx tsc --noEmit)",
       "Bash(xargs grep:*)",
       "Bash(ls src/app/\\\\\\(dashboard\\\\\\)/settings/)",
-      "Bash(grep -r \"snapshot_date\\\\|valuation_date\" /c/Users/eschu/Desktop/Unternehmensstruktur/06-Projekte/Privat/athena-finance/src --include=*.ts --include=*.tsx)"
+      "Bash(grep -r \"snapshot_date\\\\|valuation_date\" /c/Users/eschu/Desktop/Unternehmensstruktur/06-Projekte/Privat/athena-finance/src --include=*.ts --include=*.tsx)",
+      "Bash(python3 \"C:/Users/eschu/.claude/skills/ui-ux-pro-max/scripts/search.py\" \"fintech personal finance portfolio analytics dark premium SaaS\" --design-system -p \"Athena Finance\" -f markdown)",
+      "Read(//c/Users/eschu/.claude/skills/ui-ux-pro-max/**)",
+      "Bash(python3 \"C:/Users/eschu/.claude/skills/ui-ux-pro-max/scripts\")",
+      "Bash(dir \"C:\\\\Users\\\\eschu\\\\.claude\\\\skills\\\\ui-ux-pro-max\")"
     ],
     "additionalDirectories": [
-      "c:\\Users\\eschu\\Desktop\\Unternehmensstruktur\\06-Projekte\\Privat\\athena-finance\\src\\app\\(dashboard)\\finance\\contracts"
+      "c:\\Users\\eschu\\Desktop\\Unternehmensstruktur\\06-Projekte\\Privat\\athena-finance\\src\\app\\(dashboard)\\finance\\contracts",
+      "c:\\Users\\eschu\\Desktop\\Unternehmensstrategtur\\06-Projekte\\Privat\\athena-finance\\src\\app\\login"
     ]
   }
 }

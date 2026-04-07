@@ -2,8 +2,14 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  // Cron routes authenticate via Bearer token — skip session check
-  if (request.nextUrl.pathname.startsWith('/api/cron/')) {
+  // Public routes — skip session check entirely
+  const { pathname } = request.nextUrl
+  if (
+    pathname.startsWith('/api/cron/') ||
+    pathname === '/' ||
+    pathname === '/login' ||
+    pathname.startsWith('/auth/')
+  ) {
     return NextResponse.next()
   }
 

@@ -9,6 +9,7 @@ import {
   Target,
   Briefcase,
   History,
+  BarChart2,
   Settings,
   LogOut,
   X,
@@ -57,6 +58,7 @@ const navItems: NavItem[] = [
   },
   { href: '/depot',    label: 'Depot',         icon: Briefcase },
   { href: '/history',  label: 'Historie',      icon: History   },
+  { href: '/analyse',  label: 'Analyse',       icon: BarChart2 },
   { href: '/settings', label: 'Einstellungen', icon: Settings  },
 ]
 
