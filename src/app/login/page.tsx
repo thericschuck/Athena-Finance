@@ -1,4 +1,4 @@
-import { signIn, signUp } from './actions'
+import { signIn } from './actions'
 import Link from 'next/link'
 import { TrendingUp } from 'lucide-react'
 
@@ -39,7 +39,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#f3f0ea', marginBottom: '8px', letterSpacing: '-0.025em', fontFamily: 'var(--font-playfair)' }}>
             Willkommen zurück
           </h1>
-          <p style={{ fontSize: '14px', color: '#6b7280' }}>Melde dich an oder erstelle ein neues Konto</p>
+          <p style={{ fontSize: '14px', color: '#6b7280' }}>Persönliches Finanzsystem von Eric Schuck</p>
         </div>
 
         {/* Feedback */}
@@ -90,9 +90,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '4px' }}>
               <button formAction={signIn} className="af-btn-primary">
                 Einloggen
-              </button>
-              <button formAction={signUp} className="af-btn-secondary">
-                Neues Konto erstellen
               </button>
             </div>
           </form>

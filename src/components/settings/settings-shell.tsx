@@ -3,16 +3,18 @@
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { UserProfile, SettingsMap } from '@/lib/settings'
-import { ProfileForm }    from './profile-form'
-import { AppearanceForm } from './appearance-form'
-import { FinanceForm }    from './finance-form'
-import { TradingForm }    from './trading-form'
+import { ProfileForm }       from './profile-form'
+import { AppearanceForm }    from './appearance-form'
+import { FinanceForm }       from './finance-form'
+import { TradingForm }       from './trading-form'
+import { IntegrationsForm }  from './integrations-form'
 
 const TABS = [
-  { id: 'profil',      label: 'Profil' },
-  { id: 'darstellung', label: 'Darstellung' },
-  { id: 'finanzen',    label: 'Finanzen' },
-  { id: 'trading',     label: 'Trading' },
+  { id: 'profil',         label: 'Profil' },
+  { id: 'darstellung',    label: 'Darstellung' },
+  { id: 'finanzen',       label: 'Finanzen' },
+  { id: 'trading',        label: 'Trading' },
+  { id: 'integrationen',  label: 'Integrationen' },
 ] as const
 
 type TabId = typeof TABS[number]['id']
@@ -68,10 +70,11 @@ export function SettingsShell({
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        {active === 'profil'      && <ProfileForm    initialProfile={initialProfile} email={email} />}
-        {active === 'darstellung' && <AppearanceForm initialSettings={initialSettings} />}
-        {active === 'finanzen'    && <FinanceForm    initialSettings={initialSettings} />}
-        {active === 'trading'     && <TradingForm    initialSettings={initialSettings} />}
+        {active === 'profil'        && <ProfileForm       initialProfile={initialProfile} email={email} />}
+        {active === 'darstellung'   && <AppearanceForm   initialSettings={initialSettings} />}
+        {active === 'finanzen'      && <FinanceForm       initialSettings={initialSettings} />}
+        {active === 'trading'       && <TradingForm       initialSettings={initialSettings} />}
+        {active === 'integrationen' && <IntegrationsForm />}
       </div>
     </div>
   )

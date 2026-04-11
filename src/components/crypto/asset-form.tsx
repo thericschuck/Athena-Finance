@@ -25,7 +25,7 @@ import { Database } from '@/types/database'
 type Asset = Database['public']['Tables']['assets']['Row']
 
 // ─── Shared form fields ───────────────────────────────────────────────────────
-function AssetFields({ asset }: { asset?: Asset }) {
+function AssetFields({ asset, defaultPortfolio }: { asset?: Asset; defaultPortfolio?: string }) {
   const [name, setName]             = useState(asset?.name ?? '')
   // coingecko_id stored in assets.symbol column (null for fiat)
   const [coinId, setCoinId]         = useState<string>(asset?.symbol ?? '')
@@ -160,7 +160,7 @@ function AssetFields({ asset }: { asset?: Asset }) {
           <Label htmlFor="a-portfolio">Portfolio</Label>
           <Input
             id="a-portfolio" name="portfolio_name"
-            defaultValue={asset?.portfolio_name ?? ''}
+            defaultValue={asset?.portfolio_name ?? defaultPortfolio ?? ''}
             placeholder="Main, Eltern, ..."
           />
         </div>
@@ -191,7 +191,7 @@ function AssetFields({ asset }: { asset?: Asset }) {
 
 // ─── Shared dialog wrapper ────────────────────────────────────────────────────
 function AssetDialog({
-  mode, asset, trigger, open: controlledOpen, onOpenChange, onSuccess,
+  mode, asset, trigger, open: controlledOpen, onOpenChange, onSuccess, defaultPortfolio,
 }: {
   mode: 'create' | 'edit'
   asset?: Asset
@@ -199,6 +199,7 @@ function AssetDialog({
   open?: boolean
   onOpenChange?: (open: boolean) => void
   onSuccess?: () => void
+  defaultPortfolio?: string
 }) {
   const router = useRouter()
   const [internalOpen, setInternalOpen] = useState(false)
@@ -229,7 +230,7 @@ function AssetDialog({
         <DialogTitle>{mode === 'create' ? 'Neues Asset' : 'Asset bearbeiten'}</DialogTitle>
       </DialogHeader>
       <form action={formAction} className="space-y-4 pt-2">
-        <AssetFields asset={asset} />
+        <AssetFields asset={asset} defaultPortfolio={defaultPortfolio} />
         {state && 'error' in state && (
           <p className="text-sm text-destructive">{state.error}</p>
         )}
@@ -270,10 +271,12 @@ export function AssetFormDialog({
   open,
   onOpenChange,
   onSuccess,
+  defaultPortfolio,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
+  defaultPortfolio?: string
 }) {
   return (
     <AssetDialog
@@ -281,6 +284,7 @@ export function AssetFormDialog({
       open={open}
       onOpenChange={onOpenChange}
       onSuccess={onSuccess}
+      defaultPortfolio={defaultPortfolio}
     />
   )
 }

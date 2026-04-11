@@ -177,7 +177,8 @@ export function CoinCatalogManager({ builtinCoins, customCoins: initialCustom }:
     })
   }
 
-  const allCoins = [...builtinCoins, ...custom]
+  const customSymbols = new Set(custom.map(c => c.symbol))
+  const allCoins = [...builtinCoins.filter(c => !customSymbols.has(c.symbol)), ...custom]
 
   return (
     <div className="space-y-6">

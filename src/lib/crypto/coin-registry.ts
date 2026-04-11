@@ -64,12 +64,19 @@ export function findBySymbol(symbol: string): CoinEntry | undefined {
 }
 
 /**
- * Approximate EUR prices for fiat currencies.
- * EUR is always 1. Others are rough defaults — not used for financial precision.
+ * Approximate EUR prices for fiat currencies and USD-pegged stablecoins.
+ * EUR is always 1. Stablecoins are treated as 1 USD for local resolution
+ * (avoids CoinGecko dependency for assets that are always ~1 USD).
  */
 export const FIAT_EUR_PRICES: Record<string, number> = {
   eur: 1,
   usd: 0.92,
   chf: 1.05,
   gbp: 1.18,
+  // USD-pegged stablecoins — resolved locally as 1 USD in EUR
+  'usd-coin':     0.92,  // USDC
+  'tether':       0.92,  // USDT
+  'dai':          0.92,  // DAI
+  'paypal-usd':   0.92,  // PYUSD
+  'first-digital-usd': 0.92, // FDUSD
 }

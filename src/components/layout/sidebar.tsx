@@ -13,6 +13,7 @@ import {
   Settings,
   LogOut,
   X,
+  Landmark,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -56,6 +57,7 @@ const navItems: NavItem[] = [
       { href: '/strategy/strategies', label: 'Strategien' },
     ],
   },
+  { href: '/bank',     label: 'Banking',        icon: Landmark  },
   { href: '/depot',    label: 'Depot',         icon: Briefcase },
   { href: '/history',  label: 'Historie',      icon: History   },
   { href: '/analyse',  label: 'Analyse',       icon: BarChart2 },

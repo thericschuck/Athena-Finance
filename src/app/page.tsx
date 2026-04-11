@@ -99,7 +99,6 @@ export default async function LandingPage() {
               <span style={{ fontWeight: 700, fontSize: '15px', letterSpacing: '-0.01em', color: '#f3f0ea' }}>Athena Finance</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontSize: '13px', color: '#6b7280' }}>Bereits Mitglied?</span>
               <Link href="/login" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: '#f0d98c', color: '#0d0f14', fontWeight: 600, fontSize: '13px', padding: '7px 16px', borderRadius: '8px', textDecoration: 'none' }} className="btn-primary">
                 Anmelden
               </Link>
@@ -121,7 +120,7 @@ export default async function LandingPage() {
               <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', backgroundColor: '#6366f1', borderRadius: '50%' }}>
                 <Zap size={10} color="white" strokeWidth={2.5} />
               </span>
-              <span style={{ fontSize: '12px', color: '#a5b4fc', fontWeight: 500 }}>Dein persönliches Finanzkommandozentrum</span>
+              <span style={{ fontSize: '12px', color: '#a5b4fc', fontWeight: 500 }}>Persönliches Finanzsystem · Eric Schuck</span>
             </div>
 
             {/* Headline */}
@@ -136,10 +135,10 @@ export default async function LandingPage() {
               Athena Finance vereint Portfolio-Tracking, Ausgaben-Analyse, Sparplan-Management und Vertragsübersicht in einem einzigen, leistungsstarken Dashboard.
             </p>
 
-            {/* CTAs */}
+            {/* CTA */}
             <div className="fade-in-up delay-400" style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
               <Link href="/login" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: '#f0d98c', color: '#0d0f14', fontWeight: 700, fontSize: '15px', padding: '13px 28px', borderRadius: '10px', textDecoration: 'none', letterSpacing: '-0.01em' }} className="btn-primary">
-                Kostenlos starten
+                Anmelden
                 <ArrowRight size={16} strokeWidth={2.5} />
               </Link>
               <a href="#features" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#d1d5db', fontWeight: 500, fontSize: '15px', padding: '13px 24px', borderRadius: '10px', textDecoration: 'none' }} className="btn-primary">
@@ -413,9 +412,9 @@ export default async function LandingPage() {
               <div style={{ position: 'absolute', top: '28px', left: 'calc(16.67% + 20px)', right: 'calc(16.67% + 20px)', height: '1px', background: 'linear-gradient(90deg, transparent, #1e2130, #f0d98c40, #1e2130, transparent)', pointerEvents: 'none' }} />
 
               {[
-                { n: '01', icon: <ShieldCheck size={22} color="#f0d98c" />, title: 'Konto erstellen', desc: 'Registriere dich kostenlos in unter einer Minute. Keine Kreditkarte, keine Verpflichtungen.' },
-                { n: '02', icon: <Wallet size={22} color="#f0d98c" />, title: 'Daten einrichten', desc: 'Verbinde deine Konten, importiere Transaktionen und konfiguriere Kategorien nach deinem Bedarf.' },
-                { n: '03', icon: <TrendingUp size={22} color="#f0d98c" />, title: 'Überblick genießen', desc: 'Alle deine Finanzdaten in einem übersichtlichen Dashboard — jederzeit und von überall.' },
+                { n: '01', icon: <ShieldCheck size={22} color="#f0d98c" />, title: 'Einloggen', desc: 'Privates System — Zugang nur für mich. Keine öffentliche Registrierung.' },
+                { n: '02', icon: <Wallet size={22} color="#f0d98c" />, title: 'Daten einrichten', desc: 'Konten, Transaktionen, Verträge und Portfolios nach eigenem Bedarf konfigurieren.' },
+                { n: '03', icon: <TrendingUp size={22} color="#f0d98c" />, title: 'Überblick genießen', desc: 'Alle Finanzdaten in einem übersichtlichen Dashboard — jederzeit und von überall.' },
               ].map(step => (
                 <div key={step.n} style={{ textAlign: 'center', position: 'relative' }}>
                   <div style={{ width: '56px', height: '56px', borderRadius: '14px', backgroundColor: 'rgba(240,217,140,0.08)', border: '1px solid rgba(240,217,140,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
@@ -601,31 +600,24 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        {/* ── FINAL CTA ── */}
+        {/* ── FINAL ── */}
         <section style={{ padding: '80px 24px' }}>
           <div style={{ maxWidth: '700px', margin: '0 auto' }}>
             <div style={{ borderRadius: '20px', background: 'linear-gradient(135deg, #0f1018 0%, #131620 50%, #0d0f16 100%)', border: '1px solid rgba(240,217,140,0.15)', padding: 'clamp(40px, 5vw, 64px)', textAlign: 'center', position: 'relative', overflow: 'hidden' }} className="glow-gold">
-              {/* Background glow */}
               <div style={{ position: 'absolute', top: '-60px', left: '50%', transform: 'translateX(-50%)', width: '400px', height: '300px', borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(240,217,140,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
               <div style={{ position: 'relative' }}>
-                <p style={{ fontSize: '12px', fontWeight: 600, color: '#f0d98c', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '16px' }}>Kostenlos starten</p>
+                <p style={{ fontSize: '12px', fontWeight: 600, color: '#f0d98c', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '16px' }}>Persönliches Projekt</p>
                 <h2 style={{ fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.025em', color: '#f3f0ea', marginBottom: '16px', lineHeight: 1.15, fontFamily: 'var(--font-playfair)' }}>
-                  Starte heute mit Athena Finance.
+                  Selbst gebaut. Nur für mich.
                 </h2>
-                <p style={{ fontSize: '15px', color: '#9ca3af', marginBottom: '36px', lineHeight: 1.6, maxWidth: '480px', margin: '0 auto 36px' }}>
-                  Kein Abo, keine versteckten Kosten. Erstelle jetzt dein Konto und bringe Ordnung in deine Finanzen.
+                <p style={{ fontSize: '15px', color: '#9ca3af', lineHeight: 1.6, maxWidth: '480px', margin: '0 auto 36px' }}>
+                  Athena Finance ist mein persönliches Finanzsystem — entwickelt, um exakt meinen Anforderungen zu entsprechen. Kein fremdes SaaS-Produkt, keine Kompromisse.
                 </p>
                 <Link href="/login" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: '#f0d98c', color: '#0d0f14', fontWeight: 700, fontSize: '15px', padding: '14px 32px', borderRadius: '11px', textDecoration: 'none', letterSpacing: '-0.01em' }} className="btn-primary">
-                  Jetzt kostenlos registrieren
+                  Anmelden
                   <ArrowRight size={16} strokeWidth={2.5} />
                 </Link>
-                <p style={{ fontSize: '12px', color: '#4b5563', marginTop: '16px' }}>
-                  Bereits registriert?{' '}
-                  <Link href="/login" style={{ color: '#6b7280', textDecoration: 'underline', textDecorationColor: 'rgba(107,114,128,0.4)' }}>
-                    Direkt einloggen
-                  </Link>
-                </p>
               </div>
             </div>
           </div>
@@ -641,7 +633,7 @@ export default async function LandingPage() {
               <span style={{ fontSize: '13px', fontWeight: 600, color: '#4b5563' }}>Athena Finance</span>
             </div>
             <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-              <span style={{ fontSize: '12px', color: '#374151' }}>© 2025 Athena Finance</span>
+              <span style={{ fontSize: '12px', color: '#374151' }}>© 2025 Eric Schuck · Persönliches Projekt</span>
               <Link href="/login" style={{ fontSize: '12px', color: '#4b5563', textDecoration: 'none' }}>Login</Link>
             </div>
           </div>

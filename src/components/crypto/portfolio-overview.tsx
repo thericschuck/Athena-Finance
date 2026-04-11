@@ -36,10 +36,12 @@ interface Props {
   snapshots:        SnapshotRow[]
   rebalancingRows?: RebalancingRow[]
   eurUsdRate?:      number
+  activePortfolio?: string
+  readonly?:        boolean
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, eurUsdRate }: Props) {
+export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, eurUsdRate, activePortfolio, readonly }: Props) {
   const { locale } = useSettings()
   const fmtEur = (n: number) => fmtCurrency(n, 'EUR', locale)
   const router = useRouter()
@@ -61,7 +63,7 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, e
     return () => clearInterval(interval)
   }, [])
 
-  // ─── Auto-refresh prices every 60s (client-side only, no DB write) ──────────
+  // ─── Auto-refresh prices on mount + every 60s (client-side, no DB write) ─────
   useEffect(() => {
     const coingeckoIds = [...new Set(
       assets.map(a => a.symbol).filter((s): s is string => !!s)
@@ -83,6 +85,8 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, e
       }
     }
 
+    // Fetch immediately so missing DB valuations are filled on first render
+    tick()
     const interval = setInterval(tick, 60_000)
     return () => clearInterval(interval)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -138,7 +142,7 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, e
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Crypto Portfolio</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{activePortfolio ?? 'Crypto Portfolio'}</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
             {assets.length} Assets · Gesamtwert {fmtEur(totalValue)}
             {totalPnL != null && (
@@ -170,10 +174,12 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, e
             {isRefreshing ? 'Aktualisiert…' : 'Preise aktualisieren'}
           </Button>
 
-          <Button size="sm" onClick={() => setAssetFormOpen(true)}>
-            <Plus className="size-4" />
-            Asset anlegen
-          </Button>
+          {!readonly && (
+            <Button size="sm" onClick={() => setAssetFormOpen(true)}>
+              <Plus className="size-4" />
+              Asset anlegen
+            </Button>
+          )}
         </div>
       </div>
 
@@ -196,17 +202,20 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, e
       )}
 
       {/* Asset table */}
-      {assets.length > 0 && <AssetTable assets={assets} rebalancingRows={rebalancingRows} />}
+      {assets.length > 0 && <AssetTable assets={assets} rebalancingRows={rebalancingRows} readonly={readonly} />}
 
       {/* Add asset dialog */}
-      <AssetFormDialog
-        open={assetFormOpen}
-        onOpenChange={setAssetFormOpen}
-        onSuccess={() => {
-          setAssetFormOpen(false)
-          router.refresh()
-        }}
-      />
+      {!readonly && (
+        <AssetFormDialog
+          open={assetFormOpen}
+          onOpenChange={setAssetFormOpen}
+          onSuccess={() => {
+            setAssetFormOpen(false)
+            router.refresh()
+          }}
+          defaultPortfolio={activePortfolio}
+        />
+      )}
     </div>
   )
 }

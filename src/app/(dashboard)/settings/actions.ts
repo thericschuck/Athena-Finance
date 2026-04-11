@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Json } from '@/types/database'
+import { encrypt } from '@/lib/encryption'
 
 export type SettingsState = { error: string } | { success: true } | null
 
@@ -140,6 +141,74 @@ export async function changePassword(
 
   const { error } = await supabase.auth.updateUser({ password: next })
   if (error) return { error: error.message }
+  return { success: true }
+}
+
+// ─── Exchange Keys ────────────────────────────────────────────────────────────
+export async function saveExchangeKey(
+  _prev: SettingsState,
+  formData: FormData
+): Promise<SettingsState> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Nicht eingeloggt' }
+
+  const exchange  = (formData.get('exchange')   as string)?.trim()
+  const api_key   = (formData.get('api_key')    as string)?.trim()
+  const api_secret = (formData.get('api_secret') as string)?.trim()
+
+  if (!exchange || !api_key || !api_secret) {
+    return { error: 'Alle Felder sind erforderlich' }
+  }
+
+  let encryptedKey: string
+  let encryptedSecret: string
+  try {
+    encryptedKey    = encrypt(api_key)
+    encryptedSecret = encrypt(api_secret)
+  } catch (e) {
+    return { error: `Verschlüsselung fehlgeschlagen: ${(e as Error).message}` }
+  }
+
+  // exchange_keys not yet in generated types — remove cast after `supabase gen types`
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
+    .from('exchange_keys')
+    .upsert(
+      {
+        user_id:    user.id,
+        exchange,
+        api_key:    encryptedKey,
+        api_secret: encryptedSecret,
+      },
+      { onConflict: 'user_id,exchange' }
+    )
+
+  if (error) return { error: (error as { message: string }).message }
+  revalidatePath('/depot')
+  return { success: true }
+}
+
+export async function deleteExchangeKey(
+  _prev: SettingsState,
+  formData: FormData
+): Promise<SettingsState> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Nicht eingeloggt' }
+
+  const exchange = (formData.get('exchange') as string)?.trim() ?? 'kraken'
+
+  // exchange_keys not yet in generated types — remove cast after `supabase gen types`
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
+    .from('exchange_keys')
+    .delete()
+    .eq('user_id', user.id)
+    .eq('exchange', exchange)
+
+  if (error) return { error: (error as { message: string }).message }
+  revalidatePath('/depot')
   return { success: true }
 }
 

@@ -2,14 +2,25 @@ import { createClient } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { fmtDate as fmtDateLib } from '@/lib/format'
 import { PortfolioOverview, type AssetWithPrice } from '@/components/crypto/portfolio-overview'
+import { PortfolioSwitcher, type PortfolioMeta } from '@/components/crypto/portfolio-switcher'
 import { getStrategySignals, getPortfolioAllocations } from '@/app/(dashboard)/crypto/actions'
 import { calculateRebalancing } from '@/lib/crypto/rebalancing'
 import { getEurUsdRate } from '@/lib/crypto/coingecko'
 import { History } from 'lucide-react'
 
-export default async function CryptoPage() {
+export default async function CryptoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ p?: string }>
+}) {
+  const { p: portfolioParam } = await searchParams
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  const oneYearAgo = (() => {
+    const d = new Date(); d.setFullYear(d.getFullYear() - 1); return d.toISOString().split('T')[0]
+  })()
 
   const [
     { data: rawAssets },
@@ -19,6 +30,8 @@ export default async function CryptoPage() {
     allocations,
     settings,
     eurUsdRate,
+    { data: krakenKey },
+    { data: lastSyncSetting },
   ] = await Promise.all([
     supabase
       .from('assets')
@@ -30,14 +43,11 @@ export default async function CryptoPage() {
       .from('portfolio_snapshots')
       .select('snapshot_date, portfolio_name, value_eur')
       .eq('user_id', user!.id)
-      .gte('snapshot_date', (() => {
-        const d = new Date()
-        d.setFullYear(d.getFullYear() - 1)
-        return d.toISOString().split('T')[0]
-      })())
+      .gte('snapshot_date', oneYearAgo)
       .order('snapshot_date'),
     supabase
-      .from('asset_audit_log')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('asset_audit_log' as any)
       .select('*')
       .eq('user_id', user!.id)
       .order('created_at', { ascending: false })
@@ -46,23 +56,39 @@ export default async function CryptoPage() {
     getPortfolioAllocations(user!.id),
     getSettings(user!.id),
     getEurUsdRate(),
+    // Check Kraken connection (no decryption needed)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
+      .from('exchange_keys')
+      .select('id')
+      .eq('user_id', user!.id)
+      .eq('exchange', 'kraken')
+      .maybeSingle(),
+    supabase
+      .from('user_settings')
+      .select('value')
+      .eq('user_id', user!.id)
+      .eq('key', 'kraken_last_sync')
+      .maybeSingle(),
   ])
 
-  const locale = (settings.number_format as string) ?? 'de-DE'
-  const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
+  const locale     = (settings.number_format as string) ?? 'de-DE'
+  const dateFormat = (settings.date_format as string)   ?? 'dd.MM.yyyy'
 
+  const krakenConnected = !!krakenKey
+  const lastSync        = (lastSyncSetting?.value as string) ?? null
+
+  // ── Build valuation map ───────────────────────────────────────────────────
   const assetIds = (rawAssets ?? []).map(a => a.id)
-
   const { data: rawValuations } = assetIds.length
     ? await supabase
         .from('asset_valuations')
         .select('*')
         .in('asset_id', assetIds)
         .order('valuation_date', { ascending: false })
-        .order('created_at', { ascending: false })
+        .order('created_at',    { ascending: false })
     : { data: [] }
 
-  // Latest valuation per asset (first match wins due to ordering)
   const latestMap = new Map<string, { price_per_unit: number; total_value: number; valuation_date: string }>()
   for (const v of rawValuations ?? []) {
     if (!latestMap.has(v.asset_id)) {
@@ -74,7 +100,7 @@ export default async function CryptoPage() {
     }
   }
 
-  const assets: AssetWithPrice[] = (rawAssets ?? []).map(a => {
+  const allAssets: AssetWithPrice[] = (rawAssets ?? []).map(a => {
     const val = latestMap.get(a.id)
     return {
       ...a,
@@ -84,19 +110,66 @@ export default async function CryptoPage() {
     }
   })
 
-  const totalValue = assets.reduce((s, a) => s + (a.current_value ?? 0), 0)
+  // ── Build portfolio list ──────────────────────────────────────────────────
+  // Kraken portfolio = assets with exchange='Kraken'
+  const krakenAssets   = allAssets.filter(a => a.exchange?.toLowerCase() === 'kraken')
+  const nonKrakenAssets = allAssets.filter(a => a.exchange?.toLowerCase() !== 'kraken')
 
+  // Distinct portfolio names from non-Kraken assets
+  const manualNames = [...new Set(
+    nonKrakenAssets
+      .map(a => a.portfolio_name)
+      .filter((n): n is string => !!n)
+  )]
+
+  const portfolios: PortfolioMeta[] = [
+    ...(krakenConnected ? [{ name: 'Kraken', isKraken: true, assetCount: krakenAssets.length }] : []),
+    ...manualNames.map(name => ({
+      name,
+      assetCount: nonKrakenAssets.filter(a => a.portfolio_name === name).length,
+    })),
+  ]
+
+  // If the URL names a portfolio that doesn't exist yet, add it as empty (user just created it)
+  if (portfolioParam && !portfolios.some(p => p.name === portfolioParam)) {
+    portfolios.push({ name: portfolioParam, assetCount: 0 })
+  }
+
+  // Determine active portfolio
+  const activePortfolio = portfolioParam ?? portfolios[0]?.name ?? null
+
+  // ── Filter assets + snapshots for active portfolio ────────────────────────
+  const assets: AssetWithPrice[] = activePortfolio
+    ? activePortfolio === 'Kraken'
+      ? krakenAssets
+      : nonKrakenAssets.filter(a => a.portfolio_name === activePortfolio)
+    : allAssets
+
+  const filteredSnapshots = activePortfolio
+    ? (snapshots ?? []).filter(s => s.portfolio_name === activePortfolio)
+    : (snapshots ?? [])
+
+  // ── Rebalancing ───────────────────────────────────────────────────────────
+  const totalValue       = assets.reduce((s, a) => s + (a.current_value ?? 0), 0)
   const rebalancingResult = calculateRebalancing(signals, allocations, assets, totalValue)
 
   return (
     <>
+      <PortfolioSwitcher
+        portfolios={portfolios}
+        activePortfolio={activePortfolio ?? ''}
+        krakenConnected={krakenConnected}
+        lastSync={lastSync}
+      />
       <PortfolioOverview
         initialAssets={assets}
-        snapshots={snapshots ?? []}
+        snapshots={filteredSnapshots}
         rebalancingRows={rebalancingResult.rows}
         eurUsdRate={eurUsdRate}
+        activePortfolio={activePortfolio ?? undefined}
+        readonly={activePortfolio === 'Kraken'}
       />
-      <AssetAuditLog entries={(auditLog ?? []) as AuditEntry[]} locale={locale} dateFormat={dateFormat} />
+      <AssetAuditLog entries={(auditLog ?? []) as unknown as AuditEntry[]} locale={locale} dateFormat={dateFormat} />
     </>
   )
 }
@@ -160,24 +233,20 @@ function AssetAuditLog({ entries, locale, dateFormat }: { entries: AuditEntry[];
             </thead>
             <tbody>
               {entries.map((e, i) => {
-                const cfg = ACTION_LABEL[e.action] ?? { label: e.action, cls: 'bg-muted text-muted-foreground' }
+                const cfg    = ACTION_LABEL[e.action] ?? { label: e.action, cls: 'bg-muted text-muted-foreground' }
                 const isLast = i === entries.length - 1
 
-                // For 'updated': changes is { field: { from, to } }
-                // For 'created'/'deleted': changes is flat { field: value }
                 const changeLines: string[] = []
                 if (e.changes) {
                   if (e.action === 'updated') {
                     for (const [field, diff] of Object.entries(e.changes)) {
                       const d = diff as { from: unknown; to: unknown }
-                      const label = FIELD_LABEL[field] ?? field
-                      changeLines.push(`${label}: ${fmtVal(d.from, locale)} → ${fmtVal(d.to, locale)}`)
+                      changeLines.push(`${FIELD_LABEL[field] ?? field}: ${fmtVal(d.from, locale)} → ${fmtVal(d.to, locale)}`)
                     }
                   } else {
                     for (const [field, val] of Object.entries(e.changes)) {
                       if (val !== null && val !== undefined) {
-                        const label = FIELD_LABEL[field] ?? field
-                        changeLines.push(`${label}: ${fmtVal(val, locale)}`)
+                        changeLines.push(`${FIELD_LABEL[field] ?? field}: ${fmtVal(val, locale)}`)
                       }
                     }
                   }
@@ -196,9 +265,7 @@ function AssetAuditLog({ entries, locale, dateFormat }: { entries: AuditEntry[];
                     </td>
                     <td className="px-4 py-2.5 text-muted-foreground text-xs">
                       {changeLines.length === 0 ? '—' : (
-                        <ul className="space-y-0.5">
-                          {changeLines.map((l, j) => <li key={j}>{l}</li>)}
-                        </ul>
+                        <ul className="space-y-0.5">{changeLines.map((l, j) => <li key={j}>{l}</li>)}</ul>
                       )}
                     </td>
                   </tr>

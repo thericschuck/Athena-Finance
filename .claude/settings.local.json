@@ -38,7 +38,14 @@
       "Bash(python3 \"C:/Users/eschu/.claude/skills/ui-ux-pro-max/scripts/search.py\" \"fintech personal finance portfolio analytics dark premium SaaS\" --design-system -p \"Athena Finance\" -f markdown)",
       "Read(//c/Users/eschu/.claude/skills/ui-ux-pro-max/**)",
       "Bash(python3 \"C:/Users/eschu/.claude/skills/ui-ux-pro-max/scripts\")",
-      "Bash(dir \"C:\\\\Users\\\\eschu\\\\.claude\\\\skills\\\\ui-ux-pro-max\")"
+      "Bash(dir \"C:\\\\Users\\\\eschu\\\\.claude\\\\skills\\\\ui-ux-pro-max\")",
+      "Bash(find \"/c/Users/eschu/Desktop/Unternehmensstruktur/06-Projekte/Privat/athena-finance\" -type f -name \"*.sql\" -exec grep -l \"TABLE.*assets\" {} \\\\;)",
+      "Bash(grep -A 40 \"CREATE TABLE.*assets\" c:/Users/eschu/Desktop/Unternehmensstruktur/06-Projekte/Privat/athena-finance/supabase/migrations/*.sql)",
+      "Bash(npm install:*)",
+      "Bash(node -e \"const f = require\\('node-fints'\\); console.log\\(Object.keys\\(f\\).join\\(', '\\)\\)\")",
+      "Bash(node -e ':*)",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(xargs cat:*)"
     ],
     "additionalDirectories": [
       "c:\\Users\\eschu\\Desktop\\Unternehmensstruktur\\06-Projekte\\Privat\\athena-finance\\src\\app\\(dashboard)\\finance\\contracts",

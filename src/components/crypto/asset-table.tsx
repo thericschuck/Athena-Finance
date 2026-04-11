@@ -69,7 +69,7 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 // ─── Group section ────────────────────────────────────────────────────────────
-function GroupSection({ group, rebalancingRows, locale }: { group: Group; rebalancingRows?: RebalancingRow[]; locale: string }) {
+function GroupSection({ group, rebalancingRows, locale, readonly }: { group: Group; rebalancingRows?: RebalancingRow[]; locale: string; readonly?: boolean }) {
   const fmt = mkFmt(locale)
   const groupValue = group.assets.reduce((s, a) => s + (a.current_value ?? 0), 0)
   // P&L only for assets with a known cost basis
@@ -114,7 +114,7 @@ function GroupSection({ group, rebalancingRows, locale }: { group: Group; rebala
                 <th className="text-right px-4 py-2.5 font-medium">Diff. €</th>
                 <th className="text-left px-4 py-2.5 font-medium">Status</th>
               </>}
-              <th className="w-16 px-4 py-2.5" />
+              {!readonly && <th className="w-16 px-4 py-2.5" />}
             </tr>
           </thead>
           <tbody>
@@ -131,10 +131,11 @@ function GroupSection({ group, rebalancingRows, locale }: { group: Group; rebala
                   rebRow={rebRow}
                   hasReb={hasReb}
                   locale={locale}
+                  readonly={readonly}
                 />
               )
             })}
-            <SumRow assets={group.assets} groupRebRows={groupRebRows} hasReb={hasReb} locale={locale} />
+            <SumRow assets={group.assets} groupRebRows={groupRebRows} hasReb={hasReb} locale={locale} readonly={readonly} />
           </tbody>
         </table>
       </div>
@@ -144,13 +145,14 @@ function GroupSection({ group, rebalancingRows, locale }: { group: Group; rebala
 
 // ─── Asset row ────────────────────────────────────────────────────────────────
 function AssetRow({
-  asset, isLast, rebRow, hasReb, locale,
+  asset, isLast, rebRow, hasReb, locale, readonly,
 }: {
-  asset:   AssetWithPrice
-  isLast:  boolean
-  rebRow?: RebalancingRow
-  hasReb:  boolean
-  locale:  string
+  asset:    AssetWithPrice
+  isLast:   boolean
+  rebRow?:  RebalancingRow
+  hasReb:   boolean
+  locale:   string
+  readonly?: boolean
 }) {
   const fmt = mkFmt(locale)
   const quantity     = asset.quantity ?? 0
@@ -244,19 +246,21 @@ function AssetRow({
         </td>
       </>}
 
-      {/* Actions */}
-      <td className="px-4 py-3">
-        <div className="flex items-center justify-end gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-          <EditAssetDialog asset={asset} />
-          <DeleteAssetButton asset={asset} />
-        </div>
-      </td>
+      {/* Actions — hidden in readonly mode (e.g. Kraken portfolio) */}
+      {!readonly && (
+        <td className="px-4 py-3">
+          <div className="flex items-center justify-end gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+            <EditAssetDialog asset={asset} />
+            <DeleteAssetButton asset={asset} />
+          </div>
+        </td>
+      )}
     </tr>
   )
 }
 
 // ─── Sum row ──────────────────────────────────────────────────────────────────
-function SumRow({ assets, groupRebRows, hasReb, locale }: { assets: AssetWithPrice[]; groupRebRows: RebalancingRow[]; hasReb: boolean; locale: string }) {
+function SumRow({ assets, groupRebRows, hasReb, locale, readonly }: { assets: AssetWithPrice[]; groupRebRows: RebalancingRow[]; hasReb: boolean; locale: string; readonly?: boolean }) {
   const fmt = mkFmt(locale)
   const totalValue   = assets.reduce((s, a) => s + (a.current_value ?? 0), 0)
   // Only include assets with known cost basis in P&L to avoid inflated numbers
@@ -293,19 +297,19 @@ function SumRow({ assets, groupRebRows, hasReb, locale }: { assets: AssetWithPri
         </td>
         <td />
       </>}
-      <td />
+      {!readonly && <td />}
     </tr>
   )
 }
 
 // ─── Public export ────────────────────────────────────────────────────────────
-export function AssetTable({ assets, rebalancingRows }: { assets: AssetWithPrice[]; rebalancingRows?: RebalancingRow[] }) {
+export function AssetTable({ assets, rebalancingRows, readonly }: { assets: AssetWithPrice[]; rebalancingRows?: RebalancingRow[]; readonly?: boolean }) {
   const { locale } = useSettings()
   const groups = groupAssets(assets)
   return (
     <div className="space-y-6">
       {groups.map(group => (
-        <GroupSection key={group.name} group={group} rebalancingRows={rebalancingRows} locale={locale} />
+        <GroupSection key={group.name} group={group} rebalancingRows={rebalancingRows} locale={locale} readonly={readonly} />
       ))}
     </div>
   )

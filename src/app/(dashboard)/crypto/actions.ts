@@ -10,7 +10,10 @@ import {
   type StrategySignals,
   type PortfolioAllocations,
 } from '@/lib/crypto/rebalancing-defaults'
-import { FIAT_EUR_PRICES } from '@/lib/crypto/coin-registry'
+import { FIAT_EUR_PRICES, findBySymbol } from '@/lib/crypto/coin-registry'
+import { decrypt } from '@/lib/encryption'
+import { fetchKrakenBalances, krakenCodeToSymbol } from '@/lib/kraken'
+import type { ExchangeKeyRow } from '@/types/exchange-keys'
 
 export type AssetActionState = { error: string } | { success: true } | null
 
@@ -402,6 +405,198 @@ export async function getLastRebalancing(userId: string): Promise<string | null>
 
   if (!data?.value) return null
   return data.value as unknown as string
+}
+
+// ─── Crypto Portfolio Source ──────────────────────────────────────────────────
+export type CryptoSource = 'all' | 'kraken' | 'manual'
+
+export async function saveCryptoSource(source: CryptoSource): Promise<void> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  await supabase.from('user_settings').upsert(
+    { user_id: user.id, key: 'crypto_source', value: source as unknown as Json },
+    { onConflict: 'user_id,key' }
+  )
+  revalidatePath('/crypto')
+}
+
+export async function getCryptoSource(userId: string): Promise<CryptoSource> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('user_settings')
+    .select('value')
+    .eq('user_id', userId)
+    .eq('key', 'crypto_source')
+    .maybeSingle()
+  const v = data?.value as string | undefined
+  return (v === 'kraken' || v === 'manual') ? v : 'all'
+}
+
+// ─── Kraken Sync ──────────────────────────────────────────────────────────────
+export type SyncState = { error: string } | { success: true; synced: number } | null
+
+export async function syncFromKraken(): Promise<SyncState> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Nicht eingeloggt' }
+
+  // 1. Load + decrypt Kraken credentials
+  // exchange_keys not in generated types yet — remove cast after `supabase gen types`
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: keyRow } = await (supabase as any)
+    .from('exchange_keys')
+    .select('api_key, api_secret')
+    .eq('user_id', user.id)
+    .eq('exchange', 'kraken')
+    .maybeSingle() as { data: Pick<ExchangeKeyRow, 'api_key' | 'api_secret'> | null }
+
+  if (!keyRow) return { error: 'Kein Kraken-Konto verbunden. Bitte erst unter Einstellungen → Integrationen verbinden.' }
+
+  let apiKey: string, apiSecret: string
+  try {
+    apiKey    = decrypt(keyRow.api_key)
+    apiSecret = decrypt(keyRow.api_secret)
+  } catch (e) {
+    return { error: `Entschlüsselung fehlgeschlagen: ${(e as Error).message}` }
+  }
+
+  // 2. Fetch balances from Kraken
+  let raw: Record<string, string>
+  try {
+    raw = await fetchKrakenBalances(apiKey, apiSecret)
+  } catch (e) {
+    return { error: `Kraken API Fehler: ${(e as Error).message}` }
+  }
+
+  // 3. Map codes → CoinGecko IDs, skip fiat + unknown
+  type SyncEntry = { symbol: string; name: string; type: string; quantity: number }
+  const candidates: SyncEntry[] = []
+
+  for (const [code, amountStr] of Object.entries(raw)) {
+    const quantity = parseFloat(amountStr)
+    if (quantity <= 0) continue
+
+    const tradingSymbol = krakenCodeToSymbol(code)
+    const coin = findBySymbol(tradingSymbol)
+    if (!coin || !coin.coingecko_id) continue  // skip fiat + unknown
+
+    candidates.push({ symbol: coin.coingecko_id, name: coin.name, type: coin.type, quantity })
+  }
+
+  if (candidates.length === 0) return { error: 'Keine bekannten Krypto-Assets im Kraken-Konto gefunden.' }
+
+  // 4. Fetch prices first — needed to filter out dust (< 1 €)
+  const prices = await getPrices(candidates.map(e => e.symbol)).catch(() => ({} as Record<string, number>))
+  const today  = new Date().toISOString().split('T')[0]
+
+  // Keep only assets worth ≥ 1 € (or price unknown — keep to be safe)
+  const MIN_EUR_VALUE = 1
+  const toSync = candidates.filter(e => {
+    const price = prices[e.symbol]
+    if (price == null) return true               // unknown price → keep
+    return e.quantity * price >= MIN_EUR_VALUE
+  })
+
+  if (toSync.length === 0) return { error: 'Keine Assets mit ausreichendem Wert im Kraken-Konto gefunden (minimum 1 €).' }
+
+  // 5. Load existing Kraken-sourced assets for this user
+  const { data: existingAssets } = await supabase
+    .from('assets')
+    .select('id, symbol, quantity, portfolio_name')
+    .eq('user_id', user.id)
+    .eq('exchange', 'Kraken')
+
+  const existingMap = new Map<string, { id: string; portfolio_name: string | null }>(
+    (existingAssets ?? []).filter(a => a.symbol != null).map(a => [a.symbol!, { id: a.id, portfolio_name: a.portfolio_name }])
+  )
+  const syncedSymbols = new Set(toSync.map(e => e.symbol))
+
+  // 6. Upsert: update existing, insert new
+  for (const entry of toSync) {
+    const existing = existingMap.get(entry.symbol)
+    if (existing) {
+      await supabase.from('assets').update({
+        quantity:       entry.quantity,
+        portfolio_name: 'Kraken',
+        updated_at:     new Date().toISOString(),
+      }).eq('id', existing.id)
+    } else {
+      await supabase.from('assets').insert({
+        user_id:        user.id,
+        name:           entry.name,
+        symbol:         entry.symbol,
+        type:           entry.type,
+        quantity:       entry.quantity,
+        currency:       'EUR',
+        exchange:       'Kraken',
+        portfolio_name: 'Kraken',
+      })
+    }
+  }
+
+  // 7. Remove assets that are no longer in balance OR now below the dust threshold
+  const staleIds = (existingAssets ?? [])
+    .filter(a => a.symbol == null || !syncedSymbols.has(a.symbol))
+    .map(a => a.id)
+
+  if (staleIds.length > 0) {
+    await supabase.from('assets').delete().in('id', staleIds)
+  }
+
+  // 8. Write fresh valuations (prices already fetched above)
+  const { data: freshAssets } = await supabase
+    .from('assets')
+    .select('id, symbol, quantity')
+    .eq('user_id', user.id)
+    .eq('exchange', 'Kraken')
+
+  for (const asset of freshAssets ?? []) {
+    if (!asset.symbol) continue
+    const price = prices[asset.symbol]
+    if (price == null) continue
+    // Delete ALL existing valuations (prevents stale totals from old quantities)
+    await supabase.from('asset_valuations').delete().eq('asset_id', asset.id)
+    await supabase.from('asset_valuations').insert({
+      asset_id:       asset.id,
+      price_per_unit: price,
+      total_value:    (asset.quantity ?? 0) * price,
+      valuation_date: today,
+      source:         'coingecko',
+    })
+  }
+
+  // 9. Save last sync timestamp
+  await supabase.from('user_settings').upsert(
+    { user_id: user.id, key: 'kraken_last_sync', value: new Date().toISOString() as unknown as Json },
+    { onConflict: 'user_id,key' }
+  )
+
+  revalidatePath('/crypto')
+  return { success: true, synced: toSync.length }
+}
+
+// ─── Portfolio Management ─────────────────────────────────────────────────────
+
+/** Delete all assets belonging to a manual portfolio (by portfolio_name). */
+export async function deletePortfolio(portfolioName: string): Promise<{ error: string } | { success: true }> {
+  if (!portfolioName || portfolioName === 'Kraken') return { error: 'Ungültiger Portfolio-Name' }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Nicht eingeloggt' }
+
+  const { error } = await supabase
+    .from('assets')
+    .delete()
+    .eq('user_id', user.id)
+    .eq('portfolio_name', portfolioName)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/crypto')
+  return { success: true }
 }
 
 export async function markRebalancingDone(): Promise<void> {
