@@ -151,3 +151,5 @@ out/
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+# Added by code-review-graph
+.code-review-graph/

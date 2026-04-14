@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "code-review-graph": {
+      "command": "python",
+      "args": [
+        "-m",
+        "code_review_graph",
+        "serve"
+      ],
+      "type": "stdio"
+    },
+    "symdex": {
+      "command": "C:\\Users\\eschu\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python313\\Scripts\\uvx.exe",
+      "args": [
+        "symdex",
+        "serve"
+      ],
+      "type": "stdio"
+    }
+  }
+}
