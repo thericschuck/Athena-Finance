@@ -5,7 +5,7 @@ import type { HeatmapDay } from '@/lib/analyseData'
 
 interface Props { data: HeatmapDay[] }
 
-type Mode = 'ausgaben' | 'einnahmen' | 'beides'
+type Mode = 'ausgaben' | 'einnahmen' | 'guv'
 
 const MONTH_LABELS = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez']
 const DAY_LABELS   = ['Mo', '', 'Mi', '', 'Fr', '', '']
@@ -14,6 +14,20 @@ const DAY_LABELS   = ['Mo', '', 'Mi', '', 'Fr', '', '']
 const EXP_COLORS = ['#1a1d29', '#3d2e0a', '#6b4f15', '#a8782a', '#d4a84c', '#f0d98c']
 // Grün-Skala (Einnahmen)
 const INC_COLORS = ['#1a1d29', '#0a2d1a', '#15542f', '#1a7a43', '#22a85e', '#4ade80']
+// GuV-Skala: -5 (hohe Ausgaben) → 0 (neutral) → +5 (hohe Einnahmen)
+const GUV_COLORS = [
+  '#7f1d1d', // -5: sehr hohe Nettoausgaben
+  '#991b1b', // -4
+  '#c62828', // -3
+  '#ef4444', // -2
+  '#fca5a5', // -1: leicht negativ
+  '#1a1d29', // 0: neutral / keine Aktivität
+  '#bbf7d0', // +1: leicht positiv
+  '#4ade80', // +2
+  '#22c55e', // +3
+  '#16a34a', // +4
+  '#166534', // +5: sehr hohe Nettoeinnahmen
+]
 
 function expLevel(v: number): number {
   if (v === 0) return 0; if (v <= 80) return 1; if (v <= 200) return 2
@@ -23,14 +37,27 @@ function incLevel(v: number): number {
   if (v === 0) return 0; if (v <= 50) return 1; if (v <= 200) return 2
   if (v <= 1000) return 3; if (v <= 2500) return 4; return 5
 }
+function guvLevel(income: number, amount: number): number {
+  if (income === 0 && amount === 0) return 0
+  const net = income - amount
+  if (net > 2000) return 5
+  if (net > 500)  return 4
+  if (net > 100)  return 3
+  if (net > 10)   return 2
+  if (net > 0)    return 1
+  if (net === 0)  return 0
+  if (net >= -10)   return -1
+  if (net >= -100)  return -2
+  if (net >= -500)  return -3
+  if (net >= -2000) return -4
+  return -5
+}
 
 function cellBackground(day: HeatmapDay, mode: Mode): string {
-  const ec = EXP_COLORS[expLevel(day.amount)]
-  const ic = INC_COLORS[incLevel(day.income)]
-  if (mode === 'ausgaben') return ec
-  if (mode === 'einnahmen') return ic
-  // beides: gradient top=income, bottom=expenses
-  return `linear-gradient(to bottom, ${ic} 50%, ${ec} 50%)`
+  if (mode === 'ausgaben')  return EXP_COLORS[expLevel(day.amount)]
+  if (mode === 'einnahmen') return INC_COLORS[incLevel(day.income)]
+  // GuV: divergierende Farbskala basierend auf Netto-Cashflow
+  return GUV_COLORS[guvLevel(day.income, day.amount) + 5]
 }
 
 interface TipState { date: string; amount: number; income: number; x: number; y: number }
@@ -80,7 +107,7 @@ export function AusgabenHeatmap({ data }: Props) {
     return { weeks, monthMarkers }
   }, [data])
 
-  const modeLabel = mode === 'ausgaben' ? 'Ausgaben' : mode === 'einnahmen' ? 'Einnahmen' : 'Beides'
+  const modeLabel = mode === 'ausgaben' ? 'Ausgaben' : mode === 'einnahmen' ? 'Einnahmen' : 'GuV'
 
   return (
     <div className="bg-[#13161e] border border-[#1e2130] rounded-xl p-5">
@@ -88,7 +115,7 @@ export function AusgabenHeatmap({ data }: Props) {
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h2 className="text-sm font-medium text-[#f3f0ea]">{modeLabel}-Heatmap</h2>
         <div className="flex gap-1">
-          {(['ausgaben', 'einnahmen', 'beides'] as Mode[]).map(m => (
+          {(['ausgaben', 'einnahmen', 'guv'] as Mode[]).map(m => (
             <button
               key={m}
               onClick={() => setMode(m)}
@@ -96,11 +123,11 @@ export function AusgabenHeatmap({ data }: Props) {
                 mode === m
                   ? m === 'ausgaben'  ? 'bg-[#f0d98c] text-[#0d0f14]'
                   : m === 'einnahmen' ? 'bg-[#4ade80] text-[#0d0f14]'
-                  :                    'bg-[#f3f0ea] text-[#0d0f14]'
+                  :                    'bg-linear-to-r from-[#ef4444] to-[#4ade80] text-[#0d0f14]'
                   : 'text-[#6b7280] hover:text-[#d1d5db] hover:bg-[#1e2130]'
               }`}
             >
-              {m.charAt(0).toUpperCase() + m.slice(1)}
+              {m === 'ausgaben' ? 'Ausgaben' : m === 'einnahmen' ? 'Einnahmen' : 'GuV'}
             </button>
           ))}
         </div>
@@ -146,22 +173,31 @@ export function AusgabenHeatmap({ data }: Props) {
 
       {/* Legende */}
       <div className="flex items-center justify-end gap-3 mt-3">
-        {(mode === 'ausgaben' || mode === 'beides') && (
+        {mode === 'ausgaben' && (
           <div className="flex items-center gap-1.5">
-            <span className="text-[9px] text-[#4b5563]">Ausg. wenig</span>
+            <span className="text-[9px] text-[#4b5563]">wenig</span>
             {EXP_COLORS.map((c, i) => (
-              <div key={i} className="w-2.75 h-2.75 rounded-[2px]" style={{ backgroundColor: c }} />
+              <div key={i} className="w-2.5 h-2.5 rounded-[2px]" style={{ backgroundColor: c }} />
             ))}
             <span className="text-[9px] text-[#4b5563]">viel</span>
           </div>
         )}
-        {(mode === 'einnahmen' || mode === 'beides') && (
+        {mode === 'einnahmen' && (
           <div className="flex items-center gap-1.5">
-            <span className="text-[9px] text-[#4b5563]">Einn. wenig</span>
+            <span className="text-[9px] text-[#4b5563]">wenig</span>
             {INC_COLORS.map((c, i) => (
-              <div key={i} className="w-2.75 h-2.75 rounded-[2px]" style={{ backgroundColor: c }} />
+              <div key={i} className="w-2.5 h-2.5 rounded-[2px]" style={{ backgroundColor: c }} />
             ))}
             <span className="text-[9px] text-[#4b5563]">viel</span>
+          </div>
+        )}
+        {mode === 'guv' && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-[9px] text-[#f87171]">Ausgaben</span>
+            {GUV_COLORS.map((c, i) => (
+              <div key={i} className="w-2.5 h-2.5 rounded-[2px]" style={{ backgroundColor: c }} />
+            ))}
+            <span className="text-[9px] text-[#4ade80]">Einnahmen</span>
           </div>
         )}
       </div>
@@ -177,14 +213,19 @@ export function AusgabenHeatmap({ data }: Props) {
               day: '2-digit', month: 'short', year: 'numeric',
             })}
           </p>
-          {(mode === 'ausgaben' || mode === 'beides') && (
+          {(mode === 'ausgaben' || mode === 'guv') && tip.amount > 0 && (
             <p className="font-semibold text-[#f0d98c]">
-              Ausgaben: {tip.amount === 0 ? '—' : `${tip.amount.toLocaleString('de-DE')} €`}
+              Ausgaben: {tip.amount.toLocaleString('de-DE')} €
             </p>
           )}
-          {(mode === 'einnahmen' || mode === 'beides') && (
+          {(mode === 'einnahmen' || mode === 'guv') && tip.income > 0 && (
             <p className="font-semibold text-[#4ade80]">
-              Einnahmen: {tip.income === 0 ? '—' : `${tip.income.toLocaleString('de-DE')} €`}
+              Einnahmen: {tip.income.toLocaleString('de-DE')} €
+            </p>
+          )}
+          {mode === 'guv' && (tip.income > 0 || tip.amount > 0) && (
+            <p className={`font-bold mt-0.5 ${tip.income - tip.amount >= 0 ? 'text-[#4ade80]' : 'text-[#f87171]'}`}>
+              Netto: {tip.income - tip.amount >= 0 ? '+' : ''}{(tip.income - tip.amount).toLocaleString('de-DE')} €
             </p>
           )}
         </div>

@@ -32,23 +32,30 @@ import { createClient } from '@/lib/supabase/server'
 const FALLBACK_PRODUCT_ID = 'fints'
 
 function getConfig() {
-  const url       = process.env.FINTS_URL
-  const blz       = process.env.FINTS_BLZ
-  const name      = process.env.FINTS_USERNAME
-  const pin       = process.env.FINTS_PIN
-  // Use env override if set, otherwise fall back to the library default
-  const productId = process.env.FINTS_PRODUCT_ID || FALLBACK_PRODUCT_ID
+  const url       = process.env.FINTS_URL?.trim()
+  const blz       = process.env.FINTS_BLZ?.replace(/\D/g, '') // strip spaces/dashes → exactly 8 digits
+  const name      = process.env.FINTS_USERNAME?.trim()
+  const pin       = process.env.FINTS_PIN?.trim()
+  const productId = process.env.FINTS_PRODUCT_ID?.trim() || FALLBACK_PRODUCT_ID
 
   if (!url || !blz || !name || !pin) {
     throw new Error('FinTS environment variables not configured (FINTS_URL, FINTS_BLZ, FINTS_USERNAME, FINTS_PIN)')
   }
+  if (blz.length !== 8) {
+    throw new Error(`FINTS_BLZ muss genau 8 Ziffern haben, hat aber ${blz.length}: "${blz}"`)
+  }
+  if (productId.length < 5 || productId.length > 25) {
+    throw new Error(`FINTS_PRODUCT_ID muss 5–25 Zeichen haben, hat aber ${productId.length}`)
+  }
+
+  console.log('[FinTS] Config:', { url, blz, name: name.substring(0, 3) + '***', productId })
   return { url, blz, name, pin, productId }
 }
 
 function makeClient() {
   const { url, blz, name, pin, productId } = getConfig()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const opts: any = { url, blz, name, pin, productId }
+  const opts: any = { url, blz, name, pin, productId, debug: true }
   return new PinTanClient(opts)
 }
 

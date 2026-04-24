@@ -48,6 +48,9 @@ export function useBankData(): UseBankDataReturn {
           endDate:   endDate?.toISOString(),
         }),
       })
+      if (!res.ok && res.headers.get('content-type')?.includes('text/html')) {
+        throw new Error(`Server-Fehler ${res.status} — bitte Dev-Server-Log prüfen`)
+      }
       const data: SyncResponse = await res.json()
 
       if (data.error) {

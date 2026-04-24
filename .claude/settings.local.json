@@ -74,11 +74,17 @@
       "Bash(python -c \"import sys, os; scripts = os.path.join\\(os.path.dirname\\(sys.executable\\), 'Scripts'\\); print\\(os.listdir\\(scripts\\)\\)\")",
       "Bash(python -c \"import sys, os; d=os.path.dirname\\(sys.executable\\); scripts=os.path.join\\(d,'Scripts'\\); [print\\(f\\) for f in os.listdir\\(scripts\\) if 'uv' in f.lower\\(\\)]\")",
       "Bash(python -c \"import subprocess; r=subprocess.run\\(['pip','show','uv'],capture_output=True,text=True\\); print\\(r.stdout\\)\")",
-      "Read(//c/Users/eschu/AppData/Local/Packages/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/LocalCache/local-packages/Python313/Scripts/**)"
+      "Read(//c/Users/eschu/AppData/Local/Packages/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/LocalCache/local-packages/Python313/Scripts/**)",
+      "Read(//c/Users/eschu/**)",
+      "Read(//c/Users/eschu/.claude/**)",
+      "mcp__code-review-graph__semantic_search_nodes_tool",
+      "Bash(cat next.config.ts)",
+      "Bash(cat next.config.js)"
     ],
     "additionalDirectories": [
       "c:\\Users\\eschu\\Desktop\\Unternehmensstruktur\\06-Projekte\\Privat\\athena-finance\\src\\app\\(dashboard)\\finance\\contracts",
-      "c:\\Users\\eschu\\Desktop\\Unternehmensstrategtur\\06-Projekte\\Privat\\athena-finance\\src\\app\\login"
+      "c:\\Users\\eschu\\Desktop\\Unternehmensstrategtur\\06-Projekte\\Privat\\athena-finance\\src\\app\\login",
+      "c:\\Users\\eschu\\.claude"
     ]
   }
 }
