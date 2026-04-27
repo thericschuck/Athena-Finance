@@ -7,7 +7,8 @@
     "dev:turbo": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "node scripts/patch-node-fints.js"
   },
   "dependencies": {
     "@radix-ui/react-icons": "^1.3.2",

@@ -79,7 +79,8 @@
       "Read(//c/Users/eschu/.claude/**)",
       "mcp__code-review-graph__semantic_search_nodes_tool",
       "Bash(cat next.config.ts)",
-      "Bash(cat next.config.js)"
+      "Bash(cat next.config.js)",
+      "Bash(npm show *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\eschu\\Desktop\\Unternehmensstruktur\\06-Projekte\\Privat\\athena-finance\\src\\app\\(dashboard)\\finance\\contracts",

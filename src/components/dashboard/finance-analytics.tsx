@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, Tooltip as ReTooltip,
   ResponsiveContainer, CartesianGrid, ReferenceLine, BarChart,
@@ -92,6 +92,8 @@ function ChartTooltip({ active, payload, label, fmt }: {
 // ─── 1. Einnahmen vs. Ausgaben ─────────────────────────────────────────────────
 function IncomeExpenseChart({ summaries, locale }: { summaries: Summary[]; locale: string }) {
   const fmt = (n: number) => fmtCurrency(n, 'EUR', locale)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   const data = [...summaries]
     .sort((a, b) => a.month.localeCompare(b.month))
@@ -106,35 +108,39 @@ function IncomeExpenseChart({ summaries, locale }: { summaries: Summary[]; local
   return (
     <Card>
       <SectionTitle>Einnahmen vs. Ausgaben</SectionTitle>
-      <ResponsiveContainer width="100%" height={200}>
-        <ComposedChart data={data} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-          <XAxis
-            dataKey="label"
-            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-            axisLine={false} tickLine={false}
-          />
-          <YAxis
-            tickFormatter={abbr}
-            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-            axisLine={false} tickLine={false}
-          />
-          <ReTooltip
-            content={<ChartTooltip fmt={fmt} />}
-            cursor={{ fill: 'hsl(var(--muted))', fillOpacity: 0.4 }}
-          />
-          <ReferenceLine y={0} stroke="hsl(var(--border))" />
-          <Bar dataKey="Einnahmen" fill="#10b981" fillOpacity={0.85} radius={[3, 3, 0, 0]} maxBarSize={32} />
-          <Bar dataKey="Ausgaben"  fill="#ef4444" fillOpacity={0.85} radius={[3, 3, 0, 0]} maxBarSize={32} />
-          <Line
-            dataKey="Netto"
-            stroke="#6366f1"
-            strokeWidth={2}
-            dot={{ r: 3, fill: '#6366f1', strokeWidth: 0 }}
-            activeDot={{ r: 5, fill: '#6366f1' }}
-          />
-        </ComposedChart>
-      </ResponsiveContainer>
+      {mounted ? (
+        <ResponsiveContainer width="100%" height={200}>
+          <ComposedChart data={data} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+              axisLine={false} tickLine={false}
+            />
+            <YAxis
+              tickFormatter={abbr}
+              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+              axisLine={false} tickLine={false}
+            />
+            <ReTooltip
+              content={<ChartTooltip fmt={fmt} />}
+              cursor={{ fill: 'hsl(var(--muted))', fillOpacity: 0.4 }}
+            />
+            <ReferenceLine y={0} stroke="hsl(var(--border))" />
+            <Bar dataKey="Einnahmen" fill="#10b981" fillOpacity={0.85} radius={[3, 3, 0, 0]} maxBarSize={32} />
+            <Bar dataKey="Ausgaben"  fill="#ef4444" fillOpacity={0.85} radius={[3, 3, 0, 0]} maxBarSize={32} />
+            <Line
+              dataKey="Netto"
+              stroke="#6366f1"
+              strokeWidth={2}
+              dot={{ r: 3, fill: '#6366f1', strokeWidth: 0 }}
+              activeDot={{ r: 5, fill: '#6366f1' }}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      ) : (
+        <div style={{ height: 200 }} />
+      )}
     </Card>
   )
 }
@@ -145,7 +151,9 @@ type Cat = typeof ALL_CATS[number]
 // ─── 2. Ausgaben nach Kategorien ───────────────────────────────────────────────
 function CategoryChart({ summaries, locale }: { summaries: Summary[]; locale: string }) {
   const fmt = (n: number) => fmtCurrency(n, 'EUR', locale)
-  const [active, setActive] = useState<Set<Cat>>(new Set(ALL_CATS))
+  const [active,   setActive]  = useState<Set<Cat>>(new Set(ALL_CATS))
+  const [mounted,  setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   function toggle(cat: Cat) {
     setActive(prev => {
@@ -185,28 +193,32 @@ function CategoryChart({ summaries, locale }: { summaries: Summary[]; locale: st
           </button>
         ))}
       </div>
-      <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={data} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-          <XAxis
-            dataKey="label"
-            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-            axisLine={false} tickLine={false}
-          />
-          <YAxis
-            tickFormatter={abbr}
-            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-            axisLine={false} tickLine={false}
-          />
-          <ReTooltip
-            content={<ChartTooltip fmt={fmt} />}
-            cursor={{ fill: 'hsl(var(--muted))', fillOpacity: 0.4 }}
-          />
-          {ALL_CATS.filter(cat => active.has(cat)).map(cat => (
-            <Bar key={cat} dataKey={cat} stackId="a" fill={CAT_COLORS[cat]} fillOpacity={0.85} maxBarSize={36} />
-          ))}
-        </BarChart>
-      </ResponsiveContainer>
+      {mounted ? (
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={data} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+              axisLine={false} tickLine={false}
+            />
+            <YAxis
+              tickFormatter={abbr}
+              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+              axisLine={false} tickLine={false}
+            />
+            <ReTooltip
+              content={<ChartTooltip fmt={fmt} />}
+              cursor={{ fill: 'hsl(var(--muted))', fillOpacity: 0.4 }}
+            />
+            {ALL_CATS.filter(cat => active.has(cat)).map(cat => (
+              <Bar key={cat} dataKey={cat} stackId="a" fill={CAT_COLORS[cat]} fillOpacity={0.85} maxBarSize={36} />
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
+      ) : (
+        <div style={{ height: 200 }} />
+      )}
     </Card>
   )
 }
@@ -301,6 +313,9 @@ function DeviationTable({ summaries, locale }: { summaries: Summary[]; locale: s
 
 // ─── Export ────────────────────────────────────────────────────────────────────
 export function FinanceAnalytics({ summaries, locale }: Props) {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
   if (summaries.length === 0) return null
 
   return (

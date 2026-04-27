@@ -1,6 +1,6 @@
 'use client'
 
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
+import { PieChart, Pie, Cell, Tooltip } from 'recharts'
 import { fmtCurrency } from '@/lib/format'
 
 const SLICES = [
@@ -38,8 +38,7 @@ export function PortfolioDonut({ financeTotal, depotTotal, cryptoTotal, savingsT
       <div className="flex flex-col items-center gap-5">
         {/* Donut */}
         <div className="relative w-36 h-36 shrink-0">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
+          <PieChart width={144} height={144}>
               <Pie
                 data={data}
                 cx="50%"
@@ -65,7 +64,6 @@ export function PortfolioDonut({ financeTotal, depotTotal, cryptoTotal, savingsT
                 labelStyle={{ display: 'none' }}
               />
             </PieChart>
-          </ResponsiveContainer>
           {/* Center label */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <p className="text-[10px] text-muted-foreground">Gesamt</p>

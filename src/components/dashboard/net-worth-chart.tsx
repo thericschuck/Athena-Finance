@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -124,8 +124,10 @@ function ChartTooltip({ active, payload, label, view }: {
 // ─── Component ────────────────────────────────────────────────────────────────
 export function NetWorthChart({ snapshots }: { snapshots: NetWorthSnapshot[] }) {
   const { locale } = useSettings()
-  const [filter, setFilter] = useState<FilterKey>('1J')
-  const [view,   setView]   = useState<ViewKey>('Gesamt')
+  const [filter,   setFilter]   = useState<FilterKey>('1J')
+  const [view,     setView]     = useState<ViewKey>('Gesamt')
+  const [mounted,  setMounted]  = useState(false)
+  useEffect(() => setMounted(true), [])
 
   const color = VIEW_COLOR[view]
 
@@ -191,45 +193,49 @@ export function NetWorthChart({ snapshots }: { snapshots: NetWorthSnapshot[] }) 
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={220}>
-        <AreaChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-          <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor={color} stopOpacity={0.15} />
-              <stop offset="95%" stopColor={color} stopOpacity={0}    />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
-          <XAxis
-            dataKey="snapshot_date"
-            tickFormatter={xFormatter}
-            tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
-            axisLine={false}
-            tickLine={false}
-            minTickGap={40}
-          />
-          <YAxis
-            tickFormatter={v => fmtShort(v as number)}
-            tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
-            axisLine={false}
-            tickLine={false}
-            width={48}
-          />
-          <Tooltip
-            content={<ChartTooltip view={view} />}
-            cursor={{ stroke: 'currentColor', strokeOpacity: 0.2, strokeWidth: 1 }}
-          />
-          <Area
-            type="monotone"
-            dataKey="value"
-            stroke={color}
-            strokeWidth={2}
-            fill={`url(#${gradientId})`}
-            dot={false}
-            activeDot={{ r: 4, fill: color }}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
+      {mounted ? (
+        <ResponsiveContainer width="100%" height={220}>
+          <AreaChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor={color} stopOpacity={0.15} />
+                <stop offset="95%" stopColor={color} stopOpacity={0}    />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
+            <XAxis
+              dataKey="snapshot_date"
+              tickFormatter={xFormatter}
+              tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
+              axisLine={false}
+              tickLine={false}
+              minTickGap={40}
+            />
+            <YAxis
+              tickFormatter={v => fmtShort(v as number)}
+              tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
+              axisLine={false}
+              tickLine={false}
+              width={48}
+            />
+            <Tooltip
+              content={<ChartTooltip view={view} />}
+              cursor={{ stroke: 'currentColor', strokeOpacity: 0.2, strokeWidth: 1 }}
+            />
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke={color}
+              strokeWidth={2}
+              fill={`url(#${gradientId})`}
+              dot={false}
+              activeDot={{ r: 4, fill: color }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      ) : (
+        <div style={{ height: 220 }} />
+      )}
     </div>
   )
 }
