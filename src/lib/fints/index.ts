@@ -192,3 +192,40 @@ export async function upsertBankTransactions(
   const skipped  = rows.length - imported
   return { imported, skipped }
 }
+
+// ── Cloud (Vercel) delegation ────────────────────────────────────────────────────
+//
+// The Node sidecar spawns a local Python venv (scripts/fints/.venv), which does not exist
+// on Vercel. There, the interactive routes must instead delegate to the sibling Vercel
+// Python Function (api/bank-sync.py) — a native Python serverless function that talks to
+// the bank and upserts directly to Supabase itself, bypassing this Node layer entirely.
+
+export interface CloudSyncResult {
+  imported: number
+  skipped: number
+  balances: number
+}
+
+/** True when running as a Vercel Function (Vercel sets this automatically). */
+export function isCloudRuntime(): boolean {
+  return !!process.env.VERCEL
+}
+
+/**
+ * Triggers api/bank-sync.py and relays its result. That function always syncs the single
+ * configured bank account (BANK_SYNC_USER_ID) — callers should confirm the requesting user
+ * matches before calling this, otherwise a different logged-in user could trigger a sync
+ * whose data lands under someone else's account.
+ */
+export async function triggerCloudBankSync(origin: string): Promise<CloudSyncResult> {
+  const res = await fetch(`${origin}/api/bank-sync`, {
+    headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
+  })
+  const body = await res.json().catch(() => ({})) as {
+    ok?: boolean; imported?: number; skipped?: number; balances?: number; error?: string
+  }
+  if (!res.ok || body.ok === false) {
+    throw new Error(body.error ?? `Cloud-Sync fehlgeschlagen (HTTP ${res.status})`)
+  }
+  return { imported: body.imported ?? 0, skipped: body.skipped ?? 0, balances: body.balances ?? 0 }
+}

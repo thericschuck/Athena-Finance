@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { fetchBalances } from '@/lib/fints'
+import { fetchBalances, isCloudRuntime, triggerCloudBankSync } from '@/lib/fints'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function readCachedBalances(supabase: any, userId: string) {
@@ -37,13 +37,29 @@ export async function GET() {
 
 /**
  * POST /api/bank/balance
- * Explicit live refresh via the FinTS sidecar, then persists and returns the result.
- * Only works where the Python sidecar is reachable (i.e. locally) — not on Vercel.
+ * Explicit live refresh, then persists and returns the result. Locally this spawns the
+ * FinTS sidecar directly; on Vercel it delegates to the sibling Python Function, which
+ * upserts balances itself — this route then just re-reads the cache.
  */
-export async function POST() {
+export async function POST(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
+
+  if (isCloudRuntime()) {
+    if (user.id !== process.env.BANK_SYNC_USER_ID) {
+      return NextResponse.json({ error: 'Bank-Sync ist für dieses Konto nicht verfügbar.' }, { status: 403 })
+    }
+    try {
+      const origin = new URL(request.url).origin
+      await triggerCloudBankSync(origin)
+      return NextResponse.json({ balances: await readCachedBalances(supabase, user.id) })
+    } catch (err) {
+      return NextResponse.json({
+        error: err instanceof Error ? err.message : 'Cloud-Sync fehlgeschlagen',
+      }, { status: 500 })
+    }
+  }
 
   try {
     const balances = await fetchBalances()
