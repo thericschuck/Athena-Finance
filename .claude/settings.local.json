@@ -134,7 +134,10 @@
       "PowerShell(Start-ScheduledTask -TaskName \"AthenaFinance-BankSync\"; Start-Sleep -Seconds 5; Get-ScheduledTaskInfo -TaskName \"AthenaFinance-BankSync\" | Format-List LastRunTime, LastTaskResult; Write-Host \"--- log ---\"; Get-Content \"$env:TEMP\\\\athena-bank-sync.log\" -ErrorAction SilentlyContinue)",
       "Bash(npx vercel *)",
       "Bash(./scripts/fints/.venv/Scripts/python.exe -m pip install requests --quiet)",
-      "Bash(./scripts/fints/.venv/Scripts/python.exe -m py_compile api/bank-sync.py)"
+      "Bash(./scripts/fints/.venv/Scripts/python.exe -m py_compile api/bank-sync.py)",
+      "mcp__claude_ai_Supabase__list_migrations",
+      "mcp__claude_ai_Supabase__generate_typescript_types",
+      "Bash(npm run *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\eschu\\Desktop\\Unternehmensstruktur\\06-Projekte\\Privat\\athena-finance\\src\\app\\(dashboard)\\finance\\contracts",
