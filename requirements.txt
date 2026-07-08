@@ -1,0 +1,4 @@
+# Dependencies for Vercel Python Functions under /api (see api/bank-sync.py).
+# Unrelated to scripts/fints/requirements.txt, which is for the local sidecar venv.
+fints==5.0.0
+requests==2.32.3

@@ -5,12 +5,16 @@ import { Search, TrendingDown, TrendingUp } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { fmtCurrency, fmtDate } from '@/lib/format'
 import { useSettings } from '@/components/providers/settings-context'
+import { CATEGORIES } from '@/lib/fints/categorize'
 import type { BankTransaction } from '@/types/bank'
 
+const NO_CATEGORY = '__none__'
+
 interface Props {
-  transactions:   BankTransaction[]
-  isLoading:      boolean
-  onFilter:       (params: { q?: string; category?: string }) => void
+  transactions:     BankTransaction[]
+  isLoading:        boolean
+  onFilter:         (params: { q?: string; category?: string }) => void
+  onUpdateCategory: (id: string, category: string | null) => void
 }
 
 // Distinct categories from current list
@@ -20,7 +24,7 @@ function getCategories(txns: BankTransaction[]): string[] {
   return [...cats].sort()
 }
 
-export function BankTransactionsView({ transactions, isLoading, onFilter }: Props) {
+export function BankTransactionsView({ transactions, isLoading, onFilter, onUpdateCategory }: Props) {
   const { locale, dateFormat } = useSettings()
   const fmtEur = (n: number) => fmtCurrency(n, 'EUR', locale, { fractionDigits: 2 })
 
@@ -36,7 +40,7 @@ export function BankTransactionsView({ transactions, isLoading, onFilter }: Prop
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, category])
 
-  const categories = getCategories(transactions)
+  const filterCategories = getCategories(transactions)
 
   // ── Empty / loading states ──────────────────────────────────────────────────
   if (isLoading) {
@@ -53,7 +57,7 @@ export function BankTransactionsView({ transactions, isLoading, onFilter }: Prop
         <FilterBar
           search={search} setSearch={setSearch}
           category={category} setCategory={setCategory}
-          categories={categories}
+          categories={filterCategories}
         />
         <div className="rounded-lg border border-dashed border-border py-14 text-center">
           <p className="text-sm font-medium">Keine Transaktionen</p>
@@ -71,7 +75,7 @@ export function BankTransactionsView({ transactions, isLoading, onFilter }: Prop
       <FilterBar
         search={search} setSearch={setSearch}
         category={category} setCategory={setCategory}
-        categories={categories}
+        categories={filterCategories}
       />
 
       <div className="rounded-lg border border-border overflow-hidden">
@@ -115,13 +119,20 @@ export function BankTransactionsView({ transactions, isLoading, onFilter }: Prop
                       </span>
                     </td>
                     <td className="px-4 py-2.5">
-                      {tx.category ? (
-                        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                          {tx.category}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
+                      <select
+                        value={tx.category ?? NO_CATEGORY}
+                        onChange={e => onUpdateCategory(tx.id, e.target.value === NO_CATEGORY ? null : e.target.value)}
+                        className={`h-6 max-w-[140px] cursor-pointer rounded-full border-none px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring ${
+                          tx.category
+                            ? 'bg-muted text-muted-foreground hover:bg-muted/70'
+                            : 'bg-transparent text-muted-foreground/70 hover:bg-muted/50'
+                        }`}
+                      >
+                        <option value={NO_CATEGORY}>Kategorisieren…</option>
+                        {CATEGORIES.map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
                     </td>
                     <td className="px-4 py-2.5 text-right whitespace-nowrap">
                       <span className={`flex items-center justify-end gap-1 font-medium ${

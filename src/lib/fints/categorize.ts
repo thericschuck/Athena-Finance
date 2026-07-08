@@ -113,6 +113,9 @@ const RULES: CategoryRule[] = [
   },
 ]
 
+/** All known categories, in a sensible display order, for use in category pickers. */
+export const CATEGORIES: string[] = RULES.map(r => r.category)
+
 /**
  * Derive a category from the transaction description.
  * Returns null if no rule matches.

@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -14,6 +15,7 @@ import {
   LogOut,
   X,
   Landmark,
+  ShoppingCart,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -57,7 +59,8 @@ const navItems: NavItem[] = [
       { href: '/strategy/strategies', label: 'Strategien' },
     ],
   },
-  { href: '/bank',     label: 'Banking',        icon: Landmark  },
+  { href: '/bank',                  label: 'Banking',              icon: Landmark     },
+  { href: '/lebenshaltungskosten', label: 'Lebenshaltungskosten',  icon: ShoppingCart },
   { href: '/depot',    label: 'Depot',         icon: Briefcase },
   { href: '/history',  label: 'Historie',      icon: History   },
   { href: '/analyse',  label: 'Analyse',       icon: BarChart2 },
@@ -92,9 +95,10 @@ export function Sidebar({ email, displayName, avatarUrl, mobileOpen = false, onM
     >
       {/* Logo */}
       <div className="flex h-14 items-center border-b border-sidebar-border px-4">
-        <span className="flex-1 text-sm font-semibold text-sidebar-foreground tracking-tight">
-          Athena Finance
-        </span>
+        <div className="flex flex-1 items-center gap-2.5 min-w-0">
+          <Image src="/athena-logo.png" alt="Athena Finance" width={24} height={24} className="rounded-md shrink-0" />
+          <span className="text-sm font-semibold text-sidebar-foreground tracking-tight truncate">Athena Finance</span>
+        </div>
         <button
           className="md:hidden rounded-md p-1.5 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
           onClick={onMobileClose}

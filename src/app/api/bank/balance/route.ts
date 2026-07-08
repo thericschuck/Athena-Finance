@@ -2,15 +2,45 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { fetchBalances } from '@/lib/fints'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function readCachedBalances(supabase: any, userId: string) {
+  const { data, error } = await supabase
+    .from('bank_balance')
+    .select('*')
+    .eq('user_id', userId)
+    .order('account_iban')
+
+  if (error) throw new Error(error.message)
+  return data ?? []
+}
+
 /**
  * GET /api/bank/balance
- * Fetches live balances from FinTS and upserts into bank_balance.
- * Returns the persisted balances.
- *
- * POST /api/bank/balance
- * Same as GET but explicit refresh trigger.
+ * Returns the last persisted balances from Supabase. Deliberately does NOT touch the FinTS
+ * sidecar — this must stay fast and work everywhere the app is deployed (including Vercel,
+ * where the Python sidecar isn't available). Balances are kept fresh by whichever scheduled
+ * sync is running (local Task Scheduler and/or the Vercel Python cron function).
  */
-async function handler() {
+export async function GET() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
+
+  try {
+    const balances = await readCachedBalances(supabase, user.id)
+    return NextResponse.json({ balances })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Unbekannter Fehler'
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
+}
+
+/**
+ * POST /api/bank/balance
+ * Explicit live refresh via the FinTS sidecar, then persists and returns the result.
+ * Only works where the Python sidecar is reachable (i.e. locally) — not on Vercel.
+ */
+export async function POST() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
@@ -38,22 +68,9 @@ async function handler() {
       if (error) throw new Error(error.message)
     }
 
-    // Return the freshly stored balances
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error: readErr } = await (supabase as any)
-      .from('bank_balance')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('account_iban')
-
-    if (readErr) throw new Error(readErr.message)
-    return NextResponse.json({ balances: data ?? [] })
-
+    return NextResponse.json({ balances: await readCachedBalances(supabase, user.id) })
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unbekannter Fehler'
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
-
-export const GET  = handler
-export const POST = handler

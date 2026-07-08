@@ -19,12 +19,12 @@ interface UseBankDataReturn {
 
   /** Start a sync (optionally with date range). */
   startSync:       (startDate?: Date, endDate?: Date) => Promise<void>
-  /** Submit TAN after tanRequired state. */
-  submitTan:       (transactionRef: string, tan: string) => Promise<void>
   /** Fetch stored transactions from DB. */
   loadTransactions:(params?: { iban?: string; category?: string; q?: string; limit?: number }) => Promise<void>
   /** Fetch live balances from FinTS and persist. */
   loadBalances:    () => Promise<void>
+  /** Update a transaction's category (optimistic). */
+  updateCategory:  (id: string, category: string | null) => Promise<void>
   /** Reset sync status to idle. */
   resetSync:       () => void
 }
@@ -58,37 +58,6 @@ export function useBankData(): UseBankDataReturn {
         return
       }
 
-      if (data.tanRequired) {
-        setSyncStatus({
-          type:           'tan_required',
-          transactionRef: data.transactionRef!,
-          challengeText:  data.challengeText!,
-          challengeMedia: data.challengeMedia,
-        })
-        return
-      }
-
-      setSyncStatus({ type: 'success', imported: data.imported ?? 0, skipped: data.skipped ?? 0 })
-    } catch (err) {
-      setSyncStatus({ type: 'error', message: err instanceof Error ? err.message : 'Fehler' })
-    }
-  }, [])
-
-  // ── Submit TAN ──────────────────────────────────────────────────────────────
-  const submitTan = useCallback(async (transactionRef: string, tan: string) => {
-    setSyncStatus({ type: 'loading' })
-    try {
-      const res = await fetch('/api/bank/submit-tan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transactionRef, tan }),
-      })
-      const data: SyncResponse = await res.json()
-
-      if (data.error) {
-        setSyncStatus({ type: 'error', message: data.error })
-        return
-      }
       setSyncStatus({ type: 'success', imported: data.imported ?? 0, skipped: data.skipped ?? 0 })
     } catch (err) {
       setSyncStatus({ type: 'error', message: err instanceof Error ? err.message : 'Fehler' })
@@ -127,6 +96,25 @@ export function useBankData(): UseBankDataReturn {
     }
   }, [])
 
+  // ── Update category ────────────────────────────────────────────────────────
+  const updateCategory = useCallback(async (id: string, category: string | null) => {
+    const previous = transactions
+    // Optimistic update
+    setTransactions(txns => txns.map(t => t.id === id ? { ...t, category } : t))
+
+    try {
+      const res = await fetch(`/api/bank/transactions/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category }),
+      })
+      if (!res.ok) throw new Error('Kategorie konnte nicht gespeichert werden')
+    } catch {
+      // Roll back on failure
+      setTransactions(previous)
+    }
+  }, [transactions])
+
   const resetSync = useCallback(() => setSyncStatus({ type: 'idle' }), [])
 
   return {
@@ -136,9 +124,9 @@ export function useBankData(): UseBankDataReturn {
     isLoadingTxns,
     isLoadingBal,
     startSync,
-    submitTan,
     loadTransactions,
     loadBalances,
+    updateCategory,
     resetSync,
   }
 }

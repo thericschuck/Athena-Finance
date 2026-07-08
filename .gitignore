@@ -153,3 +153,7 @@ ehthumbs.db
 Desktop.ini
 # Added by code-review-graph
 .code-review-graph/
+
+# Python FinTS sidecar virtualenv
+scripts/fints/.venv/
+scripts/fints/__pycache__/

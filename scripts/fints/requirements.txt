@@ -1,0 +1,6 @@
+# FinTS sidecar dependencies (Python).
+# Install into scripts/fints/.venv:
+#   python -m venv scripts/fints/.venv
+#   scripts/fints/.venv/Scripts/pip install -r scripts/fints/requirements.txt   (Windows)
+#   scripts/fints/.venv/bin/pip     install -r scripts/fints/requirements.txt   (macOS/Linux)
+fints==5.0.0

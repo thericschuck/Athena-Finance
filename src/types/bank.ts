@@ -33,19 +33,16 @@ export interface BankBalance {
 }
 
 // ── Sync state ─────────────────────────────────────────────────────────────────
+// Decoupled SCA (SecureGo plus Direktfreigabe) is handled server-side by the sidecar,
+// so there is no client-facing "enter TAN" step — just loading → success/error.
 export type SyncStatus =
   | { type: 'idle' }
   | { type: 'loading' }
-  | { type: 'tan_required'; transactionRef: string; challengeText: string; challengeMedia?: string }
   | { type: 'success'; imported: number; skipped: number }
   | { type: 'error'; message: string }
 
 // ── API response shapes ────────────────────────────────────────────────────────
 export interface SyncResponse {
-  tanRequired?: true
-  transactionRef?: string
-  challengeText?: string
-  challengeMedia?: string
   imported?: number
   skipped?: number
   error?: string

@@ -1,6 +1,6 @@
 import { signIn } from './actions'
 import Link from 'next/link'
-import { TrendingUp } from 'lucide-react'
+import Image from 'next/image'
 
 const INPUT_STYLE = `
   .af-input { width: 100%; border-radius: 9px; border: 1px solid #1e2130; background-color: #13161e; padding: 10px 14px; font-size: 14px; color: #f3f0ea; outline: none; box-sizing: border-box; transition: border-color 0.15s ease; font-family: inherit; }
@@ -26,9 +26,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       {/* Back to landing */}
       <div style={{ position: 'absolute', top: '20px', left: '24px' }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
-          <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: 'linear-gradient(135deg, #f0d98c, #a8782a)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <TrendingUp size={13} color="#0d0f14" strokeWidth={2.5} />
-          </div>
+          <Image src="/athena-logo.png" alt="Athena Finance" width={26} height={26} style={{ borderRadius: '6px' }} />
           <span style={{ fontSize: '14px', fontWeight: 700, color: '#f3f0ea', letterSpacing: '-0.01em' }}>Athena Finance</span>
         </Link>
       </div>

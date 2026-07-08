@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect } from 'react'
-import { Landmark, CreditCard } from 'lucide-react'
+import { useEffect, useState, useCallback } from 'react'
+import { Landmark, CreditCard, Check } from 'lucide-react'
 import { useBankData } from '@/lib/hooks/use-bank-data'
 import { BankSyncButton } from '@/components/bank/bank-sync-button'
 import { BankTransactionsView } from '@/components/bank/bank-transactions-view'
+import { BankCategoryChart } from '@/components/bank/bank-category-chart'
+import { BankTrendChart } from '@/components/bank/bank-trend-chart'
 import { fmtCurrency, fmtDate } from '@/lib/format'
 import { useSettings } from '@/components/providers/settings-context'
 
@@ -18,22 +20,41 @@ export default function BankPage() {
     syncStatus,
     isLoadingTxns,
     startSync,
-    submitTan,
     loadTransactions,
     loadBalances,
+    updateCategory,
     resetSync,
   } = useBankData()
 
-  // Load stored data on mount
+  // Account filter (click a balance card to narrow everything below to that IBAN)
+  const [selectedIban, setSelectedIban] = useState<string | undefined>(undefined)
+  // Free-text / category filter from the transactions table's filter bar
+  const [txnFilters, setTxnFilters] = useState<{ q?: string; category?: string }>({})
+
+  const handleFilter = useCallback((params: { q?: string; category?: string }) => {
+    setTxnFilters(params)
+  }, [])
+
+  const toggleAccount = useCallback((iban: string) => {
+    setSelectedIban(prev => prev === iban ? undefined : iban)
+  }, [])
+
+  // Balances are always visible — load once on mount
   useEffect(() => {
-    loadTransactions()
+    loadBalances()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // After a successful sync, reload transactions
+  // Reload transactions whenever the account or table filters change (covers initial load too)
+  useEffect(() => {
+    loadTransactions({ iban: selectedIban, ...txnFilters })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedIban, txnFilters])
+
+  // After a successful sync, reload everything
   useEffect(() => {
     if (syncStatus.type === 'success') {
-      loadTransactions()
+      loadTransactions({ iban: selectedIban, ...txnFilters })
       loadBalances()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -60,32 +81,49 @@ export default function BankPage() {
         <BankSyncButton
           syncStatus={syncStatus}
           onSync={() => startSync()}
-          onSubmitTan={(ref, tan) => submitTan(ref, tan)}
           onReset={resetSync}
         />
       </div>
 
-      {/* Balance cards */}
+      {/* Balance cards — always visible, click to filter by account */}
       {balances.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {balances.map(b => (
-            <div key={b.account_iban} className="rounded-lg border border-border bg-card p-4 space-y-1">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <CreditCard className="size-4" />
-                <span className="text-xs font-medium truncate">{b.account_name ?? b.account_iban}</span>
-              </div>
-              <p className="font-mono text-xl font-semibold">{fmtEur(b.booked_balance)}</p>
-              {b.available_balance !== b.booked_balance && (
+          {balances.map(b => {
+            const isSelected = selectedIban === b.account_iban
+            return (
+              <button
+                key={b.account_iban}
+                type="button"
+                onClick={() => toggleAccount(b.account_iban)}
+                aria-pressed={isSelected}
+                className={`relative text-left rounded-lg border p-4 space-y-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                  isSelected
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border bg-card hover:border-muted-foreground/40'
+                }`}
+              >
+                {isSelected && (
+                  <span className="absolute top-3 right-3 flex items-center justify-center size-4 rounded-full bg-primary text-primary-foreground">
+                    <Check className="size-2.5" />
+                  </span>
+                )}
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <CreditCard className="size-4" />
+                  <span className="text-xs font-medium truncate">{b.account_name ?? b.account_iban}</span>
+                </div>
+                <p className="font-mono text-xl font-semibold">{fmtEur(b.booked_balance)}</p>
+                {b.available_balance !== b.booked_balance && (
+                  <p className="text-xs text-muted-foreground">
+                    Verfügbar: {fmtEur(b.available_balance)}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground font-mono">{b.account_iban}</p>
                 <p className="text-xs text-muted-foreground">
-                  Verfügbar: {fmtEur(b.available_balance)}
+                  Stand: {fmtDate(b.fetched_at, dateFormat)}
                 </p>
-              )}
-              <p className="text-xs text-muted-foreground font-mono">{b.account_iban}</p>
-              <p className="text-xs text-muted-foreground">
-                Stand: {fmtDate(b.fetched_at, dateFormat)}
-              </p>
-            </div>
-          ))}
+              </button>
+            )
+          })}
         </div>
       )}
 
@@ -107,11 +145,20 @@ export default function BankPage() {
         </div>
       )}
 
+      {/* Charts */}
+      {transactions.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <BankTrendChart transactions={transactions} />
+          <BankCategoryChart transactions={transactions} />
+        </div>
+      )}
+
       {/* Transactions */}
       <BankTransactionsView
         transactions={transactions}
         isLoading={isLoadingTxns}
-        onFilter={params => loadTransactions(params)}
+        onFilter={handleFilter}
+        onUpdateCategory={updateCategory}
       />
     </div>
   )
