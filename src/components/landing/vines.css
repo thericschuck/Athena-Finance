@@ -1,0 +1,57 @@
+/* ══════════════════════════════════════════════════════════════════════════════
+ * Wachs-Animation der Olivenzweige — gehört zu olive-vines.tsx und wird von
+ * dort importiert, reist also automatisch mit jedem Verwender mit.
+ *
+ * Bewusst CSS statt Framer Motion: 90+ Blätter per JS zu animieren würde den
+ * Main Thread genau beim Seitenstart belegen, und `prefers-reduced-motion`
+ * lässt sich hier sauber abfangen.
+ *
+ * Die Dauer von .vine-stem (2.4s) muss mit der Konstante DRAW in
+ * olive-vines.tsx übereinstimmen — dort werden die Blatt-Verzögerungen
+ * daraus berechnet.
+ * ══════════════════════════════════════════════════════════════════════════════ */
+
+@keyframes vine-draw {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes leaf-unfurl {
+  from { opacity: 0; transform: scale(.2); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes vine-sway {
+  0%, 100% { transform: rotate(-0.55deg); }
+  50%      { transform: rotate(0.55deg); }
+}
+
+.vine-stem {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: vine-draw 2.4s cubic-bezier(.16, 1, .3, 1) forwards;
+}
+
+.vine-leaf {
+  opacity: 0;
+  /* fill-box + 0% 50% = Blattansatz: das Blatt entrollt sich aus dem Stiel */
+  transform-box: fill-box;
+  transform-origin: 0% 50%;
+  animation: leaf-unfurl .6s cubic-bezier(.16, 1, .3, 1) forwards;
+}
+
+.vine-branch {
+  animation: vine-sway 16s ease-in-out infinite;
+}
+
+/* Auf schmalen Displays treffen sich die beiden Ranken-Vorhänge fast in der
+   Mitte und laufen durch den Text — dort deutlich zurücknehmen. */
+@media (max-width: 639px) {
+  .vine-layer { opacity: .3 !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vine-stem,
+  .vine-leaf,
+  .vine-branch { animation: none !important; }
+  .vine-stem { stroke-dashoffset: 0; }
+  .vine-leaf { opacity: 1; transform: none; }
+}

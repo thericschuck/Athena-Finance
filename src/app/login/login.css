@@ -1,0 +1,90 @@
+/* ══════════════════════════════════════════════════════════════════════════════
+ * Login — Onyx & Cream.
+ * Farbwerte aus den --af-*-Properties in app/globals.css.
+ * ══════════════════════════════════════════════════════════════════════════════ */
+
+.af-field {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 46px; /* über dem Touch-Mindestmaß */
+  padding: 12px 14px;
+  border: 1px solid var(--af-rule);
+  border-radius: 2px;
+  background-color: var(--af-paper);
+  font-family: var(--font-geist-sans);
+  font-size: 15px; /* ≥16px-Regel gilt für Fließtext; 15px löst auf iOS noch kein Auto-Zoom aus */
+  color: var(--af-ink);
+  outline: none;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+.af-field::placeholder { color: var(--af-ink-faint); }
+.af-field:focus {
+  border-color: var(--af-olive);
+  box-shadow: 0 0 0 3px rgba(107, 127, 92, .16);
+}
+
+.af-submit {
+  width: 100%;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--af-onyx);
+  color: var(--af-cream);
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  font-family: var(--font-geist-sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  transition: background-color .2s ease;
+}
+.af-submit:hover { background-color: var(--af-graphite); }
+
+.af-quiet { position: relative; text-decoration: none; }
+.af-quiet::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -4px;
+  height: 1px;
+  background: currentColor;
+  opacity: .55;
+  transition: right .34s cubic-bezier(.22, 1, .36, 1);
+}
+.af-quiet:hover::after { right: 0; }
+
+.login-main a:focus-visible,
+.login-main button:focus-visible {
+  outline: 2px solid var(--af-olive);
+  outline-offset: 3px;
+}
+
+/* Antippmaß breitenunabhängig — iPad quer meldet 1024px und ist Touch */
+.login-brand,
+.login-back {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .af-field,
+  .af-submit,
+  .af-quiet::after { transition: none !important; }
+}
+
+@media (max-width: 639px) {
+  .login-brand-name { font-size: 15px !important; }
+  .login-kicker { font-size: 10px !important; letter-spacing: .14em !important; }
+  /* Karte randlos: auf schmalen Displays gewinnt der Inhalt die 2×24px */
+  .login-card { margin-left: -4px; margin-right: -4px; }
+}
+
+/* Querformat: die Marke oben links darf nicht in die Karte laufen */
+@media (max-height: 560px) and (orientation: landscape) {
+  .login-main { padding-top: 68px !important; padding-bottom: 32px !important; }
+}

@@ -1,0 +1,358 @@
+/* ══════════════════════════════════════════════════════════════════════════════
+ * Landing Page — Onyx & Cream.
+ *
+ * Als echtes Stylesheet und nicht als <style>{CSS}</style> im React-Baum:
+ * inline gerendert läge derselbe String zweimal in der Antwort (SSR-HTML plus
+ * Client-Bundle), und jede Browser-Extension, die <style>-Elemente anfasst
+ * (Dark-Mode-Add-ons tun das), erzeugt beim Hydrieren einen Attribut-Mismatch.
+ *
+ * Farbwerte kommen aus den --af-*-Properties in app/globals.css.
+ * ══════════════════════════════════════════════════════════════════════════════ */
+
+.af-balance { text-wrap: balance; }
+
+/*
+ * Hero-Einstieg absichtlich in CSS statt Framer Motion: der Text ist damit ab
+ * dem ersten Frame gemalt und wartet nicht auf die Hydration — sonst verzögert
+ * ein opacity:0-Element den LCP um die gesamte JS-Ladezeit.
+ */
+@keyframes af-rise {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: none; }
+}
+.af-rise {
+  opacity: 0;
+  animation: af-rise .85s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+
+/* ── Aktionen ──────────────────────────────────────────────────────────────── */
+
+.af-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px; /* Touch-Mindestmaß, gilt auch am Desktop */
+  font-family: var(--font-geist-sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  padding: 13px 28px;
+  border-radius: 2px;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color .22s ease, color .22s ease, border-color .22s ease,
+              transform .18s ease, box-shadow .22s ease;
+}
+.af-btn-onyx { background-color: var(--af-onyx); color: var(--af-cream); }
+.af-btn-onyx:hover {
+  background-color: var(--af-graphite);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(26, 26, 26, .18);
+}
+.af-btn-cream { background-color: var(--af-cream); color: var(--af-onyx); }
+.af-btn-cream:hover { background-color: var(--af-paper); transform: translateY(-1px); }
+.af-btn-outline {
+  background-color: transparent;
+  color: var(--af-ink);
+  border-color: var(--af-rule);
+}
+.af-btn-outline:hover {
+  border-color: var(--af-ink);
+  background-color: rgba(26, 26, 26, .04);
+  transform: translateY(-1px);
+}
+
+/* Textlink mit auslaufender Unterstreichung */
+.af-quiet { position: relative; text-decoration: none; }
+.af-quiet::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -4px;
+  height: 1px;
+  background: currentColor;
+  opacity: .55;
+  transition: right .34s cubic-bezier(.22, 1, .36, 1);
+}
+.af-quiet:hover::after { right: 0; }
+
+/* ── Flächen ───────────────────────────────────────────────────────────────── */
+
+.af-card { transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease; }
+.af-card:hover {
+  border-color: rgba(26, 26, 26, .2);
+  box-shadow: 0 14px 36px rgba(26, 26, 26, .07);
+  transform: translateY(-2px);
+}
+/* ── Tempelfront (Sektion „Die Säulen") ────────────────────────────────────── */
+
+/* Gebälk: Mäanderfries auf einem Architrav-Balken */
+.entablature { margin-bottom: clamp(4px, 1vw, 10px); }
+.architrave {
+  display: block;
+  height: 3px;
+  margin-top: 7px;
+  background: linear-gradient(
+    90deg, transparent, var(--af-cream) 8%, var(--af-cream) 92%, transparent);
+  opacity: .62;
+}
+
+.pillar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/*
+ * Der Schaft trägt die Stufe als untere Kante. Volle Zellenbreite, Abstand
+ * über padding statt column-gap — nur so stoßen die Kanten aneinander und
+ * bilden eine durchgehende Stufe unter allen Säulen.
+ */
+.pillar-shaft {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 clamp(6px, 1.6vw, 20px);
+  border-bottom: 5px solid rgba(232, 224, 208, .44);
+  /* zweite, breitere Stufe */
+  box-shadow: 0 8px 0 -1px rgba(232, 224, 208, .2);
+  margin-bottom: clamp(26px, 3.4vw, 42px);
+}
+
+/* Lichtpool am Säulenfuß — auf dunklem Grund erdet ein aufgehelltes
+   Stück Stufe die Säule, ein dunkler Schatten wäre unsichtbar. */
+.pillar-shaft::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 76%;
+  height: 34px;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    ellipse at center, rgba(232, 224, 208, .14) 0%, transparent 68%);
+  pointer-events: none;
+}
+
+/*
+ * Die Säulengrafiken sind kühles Grau mit leichtem Magenta-Stich
+ * (#E6E1E4, #D4CFD0). sepia() dreht sie ins Warme, saturate() nimmt den
+ * Braunton wieder heraus — so stehen sie als Elfenbein in der Onyx-&-Cream-
+ * Palette, ohne 30 KB Pfade umfärben zu müssen.
+ */
+.pillar-img {
+  height: clamp(168px, 23vw, 300px);
+  width: auto;
+  filter: sepia(.42) saturate(.52) brightness(1.04) contrast(.96);
+}
+
+/* Beschriftung mittig unter der jeweiligen Säule — die Tempelfront ist
+   symmetrisch, linksbündiger Text bricht die Achse. */
+.pillar-copy {
+  display: block;
+  text-align: center;
+  padding: 0 clamp(6px, 1.4vw, 18px);
+}
+
+/* Zwei Säulen als Portal um den Abschluss-Block */
+.portal-column {
+  position: absolute;
+  bottom: 0;
+  height: clamp(200px, 26vw, 300px);
+  width: auto;
+  opacity: .26;
+  filter: sepia(.42) saturate(.52) brightness(1.04);
+  pointer-events: none;
+}
+.portal-left { left: clamp(8px, 3vw, 42px); }
+.portal-right { right: clamp(8px, 3vw, 42px); }
+@media (max-width: 899px) {
+  .portal-column { display: none; }
+}
+
+/* Kannelierung — vertikale Rillen wie an einer Säule */
+.af-flute {
+  background-image: repeating-linear-gradient(
+    90deg, rgba(232, 224, 208, .055) 0 1px, transparent 1px 15px);
+}
+/* Zahnschnitt unter dem Gesims */
+.af-dentil {
+  height: 4px;
+  background-image: repeating-linear-gradient(
+    90deg, var(--af-rule-soft) 0 4px, transparent 4px 11px);
+}
+
+.af-landing a:focus-visible,
+.af-landing button:focus-visible {
+  outline: 2px solid var(--af-olive);
+  outline-offset: 3px;
+}
+
+/*
+ * Antippmaß bewusst breitenunabhängig: iPad quer meldet 1024px und ist
+ * trotzdem ein Touch-Gerät. 44px hohe Textlinks kosten am Desktop nichts,
+ * die Navigationsleiste ist ohnehin 66px hoch.
+ */
+.nav-brand,
+.nav-link,
+.foot-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/*
+ * Mikro-Labels (Status, Tags, Bildunterschriften) an einer Stelle geregelt.
+ * !important, weil die Größe an den Elementen selbst inline aus dem
+ * kicker-Token kommt.
+ */
+.af-micro { font-size: 10px !important; }
+
+/* Lange Komposita sind in einer schmalen Mock-Spalte unumbrechbar und würden
+   am Kartenrand abgeschnitten. */
+.mock-label { overflow-wrap: anywhere; }
+
+@media (prefers-reduced-motion: reduce) {
+  .af-rise { animation: none; opacity: 1; transform: none; }
+  .af-btn,
+  .af-card,
+  .af-quiet::after { transition: none !important; }
+  .af-btn:hover,
+  .af-card:hover { transform: none !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+ * Breakpoint-Leiter — von groß nach klein, jede Stufe verfeinert die vorige.
+ *
+ *   ≤1023  Tablet (iPad portrait 768/834, quer bis 1023)
+ *   ≤767   großes Handy / kleines Tablet portrait
+ *   ≤639   Handy
+ *   ≤419   kleines Handy (iPhone SE 320, Galaxy 360)
+ *
+ * Raster-Spuren immer als minmax(0, 1fr): mit dem Standard minmax(auto, 1fr)
+ * setzt der breiteste unumbrechbare Inhalt (hier die gesperrten Kapitälchen)
+ * die Mindestbreite der Spur — das Raster wird dann breiter als der Viewport
+ * und die Seite scrollt horizontal.
+ * ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Tablet ────────────────────────────────────────────────────────────────── */
+@media (max-width: 1023px) {
+  .af-micro { font-size: 11px !important; letter-spacing: .12em !important; }
+
+  .g-mock { grid-template-columns: minmax(0, 1fr) !important; }
+  .g-mock-side { display: none !important; }
+  .g-split { grid-template-columns: minmax(0, 1fr) !important; gap: 44px !important; }
+  /* Zweispaltig laufen alle Karten einspaltig — 8 Karten füllen so vier
+     Reihen ohne Lücke, während span-2 wieder Löcher reißen würde. */
+  .g-feat { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .g-feat > .feat-wide { grid-column: span 1 !important; }
+  /* Vier Spalten sind bei deutschen Labels ab hier zu eng */
+  .g-pillars { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  /* Zweite Reihe braucht Abstand zur ersten Stufe */
+  .g-pillars > .pillar:nth-child(n + 3) { margin-top: clamp(34px, 5vw, 52px); }
+  .g-extras {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 32px 28px !important;
+  }
+}
+
+/* ── großes Handy / kleines Tablet ─────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .g-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    row-gap: 34px !important;
+  }
+  .g-stats > *:nth-child(-n+2) {
+    border-bottom: 1px solid var(--af-rule-on-soft);
+    padding-bottom: 30px;
+  }
+  .g-stats > * { border-left: none !important; }
+  .g-feat { grid-template-columns: minmax(0, 1fr) !important; }
+  .g-steps { grid-template-columns: minmax(0, 1fr) !important; gap: 44px !important; }
+  .g-steps-line { display: none !important; }
+  .footer-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 22px !important;
+  }
+  .mock-stats { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .mock-charts { grid-template-columns: minmax(0, 1fr) !important; }
+}
+
+/* ── Handy ─────────────────────────────────────────────────────────────────── */
+@media (max-width: 639px) {
+  /* Die gesperrten Kapitälchen sind der breiteste unumbrechbare Block der
+     Seite — auf kleinen Displays enger setzen und umbrechen lassen. */
+  .af-kicker {
+    font-size: 11px !important;
+    letter-spacing: .12em !important;
+    white-space: normal !important;
+  }
+  .af-kicker-rule { display: none !important; }
+  .nav-link { display: none !important; }
+  .nav-wordmark { font-size: 16px !important; }
+  .feat-desc { font-size: 15px !important; }
+
+  /*
+   * Einspaltig kippt jede Säule neben ihren Text: gestapelt wären es vier
+   * volle Bildhöhen hintereinander, und die durchgehende Stufe hat bei einer
+   * Spalte ohnehin keine Wirkung mehr.
+   */
+  .g-pillars { grid-template-columns: minmax(0, 1fr) !important; }
+  .entablature { display: none; }
+  .pillar {
+    flex-direction: row;
+    align-items: center;
+    gap: 20px;
+    padding: 22px 0;
+    border-top: 1px solid var(--af-rule-on-soft);
+  }
+  .g-pillars > .pillar:nth-child(n + 3) { margin-top: 0; }
+  .pillar-shaft {
+    width: auto;
+    flex-shrink: 0;
+    padding: 0;
+    border-bottom: none;
+    box-shadow: none;
+    margin-bottom: 0;
+  }
+  .pillar-shaft::after { display: none; }
+  .pillar-img { height: clamp(112px, 30vw, 150px); }
+  .pillar-copy { text-align: left; padding: 0; }
+
+  /* Aktionen über die volle Breite — bequem mit dem Daumen erreichbar */
+  .cta-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+  .cta-row > .af-btn { width: 100%; }
+}
+
+/* ── kleines Handy ─────────────────────────────────────────────────────────── */
+@media (max-width: 419px) {
+  .g-extras { grid-template-columns: minmax(0, 1fr) !important; }
+  .pillar { gap: 14px; }
+  .mock-label { letter-spacing: .08em !important; }
+
+  /* Schriftzug und Button teilen sich 320px — beide zurücknehmen, damit der
+     Button den Markennamen nicht überlagert. */
+  .nav-wordmark { font-size: 15px !important; }
+  .nav-cta {
+    padding: 10px 14px !important;
+    font-size: 11px !important;
+    letter-spacing: .1em !important;
+  }
+}
+
+/* ── Querformat auf flachen Displays ───────────────────────────────────────── */
+@media (max-height: 560px) and (orientation: landscape) {
+  .hero { padding-top: 40px !important; padding-bottom: 44px !important; }
+}

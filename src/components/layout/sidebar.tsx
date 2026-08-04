@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -19,6 +18,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { Logo } from '@/components/ui/logo'
 import { signOut } from '@/app/login/actions'
 
 type NavChild = { href: string; label: string }
@@ -96,7 +96,7 @@ export function Sidebar({ email, displayName, avatarUrl, mobileOpen = false, onM
       {/* Logo */}
       <div className="flex h-14 items-center border-b border-sidebar-border px-4">
         <div className="flex flex-1 items-center gap-2.5 min-w-0">
-          <Image src="/athena-logo.png" alt="Athena Finance" width={24} height={24} className="rounded-md shrink-0" />
+          <Logo size={24} priority />
           <span className="text-sm font-semibold text-sidebar-foreground tracking-tight truncate">Athena Finance</span>
         </div>
         <button

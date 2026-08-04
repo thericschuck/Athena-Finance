@@ -422,3 +422,43 @@ tbody tr {
   background-size: 800px 100%;
   animation: shimmer 1.5s infinite linear;
 }
+/* ── Onyx & Cream ───────────────────────────────────────────────────────────
+ * Palette der Landing Page und des Logins.
+ *
+ * ACHTUNG: dieselben Werte liegen als JS-Objekt in
+ * src/components/landing/landing-tokens.ts — dort gebraucht für Inline-Styles
+ * und SVG-Präsentationsattribute (fill/stroke akzeptieren kein var()).
+ * Änderungen immer in beiden Dateien nachziehen.
+ * ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  --af-parchment: #F7F5F0;
+  --af-paper: #FFFFFF;
+  --af-cream: #E8E0D0;
+  --af-cream-deep: #DCD2BD;
+
+  --af-onyx: #1A1A1A;
+  --af-onyx-warm: #141412;
+  --af-onyx-lift: #232320;
+  --af-graphite: #3D3D3D;
+
+  --af-ink: #1A1A1A;
+  --af-ink-body: #5C574E;
+  --af-ink-subtle: #6E675C;
+  --af-ink-faint: #8A8378;
+
+  --af-on-cream: #E8E0D0;
+  --af-on-body: #A9A197;
+  --af-on-subtle: #877F74;
+
+  --af-olive: #6B7F5C;
+  --af-olive-deep: #4A5B3D;
+  --af-olive-light: #8CA277;
+  --af-gold: #B88F51;
+  --af-gold-ink: #8A6A2F;
+  --af-terracotta: #A9553C;
+
+  --af-rule: rgba(26, 26, 26, 0.14);
+  --af-rule-soft: rgba(26, 26, 26, 0.08);
+  --af-rule-on: rgba(232, 224, 208, 0.16);
+  --af-rule-on-soft: rgba(232, 224, 208, 0.09);
+}
