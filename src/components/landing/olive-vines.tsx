@@ -45,13 +45,37 @@ function angleAt({ p0, p1, p2, p3 }: Cubic, t: number): number {
 const cubicPath = ({ p0, p1, p2, p3 }: Cubic) =>
   `M ${p0[0]} ${p0[1]} C ${p1[0]} ${p1[1]}, ${p2[0]} ${p2[1]}, ${p3[0]} ${p3[1]}`
 
-/** Lanzettliches Olivenblatt: Basis auf (0,0), Spitze auf (len,0). */
-function leafPath(len: number): string {
-  const w = len * 0.19
+/**
+ * Lanzettliches Olivenblatt: Basis auf (0,0), Spitze auf (len,0).
+ * `wf` steuert die Schlankheit — 0.13 ergibt schmale Weidenblätter,
+ * 0.24 breite, fleischige.
+ */
+function leafPath(len: number, wf = 0.19): string {
+  const w = len * wf
+  // gerundet ausgegeben: hält das Markup kurz und immun gegen Rundungsreste
+  const n = (v: number) => v.toFixed(2)
   return (
-    `M 0 0 C ${len * 0.26} ${-w * 1.05}, ${len * 0.72} ${-w * 0.92}, ${len} 0 ` +
-    `C ${len * 0.72} ${w * 0.8}, ${len * 0.26} ${w * 0.95}, 0 0 Z`
+    `M 0 0 C ${n(len * 0.26)} ${n(-w * 1.05)}, ${n(len * 0.72)} ${n(-w * 0.92)}, ${n(len)} 0 ` +
+    `C ${n(len * 0.72)} ${n(w * 0.8)}, ${n(len * 0.26)} ${n(w * 0.95)}, 0 0 Z`
   )
+}
+
+/**
+ * Deterministische Streuung aus Zweig- und Blattindex.
+ *
+ * Bewusst ein Integer-Hash (Math.imul, XOR, Shift) und NICHT der übliche
+ * `fract(sin(x) * k)`: transzendente Funktionen sind in ECMAScript
+ * ausdrücklich implementation-approximated — Node und Browser dürfen in den
+ * letzten Bits abweichen. Das reicht für abweichende Pfad-Strings und damit
+ * für einen Hydration-Mismatch. 32-Bit-Ganzzahlarithmetik ist dagegen exakt
+ * spezifiziert und liefert überall dasselbe Bitmuster.
+ */
+function wobble(seed: number, spread: number) {
+  let h = Math.imul(seed | 0, 0x27d4eb2d)
+  h ^= h >>> 15
+  h = Math.imul(h, 0x85ebca6b)
+  h ^= h >>> 13
+  return (((h >>> 0) / 0xffffffff) * 2 - 1) * spread
 }
 
 /** Ranke: auslaufende Spirale am Zweigende. */
@@ -99,6 +123,12 @@ type BranchSpec = {
   drupes?: number[]
   /** Ranke am Zweigende */
   tendril?: { r: number; turns: number; dir: 1 | -1 }
+  /** Blattbreite relativ zur Länge (0.13 schmal … 0.24 breit) */
+  leafW?: number
+  /** Streuung der Blattlänge in Prozent (0.2 = ±20%) */
+  vary?: number
+  /** Wiege-Variante a|b|c — unterschiedliche Dauer und Amplitude */
+  sway?: 'a' | 'b' | 'c'
 }
 
 /**
@@ -129,13 +159,17 @@ function VineBranch({ spec, delay, tone }: { spec: BranchSpec; delay: number; to
     to = 0.97,
     drupes = [],
     tendril,
+    leafW = 0.19,
+    vary = 0.16,
+    sway = 'a',
   } = spec
 
   const [ax, ay] = cu.p0
+  const seed = (ax * 31 + ay * 17) | 0 // ganzzahlig, siehe wobble()
 
   return (
     <g
-      className="vine-branch"
+      className={`vine-branch vine-sway-${sway}`}
       style={{
         transformBox: 'view-box',
         transformOrigin: `${ax}px ${ay}px`,
@@ -182,16 +216,15 @@ function VineBranch({ spec, delay, tone }: { spec: BranchSpec; delay: number; to
         const f = leaves === 1 ? 0 : i / (leaves - 1)
         const t = from + (to - from) * f
         const side = i % 2 === 0 ? -1 : 1
-        const len = leafLen * (1 - taper * f)
+        // Verjüngung zur Spitze plus Streuung, damit keine zwei Blätter gleich sind
+        const len = leafLen * (1 - taper * f) * (1 + wobble(seed + i, vary))
         const [x, y] = pointAt(cu, t)
-        // leichte Streuung, damit das Muster nicht mechanisch wirkt
-        const jitter = ((i * 37) % 11) - 5
-        const rot = angleAt(cu, t) + side * (spread + jitter)
+        const rot = angleAt(cu, t) + side * (spread + wobble(seed + i * 3, 9))
         return (
           <g key={i} transform={`translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${rot.toFixed(1)})`}>
             <path
               className="vine-leaf"
-              d={leafPath(len)}
+              d={leafPath(len, leafW * (1 + wobble(seed + i * 5, 0.12)))}
               fill={i % 3 === 0 ? tone.leafAlt : tone.leaf}
               style={{ animationDelay: `${(delay + 0.18 + f * DRAW * 0.82).toFixed(2)}s` }}
             />
@@ -226,38 +259,111 @@ function VineBranch({ spec, delay, tone }: { spec: BranchSpec; delay: number; to
 
 const VB = { w: 520, h: 900 }
 
+/*
+ * Jeder Zweig ein eigener Typ: ein schwerer Hauptzweig mit breiten Blättern,
+ * ein drahtiger mit vielen schmalen, ein sparriger mit weit abstehenden, ein
+ * kurzer zarter Trieb. Dazu streut jedes einzelne Blatt in Länge, Breite und
+ * Winkel (siehe `vary` und `wobble`).
+ *
+ * Die rechte Seite ist bewusst KEINE Spiegelung der linken — eigene Kurven,
+ * eigene Blattzahlen. Gespiegelt wirkte das Blattwerk wie eine Tapete.
+ */
 const LEFT: BranchSpec[] = [
+  // schwerer Hauptzweig, breite Blätter
   {
     cu: { p0: [-30, 118], p1: [156, 52], p2: [292, 248], p3: [402, 468] },
-    leaves: 19,
-    leafLen: 34,
-    taper: 0.4,
-    spread: 36,
-    width: 1.8,
+    leaves: 17,
+    leafLen: 40,
+    leafW: 0.23,
+    taper: 0.42,
+    spread: 38,
+    width: 2.2,
+    vary: 0.2,
     drupes: [0.42, 0.68],
-    tendril: { r: 20, turns: 1.35, dir: 1 },
+    tendril: { r: 22, turns: 1.35, dir: 1 },
+    sway: 'a',
   },
+  // drahtig, viele schmale Blätter
   {
     cu: { p0: [-22, 436], p1: [118, 502], p2: [236, 654], p3: [332, 862] },
-    leaves: 16,
-    leafLen: 30,
-    taper: 0.4,
-    spread: 33,
-    width: 1.5,
-    drupes: [0.55],
+    leaves: 27,
+    leafLen: 21,
+    leafW: 0.13,
+    taper: 0.28,
+    spread: 25,
+    width: 1.0,
+    vary: 0.24,
+    sway: 'b',
   },
+  // sparrig, weit abstehende Blätter
   {
     cu: { p0: [88, -44], p1: [162, 92], p2: [178, 214], p3: [252, 352] },
-    leaves: 13,
-    leafLen: 25,
-    taper: 0.4,
-    spread: 31,
-    width: 1.2,
-    tendril: { r: 15, turns: 1.2, dir: -1 },
+    leaves: 11,
+    leafLen: 31,
+    leafW: 0.2,
+    taper: 0.5,
+    spread: 46,
+    width: 1.5,
+    vary: 0.18,
+    drupes: [0.6],
+    tendril: { r: 14, turns: 1.2, dir: -1 },
+    sway: 'c',
   },
 ]
 
-const RIGHT = LEFT.map((b) => mirror(b, VB.w / 2))
+const RIGHT: BranchSpec[] = [
+  // mittelschwer, flacher Bogen
+  {
+    cu: { p0: [548, 92], p1: [372, 44], p2: [214, 236], p3: [128, 452] },
+    leaves: 14,
+    leafLen: 36,
+    leafW: 0.21,
+    taper: 0.38,
+    spread: 33,
+    width: 1.9,
+    vary: 0.19,
+    drupes: [0.36, 0.62],
+    tendril: { r: 19, turns: 1.45, dir: -1 },
+    sway: 'b',
+  },
+  // langer, dünner Trieb bis nach unten
+  {
+    cu: { p0: [544, 452], p1: [430, 546], p2: [318, 668], p3: [196, 884] },
+    leaves: 23,
+    leafLen: 24,
+    leafW: 0.15,
+    taper: 0.34,
+    spread: 28,
+    width: 1.2,
+    vary: 0.22,
+    sway: 'c',
+  },
+  // kurzer zarter Trieb oben
+  {
+    cu: { p0: [428, -50], p1: [386, 78], p2: [352, 176], p3: [296, 296] },
+    leaves: 9,
+    leafLen: 19,
+    leafW: 0.17,
+    taper: 0.3,
+    spread: 30,
+    width: 0.9,
+    vary: 0.2,
+    tendril: { r: 11, turns: 1.1, dir: 1 },
+    sway: 'a',
+  },
+  // breiter Seitenast in mittlerer Höhe
+  {
+    cu: { p0: [556, 268], p1: [470, 336], p2: [400, 424], p3: [318, 556] },
+    leaves: 12,
+    leafLen: 28,
+    leafW: 0.22,
+    taper: 0.44,
+    spread: 42,
+    width: 1.4,
+    vary: 0.17,
+    sway: 'a',
+  },
+]
 
 /**
  * Zwei Ranken-Vorhänge an den Seiten. Getrennte SVGs statt eines

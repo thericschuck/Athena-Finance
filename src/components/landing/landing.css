@@ -25,6 +25,166 @@
   animation: af-rise .85s cubic-bezier(.22, 1, .36, 1) forwards;
 }
 
+/* ── Hero-Aufbau ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* Höhe der Navigationsleiste: 66px Inhalt + 4px Zahnschnitt */
+  --af-nav-h: 70px;
+}
+
+/*
+ * Hero füllt den vollen Viewport, damit die Giebel-Enthüllung erst beim
+ * Scrollen beginnt. Die Leiste ist `absolute` (siehe .site-header) und
+ * reserviert keinen Platz im Fluss — deshalb 100svh statt
+ * `100svh - Leistenhöhe`. svh statt vh: auf Mobilgeräten rechnet vh mit
+ * eingeklappter Browser-Leiste und würde den Hero über den Bildschirm
+ * hinaus schieben.
+ */
+.hero {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+.hero-shell {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+/* schiebt Lead, Buttons und Trenner an den unteren Rand */
+.hero-foot { margin-top: auto; }
+
+/*
+ * Rankenschicht über der Navigationsleiste. Eigene Ebene außerhalb des Hero,
+ * weil dessen overflow:hidden sie sonst an der Oberkante abschneidet.
+ * z-index 60 > 50 der Leiste; pointer-events:none, damit Logo und Buttons
+ * darunter klickbar bleiben.
+ */
+.vine-layer-over {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100svh;
+  z-index: 60;
+  pointer-events: none;
+}
+
+/* ── Hero-Hintergrund: Aquarell-Landschaft ─────────────────────────────────── */
+
+/*
+ * Das Aquarell füllt den Hero vollflächig und unverändert: keine Maske, kein
+ * Verlauf, keine Farbfläche darüber. Es reicht bis zur Unterkante, damit gar
+ * keine Kante entsteht, die ausgeblendet werden müsste.
+ */
+.hero-photo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  animation: hero-photo-in 1.15s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+
+/* Blur-in von oben — der „subtle“ Reveal des Vorbilds, hier in CSS, damit er
+   nicht auf die Hydration wartet (wie beim übrigen Hero-Einstieg). */
+@keyframes hero-photo-in {
+  from { opacity: 0; transform: translateY(-18px); filter: blur(9px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+
+/* Originalfarben des Aquarells — ohne Filter, ohne Wäsche, ohne Verlauf.
+   Die Lesbarkeit der Schrift darüber trägt allein die Textfarbe. */
+.hero-photo-img {
+  object-fit: cover;
+  object-position: center 55%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-photo { animation: none; opacity: 1; transform: none; filter: none; }
+}
+
+/*
+ * Athena rechts im Hero. z-index 0 hält sie hinter der Textspalte (die über
+ * position:relative auf 1 liegt) und über dem Aquarell.
+ */
+.hero-athena {
+  position: absolute;
+  right: clamp(-30px, 0.5vw, 24px);
+  bottom: 0;
+  height: clamp(420px, 84vh, 920px);
+  width: auto;
+  z-index: 0;
+  pointer-events: none;
+  /* Startzustand: komplett unter die Hero-Unterkante geschoben */
+  transform: translateY(104%);
+  animation: athena-rise 2.9s cubic-bezier(.42, 0, .38, 1) 1.4s forwards;
+  /* eigene Compositor-Ebene, damit das Schieben nicht neu layoutet */
+  will-change: transform;
+}
+
+/*
+ * Athena wird als Ganzes von unten hereingeschoben. Bewusst `translateY` und
+ * NICHT `clip-path`: eine Maske deckt sie nur an ihrer Stelle auf, das Bild
+ * bewegt sich dabei nicht — was als Aufpoppen gelesen wird. Verdeckt wird sie
+ * währenddessen vom `overflow: hidden` des Hero-Abschnitts.
+ *
+ * Timing so gelegt, dass sie als LETZTES fertig ist: die Ranken brauchen bis
+ * ~3,9s (längste Kette: Zweigverzögerung 0,92 + Stängel 2,4 + Ranken-Spirale
+ * 1,2), der Hero-Text ist nach ~1,35s durch. 1,4s Verzögerung plus 2,9s Lauf
+ * enden bei ~4,3s — also nach allem anderen.
+ *
+ * Die Easing-Kurve ist bewusst annähernd symmetrisch und NICHT das sonst
+ * verwendete cubic-bezier(.16,1,.3,1): dieses legt fast die gesamte Bewegung
+ * in das erste Viertel, wodurch sie optisch schon nach ~2s stand, obwohl die
+ * Animation formal noch lief.
+ */
+@keyframes athena-rise {
+  from { transform: translateY(104%); }
+  to   { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-athena { animation: none; transform: none; }
+}
+@media (max-width: 899px) {
+  .hero-athena { display: none; }
+}
+
+/*
+ * Trichter oben (Trapez) mit Balken darunter — kein reines Trapez mehr,
+ * sondern Trichter + rechteckiger Stiel, der die Buttons tatsächlich umfasst.
+ * Knapp bemessen statt viewport-breit, tiefer gesetzt als zuvor.
+ */
+.hero-dome {
+  position: absolute;
+  /* bottom:0 statt Abstand — die Fläche grenzt direkt an den Hero-Rand und
+     geht damit nahtlos in den Parchment-Hintergrund der nächsten Sektion
+     über, statt als schwebende Insel mit Bild-Rand darunter zu wirken */
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  /* Balken breit genug für die Taxonomie-Zeile („PORTFOLIO · AUSGABEN ·
+     VERTRÄGE · STRATEGIE“) — der schmalere Button-Balken passte nicht */
+  width: clamp(680px, 56vw, 820px);
+  /* niedriger als zuvor: der Trichter soll kaum über die Buttons hinausragen */
+  height: clamp(260px, 0vh, 340px);
+  z-index: 0;
+  pointer-events: none;
+  background: var(--af-parchment);
+  /* Trichter jetzt schmaler (12% -> 88% statt 0 -> 100%) und flacher (obere
+     40% statt 52%), Balken unverändert bei 22% -> 78% für die Taxonomie-Zeile */
+  clip-path: polygon(10% 20%, 90% 20%, 74% 60%, 74% 100%, 26% 100%, 26% 60%);
+}
+
+/* Auf dem Handy steht die Textspalte auf voller Breite — die Fläche muss
+   entsprechend schmaler sein, bleibt aber ebenfalls randständig. */
+@media (max-width: 639px) {
+  .hero-dome {
+    width: min(94vw, 400px);
+    height: clamp(230px, 27vh, 290px);
+  }
+}
+
 /* ── Aktionen ──────────────────────────────────────────────────────────────── */
 
 .af-btn {
@@ -54,6 +214,10 @@
 }
 .af-btn-cream { background-color: var(--af-cream); color: var(--af-onyx); }
 .af-btn-cream:hover { background-color: var(--af-paper); transform: translateY(-1px); }
+/*
+ * Wieder transparent: der Button steht auf der weißen Kuppel (.hero-dome),
+ * die den Kontrast trägt — eine eigene Fläche ist hier nicht mehr nötig.
+ */
 .af-btn-outline {
   background-color: transparent;
   color: var(--af-ink);
@@ -88,6 +252,21 @@
   box-shadow: 0 14px 36px rgba(26, 26, 26, .07);
   transform: translateY(-2px);
 }
+/* ── Kennzahlen-Band ───────────────────────────────────────────────────────── */
+
+/*
+ * Zwei Varianten, per Breite umgeschaltet: das gebogene SVG-Band skaliert als
+ * Ganzes mit der Breite, seine Schrift also mit — unter 1100px wird sie zu
+ * klein, dort übernimmt das flache Band.
+ */
+.stats-arc { display: block; width: 100%; height: auto; }
+.stats-flat { display: none; }
+
+@media (max-width: 1099px) {
+  .stats-arc { display: none; }
+  .stats-flat { display: block; }
+}
+
 /* ── Tempelfront (Sektion „Die Säulen") ────────────────────────────────────── */
 
 /* Gebälk: Mäanderfries auf einem Architrav-Balken */
@@ -187,6 +366,34 @@
   height: 4px;
   background-image: repeating-linear-gradient(
     90deg, var(--af-rule-soft) 0 4px, transparent 4px 11px);
+}
+
+/*
+ * Header: transparent solange oben im Hero, undurchsichtig nach dem
+ * Scrollen (Klasse .is-scrolled kommt per JS aus LandingClient, siehe dort
+ * für die Begründung). Die Übergänge sind kurz genug, um beim Umschalten
+ * nicht zu flackern, aber nicht so kurz, dass sie hart wirken.
+ */
+/*
+ * Die Leiste liegt `absolute` über dem Hero und scrollt normal mit weg. Sie
+ * bleibt dauerhaft transparent — sie steht nie über anderem Inhalt als dem
+ * Hero, deshalb braucht es weder Scroll-State noch z-index-Staffelung gegen
+ * die Ranken (die sie am Seitenanfang bewusst überwachsen).
+ */
+.site-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background-color: transparent;
+}
+/* Der Zahnschnitt gehört zur soliden Leiste — über dem Aquarell schwebend
+   sähe die dünne gepunktete Linie wie ein Rendering-Fehler aus. */
+.site-header .af-dentil { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .site-header, .af-dentil { transition: none; }
 }
 
 .af-landing a:focus-visible,
@@ -355,4 +562,55 @@
 /* ── Querformat auf flachen Displays ───────────────────────────────────────── */
 @media (max-height: 560px) and (orientation: landscape) {
   .hero { padding-top: 40px !important; padding-bottom: 44px !important; }
+}
+
+
+/* ── Giebel-Enthüllung ─────────────────────────────────────────────────────── */
+
+/*
+ * Weicher Auslauf am unteren Rand der Dashboard-Fläche ins Parchment —
+ * dieselbe Idee wie .hero-dome, nur linear statt radial: hier soll die ganze
+ * Breite gleichmäßig auslaufen, nicht mittig aufsteigen.
+ */
+.pediment-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: clamp(90px, 12vh, 170px);
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(247, 245, 240, 0) 0%,
+    rgba(247, 245, 240, .55) 55%,
+    var(--af-parchment) 100%
+  );
+}
+
+/*
+ * Dashboard-Mock auf schmalen Displays.
+ *
+ * Die Sidebar frisst sonst 210px von 375px und lässt dem Inhalt 165px —
+ * die Kennzahlen-Labels brachen dann mitten im Wort um („VERM ÖGEN").
+ * Die inline gesetzten Rasterwerte müssen mit !important überschrieben
+ * werden, weil Inline-Styles gegen Klassen immer gewinnen.
+ */
+@media (max-width: 899px) {
+  .mock-root { grid-template-columns: minmax(0, 1fr) !important; }
+  .mock-side { display: none !important; }
+}
+
+@media (max-width: 767px) {
+  /* Diagramme untereinander statt nebeneinander — und Höhe freigeben,
+     sonst quetschen sich beide in die für eine Reihe gedachte Höhe */
+  .mock-charts {
+    grid-template-columns: minmax(0, 1fr) !important;
+    height: auto !important;
+  }
+  .mock-charts > * { min-height: 190px; }
+  /* engere Sperrung: die Labels sollen in eine Zeile passen */
+  .mock-label { letter-spacing: .06em !important; }
+  /* Kategorie-Spalte entfällt, Datum und Betrag tragen die Information */
+  .booking-cat { display: none !important; }
+  .mock-bookings { flex: none !important; }
 }

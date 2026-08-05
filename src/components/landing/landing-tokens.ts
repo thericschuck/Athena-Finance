@@ -42,6 +42,15 @@ export const C = {
   oliveLight: '#8CA277', // Blattinneres, Grafik auf Onyx
   gold: '#B88F51', // Logo-Gold — Grafik, Text auf Onyx (5.8:1)
   goldInk: '#8A6A2F', // Gold als Text auf Parchment — 4.6:1
+
+  // ── Nur für Text über dem Hero-Aquarell ──────────────────────────────────
+  // Das Bild läuft vollflächig in Originalfarben — keine Maske, kein Verlauf,
+  // keine Fläche darüber. Der Grund ist dadurch deutlich dunkler als
+  // Parchment, weshalb goldInk dort nur 2.4:1 erreicht. Diese Tiefvariante
+  // hebt den Mittelwert über die 3:1-Schwelle für große Schrift, ohne das Bild
+  // anzufassen. Achtung: über den dunklen Baumgruppen bleibt der Kontrast
+  // punktuell darunter — mehr ist ohne Abdunkelung des Bildes nicht möglich.
+  goldInkDeep: '#6E5426', // 3.4:1 im Mittel über dem Bild
   terracotta: '#A9553C', // klassisches Ton-Rot für Akzente
 
   // ── Linien ───────────────────────────────────────────────────────────────

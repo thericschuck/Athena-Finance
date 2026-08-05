@@ -1,12 +1,14 @@
 'use client'
 
+import { useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { motion, useReducedMotion } from 'framer-motion'
+import { motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform } from 'framer-motion'
+import { DashboardMock } from './DashboardMock'
 import {
   TrendingUp, BarChart2, FileText, Target, Repeat2,
   Globe, ShieldCheck, Zap, ArrowRight,
-  CandlestickChart, PieChart, Wallet, LineChart, Landmark, ShoppingCart,
+  CandlestickChart, Wallet, Landmark, ShoppingCart,
 } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { C, F, SPACE, kicker } from './landing-tokens'
@@ -158,7 +160,7 @@ function SectionHead({
         style={{
           fontFamily: F.display,
           fontWeight: 400,
-          fontSize: 'clamp(30px, 4.4vw, 54px)',
+          fontSize: 'clamp(26px, 3.6vw, 44px)',
           lineHeight: 1.1,
           letterSpacing: '-0.015em',
           color: dark ? C.onCream : C.ink,
@@ -178,7 +180,7 @@ function SectionHead({
           className="af-balance"
           style={{
             fontFamily: F.serif,
-            fontSize: 'clamp(15px, 1.5vw, 17px)',
+            fontSize: 'clamp(14px, 1.3vw, 16px)',
             lineHeight: 1.8,
             color: dark ? C.onBody : C.inkBody,
             marginTop: '20px',
@@ -280,6 +282,306 @@ function MiniStrategy() {
         opacity="0.08"
       />
     </svg>
+  )
+}
+
+// ── Gebogenes Kennzahlen-Band ─────────────────────────────────────────────────
+
+const STATS = [
+  { value: '360°', label: 'Finanzüberblick' },
+  { value: '8+', label: 'Analysetools' },
+  { value: '∞', label: 'Transaktionen' },
+  { value: '24/7', label: 'Echtzeitdaten' },
+]
+
+/*
+ * Alle Kurven des Bandes teilen dieselbe x-Kubik und unterscheiden sich nur in
+ * y — der vertikale Versatz genügt bei dieser flachen Biegung und hält Kanten,
+ * Schriftlinien und Friese exakt parallel.
+ *
+ * Die Kurven laufen von x=-140 bis x=1580, also über den viewBox-Rand hinaus:
+ * so werden die Bandenden links und rechts angeschnitten statt frei zu enden.
+ */
+const BX = [-140, 320, 1120, 1580] as const
+const Y_TOP = [225, 15, 15, 225] as const
+const Y_BOTTOM = [375, 165, 165, 375] as const
+const Y_VALUE = [300, 90, 90, 300] as const
+const Y_LABEL = [332, 122, 122, 332] as const
+const Y_FRIEZE_TOP = [241, 31, 31, 241] as const
+const Y_FRIEZE_BOTTOM = [359, 149, 149, 359] as const
+
+type Cub = readonly [number, number, number, number]
+
+const cub = (a: Cub, t: number) => {
+  const m = 1 - t
+  return m * m * m * a[0] + 3 * m * m * t * a[1] + 3 * m * t * t * a[2] + t * t * t * a[3]
+}
+const dcub = (a: Cub, t: number) => {
+  const m = 1 - t
+  return 3 * m * m * (a[1] - a[0]) + 6 * m * t * (a[2] - a[1]) + 3 * t * t * (a[3] - a[2])
+}
+const curveD = (ys: Cub) =>
+  `M ${BX[0]} ${ys[0]} C ${BX[1]} ${ys[1]}, ${BX[2]} ${ys[2]}, ${BX[3]} ${ys[3]}`
+
+/** t-Parameter zu einer x-Koordinate — die x-Kubik ist monoton, Bisektion genügt. */
+function tAtX(x: number) {
+  let lo = 0
+  let hi = 1
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2
+    if (cub(BX, mid) < x) lo = mid
+    else hi = mid
+  }
+  return (lo + hi) / 2
+}
+
+/**
+ * Ein Mäander-Schlüssel, um den Ursprung zentriert (Kachel 20×16), damit ihn
+ * `rotate()` um seine Mitte dreht.
+ */
+const MEANDER_KEY = 'M -9 2.5 H 0.5 V -6.5 H -6 V -0.5 H -2.5'
+
+/**
+ * Setzt Mäander-Kacheln in gleichmäßigem Bogenlängen-Abstand entlang einer
+ * Kurve und dreht jede in die Tangente.
+ *
+ * Ein SVG-<pattern> ginge hier nicht: dessen Kacheln stehen achsparallel im
+ * Nutzerkoordinatensystem, würden also über die steigende Kurve hinweg
+ * unterschiedlich angeschnitten. Einzeln gesetzte Kacheln folgen der Biegung.
+ */
+function meanderAlong(ys: Cub, step = 21) {
+  const samples = 900
+  const pts: { x: number; y: number; a: number }[] = []
+  let acc = 0
+  let next = step / 2
+  let px = cub(BX, 0)
+  let py = cub(ys, 0)
+  for (let i = 1; i <= samples; i++) {
+    const t = i / samples
+    const x = cub(BX, t)
+    const y = cub(ys, t)
+    // Math.sqrt ist per IEEE-754 exakt spezifiziert, Math.hypot nicht — und
+    // die Summe entscheidet, wie viele Mäanderkacheln gesetzt werden.
+    const dx = x - px
+    const dy = y - py
+    acc += Math.sqrt(dx * dx + dy * dy)
+    if (acc >= next) {
+      pts.push({
+        x,
+        y,
+        a: (Math.atan2(dcub(ys, t), dcub(BX, t)) * 180) / Math.PI,
+      })
+      next += step
+    }
+    px = x
+    py = y
+  }
+  return pts
+}
+
+const FRIEZE_TOP_KEYS = meanderAlong(Y_FRIEZE_TOP)
+const FRIEZE_BOTTOM_KEYS = meanderAlong(Y_FRIEZE_BOTTOM)
+
+/** Positionen der vier Kennzahlen als Anteil der Pfadlänge. */
+const STAT_OFFSETS = ['22%', '40.7%', '59.3%', '78%']
+
+/** Tragende Säulen: x-Position im viewBox, Höhe, Seitenverhältnis der Grafik. */
+const PROP_COLUMNS = [150, 1290]
+const PROP_H = 265
+const PROP_W = PROP_H * (102 / 332) // Seitenverhältnis von column-tuscan.svg
+
+/**
+ * Das Kennzahlen-Band als gebogener Streifen, getragen von zwei Säulen —
+ * Text und Mäanderfriese folgen der Kurve.
+ *
+ * Nur ab 1100px im Einsatz (CSS blendet um): das SVG skaliert als Ganzes mit
+ * der Breite, die Schrift also mit. Darunter wird sie unleserlich, dort
+ * übernimmt das flache Band.
+ */
+function CurvedStatsBand() {
+  const warm = { filter: 'sepia(.42) saturate(.52) brightness(1.04) contrast(.96)' }
+
+  return (
+    <svg
+      className="stats-arc"
+      viewBox="0 0 1440 545"
+      preserveAspectRatio="xMidYMid meet"
+      role="img"
+      aria-label="360 Grad Finanzüberblick, über 8 Analysetools, unbegrenzte Transaktionen, Echtzeitdaten rund um die Uhr"
+    >
+      <defs>
+        <path id="af-stat-value" d={curveD(Y_VALUE)} />
+        <path id="af-stat-label" d={curveD(Y_LABEL)} />
+      </defs>
+
+      {/* Säulen zuerst, damit das Band optisch auf ihnen aufliegt */}
+      {PROP_COLUMNS.map((x) => {
+        const yTop = cub(Y_BOTTOM, tAtX(x)) - 8
+        return (
+          <image
+            key={x}
+            href="/column-tuscan.svg"
+            x={x - PROP_W / 2}
+            y={yTop}
+            width={PROP_W}
+            height={PROP_H}
+            style={warm}
+          />
+        )
+      })}
+
+      {/* Bandfläche: Oberkante hin, Unterkante zurück */}
+      <path
+        d={`${curveD(Y_TOP)} L ${BX[3]} ${Y_BOTTOM[3]} C ${BX[2]} ${Y_BOTTOM[2]}, ${BX[1]} ${Y_BOTTOM[1]}, ${BX[0]} ${Y_BOTTOM[0]} Z`}
+        fill={C.onyx}
+      />
+
+      {/* Haarlinien auf beiden Kanten */}
+      {[Y_TOP, Y_BOTTOM].map((ys, i) => (
+        <path key={i} d={curveD(ys)} fill="none" stroke={C.cream} strokeWidth={1.5} opacity={0.28} />
+      ))}
+
+      {/* Mäanderfriese, der Biegung folgend */}
+      <g fill="none" stroke={C.cream} strokeWidth={1.4} strokeLinecap="square" opacity={0.26}>
+        {[...FRIEZE_TOP_KEYS, ...FRIEZE_BOTTOM_KEYS].map((p, i) => (
+          <path
+            key={i}
+            d={MEANDER_KEY}
+            transform={`translate(${p.x.toFixed(1)} ${p.y.toFixed(1)}) rotate(${p.a.toFixed(1)})`}
+          />
+        ))}
+      </g>
+
+      {STATS.map((s, i) => (
+        <g key={s.label}>
+          <text
+            fill={C.cream}
+            fontFamily={F.display}
+            fontSize={36}
+            letterSpacing="-0.02em"
+            textAnchor="middle"
+          >
+            <textPath href="#af-stat-value" startOffset={STAT_OFFSETS[i]}>
+              {s.value}
+            </textPath>
+          </text>
+          <text
+            fill={C.onSubtle}
+            fontFamily={F.sans}
+            fontSize={11.5}
+            fontWeight={600}
+            letterSpacing="0.2em"
+            textAnchor="middle"
+          >
+            <textPath href="#af-stat-label" startOffset={STAT_OFFSETS[i]}>
+              {s.label.toUpperCase()}
+            </textPath>
+          </text>
+        </g>
+      ))}
+    </svg>
+  )
+}
+
+// ── Giebel-Enthüllung ─────────────────────────────────────────────────────────
+
+/** Scrollweg der Szene. 100vh davon sind Haltestrecke nach dem Öffnen. */
+const SCENE_VH = 260
+/** Anteil des Scrollwegs, über den sich der Giebel öffnet — der Rest hält. */
+const OPEN_AT = 0.72
+/**
+ * Vorzieh-Überlappung in den Hero hinein: die Szene beginnt bereits, während
+ * noch ein Rest des Hero sichtbar ist, statt erst nach dessen vollständigem
+ * Verschwinden. Negativer margin-top auf die Szene zieht ihren Startpunkt um
+ * diesen Betrag nach oben — sie überlappt den unteren Rand des Hero, ohne
+ * dessen eigene Höhe oder Inhalte zu verändern.
+ */
+const PULL_INTO_HERO_VH = 42
+
+/**
+ * Ein Tempelgiebel wächst beim Scrollen aus der Bildschirmmitte und gibt das
+ * Dashboard frei.
+ *
+ * Alle drei Eckpunkte laufen bei v=0 in einem einzigen Punkt in der
+ * Bildschirmmitte (50%, 50%) zusammen — ein Dreieck der Größe null. Mit
+ * wachsendem v spreizen sie sich symmetrisch um diesen Mittelpunkt: die
+ * Spitze nach oben, die Basis nach unten und seitlich. So wächst die Form
+ * sichtbar aus der Mitte, statt von der unteren Bildschirmkante aus
+ * hochzuwachsen.
+ *
+ * Q=167 für Spitze, Basis-Höhe und Basis-Breite gleichermaßen: bei v=1 steht
+ * die Spitze 117 Einheiten über der oberen Kante, die Basis ebenso weit
+ * unter der unteren — nötig, weil ein Dreieck, dessen Ecken exakt auf den
+ * Viewport-Ecken liegen, die Fläche NICHT abdeckt (die schrägen Kanten
+ * schneiden die oberen Ecken weg).
+ *
+ * Der Wert 167 ist kein Zufallsgriff, sondern gegen die volle Bildbreite auf
+ * Höhe der Viewport-Oberkante gelöst (dort ist die Deckung am spätesten
+ * erreicht, weil die Spitze am weitesten von der sich verbreiternden Basis
+ * entfernt ist). Ein erster Versuch mit größeren, ungleichen Werten deckte
+ * den Bildschirm schon bei v≈0.33 komplett ab — das ließ die Wachstums-
+ * Animation über den Rest des Scrollwegs wie eingefroren wirken, weil bis
+ * v=1 optisch nichts mehr passierte. Mit Q=167 ist die Oberkante erst bei
+ * v≈0.9 vollständig gedeckt: das Wachstum bleibt über fast den gesamten
+ * Öffnungsweg sichtbar.
+ */
+const Q = 167
+function PedimentReveal() {
+  const still = useReducedMotion()
+  const sceneRef = useRef<HTMLElement>(null)
+  const { scrollYProgress } = useScroll({
+    target: sceneRef,
+    offset: ['start start', 'end end'],
+  })
+
+  const p = useTransform(scrollYProgress, [0, OPEN_AT], [0, 1], { clamp: true })
+  const clipPath = useTransform(
+    p,
+    (v) =>
+      `polygon(50% ${50 - Q * v}%, ${50 - Q * v}% ${50 + Q * v}%, ${50 + Q * v}% ${50 + Q * v}%)`,
+  )
+
+  // Zahlen und Balken erst starten, wenn der Giebel weit genug offen ist
+  const [run, setRun] = useState(false)
+  useMotionValueEvent(p, 'change', (v) => {
+    // früh auslösen: der Giebel gibt schon ab ~10 % Fläche frei, ein noch
+    // totes Dashboard dahinter (Balken auf 0, Zahlen bei 0) sähe leer aus
+    if (v > 0.06 && !run) setRun(true)
+  })
+
+  /*
+   * Bei reduzierter Bewegung entfällt die gesamte Pinning-Mechanik: kein
+   * überlanger Abschnitt, kein Scroll-gesteuertes Beschneiden. Das Dashboard
+   * steht einfach da. Scroll-Jacking ist für Betroffene besonders unangenehm,
+   * weil es die erwartete Scrollstrecke verfälscht.
+   */
+  if (still) {
+    return (
+      <section style={{ height: '100svh', position: 'relative', backgroundColor: C.onyxWarm }}>
+        <DashboardMock run />
+        <span className="pediment-fade" aria-hidden />
+      </section>
+    )
+  }
+
+  return (
+    <section
+      ref={sceneRef}
+      style={{
+        height: `${SCENE_VH}vh`,
+        position: 'relative',
+        marginTop: `-${PULL_INTO_HERO_VH}vh`,
+      }}
+    >
+      <div style={{ position: 'sticky', top: 0, height: '100svh', overflow: 'hidden' }}>
+        <motion.div style={{ position: 'absolute', inset: 0, clipPath, willChange: 'clip-path' }}>
+          <DashboardMock run={run} />
+          {/* weicher Auslauf nach unten ins Parchment — dieselbe Idee wie die
+              Kuppel im Hero, damit die dunkle Fläche nicht hart abbricht */}
+          <span className="pediment-fade" aria-hidden />
+        </motion.div>
+      </div>
+    </section>
   )
 }
 
@@ -450,25 +752,38 @@ export function LandingClient() {
     <div
       className="af-landing"
       style={{
+        position: 'relative',
         backgroundColor: C.parchment,
         color: C.ink,
         minHeight: '100vh',
         fontFamily: F.sans,
-        overflowX: 'hidden',
+        /*
+         * `clip` statt `hidden`: hidden auf einer Achse rechnet die andere auf
+         * `auto` hoch und macht dieses Div damit zum Scroll-Container — die
+         * sticky Navigationsleiste klebt dann an ihm statt am Viewport und
+         * scrollt mit weg. `clip` beschneidet ohne Scrollport.
+         */
+        overflowX: 'clip',
       }}
     >
-      {/* ══ NAV ══ */}
-      <header
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 50,
-          backgroundColor: 'rgba(247,245,240,0.88)',
-          backdropFilter: 'blur(14px)',
-          WebkitBackdropFilter: 'blur(14px)',
-          borderBottom: `1px solid ${C.rule}`,
-        }}
-      >
+      {/*
+        Die Ranken liegen absichtlich AUSSERHALB des Hero und über der
+        Navigationsleiste (z-index 60 gegen deren 50) — sie sollen die Leiste
+        überwachsen. Läge die Schicht im Hero, würde dessen overflow:hidden sie
+        an der Oberkante abschneiden.
+      */}
+      <div className="vine-layer-over" aria-hidden>
+        <OliveVines tone="light" opacity={0.62} />
+      </div>
+
+      {/*
+        ══ NAV ══
+        Liegt `absolute` über dem Hero und scrollt normal mit weg — nicht
+        mehr `fixed`. Dadurch reicht das Aquarell weiter bis an die
+        Seitenoberkante, die Leiste bleibt aber dauerhaft transparent, weil
+        sie nie über anderem Inhalt als dem Hero steht.
+      */}
+      <header className="site-header">
         <div
           style={{
             ...SHELL,
@@ -515,38 +830,63 @@ export function LandingClient() {
       </header>
 
       {/* ══ HERO ══ */}
+      {/*
+        Der Hero füllt bewusst den ganzen Viewport: die Dashboard-Vorschau
+        soll erst beim Scrollen auftauchen. Die Leiste ist jetzt `fixed` statt
+        `absolute` (siehe .site-header) und reserviert deshalb keinen Platz mehr
+        im Fluss — der Hero beginnt an der echten Seitenoberkante, damit das
+        Bild hinter der anfangs transparenten Leiste sichtbar ist. Der fehlende
+        Abstand kommt hier über paddingTop zurück (Leistenhöhe + der alte
+        Wert), die Überschrift steht dadurch optisch an derselben Stelle wie
+        zuvor. Lead, Buttons und Zeile darunter rutschen als Gruppe an den
+        unteren Rand (siehe .hero-foot).
+      */}
       <section
         className="hero"
         style={{
           position: 'relative',
           overflow: 'hidden',
-          paddingTop: 'clamp(52px, 10vh, 132px)',
-          paddingBottom: 'clamp(52px, 9vh, 112px)',
+          paddingTop: 'calc(var(--af-nav-h) + clamp(52px, 10vh, 132px))',
+          paddingBottom: 'clamp(34px, 5vh, 60px)',
         }}
       >
-        <OliveVines tone="light" opacity={0.62} />
+        {/* Aquarell-Landschaft, vollflächig und unverändert (siehe .hero-photo) */}
+        <div className="hero-photo" aria-hidden>
+          <Image
+            src="/hero-landscape.avif"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="hero-photo-img"
+          />
+        </div>
 
-        {/* warmes Licht hinter der Headline */}
-        <div
+        {/*
+          Athena auf ionischem Kapitell, rechts im Hero. In Originalfarben wie
+          das Aquarell. Unter 900px ausgeblendet — dort steht die Textspalte auf
+          voller Breite und es bleibt kein Platz neben ihr.
+        */}
+        <Image
+          src="/athena-statue.svg"
+          alt=""
           aria-hidden
-          style={{
-            position: 'absolute',
-            top: '-140px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 'min(900px, 130vw)',
-            height: '620px',
-            background: `radial-gradient(ellipse at center, rgba(232,224,208,.7) 0%, rgba(247,245,240,0) 70%)`,
-            pointerEvents: 'none',
-          }}
+          width={95}
+          height={142}
+          unoptimized
+          className="hero-athena"
         />
 
-        <div style={{ ...SHELL, position: 'relative', textAlign: 'center' }}>
+        {/* Weißer Halbkreis, der von der Unterkante aufsteigt — siehe .hero-dome */}
+        <div className="hero-dome" aria-hidden />
+
+        <div className="hero-shell" style={{ ...SHELL, position: 'relative', textAlign: 'center' }}>
           <div
             className="af-rise"
             style={{ display: 'flex', justifyContent: 'center', marginBottom: '30px' }}
           >
-            <Kicker rules center color={C.inkSubtle}>
+            {/* dunkler als sonst: über dem Bild erreicht inkSubtle nur 2.9:1 */}
+            <Kicker rules center color={C.ink} ruleColor="rgba(26,26,26,.35)">
               ΑTΗEΝΑ · Finanzen im Überblick
             </Kicker>
           </div>
@@ -557,7 +897,7 @@ export function LandingClient() {
               animationDelay: '.1s',
               fontFamily: F.display,
               fontWeight: 400,
-              fontSize: 'clamp(33px, 8.4vw, 104px)',
+              fontSize: 'clamp(30px, 6.6vw, 80px)',
               lineHeight: 1.02,
               letterSpacing: '-0.022em',
               margin: '0 auto',
@@ -567,301 +907,113 @@ export function LandingClient() {
           >
             Finanzen im Griff.
             <br />
-            <em style={{ fontStyle: 'italic', color: C.goldInk }}>Vollständig überblickt.</em>
+            <em style={{ fontStyle: 'italic', color: C.goldInkDeep }}>Vollständig überblickt.</em>
           </h1>
 
-          <p
-            className="af-balance af-rise"
-            style={{
-              animationDelay: '.22s',
-              fontFamily: F.serif,
-              fontSize: 'clamp(16px, 1.7vw, 19px)',
-              lineHeight: 1.85,
-              color: C.inkBody,
-              maxWidth: '580px',
-              margin: '32px auto 0',
-            }}
-          >
-            Portfolio-Tracking, Ausgaben-Analyse, Sparplan-Management und Vertragsübersicht —
-            vereint in einem einzigen, ruhigen Dashboard.
-          </p>
+          {/* Aktionen und Trenner bilden eine Gruppe am unteren Rand */}
+          <div className="hero-foot">
+            <div
+              className="af-rise cta-row"
+              style={{
+                animationDelay: '.22s',
+                display: 'flex',
+                gap: '14px',
+                justifyContent: 'center',
+                flexWrap: 'wrap',
+              }}
+            >
+              <Link href="/login" className="af-btn af-btn-onyx">
+                Anmelden <ArrowRight size={15} strokeWidth={2} />
+              </Link>
+              <a href="#features" className="af-btn af-btn-outline">
+                Das Instrumentarium
+              </a>
+            </div>
 
-          <div
-            className="af-rise cta-row"
-            style={{
-              animationDelay: '.34s',
-              display: 'flex',
-              gap: '14px',
-              justifyContent: 'center',
-              flexWrap: 'wrap',
-              marginTop: 'clamp(30px, 4vw, 42px)',
-            }}
-          >
-            <Link href="/login" className="af-btn af-btn-onyx">
-              Anmelden <ArrowRight size={15} strokeWidth={2} />
-            </Link>
-            <a href="#features" className="af-btn af-btn-outline">
-              Das Instrumentarium
-            </a>
+            <p
+              className="af-rise af-micro"
+              style={{
+                ...kicker,
+                animationDelay: '.34s',
+                fontSize: '10px',
+                /* inkSubtle statt inkFaint: bei 10px reicht inkFaint (3.4:1,
+                   nur für ≥18px geeicht) nicht — die Zeile liegt jetzt auf der
+                   weißen Kuppel (.hero-dome) und braucht 4.5:1 */
+                color: C.inkSubtle,
+                margin: 'clamp(22px, 3vw, 30px) 0 0',
+              }}
+            >
+              Portfolio · Ausgaben · Verträge · Strategie
+            </p>
+
+            <div className="af-rise" style={{ animationDelay: '.46s', marginTop: 'clamp(26px, 4vh, 48px)' }}>
+              <Lozenge />
+            </div>
           </div>
-
-          <p
-            className="af-rise af-micro"
-            style={{
-              ...kicker,
-              animationDelay: '.5s',
-              fontSize: '10px',
-              color: C.inkFaint,
-              marginTop: '30px',
-            }}
-          >
-            Portfolio · Ausgaben · Verträge · Strategie
-          </p>
         </div>
       </section>
 
-      <div style={{ ...SHELL, paddingBottom: 'clamp(40px, 6vw, 72px)' }}>
-        <Lozenge />
-      </div>
+      {/*
+        ══ GIEBEL-ENTHÜLLUNG ══
+        Ersetzt die frühere gerahmte Browserfenster-Vorschau: dasselbe
+        Dashboard zweimal kurz hintereinander hätte die Wirkung des Effekts
+        verpuffen lassen.
 
-      {/* ══ APP-VORSCHAU ══ */}
-      <section style={{ padding: `0 ${SPACE.gutter} ${SPACE.section}` }}>
-        <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
-          <Reveal y={34}>
-            <figure style={{ margin: 0 }}>
-              {/* Illustrative Vorschau mit Beispielzahlen — für Screenreader
-                  ausgeblendet, die Bildunterschrift trägt die Bedeutung. */}
-              <div
-                aria-hidden
-                style={{
-                  border: `1px solid rgba(26,26,26,.16)`,
-                  backgroundColor: C.onyxWarm,
-                  overflow: 'hidden',
-                  boxShadow: '0 40px 90px -30px rgba(26,26,26,.42), 0 2px 8px rgba(26,26,26,.06)',
-                }}
-              >
-                {/* Fensterleiste */}
-                <div
+        Aufbau: die Szene ist SCENE_VH hoch, darin klebt ein Viewport-hoher
+        Container. Beim Durchscrollen wächst ein Tempelgiebel (clip-path-
+        Dreieck) über den Bildschirm und gibt das Dashboard frei. Der letzte
+        Viertel des Scrollwegs ist bewusst Halteweg, damit das offene
+        Dashboard einen Moment steht, bevor die Seite weiterläuft.
+      */}
+      <PedimentReveal />
+
+      {/*
+        ══ KENNZAHLEN (Onyx-Bogen) ══
+        Kein Balken, sondern eine Kuppel über die volle Breite (siehe .arch).
+        Der Mäanderfries lief vorher auch oben — eine gerade Borte kann der
+        Wölbung nicht folgen, deshalb bleibt nur der untere. Die Bogenkante
+        zeichnet stattdessen ein inset-Schatten nach.
+      */}
+      <section style={{ position: 'relative' }}>
+        <CurvedStatsBand />
+
+        {/* Flaches Band unter 960px — siehe Kommentar an CurvedStatsBand */}
+        <div className="stats-flat" style={{ backgroundColor: C.onyx, position: 'relative' }}>
+          <MeanderFrieze id="frieze-stats-top" color={C.cream} opacity={0.16} />
+          <div style={{ ...SHELL, padding: `clamp(48px, 6vw, 76px) ${SPACE.gutter}` }}>
+            <div className="g-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+              {STATS.map((s, i) => (
+                <Reveal
+                  key={s.label}
+                  delay={i * 0.07}
                   style={{
-                    height: '42px',
-                    borderBottom: `1px solid ${C.ruleOnSoft}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '0 16px',
-                    gap: '7px',
+                    textAlign: 'center',
+                    borderLeft: i === 0 ? 'none' : `1px solid ${C.ruleOnSoft}`,
+                    padding: '0 12px',
                   }}
                 >
-                  {[C.terracotta, C.gold, C.olive].map((c) => (
-                    <span
-                      key={c}
-                      style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: c, opacity: 0.85 }}
-                    />
-                  ))}
-                  <span
+                  <p
                     style={{
-                      flex: 1,
-                      textAlign: 'center',
-                      fontFamily: F.mono,
-                      fontSize: '11px',
-                      color: C.onSubtle,
-                      letterSpacing: '0.02em',
+                      fontFamily: F.display,
+                      fontWeight: 400,
+                      fontSize: 'clamp(34px, 5vw, 58px)',
+                      lineHeight: 1,
+                      color: C.cream,
+                      margin: '0 0 12px',
+                      letterSpacing: '-0.02em',
                     }}
                   >
-                    athena-finance.de/dashboard
-                  </span>
-                </div>
-
-                <div className="g-mock" style={{ display: 'grid', gridTemplateColumns: '196px 1fr', minHeight: '340px' }}>
-                  {/* Sidebar der App */}
-                  <div
-                    className="g-mock-side"
-                    style={{ borderRight: `1px solid ${C.ruleOnSoft}`, padding: '20px 12px' }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '0 8px', marginBottom: '22px' }}>
-                      <Logo variant="transparent" size={20} />
-                      <span style={{ fontFamily: F.display, fontSize: '13px', color: C.onCream }}>
-                        Athena Finance
-                      </span>
-                    </div>
-                    {[
-                      { icon: <BarChart2 size={13} strokeWidth={1.6} />, label: 'Dashboard', active: true },
-                      { icon: <PieChart size={13} strokeWidth={1.6} />, label: 'Depot' },
-                      { icon: <Wallet size={13} strokeWidth={1.6} />, label: 'Finance' },
-                      { icon: <LineChart size={13} strokeWidth={1.6} />, label: 'Analyse' },
-                      { icon: <CandlestickChart size={13} strokeWidth={1.6} />, label: 'Crypto' },
-                      { icon: <Target size={13} strokeWidth={1.6} />, label: 'Strategie' },
-                    ].map(({ icon, label, active }) => (
-                      <div
-                        key={label}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '9px',
-                          padding: '8px 10px',
-                          fontSize: '12px',
-                          color: active ? C.gold : C.onSubtle,
-                          backgroundColor: active ? 'rgba(184,143,81,.1)' : 'transparent',
-                          borderLeft: `2px solid ${active ? C.gold : 'transparent'}`,
-                        }}
-                      >
-                        {icon}
-                        {label}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Inhalt */}
-                  <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    <div className="mock-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
-                      {[
-                        { label: 'Vermögen', value: '84.320', delta: '+12,4 %' },
-                        { label: 'Einnahmen / Monat', value: '4.850', delta: '+5,2 %' },
-                        { label: 'Ausgaben / Monat', value: '2.190', delta: '−8,1 %' },
-                        { label: 'Sparquote', value: '54,8 %', delta: '+2,3 %' },
-                      ].map((s) => (
-                        <div
-                          key={s.label}
-                          style={{ backgroundColor: C.onyxLift, border: `1px solid ${C.ruleOnSoft}`, padding: '12px' }}
-                        >
-                          <p
-                            className="mock-label"
-                            style={{ ...kicker, fontSize: '9px', color: C.onSubtle, margin: '0 0 7px' }}
-                          >
-                            {s.label}
-                          </p>
-                          <p
-                            style={{
-                              fontFamily: F.display,
-                              fontSize: '19px',
-                              color: C.onCream,
-                              margin: '0 0 3px',
-                              letterSpacing: '-0.01em',
-                            }}
-                          >
-                            {s.value}
-                          </p>
-                          <p style={{ fontFamily: F.mono, fontSize: '10px', color: C.olive, margin: 0 }}>
-                            {s.delta}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mock-charts" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', flex: 1 }}>
-                      <div
-                        style={{
-                          backgroundColor: C.onyxLift,
-                          border: `1px solid ${C.ruleOnSoft}`,
-                          padding: '14px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                        }}
-                      >
-                        <p style={{ ...kicker, fontSize: '9px', color: C.onSubtle, margin: '0 0 14px' }}>
-                          Monatlicher Vergleich
-                        </p>
-                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', flex: 1, minHeight: '86px' }}>
-                          {[{ i: 70, e: 50 }, { i: 80, e: 55 }, { i: 65, e: 45 }, { i: 90, e: 60 }, { i: 75, e: 48 }, { i: 95, e: 52 }].map((b, i) => (
-                            <div key={i} style={{ flex: 1, display: 'flex', gap: '2px', justifyContent: 'center', alignItems: 'flex-end', height: '100%' }}>
-                              <span style={{ width: '6px', height: `${b.i}%`, backgroundColor: C.oliveLight }} />
-                              <span style={{ width: '6px', height: `${b.e}%`, backgroundColor: C.terracotta }} />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          backgroundColor: C.onyxLift,
-                          border: `1px solid ${C.ruleOnSoft}`,
-                          padding: '14px',
-                          display: 'flex',
-                          gap: '16px',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <svg viewBox="0 0 36 36" width="68" height="68" aria-hidden style={{ flexShrink: 0 }}>
-                          <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(232,224,208,.12)" strokeWidth="4.5" />
-                          <circle cx="18" cy="18" r="14" fill="none" stroke={C.gold} strokeWidth="4.5" strokeDasharray="44 88" style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }} />
-                          <circle cx="18" cy="18" r="14" fill="none" stroke={C.oliveLight} strokeWidth="4.5" strokeDasharray="26 88" strokeDashoffset="-44" style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }} />
-                          <circle cx="18" cy="18" r="14" fill="none" stroke={C.cream} strokeWidth="4.5" strokeDasharray="18 88" strokeDashoffset="-70" style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }} />
-                        </svg>
-                        <div style={{ minWidth: 0 }}>
-                          <p style={{ ...kicker, fontSize: '9px', color: C.onSubtle, margin: '0 0 10px' }}>
-                            Portfolio-Mix
-                          </p>
-                          {[
-                            { color: C.gold, label: 'Aktien', pct: '50 %' },
-                            { color: C.oliveLight, label: 'Crypto', pct: '30 %' },
-                            { color: C.cream, label: 'Cash', pct: '20 %' },
-                          ].map((i) => (
-                            <div key={i.label} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
-                              <span style={{ width: '6px', height: '6px', backgroundColor: i.color }} />
-                              <span style={{ fontSize: '11px', color: C.onBody, flex: 1 }}>{i.label}</span>
-                              <span style={{ fontFamily: F.mono, fontSize: '11px', color: C.onCream }}>{i.pct}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <figcaption
-                className="fig-caption af-micro"
-                style={{
-                  ...kicker,
-                  fontSize: '10px',
-                  color: C.inkSubtle,
-                  textAlign: 'center',
-                  marginTop: '20px',
-                }}
-              >
-                Das Dashboard · Ansicht im Dunkelmodus
-              </figcaption>
-            </figure>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ══ KENNZAHLEN (Onyx-Band) ══ */}
-      <section style={{ backgroundColor: C.onyx, position: 'relative' }} className="af-flute">
-        <MeanderFrieze id="frieze-stats-top" color={C.cream} opacity={0.16} />
-        <div style={{ ...SHELL, padding: `clamp(48px, 6vw, 76px) ${SPACE.gutter}` }}>
-          <div className="g-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-            {[
-              { value: '360°', label: 'Finanzüberblick' },
-              { value: '8+', label: 'Analysetools' },
-              { value: '∞', label: 'Transaktionen' },
-              { value: '24/7', label: 'Echtzeitdaten' },
-            ].map((s, i) => (
-              <Reveal
-                key={s.label}
-                delay={i * 0.07}
-                style={{
-                  textAlign: 'center',
-                  borderLeft: i === 0 ? 'none' : `1px solid ${C.ruleOnSoft}`,
-                  padding: '0 12px',
-                }}
-              >
-                <p
-                  style={{
-                    fontFamily: F.display,
-                    fontWeight: 400,
-                    fontSize: 'clamp(34px, 5vw, 58px)',
-                    lineHeight: 1,
-                    color: C.cream,
-                    margin: '0 0 12px',
-                    letterSpacing: '-0.02em',
-                  }}
-                >
-                  {s.value}
-                </p>
-                <p className="af-micro" style={{ ...kicker, fontSize: '10px', color: C.onSubtle, margin: 0 }}>{s.label}</p>
-              </Reveal>
-            ))}
+                    {s.value}
+                  </p>
+                  <p className="af-micro" style={{ ...kicker, fontSize: '10px', color: C.onSubtle, margin: 0 }}>
+                    {s.label}
+                  </p>
+                </Reveal>
+              ))}
+            </div>
           </div>
+          <MeanderFrieze id="frieze-stats-bottom" color={C.cream} opacity={0.16} />
         </div>
-        <MeanderFrieze id="frieze-stats-bottom" color={C.cream} opacity={0.16} />
       </section>
 
       {/* ══ I · INSTRUMENTARIUM ══ */}
@@ -1313,21 +1465,23 @@ export function LandingClient() {
                 textAlign: 'center',
               }}
             >
-              {/* Zwei schlanke Säulen flankieren den Block wie ein Portal.
-                  Rein dekorativ, unter 900px ausgeblendet (dort fehlt die Breite). */}
-              {[
-                { src: '/column-slim.svg', w: 76, h: 329, side: 'left' as const },
-                { src: '/column-twisted.svg', w: 61, h: 330, side: 'right' as const },
-              ].map((c) => (
+              {/*
+                Zwei gleiche Säulen flankieren den Block wie ein Portal — ein
+                Portal trägt beidseitig dieselbe Ordnung. Bewusst nicht
+                gespiegelt: die Grafik hat eine gerichtete Lichtkante, gespiegelt
+                käme das Licht von zwei Seiten.
+                Rein dekorativ, unter 900px ausgeblendet (dort fehlt die Breite).
+              */}
+              {(['left', 'right'] as const).map((side) => (
                 <Image
-                  key={c.src}
-                  src={c.src}
+                  key={side}
+                  src="/column-slim.svg"
                   alt=""
                   aria-hidden
-                  width={c.w}
-                  height={c.h}
+                  width={76}
+                  height={329}
                   unoptimized
-                  className={`portal-column portal-${c.side}`}
+                  className={`portal-column portal-${side}`}
                 />
               ))}
 
@@ -1347,7 +1501,7 @@ export function LandingClient() {
                   style={{
                     fontFamily: F.display,
                     fontWeight: 400,
-                    fontSize: 'clamp(30px, 5vw, 56px)',
+                    fontSize: 'clamp(27px, 4.2vw, 46px)',
                     lineHeight: 1.08,
                     letterSpacing: '-0.02em',
                     color: C.onCream,
@@ -1362,7 +1516,7 @@ export function LandingClient() {
                   className="af-balance"
                   style={{
                     fontFamily: F.serif,
-                    fontSize: 'clamp(15px, 1.6vw, 17px)',
+                    fontSize: 'clamp(14px, 1.3vw, 16px)',
                     lineHeight: 1.85,
                     color: C.onBody,
                     maxWidth: '480px',

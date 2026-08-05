@@ -50,6 +50,10 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Statische Assets müssen hier ausgenommen sein, sonst schickt die
+    // Auth-Prüfung sie ohne Session per 307 auf /login — und der
+    // Image-Optimizer, der die Datei über denselben Server holt, quittiert
+    // das mit 400. Neue Bildformate deshalb immer mit aufnehmen.
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)',
   ],
 }
