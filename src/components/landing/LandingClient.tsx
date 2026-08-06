@@ -1,9 +1,11 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { DashboardMock } from './DashboardMock'
 import {
   TrendingUp, BarChart2, FileText, Target, Repeat2,
@@ -14,6 +16,9 @@ import { Logo } from '@/components/ui/logo'
 import { C, F, SPACE, kicker } from './landing-tokens'
 import './landing.css'
 import { OliveVines, LaurelWreath, MeanderFrieze } from './olive-vines'
+import { SmoothScrollProvider } from './SmoothScrollProvider'
+
+if (typeof window !== 'undefined') gsap.registerPlugin(ScrollTrigger)
 
 // ── Bewegung ──────────────────────────────────────────────────────────────────
 
@@ -526,28 +531,123 @@ const PULL_INTO_HERO_VH = 42
  * Öffnungsweg sichtbar.
  */
 const Q = 167
+
+/**
+ * Fries und Kranz sind FEST sichtbar, ohne jede Fade-in-Animation — auch
+ * ganz am Anfang, bevor ScrollTrigger überhaupt zu zählen beginnt. Eine an
+ * scrollYProgress/GSAP gekoppelte Einblendung hätte hier immer eine
+ * Totzone: ScrollTrigger startet erst bei `start:'top top'`, also erst
+ * PULL_INTO_HERO_VH Scroll-vh NACH Seitenanfang der Szene — bis dahin bliebe
+ * die Fläche leer, obwohl beide Elemente längst gefahrlos sichtbar sein
+ * könnten. Stattdessen positioniert sich die Gruppe per Layout knapp
+ * UNTERHALB der Hero-Überlappung (siehe .pediment-intro-Style unten) — schon
+ * bei Progress 0 außerhalb der Zone, die während der Überlappung transparent
+ * bleiben muss.
+ *
+ * Blendet dann schnell aus (plus kleiner Lift nach oben), statt in der
+ * gepinnten Fläche stehen zu bleiben, bis der wachsende Giebel sie einfach
+ * unter sich begräbt: eine sticky-gepinnte Sektion hält den Viewport per
+ * Definition fest, ein normales "wegscrollen" gibt es darin nicht.
+ *
+ * Ein GESTES Wegscrollen (nur Bewegung, keine Blende) würde hier nicht
+ * reichen: der Giebel wächst aus der exakten Bildschirmmitte mit fester Rate
+ * Q/OPEN_AT (siehe Kommentar dort) — seine Spitze rast beim Scrollen schneller
+ * nach oben, als eine ruhig wirkende Bewegung der Gruppe je mitziehen könnte.
+ * Jeder Versuch, „davonzulaufen“, sähe entweder abgehackt aus oder würde die
+ * Gruppe ohnehin wieder einholen. Der Ausweg: VOR Progress ≈0,029 (dort
+ * erreicht die Giebelspitze rechnerisch erstmals die Fries-Position) ist die
+ * Gruppe schon unsichtbar — das Ausblenden gewinnt das Rennen gegen das
+ * Wachstum, statt es zu verlieren.
+ *
+ * INTRO_EXIT_FOR bewusst klein genug gewählt, dass die Bewegungsrate unter
+ * der Schließrate der Hero-Überlappungszone bleibt (1440 %-Einheiten je
+ * Progress-Einheit) — sonst reißt die Gruppe kurz in die Zone hinein, die
+ * währenddessen noch transparent bleiben muss (siehe FADE_IN_AT-Historie).
+ */
+const INTRO_EXIT_FOR = 0.025
+const CUE_FADE_OUT_AT = 0.05
+const CUE_FADE_OUT_FOR = 0.07
+
+const clipPathAt = (v: number) =>
+  `polygon(50% ${50 - Q * v}%, ${50 - Q * v}% ${50 + Q * v}%, ${50 + Q * v}% ${50 + Q * v}%)`
+
 function PedimentReveal() {
   const still = useReducedMotion()
   const sceneRef = useRef<HTMLElement>(null)
-  const { scrollYProgress } = useScroll({
-    target: sceneRef,
-    offset: ['start start', 'end end'],
-  })
-
-  const p = useTransform(scrollYProgress, [0, OPEN_AT], [0, 1], { clamp: true })
-  const clipPath = useTransform(
-    p,
-    (v) =>
-      `polygon(50% ${50 - Q * v}%, ${50 - Q * v}% ${50 + Q * v}%, ${50 + Q * v}% ${50 + Q * v}%)`,
-  )
+  const clipRef = useRef<HTMLDivElement>(null)
+  const cueRef = useRef<HTMLDivElement>(null)
+  const introRef = useRef<HTMLDivElement>(null)
 
   // Zahlen und Balken erst starten, wenn der Giebel weit genug offen ist
   const [run, setRun] = useState(false)
-  useMotionValueEvent(p, 'change', (v) => {
-    // früh auslösen: der Giebel gibt schon ab ~10 % Fläche frei, ein noch
-    // totes Dashboard dahinter (Balken auf 0, Zahlen bei 0) sähe leer aus
-    if (v > 0.06 && !run) setRun(true)
-  })
+
+  /*
+   * Getrieben von GSAP ScrollTrigger statt Framer-Motion-Scroll-Hooks (siehe
+   * scroll-storytelling-Skill, Muster „Pin-and-play“): die Kopplung an Lenis
+   * (siehe SmoothScrollProvider) hält das Beschneiden exakt synchron zum
+   * sichtbaren, gedämpften Scroll. `scrub: true` bindet den Fortschritt
+   * direkt an die Scrollposition statt an einen einmaligen Trigger — beim
+   * Zurückscrollen läuft alles exakt rückwärts.
+   *
+   * clip-path wird bewusst nicht direkt von GSAP getweent, sondern über eine
+   * numerische Zwischengröße `state.v` plus manuellem `onUpdate`: die
+   * String-Interpolation eines mehrteiligen polygon() ist kein Fall, den
+   * GSAPs CSS-Plugin zuverlässig abdeckt, ein Zahlenwert schon.
+   */
+  useEffect(() => {
+    if (still) return
+    const scene = sceneRef.current
+    const clip = clipRef.current
+    if (!scene || !clip) return
+
+    const state = { v: 0 }
+    let hasRun = false
+
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: scene,
+        start: 'top top',
+        end: 'bottom bottom',
+        scrub: true,
+      },
+    })
+
+    if (cueRef.current) {
+      tl.to(cueRef.current, { opacity: 0, ease: 'none', duration: CUE_FADE_OUT_FOR }, CUE_FADE_OUT_AT)
+    }
+    // Blendet ab Progress 0 aus — siehe Kommentar oben, das Ausblenden muss
+    // vor dem Giebelwachstum fertig sein, nicht danach ansetzen.
+    if (introRef.current) {
+      tl.to(introRef.current, { y: -30, opacity: 0, ease: 'none', duration: INTRO_EXIT_FOR }, 0)
+    }
+    tl.to(
+      state,
+      {
+        v: 1,
+        duration: OPEN_AT,
+        ease: 'none',
+        onUpdate: () => {
+          clip.style.clipPath = clipPathAt(state.v)
+          // früh auslösen: der Giebel gibt schon ab ~10 % Fläche frei, ein
+          // noch totes Dashboard dahinter (Balken auf 0, Zahlen bei 0) sähe
+          // leer aus
+          if (!hasRun && state.v > 0.06) {
+            hasRun = true
+            setRun(true)
+          }
+        },
+      },
+      0,
+    )
+    // Halteweg: Füll-Tween ohne Wirkung, damit die Timeline-Gesamtdauer dem
+    // vollen Scrollbereich entspricht statt nach OPEN_AT abzubrechen.
+    tl.to({}, { duration: 1 - OPEN_AT })
+
+    return () => {
+      tl.scrollTrigger?.kill()
+      tl.kill()
+    }
+  }, [still])
 
   /*
    * Bei reduzierter Bewegung entfällt die gesamte Pinning-Mechanik: kein
@@ -559,7 +659,6 @@ function PedimentReveal() {
     return (
       <section style={{ height: '100svh', position: 'relative', backgroundColor: C.onyxWarm }}>
         <DashboardMock run />
-        <span className="pediment-fade" aria-hidden />
       </section>
     )
   }
@@ -571,15 +670,54 @@ function PedimentReveal() {
         height: `${SCENE_VH}vh`,
         position: 'relative',
         marginTop: `-${PULL_INTO_HERO_VH}vh`,
+        /*
+         * pointer-events:none auf einem Kind macht nur DIESES Kind und seine
+         * eigenen Nachfahren für Klicks durchsichtig — die äußere <section>
+         * selbst bleibt eine eigene, hit-testbare Box (260vh hoch, per
+         * negativem margin-top über den Hero gezogen) und fängt Klicks in
+         * der Überlappungszone weiterhin ab, obwohl visuell nichts davon zu
+         * sehen ist. Muss deshalb HIER zusätzlich gesetzt werden, nicht nur
+         * auf dem inneren Sticky-Wrapper (siehe elementFromPoint-Check: ohne
+         * dies landete der Klick auf der leeren <section>, nie am Button).
+         */
+        pointerEvents: 'none',
       }}
     >
       <div style={{ position: 'sticky', top: 0, height: '100svh', overflow: 'hidden' }}>
-        <motion.div style={{ position: 'absolute', inset: 0, clipPath, willChange: 'clip-path' }}>
+        {/*
+          Zierfüllung für den Moment, bevor der Giebel genug Fläche freigibt —
+          fest sichtbar von Anfang an, keine Fade-in-Logik (siehe Kommentar
+          oben). `top` per Inline-Style statt CSS-Klasse: muss exakt an
+          PULL_INTO_HERO_VH gekoppelt bleiben, damit die Gruppe nie in die
+          Zone rutscht, die während der Hero-Überlappung transparent bleiben
+          muss, egal wie diese Konstante später angepasst wird.
+        */}
+        <div
+          ref={introRef}
+          className="pediment-intro"
+          style={{ top: `calc(${PULL_INTO_HERO_VH}vh + 12px)` }}
+          aria-hidden
+        >
+          <MeanderFrieze id="frieze-pediment-top" color={C.ink} opacity={0.14} />
+          <LaurelWreath size={230} tone="light" opacity={0.2} />
+        </div>
+
+        {/* Kleiner Scroll-Hinweis — liegt ebenfalls außerhalb der Überlappungszone */}
+        <div ref={cueRef} className="pediment-cue" aria-hidden>
+          <span className="pediment-cue-label" style={{ ...kicker, fontSize: '10px', color: C.inkSubtle }}>
+            Scroll
+          </span>
+          <span className="pediment-cue-line" />
+        </div>
+
+        <div
+          ref={clipRef}
+          style={{ position: 'absolute', inset: 0, clipPath: clipPathAt(0), willChange: 'clip-path' }}
+        >
           <DashboardMock run={run} />
           {/* weicher Auslauf nach unten ins Parchment — dieselbe Idee wie die
               Kuppel im Hero, damit die dunkle Fläche nicht hart abbricht */}
-          <span className="pediment-fade" aria-hidden />
-        </motion.div>
+        </div>
       </div>
     </section>
   )
@@ -749,6 +887,7 @@ const SHELL: React.CSSProperties = {
 
 export function LandingClient() {
   return (
+    <SmoothScrollProvider>
     <div
       className="af-landing"
       style={{
@@ -821,7 +960,7 @@ export function LandingClient() {
             >
               Instrumentarium
             </a>
-            <Link href="/login" className="af-btn af-btn-onyx nav-cta" style={{ padding: '11px 22px' }}>
+            <Link href="/login" className="af-btn hero-btn-primary nav-cta" style={{ padding: '11px 22px' }}>
               Anmelden
             </Link>
           </nav>
@@ -878,7 +1017,16 @@ export function LandingClient() {
         />
 
         {/* Weißer Halbkreis, der von der Unterkante aufsteigt — siehe .hero-dome */}
-        <div className="hero-dome" aria-hidden />
+        <div className="hero-dome" aria-hidden>
+          {/* Mäanderfries als Gesimslinie auf dem Trichter-Rand — dasselbe
+              Zierelement wie das Gebälk in der Säulen-Sektion, hier auf dem
+              „Podest" der Hero-Aktionen statt auf einem Onyx-Band. Sitzt
+              exakt auf der oberen Kante des clip-path-Trichters (20% der
+              Kuppelhöhe), der Rest der Kuppel bleibt schlicht. */}
+          <span className="hero-dome-frieze">
+            <MeanderFrieze id="frieze-hero-dome" color={C.ink} opacity={0.16} />
+          </span>
+        </div>
 
         <div className="hero-shell" style={{ ...SHELL, position: 'relative', textAlign: 'center' }}>
           <div
@@ -922,10 +1070,10 @@ export function LandingClient() {
                 flexWrap: 'wrap',
               }}
             >
-              <Link href="/login" className="af-btn af-btn-onyx">
+              <Link href="/login" className="af-btn hero-btn-primary">
                 Anmelden <ArrowRight size={15} strokeWidth={2} />
               </Link>
-              <a href="#features" className="af-btn af-btn-outline">
+              <a href="#features" className="af-btn hero-btn-outline">
                 Das Instrumentarium
               </a>
             </div>
@@ -1569,5 +1717,6 @@ export function LandingClient() {
         </div>
       </footer>
     </div>
+    </SmoothScrollProvider>
   )
 }

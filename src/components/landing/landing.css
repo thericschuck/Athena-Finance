@@ -166,14 +166,16 @@
   /* Balken breit genug für die Taxonomie-Zeile („PORTFOLIO · AUSGABEN ·
      VERTRÄGE · STRATEGIE“) — der schmalere Button-Balken passte nicht */
   width: clamp(680px, 56vw, 820px);
-  /* niedriger als zuvor: der Trichter soll kaum über die Buttons hinausragen */
-  height: clamp(260px, 0vh, 340px);
+  /* etwas höher als die reine Button-Fläche bräuchte — der Fries auf der
+     oberen Kante (.hero-dome-frieze) braucht Luft zu den Buttons darunter */
+  height: clamp(300px, 0vh, 380px);
   z-index: 0;
   pointer-events: none;
   background: var(--af-parchment);
   /* Trichter jetzt schmaler (12% -> 88% statt 0 -> 100%) und flacher (obere
-     40% statt 52%), Balken unverändert bei 22% -> 78% für die Taxonomie-Zeile */
-  clip-path: polygon(10% 20%, 90% 20%, 74% 60%, 74% 100%, 26% 100%, 26% 60%);
+     40% statt 52%), Balken unverändert bei 22% -> 78% für die Taxonomie-Zeile.
+     Obere Kante bei 28% statt 20%: mehr Luft zwischen Fries und Buttons. */
+  clip-path: polygon(10% 28%, 90% 28%, 74% 64%, 74% 100%, 26% 100%, 26% 64%);
 }
 
 /* Auf dem Handy steht die Textspalte auf voller Breite — die Fläche muss
@@ -183,6 +185,23 @@
     width: min(94vw, 400px);
     height: clamp(230px, 27vh, 290px);
   }
+}
+
+/*
+ * Gesimslinie auf dem Kuppel-Trichter: 10%/90% sind dieselben Werte wie die
+ * obere Kante im clip-path von .hero-dome — MUSS bei jeder Änderung dort
+ * mitgezogen werden, sonst reicht der Fries nicht über die volle Breite
+ * der Kante oder ragt darüber hinaus. `top` liegt knapp UNTERHALB der
+ * 28%-Kante statt genau auf ihr — der clip-path deckt nur den Bereich ab
+ * dieser Kante ab, ein mittig darüber zentrierter Fries würde zur Hälfte
+ * weggeschnitten (die obere Hälfte läge außerhalb der Form).
+ */
+.hero-dome-frieze {
+  position: absolute;
+  top: calc(28% + 6px);
+  left: 10%;
+  right: 10%;
+  pointer-events: none;
 }
 
 /* ── Aktionen ──────────────────────────────────────────────────────────────── */
@@ -228,6 +247,38 @@
   background-color: rgba(26, 26, 26, .04);
   transform: translateY(-1px);
 }
+
+/*
+ * Hero-CTAs in warmem Bronze statt Onyx — Schwarz wirkte über dem Aquarell
+ * zu hart neben Gold-Kicker und goldInkDeep-Kursivtext. Eigene Klassen statt
+ * eine Variante von .af-btn-onyx/.af-btn-outline: die Leiste und der
+ * Abschluss-Block sollen onyx/cream behalten, nur der Hero bekommt Bronze.
+ *
+ * Innenschimmer (inset-Schatten oben) plus wärmerer, weiter auslaufender
+ * Schlagschatten statt des neutralen Onyx-Schattens — soll wie geprägtes
+ * Metall wirken, nicht wie eine flache Fläche.
+ */
+.hero-btn-primary {
+  background-color: var(--af-gold-ink-deep);
+  color: var(--af-cream);
+  box-shadow: inset 0 1px 0 rgba(232, 224, 208, .16), 0 10px 26px rgba(110, 84, 38, .3);
+}
+.hero-btn-primary:hover {
+  background-color: var(--af-gold-ink);
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(232, 224, 208, .2), 0 14px 34px rgba(110, 84, 38, .4);
+}
+.hero-btn-outline {
+  background-color: transparent;
+  color: var(--af-ink);
+  border-color: rgba(110, 84, 38, .38);
+}
+.hero-btn-outline:hover {
+  border-color: var(--af-gold-ink-deep);
+  background-color: rgba(110, 84, 38, .07);
+  transform: translateY(-1px);
+}
+/* transition/transform bei reduzierter Bewegung bereits über .af-btn deaktiviert (siehe unten) */
 
 /* Textlink mit auslaufender Unterstreichung */
 .af-quiet { position: relative; text-decoration: none; }
@@ -585,6 +636,74 @@
     rgba(247, 245, 240, .55) 55%,
     var(--af-parchment) 100%
   );
+}
+
+/*
+ * Zierfüllung des Giebel-Abschnitts, solange dessen Dreieck noch zu klein
+ * ist, um etwas zu zeigen — sonst wäre das nur eine leere Parchment-Fläche.
+ * Fest sichtbar von Anfang an, keine Fade-in-Animation: `top` kommt per
+ * Inline-Style aus PULL_INTO_HERO_VH (PedimentReveal) — die Gruppe muss knapp
+ * UNTERHALB der Hero-Überlappung sitzen, sonst verdeckt sie beim ersten
+ * Scroll-Frame kurz die Hero-Buttons/-Kuppel darunter.
+ *
+ * Fries und Kranz stehen im selben Flex-Block statt einzeln positioniert:
+ * beide wandern zusammen als eine Einheit nach oben aus dem Bild (siehe
+ * PedimentReveal, INTRO_EXIT_FOR), statt in der gepinnten Fläche stehen zu
+ * bleiben und vom wachsenden Giebel überdeckt zu werden. `gap` schiebt den
+ * Kranz spürbar unter den Fries statt direkt darunter.
+ */
+.pediment-intro {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(56px, 8vh, 96px);
+  pointer-events: none;
+  will-change: transform;
+}
+/*
+ * Scroll-Hinweis vor dem Giebel: Kapitälchen-Label über einer Linie, an
+ * deren Fuß ein Lichtpunkt endlos abtropft — ein klassisches Signal für
+ * „hier geht’s mit Scrollen weiter“, ohne den Blick vom eigentlichen
+ * Giebel-Wachstum abzulenken (blendet dafür sehr früh aus, siehe GSAP-
+ * Timeline in PedimentReveal).
+ */
+.pediment-cue {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(28px, 6vh, 64px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+}
+.pediment-cue-line {
+  position: relative;
+  width: 1px;
+  height: 36px;
+  overflow: hidden;
+  background: linear-gradient(to bottom, var(--af-rule) 0%, transparent 100%);
+}
+.pediment-cue-line::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -60%;
+  width: 100%;
+  height: 60%;
+  background: linear-gradient(to bottom, transparent, var(--af-gold-ink) 55%, transparent);
+  animation: pediment-cue-drop 1.8s cubic-bezier(.4, 0, .2, 1) infinite;
+}
+@keyframes pediment-cue-drop {
+  from { top: -60%; }
+  to   { top: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pediment-cue-line::after { animation: none; }
 }
 
 /*
