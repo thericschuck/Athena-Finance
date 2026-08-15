@@ -84,8 +84,14 @@ function IndicatorFields({
       {/* Toggles */}
       <div className="flex items-center gap-6">
         <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            className="sr-only"
+            checked={repaints}
+            onChange={e => setRepaints(e.target.checked)}
+          />
           <div
-            onClick={() => setRepaints(!repaints)}
+            aria-hidden="true"
             className={`relative w-9 h-5 rounded-full transition-colors ${repaints ? 'bg-amber-500' : 'bg-muted'}`}
           >
             <span className={`absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform ${repaints ? 'translate-x-4' : ''}`} />
@@ -94,8 +100,14 @@ function IndicatorFields({
         </label>
 
         <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            className="sr-only"
+            checked={isForbidden}
+            onChange={e => setIsForbidden(e.target.checked)}
+          />
           <div
-            onClick={() => setIsForbidden(!isForbidden)}
+            aria-hidden="true"
             className={`relative w-9 h-5 rounded-full transition-colors ${isForbidden ? 'bg-destructive' : 'bg-muted'}`}
           >
             <span className={`absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform ${isForbidden ? 'translate-x-4' : ''}`} />

@@ -147,7 +147,20 @@ function mirror(b: BranchSpec, axis: number): BranchSpec {
   }
 }
 
-function VineBranch({ spec, delay, tone }: { spec: BranchSpec; delay: number; tone: Tone }) {
+function VineBranch({
+  spec,
+  delay,
+  tone,
+  swaying = true,
+}: {
+  spec: BranchSpec
+  delay: number
+  tone: Tone
+  /** Aus für dauerhaft gemountete, GEMASKTE Ranken (siehe OliveVines-Prop
+      `swaying` unten) — die unendliche Wiege-Schleife läuft sonst für den
+      Rest der Seitenlebensdauer weiter. */
+  swaying?: boolean
+}) {
   const {
     cu,
     leaves,
@@ -169,7 +182,7 @@ function VineBranch({ spec, delay, tone }: { spec: BranchSpec; delay: number; to
 
   return (
     <g
-      className={`vine-branch vine-sway-${sway}`}
+      className={swaying ? `vine-branch vine-sway-${sway}` : 'vine-branch'}
       style={{
         transformBox: 'view-box',
         transformOrigin: `${ax}px ${ay}px`,
@@ -265,6 +278,11 @@ const VB = { w: 520, h: 900 }
  * kurzer zarter Trieb. Dazu streut jedes einzelne Blatt in Länge, Breite und
  * Winkel (siehe `vary` und `wobble`).
  *
+ * JEDER Zweig trägt ein `tendril` — die Spirale am Ende ist der einzige
+ * Abschluss, den ein Zweig überhaupt bekommt (er läuft sonst als bloßer
+ * Stängel aus, ohne Blatt oder Verjüngung). Ohne sie wirkt ein Zweigende wie
+ * abgerissen statt wie ein natürliches Auslaufen.
+ *
  * Die rechte Seite ist bewusst KEINE Spiegelung der linken — eigene Kurven,
  * eigene Blattzahlen. Gespiegelt wirkte das Blattwerk wie eine Tapete.
  */
@@ -293,6 +311,7 @@ const LEFT: BranchSpec[] = [
     spread: 25,
     width: 1.0,
     vary: 0.24,
+    tendril: { r: 10, turns: 1.15, dir: -1 },
     sway: 'b',
   },
   // sparrig, weit abstehende Blätter
@@ -336,6 +355,7 @@ const RIGHT: BranchSpec[] = [
     spread: 28,
     width: 1.2,
     vary: 0.22,
+    tendril: { r: 12, turns: 1.25, dir: 1 },
     sway: 'c',
   },
   // kurzer zarter Trieb oben
@@ -361,9 +381,17 @@ const RIGHT: BranchSpec[] = [
     spread: 42,
     width: 1.4,
     vary: 0.17,
+    tendril: { r: 15, turns: 1.3, dir: -1 },
     sway: 'a',
   },
 ]
+
+/** Statisch (referenziert nur LEFT/RIGHT, beide schon Modul-Konstanten) —
+    Modul-Ebene statt Neuanlage bei jedem OliveVines-Render. */
+const VINE_SIDES = [
+  { key: 'l', branches: LEFT, par: 'xMinYMid slice', pos: { left: 0 } },
+  { key: 'r', branches: RIGHT, par: 'xMaxYMid slice', pos: { right: 0 } },
+] as const
 
 /**
  * Zwei Ranken-Vorhänge an den Seiten. Getrennte SVGs statt eines
@@ -374,16 +402,28 @@ export function OliveVines({
   tone = 'light',
   opacity = 0.9,
   width = 'clamp(112px, 26vw, 450px)',
+  swaying = true,
 }: {
   tone?: 'light' | 'dark'
   opacity?: number
   width?: string
+  /**
+   * `false` unterdrückt die endlose Wiege-Animation (siehe vine-sway-* in
+   * vines.css) — die einmalige Wachs-Animation (Stängel/Blätter) bleibt
+   * erhalten. Nötig für dauerhaft gemountete Ranken HINTER einem CSS-
+   * `mask-image` (siehe InstrumentariumVines in LandingClient): eine Maske
+   * zwingt den Browser, ihren gesamten Inhalt bei JEDER Änderung eines
+   * Nachfahren neu zu kompositieren — bei einer für immer laufenden
+   * Rotations-Schleife (16–22s, aber ENDLOS) heißt das dauerhaftes
+   * Neuzeichnen, weit über die eigentliche Wachs-Animation hinaus, und
+   * genau das macht sich als andauerndes Ruckeln bemerkbar, sobald diese
+   * Ranken einmal ins Bild gescrollt sind — unabhängig von der aktuellen
+   * Scrollposition. Der Hero (unmaskiert, siehe Aufrufstelle) behält die
+   * Wiege-Bewegung, dort kostet sie den Browser praktisch nichts.
+   */
+  swaying?: boolean
 }) {
   const t = TONES[tone]
-  const sides = [
-    { key: 'l', branches: LEFT, par: 'xMinYMid slice', pos: { left: 0 } },
-    { key: 'r', branches: RIGHT, par: 'xMaxYMid slice', pos: { right: 0 } },
-  ] as const
 
   return (
     <div
@@ -391,7 +431,7 @@ export function OliveVines({
       className="vine-layer"
       style={{ position: 'absolute', inset: 0, pointerEvents: 'none', opacity }}
     >
-      {sides.map((side, si) => (
+      {VINE_SIDES.map((side, si) => (
         <svg
           key={side.key}
           viewBox={`0 0 ${VB.w} ${VB.h}`}
@@ -399,7 +439,7 @@ export function OliveVines({
           style={{ position: 'absolute', top: 0, height: '100%', width, ...side.pos }}
         >
           {side.branches.map((b, i) => (
-            <VineBranch key={i} spec={b} delay={0.15 + i * 0.22 + si * 0.11} tone={t} />
+            <VineBranch key={i} spec={b} delay={0.15 + i * 0.22 + si * 0.11} tone={t} swaying={swaying} />
           ))}
         </svg>
       ))}

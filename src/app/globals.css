@@ -128,6 +128,19 @@
   }
 }
 
+/*
+ * Auf der Landing Page übernimmt Lenis den Scroll komplett (siehe
+ * SmoothScrollProvider) — die native `scroll-behavior: smooth` von oben
+ * bleibt sonst nebenher aktiv und kämpft bei jeder programmatischen
+ * Scroll-Änderung mit Lenis' eigener, virtueller Animation um denselben
+ * Frame (bekannter Lenis-Stolperstein, siehe Lenis-Docs). Die Klasse wird
+ * ausschließlich für die Montagedauer von SmoothScrollProvider gesetzt,
+ * alle anderen Seiten (Dashboard etc.) behalten den Default oben.
+ */
+html.lenis-active {
+  scroll-behavior: auto;
+}
+
 /* ── Scrollbar ─────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar        { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track  { background: transparent; }
@@ -431,7 +444,7 @@ tbody tr {
  * Änderungen immer in beiden Dateien nachziehen.
  * ─────────────────────────────────────────────────────────────────────────── */
 :root {
-  --af-parchment: #F7F5F0;
+  --af-parchment: #F4EFE4;
   --af-paper: #FFFFFF;
   --af-cream: #E8E0D0;
   --af-cream-deep: #DCD2BD;

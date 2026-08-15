@@ -15,7 +15,7 @@
  */
 export const C = {
   // ── Flächen ──────────────────────────────────────────────────────────────
-  parchment: '#F7F5F0', // Seitenhintergrund (Palette: Background)
+  parchment: '#F4EFE4', // Seitenhintergrund (Palette: Background) — etwas cremiger als reines Weiß
   paper: '#FFFFFF', // erhöhte Karten auf Parchment
   cream: '#E8E0D0', // Palette: Accent — Bänder, Swatches, Text auf Onyx
   creamDeep: '#DCD2BD', // Cream-Variante für Kanten/Hover
@@ -61,6 +61,50 @@ export const C = {
   ruleSoft: 'rgba(26,26,26,0.08)',
   ruleOn: 'rgba(232,224,208,0.16)', // Haarlinie auf Onyx
   ruleOnSoft: 'rgba(232,224,208,0.09)',
+} as const
+
+/**
+ * „Aurum" — die Farbwelt des echten Dashboards, für das Mockup auf der
+ * Landing Page.
+ *
+ * Eins zu eins die Werte aus `[data-theme="aurum"]` in app/globals.css: das
+ * Mockup soll zeigen, was Nutzer nach dem Login wirklich sehen, nicht eine
+ * nachempfundene Illustration. Aurum ist zudem das einzige Preset, das
+ * ebenfalls Playfair als Grundschrift führt — der Übergang vom Hero ins
+ * Mockup bleibt dadurch ohne Stilbruch.
+ *
+ * ACHTUNG: bei Änderungen am Preset in globals.css hier nachziehen. Als
+ * JS-Literale nötig, weil Inline-Styles und SVG-Attribute die Theme-
+ * Variablen nicht sehen — das Mockup liegt außerhalb des [data-theme]-Scopes.
+ */
+export const AU = {
+  bg: '#0C0800', // --background
+  card: '#130D00', // --card
+  cardFg: '#F0E6C8', // --card-foreground
+  secondary: '#1E1500', // --secondary
+  secondaryFg: '#C8B887', // --secondary-foreground
+  mutedFg: '#8A7A50', // --muted-foreground
+  accent: '#2A1E00', // --accent
+  gold: '#D4A017', // --primary / --accent-foreground
+  destructive: '#C0392B', // --destructive
+  border: 'rgba(212,160,23,0.2)', // --border
+  sidebar: '#080500', // --sidebar
+  sidebarFg: '#C8B887', // --sidebar-foreground
+  sidebarAccent: '#1E1500', // --sidebar-accent
+  sidebarAccentFg: '#F0E6C8', // --sidebar-accent-foreground
+  sidebarBorder: 'rgba(212,160,23,0.15)', // --sidebar-border
+  /** Positiv-Grün: im Preset nicht definiert, aus der Landing-Palette geliehen. */
+  positive: '#8CA277',
+  /*
+   * Zwei kühle Akzente, ebenfalls nicht im Preset enthalten: Aurum liefert
+   * nur Gold/Grün/Rot, für ein ganzes Dashboard voller Karten wurde das im
+   * Mockup schnell eintönig-braun. Gedeckt statt satt, damit sie sich der
+   * warmen Palette unterordnen statt sie zu brechen — für die beiden
+   * einzigen Charts, die inhaltlich NICHT zu Gold/Grün/Rot passen (Kontostand,
+   * Portfolio-Wert sind neutrale Verläufe, keine Gewinn/Verlust-Aussage).
+   */
+  accentBlue: '#7A93B0',
+  accentTeal: '#6FA39A',
 } as const
 
 /** Font-Stacks (Variablen kommen aus app/layout.tsx). */

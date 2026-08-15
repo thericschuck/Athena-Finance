@@ -49,16 +49,16 @@ function PasswordForm() {
 
       <div className="space-y-3">
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Aktuelles Passwort</label>
-          <input name="current_password" type="password" autoComplete="current-password" className={inputCls} required />
+          <label htmlFor="current_password" className="text-sm font-medium">Aktuelles Passwort</label>
+          <input id="current_password" name="current_password" type="password" autoComplete="current-password" className={inputCls} required />
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Neues Passwort</label>
-          <input name="new_password" type="password" autoComplete="new-password" className={inputCls} required minLength={8} />
+          <label htmlFor="new_password" className="text-sm font-medium">Neues Passwort</label>
+          <input id="new_password" name="new_password" type="password" autoComplete="new-password" className={inputCls} required minLength={8} />
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Passwort bestätigen</label>
-          <input name="confirm_password" type="password" autoComplete="new-password" className={inputCls} required minLength={8} />
+          <label htmlFor="confirm_password" className="text-sm font-medium">Passwort bestätigen</label>
+          <input id="confirm_password" name="confirm_password" type="password" autoComplete="new-password" className={inputCls} required minLength={8} />
         </div>
       </div>
 
@@ -74,6 +74,7 @@ export function ProfileForm({ initialProfile, email }: { initialProfile: UserPro
   const [previewUrl, setPreviewUrl] = useState<string | null>(initialProfile.avatar_url ?? null)
   const [hasNewFile, setHasNewFile] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const objectUrlRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (!state) return
@@ -84,14 +85,28 @@ export function ProfileForm({ initialProfile, email }: { initialProfile: UserPro
     if ('error' in state) toast.error(state.error)
   }, [state])
 
+  // Revoke the last created object URL on unmount so its Blob can be freed.
+  useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
+    }
+  }, [])
+
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    setPreviewUrl(URL.createObjectURL(file))
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
+    const url = URL.createObjectURL(file)
+    objectUrlRef.current = url
+    setPreviewUrl(url)
     setHasNewFile(true)
   }
 
   function handleRemoveAvatar() {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current)
+      objectUrlRef.current = null
+    }
     setPreviewUrl(null)
     setHasNewFile(false)
     if (fileRef.current) fileRef.current.value = ''
@@ -108,7 +123,7 @@ export function ProfileForm({ initialProfile, email }: { initialProfile: UserPro
       <div className="space-y-4">
         {/* Avatar upload */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Profilbild</label>
+          <label htmlFor="avatar_file" className="text-sm font-medium">Profilbild</label>
           <div className="flex items-center gap-4">
             <div className="relative shrink-0">
               {previewUrl ? (
@@ -153,6 +168,7 @@ export function ProfileForm({ initialProfile, email }: { initialProfile: UserPro
 
           <input
             ref={fileRef}
+            id="avatar_file"
             type="file"
             name="avatar_file"
             accept="image/jpeg,image/png,image/webp"
@@ -168,8 +184,9 @@ export function ProfileForm({ initialProfile, email }: { initialProfile: UserPro
 
         {/* Display name */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Anzeigename</label>
+          <label htmlFor="display_name" className="text-sm font-medium">Anzeigename</label>
           <input
+            id="display_name"
             name="display_name"
             defaultValue={initialProfile.display_name ?? ''}
             className={inputCls}
@@ -179,16 +196,16 @@ export function ProfileForm({ initialProfile, email }: { initialProfile: UserPro
 
         {/* Timezone */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Zeitzone</label>
-          <select name="timezone" defaultValue={initialProfile.timezone} className={selectCls}>
+          <label htmlFor="timezone" className="text-sm font-medium">Zeitzone</label>
+          <select id="timezone" name="timezone" defaultValue={initialProfile.timezone} className={selectCls}>
             {TIMEZONES.map(tz => <option key={tz} value={tz}>{tz}</option>)}
           </select>
         </div>
 
         {/* Currency */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Basis-Währung</label>
-          <select name="currency" defaultValue={initialProfile.currency} className={selectCls}>
+          <label htmlFor="currency" className="text-sm font-medium">Basis-Währung</label>
+          <select id="currency" name="currency" defaultValue={initialProfile.currency} className={selectCls}>
             {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>

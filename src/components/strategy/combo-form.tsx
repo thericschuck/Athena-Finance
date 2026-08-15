@@ -108,6 +108,7 @@ function IndicatorList({
             {/* Line 1: Indicator selector + remove button */}
             <div className="flex gap-2 items-center">
               <select
+                aria-label="Indikator"
                 className="h-9 flex-1 rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                 value={row.indicator_id}
                 onChange={e => setField(row._key, 'indicator_id', e.target.value)}
@@ -133,6 +134,7 @@ function IndicatorList({
             {/* Line 2: Role + Settings */}
             <div className="flex gap-2 items-center">
               <select
+                aria-label="Rolle"
                 className="h-8 w-36 shrink-0 rounded-md border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
                 value={row.role}
                 onChange={e => setField(row._key, 'role', e.target.value)}
@@ -141,6 +143,7 @@ function IndicatorList({
               </select>
               <input
                 type="text"
+                aria-label="Einstellungen (optional)"
                 placeholder="Settings (optional)"
                 className="h-8 flex-1 rounded-md border border-input bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
                 value={row.settings_override}
@@ -181,12 +184,12 @@ function ComboFormBody({
       {/* Name + Status */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Name *</label>
-          <input name="name" required defaultValue={defaults?.name ?? ''} className={inputCls} placeholder="z.B. EMA Cross + RSI" />
+          <label htmlFor="combo-name" className="text-sm font-medium">Name *</label>
+          <input id="combo-name" name="name" required defaultValue={defaults?.name ?? ''} className={inputCls} placeholder="z.B. EMA Cross + RSI" />
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Status</label>
-          <select name="status" defaultValue={defaults?.status ?? 'draft'} className={selectCls}>
+          <label htmlFor="combo-status" className="text-sm font-medium">Status</label>
+          <select id="combo-status" name="status" defaultValue={defaults?.status ?? 'draft'} className={selectCls}>
             {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
@@ -195,12 +198,12 @@ function ComboFormBody({
       {/* Asset + Asset-Klasse */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Asset *</label>
-          <input name="asset" required defaultValue={defaults?.asset ?? ''} className={inputCls} placeholder="z.B. BTCUSDT" />
+          <label htmlFor="combo-asset" className="text-sm font-medium">Asset *</label>
+          <input id="combo-asset" name="asset" required defaultValue={defaults?.asset ?? ''} className={inputCls} placeholder="z.B. BTCUSDT" />
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Asset-Klasse *</label>
-          <select name="asset_class" required defaultValue={defaults?.asset_class ?? 'major'} className={selectCls}>
+          <label htmlFor="combo-asset-class" className="text-sm font-medium">Asset-Klasse *</label>
+          <select id="combo-asset-class" name="asset_class" required defaultValue={defaults?.asset_class ?? 'major'} className={selectCls}>
             {ASSET_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
@@ -212,19 +215,19 @@ function ComboFormBody({
       {/* Long / Short conditions */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Long-Bedingung</label>
-          <textarea name="long_condition" rows={3} defaultValue={defaults?.long_condition ?? ''} className={textareaCls} placeholder="z.B. EMA 20 > EMA 50 und RSI > 50" />
+          <label htmlFor="combo-long-condition" className="text-sm font-medium">Long-Bedingung</label>
+          <textarea id="combo-long-condition" name="long_condition" rows={3} defaultValue={defaults?.long_condition ?? ''} className={textareaCls} placeholder="z.B. EMA 20 > EMA 50 und RSI > 50" />
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Short-Bedingung</label>
-          <textarea name="short_condition" rows={3} defaultValue={defaults?.short_condition ?? ''} className={textareaCls} placeholder="z.B. EMA 20 < EMA 50 und RSI < 50" />
+          <label htmlFor="combo-short-condition" className="text-sm font-medium">Short-Bedingung</label>
+          <textarea id="combo-short-condition" name="short_condition" rows={3} defaultValue={defaults?.short_condition ?? ''} className={textareaCls} placeholder="z.B. EMA 20 < EMA 50 und RSI < 50" />
         </div>
       </div>
 
       {/* Notes */}
       <div className="space-y-1.5">
-        <label className="text-sm font-medium">Notizen</label>
-        <textarea name="notes" rows={2} defaultValue={defaults?.notes ?? ''} className={textareaCls} />
+        <label htmlFor="combo-notes" className="text-sm font-medium">Notizen</label>
+        <textarea id="combo-notes" name="notes" rows={2} defaultValue={defaults?.notes ?? ''} className={textareaCls} />
       </div>
 
       {state && 'error' in state && (
@@ -346,8 +349,11 @@ export function DeleteComboButton({ id }: { id: string }) {
 
   async function handleDelete() {
     setPending(true)
-    await deleteCombo(id)
-    setPending(false)
+    try {
+      await deleteCombo(id)
+    } finally {
+      setPending(false)
+    }
   }
 
   if (!confirm) {

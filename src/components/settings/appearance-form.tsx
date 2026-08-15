@@ -113,12 +113,13 @@ const DATE_FORMATS = [
 
 const selectCls = 'h-9 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring'
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-label={label}
       onClick={() => onChange(!checked)}
       className={cn(
         'relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -270,7 +271,7 @@ export function AppearanceForm({ initialSettings }: { initialSettings: SettingsM
 
       {/* Theme Presets */}
       <div className="space-y-3">
-        <label className="text-sm font-medium">Theme</label>
+        <p className="text-sm font-medium">Theme</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {THEME_PRESETS.map(preset => (
             <ThemePreviewCard
@@ -301,7 +302,7 @@ export function AppearanceForm({ initialSettings }: { initialSettings: SettingsM
       {themePreset === '' && (
         <>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Hell / Dunkel</label>
+            <p className="text-sm font-medium">Hell / Dunkel</p>
             <div className="flex gap-2">
               {BASE_THEMES.map(t => (
                 <button
@@ -322,7 +323,7 @@ export function AppearanceForm({ initialSettings }: { initialSettings: SettingsM
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Akzentfarbe</label>
+            <p className="text-sm font-medium">Akzentfarbe</p>
             <div className="flex gap-2">
               {COLORS.map(c => (
                 <button
@@ -344,22 +345,23 @@ export function AppearanceForm({ initialSettings }: { initialSettings: SettingsM
 
       {/* Toggles */}
       <div className="space-y-3">
-        <label className="text-sm font-medium">Optionen</label>
+        <p className="text-sm font-medium">Optionen</p>
 
         <div className="flex items-center justify-between rounded-md border border-border bg-card px-4 py-3">
           <div>
             <p className="text-sm font-medium">Kompakte Tabellen</p>
             <p className="text-xs text-muted-foreground">Kompaktere Darstellung in Tabellen</p>
           </div>
-          <Toggle checked={compactTables} onChange={setCompactTables} />
+          <Toggle checked={compactTables} onChange={setCompactTables} label="Kompakte Tabellen" />
         </div>
       </div>
 
       {/* Formats */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Zahlenformat</label>
+          <label htmlFor="number_format" className="text-sm font-medium">Zahlenformat</label>
           <select
+            id="number_format"
             className={selectCls}
             value={numberFormat}
             onChange={e => setNumberFormat(e.target.value)}
@@ -369,8 +371,9 @@ export function AppearanceForm({ initialSettings }: { initialSettings: SettingsM
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Datumsformat</label>
+          <label htmlFor="date_format" className="text-sm font-medium">Datumsformat</label>
           <select
+            id="date_format"
             className={selectCls}
             value={dateFormat}
             onChange={e => setDateFormat(e.target.value)}

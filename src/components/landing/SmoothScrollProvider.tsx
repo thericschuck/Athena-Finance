@@ -4,6 +4,7 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import Lenis from 'lenis'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { setActiveLenis, clearActiveLenis } from './scroll-control'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -29,6 +30,22 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
     })
     lenisRef.current = lenis
+    setActiveLenis(lenis)
+
+    /*
+     * `html { scroll-behavior: smooth }` (siehe globals.css) ist ein
+     * sitebreiter Default fürs Dashboard (native Anker-Sprünge). Lenis
+     * übernimmt den Scroll hier komplett selbst — bleibt die native
+     * Glättung nebenher aktiv, greift der Browser bei JEDER programmatischen
+     * Scroll-Positionsänderung (auch Lenis' eigenen internen Schreibvorgängen
+     * auf scrollTop) zusätzlich mit seiner eigenen Animation ein, die mit
+     * Lenis' virtuellem Scroll um denselben Frame konkurriert — das
+     * "kämpfende" Doppel-Smoothing ist ein bekannter Lenis-Stolperstein
+     * (siehe Lenis-Docs: „remove scroll-behavior: smooth"). Die Klasse
+     * schaltet es NUR für die Dauer der Landing-Page-Montage ab (siehe
+     * html.lenis-active in globals.css), das Dashboard behält sein Default.
+     */
+    document.documentElement.classList.add('lenis-active')
 
     lenis.on('scroll', ScrollTrigger.update)
 
@@ -55,6 +72,8 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
       gsap.ticker.remove(tick)
       lenis.destroy()
       lenisRef.current = null
+      clearActiveLenis(lenis)
+      document.documentElement.classList.remove('lenis-active')
     }
   }, [])
 

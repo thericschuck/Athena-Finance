@@ -27,6 +27,7 @@ export function TestsFilters() {
     <div className="flex items-center gap-3 flex-wrap">
       {/* Asset Class */}
       <select
+        aria-label="Asset-Klasse"
         className={selectClass}
         defaultValue={searchParams.get('asset_class') ?? ''}
         onChange={e => update('asset_class', e.target.value)}
@@ -38,8 +39,9 @@ export function TestsFilters() {
 
       {/* Min Cobra Green */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-muted-foreground whitespace-nowrap">Cobra ▲ ≥</span>
+        <label htmlFor="min-cg" className="text-xs text-muted-foreground whitespace-nowrap">Cobra ▲ ≥</label>
         <input
+          id="min-cg"
           type="number" min="0" max="7" step="1"
           className={inputClass}
           defaultValue={searchParams.get('min_cg') ?? ''}
@@ -50,8 +52,9 @@ export function TestsFilters() {
 
       {/* Min Cobra Red */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-muted-foreground whitespace-nowrap">Cobra ▼ ≥</span>
+        <label htmlFor="min-cr" className="text-xs text-muted-foreground whitespace-nowrap">Cobra ▼ ≥</label>
         <input
+          id="min-cr"
           type="number" min="0" max="7" step="1"
           className={inputClass}
           defaultValue={searchParams.get('min_cr') ?? ''}
@@ -62,8 +65,9 @@ export function TestsFilters() {
 
       {/* Min Profit Factor */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-muted-foreground whitespace-nowrap">PF ≥</span>
+        <label htmlFor="min-pf" className="text-xs text-muted-foreground whitespace-nowrap">PF ≥</label>
         <input
+          id="min-pf"
           type="number" min="0" step="0.1"
           className={inputClass}
           defaultValue={searchParams.get('min_pf') ?? ''}
@@ -74,8 +78,9 @@ export function TestsFilters() {
 
       {/* Min Win Rate */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-muted-foreground whitespace-nowrap">WR ≥</span>
+        <label htmlFor="min-wr" className="text-xs text-muted-foreground whitespace-nowrap">WR ≥</label>
         <input
+          id="min-wr"
           type="number" min="0" max="100" step="1"
           className={inputClass}
           defaultValue={searchParams.get('min_wr') ?? ''}

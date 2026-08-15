@@ -62,8 +62,9 @@ function StrategyFormBody({
 
       {/* Name */}
       <div className="space-y-1.5">
-        <label className="text-sm font-medium">Name *</label>
+        <label htmlFor="strategy-name" className="text-sm font-medium">Name *</label>
         <input
+          id="strategy-name"
           name="name"
           required
           defaultValue={defaults?.name ?? ''}
@@ -75,12 +76,12 @@ function StrategyFormBody({
       {/* Asset + Asset-Klasse */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Asset *</label>
-          <input name="asset" required defaultValue={defaults?.asset ?? ''} className={inputCls} placeholder="z.B. BTCUSDT" />
+          <label htmlFor="strategy-asset" className="text-sm font-medium">Asset *</label>
+          <input id="strategy-asset" name="asset" required defaultValue={defaults?.asset ?? ''} className={inputCls} placeholder="z.B. BTCUSDT" />
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Asset-Klasse</label>
-          <select name="asset_class" defaultValue={defaults?.asset_class ?? 'major'} className={selectCls}>
+          <label htmlFor="strategy-asset-class" className="text-sm font-medium">Asset-Klasse</label>
+          <select id="strategy-asset-class" name="asset_class" defaultValue={defaults?.asset_class ?? 'major'} className={selectCls}>
             {ASSET_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
@@ -89,12 +90,12 @@ function StrategyFormBody({
       {/* Timeframe + Status */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Timeframe *</label>
-          <input name="timeframe" required defaultValue={defaults?.timeframe ?? ''} className={inputCls} placeholder="z.B. 4H, 1D" />
+          <label htmlFor="strategy-timeframe" className="text-sm font-medium">Timeframe *</label>
+          <input id="strategy-timeframe" name="timeframe" required defaultValue={defaults?.timeframe ?? ''} className={inputCls} placeholder="z.B. 4H, 1D" />
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Status</label>
-          <select name="status" defaultValue={defaults?.status ?? 'development'} className={selectCls}>
+          <label htmlFor="strategy-status" className="text-sm font-medium">Status</label>
+          <select id="strategy-status" name="status" defaultValue={defaults?.status ?? 'development'} className={selectCls}>
             {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
@@ -102,8 +103,8 @@ function StrategyFormBody({
 
       {/* Combo */}
       <div className="space-y-1.5">
-        <label className="text-sm font-medium">Combo</label>
-        <select name="combo_id" defaultValue={defaults?.combo_id ?? ''} className={selectCls}>
+        <label htmlFor="strategy-combo" className="text-sm font-medium">Combo</label>
+        <select id="strategy-combo" name="combo_id" defaultValue={defaults?.combo_id ?? ''} className={selectCls}>
           <option value="">— Kein Combo —</option>
           {comboOptions.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
@@ -112,8 +113,9 @@ function StrategyFormBody({
       {/* Pine version + Version + Startkapital */}
       <div className="grid grid-cols-3 gap-3">
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Pine v</label>
+          <label htmlFor="strategy-pine-version" className="text-sm font-medium">Pine v</label>
           <input
+            id="strategy-pine-version"
             name="pine_version"
             type="number"
             min="1" max="6"
@@ -122,8 +124,9 @@ function StrategyFormBody({
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Version</label>
+          <label htmlFor="strategy-version" className="text-sm font-medium">Version</label>
           <input
+            id="strategy-version"
             name="version"
             type="number"
             min="1"
@@ -132,8 +135,9 @@ function StrategyFormBody({
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Startkapital</label>
+          <label htmlFor="strategy-initial-capital" className="text-sm font-medium">Startkapital</label>
           <input
+            id="strategy-initial-capital"
             name="initial_capital"
             type="number"
             min="0"
@@ -159,8 +163,9 @@ function StrategyFormBody({
 
       {/* TV Script URL */}
       <div className="space-y-1.5">
-        <label className="text-sm font-medium">TradingView Script URL</label>
+        <label htmlFor="strategy-tv-url" className="text-sm font-medium">TradingView Script URL</label>
         <input
+          id="strategy-tv-url"
           name="tv_script_url"
           type="url"
           defaultValue={defaults?.tv_script_url ?? ''}
@@ -171,8 +176,9 @@ function StrategyFormBody({
 
       {/* Submission Date */}
       <div className="space-y-1.5">
-        <label className="text-sm font-medium">Submission-Datum</label>
+        <label htmlFor="strategy-submission-date" className="text-sm font-medium">Submission-Datum</label>
         <input
+          id="strategy-submission-date"
           name="submission_date"
           type="date"
           defaultValue={defaults?.submission_date?.slice(0, 10) ?? ''}
@@ -182,8 +188,8 @@ function StrategyFormBody({
 
       {/* Notes */}
       <div className="space-y-1.5">
-        <label className="text-sm font-medium">Notizen</label>
-        <textarea name="notes" rows={2} defaultValue={defaults?.notes ?? ''} className={textareaCls} />
+        <label htmlFor="strategy-notes" className="text-sm font-medium">Notizen</label>
+        <textarea id="strategy-notes" name="notes" rows={2} defaultValue={defaults?.notes ?? ''} className={textareaCls} />
       </div>
 
       {state && 'error' in state && (
@@ -300,9 +306,12 @@ export function DeleteStrategyButton({ id, redirectAfter }: { id: string; redire
 
   async function handleDelete() {
     setPending(true)
-    await deleteStrategy(id)
-    setPending(false)
-    if (redirectAfter) router.push('/strategy/strategies')
+    try {
+      await deleteStrategy(id)
+      if (redirectAfter) router.push('/strategy/strategies')
+    } finally {
+      setPending(false)
+    }
   }
 
   if (!confirm) {

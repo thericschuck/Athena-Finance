@@ -37,8 +37,9 @@ export function TradingForm({ initialSettings }: { initialSettings: SettingsMap 
       <div className="space-y-4">
         {/* Default asset class */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Standard-Asset-Klasse</label>
+          <label htmlFor="default_asset_class" className="text-sm font-medium">Standard-Asset-Klasse</label>
           <select
+            id="default_asset_class"
             name="default_asset_class"
             defaultValue={(initialSettings.default_asset_class as string) ?? 'major'}
             className={selectCls}
@@ -50,8 +51,9 @@ export function TradingForm({ initialSettings }: { initialSettings: SettingsMap 
 
         {/* Default timeframe */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Standard-Timeframe</label>
+          <label htmlFor="default_timeframe" className="text-sm font-medium">Standard-Timeframe</label>
           <input
+            id="default_timeframe"
             name="default_timeframe"
             list="timeframe-list"
             defaultValue={(initialSettings.default_timeframe as string) ?? ''}

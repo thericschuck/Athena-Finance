@@ -27,8 +27,9 @@ export function FinanceForm({ initialSettings }: { initialSettings: SettingsMap 
       <div className="space-y-4">
         {/* Monthly budget */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Monatliches Ausgaben-Budget (€)</label>
+          <label htmlFor="monthly_budget" className="text-sm font-medium">Monatliches Ausgaben-Budget (€)</label>
           <input
+            id="monthly_budget"
             name="monthly_budget"
             type="number"
             step="0.01"
@@ -44,8 +45,9 @@ export function FinanceForm({ initialSettings }: { initialSettings: SettingsMap 
 
         {/* Tax rate */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Abgeltungsteuer inkl. Soli (%)</label>
+          <label htmlFor="default_tax_rate" className="text-sm font-medium">Abgeltungsteuer inkl. Soli (%)</label>
           <input
+            id="default_tax_rate"
             name="default_tax_rate"
             type="number"
             step="0.1"

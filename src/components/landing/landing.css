@@ -92,15 +92,35 @@
   to   { opacity: 1; transform: none; filter: blur(0); }
 }
 
-/* Originalfarben des Aquarells — ohne Filter, ohne Wäsche, ohne Verlauf.
-   Die Lesbarkeit der Schrift darüber trägt allein die Textfarbe. */
+/*
+ * Originalfarben des Aquarells — ohne Filter, ohne Wäsche, ohne Verlauf.
+ * Die Lesbarkeit der Schrift darüber trägt allein die Textfarbe.
+ *
+ * scale(1.24) ist der Parallax-Puffer: JS verschiebt dieses Bild beim
+ * Scrollen (siehe useEffect in LandingClient, yPercent: 10), damit es beim
+ * Scrollen hinter der restlichen Seite zurückbleibt. Ohne Übergröße würde
+ * diese Verschiebung an einer Kante eine leere Fläche freilegen —
+ * .hero-photo selbst bleibt unbewegt und bildet als `overflow: hidden`-
+ * Fenster den stabilen Ausschnitt, durch den das größere, bewegte Bild
+ * hindurchscheint.
+ *
+ * Puffer (12% je Kante, aus (1.24-1)/2) bewusst größer als die Bewegung
+ * (10% der Bildhöhe) — die 2% Reserve fangen Rundungsfehler ab. Beide Werte
+ * sind relativ zur Bildhöhe (scale/yPercent, keine festen Pixel), damit das
+ * Verhältnis auf jeder Viewport-Höhe gleich bleibt statt auf kurzen
+ * Bildschirmen zu knapp zu werden.
+ */
 .hero-photo-img {
   object-fit: cover;
   object-position: center 55%;
+  transform: scale(1.24);
+  will-change: transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .hero-photo { animation: none; opacity: 1; transform: none; filter: none; }
+  /* Puffer ohne Zweck ohne die Scroll-Parallax, die ihn braucht (siehe oben) */
+  .hero-photo-img { transform: none; }
 }
 
 /*
@@ -178,13 +198,28 @@
   clip-path: polygon(10% 28%, 90% 28%, 74% 64%, 74% 100%, 26% 100%, 26% 64%);
 }
 
-/* Auf dem Handy steht die Textspalte auf voller Breite — die Fläche muss
-   entsprechend schmaler sein, bleibt aber ebenfalls randständig. */
+/*
+ * Auf dem Handy steht die Textspalte auf voller Breite, und `.cta-row`
+ * stapelt die beiden Buttons statt sie nebeneinander zu zeigen (siehe
+ * `.cta-row` weiter unten) — beide zusammen sind dann so breit wie die
+ * Textspalte selbst, deutlich breiter als der schmale Trichter-Stiel des
+ * Desktop-Trapezes (26%–74% der Breite). Statt die Buttons über diesen
+ * schmalen Stiel hinausragen zu lassen, wird die Fläche hier zur echten
+ * Bühne: randlos über die volle Bildschirmbreite, kein Trichter mehr — ein
+ * schmaler Stiel unter zwei vollbreiten, gestapelten Buttons wäre ohnehin
+ * nur noch ein schmaler Streifen gewesen, kein erkennbares Podest.
+ */
 @media (max-width: 639px) {
   .hero-dome {
-    width: min(94vw, 400px);
-    height: clamp(230px, 27vh, 290px);
+    left: 0;
+    right: 0;
+    transform: none;
+    width: auto;
+    height: clamp(250px, 34vh, 320px);
+    clip-path: none;
+    border-top: 1px solid var(--af-rule);
   }
+  .hero-dome-frieze { top: 14px; }
 }
 
 /*
@@ -331,10 +366,29 @@
   opacity: .62;
 }
 
-.pillar {
+/* .pillar ist nur noch die äußere Reveal-Hülle (Grid-/Flex-Item-Ebene:
+   margin-top-Regeln, im Track flex:0 0 25% usw.) — die Anordnung von Schaft
+   und Text übernimmt .pillar-inner, siehe dort. */
+.pillar { display: block; }
+
+/*
+ * Trägt die eigentliche Anordnung von Schaft + Text. Eigene Ebene INNERHALB
+ * von .pillar nötig, seit Reveal (siehe LandingClient.tsx) intern einen
+ * unbewegten Sentinel-Wrapper um ein animiertes <motion.div> legt: Schaft und
+ * Text sind dadurch Enkel von .pillar, nicht mehr direkte Kinder — eine
+ * Flex-Regel auf .pillar selbst würde sie nicht mehr erreichen.
+ */
+.pillar-inner {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  height: 100%;
+  /* z-index (siehe PillarsReveal, ab PILLARS_MIN_WIDTH) wirkt nur auf
+     positionierte Elemente — ohne das gewann beim Überlappen immer die
+     Säule, die zufällig später im DOM steht, statt die gerade vorderste;
+     durch die dann "durchscheinende" Nachbarsäule wirkten beide transparent. */
+  position: relative;
 }
 
 /*
@@ -350,9 +404,18 @@
   width: 100%;
   box-sizing: border-box;
   padding: 0 clamp(6px, 1.6vw, 20px);
-  border-bottom: 5px solid rgba(232, 224, 208, .44);
-  /* zweite, breitere Stufe */
-  box-shadow: 0 8px 0 -1px rgba(232, 224, 208, .2);
+  /*
+   * --pillar-base-alpha (Standard .44, wie zuvor fest codiert): im
+   * Karussell (ab PILLARS_MIN_WIDTH, siehe PillarsReveal) setzt JS diese
+   * Property auf .pillar-inner — dort erbt sie herunter bis hierher. Die
+   * Vordergrundsäule bekommt so eine blickdichte Stufe statt der
+   * halbtransparenten Standardfarbe, die beim Überlappen mit einer
+   * Nachbarsäule sonst deren Kante durchscheinen ließ.
+   */
+  border-bottom: 5px solid rgba(232, 224, 208, var(--pillar-base-alpha, .44));
+  /* zweite, breitere Stufe — .2 war rund 45% der Kanten-Alpha, dasselbe
+     Verhältnis hier über calc() erhalten */
+  box-shadow: 0 8px 0 -1px rgba(232, 224, 208, calc(var(--pillar-base-alpha, .44) * .45));
   margin-bottom: clamp(26px, 3.4vw, 42px);
 }
 
@@ -366,8 +429,9 @@
   width: 76%;
   height: 34px;
   transform: translateX(-50%);
+  /* .14 war rund 32% der Kanten-Alpha, dasselbe Verhältnis hier erhalten */
   background: radial-gradient(
-    ellipse at center, rgba(232, 224, 208, .14) 0%, transparent 68%);
+    ellipse at center, rgba(232, 224, 208, calc(var(--pillar-base-alpha, .44) * .32)) 0%, transparent 68%);
   pointer-events: none;
 }
 
@@ -389,6 +453,151 @@
   display: block;
   text-align: center;
   padding: 0 clamp(6px, 1.4vw, 18px);
+}
+
+/*
+ * Säulenreihe als scroll-gesteuertes Karussell (siehe PillarsReveal): alle
+ * vier bleiben nebeneinander sichtbar, immer eine im Vordergrund. Dasselbe
+ * Halte-Prinzip wie .pediment-scene: die Sektion bekommt zusätzliche
+ * Scrollstrecke (--pillars-scene-h), ein `position: sticky`-Kind hält den
+ * Ausschnitt fest, während JS pro Säule transform/opacity/filter setzt —
+ * kein GSAP-`pin`, das erspart dessen Pin-Spacer-DOM. `overflow: visible`,
+ * weil die hervorgehobene Säule beim Skalieren bewusst etwas über ihre
+ * Rasterzelle hinausragen darf, statt beschnitten zu werden.
+ *
+ * Unter PILLARS_MIN_WIDTH (1024px) bleiben beide Regeln wirkungslos (siehe
+ * Media Query unten): dieselbe Markup-Struktur zeigt dort unverändert die
+ * bestehende Grid-/Listen-Darstellung.
+ */
+.pillars-scene { position: relative; height: var(--pillars-scene-h); }
+/* flex-direction: column, weil das Gebälk jetzt als erstes Kind IN der
+   gepinnten Fläche steht (siehe PillarsReveal) statt davor — .g-pillars
+   bekommt den Rest der Höhe und zentriert seine Reihe darin (siehe unten). */
+.pillars-sticky { position: sticky; top: 0; height: 100vh; overflow: visible; display: flex; flex-direction: column; }
+
+@media (max-width: 1023px) {
+  .pillars-scene { height: auto; }
+  .pillars-sticky { position: static; height: auto; display: block; }
+}
+
+@media (min-width: 1024px) {
+  .g-pillars { width: 100%; flex: 1; align-content: center; min-height: 0; }
+  /* Übergangsweich statt hart pro Frame gesetzt — GSAP aktualisiert
+     transform/opacity/filter zwar schon weich (scrub folgt der
+     Scrollposition 1:1), eine kurze eigene Transition rundet feine
+     Zwischenschritte ab, ohne dem Scrubbing hinterherzuhinken.
+     NUR auf `transform` (Compositor-Property, praktisch kostenlos neu
+     zu starten) — nicht auf `filter`: das JS setzt `filter` bei JEDEM
+     Scroll-Frame neu (siehe applyEmphasis in PillarsReveal), eine
+     gleichzeitig laufende CSS-Transition auf derselben Property müsste
+     dann bei jedem Frame neu ansetzen und dabei fortlaufend neu
+     rastern (filter hat keinen Compositor-only-Pfad wie transform) —
+     spürbares Ruckeln beim Durchscrollen der Säulen-Sektion, das sich
+     ohne die Filter-Transition (GSAPs eigenes Scrubbing reicht als
+     Glättung völlig aus) erübrigt. */
+  .pillar-inner { transition: transform .15s ease-out; will-change: transform, opacity, filter; cursor: pointer; }
+  .pillar-inner:focus-visible { outline: 2px solid var(--af-gold); outline-offset: 6px; border-radius: 4px; }
+  /* Begrenzt, wie breit der Text wird, wenn seine Säule zur Mitte wandert —
+     ohne das liefe der lange Beschreibungstext beim Zentrieren+Skalieren in
+     die Nachbarspalten hinein statt einfach mehrzeilig umzubrechen. */
+  .pillar-copy { max-width: 260px; }
+  .pillar-img { height: clamp(200px, 26vw, 360px); }
+}
+
+/*
+ * Reduzierte Bewegung: derselbe Fallback wie unter PILLARS_MIN_WIDTH, aber
+ * unabhängig von der Breite — PillarsReveal baut die Timeline in diesem Fall
+ * gar nicht erst (siehe `still`-Guard dort), diese Regel verhindert nur,
+ * dass die (dann wirkungslose) Pin-CSS eine riesige leere Scrollstrecke mit
+ * nur der ersten Säule hinterlässt.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .pillars-scene { height: auto !important; }
+  .pillars-sticky { position: static !important; height: auto !important; display: block !important; }
+}
+
+/*
+ * III · Die Analyse als gepinnte Schritt-Erzählung (siehe AnalyseReveal):
+ * dieselbe Halte-Technik wie .pillars-scene/.pediment-scene — die Sektion
+ * bekommt zusätzliche Scrollstrecke (--analyse-scene-h), ein
+ * `position: sticky`-Kind hält den Ausschnitt fest, während JS den aktiven
+ * Listenpunkt und die passende Karte setzt.
+ *
+ * WICHTIG: die Sektion selbst darf KEIN `overflow: hidden` tragen (das hatte
+ * sie früher, um die Kerzen zu beschneiden). `overflow: hidden` erzeugt einen
+ * Scroll-Container, und `position: sticky` bezieht sich immer auf den
+ * nächsten solchen Vorfahren — der hier gar nicht scrollt, das Kind bliebe
+ * also wirkungslos kleben. Dasselbe Detail, aus dem .af-landing bewusst
+ * `overflow-x: clip` statt `hidden` verwendet. Das Beschneiden übernimmt
+ * deshalb das sticky-Kind; dessen eigenes overflow ist für die eigene
+ * Klebrigkeit unerheblich.
+ */
+.analyse-scene { position: relative; height: var(--analyse-scene-h); }
+.analyse-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+/*
+ * Kartenstapel: alle vier Karten liegen deckungsgleich übereinander, die
+ * Staffelung macht erst das per JS gesetzte transform (siehe deckGeometry).
+ * Feste Höhe, weil absolut positionierte Kinder dem Elternteil keine geben.
+ */
+.analyse-deck { position: relative; height: 360px; }
+.analyse-deck-card { position: absolute; inset: 0; }
+/* Hintere Karten sind anklickbar — der Button ist reine Hülle, alles Sichtbare
+   bringt die Karte darin mit. */
+.analyse-deck-btn {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+}
+.analyse-step-btn { background: none; border: none; padding: 0; cursor: pointer; }
+
+/*
+ * Unterhalb der Schwelle (und bei reduzierter Bewegung) kein Pinning und
+ * keine Zusatzstrecke — AnalyseReveal baut die Timeline dort ohnehin nicht
+ * (matchMedia bzw. `still`-Guard), die Regeln hier verhindern nur, dass die
+ * wirkungslose Pin-CSS eine riesige leere Scrollstrecke hinterlässt.
+ *
+ * Der Stapel wird dabei zur normalen Liste: ohne Scroll-Erzählung gäbe es
+ * nichts, was zwischen den Karten weiterschaltet — untereinander sind alle
+ * vier erreichbar. `transform`/`opacity` müssen dafür per !important
+ * zurückgenommen werden, weil Framer Motion sie als Inline-Style schreibt.
+ */
+@media (max-width: 1023px) {
+  .analyse-scene { height: auto; }
+  .analyse-sticky { position: static; height: auto; display: block; }
+  .analyse-deck { height: auto; display: flex; flex-direction: column; gap: 18px; }
+  .analyse-deck-card {
+    position: static;
+    transform: none !important;
+    opacity: 1 !important;
+    z-index: auto !important;
+  }
+  .analyse-deck-btn { cursor: default; }
+  .analyse-step-btn { cursor: default; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .analyse-scene { height: auto !important; }
+  .analyse-sticky { position: static !important; height: auto !important; display: block !important; }
+  .analyse-deck { height: auto !important; display: flex !important; flex-direction: column; gap: 18px; }
+  .analyse-deck-card {
+    position: static !important;
+    transform: none !important;
+    opacity: 1 !important;
+    z-index: auto !important;
+  }
+  .analyse-deck-btn, .analyse-step-btn { cursor: default; }
 }
 
 /* Zwei Säulen als Portal um den Abschluss-Block */
@@ -452,6 +661,24 @@
   outline: 2px solid var(--af-olive);
   outline-offset: 3px;
 }
+
+.af-section-nav-trigger {
+  cursor: pointer;
+  transition: transform .15s ease-out;
+}
+.af-section-nav-trigger:hover { transform: translateY(-1px); }
+
+/*
+ * Kein CSS-`transition`/`background-color` hier: das Element setzt beide
+ * inline (für den Öffnen/Schließen-Stagger bzw. die eigene Kachelfarbe) —
+ * ein Inline-Style gewinnt immer gegen eine Stylesheet-Regel für dieselbe
+ * Eigenschaft, ein Hover darüber liefe also ins Leere. `filter` bleibt dafür
+ * frei.
+ */
+.af-section-nav-item {
+  cursor: pointer;
+}
+.af-section-nav-item:hover { filter: brightness(0.96); }
 
 /*
  * Antippmaß bewusst breitenunabhängig: iPad quer meldet 1024px und ist
@@ -540,7 +767,6 @@
     align-items: flex-start !important;
     gap: 22px !important;
   }
-  .mock-stats { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
   .mock-charts { grid-template-columns: minmax(0, 1fr) !important; }
 }
 
@@ -554,6 +780,19 @@
     white-space: normal !important;
   }
   .af-kicker-rule { display: none !important; }
+  /*
+   * Ausnahme von der Umbruch-Regel oben: die Sticky-Leiste (SectionProgressBar)
+   * teilt sich zwar dieselbe Kicker-Klasse, ist aber eine schmale Kapsel mit
+   * Blur-Hintergrund, keine Überschriftenzeile — deren Hintergrund wächst
+   * nicht mit dem Text mit, ein Umbruch ließ die zweite Zeile also über den
+   * Rand hinaus lesbar (und über den Inhalt darunter) bluten. Feste Zeile
+   * statt Umbruch: „I · Das Instrumentarium" & Co. sind kurz genug, um auch
+   * bei 375px in eine Zeile zu passen.
+   */
+  .af-section-nav-trigger .af-kicker,
+  .af-section-nav-item .af-kicker {
+    white-space: nowrap !important;
+  }
   .nav-link { display: none !important; }
   .nav-wordmark { font-size: 16px !important; }
   .feat-desc { font-size: 15px !important; }
@@ -565,13 +804,8 @@
    */
   .g-pillars { grid-template-columns: minmax(0, 1fr) !important; }
   .entablature { display: none; }
-  .pillar {
-    flex-direction: row;
-    align-items: center;
-    gap: 20px;
-    padding: 22px 0;
-    border-top: 1px solid var(--af-rule-on-soft);
-  }
+  .pillar { padding: 22px 0; border-top: 1px solid var(--af-rule-on-soft); }
+  .pillar-inner { flex-direction: row; justify-content: flex-start; gap: 20px; }
   .g-pillars > .pillar:nth-child(n + 3) { margin-top: 0; }
   .pillar-shaft {
     width: auto;
@@ -597,7 +831,7 @@
 /* ── kleines Handy ─────────────────────────────────────────────────────────── */
 @media (max-width: 419px) {
   .g-extras { grid-template-columns: minmax(0, 1fr) !important; }
-  .pillar { gap: 14px; }
+  .pillar-inner { gap: 14px; }
   .mock-label { letter-spacing: .08em !important; }
 
   /* Schriftzug und Button teilen sich 320px — beide zurücknehmen, damit der
@@ -632,8 +866,8 @@
   pointer-events: none;
   background: linear-gradient(
     to bottom,
-    rgba(247, 245, 240, 0) 0%,
-    rgba(247, 245, 240, .55) 55%,
+    rgba(244, 239, 228, 0) 0%,
+    rgba(244, 239, 228, .55) 55%,
     var(--af-parchment) 100%
   );
 }
@@ -646,22 +880,290 @@
  * UNTERHALB der Hero-Überlappung sitzen, sonst verdeckt sie beim ersten
  * Scroll-Frame kurz die Hero-Buttons/-Kuppel darunter.
  *
- * Fries und Kranz stehen im selben Flex-Block statt einzeln positioniert:
- * beide wandern zusammen als eine Einheit nach oben aus dem Bild (siehe
- * PedimentReveal, INTRO_EXIT_FOR), statt in der gepinnten Fläche stehen zu
- * bleiben und vom wachsenden Giebel überdeckt zu werden. `gap` schiebt den
- * Kranz spürbar unter den Fries statt direkt darunter.
+ * Wandert als Ganzes nach oben aus dem Bild (siehe PedimentReveal,
+ * INTRO_EXIT_FOR), statt in der gepinnten Fläche stehen zu bleiben und vom
+ * wachsenden Giebel überdeckt zu werden.
  */
 .pediment-intro {
   position: absolute;
+  /* randständig, NICHT eingezogen: die Lücke gehört nur in die Mitte (siehe
+     .pediment-intro-gap), links/rechts soll der Fries bis an die
+     Viewport-Kante laufen. */
   left: 0;
   right: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+/*
+ * Fries mit Lücke statt durchgehender Bahn — Mäander mit Medaillon: zwei
+ * Hälften rahmen eine leere Mitte, in die der Kranz eingebettet ist (siehe
+ * .pediment-intro-wreath), statt lose darunterzuhängen.
+ */
+.pediment-intro-frieze-row {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: clamp(56px, 8vh, 96px);
+}
+.pediment-intro-frieze-half { flex: 1; min-width: 0; }
+.pediment-intro-gap { flex: 0 0 clamp(248px, 22vw, 300px); }
+
+/*
+ * Etwas unterhalb der Frieslinie statt exakt darauf zentriert (24px statt
+ * 8px) — der Kranz hängt jetzt sichtbar in der Lücke, statt von der Linie
+ * mittig durchschnitten zu werden.
+ */
+.pediment-intro-wreath {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* ── Kennzahlen-Säule über dem Mockup ──────────────────────────────────────── */
+
+/*
+ * Höhe der Giebel-Szene. Die beiden Werte kommen als Custom Properties aus
+ * PedimentReveal — schmale Displays zeigen die Säule nicht und bekommen
+ * deshalb die kürzere Fassung, sonst bliebe deren Scrollstrecke als reine
+ * Leerstrecke stehen.
+ */
+.pediment-scene { height: var(--scene-h); }
+
+/* Statisches Kennzahlen-Band als Säulen-Ersatz — nur dort, wo keine Säule
+   läuft. Über der Breakpoint-Grenze stünden sonst dieselben vier Zahlen
+   zweimal auf der Seite. */
+.stats-band-sm { display: none; }
+
+@media (max-width: 899px) {
+  .pediment-scene { height: var(--scene-h-sm); }
+  .stats-band-sm { display: block; }
+}
+
+/*
+ * Steht rechts im offenen Dashboard und trägt die vier Kennzahlen, die beim
+ * Scrollen um sie herum rotieren (siehe PedimentReveal / cylinderTransform).
+ * Fährt beim Erscheinen von unten herein — der sticky Container kappt sie
+ * dabei über sein `overflow: hidden`.
+ *
+ * Höhe über top/bottom statt einer festen Höhe: die Säule soll den Viewport
+ * exakt füllen. Die Breite ergibt sich daraus über das Seitenverhältnis der
+ * Grafik (61:330) — deshalb steht am Bild `width: auto` und nicht umgekehrt,
+ * eine gestreckte Säule verzerrt die Windung sichtbar.
+ */
+.mock-column {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: clamp(12px, 3vw, 64px);
   pointer-events: none;
   will-change: transform;
+  /*
+   * Bis GSAP den Startversatz gesetzt hat (erster useEffect-Lauf) stünde die
+   * Säule sonst ungeschoben mitten im Bild. Bewusst KEIN transform hier —
+   * GSAP würde ihn als Basis lesen und seinen eigenen daraufrechnen.
+   */
+  visibility: hidden;
+}
+.mock-column-img {
+  height: 100%;
+  width: auto;
+  display: block;
+  /* dieselbe Elfenbein-Umfärbung wie die übrigen Säulen (siehe .pillar-img) */
+  filter: sepia(.42) saturate(.52) brightness(1.04) contrast(.96);
+}
+
+/* Schriftfläche: nur der gerade Schaft, Kapitell und Basis bleiben frei.
+   Die inset-Werte kommen als Inline-Style aus SHAFT_INSET. */
+.mock-column-shaft {
+  position: absolute;
+  overflow: hidden;
+}
+
+/*
+ * Eine Kennzahl, senkrecht auf den Schaft geschrieben.
+ *
+ * `writing-mode: vertical-rl` dreht Textfluss UND Glyphen um 90° — der
+ * Flex-Container folgt dem Schreibfluss, Wert und Label stehen dadurch ohne
+ * weiteres Zutun untereinander statt nebeneinander.
+ *
+ * transform/opacity setzt ausschließlich JS (cylinderTransform); der hier
+ * notierte Startwert gilt nur bis zum ersten Frame.
+ */
+.mock-column-stat {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transform-origin: center center;
+  writing-mode: vertical-rl;
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 1.4vw, 20px);
+  white-space: nowrap;
+  /* verhindert Kanten-Flimmern, während scaleX gegen 0 läuft */
+  backface-visibility: hidden;
+}
+.mock-column-value {
+  font-family: var(--font-playfair);
+  font-weight: 400;
+  font-size: clamp(30px, 3.4vw, 52px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--af-ink);
+}
+.mock-column-label {
+  font-family: var(--font-geist-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  color: var(--af-ink-subtle);
+}
+
+/*
+ * Freiraum rechts für die Säule. Ohne ihn lägen genau die rechtsbündigen
+ * Zahlen des Dashboards (Beträge, Prozente, Kurse) unter der Säule.
+ * Nur ab der Breite, ab der die Säule überhaupt läuft — darunter ist sie
+ * ausgeblendet und der Platz wäre verschenkt.
+ */
+@media (min-width: 900px) {
+  .mock-content-inset { padding-right: clamp(210px, 17vw, 270px) !important; }
+}
+
+/* Unter 900px steht die Säule dem Mockup im Weg — dort trägt es die Fläche
+   allein, die Kennzahlen erscheinen weiter unten im Fließtext der Seite. */
+@media (max-width: 899px) {
+  .mock-column { display: none; }
+}
+
+/* ── Dashboard-Mockup: Sub-Nav, Live-Ticker, Szenenwechsel ──────────────────── */
+
+/*
+ * Sub-Nav-Auf/Zuklappen — dieselbe CSS-Grid-Technik wie die echte Sidebar
+ * (.subnav-container in globals.css), hier unter eigenem Namen, damit sich
+ * Landing- und App-Stylesheet nicht überschneiden. IMMER gemountet (siehe
+ * DashboardMock): nur so kann `grid-template-rows` beim Auf- UND Zuklappen
+ * animieren, nicht nur beim Erscheinen.
+ */
+.mock-subnav-container {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  margin: 0 10px 0 25px;
+  padding-left: 12px;
+  border-left: 1px solid rgba(212, 160, 23, .15);
+  transition: grid-template-rows .28s cubic-bezier(.25, .46, .45, .94), opacity .2s ease;
+}
+.mock-subnav-container.open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+.mock-subnav-inner { overflow: hidden; min-height: 0; }
+.mock-subnav-item {
+  padding: 6px 10px;
+  border-radius: 5px;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Live-Signal-Punkt neben „Kurse · Live" — pulsiert statt still zu stehen */
+.mock-live-dot { animation: mock-live-pulse 1.8s ease-in-out infinite; }
+@keyframes mock-live-pulse {
+  0%, 100% { opacity: .5; transform: scale(.85); }
+  50%      { opacity: 1;  transform: scale(1.15); }
+}
+
+/*
+ * Szenenwechsel: sanftes Einblenden statt hartem Umschalten. Greift über
+ * `key={view}` in DashboardMock — jeder Szenenwechsel remountet den Block
+ * und spielt die Animation dadurch erneut ab.
+ */
+@keyframes mock-view-in {
+  from { opacity: 0; transform: translateX(48px); }
+  to   { opacity: 1; transform: none; }
+}
+/* `.mock-root` trägt overflow:hidden (siehe DashboardMock) — die Karte fährt
+   dadurch sauber von rechts unter der Kennzahlen-Säule hervor, statt kurz
+   darüber hinauszuragen. */
+.mock-view-fade { animation: mock-view-in .5s cubic-bezier(.22, 1, .36, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mock-live-dot { animation: none; }
+  .mock-view-fade { animation: none; }
+  .mock-subnav-container { transition: none; }
+}
+
+/* ── Dashboard-Mockup: Tilt/Glanz, Puls ──────────────────────────────────────
+ *
+ * Freie Illustration statt 1:1-Spiegel (siehe Kommentar an AU in
+ * landing-tokens.ts), aber bewusst zurückhaltend: das echte Dashboard ist
+ * ein sachliches Finanz-Tool ohne Glow-Blobs oder Schimmer-Text, und genau
+ * das soll dieses Mockup jetzt auch ausstrahlen. Karten kippen dem Cursor
+ * leicht entgegen und werfen ein dezentes Glanzlicht (useTilt/TiltCard),
+ * Live-Werte blitzen bei Änderung auf (usePulseDirection/PulseValue) — mehr
+ * Effekt braucht ein professionelles Dashboard nicht.
+ */
+
+.mock-root { position: relative; }
+
+/* Zeigt beim Hovern ein dezentes Glanzlicht, das der Maus folgt (--mx/--my,
+   aus useTilt) — kein 3D-Tilt (Rotation) mehr, der kippte die Karten zu
+   stark. transition/will-change bleiben für den Hover-Schatten unten. */
+.mock-tilt-card {
+  position: relative;
+  transition: box-shadow .2s ease;
+  will-change: box-shadow;
+}
+.mock-tilt-card:hover {
+  box-shadow: 0 10px 28px -12px rgba(0, 0, 0, .45);
+}
+.mock-tilt-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(212, 160, 23, .10), transparent 60%);
+  opacity: 0;
+  transition: opacity .25s ease;
+  pointer-events: none;
+}
+.mock-tilt-card:hover::before { opacity: 1; }
+
+/* Aufmacherkarte (Live-Kurs, siehe TickerBanner): keine Glow-Blobs oder
+   Text-Effekte, nur ein sauberer Ausschnitt. */
+.mock-hero-card { overflow: hidden; }
+
+/* Kurzer Puls-Pop, sobald ein Live-Wert sich ändert (siehe PulseValue) */
+.mock-pulse { animation: mock-pulse-pop .5s ease; }
+@keyframes mock-pulse-pop {
+  0%   { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+/* Karteireiter (Zeitraum-Filter etc.) — dieselbe Aktiv/Hover-Mechanik wie in
+   den echten Chart-Tabs (siehe NetWorthChart), nur auf Aurum-Tokens übertragen. */
+.mock-pill {
+  transition: background-color .15s ease, color .15s ease, transform .15s ease;
+}
+.mock-pill:not(.active):hover {
+  background-color: rgba(212, 160, 23, .1) !important;
+}
+
+/* Kategorie-Chips (siehe CategoryChart im echten Dashboard) — Opacity-Toggle
+   beim Klick, dieselbe Mechanik wie dort. */
+.mock-chip { transition: opacity .15s ease; cursor: pointer; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mock-pulse { animation: none !important; }
+  .mock-tilt-card {
+    transform: none !important;
+    transition: none !important;
+  }
+  .mock-tilt-card::before { display: none !important; }
 }
 /*
  * Scroll-Hinweis vor dem Giebel: Kapitälchen-Label über einer Linie, an

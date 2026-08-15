@@ -18,11 +18,16 @@ export function IntegrationsForm() {
 
   // Check current Kraken connection status on mount
   useEffect(() => {
-    fetch('/api/kraken/portfolio')
-      .then(r => r.json())
+    const controller = new AbortController()
+    fetch('/api/kraken/portfolio', { signal: controller.signal })
+      .then(r => {
+        if (!r.ok) throw new Error(`Request failed: ${r.status}`)
+        return r.json()
+      })
       .then((d: { connected?: boolean }) => setConnected(d.connected ?? false))
       .catch(() => setConnected(false))
       .finally(() => setStatusLoading(false))
+    return () => controller.abort()
   }, [])
 
   // Refresh status after save / delete
@@ -99,8 +104,9 @@ export function IntegrationsForm() {
             <input type="hidden" name="exchange" value="kraken" />
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">API Key</label>
+              <label htmlFor="api_key" className="text-sm font-medium">API Key</label>
               <input
+                id="api_key"
                 name="api_key"
                 required
                 autoComplete="off"
@@ -110,8 +116,9 @@ export function IntegrationsForm() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">API Secret</label>
+              <label htmlFor="api_secret" className="text-sm font-medium">API Secret</label>
               <input
+                id="api_secret"
                 name="api_secret"
                 type="password"
                 required
