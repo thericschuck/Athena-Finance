@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useSyncExternalStore } from 'react'
 import {
   AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -53,6 +53,17 @@ function cutoff(key: FilterKey): Date | null {
   return null
 }
 
+// ─── SSR-safe "mounted" flag ────────────────────────────────────────────────────
+// recharts needs real DOM measurements, so we render a placeholder on the server
+// and swap in the chart once we're on the client. useSyncExternalStore (rather than
+// useState+useEffect) avoids the extra commit that the naive pattern causes.
+function subscribeNever() {
+  return () => {}
+}
+function useMounted() {
+  return useSyncExternalStore(subscribeNever, () => true, () => false)
+}
+
 function viewValue(s: NetWorthSnapshot, view: ViewKey): number {
   switch (view) {
     case 'Konten': return (s.net_worth ?? 0) + (s.total_debts ?? 0) - (s.total_depot ?? 0) - (s.total_crypto ?? 0)
@@ -75,7 +86,7 @@ function ChartTooltip({ active, payload, label, view }: {
   if (!d) return null
 
   const date = new Date(label ?? '').toLocaleDateString(locale, {
-    day: '2-digit', month: 'short', year: 'numeric',
+    day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC',
   })
 
   const detailRows: [string, number | null][] =
@@ -124,10 +135,9 @@ function ChartTooltip({ active, payload, label, view }: {
 // ─── Component ────────────────────────────────────────────────────────────────
 export function NetWorthChart({ snapshots }: { snapshots: NetWorthSnapshot[] }) {
   const { locale } = useSettings()
-  const [filter,   setFilter]   = useState<FilterKey>('1J')
-  const [view,     setView]     = useState<ViewKey>('Gesamt')
-  const [mounted,  setMounted]  = useState(false)
-  useEffect(() => setMounted(true), [])
+  const [filter, setFilter] = useState<FilterKey>('1J')
+  const [view,   setView]   = useState<ViewKey>('Gesamt')
+  const mounted = useMounted()
 
   const color = VIEW_COLOR[view]
 

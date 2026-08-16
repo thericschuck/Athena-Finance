@@ -23,8 +23,9 @@ export function EinstellungenTab({ target }: Props) {
           {target?.id && <input type="hidden" name="id" value={target.id} />}
 
           <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Bezeichnung</label>
+            <label htmlFor="income-label" className="block text-xs font-medium text-muted-foreground mb-1.5">Bezeichnung</label>
             <input
+              id="income-label"
               name="label"
               defaultValue={target?.label ?? 'Standard'}
               className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
@@ -33,10 +34,11 @@ export function EinstellungenTab({ target }: Props) {
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+              <label htmlFor="income-buffer-pct" className="block text-xs font-medium text-muted-foreground mb-1.5">
                 Puffer %
               </label>
               <input
+                id="income-buffer-pct"
                 name="buffer_pct"
                 type="number"
                 min="0"
@@ -47,10 +49,11 @@ export function EinstellungenTab({ target }: Props) {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+              <label htmlFor="income-tax-pct" className="block text-xs font-medium text-muted-foreground mb-1.5">
                 Steuer %
               </label>
               <input
+                id="income-tax-pct"
                 name="tax_pct"
                 type="number"
                 min="0"
@@ -61,10 +64,11 @@ export function EinstellungenTab({ target }: Props) {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+              <label htmlFor="income-savings-pct" className="block text-xs font-medium text-muted-foreground mb-1.5">
                 Sparrate %
               </label>
               <input
+                id="income-savings-pct"
                 name="savings_pct"
                 type="number"
                 min="0"

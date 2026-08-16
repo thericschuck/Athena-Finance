@@ -123,10 +123,15 @@ export function Sidebar({ email, displayName, avatarUrl, mobileOpen = false, onM
                 className={cn(
                   'w-full justify-start gap-2.5 font-normal text-sidebar-foreground',
                   'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                  // Aktive Blattseite: volle Gold-Fläche mit dunkler Schrift
+                  // (sidebar-primary/-foreground), exakt wie im Figma-Redesign —
+                  // sidebar-accent bleibt für Hover und die Avatar-Kachel reserviert.
                   sectionActive && !children &&
-                    'bg-sidebar-accent text-sidebar-accent-foreground font-medium',
+                    'bg-sidebar-primary text-sidebar-primary-foreground font-medium hover:bg-sidebar-primary hover:text-sidebar-primary-foreground',
+                  // Aktiver Elternpunkt mit aufgeklappten Kindern: nur Text in Gold,
+                  // keine volle Fläche (die Kinder öffnen sich direkt darunter).
                   sectionActive && children &&
-                    'text-sidebar-accent-foreground font-medium',
+                    'text-sidebar-primary font-medium',
                 )}
               >
                 <Link href={children ? children[0].href : href}>

@@ -71,11 +71,12 @@ function ItemForm({
       <button
         type="submit"
         disabled={pending}
+        aria-label="Speichern"
         className="h-8 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
       >
         <Check className="size-4" />
       </button>
-      <button type="button" onClick={onDone} className="h-8 px-2 rounded-md text-muted-foreground hover:text-foreground">
+      <button type="button" onClick={onDone} aria-label="Abbrechen" className="h-8 px-2 rounded-md text-muted-foreground hover:text-foreground">
         <X className="size-4" />
       </button>
     </form>
@@ -88,8 +89,11 @@ function ItemRow({ item, onEdit }: { item: BudgetItem; onEdit: () => void }) {
 
   async function handleDelete() {
     setDeleting(true)
-    await deleteItem(item.id)
-    setDeleting(false)
+    try {
+      await deleteItem(item.id)
+    } finally {
+      setDeleting(false)
+    }
   }
 
   return (
@@ -104,6 +108,7 @@ function ItemRow({ item, onEdit }: { item: BudgetItem; onEdit: () => void }) {
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={onEdit}
+            aria-label="Produkt bearbeiten"
             className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground"
           >
             <Pencil className="size-3.5" />
@@ -111,6 +116,7 @@ function ItemRow({ item, onEdit }: { item: BudgetItem; onEdit: () => void }) {
           <button
             onClick={handleDelete}
             disabled={deleting}
+            aria-label="Produkt löschen"
             className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-red-500 disabled:opacity-40"
           >
             <Trash2 className="size-3.5" />
@@ -166,17 +172,25 @@ function CategoryCard({
           {'error' in (catState ?? {}) && (
             <span className="text-xs text-red-500 w-full">{(catState as {error:string}).error}</span>
           )}
-          <button type="submit" disabled={catPending} className="h-8 px-3 rounded-md bg-primary text-primary-foreground text-sm">
+          <button type="submit" disabled={catPending} aria-label="Speichern" className="h-8 px-3 rounded-md bg-primary text-primary-foreground text-sm">
             <Check className="size-4" />
           </button>
-          <button type="button" onClick={() => setEditingCat(false)} className="h-8 px-2 rounded-md text-muted-foreground hover:text-foreground">
+          <button type="button" onClick={() => setEditingCat(false)} aria-label="Abbrechen" className="h-8 px-2 rounded-md text-muted-foreground hover:text-foreground">
             <X className="size-4" />
           </button>
         </form>
       ) : (
         <div
+          role="button"
+          tabIndex={0}
           className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none hover:bg-muted/30 transition-colors"
           onClick={() => setOpen(o => !o)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              setOpen(o => !o)
+            }
+          }}
         >
           <span className="text-lg w-7 text-center shrink-0">{category.icon ?? '📦'}</span>
           <span className="flex-1 font-medium text-sm">{category.name}</span>
@@ -194,6 +208,7 @@ function CategoryCard({
           >
             <button
               onClick={() => setEditingCat(true)}
+              aria-label="Kategorie bearbeiten"
               className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100"
             >
               <Pencil className="size-3.5" />
@@ -201,6 +216,7 @@ function CategoryCard({
             <button
               onClick={handleDeleteCat}
               disabled={deletingCat}
+              aria-label="Kategorie löschen"
               className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-red-500 disabled:opacity-40"
             >
               <Trash2 className="size-3.5" />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useSyncExternalStore } from 'react'
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, Tooltip as ReTooltip,
   ResponsiveContainer, CartesianGrid, ReferenceLine, BarChart,
@@ -8,7 +8,7 @@ import {
 import { AlertTriangle, TrendingUp, Minus } from 'lucide-react'
 import { fmtCurrency } from '@/lib/format'
 
-type Summary = {
+export type Summary = {
   id:               string
   user_id:          string
   month:            string
@@ -31,7 +31,18 @@ type Props = { summaries: Summary[]; locale: string }
 
 function monthLabel(month: string, locale: string) {
   const dateStr = month.length <= 7 ? month + '-01' : month.slice(0, 10)
-  return new Date(dateStr + 'T12:00:00').toLocaleDateString(locale, { month: 'short', year: '2-digit' })
+  return new Date(dateStr + 'T12:00:00Z').toLocaleDateString(locale, { month: 'short', year: '2-digit', timeZone: 'UTC' })
+}
+
+// ─── SSR-safe "mounted" flag ────────────────────────────────────────────────────
+// Chart libs like recharts need real DOM measurements, so we render a placeholder
+// on the server and swap in the chart once we're on the client. useSyncExternalStore
+// (rather than useState+useEffect) avoids the extra commit that the naive pattern causes.
+function subscribeNever() {
+  return () => {}
+}
+function useMounted() {
+  return useSyncExternalStore(subscribeNever, () => true, () => false)
 }
 
 function netBal(m: Summary) {
@@ -90,10 +101,13 @@ function ChartTooltip({ active, payload, label, fmt }: {
 }
 
 // ─── 1. Einnahmen vs. Ausgaben ─────────────────────────────────────────────────
-function IncomeExpenseChart({ summaries, locale }: { summaries: Summary[]; locale: string }) {
+// Exportiert (zusätzlich zum Re-Export über FinanceAnalytics unten) für den
+// Landing-Mockup-Pilot (siehe DashboardMock.tsx, BarsChart) — dort wird nur
+// dieser einzelne Chart gebraucht, nicht das komplette FinanceAnalytics-Bundle
+// samt Kategorie-Chart und Monatsabweichungs-Tabelle.
+export function IncomeExpenseChart({ summaries, locale, height = 200 }: { summaries: Summary[]; locale: string; height?: number | `${number}%` }) {
   const fmt = (n: number) => fmtCurrency(n, 'EUR', locale)
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+  const mounted = useMounted()
 
   const data = [...summaries]
     .sort((a, b) => a.month.localeCompare(b.month))
@@ -109,7 +123,7 @@ function IncomeExpenseChart({ summaries, locale }: { summaries: Summary[]; local
     <Card>
       <SectionTitle>Einnahmen vs. Ausgaben</SectionTitle>
       {mounted ? (
-        <ResponsiveContainer width="100%" height={200}>
+        <ResponsiveContainer width="100%" height={height}>
           <ComposedChart data={data} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis
@@ -127,19 +141,25 @@ function IncomeExpenseChart({ summaries, locale }: { summaries: Summary[]; local
               cursor={{ fill: 'hsl(var(--muted))', fillOpacity: 0.4 }}
             />
             <ReferenceLine y={0} stroke="hsl(var(--border))" />
-            <Bar dataKey="Einnahmen" fill="#10b981" fillOpacity={0.85} radius={[3, 3, 0, 0]} maxBarSize={32} />
-            <Bar dataKey="Ausgaben"  fill="#ef4444" fillOpacity={0.85} radius={[3, 3, 0, 0]} maxBarSize={32} />
+            {/* Oliv/Terrakotta statt gesättigtem Emerald/Rot, Gold statt Indigo
+                für die Netto-Linie — dieselbe gedeckte Erdton-Sprache wie die
+                Analyse-Komponenten (siehe GeldflussChart-impl.tsx/
+                AusgabenHeatmap.tsx/MonatsVergleich-impl.tsx), damit Dashboard-
+                und Analyse-Szene im Landing-Mockup nicht wie zwei verschiedene
+                Paletten wirken. */}
+            <Bar dataKey="Einnahmen" fill="#8CA277" fillOpacity={0.85} radius={[3, 3, 0, 0]} maxBarSize={32} />
+            <Bar dataKey="Ausgaben"  fill="#A9553C" fillOpacity={0.85} radius={[3, 3, 0, 0]} maxBarSize={32} />
             <Line
               dataKey="Netto"
-              stroke="#6366f1"
+              stroke="#f0d98c"
               strokeWidth={2}
-              dot={{ r: 3, fill: '#6366f1', strokeWidth: 0 }}
-              activeDot={{ r: 5, fill: '#6366f1' }}
+              dot={{ r: 3, fill: '#f0d98c', strokeWidth: 0 }}
+              activeDot={{ r: 5, fill: '#f0d98c' }}
             />
           </ComposedChart>
         </ResponsiveContainer>
       ) : (
-        <div style={{ height: 200 }} />
+        <div style={{ height }} />
       )}
     </Card>
   )
@@ -151,9 +171,8 @@ type Cat = typeof ALL_CATS[number]
 // ─── 2. Ausgaben nach Kategorien ───────────────────────────────────────────────
 function CategoryChart({ summaries, locale }: { summaries: Summary[]; locale: string }) {
   const fmt = (n: number) => fmtCurrency(n, 'EUR', locale)
-  const [active,   setActive]  = useState<Set<Cat>>(new Set(ALL_CATS))
-  const [mounted,  setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+  const [active, setActive] = useState<Set<Cat>>(() => new Set(ALL_CATS))
+  const mounted = useMounted()
 
   function toggle(cat: Cat) {
     setActive(prev => {
@@ -313,9 +332,6 @@ function DeviationTable({ summaries, locale }: { summaries: Summary[]; locale: s
 
 // ─── Export ────────────────────────────────────────────────────────────────────
 export function FinanceAnalytics({ summaries, locale }: Props) {
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
-
   if (summaries.length === 0) return null
 
   return (

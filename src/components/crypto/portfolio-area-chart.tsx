@@ -1,0 +1,127 @@
+'use client'
+
+// Recharts-dependent rendering split out of portfolio-chart.tsx so it can be
+// loaded on demand via next/dynamic (react-doctor/prefer-dynamic-import) —
+// recharts is a heavy dependency and this chart is non-critical, below-the-fold UI.
+
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Legend,
+} from 'recharts'
+import { useSettings } from '@/components/providers/settings-context'
+import { fmtCurrency } from '@/lib/format'
+
+// Oliv/Gold/Terrakotta-Familie statt Indigo/Amber/Emerald/Rot/Violett/Cyan —
+// dieselbe gedeckte Erdton-Sprache wie die Analyse-Komponenten (siehe
+// GeldflussChart-impl.tsx/AusgabenHeatmap.tsx), damit Crypto- und Analyse-
+// Szene im Landing-Mockup nicht wie zwei verschiedene Paletten wirken.
+const COLORS = ['#8CA277', '#CDA564', '#A9553C', '#748563', '#BF9B6E', '#6B3427']
+
+function formatY(value: number): string {
+  if (value >= 1_000_000) return `€${(value / 1_000_000).toFixed(1)}M`
+  if (value >= 1_000) return `€${(value / 1_000).toFixed(0)}k`
+  return `€${value}`
+}
+
+// ─── Custom Tooltip ───────────────────────────────────────────────────────────
+function CustomTooltip({ active, payload, label }: {
+  active?: boolean
+  payload?: Array<{ dataKey: string; value: number; color: string }>
+  label?: string
+}) {
+  const { locale } = useSettings()
+  if (!active || !payload?.length || !label) return null
+  const [y, m, d] = label.split('-')
+  const total = payload.reduce((s, e) => s + (e.value ?? 0), 0)
+
+  return (
+    <div className="rounded-lg border border-border bg-card shadow-md p-3 text-xs space-y-1 min-w-[160px]">
+      <p className="font-medium text-muted-foreground pb-1 border-b border-border">
+        {d}.{m}.{y}
+      </p>
+      {payload.map(entry => (
+        <div key={entry.dataKey} className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-1.5">
+            <span className="size-2 rounded-full shrink-0" style={{ background: entry.color }} />
+            <span className="text-muted-foreground">{entry.dataKey}</span>
+          </div>
+          <span className="font-medium tabular-nums">{fmtCurrency(entry.value, 'EUR', locale)}</span>
+        </div>
+      ))}
+      {payload.length > 1 && (
+        <div className="flex items-center justify-between gap-4 pt-1 border-t border-border">
+          <span className="text-muted-foreground">Gesamt</span>
+          <span className="font-semibold tabular-nums">{fmtCurrency(total, 'EUR', locale)}</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Public export ────────────────────────────────────────────────────────────
+export function PortfolioAreaChart({
+  chartData, visiblePortfolios, xFormatter, tickInterval, height = 300,
+}: {
+  chartData: Array<Record<string, string | number>>
+  visiblePortfolios: string[]
+  xFormatter: (v: string) => string
+  tickInterval: number
+  height?: number | `${number}%`
+}) {
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+        <defs>
+          {visiblePortfolios.map((name, i) => (
+            <linearGradient key={name} id={`grad-${i}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%"  stopColor={COLORS[i % COLORS.length]} stopOpacity={0.3} />
+              <stop offset="95%" stopColor={COLORS[i % COLORS.length]} stopOpacity={0.03} />
+            </linearGradient>
+          ))}
+        </defs>
+
+        <CartesianGrid
+          strokeDasharray="3 3"
+          stroke="currentColor"
+          strokeOpacity={0.1}
+          vertical={false}
+        />
+        <XAxis
+          dataKey="date"
+          tickFormatter={xFormatter}
+          interval={tickInterval}
+          tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
+          tickLine={false}
+          axisLine={false}
+        />
+        <YAxis
+          tickFormatter={formatY}
+          tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
+          tickLine={false}
+          axisLine={false}
+          width={52}
+        />
+        <Tooltip content={<CustomTooltip />} />
+        {visiblePortfolios.length > 1 && (
+          <Legend
+            wrapperStyle={{ fontSize: '12px', paddingTop: '12px', opacity: 0.7 }}
+          />
+        )}
+
+        {visiblePortfolios.map((name, i) => (
+          <Area
+            key={name}
+            type="monotone"
+            dataKey={name}
+            stackId="stack"
+            stroke={COLORS[i % COLORS.length]}
+            strokeWidth={2}
+            fill={`url(#grad-${i})`}
+            dot={false}
+            activeDot={{ r: 4, strokeWidth: 0 }}
+          />
+        ))}
+      </AreaChart>
+    </ResponsiveContainer>
+  )
+}

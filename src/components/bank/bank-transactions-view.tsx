@@ -122,6 +122,7 @@ export function BankTransactionsView({ transactions, isLoading, onFilter, onUpda
                       <select
                         value={tx.category ?? NO_CATEGORY}
                         onChange={e => onUpdateCategory(tx.id, e.target.value === NO_CATEGORY ? null : e.target.value)}
+                        aria-label="Kategorie ändern"
                         className={`h-6 max-w-[140px] cursor-pointer rounded-full border-none px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring ${
                           tx.category
                             ? 'bg-muted text-muted-foreground hover:bg-muted/70'
@@ -188,6 +189,7 @@ function FilterBar({
         <select
           value={category}
           onChange={e => setCategory(e.target.value)}
+          aria-label="Nach Kategorie filtern"
           className="h-8 rounded-md border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         >
           <option value="">Alle Kategorien</option>

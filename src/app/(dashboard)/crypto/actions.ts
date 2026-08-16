@@ -513,33 +513,36 @@ export async function syncFromKraken(): Promise<SyncState> {
   )
   const syncedSymbols = new Set(toSync.map(e => e.symbol))
 
-  // 6. Upsert: update existing, insert new
-  for (const entry of toSync) {
-    const existing = existingMap.get(entry.symbol)
-    if (existing) {
-      await supabase.from('assets').update({
-        quantity:       entry.quantity,
-        portfolio_name: 'Kraken',
-        updated_at:     new Date().toISOString(),
-      }).eq('id', existing.id)
-    } else {
-      await supabase.from('assets').insert({
-        user_id:        user.id,
-        name:           entry.name,
-        symbol:         entry.symbol,
-        type:           entry.type,
-        quantity:       entry.quantity,
-        currency:       'EUR',
-        exchange:       'Kraken',
-        portfolio_name: 'Kraken',
-      })
-    }
-  }
+  // 6. Upsert: update existing, insert new (each entry targets a distinct asset row, independent of the others)
+  await Promise.all(
+    toSync.map(async entry => {
+      const existing = existingMap.get(entry.symbol)
+      if (existing) {
+        await supabase.from('assets').update({
+          quantity:       entry.quantity,
+          portfolio_name: 'Kraken',
+          updated_at:     new Date().toISOString(),
+        }).eq('id', existing.id)
+      } else {
+        await supabase.from('assets').insert({
+          user_id:        user.id,
+          name:           entry.name,
+          symbol:         entry.symbol,
+          type:           entry.type,
+          quantity:       entry.quantity,
+          currency:       'EUR',
+          exchange:       'Kraken',
+          portfolio_name: 'Kraken',
+        })
+      }
+    })
+  )
 
   // 7. Remove assets that are no longer in balance OR now below the dust threshold
-  const staleIds = (existingAssets ?? [])
-    .filter(a => a.symbol == null || !syncedSymbols.has(a.symbol))
-    .map(a => a.id)
+  const staleIds: string[] = []
+  for (const a of existingAssets ?? []) {
+    if (a.symbol == null || !syncedSymbols.has(a.symbol)) staleIds.push(a.id)
+  }
 
   if (staleIds.length > 0) {
     await supabase.from('assets').delete().in('id', staleIds)
@@ -552,20 +555,23 @@ export async function syncFromKraken(): Promise<SyncState> {
     .eq('user_id', user.id)
     .eq('exchange', 'Kraken')
 
-  for (const asset of freshAssets ?? []) {
-    if (!asset.symbol) continue
-    const price = prices[asset.symbol]
-    if (price == null) continue
-    // Delete ALL existing valuations (prevents stale totals from old quantities)
-    await supabase.from('asset_valuations').delete().eq('asset_id', asset.id)
-    await supabase.from('asset_valuations').insert({
-      asset_id:       asset.id,
-      price_per_unit: price,
-      total_value:    (asset.quantity ?? 0) * price,
-      valuation_date: today,
-      source:         'coingecko',
+  // Each asset's delete-then-insert pair must stay ordered, but different assets are independent of each other.
+  await Promise.all(
+    (freshAssets ?? []).map(async asset => {
+      if (!asset.symbol) return
+      const price = prices[asset.symbol]
+      if (price == null) return
+      // Delete ALL existing valuations (prevents stale totals from old quantities)
+      await supabase.from('asset_valuations').delete().eq('asset_id', asset.id)
+      await supabase.from('asset_valuations').insert({
+        asset_id:       asset.id,
+        price_per_unit: price,
+        total_value:    (asset.quantity ?? 0) * price,
+        valuation_date: today,
+        source:         'coingecko',
+      })
     })
-  }
+  )
 
   // 9. Save last sync timestamp
   await supabase.from('user_settings').upsert(

@@ -128,6 +128,7 @@ export function CoinCombobox({ defaultValue, onChange }: Props) {
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder="Suchen…"
+              aria-label="Coins suchen"
               className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
           </div>
@@ -140,7 +141,16 @@ export function CoinCombobox({ defaultValue, onChange }: Props) {
               filtered.map(coin => (
                 <li
                   key={coin.coingecko_id ?? coin.symbol}
+                  role="option"
+                  aria-selected={selected?.symbol === coin.symbol}
+                  tabIndex={0}
                   onClick={() => select(coin)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      select(coin)
+                    }
+                  }}
                   className={`flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-muted/60 ${
                     selected?.symbol === coin.symbol ? 'bg-muted/40' : ''
                   }`}

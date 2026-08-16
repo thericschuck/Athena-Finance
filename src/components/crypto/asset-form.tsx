@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Loader2, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Loader2, Pencil, Trash2 } from 'lucide-react'
 import {
   createAsset, updateAsset, deleteAsset, type AssetActionState,
 } from '@/app/(dashboard)/crypto/actions'
@@ -285,15 +285,6 @@ export function AssetFormDialog({
       onOpenChange={onOpenChange}
       onSuccess={onSuccess}
       defaultPortfolio={defaultPortfolio}
-    />
-  )
-}
-
-export function AddAssetDialog() {
-  return (
-    <AssetDialog
-      mode="create"
-      trigger={<Button size="sm"><Plus className="size-4" />Asset anlegen</Button>}
     />
   )
 }

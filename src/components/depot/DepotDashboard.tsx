@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import {
-  AreaChart, Area, LineChart, Line,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
-} from 'recharts'
+import dynamic from 'next/dynamic'
+import type { ChartTab } from '@/components/depot/depot-chart'
+import { DepotTransactionsTable } from '@/components/depot/depot-transactions-table'
 import {
   addInitialHolding,
   addManualDeposit,
@@ -37,8 +36,13 @@ import { ChevronDown, Plus, Trash2, Zap } from 'lucide-react'
 const DEFAULT_MONTHLY_AMOUNT = 50
 
 type FormTab   = 'deposit' | 'initial' | 'savings_plan'
-type ChartTab  = 'Wert' | 'Anteile' | 'Cost Basis' | 'Rendite'
 const CHART_TABS: ChartTab[] = ['Wert', 'Anteile', 'Cost Basis', 'Rendite']
+
+// recharts is a heavy dependency — load it on demand, client-only.
+const DepotChart = dynamic(
+  () => import('@/components/depot/depot-chart').then(m => m.DepotChart),
+  { ssr: false }
+)
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 
@@ -53,9 +57,6 @@ function fmtShares(n: number) {
 }
 function fmtDate(s: string) {
   return new Date(s + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
-function fmtDateShort(s: string) {
-  return new Date(s + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: '2-digit' })
 }
 function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
@@ -83,29 +84,6 @@ function StatCard({ title, value, sub, color, loading }: {
           {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
         </>
       )}
-    </div>
-  )
-}
-
-function ChartTooltip({ active, payload, label }: {
-  active?: boolean
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  payload?: Array<{ value: number; name: string; [k: string]: any }>
-  label?: string
-}) {
-  if (!active || !payload?.length) return null
-  return (
-    <div className="rounded-xl border border-border bg-card px-3 py-2 text-xs shadow-lg">
-      <p className="text-muted-foreground mb-1">{label ? fmtDate(label) : ''}</p>
-      {payload.map((p, i) => (
-        <p key={i} className="text-foreground">
-          {p.name === 'portfolioValue' ? 'Wert: ' + fmtEur(p.value) :
-           p.name === 'totalInvested'  ? 'Investiert: ' + fmtEur(p.value) :
-           p.name === 'totalShares'    ? 'Anteile: ' + fmtShares(p.value) :
-           p.name === 'returnPct'      ? 'Rendite: ' + fmtPct(p.value) :
-           String(p.value)}
-        </p>
-      ))}
     </div>
   )
 }
@@ -200,10 +178,14 @@ export function DepotDashboard() {
     setIsLive(false)
     livePricePreFilled.current = false
 
+    let cancelled = false
+
     const fetchPrice = async () => {
       try {
-        const res  = await fetch(`/api/depot/live-price?isin=${activeDepot.isin}`)
+        const res = await fetch(`/api/depot/live-price?isin=${activeDepot.isin}`)
+        if (!res.ok) return
         const data = await res.json()
+        if (cancelled) return
         if (data.price) {
           setLivePrice(Number(data.price))
           if (!livePricePreFilled.current) {
@@ -217,24 +199,27 @@ export function DepotDashboard() {
     }
     fetchPrice()
     const interval = setInterval(fetchPrice, 5 * 60_000)
-    return () => clearInterval(interval)
+    return () => { cancelled = true; clearInterval(interval) }
   }, [activeDepot])
 
   // ─── Load transaction data ───────────────────────────────────────────────────
   const loadData = useCallback(async () => {
     if (!activeDepot) return
     setLoading(true)
-    const [txs, hist, allPlans] = await Promise.all([
-      getDepotTransactions(activeDepot.isin),
-      getPortfolioHistory(activeDepot.isin),
-      getSavingsPlans(),
-    ])
-    const plans = allPlans.filter(p => p.isin === activeDepot.isin)
-    setTransactions(txs)
-    setHistory(hist)
-    setSavingsPlans(plans)
-    setDuePlans(checkDueSavingsPlans(plans, txs))
-    setLoading(false)
+    try {
+      const [txs, hist, allPlans] = await Promise.all([
+        getDepotTransactions(activeDepot.isin),
+        getPortfolioHistory(activeDepot.isin),
+        getSavingsPlans(),
+      ])
+      const plans = allPlans.filter(p => p.isin === activeDepot.isin)
+      setTransactions(txs)
+      setHistory(hist)
+      setSavingsPlans(plans)
+      setDuePlans(checkDueSavingsPlans(plans, txs))
+    } finally {
+      setLoading(false)
+    }
   }, [activeDepot])
 
   useEffect(() => { loadData() }, [loadData])
@@ -256,12 +241,6 @@ export function DepotDashboard() {
 
   const sortedTx = [...transactions].sort((a, b) => b.transaction_date.localeCompare(a.transaction_date))
 
-  function yTickFmt(v: number) {
-    if (chartTab === 'Rendite') return v.toFixed(1) + '%'
-    if (chartTab === 'Anteile') return v.toFixed(3)
-    return Math.abs(v) >= 1000 ? (v / 1000).toFixed(0) + 'k' : v.toFixed(0)
-  }
-
   // ─── Handlers ───────────────────────────────────────────────────────────────
   async function handleDeleteDepot() {
     if (!depotToDelete) return
@@ -278,31 +257,37 @@ export function DepotDashboard() {
     e.preventDefault()
     setNewDepotError(null)
     setNewDepotBusy(true)
-    const result = await createDepot(newDepotName.trim(), newDepotIsin.trim())
-    setNewDepotBusy(false)
-    if (!result.success) { setNewDepotError(result.error ?? 'Fehler'); return }
-    const list = await getDepots()
-    setDepots(list)
-    const created = list.find(d => d.id === result.id)
-    if (created) setActiveDepot(created)
-    setNewDepotName('')
-    setNewDepotIsin('')
-    setShowNewDepotForm(false)
-    setShowDepotPicker(false)
+    try {
+      const result = await createDepot(newDepotName.trim(), newDepotIsin.trim())
+      if (!result.success) { setNewDepotError(result.error ?? 'Fehler'); return }
+      const list = await getDepots()
+      setDepots(list)
+      const created = list.find(d => d.id === result.id)
+      if (created) setActiveDepot(created)
+      setNewDepotName('')
+      setNewDepotIsin('')
+      setShowNewDepotForm(false)
+      setShowDepotPicker(false)
+    } finally {
+      setNewDepotBusy(false)
+    }
   }
 
   async function handleDeposit(e: React.FormEvent) {
     e.preventDefault(); setDepError(null); setDepBusy(true)
     if (!activeDepot) return
-    const result = await addManualDeposit(
-      activeDepot.isin, activeDepot.name,
-      parseFloat(depAmount), parseFloat(depPrice), depDate, depNotes || undefined
-    )
-    setDepBusy(false)
-    if (!result.success) { setDepError(result.error ?? 'Fehler'); return }
-    setDepAmount(String(DEFAULT_MONTHLY_AMOUNT))
-    setDepNotes('')
-    await loadData()
+    try {
+      const result = await addManualDeposit(
+        activeDepot.isin, activeDepot.name,
+        parseFloat(depAmount), parseFloat(depPrice), depDate, depNotes || undefined
+      )
+      if (!result.success) { setDepError(result.error ?? 'Fehler'); return }
+      setDepAmount(String(DEFAULT_MONTHLY_AMOUNT))
+      setDepNotes('')
+      await loadData()
+    } finally {
+      setDepBusy(false)
+    }
   }
 
   async function handleInitial(e: React.FormEvent) {
@@ -314,29 +299,35 @@ export function DepotDashboard() {
       setInitBusy(false)
       return
     }
-    const result = await addInitialHolding(
-      activeDepot.isin, activeDepot.name,
-      parseFloat(initShares), priceToUse, initDate
-    )
-    setInitBusy(false)
-    if (!result.success) { setInitError(result.error ?? 'Fehler'); return }
-    setInitShares('')
-    await loadData()
+    try {
+      const result = await addInitialHolding(
+        activeDepot.isin, activeDepot.name,
+        parseFloat(initShares), priceToUse, initDate
+      )
+      if (!result.success) { setInitError(result.error ?? 'Fehler'); return }
+      setInitShares('')
+      await loadData()
+    } finally {
+      setInitBusy(false)
+    }
   }
 
   async function handleCreatePlan(e: React.FormEvent) {
     e.preventDefault(); setPlanError(null); setPlanBusy(true)
     if (!activeDepot) return
-    const result = await createSavingsPlan(
-      activeDepot.isin, activeDepot.name,
-      parseFloat(planAmount), parseInt(planDay), planStart
-    )
-    setPlanBusy(false)
-    if (!result.success) { setPlanError(result.error ?? 'Fehler'); return }
-    setPlanAmount(String(DEFAULT_MONTHLY_AMOUNT))
-    setPlanDay('1')
-    setPlanStart(today)
-    await loadData()
+    try {
+      const result = await createSavingsPlan(
+        activeDepot.isin, activeDepot.name,
+        parseFloat(planAmount), parseInt(planDay), planStart
+      )
+      if (!result.success) { setPlanError(result.error ?? 'Fehler'); return }
+      setPlanAmount(String(DEFAULT_MONTHLY_AMOUNT))
+      setPlanDay('1')
+      setPlanStart(today)
+      await loadData()
+    } finally {
+      setPlanBusy(false)
+    }
   }
 
   async function handleToggle(id: string, current: boolean) {
@@ -379,12 +370,14 @@ export function DepotDashboard() {
           <form onSubmit={handleCreateDepot} className="space-y-3">
             <input
               placeholder="Name (z.B. UniGlobal Depot)"
+              aria-label="Depot-Name"
               value={newDepotName} onChange={e => setNewDepotName(e.target.value)}
               className="w-full text-sm rounded-md bg-background border border-border text-foreground px-3 py-2 outline-none focus:border-primary"
               required
             />
             <input
               placeholder="ISIN (z.B. DE0008491051)"
+              aria-label="ISIN"
               value={newDepotIsin} onChange={e => setNewDepotIsin(e.target.value)}
               className="w-full text-sm rounded-md bg-background border border-border text-foreground px-3 py-2 outline-none focus:border-primary font-mono"
               required
@@ -441,6 +434,7 @@ export function DepotDashboard() {
                   </button>
                   <button
                     onClick={e => { e.stopPropagation(); setDepotToDelete(d); setShowDepotPicker(false) }}
+                    aria-label={`Depot ${d.name} löschen`}
                     className="pr-3 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
                   >
                     <Trash2 className="size-3.5" />
@@ -463,12 +457,14 @@ export function DepotDashboard() {
                   <p className="text-xs font-medium text-foreground mb-2">Neues Depot</p>
                   <input
                     placeholder="Name (z.B. UniGlobal)"
+                    aria-label="Depot-Name"
                     value={newDepotName} onChange={e => setNewDepotName(e.target.value)}
                     className="w-full text-sm rounded-md bg-background border border-border text-foreground px-3 py-1.5 outline-none focus:border-primary"
                     autoFocus required
                   />
                   <input
                     placeholder="ISIN"
+                    aria-label="ISIN"
                     value={newDepotIsin} onChange={e => setNewDepotIsin(e.target.value)}
                     className="w-full text-sm rounded-md bg-background border border-border text-foreground px-3 py-1.5 outline-none focus:border-primary font-mono"
                     required
@@ -699,6 +695,7 @@ export function DepotDashboard() {
                             </div>
                             <button
                               onClick={() => handleToggle(plan.id, plan.is_active)}
+                              aria-label={plan.is_active ? 'Sparplan deaktivieren' : 'Sparplan aktivieren'}
                               className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${plan.is_active ? 'bg-primary' : 'bg-muted'}`}
                             >
                               <span className={`inline-block size-3.5 rounded-full bg-white transition-transform ${plan.is_active ? 'translate-x-4' : 'translate-x-0.5'}`} />
@@ -716,7 +713,7 @@ export function DepotDashboard() {
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <button className="text-muted-foreground hover:text-destructive transition-colors px-1">
+                                <button aria-label="Sparplan löschen" className="text-muted-foreground hover:text-destructive transition-colors px-1">
                                   <Trash2 className="size-4" />
                                 </button>
                               </AlertDialogTrigger>
@@ -789,47 +786,7 @@ export function DepotDashboard() {
                 Noch keine Daten – trage deinen ersten Kauf ein.
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                {chartTab === 'Rendite' ? (
-                  <LineChart data={history} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#30363d" vertical={false} />
-                    <XAxis dataKey="date" tickFormatter={fmtDateShort} tick={{ fill: '#8b949e', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tickFormatter={yTickFmt} tick={{ fill: '#8b949e', fontSize: 11 }} axisLine={false} tickLine={false} width={50} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <ReferenceLine y={0} stroke="#30363d" strokeDasharray="4 2" />
-                    <Line type="monotone" dataKey="returnPct" stroke="#58a6ff" dot={false} strokeWidth={2} />
-                  </LineChart>
-                ) : (
-                  <AreaChart data={history} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="gradValue"    x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%"  stopColor="#58a6ff" stopOpacity={0.25} />
-                        <stop offset="95%" stopColor="#58a6ff" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="gradInvested" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%"  stopColor="#3fb950" stopOpacity={0.18} />
-                        <stop offset="95%" stopColor="#3fb950" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#30363d" vertical={false} />
-                    <XAxis dataKey="date" tickFormatter={fmtDateShort} tick={{ fill: '#8b949e', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tickFormatter={yTickFmt} tick={{ fill: '#8b949e', fontSize: 11 }} axisLine={false} tickLine={false} width={50} />
-                    <Tooltip content={<ChartTooltip />} />
-                    {chartTab === 'Wert' && (
-                      <Area type="monotone" dataKey="portfolioValue" stroke="#58a6ff" fill="url(#gradValue)" strokeWidth={2} dot={false} />
-                    )}
-                    {chartTab === 'Anteile' && (
-                      <Area type="monotone" dataKey="totalShares" stroke="#58a6ff" fill="url(#gradValue)" strokeWidth={2} dot={false} />
-                    )}
-                    {chartTab === 'Cost Basis' && (
-                      <>
-                        <Area type="monotone" dataKey="portfolioValue" stroke="#58a6ff" fill="url(#gradValue)" strokeWidth={2} dot={false} />
-                        <Area type="monotone" dataKey="totalInvested" stroke="#3fb950" fill="url(#gradInvested)" strokeWidth={2} dot={false} />
-                      </>
-                    )}
-                  </AreaChart>
-                )}
-              </ResponsiveContainer>
+              <DepotChart chartTab={chartTab} history={history} />
             )}
           </div>
 
@@ -847,65 +804,7 @@ export function DepotDashboard() {
                 Noch keine Transaktionen vorhanden.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border text-muted-foreground text-xs">
-                      <th className="text-left px-5 py-2 font-medium">Datum</th>
-                      <th className="text-left px-3 py-2 font-medium hidden sm:table-cell">Typ</th>
-                      <th className="text-right px-3 py-2 font-medium">Betrag</th>
-                      <th className="text-right px-3 py-2 font-medium hidden sm:table-cell">Kurs</th>
-                      <th className="text-right px-3 py-2 font-medium">Anteile</th>
-                      <th className="text-left px-3 py-2 font-medium hidden md:table-cell">Notiz</th>
-                      <th className="px-3 py-2" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedTx.map(tx => {
-                      const typeLabel = tx.transaction_type === 'initial' ? 'Bestand' : tx.transaction_type === 'savings_plan' ? 'Sparplan' : 'Kauf'
-                      const typeColor = tx.transaction_type === 'initial' ? 'text-yellow-500' : tx.transaction_type === 'savings_plan' ? 'text-primary' : 'text-green-500'
-                      return (
-                        <tr key={tx.id} className="group border-b border-border/50 hover:bg-muted/20 transition-colors">
-                          <td className="px-5 py-2.5 text-foreground whitespace-nowrap">{fmtDate(tx.transaction_date)}</td>
-                          <td className={`px-3 py-2.5 text-xs hidden sm:table-cell whitespace-nowrap ${typeColor}`}>{typeLabel}</td>
-                          <td className="px-3 py-2.5 text-right text-foreground whitespace-nowrap">{fmtEur(tx.amount_eur)}</td>
-                          <td className="px-3 py-2.5 text-right text-muted-foreground whitespace-nowrap hidden sm:table-cell">
-                            {tx.price_per_share.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} €
-                          </td>
-                          <td className="px-3 py-2.5 text-right text-primary font-mono whitespace-nowrap">
-                            {fmtShares(tx.shares)}
-                          </td>
-                          <td className="px-3 py-2.5 text-muted-foreground hidden md:table-cell max-w-[120px] truncate">
-                            {tx.notes ?? '–'}
-                          </td>
-                          <td className="px-3 py-2.5 text-right">
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <button className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive">
-                                  <Trash2 className="size-4" />
-                                </button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent className="bg-card border-border">
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle className="text-foreground">Transaktion löschen?</AlertDialogTitle>
-                                  <AlertDialogDescription className="text-muted-foreground">
-                                    Transaktion vom {fmtDate(tx.transaction_date)} über {fmtEur(tx.amount_eur)} wird dauerhaft gelöscht.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel className="border-border text-foreground bg-transparent hover:bg-muted">Abbrechen</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDeleteTx(tx.id)}
-                                    className="bg-destructive hover:bg-destructive/90 text-white border-0">Löschen</AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <DepotTransactionsTable transactions={sortedTx} onDelete={handleDeleteTx} />
             )}
           </div>
         </div>

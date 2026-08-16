@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -39,20 +39,21 @@ function SubBadge({ row }: { row: RebalancingRow }) {
 }
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
+const STATUS_BADGE_CLASS: Record<RebalancingRow['status'], string> = {
+  underweight: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
+  overweight:  'bg-red-100   text-red-700   dark:bg-red-900/40   dark:text-red-300',
+  balanced:    'bg-muted text-muted-foreground',
+}
+const STATUS_BADGE_LABEL: Record<RebalancingRow['status'], string> = {
+  underweight: 'UNTERGEWICHTET',
+  overweight:  'ÜBERGEWICHTET',
+  balanced:    'BALANCED',
+}
+
 function StatusBadge({ status }: { status: RebalancingRow['status'] }) {
-  const map = {
-    underweight: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
-    overweight:  'bg-red-100   text-red-700   dark:bg-red-900/40   dark:text-red-300',
-    balanced:    'bg-muted text-muted-foreground',
-  }
-  const label = {
-    underweight: 'UNTERGEWICHTET',
-    overweight:  'ÜBERGEWICHTET',
-    balanced:    'BALANCED',
-  }
   return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${map[status]}`}>
-      {label[status]}
+    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE_CLASS[status]}`}>
+      {STATUS_BADGE_LABEL[status]}
     </span>
   )
 }
@@ -82,7 +83,8 @@ export function RebalancingCalculator({
 }: Props) {
   const { locale } = useSettings()
   const fmtEur     = (n: number) => fmtCurrency(n, 'EUR', locale)
-  const fmtPct     = (n: number) => `${n.toFixed(1).replace('.', new Intl.NumberFormat(locale).format(1.1)[1])} %`
+  const decimalSeparator = useMemo(() => new Intl.NumberFormat(locale).format(1.1)[1], [locale])
+  const fmtPct     = (n: number) => `${n.toFixed(1).replace('.', decimalSeparator)} %`
   const fmtDiffEur = (n: number) => `${n > 0 ? '+' : ''}${fmtEur(n)}`
 
   const [signals,     setSignals]     = useState<StrategySignalsType>(initialSignals)

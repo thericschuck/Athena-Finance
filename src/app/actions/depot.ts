@@ -68,37 +68,6 @@ async function upsertFundPrice(
   )
 }
 
-// ─── V1 compat ────────────────────────────────────────────────────────────────
-
-export async function addDepotTransaction(
-  formData: FormData
-): Promise<{ success: boolean; error?: string }> {
-  const { supabase, user } = await getAuthUser()
-  if (!user) return { success: false, error: 'Nicht eingeloggt' }
-
-  const transaction_date   = formData.get('transaction_date') as string
-  const amount_eur         = parseFloat(formData.get('amount_eur') as string)
-  const price_per_share    = parseFloat(formData.get('price_per_share') as string)
-  const notes              = (formData.get('notes') as string) || null
-  const isin               = formData.get('isin') as string
-  const fund_name          = formData.get('fund_name') as string
-
-  if (!transaction_date) return { success: false, error: 'Datum ist erforderlich' }
-  if (isNaN(amount_eur) || amount_eur <= 0) return { success: false, error: 'Betrag muss größer als 0 sein' }
-  if (isNaN(price_per_share) || price_per_share <= 0) return { success: false, error: 'Kurs muss größer als 0 sein' }
-
-  try {
-    await upsertFundPrice(supabase, isin, fund_name, price_per_share, transaction_date)
-    const { error } = await supabase.from('depot_transactions').insert({
-      user_id: user.id, isin, fund_name, transaction_date, amount_eur, price_per_share, notes, transaction_type: 'buy',
-    })
-    if (error) return { success: false, error: error.message }
-    return { success: true }
-  } catch (err) {
-    return { success: false, error: err instanceof Error ? err.message : 'Unbekannter Fehler' }
-  }
-}
-
 // ─── V2 Actions ───────────────────────────────────────────────────────────────
 
 export async function addInitialHolding(
@@ -477,14 +446,4 @@ export async function getDepotsSummaries(): Promise<DepotWithSummary[]> {
       : null
     return { ...depot, totalShares, totalInvested, livePrice, depotValue, returnPct }
   })
-}
-
-// kept for backwards compat – uses first depot with transactions
-export async function getDepotSummary(): Promise<DepotSummary | null> {
-  const summaries = await getDepotsSummaries()
-  const first = summaries.find(s => s.totalShares > 0)
-  if (!first) return null
-
-  const { totalShares, totalInvested, livePrice, depotValue, returnPct } = first
-  return { totalShares, totalInvested, livePrice, depotValue, returnPct }
 }

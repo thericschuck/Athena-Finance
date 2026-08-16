@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useState, useTransition } from 'react'
+import { useActionState, useEffect, useReducer, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Dialog,
@@ -57,22 +57,53 @@ interface AddTransactionDialogProps {
   defaultAccountId?: string
 }
 
+// ─── Grouped form state ────────────────────────────────────────────────────────
+// accountId/categoryId/currency/isTransfer/transferTo all change together
+// (e.g. on open/reset), so they're modeled as one reducer instead of 5 useState calls.
+type TxFormState = {
+  accountId:   string
+  categoryId:  string
+  currency:    string
+  isTransfer:  boolean
+  transferTo:  string
+}
+
+type TxFormAction =
+  | { type: 'set'; field: 'accountId' | 'categoryId' | 'transferTo'; value: string }
+  | { type: 'setCurrency'; value: string }
+  | { type: 'toggleTransfer' }
+  | { type: 'reset'; accountId: string; currency: string }
+
+function txFormReducer(state: TxFormState, action: TxFormAction): TxFormState {
+  switch (action.type) {
+    case 'set':
+      return { ...state, [action.field]: action.value }
+    case 'setCurrency':
+      return { ...state, currency: action.value }
+    case 'toggleTransfer':
+      return { ...state, isTransfer: !state.isTransfer, transferTo: '' }
+    case 'reset':
+      return { accountId: action.accountId, categoryId: '', currency: action.currency, isTransfer: false, transferTo: '' }
+  }
+}
+
+function currencyForAccount(accountId: string | undefined, accounts: Account[]): string {
+  const acc = accountId ? accounts.find((a) => a.id === accountId) : undefined
+  return acc?.currency ?? 'EUR'
+}
+
 export function AddTransactionDialog({ accounts, categories, defaultAccountId }: AddTransactionDialogProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
 
-  // Select values (need hidden inputs for Server Action)
-  const [accountId, setAccountId] = useState(defaultAccountId ?? '')
-  const [categoryId, setCategoryId] = useState('')
-  const [currency, setCurrency] = useState(() => {
-    if (defaultAccountId) {
-      const acc = accounts.find((a) => a.id === defaultAccountId)
-      if (acc) return acc.currency
-    }
-    return 'EUR'
-  })
-  const [isTransfer, setIsTransfer] = useState(false)
-  const [transferTo, setTransferTo] = useState('')
+  const [form, dispatch] = useReducer(txFormReducer, defaultAccountId, (accId) => ({
+    accountId:  accId ?? '',
+    categoryId: '',
+    currency:   currencyForAccount(accId, accounts),
+    isTransfer: false,
+    transferTo: '',
+  }))
+  const { accountId, categoryId, currency, isTransfer, transferTo } = form
 
   const [state, formAction, isPending] = useActionState<TransactionActionState, FormData>(
     createTransaction,
@@ -90,18 +121,13 @@ export function AddTransactionDialog({ accounts, categories, defaultAccountId }:
   // Auto-fill currency from selected account
   useEffect(() => {
     const account = accounts.find((a) => a.id === accountId)
-    if (account) setCurrency(account.currency)
+    if (account) dispatch({ type: 'setCurrency', value: account.currency })
   }, [accountId, accounts])
 
   function handleOpenChange(next: boolean) {
     setOpen(next)
     if (next) {
-      setAccountId(defaultAccountId ?? '')
-      setCategoryId('')
-      const acc = defaultAccountId ? accounts.find((a) => a.id === defaultAccountId) : null
-      setCurrency(acc?.currency ?? 'EUR')
-      setIsTransfer(false)
-      setTransferTo('')
+      dispatch({ type: 'reset', accountId: defaultAccountId ?? '', currency: currencyForAccount(defaultAccountId, accounts) })
     }
   }
 
@@ -149,7 +175,7 @@ export function AddTransactionDialog({ accounts, categories, defaultAccountId }:
             </div>
             <div className="space-y-1.5">
               <Label>Währung *</Label>
-              <Select value={currency} onValueChange={setCurrency}>
+              <Select value={currency} onValueChange={(v) => dispatch({ type: 'setCurrency', value: v })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -167,7 +193,7 @@ export function AddTransactionDialog({ accounts, categories, defaultAccountId }:
           {/* Konto */}
           <div className="space-y-1.5">
             <Label>Konto *</Label>
-            <Select value={accountId} onValueChange={setAccountId}>
+            <Select value={accountId} onValueChange={(v) => dispatch({ type: 'set', field: 'accountId', value: v })}>
               <SelectTrigger>
                 <SelectValue placeholder="Konto wählen…" />
               </SelectTrigger>
@@ -190,7 +216,7 @@ export function AddTransactionDialog({ accounts, categories, defaultAccountId }:
           {/* Kategorie */}
           <div className="space-y-1.5">
             <Label>Kategorie</Label>
-            <Select value={categoryId} onValueChange={setCategoryId}>
+            <Select value={categoryId} onValueChange={(v) => dispatch({ type: 'set', field: 'categoryId', value: v })}>
               <SelectTrigger>
                 <SelectValue placeholder="Kategorie wählen…" />
               </SelectTrigger>
@@ -220,17 +246,14 @@ export function AddTransactionDialog({ accounts, categories, defaultAccountId }:
           <div className="space-y-2">
             <button
               type="button"
-              onClick={() => {
-                setIsTransfer(!isTransfer)
-                setTransferTo('')
-              }}
+              onClick={() => dispatch({ type: 'toggleTransfer' })}
               className={`flex items-center gap-1.5 text-xs hover:text-foreground transition-colors ${isTransfer ? 'text-foreground' : 'text-muted-foreground'}`}
             >
               <ArrowLeftRight className="size-3.5" />
               Transfer zwischen Konten
             </button>
             {isTransfer && (
-              <Select value={transferTo} onValueChange={setTransferTo}>
+              <Select value={transferTo} onValueChange={(v) => dispatch({ type: 'set', field: 'transferTo', value: v })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Zielkonto wählen…" />
                 </SelectTrigger>
@@ -309,7 +332,13 @@ export function EditTransactionDialog({
 
   function handleOpenChange(next: boolean) {
     setOpen(next)
-    if (!next) {
+    if (next) {
+      // Re-seed the editable copy from the latest tx prop every time the dialog
+      // opens, so a stale snapshot from an earlier mount doesn't linger after
+      // this row's data has since been refreshed (e.g. after a prior edit).
+      setAccountId(tx.account_id)
+      setCategoryId(tx.category_id ?? '')
+      setCurrency(tx.currency)
       setIsTransfer(tx.type === 'transfer')
       setTransferTo((tx as TxRow & { transfer_to?: string }).transfer_to ?? '')
     }

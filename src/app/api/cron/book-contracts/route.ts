@@ -90,67 +90,76 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: contractsErr.message }, { status: 500 })
   }
 
-  let booked = 0
-  let skipped = 0
+  const contractResults = await Promise.all(
+    (contracts ?? []).map(async (contract) => {
+      if (!contract.account_id) return { booked: 0, skipped: 1 }
+      // In eine eigene Konstante gebunden statt weiter `contract.account_id`
+      // zu lesen: TS verliert die obige Narrowing-Prüfung, sobald sie über die
+      // Grenze der `datesToBook.map(async ...)`-Closure unten hinweg gelesen
+      // wird (dort gilt wieder der volle Property-Typ `string | null`) — eine
+      // separate `const` mit dem hier bereits engeren Typ bleibt dagegen non-null.
+      const accountId = contract.account_id
 
-  for (const contract of contracts ?? []) {
-    if (!contract.account_id) { skipped++; continue }
+      // Determine the "from" date: max(lookback, contract created_at)
+      const createdAt = new Date(contract.created_at)
+      createdAt.setHours(0, 0, 0, 0)
+      const from = createdAt > lookback ? createdAt : lookback
 
-    // Determine the "from" date: max(lookback, contract created_at)
-    const createdAt = new Date(contract.created_at)
-    createdAt.setHours(0, 0, 0, 0)
-    const from = createdAt > lookback ? createdAt : lookback
+      const dates = billingDatesInRange(
+        contract.start_date,
+        contract.frequency,
+        contract.billing_day,
+        from,
+        today,
+      )
 
-    const dates = billingDatesInRange(
-      contract.start_date,
-      contract.frequency,
-      contract.billing_day,
-      from,
-      today,
-    )
+      if (dates.length === 0) return { booked: 0, skipped: 0 }
 
-    if (dates.length === 0) continue
+      // Load existing transactions for this contract in the date range
+      const { data: existing } = await supabase
+        .from('transactions')
+        .select('date')
+        .eq('contract_id', contract.id)
+        .gte('date', dates[0])
+        .lte('date', dates[dates.length - 1])
 
-    // Load existing transactions for this contract in the date range
-    const { data: existing } = await supabase
-      .from('transactions')
-      .select('date')
-      .eq('contract_id', contract.id)
-      .gte('date', dates[0])
-      .lte('date', dates[dates.length - 1])
+      const existingDates = new Set((existing ?? []).map(t => t.date))
+      const isTransfer = TRANSFER_TYPES.has(contract.type)
+      const datesToBook = dates.filter(date => !existingDates.has(date))
 
-    const existingDates = new Set((existing ?? []).map(t => t.date))
-    const isTransfer = TRANSFER_TYPES.has(contract.type)
+      // Each date is a distinct, independent transaction for this contract.
+      await Promise.all(datesToBook.map(async (date) => {
+        const base = {
+          user_id:     contract.user_id,
+          account_id:  accountId,
+          amount:      contract.amount,
+          currency:    contract.currency,
+          date,
+          description: contract.name,
+          contract_id: contract.id,
+          category_id: contract.category_id,
+          is_recurring: true,
+          fx_rate:     1,
+          tags:        [] as string[],
+        }
 
-    for (const date of dates) {
-      if (existingDates.has(date)) continue
+        if (isTransfer) {
+          await supabase.from('transactions').insert({
+            ...base,
+            type:        'transfer',
+            transfer_to: (contract as typeof contract & { to_account_id?: string | null }).to_account_id ?? null,
+          })
+        } else {
+          await supabase.from('transactions').insert({ ...base, type: 'expense' })
+        }
+      }))
 
-      const base = {
-        user_id:     contract.user_id,
-        account_id:  contract.account_id,
-        amount:      contract.amount,
-        currency:    contract.currency,
-        date,
-        description: contract.name,
-        contract_id: contract.id,
-        category_id: contract.category_id,
-        is_recurring: true,
-        fx_rate:     1,
-        tags:        [] as string[],
-      }
+      return { booked: datesToBook.length, skipped: 0 }
+    })
+  )
 
-      if (isTransfer) {
-        await supabase.from('transactions').insert({
-          ...base,
-          type:        'transfer',
-          transfer_to: (contract as typeof contract & { to_account_id?: string | null }).to_account_id ?? null,
-        })
-      } else {
-        await supabase.from('transactions').insert({ ...base, type: 'expense' })
-      }
-      booked++
-    }
-  }
+  const booked  = contractResults.reduce((sum, r) => sum + r.booked, 0)
+  const skipped = contractResults.reduce((sum, r) => sum + r.skipped, 0)
 
   return NextResponse.json({ ok: true, booked, skipped })
 }

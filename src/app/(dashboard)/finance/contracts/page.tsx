@@ -125,9 +125,10 @@ export default async function ContractsPage() {
     .reduce((s, c) => s + toMonthly(c.amount, c.frequency), 0)
 
   // Per-account monthly breakdown
+  const accsById = new Map(accs.map(a => [a.id, a]))
   const byAccount = new Map<string, { name: string; monthly: number }>()
   for (const c of active.filter(c => c.currency === 'EUR' && c.account_id)) {
-    const acc = accs.find(a => a.id === c.account_id)
+    const acc = accsById.get(c.account_id!)
     const key = c.account_id!
     if (!byAccount.has(key)) byAccount.set(key, { name: acc?.name ?? 'Unbekannt', monthly: 0 })
     byAccount.get(key)!.monthly += toMonthly(c.amount, c.frequency)
@@ -136,7 +137,10 @@ export default async function ContractsPage() {
 
   const grouped = new Map<string, Contract[]>()
   for (const t of TYPE_ORDER) grouped.set(t, [])
-  for (const c of all) grouped.get(TYPE_ORDER.includes(c.type) ? c.type : 'other')!.push(c)
+  for (const c of all) {
+    const key = TYPE_ORDER.includes(c.type) ? c.type : 'other'
+    grouped.get(key)?.push(c)
+  }
 
   const warningCount = all.filter(c => c.is_active && isNoticeExpired(c)).length
 
@@ -369,7 +373,7 @@ function SavingsPlanRow({ plan, locale }: { plan: SavingsPlan; locale: string })
       <td className="px-4 py-3 w-20">
         <div className="flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity">
           <Link href="/depot" title="Im Depot bearbeiten">
-            <button className="rounded p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            <button aria-label="Im Depot bearbeiten" className="rounded p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
               <ExternalLink className="size-3.5" />
             </button>
           </Link>

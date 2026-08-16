@@ -76,35 +76,51 @@ export const C = {
  * ACHTUNG: bei Änderungen am Preset in globals.css hier nachziehen. Als
  * JS-Literale nötig, weil Inline-Styles und SVG-Attribute die Theme-
  * Variablen nicht sehen — das Mockup liegt außerhalb des [data-theme]-Scopes.
+ *
+ * Werte 1:1 aus dem Figma-Redesign übernommen (Datei „Athena-Finance",
+ * Variablen surface/*, text/*, brand/gold-500, status/good, chart/cat-*) —
+ * ersetzt die ältere, gesättigtere Gold/Braun-Palette (#D4A017 auf #0C0800).
+ * Figma setzt auf ein neutraleres Beinahe-Schwarz plus ein gedämpftes,
+ * champagnerfarbenes Gold statt sattem Bernstein.
  */
 export const AU = {
-  bg: '#0C0800', // --background
-  card: '#130D00', // --card
-  cardFg: '#F0E6C8', // --card-foreground
-  secondary: '#1E1500', // --secondary
-  secondaryFg: '#C8B887', // --secondary-foreground
-  mutedFg: '#8A7A50', // --muted-foreground
-  accent: '#2A1E00', // --accent
-  gold: '#D4A017', // --primary / --accent-foreground
-  destructive: '#C0392B', // --destructive
-  border: 'rgba(212,160,23,0.2)', // --border
-  sidebar: '#080500', // --sidebar
-  sidebarFg: '#C8B887', // --sidebar-foreground
-  sidebarAccent: '#1E1500', // --sidebar-accent
-  sidebarAccentFg: '#F0E6C8', // --sidebar-accent-foreground
-  sidebarBorder: 'rgba(212,160,23,0.15)', // --sidebar-border
-  /** Positiv-Grün: im Preset nicht definiert, aus der Landing-Palette geliehen. */
+  bg: '#0A0A09', // --background · Figma surface/bg
+  card: '#131110', // --card · Figma surface/base
+  cardFg: '#F4EEE2', // --card-foreground · Figma text/primary
+  secondary: '#1A1714', // --secondary · Figma surface/raised
+  secondaryFg: '#B7AC98', // --secondary-foreground · Figma text/secondary
+  mutedFg: '#7C7365', // --muted-foreground · Figma text/muted
+  accent: '#3A2E17', // --accent · Figma brand/gold-100 (getönte Gold-Fläche)
+  gold: '#CDA564', // --primary / --accent-foreground · Figma brand/gold-500
+  /** Oliv/Terrakotta statt des saturierteren Figma-Rots — dieselbe gedeckte
+      Erdton-Sprache wie die Analyse-Szene (Heatmap/Sankey/Kalender, siehe
+      GeldflussChart-impl.tsx & Co.), damit alle vier Mockup-Szenen wie EINE
+      Palette wirken statt wie mehrere nebeneinander (siehe Chat). */
+  destructive: '#A9553C',
+  border: '#262119', // --border · Figma border/subtle (deckend statt Gold-Alpha)
+  sidebar: '#0A0A09', // --sidebar · gleiche Fläche wie bg (Figma trennt hier nicht)
+  sidebarFg: '#B7AC98', // --sidebar-foreground · Figma text/secondary
+  /** Nur noch für Hover-Zustand und Avatar-Kachel — der aktive Nav-Eintrag
+      läuft jetzt über `gold`/`bg` (siehe unten), damit die Figma-Pille
+      (volle Gold-Fläche, dunkle Schrift) exakt getroffen wird. */
+  sidebarAccent: '#1A1714',
+  sidebarAccentFg: '#F4EEE2',
+  sidebarBorder: '#262119', // --sidebar-border
+  /** Positiv-Grün — zurück auf die Oliv-Variante (siehe destructive-Kommentar
+      oben): die zwischenzeitlich kräftigere/kühlere Figma-status/good-Fassung
+      (#59B889) passte nicht mehr zur Analyse-Szenen-Palette. Identisch mit
+      C.oliveLight aus der Landing-Palette — bewusst dieselbe Zahl, nicht nur
+      dieselbe Familie, für exakte Farbgleichheit zwischen den Mockup-Szenen. */
   positive: '#8CA277',
   /*
-   * Zwei kühle Akzente, ebenfalls nicht im Preset enthalten: Aurum liefert
-   * nur Gold/Grün/Rot, für ein ganzes Dashboard voller Karten wurde das im
-   * Mockup schnell eintönig-braun. Gedeckt statt satt, damit sie sich der
-   * warmen Palette unterordnen statt sie zu brechen — für die beiden
-   * einzigen Charts, die inhaltlich NICHT zu Gold/Grün/Rot passen (Kontostand,
-   * Portfolio-Wert sind neutrale Verläufe, keine Gewinn/Verlust-Aussage).
+   * Kategorische Chart-Akzente — ebenfalls auf die Analyse-Palette gezogen
+   * (siehe oben) statt der bisherigen, unabhängig gewählten Figma-chart/cat-
+   * Variablen: Konto-/Portfolio-/Rebalancing-Charts sollen sich nicht wie
+   * eine vierte, andere Palette neben Dashboard/Analyse/Depot/Crypto anfühlen.
    */
-  accentBlue: '#7A93B0',
-  accentTeal: '#6FA39A',
+  accentBlue: '#748563', // vormals chart/cat-3-blue (#7B9BDE)
+  accentTeal: '#8CA277', // vormals chart/cat-1-teal (#1FADAD)
+  accentLavender: '#BF9B6E', // vormals chart/cat-5-lavender (#A177BE)
 } as const
 
 /** Font-Stacks (Variablen kommen aus app/layout.tsx). */

@@ -56,6 +56,20 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
   return <div className={`rounded-lg border border-border bg-card ${className}`}>{children}</div>
 }
 
+// Mirror the accountBucket logic from the cron job
+function liveAccountBucket(type: string): string | null {
+  switch (type) {
+    case 'checking':
+    case 'investment':       return 'checking'
+    case 'savings':          return 'savings'
+    case 'cash':             return 'cash'
+    case 'bausparer':
+    case 'building_savings': return 'bausparer'
+    case 'business':         return 'business'
+    default:                 return null
+  }
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -121,7 +135,7 @@ export default async function DashboardPage() {
     .gte('snapshot_date', snapshotFrom.toISOString().split('T')[0])
     .order('snapshot_date')
 
-  type GoalDash = { current_amount: number; target_amount: number; description: string; status: string }
+  type GoalDash = { id: string; current_amount: number; target_amount: number; description: string; status: string }
 
   const accounts       = accountsRaw ?? []
   const activeAccounts = accounts.filter(a => a.is_active)
@@ -178,19 +192,6 @@ export default async function DashboardPage() {
   const netWorth      = financeTotal + cryptoTotal + savingsTotal + lentTotal + depotTotal - borrowedTotal
 
   // ── Today's snapshot for chart (live data point) ──────────────────────────
-  // Mirror the accountBucket logic from the cron job
-  function liveAccountBucket(type: string): string | null {
-    switch (type) {
-      case 'checking':
-      case 'investment':       return 'checking'
-      case 'savings':          return 'savings'
-      case 'cash':             return 'cash'
-      case 'bausparer':
-      case 'building_savings': return 'bausparer'
-      case 'business':         return 'business'
-      default:                 return null
-    }
-  }
   const liveBuckets: Record<string, number> = { checking: 0, savings: 0, cash: 0, bausparer: 0, business: 0 }
   for (const a of accounts) {
     const bucket = liveAccountBucket(a.type)
@@ -492,13 +493,13 @@ export default async function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {goals.slice(0, 5).map((g, i) => {
+              {goals.slice(0, 5).map((g) => {
                 const current = g.current_amount ?? 0
                 const missing = Math.max(0, g.target_amount - current)
                 const pct = Math.min(100, Math.round((current / g.target_amount) * 100))
                 const done = pct >= 100
                 return (
-                  <Card key={i} className="px-4 py-3">
+                  <Card key={g.id} className="px-4 py-3">
                     <div className="flex items-center justify-between mb-1.5 gap-2">
                       <p className="text-sm font-medium truncate">{g.description}</p>
                       {done ? (

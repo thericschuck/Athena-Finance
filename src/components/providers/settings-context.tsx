@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect } from 'react'
+import { createContext, useContext, useEffect, useMemo } from 'react'
 import type { SettingsMap } from '@/lib/settings'
 
 export type UserSettings = {
@@ -72,8 +72,13 @@ export function SettingsProvider({
     else root.removeAttribute('data-compact')
   }, [themePreset, primaryColor, compactTables])
 
+  const value = useMemo(
+    () => ({ locale, dateFormat, currency, compactTables, primaryColor, themePreset }),
+    [locale, dateFormat, currency, compactTables, primaryColor, themePreset],
+  )
+
   return (
-    <SettingsContext.Provider value={{ locale, dateFormat, currency, compactTables, primaryColor, themePreset }}>
+    <SettingsContext.Provider value={value}>
       {children}
     </SettingsContext.Provider>
   )

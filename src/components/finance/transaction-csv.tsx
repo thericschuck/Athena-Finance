@@ -355,10 +355,18 @@ export function ImportTransactionsDialog({
 
             {/* Drag & Drop Zone */}
             <div
+              role="button"
+              tabIndex={0}
               onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
               onDragLeave={() => setIsDragging(false)}
               onDrop={onDrop}
               onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  fileInputRef.current?.click()
+                }
+              }}
               className={`
                 flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed
                 cursor-pointer p-10 transition-colors

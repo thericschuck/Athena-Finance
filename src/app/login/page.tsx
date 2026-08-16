@@ -156,7 +156,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               />
             </div>
 
-            <button formAction={signIn} className="af-submit" style={{ marginTop: '4px' }}>
+            <button type="submit" formAction={signIn} className="af-submit" style={{ marginTop: '4px' }}>
               Einloggen
             </button>
           </form>

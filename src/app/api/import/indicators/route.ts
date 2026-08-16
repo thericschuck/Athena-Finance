@@ -29,27 +29,33 @@ export async function POST(req: NextRequest) {
   let importedIndicators = 0
   let importedBacktests = 0
 
-  for (const indicator of indicators) {
-    const oldId = indicator.id as string | undefined
-    // Strip id and set user_id
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { id: _id, ...rest } = indicator
-    const toInsert = { ...rest, user_id: user.id }
+  // Each indicator insert is independent (no cross-row references at insert time),
+  // so run them concurrently instead of one-by-one.
+  const insertResults = await Promise.all(
+    indicators.map(async (indicator) => {
+      const oldId = indicator.id as string | undefined
+      // Strip id and set user_id
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id: _id, ...rest } = indicator
+      const toInsert = { ...rest, user_id: user.id }
 
-    const { data: inserted, error } = await supabase
-      .from('indicators')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .insert(toInsert as any)
-      .select('id')
-      .single()
+      const { data: inserted, error } = await supabase
+        .from('indicators')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .insert(toInsert as any)
+        .select('id')
+        .single()
 
-    if (error || !inserted) {
-      continue
-    }
+      if (error || !inserted) return null
+      return { oldId, newId: inserted.id }
+    })
+  )
 
+  for (const result of insertResults) {
+    if (!result) continue
     importedIndicators++
-    if (oldId) {
-      idMap.set(oldId, inserted.id)
+    if (result.oldId) {
+      idMap.set(result.oldId, result.newId)
     }
   }
 

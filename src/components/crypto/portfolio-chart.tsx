@@ -1,12 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Legend,
-} from 'recharts'
-import { useSettings } from '@/components/providers/settings-context'
-import { fmtCurrency } from '@/lib/format'
+import dynamic from 'next/dynamic'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export type SnapshotRow = {
@@ -18,7 +13,11 @@ export type SnapshotRow = {
 const PERIODS = ['1W', '1M', '3M', '6M', '1J', 'All'] as const
 type Period = typeof PERIODS[number]
 
-const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4']
+// recharts is a heavy dependency — load it on demand, client-only.
+const PortfolioAreaChart = dynamic(
+  () => import('@/components/crypto/portfolio-area-chart').then(m => m.PortfolioAreaChart),
+  { ssr: false }
+)
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function cutoffDate(period: Period): string {
@@ -35,47 +34,6 @@ function cutoffDate(period: Period): string {
 function formatXTick(dateStr: string, period: Period): string {
   const [y, m, d] = dateStr.split('-')
   return period === '1W' || period === '1M' || period === '3M' ? `${d}.${m}.` : `${m}/${y.slice(2)}`
-}
-
-function formatY(value: number): string {
-  if (value >= 1_000_000) return `€${(value / 1_000_000).toFixed(1)}M`
-  if (value >= 1_000) return `€${(value / 1_000).toFixed(0)}k`
-  return `€${value}`
-}
-
-// ─── Custom Tooltip ───────────────────────────────────────────────────────────
-function CustomTooltip({ active, payload, label }: {
-  active?: boolean
-  payload?: Array<{ dataKey: string; value: number; color: string }>
-  label?: string
-}) {
-  const { locale } = useSettings()
-  if (!active || !payload?.length || !label) return null
-  const [y, m, d] = label.split('-')
-  const total = payload.reduce((s, e) => s + (e.value ?? 0), 0)
-
-  return (
-    <div className="rounded-lg border border-border bg-card shadow-md p-3 text-xs space-y-1 min-w-[160px]">
-      <p className="font-medium text-muted-foreground pb-1 border-b border-border">
-        {d}.{m}.{y}
-      </p>
-      {payload.map(entry => (
-        <div key={entry.dataKey} className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-1.5">
-            <span className="size-2 rounded-full shrink-0" style={{ background: entry.color }} />
-            <span className="text-muted-foreground">{entry.dataKey}</span>
-          </div>
-          <span className="font-medium tabular-nums">{fmtCurrency(entry.value, 'EUR', locale)}</span>
-        </div>
-      ))}
-      {payload.length > 1 && (
-        <div className="flex items-center justify-between gap-4 pt-1 border-t border-border">
-          <span className="text-muted-foreground">Gesamt</span>
-          <span className="font-semibold tabular-nums">{fmtCurrency(total, 'EUR', locale)}</span>
-        </div>
-      )}
-    </div>
-  )
 }
 
 // ─── Filter pill ──────────────────────────────────────────────────────────────
@@ -107,11 +65,15 @@ export function PortfolioChart({ snapshots }: { snapshots: SnapshotRow[] }) {
   }, [snapshots])
 
   // Which portfolios to show as Areas
-  const visiblePortfolios = activePortfolio === 'Alle' ? portfolioNames : [activePortfolio]
+  const visiblePortfolios = useMemo(
+    () => activePortfolio === 'Alle' ? portfolioNames : [activePortfolio],
+    [activePortfolio, portfolioNames]
+  )
 
   // Build chart data
   const chartData = useMemo(() => {
     const cutoff = cutoffDate(period)
+    const visibleSet = new Set(visiblePortfolios)
 
     // Group by date → per portfolio_name → sum value_eur
     const byDate = new Map<string, Record<string, number>>()
@@ -119,7 +81,7 @@ export function PortfolioChart({ snapshots }: { snapshots: SnapshotRow[] }) {
     for (const row of snapshots) {
       if (row.snapshot_date < cutoff) continue
       const pName = row.portfolio_name ?? 'Sonstige'
-      if (!visiblePortfolios.includes(pName)) continue
+      if (!visibleSet.has(pName)) continue
 
       if (!byDate.has(row.snapshot_date)) byDate.set(row.snapshot_date, {})
       const entry = byDate.get(row.snapshot_date)!
@@ -173,60 +135,12 @@ export function PortfolioChart({ snapshots }: { snapshots: SnapshotRow[] }) {
           </p>
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-            <defs>
-              {visiblePortfolios.map((name, i) => (
-                <linearGradient key={name} id={`grad-${i}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={COLORS[i % COLORS.length]} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={COLORS[i % COLORS.length]} stopOpacity={0.03} />
-                </linearGradient>
-              ))}
-            </defs>
-
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="currentColor"
-              strokeOpacity={0.1}
-              vertical={false}
-            />
-            <XAxis
-              dataKey="date"
-              tickFormatter={xFormatter}
-              interval={tickInterval}
-              tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis
-              tickFormatter={formatY}
-              tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
-              tickLine={false}
-              axisLine={false}
-              width={52}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            {visiblePortfolios.length > 1 && (
-              <Legend
-                wrapperStyle={{ fontSize: '12px', paddingTop: '12px', opacity: 0.7 }}
-              />
-            )}
-
-            {visiblePortfolios.map((name, i) => (
-              <Area
-                key={name}
-                type="monotone"
-                dataKey={name}
-                stackId="stack"
-                stroke={COLORS[i % COLORS.length]}
-                strokeWidth={2}
-                fill={`url(#grad-${i})`}
-                dot={false}
-                activeDot={{ r: 4, strokeWidth: 0 }}
-              />
-            ))}
-          </AreaChart>
-        </ResponsiveContainer>
+        <PortfolioAreaChart
+          chartData={chartData}
+          visiblePortfolios={visiblePortfolios}
+          xFormatter={xFormatter}
+          tickInterval={tickInterval}
+        />
       )}
     </div>
   )

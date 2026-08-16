@@ -12,21 +12,25 @@ const DAY_LABELS   = ['Mo', '', 'Mi', '', 'Fr', '', '']
 
 // Gold-Skala (Ausgaben): 0 = keine, 5 = sehr hoch
 const EXP_COLORS = ['#1a1d29', '#3d2e0a', '#6b4f15', '#a8782a', '#d4a84c', '#f0d98c']
-// Grün-Skala (Einnahmen)
-const INC_COLORS = ['#1a1d29', '#0a2d1a', '#15542f', '#1a7a43', '#22a85e', '#4ade80']
-// GuV-Skala: -5 (hohe Ausgaben) → 0 (neutral) → +5 (hohe Einnahmen)
+// Oliv-Skala (Einnahmen) — dieselbe Erdton-Familie wie GUV_POS, statt
+// gesättigtem Tailwind-Grün am oberen Ende (siehe GUV_COLORS-Kommentar oben).
+const INC_COLORS = ['#1a1d29', '#1E2A17', '#2C3826', '#41522F', '#5B6E4B', '#8CA277']
+// GuV-Skala: -5 (hohe Ausgaben) → 0 (neutral) → +5 (hohe Einnahmen). Terrakotta/
+// Oliv statt gesättigtem Tailwind-Rot/Grün — dieselbe gedeckte Erdton-Sprache
+// wie die "III · Die Analyse"-Sektion der Landing Page (siehe GUV_NEG/GUV_POS
+// in LandingClient.tsx), nur auf elf statt vier Stufen gestreckt.
 const GUV_COLORS = [
-  '#7f1d1d', // -5: sehr hohe Nettoausgaben
-  '#991b1b', // -4
-  '#c62828', // -3
-  '#ef4444', // -2
-  '#fca5a5', // -1: leicht negativ
+  '#2C1912', // -5: sehr hohe Nettoausgaben
+  '#3A231B', // -4
+  '#6B3427', // -3
+  '#8E4634', // -2
+  '#A9553C', // -1: leicht negativ
   '#1a1d29', // 0: neutral / keine Aktivität
-  '#bbf7d0', // +1: leicht positiv
-  '#4ade80', // +2
-  '#22c55e', // +3
-  '#16a34a', // +4
-  '#166534', // +5: sehr hohe Nettoeinnahmen
+  '#2C3826', // +1: leicht positiv
+  '#41522F', // +2
+  '#5B6E4B', // +3
+  '#8CA277', // +4
+  '#B7CDA0', // +5: sehr hohe Nettoeinnahmen
 ]
 
 function expLevel(v: number): number {
@@ -122,8 +126,8 @@ export function AusgabenHeatmap({ data }: Props) {
               className={`px-2.5 py-1 text-[10px] rounded font-medium capitalize transition-all duration-150 ${
                 mode === m
                   ? m === 'ausgaben'  ? 'bg-[#f0d98c] text-[#0d0f14]'
-                  : m === 'einnahmen' ? 'bg-[#4ade80] text-[#0d0f14]'
-                  :                    'bg-linear-to-r from-[#ef4444] to-[#4ade80] text-[#0d0f14]'
+                  : m === 'einnahmen' ? 'bg-[#8CA277] text-[#0d0f14]'
+                  :                    'bg-linear-to-r from-[#A9553C] to-[#8CA277] text-[#0d0f14]'
                   : 'text-[#6b7280] hover:text-[#d1d5db] hover:bg-[#1e2130]'
               }`}
             >
@@ -193,11 +197,11 @@ export function AusgabenHeatmap({ data }: Props) {
         )}
         {mode === 'guv' && (
           <div className="flex items-center gap-1.5">
-            <span className="text-[9px] text-[#f87171]">Ausgaben</span>
+            <span className="text-[9px] text-[#A9553C]">Ausgaben</span>
             {GUV_COLORS.map((c, i) => (
               <div key={i} className="w-2.5 h-2.5 rounded-[2px]" style={{ backgroundColor: c }} />
             ))}
-            <span className="text-[9px] text-[#4ade80]">Einnahmen</span>
+            <span className="text-[9px] text-[#8CA277]">Einnahmen</span>
           </div>
         )}
       </div>
@@ -219,12 +223,12 @@ export function AusgabenHeatmap({ data }: Props) {
             </p>
           )}
           {(mode === 'einnahmen' || mode === 'guv') && tip.income > 0 && (
-            <p className="font-semibold text-[#4ade80]">
+            <p className="font-semibold text-[#8CA277]">
               Einnahmen: {tip.income.toLocaleString('de-DE')} €
             </p>
           )}
           {mode === 'guv' && (tip.income > 0 || tip.amount > 0) && (
-            <p className={`font-bold mt-0.5 ${tip.income - tip.amount >= 0 ? 'text-[#4ade80]' : 'text-[#f87171]'}`}>
+            <p className={`font-bold mt-0.5 ${tip.income - tip.amount >= 0 ? 'text-[#8CA277]' : 'text-[#A9553C]'}`}>
               Netto: {tip.income - tip.amount >= 0 ? '+' : ''}{(tip.income - tip.amount).toLocaleString('de-DE')} €
             </p>
           )}

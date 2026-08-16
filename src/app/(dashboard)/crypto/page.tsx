@@ -13,9 +13,8 @@ export default async function CryptoPage({
 }: {
   searchParams: Promise<{ p?: string }>
 }) {
-  const { p: portfolioParam } = await searchParams
+  const [{ p: portfolioParam }, supabase] = await Promise.all([searchParams, createClient()])
 
-  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   const oneYearAgo = (() => {

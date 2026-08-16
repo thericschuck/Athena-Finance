@@ -403,6 +403,7 @@ export function OliveVines({
   opacity = 0.9,
   width = 'clamp(112px, 26vw, 450px)',
   swaying = true,
+  static: staticVines = false,
 }: {
   tone?: 'light' | 'dark'
   opacity?: number
@@ -420,15 +421,28 @@ export function OliveVines({
    * Ranken einmal ins Bild gescrollt sind — unabhängig von der aktuellen
    * Scrollposition. Der Hero (unmaskiert, siehe Aufrufstelle) behält die
    * Wiege-Bewegung, dort kostet sie den Browser praktisch nichts.
+   *
+   * Wird von `static` (siehe unten) ohnehin überschrieben — dort läuft
+   * gar keine Animation mehr, das Wiegen eingeschlossen.
    */
   swaying?: boolean
+  /**
+   * `true`: keine Animation überhaupt — weder das einmalige Aufzeichnen
+   * (Stängel/Blätter) noch das endlose Wiegen. Die Ranken erscheinen sofort
+   * fertig gewachsen, wie ein normales Hintergrundbild. Für Ranken, die
+   * ohnehin nur Dekoration sind und deren Wachs-Moment keinen erzählerischen
+   * Wert hat (siehe InstrumentariumVines): spart die Paint-Kosten der
+   * Draw-Animation UND — bei gemaskten Ranken — der Wiege-Schleife, ohne
+   * dafür zwei separate Flags pflegen zu müssen.
+   */
+  static?: boolean
 }) {
   const t = TONES[tone]
 
   return (
     <div
       aria-hidden
-      className="vine-layer"
+      className={staticVines ? 'vine-layer vine-layer-static' : 'vine-layer'}
       style={{ position: 'absolute', inset: 0, pointerEvents: 'none', opacity }}
     >
       {VINE_SIDES.map((side, si) => (

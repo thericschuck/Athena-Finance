@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -50,8 +50,14 @@ function AssetWeightTable({
   assets: SubPortfolioAsset[]
   onChange: (next: SubPortfolioAsset[]) => void
 }) {
+  // Stable row ids for React keys — decoupled from array position and from
+  // coingecko_id (which addRow doesn't dedupe, so it isn't guaranteed unique).
+  // Initial rows use their array index (plain value, safe during render);
+  // addRow (an event handler, not render) continues the counter from there.
+  const nextRowId = useRef(assets.length)
+
   // Store weights as % (0–100) locally for easy editing
-  const [rows, setRows]           = useState(() => assets.map(a => ({ ...a, pct: +(a.weight * 100).toFixed(2) })))
+  const [rows, setRows]           = useState(() => assets.map((a, i) => ({ ...a, pct: +(a.weight * 100).toFixed(2), _id: i })))
   const [newSymbol, setNewSymbol]         = useState('')
   const [newCoingeckoId, setNewCoingeckoId] = useState('')
   const [newPct, setNewPct]               = useState('')
@@ -82,7 +88,7 @@ function AssetWeightTable({
     const cgId  = newCoingeckoId.trim().toLowerCase()
     const pct   = parseFloat(newPct) || 0
     if (!sym || !cgId || pct <= 0) return
-    const next = [...rows, { symbol: sym, coingecko_id: cgId, pct, weight: pct / 100 }]
+    const next = [...rows, { symbol: sym, coingecko_id: cgId, pct, weight: pct / 100, _id: nextRowId.current++ }]
     setNewSymbol(''); setNewCoingeckoId(''); setNewPct('')
     setCoinKey(k => k + 1)
     update(next)
@@ -101,7 +107,7 @@ function AssetWeightTable({
           </thead>
           <tbody>
             {rows.map((row, i) => (
-              <tr key={`${row.coingecko_id}-${i}`} className="border-b border-border last:border-0">
+              <tr key={row._id} className="border-b border-border last:border-0">
                 <td className="px-3 py-2 font-medium">{row.symbol}</td>
                 <td className="px-3 py-2 text-right">
                   <Input
@@ -112,7 +118,11 @@ function AssetWeightTable({
                   />
                 </td>
                 <td className="px-2 py-2">
-                  <button onClick={() => removeRow(i)} className="text-muted-foreground hover:text-destructive transition-colors">
+                  <button
+                    onClick={() => removeRow(i)}
+                    aria-label={`${row.symbol} entfernen`}
+                    className="text-muted-foreground hover:text-destructive transition-colors"
+                  >
                     <Trash2 className="size-3.5" />
                   </button>
                 </td>

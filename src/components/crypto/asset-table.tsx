@@ -1,12 +1,15 @@
 'use client'
 
+import { useMemo } from 'react'
 import { EditAssetDialog, DeleteAssetButton } from '@/components/crypto/asset-form'
 import type { AssetWithPrice } from '@/components/crypto/portfolio-overview'
 import type { RebalancingRow } from '@/lib/crypto/rebalancing'
 import { useSettings } from '@/components/providers/settings-context'
 import { fmtCurrency, fmtDateShort } from '@/lib/format'
 
-// ─── Locale-aware formatters (called with locale from context) ────────────────
+// ─── Locale-aware formatters (called once per locale, memoized in AssetTable) ─
+type Fmt = ReturnType<typeof mkFmt>
+
 function mkFmt(locale: string) {
   return {
     eur: (n: number) => fmtCurrency(n, 'EUR', locale),
@@ -69,8 +72,7 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 // ─── Group section ────────────────────────────────────────────────────────────
-function GroupSection({ group, rebalancingRows, locale, readonly }: { group: Group; rebalancingRows?: RebalancingRow[]; locale: string; readonly?: boolean }) {
-  const fmt = mkFmt(locale)
+function GroupSection({ group, rebalancingRows, fmt, readonly }: { group: Group; rebalancingRows?: RebalancingRow[]; fmt: Fmt; readonly?: boolean }) {
   const groupValue = group.assets.reduce((s, a) => s + (a.current_value ?? 0), 0)
   // P&L only for assets with a known cost basis
   const pricedAssets = group.assets.filter(a => a.avg_buy_price != null)
@@ -130,12 +132,12 @@ function GroupSection({ group, rebalancingRows, locale, readonly }: { group: Gro
                   isLast={i === group.assets.length - 1}
                   rebRow={rebRow}
                   hasReb={hasReb}
-                  locale={locale}
+                  fmt={fmt}
                   readonly={readonly}
                 />
               )
             })}
-            <SumRow assets={group.assets} groupRebRows={groupRebRows} hasReb={hasReb} locale={locale} readonly={readonly} />
+            <SumRow assets={group.assets} groupRebRows={groupRebRows} hasReb={hasReb} fmt={fmt} readonly={readonly} />
           </tbody>
         </table>
       </div>
@@ -145,16 +147,15 @@ function GroupSection({ group, rebalancingRows, locale, readonly }: { group: Gro
 
 // ─── Asset row ────────────────────────────────────────────────────────────────
 function AssetRow({
-  asset, isLast, rebRow, hasReb, locale, readonly,
+  asset, isLast, rebRow, hasReb, fmt, readonly,
 }: {
   asset:    AssetWithPrice
   isLast:   boolean
   rebRow?:  RebalancingRow
   hasReb:   boolean
-  locale:   string
+  fmt:      Fmt
   readonly?: boolean
 }) {
-  const fmt = mkFmt(locale)
   const quantity     = asset.quantity ?? 0
   const currentPrice = asset.current_price
   const currentValue = asset.current_value
@@ -260,8 +261,7 @@ function AssetRow({
 }
 
 // ─── Sum row ──────────────────────────────────────────────────────────────────
-function SumRow({ assets, groupRebRows, hasReb, locale, readonly }: { assets: AssetWithPrice[]; groupRebRows: RebalancingRow[]; hasReb: boolean; locale: string; readonly?: boolean }) {
-  const fmt = mkFmt(locale)
+function SumRow({ assets, groupRebRows, hasReb, fmt, readonly }: { assets: AssetWithPrice[]; groupRebRows: RebalancingRow[]; hasReb: boolean; fmt: Fmt; readonly?: boolean }) {
   const totalValue   = assets.reduce((s, a) => s + (a.current_value ?? 0), 0)
   // Only include assets with known cost basis in P&L to avoid inflated numbers
   const pricedAssets = assets.filter(a => a.avg_buy_price != null)
@@ -305,11 +305,12 @@ function SumRow({ assets, groupRebRows, hasReb, locale, readonly }: { assets: As
 // ─── Public export ────────────────────────────────────────────────────────────
 export function AssetTable({ assets, rebalancingRows, readonly }: { assets: AssetWithPrice[]; rebalancingRows?: RebalancingRow[]; readonly?: boolean }) {
   const { locale } = useSettings()
+  const fmt = useMemo(() => mkFmt(locale), [locale])
   const groups = groupAssets(assets)
   return (
     <div className="space-y-6">
       {groups.map(group => (
-        <GroupSection key={group.name} group={group} rebalancingRows={rebalancingRows} locale={locale} readonly={readonly} />
+        <GroupSection key={group.name} group={group} rebalancingRows={rebalancingRows} fmt={fmt} readonly={readonly} />
       ))}
     </div>
   )

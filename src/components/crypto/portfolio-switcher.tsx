@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { PlusCircle, RefreshCw, CheckCircle2, AlertCircle, Zap, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { syncFromKraken, deletePortfolio } from '@/app/(dashboard)/crypto/actions'
@@ -93,7 +94,7 @@ export function PortfolioSwitcher({ portfolios, activePortfolio, krakenConnected
                 /* ── Inline delete confirm ── */
                 <div className="flex items-center gap-1.5 rounded-md border border-destructive/60 bg-destructive/10 px-2.5 py-1.5">
                   <span className="text-xs text-destructive font-medium whitespace-nowrap">
-                    „{p.name}" löschen?
+                    „{p.name}“ löschen?
                   </span>
                   <button
                     onClick={() => handleDelete(p.name)}
@@ -134,7 +135,16 @@ export function PortfolioSwitcher({ portfolios, activePortfolio, krakenConnected
                   {!p.isKraken && (
                     <span
                       role="button"
+                      tabIndex={0}
+                      aria-label={`Portfolio „${p.name}" löschen`}
                       onClick={e => { e.stopPropagation(); setConfirmDelete(p.name) }}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          setConfirmDelete(p.name)
+                        }
+                      }}
                       className={cn(
                         'ml-0.5 rounded-full p-0.5 transition-opacity',
                         isActive
@@ -163,6 +173,7 @@ export function PortfolioSwitcher({ portfolios, activePortfolio, krakenConnected
                 if (e.key === 'Escape') { setCreating(false); setNewName('') }
               }}
               placeholder="Portfolio-Name"
+              aria-label="Portfolio-Name"
               className="h-8 w-36 rounded-md border border-border bg-background px-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
             />
             <button
@@ -219,9 +230,9 @@ export function PortfolioSwitcher({ portfolios, activePortfolio, krakenConnected
             <span className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
               <AlertCircle className="size-3.5" />
               Kraken nicht verbunden —{' '}
-              <a href="/settings" className="underline underline-offset-2">
+              <Link href="/settings" className="underline underline-offset-2">
                 Einstellungen → Integrationen
-              </a>
+              </Link>
             </span>
           )}
         </div>

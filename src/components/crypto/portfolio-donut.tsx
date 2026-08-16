@@ -1,122 +1,17 @@
 'use client'
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
+import dynamic from 'next/dynamic'
 import type { AssetWithPrice } from '@/components/crypto/portfolio-overview'
 import type { RebalancingRow } from '@/lib/crypto/rebalancing'
+import type { DonutEntry } from '@/components/crypto/portfolio-donut-card'
 import { useSettings } from '@/components/providers/settings-context'
 import { fmtCurrency } from '@/lib/format'
 
-// ─── Colors ───────────────────────────────────────────────────────────────────
-const COIN_COLORS: Record<string, string> = {
-  'bitcoin':          '#F7931A',
-  'ethereum':         '#627EEA',
-  'binancecoin':      '#F3BA2F',
-  'solana':           '#9945FF',
-  'convex-finance':   '#4A5568',
-  'cardano':          '#3CC8C8',
-  'polkadot':         '#E6007A',
-  'chainlink':        '#2A5ADA',
-  'avalanche-2':      '#E84142',
-  'matic-network':    '#8247E5',
-  'ripple':           '#346AA9',
-  'litecoin':         '#BFBBBB',
-  'pax-gold':         '#D4AF37',
-}
-const FALLBACK_COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899']
-
-function getColor(coingeckoId: string, index: number): string {
-  return COIN_COLORS[coingeckoId] ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length]
-}
-
-// ─── Custom tooltip ───────────────────────────────────────────────────────────
-function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<{ name: string; value: number; payload: DonutEntry }> }) {
-  const { locale } = useSettings()
-  if (!active || !payload?.length) return null
-  const d = payload[0]
-  return (
-    <div className="rounded-lg border border-border bg-popover px-3 py-2 shadow-lg text-sm">
-      <p className="font-medium">{d.name}</p>
-      <p className="text-muted-foreground tabular-nums">{d.payload.pct.toFixed(1)} % · {fmtCurrency(d.value, 'EUR', locale)}</p>
-    </div>
-  )
-}
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface DonutEntry {
-  label:        string
-  coingecko_id: string
-  value:        number
-  pct:          number
-}
-
-// ─── Single donut card ────────────────────────────────────────────────────────
-function DonutCard({
-  title, subtitle, data, eurUsdRate,
-}: {
-  title: string
-  subtitle: string
-  data: DonutEntry[]
-  eurUsdRate?: number
-}) {
-  const { locale } = useSettings()
-  const fmtUsd = (n: number) => fmtCurrency(n, 'USD', locale)
-
-  return (
-    <div className="rounded-lg border border-border bg-card p-5 space-y-4">
-      <div>
-        <h3 className="text-sm font-semibold">{title}</h3>
-        <p className="text-xs text-muted-foreground">{subtitle}</p>
-      </div>
-
-      <div className="relative">
-        <ResponsiveContainer width="100%" height={200}>
-          <PieChart>
-            <Pie
-              data={data}
-              dataKey="value"
-              nameKey="label"
-              innerRadius={65}
-              outerRadius={95}
-              paddingAngle={2}
-              strokeWidth={0}
-              isAnimationActive={true}
-              animationBegin={0}
-              animationDuration={800}
-              animationEasing="ease-out"
-            >
-              {data.map((entry, i) => (
-                <Cell key={entry.coingecko_id} fill={getColor(entry.coingecko_id, i)} />
-              ))}
-            </Pie>
-            <Tooltip content={<CustomTooltip />} />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Legend */}
-      <div className="space-y-1.5">
-        {data.map((d, i) => (
-          <div key={`${d.coingecko_id}-${i}`} className="flex items-center justify-between text-xs gap-2">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span
-                className="w-2.5 h-2.5 rounded-full shrink-0"
-                style={{ backgroundColor: getColor(d.coingecko_id, i) }}
-              />
-              <span className="font-medium">{d.label}</span>
-            </div>
-            <div className="flex items-center gap-2 tabular-nums text-muted-foreground shrink-0">
-              {eurUsdRate && (
-                <span className="text-[10px] opacity-70">{fmtUsd(d.value * eurUsdRate)}</span>
-              )}
-              <span>{fmtCurrency(d.value, 'EUR', locale)}</span>
-              <span className="opacity-60">{d.pct.toFixed(1).replace('.', ',')} %</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
+// recharts is a heavy dependency — load it on demand, client-only.
+const DonutCard = dynamic(
+  () => import('@/components/crypto/portfolio-donut-card').then(m => m.DonutCard),
+  { ssr: false }
+)
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 interface Props {
@@ -143,13 +38,17 @@ export function PortfolioDonut({ assets, rebalancingRows, eurUsdRate }: Props) {
   }
   const totalIst = Array.from(istMap.values()).reduce((s, v) => s + v, 0)
   const istData: DonutEntry[] = Array.from(istMap.entries())
-    .map(([id, value]) => ({
-      label:        labelMap.get(id) ?? id.toUpperCase(),
-      coingecko_id: id,
-      value,
-      pct:          totalIst > 0 ? (value / totalIst) * 100 : 0,
-    }))
-    .filter(d => d.value > 0)
+    .reduce<DonutEntry[]>((acc, [id, value]) => {
+      if (value > 0) {
+        acc.push({
+          label:        labelMap.get(id) ?? id.toUpperCase(),
+          coingecko_id: id,
+          value,
+          pct:          totalIst > 0 ? (value / totalIst) * 100 : 0,
+        })
+      }
+      return acc
+    }, [])
     .sort((a, b) => b.value - a.value)
 
   // ── ZIEL data: sum target_eur per coingecko_id from rebalancing rows ─────────
@@ -161,13 +60,17 @@ export function PortfolioDonut({ assets, rebalancingRows, eurUsdRate }: Props) {
   }
   const totalZiel = Array.from(zielMap.values()).reduce((s, v) => s + v.value, 0)
   const zielData: DonutEntry[] = Array.from(zielMap.entries())
-    .map(([id, { label, value }]) => ({
-      label,
-      coingecko_id: id,
-      value,
-      pct: totalZiel > 0 ? (value / totalZiel) * 100 : 0,
-    }))
-    .filter(d => d.value > 0)
+    .reduce<DonutEntry[]>((acc, [id, { label, value }]) => {
+      if (value > 0) {
+        acc.push({
+          label,
+          coingecko_id: id,
+          value,
+          pct: totalZiel > 0 ? (value / totalZiel) * 100 : 0,
+        })
+      }
+      return acc
+    }, [])
     .sort((a, b) => b.value - a.value)
 
   if (istData.length === 0 && zielData.length === 0) return null

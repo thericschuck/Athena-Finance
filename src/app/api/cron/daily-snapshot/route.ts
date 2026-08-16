@@ -432,16 +432,22 @@ export async function GET(req: NextRequest) {
     for (const date of datesToRun) {
       log.push(`\n=== ${date} ===`)
 
-      // Fetch crypto prices once per date run (shared across users)
+      // Fetch crypto prices once per date run (shared across users).
+      // Each user's asset lookup is independent read-only work, so run them concurrently.
       const cryptoSymbolSet = new Set<string>()
-      for (const user of users) {
-        const { data: assets } = await supabase
-          .from('assets')
-          .select('symbol, type')
-          .eq('user_id', user.id)
-          .eq('type', 'crypto')
-          .not('symbol', 'is', null)
-        for (const a of assets ?? []) if (a.symbol) cryptoSymbolSet.add(a.symbol.toUpperCase())
+      const userAssetLists = await Promise.all(
+        users.map(user =>
+          supabase
+            .from('assets')
+            .select('symbol, type')
+            .eq('user_id', user.id)
+            .eq('type', 'crypto')
+            .not('symbol', 'is', null)
+            .then(({ data }) => data ?? [])
+        )
+      )
+      for (const assets of userAssetLists) {
+        for (const a of assets) if (a.symbol) cryptoSymbolSet.add(a.symbol.toUpperCase())
       }
       const cryptoPrices = cryptoSymbolSet.size
         ? await fetchCryptoPrices([...cryptoSymbolSet])

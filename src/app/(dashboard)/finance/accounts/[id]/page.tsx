@@ -53,8 +53,7 @@ interface PageProps {
 }
 
 export default async function AccountDetailPage({ params }: PageProps) {
-  const { id } = await params
-  const supabase = await createClient()
+  const [{ id }, supabase] = await Promise.all([params, createClient()])
   const { data: { user } } = await supabase.auth.getUser()
 
   const [{ data: account }, { data: accounts }, { data: categories }, { data: transactions }, { data: balanceHistory }, settings] = await Promise.all([

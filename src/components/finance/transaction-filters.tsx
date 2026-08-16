@@ -40,6 +40,7 @@ export function TransactionFilters({ accounts, categories }: TransactionFiltersP
     <div className="flex flex-wrap items-center gap-2">
       {/* Typ */}
       <select
+        aria-label="Typ"
         className={selectClass}
         value={searchParams.get('type') ?? ''}
         onChange={(e) => update('type', e.target.value)}
@@ -54,6 +55,7 @@ export function TransactionFilters({ accounts, categories }: TransactionFiltersP
 
       {/* Konto */}
       <select
+        aria-label="Konto"
         className={selectClass}
         value={searchParams.get('account') ?? ''}
         onChange={(e) => update('account', e.target.value)}
@@ -68,6 +70,7 @@ export function TransactionFilters({ accounts, categories }: TransactionFiltersP
 
       {/* Kategorie */}
       <select
+        aria-label="Kategorie"
         className={selectClass}
         value={searchParams.get('category') ?? ''}
         onChange={(e) => update('category', e.target.value)}
@@ -83,6 +86,7 @@ export function TransactionFilters({ accounts, categories }: TransactionFiltersP
       {/* Von */}
       <input
         type="date"
+        aria-label="Von"
         className={selectClass}
         value={searchParams.get('from') ?? ''}
         onChange={(e) => update('from', e.target.value)}
@@ -91,6 +95,7 @@ export function TransactionFilters({ accounts, categories }: TransactionFiltersP
       {/* Bis */}
       <input
         type="date"
+        aria-label="Bis"
         className={selectClass}
         value={searchParams.get('to') ?? ''}
         onChange={(e) => update('to', e.target.value)}

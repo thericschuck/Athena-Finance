@@ -29,14 +29,3 @@ export const getSettings = cache(async (userId: string): Promise<SettingsMap> =>
     .eq('user_id', userId)
   return Object.fromEntries((data ?? []).map(r => [r.key, r.value]))
 })
-
-export async function getSetting(userId: string, key: string): Promise<unknown> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('user_settings')
-    .select('value')
-    .eq('user_id', userId)
-    .eq('key', key)
-    .single()
-  return data?.value ?? null
-}

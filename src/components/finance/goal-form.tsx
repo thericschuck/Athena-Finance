@@ -40,7 +40,7 @@ function GoalFields({
   setPriority: (v: string) => void
 }) {
   const today = new Date().toISOString().split('T')[0]
-  const [rate, setRate] = useState(goal?.monthly_savings_rate?.toString() ?? '')
+  const [rate, setRate] = useState(() => goal?.monthly_savings_rate?.toString() ?? '')
   const hasRate = parseFloat(rate) > 0
 
   return (

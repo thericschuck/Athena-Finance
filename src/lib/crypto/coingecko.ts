@@ -1,24 +1,5 @@
 import { FIAT_EUR_PRICES } from '@/lib/crypto/coin-registry'
 
-/** @deprecated Use COIN_REGISTRY from coin-registry.ts instead */
-export const COINGECKO_IDS: Record<string, string> = {
-  BTC:   'bitcoin',
-  ETH:   'ethereum',
-  SOL:   'solana',
-  BNB:   'binancecoin',
-  CVX:   'convex-finance',
-  SUI:   'sui',
-  AVAX:  'avalanche-2',
-  LINK:  'chainlink',
-  XRP:   'ripple',
-  DOGE:  'dogecoin',
-  ADA:   'cardano',
-  DOT:   'polkadot',
-  MATIC: 'matic-network',
-  UNI:   'uniswap',
-  AAVE:  'aave',
-}
-
 const BASE = 'https://api.coingecko.com/api/v3'
 const BATCH_SIZE = 25
 

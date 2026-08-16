@@ -11,7 +11,7 @@ import {
   TrendingUp, BarChart2, FileText, Target, Repeat2,
   Globe, ShieldCheck, Zap, ArrowRight,
   CandlestickChart, Wallet, Landmark, ShoppingCart,
-  Infinity as InfinityIcon,
+  Infinity as InfinityIcon, ChevronDown,
 } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { C, F, SPACE, kicker } from './landing-tokens'
@@ -744,37 +744,43 @@ function MiniSparkline({ stroke = C.olive }: { stroke?: string }) {
 }
 
 /** Statisch, keine Prop-/State-Abhängigkeit — Modul-Ebene statt Neuanlage
-    bei jedem MiniDonut-Render (siehe MiniDonut unten). */
-const MINI_DONUT_SEGMENTS = [
-  { color: C.gold, len: 62 },
-  { color: C.olive, len: 40 },
-  { color: C.graphite, len: 23 },
-]
+    bei jedem MiniDonut-Render (siehe MiniDonut unten). Offset gleich mit
+    vorberechnet (statt als `let`-Zähler während des JSX-`.map()` fortgeführt
+    zu werden): eine während des Renderns mutierte Closure-Variable ist unter
+    React-Compiler-Regeln unzulässig (react-hooks/immutability) — Concurrent
+    Rendering garantiert nicht, dass eine Render-Durchführung genau einmal
+    "durchläuft". */
+const MINI_DONUT_SEGMENTS = (() => {
+  let offset = 0
+  return [
+    { color: C.gold, len: 62 },
+    { color: C.olive, len: 40 },
+    { color: C.graphite, len: 23 },
+  ].map((s) => {
+    const seg = { ...s, offset }
+    offset += s.len + 2
+    return seg
+  })
+})()
 
 function MiniDonut({ size = 76 }: { size?: number }) {
-  let offset = 0
   return (
     <svg viewBox="0 0 80 80" width={size} height={size} aria-hidden style={{ display: 'block' }}>
       <circle cx="40" cy="40" r="30" fill="none" stroke={C.creamDeep} strokeWidth="9" />
-      {MINI_DONUT_SEGMENTS.map((s, i) => {
-        const dash = `${s.len} 125`
-        const el = (
-          <circle
-            key={i}
-            cx="40"
-            cy="40"
-            r="30"
-            fill="none"
-            stroke={s.color}
-            strokeWidth="9"
-            strokeDasharray={dash}
-            strokeDashoffset={-offset}
-            style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
-          />
-        )
-        offset += s.len + 2
-        return el
-      })}
+      {MINI_DONUT_SEGMENTS.map((s) => (
+        <circle
+          key={s.color}
+          cx="40"
+          cy="40"
+          r="30"
+          fill="none"
+          stroke={s.color}
+          strokeWidth="9"
+          strokeDasharray={`${s.len} 125`}
+          strokeDashoffset={-s.offset}
+          style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
+        />
+      ))}
     </svg>
   )
 }
@@ -838,10 +844,37 @@ function candleBaselineYNorm(t: number) {
   }
   return CANDLE_KEYFRAMES[CANDLE_KEYFRAMES.length - 1].y
 }
-/** Deterministisches Pseudo-Rauschen (drei überlagerte Sinuswellen statt
-    Math.random) — reicht von ~-1 bis 1, für Server/Client identisch. */
-function pseudoNoise(i: number, seed: number) {
-  return Math.sin(i * seed) * 0.5 + Math.sin(i * seed * 2.7 + 1.3) * 0.3 + Math.sin(i * seed * 5.1 + 2.6) * 0.2
+/**
+ * Deterministisches Pseudo-Rauschen — ganzzahliger Hash (Math.imul, XOR,
+ * Shift), reicht von -1 bis 1. Ersetzt an allen drei Stellen unten (Kerzen,
+ * GuV-Heatmap, Kalender) ein `Math.sin(i * seed) * .5 + ...`-Muster mit der
+ * Behauptung, das sei „für Server/Client identisch" — stimmt nicht:
+ * ECMAScript lässt transzendente Funktionen wie `Math.sin` ausdrücklich
+ * implementierungsapproximiert, und selbst innerhalb DESSELBEN Browsers/Node
+ * weichen der SSR-Aufruf und der Hydration-Aufruf im Client im letzten Bit
+ * ab, sobald unterschiedliche JIT-Tiers/Codepfade greifen (dieselbe
+ * Begründung wie bei `wobble()` in olive-vines.tsx, nur dort schon immer
+ * richtig gemacht) — bei den Kerzen hat das den `y1`-Attributwert minimal
+ * verschoben und einen echten Hydration-Mismatch ausgelöst; bei GuV-Heatmap
+ * und Kalender bisher nur deshalb nicht sichtbar geworden, weil dort direkt
+ * gerundet wird (ein 1-Bit-Unterschied kippt fast nie eine .5-Rundungsgrenze)
+ * — derselbe fehlerhafte Ansatz, nur mit Glück bisher folgenlos. 32-Bit-
+ * Ganzzahlarithmetik ist dagegen exakt spezifiziert und liefert überall
+ * dasselbe Bitmuster.
+ */
+function hashNoise(seed: number) {
+  let h = Math.imul(seed | 0, 0x27d4eb2d)
+  h ^= h >>> 15
+  h = Math.imul(h, 0x85ebca6b)
+  h ^= h >>> 13
+  return ((h >>> 0) / 0xffffffff) * 2 - 1
+}
+
+/** `channel` trennt die drei unabhängigen Rauschquellen pro Kerze
+    (Kurslücke, Docht oben, Docht unten) — vorher über den `seed`-
+    Multiplikator (0.9/1.7/2.3), jetzt als Kanal-Index in denselben Hash. */
+function pseudoNoise(i: number, channel: number) {
+  return hashNoise(i * 4 + channel)
 }
 /**
  * Jede Kerze bekommt jetzt einen echten Open/Close-Bezug statt unabhängigem
@@ -857,12 +890,12 @@ const CANDLES = Array.from({ length: CANDLE_COUNT }, (_, i) => {
   const closeY = CANDLE_Y_TOP + candleBaselineYNorm(t) * (CANDLE_Y_BOTTOM - CANDLE_Y_TOP)
   const prevT = i === 0 ? t : (i - 1) / (CANDLE_COUNT - 1)
   const prevCloseY = CANDLE_Y_TOP + candleBaselineYNorm(prevT) * (CANDLE_Y_BOTTOM - CANDLE_Y_TOP)
-  const openY = i === 0 ? closeY + 14 : prevCloseY + pseudoNoise(i, 0.9) * 9
+  const openY = i === 0 ? closeY + 14 : prevCloseY + pseudoNoise(i, 0) * 9
   const bodyTop = Math.min(openY, closeY)
   const bodyBottom = Math.max(openY, closeY)
   const bodyH = Math.max(3, bodyBottom - bodyTop)
-  const wickTop = bodyTop - Math.max(4, 10 + pseudoNoise(i, 1.7) * 16)
-  const wickBottom = bodyBottom + Math.max(4, 10 + pseudoNoise(i, 2.3) * 16)
+  const wickTop = bodyTop - Math.max(4, 10 + pseudoNoise(i, 1) * 16)
+  const wickBottom = bodyBottom + Math.max(4, 10 + pseudoNoise(i, 2) * 16)
   // Klassische Candlestick-Konvention: gestiegener Kurs (Close über Open,
   // also kleineres y) hohl/nur Kontur, gefallener Kurs voll gefüllt.
   const up = closeY < openY
@@ -905,35 +938,22 @@ function AnalyseCandles() {
     // Die Kerzen bauen sich auf dem Weg IN die Szene auf und stehen genau
     // dann fertig, wenn das Pinning greift (`top top`) — danach sind sie
     // ruhiger Hintergrund für die vier Schritte, statt weiter zu wachsen.
-    //
-    // scaleY statt y/height/y1 als animierte Attribute: Wick und Body stehen
-    // im Markup jetzt bereits in ihrer FINALEN Geometrie (siehe JSX unten),
-    // mit `transform-box: fill-box`/`transform-origin` an der eigenen
-    // Grundlinie — „wachsen" heißt hier nur noch scaleY 0→1 auf derselben
-    // Form, keine Attribut-Mutation mehr pro Frame. GSAP schreibt scaleY als
-    // reine CSS-`transform`-Property (Compositor, kein SVG-Reflow), y/height/
-    // y1 als Geometrie-Attribute erzwingen dagegen bei JEDER Änderung ein
-    // Layout — bei 52 Kerzen à zwei Formen macht genau das beim
-    // Durchscrollen den Unterschied zwischen ruckelfrei und spürbarem
-    // Stottern. (Nebeneffekt: die Kerzenkörper wachsen jetzt von ihrer
-    // EIGENEN Grundlinie statt vom etwas tieferen Docht-Ende aus — bei der
-    // ohnehin gestaffelten/gejitterten Reveal-Animation nicht wahrnehmbar.)
     const tl = gsap.timeline({
       scrollTrigger: { trigger: scene, start: 'top bottom', end: 'top top', scrub: true },
     })
 
-    CANDLES.forEach((_, i) => {
+    CANDLES.forEach((c, i) => {
       const wick = wickRefs.current[i]
       const body = bodyRefs.current[i]
       if (!wick || !body) return
-      gsap.set([wick, body], { scaleY: 0 })
+      gsap.set(wick, { attr: { y1: c.wickBottom } })
+      gsap.set(body, { attr: { y: c.wickBottom, height: 0 } })
       // Enger gestaffelt (statt strikt links-nach-rechts) und mit leichtem
       // Jitter statt gleichmäßigem Abstand — wirkt weniger wie ein sauberer
       // Sweep, mehr wie ungleichmäßiges Aufflackern.
-      const pos = Math.max(0, i * 0.07 + Math.sin(i * 1.9) * 0.02)
-      // Ein Tween für beide Formen (statt je einem) — dieselbe Dauer/Position,
-      // GSAP animiert ein Array gleich behandelter Ziele in einem Schritt.
-      tl.to([wick, body], { scaleY: 1, duration: 0.6, ease: 'none' }, pos)
+      const pos = Math.max(0, i * 0.07 + hashNoise(i) * 0.02)
+      tl.to(wick, { attr: { y1: c.wickTop }, duration: 0.6, ease: 'none' }, pos)
+      tl.to(body, { attr: { y: c.bodyTop, height: c.bodyH }, duration: 0.6, ease: 'none' }, pos)
     })
 
     return () => {
@@ -1021,14 +1041,10 @@ function AnalyseCandles() {
           const tone = on ? C.goldInk : C.inkFaint
           return (
             /*
-              x1/x2/y1/y2 bzw. x/y/width/height stehen jetzt IMMER in ihrer
-              finalen Geometrie (siehe scaleY-Kommentar im useEffect oben) —
-              nur noch `transform: scaleY()` wächst/schrumpft die Form,
-              verankert an ihrer eigenen Grundlinie (`transform-box: fill-box`,
-              `transform-origin` unten). GSAP schreibt scaleY pro Frame,
-              React fasst hier nur noch stroke/fill/opacity beim Hover an —
-              die WACHSTUMS-Property (`transform`) bleibt für React unangetastet,
-              ein Hover setzt den Aufbau-Fortschritt der Kerze also nicht zurück.
+              y/height/y1 bleiben bewusst statische Props: GSAP schreibt diese
+              Attribute pro Frame, React fasst sie beim Re-Render (Hover) nur
+              an, wenn sich der PROP-Wert ändert — täte er das, würde jeder
+              Hover den Aufbau-Fortschritt der Kerze zurücksetzen.
             */
             <g key={i} opacity={on ? 0.5 : 0.15} style={{ transition: 'opacity .18s ease' }}>
               <line
@@ -1037,42 +1053,23 @@ function AnalyseCandles() {
                 }}
                 x1={x}
                 x2={x}
-                y1={c.wickTop}
+                y1={still ? c.wickTop : c.wickBottom}
                 y2={c.wickBottom}
                 strokeWidth={1.6}
                 vectorEffect="non-scaling-stroke"
-                style={{
-                  transformBox: 'fill-box',
-                  transformOrigin: '50% 100%',
-                  // Default vor dem ersten Effekt-Lauf schon kollabiert
-                  // (nicht `undefined`/scaleY(1)) — sonst blitzen die fertig
-                  // gebauten Kerzen einen Frame lang auf, bevor `gsap.set`
-                  // sie herunterskaliert (bei reduzierter Bewegung läuft
-                  // dieser Effekt gar nicht, dort bleibt scaleY(1) final).
-                  transform: still ? 'scaleY(1)' : 'scaleY(0)',
-                  stroke: tone,
-                  transition: 'stroke .18s ease',
-                }}
+                style={{ stroke: tone, transition: 'stroke .18s ease' }}
               />
               <rect
                 ref={(el) => {
                   bodyRefs.current[i] = el
                 }}
                 x={x - bodyW / 2}
-                y={c.bodyTop}
+                y={still ? c.bodyTop : c.wickBottom}
                 width={bodyW}
-                height={c.bodyH}
+                height={still ? c.bodyH : 0}
                 strokeWidth={c.up ? 1.6 : 0}
                 vectorEffect="non-scaling-stroke"
                 style={{
-                  transformBox: 'fill-box',
-                  transformOrigin: '50% 100%',
-                  // Default vor dem ersten Effekt-Lauf schon kollabiert
-                  // (nicht `undefined`/scaleY(1)) — sonst blitzen die fertig
-                  // gebauten Kerzen einen Frame lang auf, bevor `gsap.set`
-                  // sie herunterskaliert (bei reduzierter Bewegung läuft
-                  // dieser Effekt gar nicht, dort bleibt scaleY(1) final).
-                  transform: still ? 'scaleY(1)' : 'scaleY(0)',
                   // "Hohle" (gestiegene) Kerzen bekommen keinen echten
                   // Transparent-Körper — sie werden mit der Seitenfarbe
                   // gefüllt, genau wie in echten Chart-Bibliotheken. Sonst
@@ -1161,7 +1158,7 @@ const GUV_NEG = ['#3A231B', '#6B3427', '#8E4634', '#A9553C']
 const GUV_POS = ['#2C3826', '#41522F', '#5B6E4B', '#8CA277']
 const GUV_ZERO = '#232320'
 const GUV_CELLS = Array.from({ length: GUV_COLS * GUV_ROWS }, (_, i) => {
-  const w = Math.sin(i * 0.7) * 2 + Math.cos(i * 1.9) * 1.6 + Math.sin(i * 0.23) * 1.2
+  const w = hashNoise(i) * 4
   return Math.max(-4, Math.min(4, Math.round(w)))
 })
 function guvColor(v: number) {
@@ -1384,8 +1381,7 @@ function CardSankey() {
 const CAL_LEAD_BLANKS = 2
 const CAL_POPUP_DAY = 17
 const CAL_NET = Array.from({ length: 31 }, (_, i) => {
-  const d = i + 1
-  return Math.round(Math.sin(d * 1.3) * 60 + Math.cos(d * 0.7) * 40 + Math.sin(d * 2.9) * 25)
+  return Math.round(hashNoise(i) * 90)
 })
 function calColor(v: number) {
   const a = (0.16 + Math.min(1, Math.abs(v) / 90) * 0.56).toFixed(2)
@@ -2356,6 +2352,49 @@ function PedimentReveal() {
     return () => mm.revert()
   }, [still])
 
+  /**
+   * Klick auf den Pfeil unter der Säule springt weiter — zur nächsten
+   * Kennzahl, oder, auf der letzten Kennzahl, über das Szenenende hinaus in
+   * den nächsten Seitenabschnitt (siehe Chat: "sollte nicht verschwinden,
+   * dann kann es nach unten führen" — der Pfeil bleibt also stehen, statt
+   * ins Nichts zu zeigen, sobald nichts mehr zu rotieren ist).
+   *
+   * Dieselbe Idee wie jumpToPillar/jumpToStep in PillarsReveal/AnalyseReveal:
+   * die Säulen-Rotation ist reiner Scroll-Fortschritt (state.phi, siehe
+   * `build()` oben), "hinspringen" heißt also nur, dorthin zu scrollen, wo
+   * phi = i * STAT_STEP_DEG wäre — kein zweiter Animationsmechanismus nötig.
+   *
+   * Die Rechnung spiegelt exakt das Rotations-Tween in `build()`: es läuft
+   * von Timeline-Position p(OPEN_VH + HOLD_VH) über die Dauer p(COLUMN_ROTATE_VH)
+   * linear (`ease:'none'`) von COLUMN_START_DEG bis COLUMN_END_DEG. `rotateFrac`
+   * ist der Anteil davon, den phi bis zum Ziel-Winkel schon zurückgelegt hat.
+   *
+   * `scrollDistance <= 0` erkennt zuverlässig, ob die Säule überhaupt aktiv
+   * ist (siehe jumpToPillar-Kommentar) — unter COLUMN_MIN_WIDTH bleibt die
+   * Sektion per `build(false)` auf die kürzere, säulenlose Fassung genormt,
+   * in der ein Sprung ohnehin ins Leere liefe.
+   */
+  const jumpToNextStat = () => {
+    const scene = sceneRef.current
+    if (!scene) return
+    const scrollDistance = scene.offsetHeight - window.innerHeight
+    if (scrollDistance <= 0) return
+    const sceneTop = scene.getBoundingClientRect().top + window.scrollY
+
+    const current = Math.max(0, view)
+    if (current >= STATS.length - 1) {
+      // Letzte Kennzahl: über das Szenenende hinaus scrollen, statt an Ort
+      // und Stelle zu verharren — führt in den nächsten Seitenabschnitt.
+      scrollToY(sceneTop + scene.offsetHeight)
+      return
+    }
+
+    const targetDeg = (current + 1) * STAT_STEP_DEG
+    const rotateFrac = (targetDeg - COLUMN_START_DEG) / (COLUMN_END_DEG - COLUMN_START_DEG)
+    const t = p(OPEN_VH + HOLD_VH) + rotateFrac * p(COLUMN_ROTATE_VH)
+    scrollToY(sceneTop + t * scrollDistance)
+  }
+
   /*
    * Bei reduzierter Bewegung entfällt die gesamte Pinning-Mechanik: kein
    * überlanger Abschnitt, kein Scroll-gesteuertes Beschneiden. Das Dashboard
@@ -2529,6 +2568,29 @@ function PedimentReveal() {
               </div>
             ))}
           </div>
+
+          {/*
+            "Weiter"-Hinweis am Fuß der Säule — spiegelt den "Scroll"-Hinweis
+            über dem Giebel (siehe .pediment-cue), diesmal mit klickbarem
+            Pfeil statt reiner Deko. pointer-events:auto nötig, weil
+            .mock-column selbst komplett pointer-events:none ist (siehe
+            dort) — sonst gäbe es kein Klick-Ziel.
+
+            Bleibt bewusst auch auf der letzten Kennzahl stehen, statt zu
+            verschwinden (siehe Chat): jumpToNextStat springt dort über das
+            Szenenende hinaus in den nächsten Seitenabschnitt statt zur
+            nächsten Kennzahl — derselbe Pfeil, dieselbe Richtung, nur ein
+            anderes Ziel.
+          */}
+          <button
+            type="button"
+            onClick={jumpToNextStat}
+            aria-label="Weiter"
+            className="mock-column-next"
+          >
+            <span className="mock-column-next-label" style={{ ...kicker, fontSize: '10px' }}>Scroll</span>
+            <ChevronDown size={16} strokeWidth={1.6} aria-hidden />
+          </button>
         </div>
       </div>
     </section>
@@ -3056,14 +3118,17 @@ function InstrumentariumVines({ dock }: { dock: 'top' | 'bottom' }) {
       }}
     >
       {/*
-        swaying={false}: diese Ranken sitzen dauerhaft (einmal `inView`, nie
-        wieder unmontiert) HINTER der `maskImage` oben — mit der endlosen
-        Wiege-Schleife (siehe swaying-Kommentar in olive-vines.tsx) müsste
-        der Browser diese Maske für den Rest der Seite ständig neu
-        kompositieren, sichtbar als andauerndes Ruckeln ab genau dieser
-        Sektion. Die einmalige Wachs-Animation bleibt.
+        static: diese Ranken sind reine Hintergrund-Deko ohne erzählerischen
+        Moment — kein Grund, dafür Paint-Zeit für das einmalige Aufzeichnen
+        UND (bei gemaskten, dauerhaft gemounteten Ranken wie hier) die
+        endlose Wiege-Schleife zu zahlen. Erscheinen dadurch sofort fertig
+        gewachsen, wie ein normales Bild. Verstärkt außerdem den früheren
+        Grund für swaying={false}: eine Maske zwingt den Browser, ihren
+        gesamten Inhalt bei JEDER Änderung eines Nachfahren neu zu
+        kompositieren — bei „static" ändert sich hinter der Maske jetzt
+        gar nichts mehr.
       */}
-      {inView && <OliveVines tone="light" opacity={0.42} width={width} swaying={false} />}
+      {inView && <OliveVines tone="light" opacity={0.42} width={width} static />}
     </div>
   )
 }
@@ -3145,6 +3210,11 @@ export function LandingClient() {
   }, [stillMotion])
 
   return (
+    // domAnimation reicht: die drei m.div-Stellen (Reveal, CardDiverging,
+    // AnalyseDeck) animieren nur opacity/x/y/scale/rotate — kein drag/
+    // layout/layoutId, das bräuchte das größere domMax. LazyMotion + `m`
+    // statt `motion` spart hier laut Motion-Doku ~30kb im Client-Bundle.
+    <LazyMotion features={domAnimation}>
     <SmoothScrollProvider>
     <div
       className="af-landing"
@@ -3507,119 +3577,148 @@ export function LandingClient() {
       {/* ══ III · DIE ANALYSE (gepinnte Schritt-Erzählung ab Desktop) ══ */}
       <AnalyseReveal />
 
-      {/* ══ IV · DER WEG ══ */}
-      <section
-        style={{
-          padding: `${SPACE.section} ${SPACE.gutter}`,
-          borderTop: `1px solid ${C.rule}`,
-          backgroundColor: 'rgba(232,224,208,.24)',
-        }}
-      >
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-          <div data-section-marker="IV">
-            <Reveal>
-              <SectionHead
-                index="IV"
-                label="Der Weg"
-                title="In drei Schritten zum"
-                emphasis="vollen Überblick."
-              />
-            </Reveal>
-          </div>
-
-          <div
-            className="g-steps"
+      {/* ══ IV · DER WEG — erster Halt der Vorhang-Kette (siehe .overlap-*
+          in landing.css): bleibt stehen, während „Weitere Eigenschaften"
+          darüber hinwegzieht ══ */}
+      {/* data-section-marker sitzt hier auf der SZENE, nicht auf dem
+          Überschrift-Div: der Inhalt steht innerhalb von .overlap-sticky
+          per flex/align-items:center vertikal zentriert, sein `top` bleibt
+          also während der ganzen Klebedauer auf einem konstanten Offset
+          stehen (oft > REVEAL_LINE in SectionProgressBar) und überschreitet
+          die Schwelle nie — die Leiste bliebe fälschlich auf der vorigen
+          Sektion stehen. Die Szene selbst ist normaler Fluss und wandert
+          stetig, genau wie bei „III · Die Analyse" (.analyse-scene). */}
+      <div className="overlap-scene" data-section-marker="IV">
+        <div className="overlap-sticky" style={{ zIndex: 1 }}>
+          <section
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: 'clamp(28px, 4vw, 48px)',
-              marginTop: 'clamp(48px, 6vw, 76px)',
-              position: 'relative',
+              width: '100%',
+              padding: `${SPACE.section} ${SPACE.gutter}`,
+              borderTop: `1px solid ${C.rule}`,
+              backgroundColor: 'rgba(232,224,208,.24)',
             }}
           >
-            <div
-              className="g-steps-line"
-              aria-hidden
-              style={{
-                position: 'absolute',
-                top: '27px',
-                left: '18%',
-                right: '18%',
-                height: '1px',
-                background: `linear-gradient(90deg, transparent, ${C.rule} 12%, ${C.olive} 50%, ${C.rule} 88%, transparent)`,
-                opacity: 0.6,
-              }}
-            />
-            {STEPS.map((step, i) => (
-              <Reveal key={step.num} delay={i * 0.1} style={{ textAlign: 'center', position: 'relative' }}>
+            <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+              <div>
+                <Reveal>
+                  <SectionHead
+                    index="IV"
+                    label="Der Weg"
+                    title="In drei Schritten zum"
+                    emphasis="vollen Überblick."
+                  />
+                </Reveal>
+              </div>
+
+              <div
+                className="g-steps"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: 'clamp(28px, 4vw, 48px)',
+                  marginTop: 'clamp(48px, 6vw, 76px)',
+                  position: 'relative',
+                }}
+              >
                 <div
+                  className="g-steps-line"
+                  aria-hidden
                   style={{
-                    width: '54px',
-                    height: '54px',
-                    margin: '0 auto 22px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: C.parchment,
-                    border: `1px solid ${C.rule}`,
-                    color: C.goldInk,
+                    position: 'absolute',
+                    top: '27px',
+                    left: '18%',
+                    right: '18%',
+                    height: '1px',
+                    background: `linear-gradient(90deg, transparent, ${C.rule} 12%, ${C.olive} 50%, ${C.rule} 88%, transparent)`,
+                    opacity: 0.6,
                   }}
-                >
-                  {step.icon}
-                </div>
-                <p
-                  style={{
-                    fontFamily: F.display,
-                    fontSize: '22px',
-                    lineHeight: 1,
-                    color: C.goldInk,
-                    margin: '0 0 12px',
-                  }}
-                >
-                  {step.num}
-                </p>
-                <h3 style={{ fontFamily: F.display, fontSize: '22px', fontWeight: 500, color: C.ink, margin: '0 0 10px' }}>
-                  {step.title}
-                </h3>
-                <p
-                  className="af-balance"
-                  style={{ fontFamily: F.serif, fontSize: '14px', lineHeight: 1.75, color: C.inkBody, margin: '0 auto', maxWidth: '30ch' }}
-                >
-                  {step.desc}
-                </p>
-              </Reveal>
-            ))}
-          </div>
+                />
+                {STEPS.map((step, i) => (
+                  <Reveal key={step.num} delay={i * 0.1} style={{ textAlign: 'center', position: 'relative' }}>
+                    <div
+                      style={{
+                        width: '54px',
+                        height: '54px',
+                        margin: '0 auto 22px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: C.parchment,
+                        border: `1px solid ${C.rule}`,
+                        color: C.goldInk,
+                      }}
+                    >
+                      {step.icon}
+                    </div>
+                    <p
+                      style={{
+                        fontFamily: F.display,
+                        fontSize: '22px',
+                        lineHeight: 1,
+                        color: C.goldInk,
+                        margin: '0 0 12px',
+                      }}
+                    >
+                      {step.num}
+                    </p>
+                    <h3 style={{ fontFamily: F.display, fontSize: '22px', fontWeight: 500, color: C.ink, margin: '0 0 10px' }}>
+                      {step.title}
+                    </h3>
+                    <p
+                      className="af-balance"
+                      style={{ fontFamily: F.serif, fontSize: '14px', lineHeight: 1.75, color: C.inkBody, margin: '0 auto', maxWidth: '30ch' }}
+                    >
+                      {step.desc}
+                    </p>
+                  </Reveal>
+                ))}
+              </div>
+            </div>
+          </section>
         </div>
-      </section>
+      </div>
 
-      {/* ══ WEITERE EIGENSCHAFTEN ══ */}
-      <section style={{ padding: `clamp(56px, 7vw, 88px) ${SPACE.gutter}`, borderTop: `1px solid ${C.rule}` }}>
-        <div style={{ maxWidth: '1160px', margin: '0 auto' }}>
-          <div
-            className="g-extras"
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'clamp(24px, 3vw, 40px)' }}
-          >
-            {EXTRAS.map((f, i) => (
-              <Reveal key={f.title} delay={i * 0.06}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <span style={{ color: C.oliveDeep }}>{f.icon}</span>
-                  <div style={{ height: '1px', backgroundColor: C.rule }} />
-                  <h4 style={{ fontFamily: F.display, fontSize: '17px', fontWeight: 500, color: C.ink, margin: 0 }}>
-                    {f.title}
-                  </h4>
-                  <p style={{ fontFamily: F.serif, fontSize: '13px', lineHeight: 1.75, color: C.inkBody, margin: 0 }}>
-                    {f.desc}
-                  </p>
-                </div>
-              </Reveal>
-            ))}
+      {/* ══ WEITERE EIGENSCHAFTEN — letzter Halt der Vorhang-Kette: zieht
+          per Negativ-Margin über „Der Weg" hinweg (siehe .overlap-*-
+          Kommentar in landing.css), bleibt dabei aber selbst normaler
+          Fluss — kein eigenes Sticky-Pinning mehr, sonst hängt sie nach
+          dem Überziehen tot in der Luft, bevor der Abschluss aufschließt.
+          Der Abschluss folgt direkt danach, ohne weiteren Vorhang ══ */}
+      <div className="overlap-cover" style={{ zIndex: 2, backgroundColor: C.parchment }}>
+        <section style={{ width: '100%', padding: `clamp(56px, 7vw, 88px) ${SPACE.gutter}`, borderTop: `1px solid ${C.rule}` }}>
+          <div style={{ maxWidth: '1160px', margin: '0 auto' }}>
+            <div
+              className="g-extras"
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'clamp(24px, 3vw, 40px)' }}
+            >
+              {EXTRAS.map((f, i) => (
+                <Reveal key={f.title} delay={i * 0.06}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <span style={{ color: C.oliveDeep }}>{f.icon}</span>
+                    <div style={{ height: '1px', backgroundColor: C.rule }} />
+                    <h4 style={{ fontFamily: F.display, fontSize: '17px', fontWeight: 500, color: C.ink, margin: 0 }}>
+                      {f.title}
+                    </h4>
+                    <p style={{ fontFamily: F.serif, fontSize: '13px', lineHeight: 1.75, color: C.inkBody, margin: 0 }}>
+                      {f.desc}
+                    </p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
-      {/* ══ ABSCHLUSS ══ */}
-      <section style={{ padding: `0 ${SPACE.gutter} ${SPACE.section}` }}>
+      {/* ══ ABSCHLUSS — folgt direkt im normalen Fluss auf „Weitere
+          Eigenschaften", kein Vorhang mehr darüber. Braucht aber trotzdem
+          position+z-index: die vorigen Sektionen sind noch sticky-positioniert
+          mit eigenem z-index, und positionierte Geschwister mit z-index
+          malen sich laut CSS-Stacking-Regeln IMMER über normale, nicht
+          positionierte Geschwister — unabhängig von der DOM-Reihenfolge.
+          Ohne das hier würde „Der Weg" (z-index 1) durch den Abschluss
+          hindurchscheinen ══ */}
+      <section style={{ position: 'relative', zIndex: 3, padding: `${SPACE.section} ${SPACE.gutter}`, backgroundColor: C.parchment }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <Reveal y={30}>
             <div
@@ -3749,7 +3848,7 @@ export function LandingClient() {
               <span className="af-micro" style={{ ...kicker, fontSize: '10px', color: C.inkFaint, marginBottom: '2px' }}>
                 Mehr
               </span>
-              <a href="mailto:eric@athena-finance.de" className="foot-link">
+              <a href="mailto:info@schuck-webdesign.de" className="foot-link">
                 <span className="af-quiet af-micro" style={{ ...kicker, fontSize: '11px', color: C.inkSubtle }}>
                   Kontakt
                 </span>
@@ -3779,7 +3878,7 @@ export function LandingClient() {
               style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: C.goldInk, flexShrink: 0, transform: 'translateY(-2px)' }}
             />
             <p style={{ fontFamily: F.sans, fontSize: '12.5px', lineHeight: 1.6, color: C.inkSubtle, margin: 0, maxWidth: '560px' }}>
-              Der Zugang ist aktuell begrenzt — es werden vorübergehend keine neuen Konten angelegt.
+              Der Zugang ist aktuell ausschließlich für Eric Schuck Persönlich — Es werden vorübergehend keine neuen Konten angelegt.
             </p>
           </div>
 
@@ -3802,5 +3901,6 @@ export function LandingClient() {
       </footer>
     </div>
     </SmoothScrollProvider>
+    </LazyMotion>
   )
 }

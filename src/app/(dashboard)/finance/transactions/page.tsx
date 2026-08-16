@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { AddTransactionDialog, EditTransactionDialog, DeleteTransactionButton } from '@/components/finance/transaction-form'
 import { TransactionFilters } from '@/components/finance/transaction-filters'
@@ -41,8 +42,7 @@ function formatDate(dateStr: string, dateFormat: string) {
 }
 
 export default async function TransactionsPage({ searchParams }: PageProps) {
-  const filters = await searchParams
-  const supabase = await createClient()
+  const [filters, supabase] = await Promise.all([searchParams, createClient()])
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -108,10 +108,12 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
       </div>
 
       {/* Filters */}
-      <TransactionFilters
-        accounts={accounts ?? []}
-        categories={categories ?? []}
-      />
+      <Suspense fallback={<div className="h-8" />}>
+        <TransactionFilters
+          accounts={accounts ?? []}
+          categories={categories ?? []}
+        />
+      </Suspense>
 
       {/* Table */}
       {rows.length === 0 ? (

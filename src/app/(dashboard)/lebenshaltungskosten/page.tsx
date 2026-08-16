@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { seedIfEmpty } from './actions'
 import { LebenshaltungskostenClient } from '@/components/lebenshaltungskosten/LebenshaltungskostenClient'
@@ -32,15 +33,22 @@ export default async function LebenshaltungskostenPage() {
   await seedIfEmpty()
 
   const supabase = await createClient()
+  // Layout redirected bereits, falls kein User eingeloggt ist — der Check
+  // hier ist trotzdem nötig, um `user.id` unten typsicher (und nicht nur
+  // durchs Layout garantiert) an die Queries zu geben.
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
+  // .eq('user_id', ...) zusätzlich zur RLS-Policy — siehe Kommentar in
+  // actions.ts (updateCategory): dieselbe Defense-in-Depth-Konvention.
   const [
     { data: categories },
     { data: items },
     { data: targets },
   ] = await Promise.all([
-    supabase.from('budget_categories').select('*').order('sort_order').order('name'),
-    supabase.from('budget_items').select('*').order('name'),
-    supabase.from('income_targets').select('*').order('created_at').limit(1),
+    supabase.from('budget_categories').select('*').eq('user_id', user.id).order('sort_order').order('name'),
+    supabase.from('budget_items').select('*').eq('user_id', user.id).order('name'),
+    supabase.from('income_targets').select('*').eq('user_id', user.id).order('created_at').limit(1),
   ])
 
   return (

@@ -1,6 +1,8 @@
 import type { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+const CSV_HEADERS = ['datum', 'betrag', 'beschreibung', 'haendler', 'kategorie', 'konto', 'waehrung']
+
 function escapeCSV(value: string | number | null | undefined): string {
   if (value == null) return ''
   const str = String(value)
@@ -43,8 +45,7 @@ export async function GET(req: NextRequest) {
     return new Response('Error fetching transactions', { status: 500 })
   }
 
-  const headers = ['datum', 'betrag', 'beschreibung', 'haendler', 'kategorie', 'konto', 'waehrung']
-  const lines: string[] = [headers.join(',')]
+  const lines: string[] = [CSV_HEADERS.join(',')]
 
   for (const tx of transactions ?? []) {
     let amount: number

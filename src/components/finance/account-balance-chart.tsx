@@ -38,7 +38,7 @@ function ChartTooltip({ active, payload, label }: {
 
   if (!active || !payload?.length) return null
   const date = new Date(label ?? '').toLocaleDateString(locale, {
-    day: '2-digit', month: 'short', year: 'numeric',
+    day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC',
   })
   return (
     <div className="rounded-lg border border-border bg-popover p-3 shadow-md text-xs min-w-[140px]">

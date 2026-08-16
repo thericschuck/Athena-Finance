@@ -26,7 +26,9 @@ export function AppShell({
     <div className="flex h-dvh bg-background overflow-hidden">
       {/* Mobile backdrop */}
       {mobileOpen && (
-        <div
+        <button
+          type="button"
+          aria-label="Navigation schliessen"
           className="fixed inset-0 z-40 bg-black/50 md:hidden"
           onClick={() => setMobileOpen(false)}
         />

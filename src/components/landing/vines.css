@@ -58,6 +58,22 @@
   .vine-layer { opacity: .3 !important; }
 }
 
+/* Statische Variante (siehe OliveVines-Prop `static`) — derselbe Endzustand
+   wie prefers-reduced-motion unten, aber gezielt zuschaltbar statt an die
+   Systemeinstellung gekoppelt: für Ranken, die dauerhaft nur Hintergrund-
+   Schmuck sind (siehe InstrumentariumVines) lohnt sich weder das einmalige
+   Aufzeichnen noch das endlose Wiegen — beides kostet Paint-Zeit, ohne dass
+   es hier zur Wirkung des Abschnitts beiträgt. */
+.vine-layer-static .vine-stem,
+.vine-layer-static .vine-leaf,
+.vine-layer-static .vine-sway-a,
+.vine-layer-static .vine-sway-b,
+.vine-layer-static .vine-sway-c {
+  animation: none !important;
+}
+.vine-layer-static .vine-stem { stroke-dashoffset: 0; }
+.vine-layer-static .vine-leaf { opacity: 1; transform: none; }
+
 @media (prefers-reduced-motion: reduce) {
   .vine-stem,
   .vine-leaf,

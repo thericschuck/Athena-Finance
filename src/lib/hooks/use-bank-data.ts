@@ -77,6 +77,7 @@ export function useBankData(): UseBankDataReturn {
       if (params?.limit)    url.searchParams.set('limit',    String(params.limit))
 
       const res = await fetch(url.toString())
+      if (!res.ok) return
       const data: TransactionsResponse = await res.json()
       if (data.transactions) setTransactions(data.transactions)
     } finally {
@@ -89,6 +90,7 @@ export function useBankData(): UseBankDataReturn {
     setIsLoadingBal(true)
     try {
       const res = await fetch('/api/bank/balance')
+      if (!res.ok) return
       const data: BalanceResponse = await res.json()
       if (data.balances) setBalances(data.balances)
     } finally {

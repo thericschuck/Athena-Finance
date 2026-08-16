@@ -236,35 +236,44 @@ tbody tr {
   letter-spacing: -0.01em;
 }
 
-/* Aurum – Dark · Serif · Luxury Finance */
+/* Aurum – Dark · Serif · Luxury Finance
+ * Werte 1:1 aus dem Figma-Redesign („Athena-Finance", Variablen surface/*,
+ * text/*, brand/gold-500, status/good, chart/cat-*) — siehe landing-tokens.ts
+ * (AU) für dieselbe Palette als JS-Literale. Ersetzt die ältere, gesättigtere
+ * Gold/Braun-Version (#d4a017 auf #0c0800) durch ein neutraleres
+ * Beinahe-Schwarz plus gedämpftes Champagner-Gold.
+ */
 [data-theme="aurum"] {
-  --background: #0c0800;
-  --foreground: #f0e6c8;
-  --card: #130d00;
-  --card-foreground: #f0e6c8;
-  --popover: #130d00;
-  --popover-foreground: #f0e6c8;
-  --primary: #d4a017;
-  --primary-foreground: #0c0800;
-  --secondary: #1e1500;
-  --secondary-foreground: #c8b887;
-  --muted: #1e1500;
-  --muted-foreground: #8a7a50;
-  --accent: #2a1e00;
-  --accent-foreground: #d4a017;
+  --background: #0a0a09;
+  --foreground: #f4eee2;
+  --card: #131110;
+  --card-foreground: #f4eee2;
+  --popover: #131110;
+  --popover-foreground: #f4eee2;
+  --primary: #cda564;
+  --primary-foreground: #0a0a09;
+  --secondary: #1a1714;
+  --secondary-foreground: #b7ac98;
+  --muted: #1a1714;
+  --muted-foreground: #7c7365;
+  --accent: #3a2e17;
+  --accent-foreground: #cda564;
   --destructive: #c0392b;
-  --border: rgba(212, 160, 23, 0.2);
-  --input: rgba(212, 160, 23, 0.1);
-  --ring: rgba(212, 160, 23, 0.4);
+  --border: #262119;
+  --input: rgba(205, 165, 100, 0.12);
+  --ring: rgba(205, 165, 100, 0.4);
   --radius: 0.5rem;
-  --sidebar: #080500;
-  --sidebar-foreground: #c8b887;
-  --sidebar-primary: #d4a017;
-  --sidebar-primary-foreground: #0c0800;
-  --sidebar-accent: #1e1500;
-  --sidebar-accent-foreground: #f0e6c8;
-  --sidebar-border: rgba(212, 160, 23, 0.15);
-  --sidebar-ring: rgba(212, 160, 23, 0.3);
+  --sidebar: #0a0a09;
+  --sidebar-foreground: #b7ac98;
+  /* Aktiver Nav-Eintrag in der echten Sidebar läuft über sidebar-primary
+     (volle Gold-Fläche, dunkle Schrift) statt sidebar-accent — letzteres
+     bleibt für Hover/Avatar-Kachel reserviert (siehe sidebar.tsx). */
+  --sidebar-primary: #cda564;
+  --sidebar-primary-foreground: #0a0a09;
+  --sidebar-accent: #1a1714;
+  --sidebar-accent-foreground: #f4eee2;
+  --sidebar-border: #262119;
+  --sidebar-ring: rgba(205, 165, 100, 0.3);
 }
 [data-theme="aurum"] body {
   font-family: var(--font-playfair), Georgia, serif;

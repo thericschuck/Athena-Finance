@@ -24,8 +24,7 @@ const FREQ_LABEL   = Object.fromEntries(FREQUENCIES.map(f => [f.value, f.label])
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default async function ContractDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const supabase = await createClient()
+  const [{ id }, supabase] = await Promise.all([params, createClient()])
   const { data: { user } } = await supabase.auth.getUser()
 
   const [

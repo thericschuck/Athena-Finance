@@ -67,11 +67,11 @@ export function CashflowKalender({ events }: Props) {
     <div className="bg-[#13161e] border border-[#1e2130] rounded-xl p-5">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
-        <button onClick={prev} className="p-1.5 rounded-lg hover:bg-[#1e2130] text-[#6b7280] hover:text-[#f3f0ea] transition-colors">
+        <button onClick={prev} aria-label="Vorheriger Monat" className="p-1.5 rounded-lg hover:bg-[#1e2130] text-[#6b7280] hover:text-[#f3f0ea] transition-colors">
           <ChevronLeft className="size-4" />
         </button>
         <h2 className="text-sm font-semibold text-[#f3f0ea]">{MONTH_NAMES[month]} {year}</h2>
-        <button onClick={next} className="p-1.5 rounded-lg hover:bg-[#1e2130] text-[#6b7280] hover:text-[#f3f0ea] transition-colors">
+        <button onClick={next} aria-label="Nächster Monat" className="p-1.5 rounded-lg hover:bg-[#1e2130] text-[#6b7280] hover:text-[#f3f0ea] transition-colors">
           <ChevronRight className="size-4" />
         </button>
       </div>
@@ -97,17 +97,28 @@ export function CashflowKalender({ events }: Props) {
           const inc = evs.filter(e => e.type === 'income').reduce((s, e) => s + e.amount, 0)
           const exp = evs.filter(e => e.type === 'expense').reduce((s, e) => s + e.amount, 0)
 
+          const activateDay = (target: HTMLDivElement) => {
+            if (!valid || !hasEvs) return
+            const r = target.getBoundingClientRect()
+            if (isSelected) {
+              setPopup(null)
+            } else {
+              setTip(null)
+              setPopup({ day, x: r.left + r.width / 2, y: r.top })
+            }
+          }
+
           return (
             <div
               key={i}
-              onClick={e => {
-                if (!valid || !hasEvs) return
-                const r = e.currentTarget.getBoundingClientRect()
-                if (isSelected) {
-                  setPopup(null)
-                } else {
-                  setTip(null)
-                  setPopup({ day, x: r.left + r.width / 2, y: r.top })
+              role={valid && hasEvs ? 'button' : undefined}
+              tabIndex={valid && hasEvs ? 0 : undefined}
+              aria-label={valid && hasEvs ? `${day}. ${MONTH_NAMES[month]}, ${evs.length} Transaktion${evs.length > 1 ? 'en' : ''}` : undefined}
+              onClick={e => activateDay(e.currentTarget)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  activateDay(e.currentTarget)
                 }
               }}
               onMouseEnter={e => {
@@ -137,16 +148,16 @@ export function CashflowKalender({ events }: Props) {
                     <div className="space-y-0.75">
                       {inc > 0 && (
                         <div className="flex items-center gap-0.75">
-                          <div className="w-0.75 h-0.75 rounded-full bg-[#4ade80] shrink-0" />
-                          <span className="text-[9px] text-[#4ade80] font-medium truncate leading-tight">
+                          <div className="w-0.75 h-0.75 rounded-full bg-[#8CA277] shrink-0" />
+                          <span className="text-[9px] text-[#8CA277] font-medium truncate leading-tight">
                             +{inc % 1 === 0 ? inc : inc.toFixed(0)}€
                           </span>
                         </div>
                       )}
                       {exp > 0 && (
                         <div className="flex items-center gap-0.75">
-                          <div className="w-0.75 h-0.75 rounded-full bg-[#f87171] shrink-0" />
-                          <span className="text-[9px] text-[#f87171] font-medium truncate leading-tight">
+                          <div className="w-0.75 h-0.75 rounded-full bg-[#A9553C] shrink-0" />
+                          <span className="text-[9px] text-[#A9553C] font-medium truncate leading-tight">
                             −{exp % 1 === 0 ? exp : exp.toFixed(0)}€
                           </span>
                         </div>
@@ -180,6 +191,7 @@ export function CashflowKalender({ events }: Props) {
             </p>
             <button
               onClick={() => setPopup(null)}
+              aria-label="Schließen"
               className="text-[#4b5563] hover:text-[#9ca3af] transition-colors ml-2 shrink-0"
             >
               <X className="size-3.5" />
@@ -188,17 +200,17 @@ export function CashflowKalender({ events }: Props) {
 
           {/* Events list */}
           <div className="px-3.5 py-2.5 space-y-2 max-h-52 overflow-y-auto">
-            {popupEvs.map((ev, i) => (
-              <div key={i} className="flex items-center justify-between gap-2">
+            {popupEvs.map(ev => (
+              <div key={`${ev.date}_${ev.type}_${ev.label}_${ev.amount}`} className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                   {ev.type === 'income'
-                    ? <ArrowUpRight className="size-3.5 text-[#4ade80] shrink-0" />
-                    : <ArrowDownLeft className="size-3.5 text-[#f87171] shrink-0" />
+                    ? <ArrowUpRight className="size-3.5 text-[#8CA277] shrink-0" />
+                    : <ArrowDownLeft className="size-3.5 text-[#A9553C] shrink-0" />
                   }
                   <span className="text-xs text-[#d1d5db] truncate">{ev.label}</span>
                 </div>
                 <span className={`text-xs font-semibold tabular-nums shrink-0 ${
-                  ev.type === 'income' ? 'text-[#4ade80]' : 'text-[#f87171]'
+                  ev.type === 'income' ? 'text-[#8CA277]' : 'text-[#A9553C]'
                 }`}>
                   {ev.type === 'income' ? '+' : '−'}{fmtAmt(ev.amount)} €
                 </span>
@@ -210,14 +222,14 @@ export function CashflowKalender({ events }: Props) {
           {(popupIncome > 0 || popupExpense > 0) && (
             <div className="px-3.5 pt-2 pb-3 border-t border-[#1e2130] flex items-center justify-between gap-2">
               {popupIncome > 0 && (
-                <span className="text-[10px] text-[#4ade80] font-semibold">+{fmtAmt(popupIncome)} €</span>
+                <span className="text-[10px] text-[#8CA277] font-semibold">+{fmtAmt(popupIncome)} €</span>
               )}
               {popupExpense > 0 && (
-                <span className="text-[10px] text-[#f87171] font-semibold">−{fmtAmt(popupExpense)} €</span>
+                <span className="text-[10px] text-[#A9553C] font-semibold">−{fmtAmt(popupExpense)} €</span>
               )}
               {popupIncome > 0 && popupExpense > 0 && (
                 <span className={`text-[10px] font-bold ml-auto ${
-                  popupIncome - popupExpense >= 0 ? 'text-[#4ade80]' : 'text-[#f87171]'
+                  popupIncome - popupExpense >= 0 ? 'text-[#8CA277]' : 'text-[#A9553C]'
                 }`}>
                   Netto: {popupIncome - popupExpense >= 0 ? '+' : '−'}{fmtAmt(Math.abs(popupIncome - popupExpense))} €
                 </span>
@@ -234,8 +246,8 @@ export function CashflowKalender({ events }: Props) {
           style={{ left: tip.x, top: tip.y - 8, transform: 'translate(-50%, -100%)' }}
         >
           <p className="text-[#6b7280] mb-1 font-medium">{tip.day}. {MONTH_NAMES[month]}</p>
-          {tipIncome  > 0 && <p className="text-[#4ade80]">+{fmtAmt(tipIncome)} €</p>}
-          {tipExpense > 0 && <p className="text-[#f87171]">−{fmtAmt(tipExpense)} €</p>}
+          {tipIncome  > 0 && <p className="text-[#8CA277]">+{fmtAmt(tipIncome)} €</p>}
+          {tipExpense > 0 && <p className="text-[#A9553C]">−{fmtAmt(tipExpense)} €</p>}
           <p className="text-[#4b5563] mt-0.5">{tipEvs.length} Transaktion{tipEvs.length > 1 ? 'en' : ''}</p>
         </div>
       )}

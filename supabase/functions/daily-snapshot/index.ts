@@ -128,9 +128,17 @@ Deno.serve(async (req) => {
   }
 
   // ── 3. Run snapshot for each date ───────────────────────────────────────────
-  for (const date of datesToRun) {
+  // fn_take_snapshot(date) recomputes each date's rows purely from the ledger
+  // tables (keyed by snapshot_date / month, independent of other dates), so the
+  // per-date calls are safe to run concurrently instead of one after another.
+  const snapshotResults = await Promise.all(
+    datesToRun.map(date =>
+      supabase.rpc('fn_take_snapshot', { target_date: date })
+        .then(({ data, error }) => ({ date, data, error }))
+    )
+  )
+  for (const { date, data, error } of snapshotResults) {
     log.push(`\n=== ${date} ===`)
-    const { data, error } = await supabase.rpc('fn_take_snapshot', { target_date: date })
     if (error) {
       log.push(`  fn_take_snapshot ERR: ${error.message}`)
     } else {

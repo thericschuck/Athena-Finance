@@ -17,6 +17,7 @@ export async function createCategory(_prev: State, formData: FormData): Promise<
   if (!name) return { error: 'Name ist erforderlich' }
 
   const { error } = await supabase.from('budget_categories').insert({
+    user_id: user.id,
     name,
     icon:           (formData.get('icon') as string) || null,
     monthly_budget: formData.get('monthly_budget') ? Number(formData.get('monthly_budget')) : null,
@@ -38,12 +39,16 @@ export async function updateCategory(_prev: State, formData: FormData): Promise<
   if (!id)   return { error: 'ID fehlt' }
   if (!name) return { error: 'Name ist erforderlich' }
 
+  // .eq('user_id', ...) zusätzlich zur RLS-Policy — dieselbe Defense-in-Depth
+  // wie bei bank_transactions/crypto-Actions: die Policy allein reicht,
+  // die explizite Bedingung macht den Besitzer-Scope auch im Anwendungscode
+  // sichtbar statt sich ausschließlich auf die DB-Ebene zu verlassen.
   const { error } = await supabase.from('budget_categories').update({
     name,
     icon:           (formData.get('icon') as string) || null,
     monthly_budget: formData.get('monthly_budget') ? Number(formData.get('monthly_budget')) : null,
     sort_order:     Number(formData.get('sort_order') || 0),
-  }).eq('id', id)
+  }).eq('id', id).eq('user_id', user.id)
 
   if (error) return { error: error.message }
   revalidatePath(PATH)
@@ -55,7 +60,7 @@ export async function deleteCategory(id: string): Promise<{ error?: string }> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const { error } = await supabase.from('budget_categories').delete().eq('id', id)
+  const { error } = await supabase.from('budget_categories').delete().eq('id', id).eq('user_id', user.id)
   if (error) return { error: error.message }
   revalidatePath(PATH)
   return {}
@@ -80,6 +85,7 @@ export async function createItem(_prev: State, formData: FormData): Promise<Stat
   if (!interval_days || interval_days < 1) return { error: 'Intervall muss mindestens 1 Tag sein' }
 
   const { error } = await supabase.from('budget_items').insert({
+    user_id: user.id,
     name,
     category_id,
     unit_price,
@@ -115,7 +121,7 @@ export async function updateItem(_prev: State, formData: FormData): Promise<Stat
     quantity,
     interval_days,
     notes: (formData.get('notes') as string) || null,
-  }).eq('id', id)
+  }).eq('id', id).eq('user_id', user.id)
 
   if (error) return { error: error.message }
   revalidatePath(PATH)
@@ -127,7 +133,7 @@ export async function deleteItem(id: string): Promise<{ error?: string }> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const { error } = await supabase.from('budget_items').delete().eq('id', id)
+  const { error } = await supabase.from('budget_items').delete().eq('id', id).eq('user_id', user.id)
   if (error) return { error: error.message }
   revalidatePath(PATH)
   return {}
@@ -149,8 +155,8 @@ export async function upsertIncomeTarget(_prev: State, formData: FormData): Prom
   const payload = { label, buffer_pct, tax_pct, savings_pct }
 
   const { error } = id
-    ? await supabase.from('income_targets').update(payload).eq('id', id)
-    : await supabase.from('income_targets').insert(payload)
+    ? await supabase.from('income_targets').update(payload).eq('id', id).eq('user_id', user.id)
+    : await supabase.from('income_targets').insert({ ...payload, user_id: user.id })
 
   if (error) return { error: error.message }
   revalidatePath(PATH)
@@ -161,10 +167,17 @@ export async function upsertIncomeTarget(_prev: State, formData: FormData): Prom
 
 export async function seedIfEmpty(): Promise<void> {
   const supabase = await createClient()
+  // Server Actions sind eigenständig aufrufbar (nicht nur über den
+  // Seiten-Render-Baum, siehe layout.tsx-Redirect) — ohne dieses Gate könnte
+  // jeder direkt gegen diese Action posten und beliebig oft Seed-Zeilen
+  // einfügen. Gleiches Muster wie createCategory/upsertIncomeTarget oben.
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
 
   const { count: catCount } = await supabase
     .from('budget_categories')
     .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)
 
   if ((catCount ?? 0) === 0) {
     const seeds = [
@@ -173,16 +186,18 @@ export async function seedIfEmpty(): Promise<void> {
       { name: 'Haushalt',     icon: '🏠', monthly_budget: 80,  sort_order: 2 },
       { name: 'Transport',    icon: '🚗', monthly_budget: 150, sort_order: 3 },
       { name: 'Freizeit',     icon: '🎯', monthly_budget: 100, sort_order: 4 },
-    ]
+    ].map((seed) => ({ ...seed, user_id: user.id }))
     await supabase.from('budget_categories').insert(seeds)
   }
 
   const { count: targetCount } = await supabase
     .from('income_targets')
     .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)
 
   if ((targetCount ?? 0) === 0) {
     await supabase.from('income_targets').insert({
+      user_id: user.id,
       label: 'Standard', buffer_pct: 15, tax_pct: 30, savings_pct: 10,
     })
   }

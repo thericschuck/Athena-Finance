@@ -53,11 +53,6 @@ export const COIN_REGISTRY: CoinEntry[] = [
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Find a registry entry by coingecko_id. */
-export function findByCoinId(coingeckoId: string): CoinEntry | undefined {
-  return COIN_REGISTRY.find(c => c.coingecko_id === coingeckoId)
-}
-
 /** Find a registry entry by symbol (case-insensitive). */
 export function findBySymbol(symbol: string): CoinEntry | undefined {
   return COIN_REGISTRY.find(c => c.symbol.toLowerCase() === symbol.toLowerCase())
