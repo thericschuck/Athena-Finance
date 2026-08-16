@@ -1,4 +1,14 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(node -e ' *)",
+      "Bash(ssh -T git@github-a)",
+      "Bash(ssh -T git@github-b)",
+      "Bash(ssh -T git@github.com)",
+      "Bash(ssh -vT git@github-b)",
+      "Bash(ssh -vT git@github-a)"
+    ]
+  },
   "hooks": {
     "PostToolUse": [
       {
@@ -23,11 +33,6 @@
           }
         ]
       }
-    ]
-  },
-  "permissions": {
-    "allow": [
-      "Bash(node -e ' *)"
     ]
   }
 }
