@@ -101,7 +101,7 @@ const NAV = [
   { icon: TrendingUp, label: 'Finance', children: ['Konten', 'Transaktionen', 'Kategorien', 'Schulden', 'Verträge', 'Sparziele'] },
   { icon: CircleDollarSign, label: 'Crypto', children: ['Portfolio', 'Rebalancing', 'Assets'] },
   { icon: Target, label: 'Strategy' },
-  { icon: ShoppingCart, label: 'Lebenshaltungskosten' },
+  { icon: ShoppingCart, label: 'Fixkosten' },
   { icon: Briefcase, label: 'Depot' },
   { icon: BarChart2, label: 'Analyse' },
   { icon: History, label: 'Historie' },

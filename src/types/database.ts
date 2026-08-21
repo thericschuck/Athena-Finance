@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.1"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       account_balances: {
@@ -96,6 +121,125 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      ai_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_messages: {
+        Row: {
+          content: Json
+          content_text: string | null
+          content_tsv: unknown
+          conversation_id: string
+          created_at: string
+          id: string
+          role: string
+          tool_calls: Json | null
+          user_id: string
+        }
+        Insert: {
+          content: Json
+          content_text?: string | null
+          content_tsv?: unknown
+          conversation_id: string
+          created_at?: string
+          id?: string
+          role: string
+          tool_calls?: Json | null
+          user_id: string
+        }
+        Update: {
+          content?: Json
+          content_text?: string | null
+          content_tsv?: unknown
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+          tool_calls?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_tool_calls: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          duration_ms: number | null
+          id: string
+          input: Json | null
+          is_error: boolean
+          message_id: string
+          output_summary: string | null
+          tool_name: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          input?: Json | null
+          is_error?: boolean
+          message_id: string
+          output_summary?: string | null
+          tool_name: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          input?: Json | null
+          is_error?: boolean
+          message_id?: string
+          output_summary?: string | null
+          tool_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_tool_calls_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_tool_calls_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "ai_messages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       asset_audit_log: {
         Row: {
@@ -277,6 +421,7 @@ export type Database = {
           account_iban: string
           account_name: string | null
           available_balance: number
+          bank_label: string | null
           booked_balance: number
           created_at: string
           currency: string
@@ -289,6 +434,7 @@ export type Database = {
           account_iban: string
           account_name?: string | null
           available_balance?: number
+          bank_label?: string | null
           booked_balance?: number
           created_at?: string
           currency?: string
@@ -301,6 +447,7 @@ export type Database = {
           account_iban?: string
           account_name?: string | null
           available_balance?: number
+          bank_label?: string | null
           booked_balance?: number
           created_at?: string
           currency?: string
@@ -315,7 +462,10 @@ export type Database = {
           account_bic: string | null
           account_iban: string
           amount: number
+          bank_label: string | null
+          bank_reference: string | null
           category: string | null
+          category_id: string | null
           counterpart_bic: string | null
           counterpart_iban: string | null
           counterpart_name: string | null
@@ -333,7 +483,10 @@ export type Database = {
           account_bic?: string | null
           account_iban: string
           amount: number
+          bank_label?: string | null
+          bank_reference?: string | null
           category?: string | null
+          category_id?: string | null
           counterpart_bic?: string | null
           counterpart_iban?: string | null
           counterpart_name?: string | null
@@ -351,7 +504,10 @@ export type Database = {
           account_bic?: string | null
           account_iban?: string
           amount?: number
+          bank_label?: string | null
+          bank_reference?: string | null
           category?: string | null
+          category_id?: string | null
           counterpart_bic?: string | null
           counterpart_iban?: string | null
           counterpart_name?: string | null
@@ -365,7 +521,15 @@ export type Database = {
           user_id?: string
           value_date?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bank_transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       budget_categories: {
         Row: {
@@ -375,6 +539,7 @@ export type Database = {
           monthly_budget: number | null
           name: string
           sort_order: number
+          user_id: string
         }
         Insert: {
           created_at?: string
@@ -383,6 +548,7 @@ export type Database = {
           monthly_budget?: number | null
           name: string
           sort_order?: number
+          user_id: string
         }
         Update: {
           created_at?: string
@@ -391,6 +557,7 @@ export type Database = {
           monthly_budget?: number | null
           name?: string
           sort_order?: number
+          user_id?: string
         }
         Relationships: []
       }
@@ -404,6 +571,7 @@ export type Database = {
           notes: string | null
           quantity: number
           unit_price: number
+          user_id: string
         }
         Insert: {
           category_id: string
@@ -414,6 +582,7 @@ export type Database = {
           notes?: string | null
           quantity?: number
           unit_price: number
+          user_id: string
         }
         Update: {
           category_id?: string
@@ -424,6 +593,7 @@ export type Database = {
           notes?: string | null
           quantity?: number
           unit_price?: number
+          user_id?: string
         }
         Relationships: [
           {
@@ -821,6 +991,63 @@ export type Database = {
         }
         Relationships: []
       }
+      depot_holdings: {
+        Row: {
+          account_label: string | null
+          account_number: string | null
+          acquisition_price: number | null
+          bank_label: string | null
+          created_at: string
+          currency: string
+          external_id: string
+          fetched_at: string
+          id: string
+          isin: string
+          market_value: number | null
+          name: string | null
+          pieces: number | null
+          total_value: number | null
+          user_id: string
+          valuation_date: string | null
+        }
+        Insert: {
+          account_label?: string | null
+          account_number?: string | null
+          acquisition_price?: number | null
+          bank_label?: string | null
+          created_at?: string
+          currency?: string
+          external_id: string
+          fetched_at?: string
+          id?: string
+          isin: string
+          market_value?: number | null
+          name?: string | null
+          pieces?: number | null
+          total_value?: number | null
+          user_id: string
+          valuation_date?: string | null
+        }
+        Update: {
+          account_label?: string | null
+          account_number?: string | null
+          acquisition_price?: number | null
+          bank_label?: string | null
+          created_at?: string
+          currency?: string
+          external_id?: string
+          fetched_at?: string
+          id?: string
+          isin?: string
+          market_value?: number | null
+          name?: string | null
+          pieces?: number | null
+          total_value?: number | null
+          user_id?: string
+          valuation_date?: string | null
+        }
+        Relationships: []
+      }
       depot_transactions: {
         Row: {
           amount_eur: number
@@ -1048,6 +1275,7 @@ export type Database = {
           label: string
           savings_pct: number
           tax_pct: number
+          user_id: string
         }
         Insert: {
           buffer_pct?: number
@@ -1056,6 +1284,7 @@ export type Database = {
           label?: string
           savings_pct?: number
           tax_pct?: number
+          user_id: string
         }
         Update: {
           buffer_pct?: number
@@ -1064,6 +1293,7 @@ export type Database = {
           label?: string
           savings_pct?: number
           tax_pct?: number
+          user_id?: string
         }
         Relationships: []
       }
@@ -1191,6 +1421,42 @@ export type Database = {
           tv_url?: string | null
           type?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      insights: {
+        Row: {
+          body: string | null
+          created_at: string
+          dismissed_at: string | null
+          id: string
+          payload: Json | null
+          severity: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          dismissed_at?: string | null
+          id?: string
+          payload?: Json | null
+          severity?: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          dismissed_at?: string | null
+          id?: string
+          payload?: Json | null
+          severity?: string
+          title?: string
+          type?: string
           user_id?: string
         }
         Relationships: []
@@ -2574,6 +2840,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

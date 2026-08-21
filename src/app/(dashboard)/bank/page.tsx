@@ -1,14 +1,36 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { Landmark, CreditCard, Check } from 'lucide-react'
 import { useBankData } from '@/lib/hooks/use-bank-data'
 import { BankSyncButton } from '@/components/bank/bank-sync-button'
+import { CategorySuggestions } from '@/components/bank/category-suggestions'
 import { BankTransactionsView } from '@/components/bank/bank-transactions-view'
 import { BankCategoryChart } from '@/components/bank/bank-category-chart'
 import { BankTrendChart } from '@/components/bank/bank-trend-chart'
+import { BankBalanceChart } from '@/components/bank/bank-balance-chart'
+import { SyncedHoldingsCard } from '@/components/bank/synced-holdings-card'
 import { fmtCurrency, fmtDate } from '@/lib/format'
 import { useSettings } from '@/components/providers/settings-context'
+import type { BankTransaction } from '@/types/bank'
+
+// Scopes the trend/category charts (and the totals shown in BankTrendChart's own header) to
+// a window, same idea as the Analyse page's period selector. Sync now defaults to full
+// history (see the note in the header below), so without this the trend chart would keep
+// stacking bars/categories from years of data by default — the balance-history chart and the
+// transaction table stay unfiltered on purpose, since "full account history" is exactly what
+// they're for.
+const PERIODS = ['3M', '6M', '1J', 'Alles'] as const
+type Period = typeof PERIODS[number]
+
+function periodCutoff(period: Period): string {
+  const d = new Date()
+  if (period === '3M') d.setMonth(d.getMonth() - 3)
+  else if (period === '6M') d.setMonth(d.getMonth() - 6)
+  else if (period === '1J') d.setFullYear(d.getFullYear() - 1)
+  else return '2000-01-01'
+  return d.toISOString().slice(0, 10)
+}
 
 export default function BankPage() {
   const { locale, dateFormat } = useSettings()
@@ -17,11 +39,15 @@ export default function BankPage() {
   const {
     transactions,
     balances,
+    holdings,
+    categories,
     syncStatus,
     isLoadingTxns,
     startSync,
     loadTransactions,
     loadBalances,
+    loadHoldings,
+    loadCategories,
     updateCategory,
     resetSync,
   } = useBankData()
@@ -29,9 +55,11 @@ export default function BankPage() {
   // Account filter (click a balance card to narrow everything below to that IBAN)
   const [selectedIban, setSelectedIban] = useState<string | undefined>(undefined)
   // Free-text / category filter from the transactions table's filter bar
-  const [txnFilters, setTxnFilters] = useState<{ q?: string; category?: string }>({})
+  const [txnFilters, setTxnFilters] = useState<{ q?: string; categoryId?: string }>({})
+  // Zeitraum for the trend/category charts (see PERIODS comment above)
+  const [period, setPeriod] = useState<Period>('6M')
 
-  const handleFilter = useCallback((params: { q?: string; category?: string }) => {
+  const handleFilter = useCallback((params: { q?: string; categoryId?: string }) => {
     setTxnFilters(params)
   }, [])
 
@@ -42,6 +70,8 @@ export default function BankPage() {
   // Balances are always visible — load once on mount
   useEffect(() => {
     loadBalances()
+    loadHoldings()
+    loadCategories()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -56,13 +86,31 @@ export default function BankPage() {
     if (syncStatus.type === 'success') {
       loadTransactions({ iban: selectedIban, ...txnFilters })
       loadBalances()
+      loadHoldings()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [syncStatus])
 
-  // ── Derived totals ─────────────────────────────────────────────────────────
-  const totalIncome  = transactions.filter(t => t.amount > 0).reduce((s, t) => s + t.amount,  0)
-  const totalExpense = transactions.filter(t => t.amount < 0).reduce((s, t) => s + t.amount,  0)
+  // Transactions scoped to the selected Zeitraum — the balance-history chart and the
+  // transaction table below intentionally keep using the unfiltered `transactions`.
+  const cutoff = periodCutoff(period)
+
+  // A transfer between two of Eric's own accounts (e.g. Girokonto → Tagesgeld) posts as two
+  // legs — a debit on one account's statement, a matching credit on the other's. Viewed per
+  // account that's a real movement and stays in. But Trend/Category below sum income and
+  // expense separately rather than netting them, so in the "alle Konten" combined view the
+  // same transfer inflates both the income bar and the expense bar by the same amount even
+  // though no money actually left the household — that's what made August look inflated.
+  const ownIbans = useMemo(() => new Set(balances.map(b => b.account_iban)), [balances])
+  const isInternalTransfer = useCallback(
+    (t: BankTransaction) => !!t.counterpart_iban && ownIbans.has(t.counterpart_iban),
+    [ownIbans],
+  )
+
+  const periodTransactions = useMemo(() => {
+    const inRange = transactions.filter(t => t.value_date >= cutoff)
+    return selectedIban ? inRange : inRange.filter(t => !isInternalTransfer(t))
+  }, [transactions, cutoff, selectedIban, isInternalTransfer])
 
   return (
     <div className="p-4 sm:p-8 space-y-8">
@@ -76,13 +124,19 @@ export default function BankPage() {
           <p className="mt-0.5 text-sm text-muted-foreground">
             Raiffeisenbank · FinTS / HBCI
           </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Sync lädt standardmäßig die komplette verfügbare Historie (die Bank begrenzt selbst, wie weit sie zurückreicht).
+          </p>
         </div>
 
-        <BankSyncButton
-          syncStatus={syncStatus}
-          onSync={() => startSync()}
-          onReset={resetSync}
-        />
+        <div className="flex items-start gap-2 flex-wrap justify-end">
+          <CategorySuggestions categories={categories} onAccept={updateCategory} />
+          <BankSyncButton
+            syncStatus={syncStatus}
+            onSync={() => startSync()}
+            onReset={resetSync}
+          />
+        </div>
       </div>
 
       {/* Balance cards — always visible, click to filter by account */}
@@ -127,35 +181,68 @@ export default function BankPage() {
         </div>
       )}
 
-      {/* Summary strip */}
+      {/* Depot-Bestände (Union Investment o.ä.) — automatisch über dieselbe FinTS-Anmeldung synchronisiert */}
+      <SyncedHoldingsCard holdings={holdings} />
+
+      {/* Kontostand-Verlauf — one chart per account that has transactions in the current
+          (unfiltered or account-filtered) set; reconstructed from the ledger, see
+          bank-balance-chart-impl.tsx for why there's no separate history table. */}
+      {balances.length > 0 && transactions.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {balances
+            .filter(b => transactions.some(t => t.account_iban === b.account_iban))
+            .map(b => (
+              <BankBalanceChart
+                key={b.account_iban}
+                accountName={b.account_name ?? b.account_iban}
+                currentBalance={b.booked_balance}
+                transactions={transactions.filter(t => t.account_iban === b.account_iban)}
+              />
+            ))}
+        </div>
+      )}
+
+      {/* Zeitraum toolbar — one compact card instead of a bare row + a separate two-box
+          totals strip; the totals themselves now live in BankTrendChart's own header. */}
       {transactions.length > 0 && (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-lg border border-border bg-card p-4">
-            <p className="text-xs text-muted-foreground">Einnahmen (Zeitraum)</p>
-            <p className="mt-1 text-lg font-semibold text-green-600 dark:text-green-400">
-              +{fmtEur(totalIncome)}
-            </p>
+        <div className="rounded-lg border border-border bg-card p-3 flex items-center gap-3">
+          <span className="text-xs text-muted-foreground pl-1">Zeitraum</span>
+          <div className="flex gap-1">
+            {PERIODS.map(p => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setPeriod(p)}
+                className={`px-2.5 py-1 text-xs rounded-full font-medium transition-colors ${
+                  period === p
+                    ? 'bg-foreground text-background'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+              >
+                {p}
+              </button>
+            ))}
           </div>
-          <div className="rounded-lg border border-border bg-card p-4">
-            <p className="text-xs text-muted-foreground">Ausgaben (Zeitraum)</p>
-            <p className="mt-1 text-lg font-semibold text-red-600 dark:text-red-400">
-              {fmtEur(totalExpense)}
-            </p>
-          </div>
+          {!selectedIban && (
+            <span className="text-xs text-muted-foreground/70 ml-auto">
+              Umbuchungen zwischen eigenen Konten sind hier rausgerechnet
+            </span>
+          )}
         </div>
       )}
 
       {/* Charts */}
       {transactions.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <BankTrendChart transactions={transactions} />
-          <BankCategoryChart transactions={transactions} />
+          <BankTrendChart transactions={periodTransactions} />
+          <BankCategoryChart transactions={periodTransactions} categories={categories} />
         </div>
       )}
 
       {/* Transactions */}
       <BankTransactionsView
         transactions={transactions}
+        categories={categories}
         isLoading={isLoadingTxns}
         onFilter={handleFilter}
         onUpdateCategory={updateCategory}

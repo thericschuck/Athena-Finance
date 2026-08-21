@@ -23,6 +23,62 @@
   box-shadow: 0 0 0 3px rgba(107, 127, 92, .16);
 }
 
+/* Anzeigen/Verbergen-Umschalter im Passwort-Feld (siehe PasswordField.tsx) —
+   volle Feldhöhe als Klickfläche statt eines kleinen Icons, leichter zu
+   treffen und über dem Touch-Mindestmaß. */
+.af-field-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--af-ink-subtle);
+  transition: color .18s ease;
+}
+.af-field-toggle:hover { color: var(--af-ink); }
+
+/* Kleiner "Pop" beim Icon-Wechsel (siehe `key`-Remount in PasswordField.tsx)
+   statt eines harten Sprungs — passend zur jetzt spürbar weicheren
+   Entschlüsseln/Verschlüsseln-Animation im Feld selbst. */
+@keyframes af-field-toggle-pop {
+  from { transform: scale(.55); opacity: .3; }
+  to   { transform: scale(1); opacity: 1; }
+}
+.af-field-toggle-icon {
+  display: flex;
+  animation: af-field-toggle-pop .22s cubic-bezier(.34, 1.56, .64, 1);
+}
+
+/* Entschlüsseln/Verschlüsseln-Overlay beim Umschalten (siehe PasswordField.tsx)
+   — exakt dieselbe Box wie .af-field (Border/Padding/Schrift), liegt aber
+   NUR während der Animation darüber; das echte Feld bleibt darunter fokus-
+   und tippbereit. `box-sizing: border-box` + derselbe 1px-Rahmen (transparent)
+   sorgt dafür, dass Padding vom selben Nullpunkt aus gemessen wird wie beim
+   echten Feld — sonst verrutscht der Text um die Rahmenbreite. */
+.af-field-scramble {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding: 12px 44px 12px 14px;
+  border: 1px solid transparent;
+  font-family: var(--font-geist-sans);
+  font-size: 15px;
+  letter-spacing: 1px;
+  color: var(--af-ink);
+  pointer-events: none;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
 .af-submit {
   width: 100%;
   min-height: 48px;
@@ -75,6 +131,11 @@
   .af-field,
   .af-submit,
   .af-quiet::after { transition: none !important; }
+  /* Die Scramble-Animation selbst läuft bei reduzierter Bewegung ohnehin
+     nie (siehe `reduced`-Check in PasswordField.tsx, direktes Umschalten
+     statt Animation) — dieser Pop bleibt der einzige übrige Bewegungsrest
+     am Feld und wird hier zusätzlich abgeschaltet. */
+  .af-field-toggle-icon { animation: none !important; }
 }
 
 @media (max-width: 639px) {

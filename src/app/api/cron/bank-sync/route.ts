@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { getFinTSErrorDetails, startSync, upsertBankTransactions } from '@/lib/fints'
+import { getFinTSErrorDetails, startSync, upsertBankTransactions, upsertDepotHoldings } from '@/lib/fints'
+import { buildLearnedCategoryMap } from '@/lib/fints/categorize'
 
 // The sidecar drives the whole FinTS dialog and can block for a while (e.g. if a decoupled
 // SCA approval is ever required again) — give it the same headroom as the interactive route.
@@ -42,9 +43,22 @@ export async function GET(req: NextRequest) {
 
   try {
     const supabase = adminClient()
-    const result = await startSync(startDate, undefined)
+    const { data: categories } = await supabase
+      .from('categories')
+      .select('id, name, type, color, icon, parent_id')
+      .eq('user_id', userId)
+
+    const { data: categorized } = await supabase
+      .from('bank_transactions')
+      .select('counterpart_name, category_id')
+      .eq('user_id', userId)
+      .not('category_id', 'is', null)
+    const learnedMap = buildLearnedCategoryMap(categorized ?? [])
+
+    const result = await startSync(startDate, undefined, categories ?? [], learnedMap)
     const { imported, skipped } = await upsertBankTransactions(supabase, userId, result.transactions)
-    return NextResponse.json({ ok: true, imported, skipped })
+    const { synced: holdingsSynced } = await upsertDepotHoldings(supabase, userId, result.holdings)
+    return NextResponse.json({ ok: true, imported, skipped, holdingsSynced, warnings: result.warnings })
 
   } catch (err) {
     const details = getFinTSErrorDetails(err)

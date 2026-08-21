@@ -3,7 +3,8 @@ import type {
   HeatmapDay, SankeyData, SankeyNodeDatum, SankeyLinkDatum,
   CashflowEvent, MonthlyComparison, CategoryDatum,
 } from '@/lib/analyseData'
-import { AnalysePeriodSelector } from '@/components/analyse/AnalysePeriodSelector'
+import { AnalysePeriodSelector }  from '@/components/analyse/AnalysePeriodSelector'
+import { AnalyseAccountSelector } from '@/components/analyse/AnalyseAccountSelector'
 import { AusgabenHeatmap }       from '@/components/analyse/AusgabenHeatmap'
 import { GeldflussChart }        from '@/components/analyse/GeldflussChart'
 import { CashflowKalender }      from '@/components/analyse/CashflowKalender'
@@ -29,6 +30,13 @@ type MonthlySummaryRow = {
   month:          string
   total_income:   number
   total_expenses: number
+}
+
+type AccountRow = {
+  id:    string
+  name:  string
+  type:  string
+  color: string | null
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -141,6 +149,28 @@ function buildCashflow(txns: TxnRow[]): CashflowEvent[] {
     }))
 }
 
+// `monthly_finance_summary` is a whole-user cron aggregate with no account_id column, so it
+// can't be scoped to a Konten-Auswahl. When a filter is active we instead derive the same
+// income/expense/sparquote shape directly from the (account-filtered) transactions.
+function buildMonthlyComparisonFromTxns(
+  txns: Pick<TxnRow, 'date' | 'type' | 'amount' | 'amount_base'>[],
+): MonthlyComparison[] {
+  const map = new Map<string, { income: number; expenses: number }>()
+  for (const t of txns) {
+    if (t.type !== 'income' && t.type !== 'expense') continue
+    const month = t.date.slice(0, 7)
+    const cur = map.get(month) ?? { income: 0, expenses: 0 }
+    const eur = toEur(t)
+    if (t.type === 'income') cur.income += eur
+    else cur.expenses += eur
+    map.set(month, cur)
+  }
+  const rows: MonthlySummaryRow[] = [...map.entries()].map(([month, v]) => ({
+    month, total_income: v.income, total_expenses: v.expenses,
+  }))
+  return buildMonthlyComparison(rows)
+}
+
 function buildMonthlyComparison(rows: MonthlySummaryRow[]): MonthlyComparison[] {
   return [...rows]
     .sort((a, b) => a.month.localeCompare(b.month))
@@ -165,9 +195,9 @@ function buildMonthlyComparison(rows: MonthlySummaryRow[]): MonthlyComparison[] 
 export default async function AnalysePage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string }>
+  searchParams: Promise<{ period?: string; accounts?: string }>
 }) {
-  const { period: rawPeriod } = await searchParams
+  const { period: rawPeriod, accounts: rawAccounts } = await searchParams
   const period: Period = VALID.includes(rawPeriod as Period) ? (rawPeriod as Period) : '1J'
 
   const supabase = await createClient()
@@ -180,51 +210,99 @@ export default async function AnalysePage({
   const now = new Date()
   const calStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0]
   const calEnd   = new Date(now.getFullYear(), now.getMonth() + 2, 0).toISOString().split('T')[0]
+  // Trailing 6-month window for the Monatsvergleich fallback (independent of `period`,
+  // matching the 6-row limit the monthly_finance_summary query used before).
+  const monthlyCutoff = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString().split('T')[0]
 
-  const [txnRes, calRes, monthlyRes] = await Promise.all([
+  const { data: accountRows } = await supabase
+    .from('accounts')
+    .select('id, name, type, color')
+    .eq('user_id', user.id)
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true })
+
+  const accounts = (accountRows ?? []) as AccountRow[]
+  const accountIds = new Set(accounts.map(a => a.id))
+  // Ignore ids that no longer exist (deleted/renamed account) instead of silently
+  // filtering everything down to zero rows.
+  const selectedAccountIds = (rawAccounts ?? '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(id => accountIds.has(id))
+  const hasAccountFilter = selectedAccountIds.length > 0
+
+  const [txnRes, calRes, monthlyRes, monthlyTxnRes] = await Promise.all([
     // Transactions for period (heatmap, categories, sankey)
-    supabase
-      .from('transactions')
-      .select('date, type, amount, amount_base, category:categories(name), description, merchant')
-      .eq('user_id', user.id)
-      .gte('date', cutoff)
-      .in('type', ['income', 'expense'])
-      .order('date'),
+    (() => {
+      let q = supabase
+        .from('transactions')
+        .select('date, type, amount, amount_base, category:categories(name), description, merchant')
+        .eq('user_id', user.id)
+        .gte('date', cutoff)
+        .in('type', ['income', 'expense'])
+      if (hasAccountFilter) q = q.in('account_id', selectedAccountIds)
+      return q.order('date')
+    })(),
 
     // Transactions for calendar (3-month window, independent of period)
-    supabase
-      .from('transactions')
-      .select('date, type, amount, category:categories(name), description, merchant')
-      .eq('user_id', user.id)
-      .gte('date', calStart)
-      .lte('date', calEnd)
-      .in('type', ['income', 'expense'])
-      .order('date'),
+    (() => {
+      let q = supabase
+        .from('transactions')
+        .select('date, type, amount, category:categories(name), description, merchant')
+        .eq('user_id', user.id)
+        .gte('date', calStart)
+        .lte('date', calEnd)
+        .in('type', ['income', 'expense'])
+      if (hasAccountFilter) q = q.in('account_id', selectedAccountIds)
+      return q.order('date')
+    })(),
 
-    // Monthly summaries for MonatsVergleich
-    supabase
-      .from('monthly_finance_summary')
-      .select('month, total_income, total_expenses')
-      .order('month', { ascending: false })
-      .limit(6),
+    // Monthly summaries for MonatsVergleich — the precomputed table has no account_id,
+    // so it's only used when there's no Konten-Filter (see buildMonthlyComparisonFromTxns).
+    hasAccountFilter
+      ? Promise.resolve(null)
+      : supabase
+          .from('monthly_finance_summary')
+          .select('month, total_income, total_expenses')
+          .order('month', { ascending: false })
+          .limit(6),
+
+    // Transactions for the 6-month Monatsvergleich window, only fetched when filtering by account.
+    hasAccountFilter
+      ? supabase
+          .from('transactions')
+          .select('date, type, amount, amount_base')
+          .eq('user_id', user.id)
+          .gte('date', monthlyCutoff)
+          .in('type', ['income', 'expense'])
+          .in('account_id', selectedAccountIds)
+          .order('date')
+      : Promise.resolve(null),
   ])
 
   const txns    = (txnRes.data  ?? []) as TxnRow[]
   const calTxns = (calRes.data  ?? []) as TxnRow[]
-  const monthly = (monthlyRes.data ?? []) as MonthlySummaryRow[]
 
   const heatmapData      = buildHeatmap(txns)
   const categoryData     = buildCategories(txns)
   const sankeyData       = buildSankey(txns)
   const cashflowEvents   = buildCashflow(calTxns)
-  const monthlyComparison = buildMonthlyComparison(monthly)
+  const monthlyComparison = hasAccountFilter
+    ? buildMonthlyComparisonFromTxns(
+        (monthlyTxnRes?.data ?? []) as Pick<TxnRow, 'date' | 'type' | 'amount' | 'amount_base'>[],
+      )
+    : buildMonthlyComparison((monthlyRes?.data ?? []) as MonthlySummaryRow[])
 
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-3xl font-bold text-foreground">Analyse</h1>
-        <AnalysePeriodSelector current={period} />
+        <div className="flex items-center gap-4 flex-wrap">
+          <AnalyseAccountSelector accounts={accounts} selected={selectedAccountIds} />
+          <AnalysePeriodSelector current={period} />
+        </div>
       </div>
 
       {/* Heatmap */}

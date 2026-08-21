@@ -1,9 +1,9 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import type { BankTransaction } from '@/types/bank'
+import type { BankTransaction, FinanceCategory } from '@/types/bank'
 
-interface Props { transactions: BankTransaction[] }
+interface Props { transactions: BankTransaction[]; categories: FinanceCategory[] }
 
 // recharts is heavy and this chart only renders once bank transactions exist, so it's
 // loaded on demand via next/dynamic instead of bundled into the initial page JS.

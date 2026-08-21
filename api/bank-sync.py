@@ -126,8 +126,14 @@ def js_number_str(n):
     return repr(f)
 
 
-def build_external_id(iban, value_date, amount, description):
-    raw = f"{iban}|{value_date}|{js_number_str(amount)}|{(description or '')[:100]}"
+def build_external_id(iban, bank_reference, value_date, amount, description):
+    # Mirrors src/lib/fints/index.ts's buildExternalId: prefer the bank's own reference
+    # (stable across re-fetches) over hashing the free-text purpose (observed to change
+    # between syncs of the same posting, which duplicated transactions downstream).
+    if bank_reference:
+        raw = f"{iban}|ref|{bank_reference}"
+    else:
+        raw = f"{iban}|{value_date}|{js_number_str(amount)}|{(description or '')[:100]}"
     return base64.b64encode(raw.encode("utf-8")).decode("ascii")
 
 
@@ -268,9 +274,18 @@ def run_sync():
 
                 value_date = data.get("date")
                 value_date_str = value_date.isoformat() if value_date else None
+                if not value_date_str or not acc.iban:
+                    # bank_transactions.value_date/account_iban are NOT NULL, and a batch
+                    # POST here fails (and drops) the *whole* request on one bad row —
+                    # skip rather than let one unparseable line take the rest down.
+                    continue
                 entry_date = data.get("entry_date") or data.get("guessed_entry_date")
                 entry_date_str = entry_date.isoformat() if entry_date else None
                 description = data.get("purpose") or None
+                # AcctSvcrRef (camt.052) / tag-61 bank reference (MT940) — stable across
+                # re-fetches, unlike `purpose` (the bank has been observed to rewrite it
+                # between syncs of the same posting). See build_external_id.
+                bank_reference = data.get("bank_reference")
 
                 txn_rows.append({
                     "user_id": supabase_user_id,
@@ -286,7 +301,8 @@ def run_sync():
                     "counterpart_bic": data.get("applicant_bin"),
                     "category": categorize(data.get("applicant_name")) or categorize(description),
                     "raw_description": description,
-                    "external_id": build_external_id(acc.iban, value_date_str, amount, description),
+                    "bank_reference": bank_reference,
+                    "external_id": build_external_id(acc.iban, bank_reference, value_date_str, amount, description),
                 })
 
     imported, skipped = upsert_transactions(supabase_url, txn_rows)

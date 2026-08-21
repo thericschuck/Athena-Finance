@@ -5,6 +5,7 @@ import { Menu } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { Sidebar } from '@/components/layout/sidebar'
 import { PageWrapper } from '@/components/layout/page-wrapper'
+import { AssistantSheet } from '@/components/assistant/AssistantSheet'
 
 export function AppShell({
   children, email, displayName, avatarUrl,
@@ -57,6 +58,10 @@ export function AppShell({
 
         <PageWrapper>{children}</PageWrapper>
       </div>
+
+      {/* Auf der eigenen Assistant-Seite gibt es die Konversation schon
+          großflächig — kein zweites, schwebendes Sheet-Trigger nötig. */}
+      {!pathname.startsWith('/assistant') && <AssistantSheet />}
     </div>
   )
 }

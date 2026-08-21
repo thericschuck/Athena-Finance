@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import {
-  getFinTSErrorDetails, startSync, upsertBankTransactions,
+  getFinTSErrorDetails, startSync, upsertBankTransactions, upsertDepotHoldings,
   isCloudRuntime, triggerCloudBankSync,
 } from '@/lib/fints'
+import { buildLearnedCategoryMap } from '@/lib/fints/categorize'
 
 // The sidecar drives the whole dialog (incl. waiting for a decoupled app approval),
 // so this route can block for a while. Give the platform enough headroom.
@@ -49,16 +50,31 @@ export async function POST(request: Request) {
     if (body.endDate)   endDate   = new Date(body.endDate)
   } catch { /* no body */ }
 
-  // Default: last 90 days
+  // Default: as far back as the bank will give us. Transactions are deduplicated
+  // by external_id downstream, so requesting more history than the bank actually
+  // retains is harmless — this just maximizes what we get on the first sync.
   if (!startDate) {
-    startDate = new Date()
-    startDate.setDate(startDate.getDate() - 90)
+    startDate = new Date('2000-01-01')
   }
 
   try {
-    const result = await startSync(startDate, endDate)
+    const { data: categories } = await supabase
+      .from('categories')
+      .select('id, name, type, color, icon, parent_id')
+      .eq('user_id', user.id)
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: categorized } = await (supabase as any)
+      .from('bank_transactions')
+      .select('counterpart_name, category_id')
+      .eq('user_id', user.id)
+      .not('category_id', 'is', null)
+    const learnedMap = buildLearnedCategoryMap(categorized ?? [])
+
+    const result = await startSync(startDate, endDate, categories ?? [], learnedMap)
     const { imported, skipped } = await upsertBankTransactions(supabase, user.id, result.transactions)
-    return NextResponse.json({ imported, skipped })
+    const { synced: holdingsSynced } = await upsertDepotHoldings(supabase, user.id, result.holdings)
+    return NextResponse.json({ imported, skipped, holdingsSynced, warnings: result.warnings })
 
   } catch (err) {
     const details = getFinTSErrorDetails(err)

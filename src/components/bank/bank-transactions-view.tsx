@@ -3,44 +3,48 @@
 import { useEffect, useState } from 'react'
 import { Search, TrendingDown, TrendingUp } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { fmtCurrency, fmtDate } from '@/lib/format'
 import { useSettings } from '@/components/providers/settings-context'
-import { CATEGORIES } from '@/lib/fints/categorize'
-import type { BankTransaction } from '@/types/bank'
+import type { BankTransaction, FinanceCategory } from '@/types/bank'
 
 const NO_CATEGORY = '__none__'
 
 interface Props {
   transactions:     BankTransaction[]
+  categories:       FinanceCategory[]
   isLoading:        boolean
-  onFilter:         (params: { q?: string; category?: string }) => void
-  onUpdateCategory: (id: string, category: string | null) => void
+  onFilter:         (params: { q?: string; categoryId?: string }) => void
+  onUpdateCategory: (id: string, categoryId: string | null) => void
 }
 
-// Distinct categories from current list
-function getCategories(txns: BankTransaction[]): string[] {
-  const cats = new Set<string>()
-  for (const t of txns) if (t.category) cats.add(t.category)
-  return [...cats].sort()
+function categoryLabel(c: FinanceCategory): string {
+  return c.icon ? `${c.icon} ${c.name}` : c.name
 }
 
-export function BankTransactionsView({ transactions, isLoading, onFilter, onUpdateCategory }: Props) {
+export function BankTransactionsView({ transactions, categories, isLoading, onFilter, onUpdateCategory }: Props) {
   const { locale, dateFormat } = useSettings()
   const fmtEur = (n: number) => fmtCurrency(n, 'EUR', locale, { fractionDigits: 2 })
 
-  const [search,   setSearch]   = useState('')
-  const [category, setCategory] = useState('')
+  const [search,     setSearch]     = useState('')
+  const [categoryId, setCategoryId] = useState('')
+
+  const categoriesById = new Map(categories.map(c => [c.id, c]))
 
   // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
-      onFilter({ q: search || undefined, category: category || undefined })
+      onFilter({ q: search || undefined, categoryId: categoryId || undefined })
     }, 300)
     return () => clearTimeout(timer)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, category])
-
-  const filterCategories = getCategories(transactions)
+  }, [search, categoryId])
 
   // ── Empty / loading states ──────────────────────────────────────────────────
   if (isLoading) {
@@ -56,8 +60,8 @@ export function BankTransactionsView({ transactions, isLoading, onFilter, onUpda
       <div className="space-y-4">
         <FilterBar
           search={search} setSearch={setSearch}
-          category={category} setCategory={setCategory}
-          categories={filterCategories}
+          categoryId={categoryId} setCategoryId={setCategoryId}
+          categories={categories}
         />
         <div className="rounded-lg border border-dashed border-border py-14 text-center">
           <p className="text-sm font-medium">Keine Transaktionen</p>
@@ -74,8 +78,8 @@ export function BankTransactionsView({ transactions, isLoading, onFilter, onUpda
     <div className="space-y-4">
       <FilterBar
         search={search} setSearch={setSearch}
-        category={category} setCategory={setCategory}
-        categories={filterCategories}
+        categoryId={categoryId} setCategoryId={setCategoryId}
+        categories={categories}
       />
 
       <div className="rounded-lg border border-border overflow-hidden">
@@ -94,6 +98,7 @@ export function BankTransactionsView({ transactions, isLoading, onFilter, onUpda
               {transactions.map((tx, i) => {
                 const isCredit = tx.amount >= 0
                 const isLast   = i === transactions.length - 1
+                const current  = tx.category_id ? categoriesById.get(tx.category_id) : undefined
 
                 return (
                   <tr
@@ -119,21 +124,35 @@ export function BankTransactionsView({ transactions, isLoading, onFilter, onUpda
                       </span>
                     </td>
                     <td className="px-4 py-2.5">
-                      <select
-                        value={tx.category ?? NO_CATEGORY}
-                        onChange={e => onUpdateCategory(tx.id, e.target.value === NO_CATEGORY ? null : e.target.value)}
-                        aria-label="Kategorie ändern"
-                        className={`h-6 max-w-[140px] cursor-pointer rounded-full border-none px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring ${
-                          tx.category
-                            ? 'bg-muted text-muted-foreground hover:bg-muted/70'
-                            : 'bg-transparent text-muted-foreground/70 hover:bg-muted/50'
-                        }`}
+                      <Select
+                        value={tx.category_id ?? NO_CATEGORY}
+                        onValueChange={v => onUpdateCategory(tx.id, v === NO_CATEGORY ? null : v)}
                       >
-                        <option value={NO_CATEGORY}>Kategorisieren…</option>
-                        {CATEGORIES.map(c => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
+                        <SelectTrigger
+                          size="sm"
+                          aria-label="Kategorie ändern"
+                          className="h-7 max-w-[160px] rounded-full border-none px-2.5 text-xs shadow-none"
+                          style={current?.color ? { backgroundColor: `${current.color}1a`, color: current.color } : undefined}
+                        >
+                          <SelectValue placeholder="Kategorisieren…">
+                            {current ? categoryLabel(current) : 'Kategorisieren…'}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={NO_CATEGORY}>Ohne Kategorie</SelectItem>
+                          {categories.map(c => (
+                            <SelectItem key={c.id} value={c.id}>
+                              <span className="flex items-center gap-2">
+                                <span
+                                  className="size-2 rounded-full shrink-0"
+                                  style={{ backgroundColor: c.color ?? '#94a3b8' }}
+                                />
+                                {categoryLabel(c)}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </td>
                     <td className="px-4 py-2.5 text-right whitespace-nowrap">
                       <span className={`flex items-center justify-end gap-1 font-medium ${
@@ -166,12 +185,12 @@ export function BankTransactionsView({ transactions, isLoading, onFilter, onUpda
 // ── Filter bar ─────────────────────────────────────────────────────────────────
 function FilterBar({
   search, setSearch,
-  category, setCategory,
+  categoryId, setCategoryId,
   categories,
 }: {
   search: string; setSearch: (v: string) => void
-  category: string; setCategory: (v: string) => void
-  categories: string[]
+  categoryId: string; setCategoryId: (v: string) => void
+  categories: FinanceCategory[]
 }) {
   return (
     <div className="flex flex-wrap gap-2">
@@ -186,17 +205,25 @@ function FilterBar({
       </div>
 
       {categories.length > 0 && (
-        <select
-          value={category}
-          onChange={e => setCategory(e.target.value)}
-          aria-label="Nach Kategorie filtern"
-          className="h-8 rounded-md border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-        >
-          <option value="">Alle Kategorien</option>
-          {categories.map(c => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
+        <Select value={categoryId || '__all__'} onValueChange={v => setCategoryId(v === '__all__' ? '' : v)}>
+          <SelectTrigger size="sm" aria-label="Nach Kategorie filtern" className="h-8 text-sm">
+            <SelectValue placeholder="Alle Kategorien" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Alle Kategorien</SelectItem>
+            {categories.map(c => (
+              <SelectItem key={c.id} value={c.id}>
+                <span className="flex items-center gap-2">
+                  <span
+                    className="size-2 rounded-full shrink-0"
+                    style={{ backgroundColor: c.color ?? '#94a3b8' }}
+                  />
+                  {categoryLabel(c)}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       )}
     </div>
   )

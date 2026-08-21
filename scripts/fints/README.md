@@ -14,6 +14,134 @@ Against this bank a read-only sync currently returns `3076 – Starke Kundenauth
 nicht notwendig`, i.e. the app approval is usually not even prompted for balance/transaction
 reads with a registered product ID. The polling path is in place for when it is.
 
+## Depot (Union Investment) & Bausparvertrag (Schwäbisch Hall)
+
+`fints_sync.py` now also calls `get_information()` (HIUPD) after fetching the giro
+accounts. That call lists **every** account this FinTS login knows about, including
+ones `get_sepa_accounts()` silently drops (anything without the "Kontoverwendung
+SEPA" flag — commonly a Wertpapierdepot or Bausparvertrag). For each such account
+the sync checks what it actually supports and dispatches accordingly:
+
+- Supports `HKWPD` (Depotaufstellung) → fetched via `get_holdings()`, emitted as
+  `holdings` in the JSON output (ISIN, name, Stück, Kurs, Bestandswert, ...).
+- Supports `HKSAL`/`HKKAZ` (balance/transactions) → folded into the normal
+  `balances`/`transactions` output.
+
+This works **without any new credentials** if Union Investment's UnionDepot and/or
+the Schwäbisch Hall Bausparvertrag are administered under the same Raiffeisenbank
+FinTS login (common in the Volksbanken/Raiffeisenbanken Verbund, since both
+companies are the group's cooperative fund/Bauspar partners).
+
+**How to check:** run a sync locally (`npm run dev`, then trigger a sync from
+`/bank`) and watch the sidecar's stderr log. A line like
+`[fints] Zusätzliches Konto gefunden: <Name>` means it was found — its holdings
+(if a depot) show up in the "Depot (automatisch synchronisiert)" card on `/bank`
+and in the `depot_holdings` table.
+
+**If they don't show up but you know the account/Depot number:** `get_information()`
+only lists what the bank chooses to expose there — some banks simply omit a
+Bausparvertrag from that overview even though it's reachable through the same login
+for other purposes. Set `FINTS_EXTRA_ACCOUNTS` (a comma-separated list of known
+account/Depot numbers — e.g. one Depotnummer and one or more Bausparvertrag-Nummern)
+to probe those specific numbers directly, independently of what `get_information()`
+reports:
+
+```
+FINTS_EXTRA_ACCOUNTS=1234567,7654321,7654322,7654323
+```
+
+(`FINTS_BANK2_EXTRA_ACCOUNTS` etc. for a second/third bank profile.) The sync then
+tries `get_holdings()` / `get_balance()` / `get_transactions()` against each number
+directly and logs exactly what the bank returns for it — success, an error message,
+or "not supported". A Depot hit is stored normally (`depot_holdings`, no IBAN
+needed); a Bausparvertrag balance/transaction hit is currently only logged, not
+stored yet — `bank_balance`/`bank_transactions` both require an IBAN, which these
+accounts don't have, so storing that needs a small schema addition once we know it's
+actually retrievable this way.
+
+**Confirmed result for this login (Raiffeisenbank, August 2026) probing 3 Bausparvertrag
+numbers directly:** `get_transactions()` raises
+`FinTSUnsupportedOperation: No supported HIKAZS version found. ... bank supports ()` —
+the bank's own Bank Parameter Data reports **zero** supported Kontoumsätze versions for
+these accounts, at all, regardless of account-number format. That's the bank's BPD
+talking, not a client bug — Bausparvertrag-Umsätze/-Saldo are not retrievable through
+this login, full stop. `get_holdings()` also failed, but that one *was* a client bug
+(python-fints' `Account2/Account3.from_sepa_account()` derives a country code from
+`acc.bic[4:6]` and crashes with a bare `TypeError` if `bic` is `None` — fixed by passing
+the login's own BIC for probed accounts). Doesn't change the Bausparvertrag conclusion
+above; only matters for a genuine Depotnummer, where `get_holdings()` is the relevant
+call and might still succeed once it can actually reach the bank.
+
+**If even direct probing fails for all three operations:** Union Investment and/or
+Schwäbisch Hall need a *separate* FinTS login of their own. Research on this (August
+2026, see sources below) came back different for each:
+
+- **Union Investment (UnionDepot):** Union Investment Service Bank AG's own
+  "Freischaltungsantrag zur Depotführung über einen Online-Zugang" (their
+  official form for activating online access to a depot) does **not mention
+  FinTS/HBCI at all** — it only covers their own proprietary "UnionDepotOnline"
+  web portal, and explicitly routes personalised security credentials through
+  the "Vertriebspartner" (the selling bank — i.e. the Raiffeisenbank). Their own
+  FAQ on depot/customer numbers also tells users to ask "Ihren Bankberater" (their
+  bank advisor at the Hausbank), not Union Investment support. That's a strong
+  signal Union Investment does not run its own public FinTS/HBCI server for
+  third-party software — the Raiffeisenbank login (already implemented, see
+  above) is likely the *only* path in, and if `get_information()` doesn't surface
+  it, the more likely fix is asking the Raiffeisenbank to enable Depot/HKWPD
+  reporting on the existing FinTS access, not hunting for separate Union
+  Investment credentials.
+- **Schwäbisch Hall (Bausparvertrag):** genuinely unclear from public sources.
+  A StarMoney community thread title ("Bausparkasse Schwäbisch Hall – Keine
+  Umsatzabfrage mehr möglich") suggests third-party FinTS access existed at some
+  point and later broke or changed — but the thread content itself sits behind a
+  login wall, so the technical details (BLZ, current status) couldn't be
+  confirmed here. Their public "Mein Konto" page only documents their own web
+  login, no FinTS/HBCI. **To find out for certain:** log into "Mein Konto" at
+  schwaebisch-hall.de and check Kontoeinstellungen for a "PIN/TAN-Verfahren" or
+  "Homebanking-Zugang" option, or call their service line directly
+  (+49 791 46-4444) and ask specifically for "FinTS/HBCI-Zugangsdaten für
+  Homebanking-Software" for the Bausparvertrag.
+
+If either turns out to need its own login, the sync already supports it —
+**multi-bank is implemented**, not just planned:
+
+### Multi-bank configuration
+
+Add these to `.env.local` for a second bank (a third would be `FINTS_BANK3_*`,
+and so on):
+
+```
+FINTS_BANK2_URL=https://...
+FINTS_BANK2_BLZ=12345678
+FINTS_BANK2_USERNAME=...
+FINTS_BANK2_PIN=...
+FINTS_BANK2_PRODUCT_ID=...      # optional — falls back to FINTS_PRODUCT_ID
+FINTS_BANK2_LABEL=Union Investment   # optional — defaults to "Bank 2"
+```
+
+Each configured bank is synced independently in the same run (its own FinTS
+dialog, its own decoupled-SCA approval if required). Every account, transaction,
+balance, and holding in the JSON output carries a `bankLabel` saying which login
+produced it (persisted as `bank_label` in `bank_transactions`, `bank_balance`,
+and `depot_holdings`). If one bank fails (wrong PIN, unreachable, not yet
+configured correctly) it's recorded in `warnings` — shown as an amber note under
+the sync button — while the rest of the sync still completes.
+
+Sources consulted:
+- [Depotzugang | Union Investment](https://www.union-investment.de/einzelseiten/depotzugang)
+- [Freischaltungsantrag zur Depotführung (PDF)](https://cdn.dam.union-investment.de/404381_Freischaltungsantrag_Online-Zugang_000402_01.22.pdf)
+- [Woher erhalte ich meine Depot-, Zugangs- oder Kundennummer?](https://www.union-investment.de/unsere-services/haeufige-fragen/haeufige-fragen/frage/Woher-erhalte-ich-meine-Depot-,-Zugangs--oder-Kundennummer)
+- [MEIN KONTO – Schwäbisch Hall](https://www.schwaebisch-hall.de/meinkonto/meinkonto-onlineservice.html)
+- [Bausparkasse Schwäbisch Hall – Keine Umsatzabfrage mehr möglich (StarMoney Community)](https://www.starmoney.de/forum/viewtopic.php?t=35970)
+
+## Volle Historie
+
+`--start` now defaults to `2000-01-01` instead of a short rolling window — i.e.
+"as much transaction history as the bank will give us". The bank itself decides
+how far back it actually has data (commonly somewhere between 90 days and ~18-24
+months for camt.052/Atruvia-backed accounts); requesting further back than that
+is harmless since transactions are deduplicated downstream by `external_id`.
+
 ## Setup
 
 ```bash
@@ -38,7 +166,11 @@ Read from the same environment variables the Next.js app uses (loaded from `.env
 | `FINTS_USERNAME`   | yes      | VR-NetKey / Alias                                        |
 | `FINTS_PIN`        | yes      | Online-Banking PIN                                       |
 | `FINTS_PRODUCT_ID` | strongly | ZKA/DK-registered product ID; this bank effectively needs one |
+| `FINTS_LABEL`      | no       | Display label for this bank (defaults to "Raiffeisenbank") |
 | `FINTS_PYTHON`     | no       | Override interpreter path (defaults to the venv above)   |
+| `FINTS_BANK2_*` … `FINTS_BANK6_*` | no | Additional bank logins — see "Multi-bank configuration" above |
+| `FINTS_EXTRA_ACCOUNTS` | no | Comma-separated known account/Depot numbers to probe directly — see "Depot & Bausparvertrag" above |
+| `FINTS_BANK{N}_EXTRA_ACCOUNTS` | no | Same, scoped to bank profile N |
 
 ## Usage
 

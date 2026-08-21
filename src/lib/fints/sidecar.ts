@@ -14,6 +14,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 
 export interface SidecarAccount {
+  bankLabel: string | null
   iban: string | null
   bic: string | null
   accountNumber: string | null
@@ -22,6 +23,7 @@ export interface SidecarAccount {
 }
 
 export interface SidecarTransaction {
+  bankLabel: string | null
   accountIban: string | null
   accountBic: string | null
   amount: number | null
@@ -32,9 +34,12 @@ export interface SidecarTransaction {
   counterpartName: string | null
   counterpartIban: string | null
   counterpartBic: string | null
+  /** AcctSvcrRef (camt.052) / bank reference (MT940 tag 61) — stable across re-fetches. */
+  bankReference: string | null
 }
 
 export interface SidecarBalance {
+  bankLabel: string | null
   iban: string | null
   bic: string | null
   bookedBalance: number | null
@@ -43,11 +48,33 @@ export interface SidecarBalance {
   date: string | null
 }
 
+/**
+ * A single position from a securities depot (HKWPD "Depotaufstellung") — e.g. a
+ * Union Investment "UnionDepot" fund reachable through the same FinTS login as the
+ * Girokonto. Discovered via get_information() (HIUPD), not get_sepa_accounts().
+ */
+export interface SidecarHolding {
+  bankLabel: string | null
+  accountLabel: string | null
+  accountNumber: string | null
+  isin: string | null
+  name: string | null
+  pieces: number | null
+  marketValue: number | null
+  currency: string
+  valuationDate: string | null
+  totalValue: number | null
+  acquisitionPrice: number | null
+}
+
 export interface SidecarSuccess {
   ok: true
   accounts: SidecarAccount[]
   transactions: SidecarTransaction[]
   balances: SidecarBalance[]
+  holdings: SidecarHolding[]
+  /** One message per bank profile that failed (e.g. wrong PIN) — others still succeed. */
+  warnings: string[]
 }
 
 interface SidecarError {

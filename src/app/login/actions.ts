@@ -6,14 +6,18 @@ import { headers } from 'next/headers'
 
 export async function signIn(formData: FormData) {
   const supabase = await createClient()
+  const email = formData.get('email') as string
 
   const { error } = await supabase.auth.signInWithPassword({
-    email: formData.get('email') as string,
+    email,
     password: formData.get('password') as string,
   })
 
   if (error) {
-    redirect(`/login?error=${encodeURIComponent(error.message)}`)
+    // E-Mail mit zurück an /login geben (siehe LoginPage: `defaultValue` auf
+    // dem Feld) — der Redirect ist eine echte Navigation, ohne das stünde
+    // das Feld nach einem falschen Passwort wieder leer da.
+    redirect(`/login?error=${encodeURIComponent(error.message)}&email=${encodeURIComponent(email)}`)
   }
 
   redirect('/dashboard')

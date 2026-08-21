@@ -6,7 +6,27 @@
       "Bash(ssh -T git@github-b)",
       "Bash(ssh -T git@github.com)",
       "Bash(ssh -vT git@github-b)",
-      "Bash(ssh -vT git@github-a)"
+      "Bash(ssh -vT git@github-a)",
+      "Bash(powershell -Command \"Get-Process -Name node -ErrorAction SilentlyContinue | Select-Object Id,ProcessName,StartTime\")",
+      "PowerShell(Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -ge 3000 -and $_.LocalPort -le 3200 } | Select-Object LocalPort,OwningProcess)",
+      "PowerShell(Get-CimInstance Win32_Process -Filter \"ProcessId=23468\")",
+      "PowerShell(Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -eq 3000 } | Select-Object LocalPort,OwningProcess)",
+      "Bash(curl -s -o /dev/null -w \"check1 %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"check2 %{http_code}\\\\n\" http://localhost:3000/)",
+      "PowerShell(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -eq 3000 } | Select-Object LocalPort,OwningProcess)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3001/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3001/login)",
+      "Bash(mkdir -p 'C:\\\\Users\\\\eschu\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-eschu-Desktop-Unternehmensstruktur-07-Projekte-Privat-athena-finance\\\\b5d769be-f22c-46cd-9053-4036b6b02c60\\\\scratchpad/pw/out')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/login)",
+      "Bash(npm audit *)",
+      "Bash(npx shadcn@latest add sheet textarea scroll-area --yes)",
+      "Bash(npx supabase *)",
+      "Bash(grep -o \"tool[a-zA-Z_$]*\" node_modules/ai/dist/index.d.ts)",
+      "Bash(node -e \"console.log\\(typeof require\\('ai'\\).useChat\\)\")",
+      "Bash(node -e \"console.log\\(typeof require\\('ai'\\).convertToModelMessages\\)\")",
+      "Bash(netstat -ano)",
+      "Bash(curl -s -o /dev/null -w \"assistant page: %{http_code}\\\\n\" http://localhost:3000/assistant)",
+      "Bash(curl -s -o /dev/null -w \"dashboard page: %{http_code}\\\\n\" http://localhost:3000/dashboard)"
     ]
   },
   "hooks": {

@@ -67,6 +67,7 @@ export async function POST(request: Request) {
     if (balances.length > 0) {
       const rows = balances.map(b => ({
         user_id:           user.id,
+        bank_label:        b.bankLabel,
         account_iban:      b.iban,
         account_bic:       b.bic,
         account_name:      b.accountName,

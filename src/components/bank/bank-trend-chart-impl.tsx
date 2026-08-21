@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo } from 'react'
-import { useTheme } from 'next-themes'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts'
@@ -9,15 +8,12 @@ import { useSettings } from '@/components/providers/settings-context'
 import { fmtCurrency } from '@/lib/format'
 import type { BankTransaction } from '@/types/bank'
 
-// Income/expense pair validated with scripts/validate_palette.js against this app's card
-// surfaces. Light mode reuses the app's own tokens (--chart-2, --destructive), which pass
-// as-is. The app's dark-mode tokens for those same slots fail the OKLCH lightness band
-// (both land at L≈0.70, just outside the 0.48–0.67 dark band), so dark mode uses the
-// dataviz skill's reference green/red slots instead, which pass cleanly.
-const INCOME_LIGHT  = '#009689'
-const EXPENSE_LIGHT = '#e7000b'
-const INCOME_DARK  = '#008300'
-const EXPENSE_DARK = '#e66767'
+// Same olive/gold/terracotta income-expense pair used everywhere else money is charted
+// (Analyse's KategorienChart/GeldflussChart, the Crypto portfolio chart) — the Banking page
+// used its own separately-validated teal/red pair before, which is why it read as visually
+// disconnected from the rest of the app despite showing the same kind of data.
+const INCOME  = '#8CA277'
+const EXPENSE = '#A9553C'
 
 interface MonthDatum { month: string; income: number; expense: number }
 
@@ -42,12 +38,10 @@ function monthLabel(key: string, locale: string): string {
 
 export function BankTrendChart({ transactions }: { transactions: BankTransaction[] }) {
   const { locale } = useSettings()
-  const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === 'dark'
-  const income  = isDark ? INCOME_DARK  : INCOME_LIGHT
-  const expense = isDark ? EXPENSE_DARK : EXPENSE_LIGHT
 
   const data = useMemo(() => buildData(transactions), [transactions])
+  const totalIncome  = useMemo(() => data.reduce((s, d) => s + d.income,  0), [data])
+  const totalExpense = useMemo(() => data.reduce((s, d) => s + d.expense, 0), [data])
 
   if (data.length === 0) {
     return (
@@ -62,18 +56,20 @@ export function BankTrendChart({ transactions }: { transactions: BankTransaction
 
   return (
     <div className="rounded-lg border border-border bg-card p-5">
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+      {/* Header carries both the legend and the period's totals — folds what used to be a
+          separate "Summary strip" of two full-width boxes into this one line. */}
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
           Einnahmen &amp; Ausgaben pro Monat
         </p>
-        <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block size-2.5 rounded-sm" style={{ background: income }} />
-            Einnahmen
+        <div className="flex items-center gap-4 text-xs">
+          <span className="flex items-center gap-1.5 font-semibold tabular-nums" style={{ color: INCOME }}>
+            <span className="inline-block size-2 rounded-full" style={{ background: INCOME }} />
+            +{fmtCurrency(totalIncome, 'EUR', locale, { fractionDigits: 0 })}
           </span>
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block size-2.5 rounded-sm" style={{ background: expense }} />
-            Ausgaben
+          <span className="flex items-center gap-1.5 font-semibold tabular-nums" style={{ color: EXPENSE }}>
+            <span className="inline-block size-2 rounded-full" style={{ background: EXPENSE }} />
+            {fmtCurrency(totalExpense, 'EUR', locale, { fractionDigits: 0 })}
           </span>
         </div>
       </div>
@@ -103,13 +99,13 @@ export function BankTrendChart({ transactions }: { transactions: BankTransaction
                   <p className="text-foreground font-medium mb-1">{monthLabel(label as string, locale)}</p>
                   <p className="flex items-center justify-between gap-4">
                     <span className="text-muted-foreground">Einnahmen</span>
-                    <span className="font-semibold tabular-nums" style={{ color: income }}>
+                    <span className="font-semibold tabular-nums" style={{ color: INCOME }}>
                       +{fmtCurrency(d.income, 'EUR', locale, { fractionDigits: 2 })}
                     </span>
                   </p>
                   <p className="flex items-center justify-between gap-4">
                     <span className="text-muted-foreground">Ausgaben</span>
-                    <span className="font-semibold tabular-nums" style={{ color: expense }}>
+                    <span className="font-semibold tabular-nums" style={{ color: EXPENSE }}>
                       {fmtCurrency(d.expense, 'EUR', locale, { fractionDigits: 2 })}
                     </span>
                   </p>
@@ -117,8 +113,8 @@ export function BankTrendChart({ transactions }: { transactions: BankTransaction
               )
             }}
           />
-          <Bar dataKey="income" fill={income} radius={[4, 4, 0, 0]} maxBarSize={28} />
-          <Bar dataKey="expense" fill={expense} radius={[0, 0, 4, 4]} maxBarSize={28} />
+          <Bar dataKey="income" fill={INCOME} radius={[4, 4, 0, 0]} maxBarSize={28} />
+          <Bar dataKey="expense" fill={EXPENSE} radius={[0, 0, 4, 4]} maxBarSize={28} />
         </BarChart>
       </ResponsiveContainer>
     </div>

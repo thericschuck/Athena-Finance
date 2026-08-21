@@ -27,7 +27,7 @@ export function LebenshaltungskostenClient({ categories, items, target }: Props)
   return (
     <div className="p-8 space-y-6 max-w-5xl">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Lebenshaltungskosten</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Fixkosten</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
           Budget-Planung, Produktverbrauch und Mindestgehalt-Kalkulation
         </p>

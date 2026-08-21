@@ -12,6 +12,85 @@
 .af-balance { text-wrap: balance; }
 
 /*
+ * Individueller Cursor (siehe CustomCursor in LandingClient.tsx) — feiner
+ * Gold-Ring mit Nachlauf plus ein präziser Punkt exakt auf der Zeigerposition.
+ * Nur mit echter Maus: `(hover: hover) and (pointer: fine)` schließt Touch-
+ * Geräte aus, auf denen es ohnehin keinen Zeiger zum Ersetzen gibt.
+ *
+ * `.af-landing, .af-landing * { cursor: none !important }`: viele Buttons/
+ * Links setzen `cursor: 'pointer'` als Inline-Style (Inline schlägt sonst
+ * jede Klassenregel ohne !important), Browser-UA-Styles bringen auf
+ * Links/Buttons zusätzlich ihr eigenes cursor:pointer mit — nur eine
+ * !important-Regel mit demselben Erfassungsbereich gewinnt zuverlässig
+ * gegen beides.
+ *
+ * Grundplatzierung (`.af-cursor`) bewusst AUSSERHALB der Media Query:
+ * Ring/Punkt bleiben dadurch auch auf Touch-Geräten explizit aus dem
+ * Textfluss genommen, statt sich nur implizit auf leere, randlose Divs zu
+ * verlassen, die zufällig auf 0 Höhe kollabieren.
+ */
+.af-cursor {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .af-landing,
+  .af-landing * {
+    cursor: none !important;
+  }
+
+  .af-cursor-ring,
+  .af-cursor-dot {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity .2s ease;
+  }
+  /* Erst nach der ersten echten Mausposition sichtbar (siehe .is-visible in
+     CustomCursor) — sonst blitzt beides kurz in der Bildschirmmitte auf,
+     dem Startwert von mouseX/mouseY vor der ersten Bewegung. */
+  .af-cursor.is-visible .af-cursor-ring,
+  .af-cursor.is-visible .af-cursor-dot {
+    opacity: 1;
+  }
+
+  .af-cursor-ring {
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--af-gold-ink);
+    background-color: transparent;
+    /* Nur Größe/Füllung übergangsweise animiert, NICHT `transform` — das
+       setzt CustomCursor selbst per rAF direkt als Inline-Style (Position
+       plus Klick-Skalierung), eine zusätzliche CSS-Transition darauf würde
+       gegen die Echtzeit-Updates ankämpfen statt sie zu ergänzen. */
+    transition: width .28s cubic-bezier(.16, 1, .3, 1), height .28s cubic-bezier(.16, 1, .3, 1),
+                background-color .28s ease, border-color .2s ease, opacity .2s ease;
+  }
+  .af-cursor-ring.is-hover {
+    width: 52px;
+    height: 52px;
+    background-color: rgba(138, 106, 47, .1);
+  }
+
+  .af-cursor-dot {
+    width: 5px;
+    height: 5px;
+    background-color: var(--af-gold-ink-deep);
+    transition: opacity .15s ease;
+  }
+  /* Drei statt zwei Klassen — muss gegen `.af-cursor.is-visible .af-cursor-dot`
+     weiter oben gewinnen (ebenfalls drei Klassen-Selektoren): Spezifität
+     entscheidet hier VOR Quellreihenfolge, eine schwächere Regel würde trotz
+     späterer Position im Stylesheet verlieren. */
+  .af-cursor.is-visible .af-cursor-dot.is-hidden { opacity: 0; }
+}
+
+/*
  * Hero-Einstieg absichtlich in CSS statt Framer Motion: der Text ist damit ab
  * dem ersten Frame gemalt und wartet nicht auf die Hydration — sonst verzögert
  * ein opacity:0-Element den LCP um die gesamte JS-Ladezeit.
@@ -67,6 +146,30 @@
   height: 100svh;
   z-index: 60;
   pointer-events: none;
+}
+
+/*
+ * Auf dem Handy niedriger statt ganz weg: OliveVines rendert die beiden
+ * Ranken bewusst per `preserveAspectRatio="slice"` (siehe olive-vines.tsx) —
+ * die Zweigbasen bleiben dadurch am Rand stehen statt zu Miniaturen zu
+ * schrumpfen, auf Kosten dessen, dass der sichtbare Ausschnitt einzelne
+ * Blätter mitten im Blatt kappt statt sauber am Stängel. Der Effekt skaliert
+ * mit der BOX-HÖHE, nicht mit der Bildschirmbreite: bei `height: 100svh`
+ * (voller Viewport) gegen `width: clamp(112px, 26vw, 450px)` dominiert auf
+ * hohen, schmalen Handy-Screens die Höhe die Skalierung, wodurch nur ein
+ * sehr schmaler Ausschnitt (~23% der Rankenbreite) sichtbar bleibt — daher
+ * das komplette Fehlen ganzer Zweige zwischen Stängel und Blattspitze (siehe
+ * Chat, erster Versuch war ganz aus statt niedriger).
+ *
+ * Eine deutlich niedrigere Box ändert dieses Verhältnis: bei gleicher Breite
+ * zeigt eine ~380px statt 100svh (~850px) hohe Box gut doppelt so viel von
+ * der Rankenbreite (die Höhe dominiert die Skalierung dann weniger stark),
+ * die Ranken wirken dadurch als saubere Bogen von der Ecke statt als
+ * abgeschnittene Fragmente — bei kleinerem, zarterem Maßstab als am Desktop,
+ * was für eine Ecken-Deko auf dem Handy passender ist als 1:1-Originalgröße.
+ */
+@media (max-width: 639px) {
+  .vine-layer-over { height: clamp(280px, 42vh, 380px); }
 }
 
 /* ── Hero-Hintergrund: Aquarell-Landschaft ─────────────────────────────────── */
@@ -203,11 +306,23 @@
  * stapelt die beiden Buttons statt sie nebeneinander zu zeigen (siehe
  * `.cta-row` weiter unten) — beide zusammen sind dann so breit wie die
  * Textspalte selbst, deutlich breiter als der schmale Trichter-Stiel des
- * Desktop-Trapezes (26%–74% der Breite). Statt die Buttons über diesen
- * schmalen Stiel hinausragen zu lassen, wird die Fläche hier zur echten
- * Bühne: randlos über die volle Bildschirmbreite, kein Trichter mehr — ein
- * schmaler Stiel unter zwei vollbreiten, gestapelten Buttons wäre ohnehin
- * nur noch ein schmaler Streifen gewesen, kein erkennbares Podest.
+ * Desktop-Trapezes (26%–74% der Breite). Ein auf Rechteck reduzierter
+ * Trichter wäre hier kaum höher als sein Inhalt und liefe nur noch als
+ * kantige Box mit Trennlinie mitten im Bild auf — kein erkennbares Podest
+ * mehr (siehe Chat).
+ *
+ * Komplettes Entfernen der Fläche (erster Versuch) sah zwar sauberer aus,
+ * hat aber `.hero-btn-outline` (Rand + dunkle Schrift) und die Taxonomie-
+ * Zeile darunter (`C.inkSubtle`, siehe LandingClient) unlesbar gemacht: beide
+ * waren FÜR den hellen Kuppel-Hintergrund geeicht (4.5:1 laut Kommentar
+ * dort), direkt auf dem Aquarell reicht der Kontrast an dieser Stelle nicht
+ * mehr (siehe Chat).
+ *
+ * Lösung wie `.pediment-fade` weiter unten: ein nach oben auslaufender
+ * Verlauf statt einer Fläche mit Kante — oben transparent, unten deckend
+ * Parchment. Keine sichtbare Box, aber am unteren Rand (wo Buttons und
+ * Taxonomie-Zeile sitzen) trotzdem genug Kontrast. `hero-btn-primary` bleibt
+ * ohnehin unberührt (eigene Volltonfläche).
  */
 @media (max-width: 639px) {
   .hero-dome {
@@ -215,11 +330,25 @@
     right: 0;
     transform: none;
     width: auto;
-    height: clamp(250px, 34vh, 320px);
+    /* höher als die vorige Box: der Verlauf braucht oben Auslauf, bevor er
+       bei den Buttons deckend wird, statt dort schon abrupt anzusetzen */
+    height: clamp(320px, 46vh, 420px);
     clip-path: none;
-    border-top: 1px solid var(--af-rule);
+    border-top: none;
+    background: linear-gradient(
+      to bottom,
+      rgba(244, 239, 228, 0) 0%,
+      rgba(244, 239, 228, .45) 45%,
+      rgba(244, 239, 228, .88) 72%,
+      var(--af-parchment) 100%
+    );
   }
-  .hero-dome-frieze { top: 14px; }
+  .hero-dome-frieze { display: none; }
+  /* Steg aus Linie + Raute (siehe .hero-lozenge-Kommentar in LandingClient) —
+     sitzt hier direkt auf dem Verlaufs-Auslauf der Kuppel statt wie am
+     Desktop auf ruhigem Parchment und liest sich als überflüssige zweite
+     Linie neben dem eigentlichen Bühnenrand (siehe Chat). */
+  .hero-lozenge { display: none; }
 }
 
 /*
@@ -564,28 +693,56 @@
 .analyse-step-btn { background: none; border: none; padding: 0; cursor: pointer; }
 
 /*
- * Unterhalb der Schwelle (und bei reduzierter Bewegung) kein Pinning und
- * keine Zusatzstrecke — AnalyseReveal baut die Timeline dort ohnehin nicht
- * (matchMedia bzw. `still`-Guard), die Regeln hier verhindern nur, dass die
- * wirkungslose Pin-CSS eine riesige leere Scrollstrecke hinterlässt.
+ * Unterhalb der Schwelle kein Pinning und keine Zusatzstrecke — AnalyseReveal
+ * baut die Timeline dort ohnehin nicht (matchMedia-Guard), die Regeln hier
+ * verhindern nur, dass die wirkungslose Pin-CSS eine riesige leere
+ * Scrollstrecke hinterlässt.
  *
- * Der Stapel wird dabei zur normalen Liste: ohne Scroll-Erzählung gäbe es
- * nichts, was zwischen den Karten weiterschaltet — untereinander sind alle
- * vier erreichbar. `transform`/`opacity` müssen dafür per !important
- * zurückgenommen werden, weil Framer Motion sie als Inline-Style schreibt.
+ * Der Stapel wird dabei zu einem horizontalen Swipe-Karussell statt einer
+ * vertikal gestapelten Liste — ohne die gepinnte Vertikal-Erzählung wären
+ * vier volle Kartenhöhen untereinander eine sehr lange Sektion. Natives
+ * `scroll-snap` statt vertikal-scroll-gekoppeltem Transform (wie am
+ * Desktop): kein Kampf mit dem normalen Touch-Scroll der Seite, genau die
+ * Falle, vor der der scroll-storytelling-Skill bei horizontalen, an
+ * vertikalen Scroll gekoppelten Overlays auf Touch-Geräten warnt.
+ *
+ * Welche Karte gerade zentriert im Bild steht, meldet ein IntersectionObserver
+ * (siehe AnalyseReveal) an dieselbe `step`-Variable, die am Desktop GSAP
+ * schreibt — die Liste links hebt den passenden Punkt dadurch genauso hervor
+ * wie dort. `transform`/`opacity` müssen für die Karten selbst weiterhin per
+ * !important zurückgenommen werden, weil Framer Motion sie als Inline-Style
+ * schreibt (die Stapel-Staffelung ergäbe nebeneinander keinen Sinn).
  */
 @media (max-width: 1023px) {
   .analyse-scene { height: auto; }
   .analyse-sticky { position: static; height: auto; display: block; }
-  .analyse-deck { height: auto; display: flex; flex-direction: column; gap: 18px; }
+  .analyse-deck {
+    height: auto;
+    display: flex;
+    flex-direction: row;
+    gap: 14px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    /* Scrollbalken dezent ausblenden — der Wisch-Griff bleibt, ein sichtbarer
+       Balken darunter ist bei einem Karussell wie diesem nur Ballast. */
+    scrollbar-width: none;
+  }
+  .analyse-deck::-webkit-scrollbar { display: none; }
   .analyse-deck-card {
     position: static;
     transform: none !important;
     opacity: 1 !important;
     z-index: auto !important;
+    /* Feste Breite unter 100 %, statt volle Breite: die nächste Karte lugt
+       am Rand hervor — sichtbarer Hinweis, dass hier mehr kommt, statt einer
+       Kante, die wie das Sektionsende aussehen könnte. */
+    flex: 0 0 86%;
+    max-width: 340px;
+    scroll-snap-align: center;
   }
   .analyse-deck-btn { cursor: default; }
-  .analyse-step-btn { cursor: default; }
 }
 @media (prefers-reduced-motion: reduce) {
   .analyse-scene { height: auto !important; }
@@ -817,7 +974,10 @@
     align-items: flex-start !important;
     gap: 22px !important;
   }
-  .mock-charts { grid-template-columns: minmax(0, 1fr) !important; }
+  /* .mock-charts absichtlich NICHT hier: siehe ausführlichen Kommentar bei
+     der zweiten @media(max-width:767px)-Regel weiter unten (Dashboard-Mock-
+     Abschnitt) — ein Spaltenumbruch sprengt dort das feste 100svh-Budget der
+     gepinnten Szene. */
 }
 
 /* ── Handy ─────────────────────────────────────────────────────────────────── */
@@ -880,7 +1040,12 @@
 
 /* ── kleines Handy ─────────────────────────────────────────────────────────── */
 @media (max-width: 419px) {
-  .g-extras { grid-template-columns: minmax(0, 1fr) !important; }
+  /* Statt auf 1 Spalte umzubrechen (vier volle Kartenhöhen untereinander)
+     übernimmt hier .extras-carousel weiter unten — Raster ausgeblendet,
+     nicht entfernt, bleibt aber im DOM (siehe ExtrasCarousel-Kommentar).
+     !important nötig: das Element trägt `display:'grid'` als Inline-Style
+     (siehe JSX), das gewinnt sonst gegen jede Klassenregel ohne !important. */
+  .g-extras { display: none !important; }
   .pillar-inner { gap: 14px; }
   .mock-label { letter-spacing: .08em !important; }
 
@@ -892,6 +1057,73 @@
     font-size: 11px !important;
     letter-spacing: .1em !important;
   }
+}
+
+/*
+ * Horizontales Karussell für „Weitere Eigenschaften" (siehe ExtrasCarousel
+ * in LandingClient.tsx) — standardmäßig unsichtbar, damit es oberhalb von
+ * 420px weder Platz noch Bedienelemente zeigt (dort läuft weiterhin
+ * .g-extras). Wisch-Container wie beim Analyse-Karussell: natives
+ * `scroll-snap` statt vertikal gekoppeltem Transform, dazu Pfeile UND
+ * Punkte für echtes „Durchklicken" (siehe Chat), nicht nur Wischen.
+ */
+.extras-carousel { display: none; }
+@media (max-width: 419px) {
+  .extras-carousel { display: block; margin-top: 8px; }
+  .extras-carousel-deck {
+    display: flex;
+    flex-direction: row;
+    gap: 14px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .extras-carousel-deck::-webkit-scrollbar { display: none; }
+  .extras-carousel-card {
+    flex: 0 0 86%;
+    max-width: 320px;
+    scroll-snap-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .extras-carousel-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin-top: 22px;
+  }
+  .extras-carousel-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--af-rule);
+    background: none;
+    color: var(--af-ink-body);
+    cursor: pointer;
+    transition: border-color .2s ease, color .2s ease;
+  }
+  .extras-carousel-arrow:hover { border-color: var(--af-ink); color: var(--af-ink); }
+  .extras-carousel-dots { display: flex; align-items: center; gap: 8px; }
+  .extras-carousel-dot {
+    width: 6px;
+    height: 6px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background-color: var(--af-ink);
+    opacity: .22;
+    cursor: pointer;
+    transition: opacity .3s ease, transform .3s ease;
+  }
+  .extras-carousel-dot.active { opacity: 1; transform: scale(1.3); }
 }
 
 /* ── Querformat auf flachen Displays ───────────────────────────────────────── */
@@ -1318,13 +1550,26 @@
 }
 
 @media (max-width: 767px) {
-  /* Diagramme untereinander statt nebeneinander — und Höhe freigeben,
-     sonst quetschen sich beide in die für eine Reihe gedachte Höhe */
-  .mock-charts {
-    grid-template-columns: minmax(0, 1fr) !important;
-    height: auto !important;
-  }
-  .mock-charts > * { min-height: 190px; }
+  /*
+   * Die frühere Regel hier ließ `.mock-charts` (u. a. die Kennzahlen-Reihe
+   * in StatTilesRow) auf 1 Spalte umbrechen und ihre Höhe freigeben
+   * (`height: auto`, `min-height: 190px` pro Kachel) — das setzt voraus, dass
+   * die Szene bei Bedarf wachsen darf. Genau das darf sie aber nicht:
+   * `.mock-root` ist `height: 100%; overflow: hidden` innerhalb eines starr
+   * 100svh hohen Sticky-Wrappers (siehe PedimentReveal/DashboardMock-
+   * Kommentar „der Überstand wird kommentarlos abgeschnitten") — vier
+   * übereinandergestapelte, je 190px hohe Kacheln sprengen dieses Budget
+   * um ein Vielfaches. Der Rest der Szene wurde dadurch stumm abgeschnitten
+   * und die Sticky-Sektion blieb dabei sichtbar hängen (siehe Chat: „hängt
+   * noch voll", „Scrolling funktioniert nicht" — kein Bug im Scroll-Trigger
+   * selbst, nur Inhalt, der sein festes Kartenraster gesprengt hat).
+   *
+   * Statt umzubrechen, bleibt die Kachel-Reihe deshalb IMMER mehrspaltig
+   * (StatTilesRow setzt `repeat(tiles.length, minmax(0,1fr))" ohnehin selbst,
+   * siehe DashboardMock) und schrumpft stattdessen über die längst
+   * vorhandenen `clamp()`-Werte an Schrift/Padding — dieselbe Strategie wie
+   * überall sonst im Mockup.
+   */
   /* engere Sperrung: die Labels sollen in eine Zeile passen */
   .mock-label { letter-spacing: .06em !important; }
   /* Kategorie-Spalte entfällt, Datum und Betrag tragen die Information */

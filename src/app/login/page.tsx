@@ -4,13 +4,14 @@ import { Logo } from '@/components/ui/logo'
 import { C, F, kicker } from '@/components/landing/landing-tokens'
 import './login.css'
 import { OliveVines } from '@/components/landing/olive-vines'
+import { PasswordField } from './PasswordField'
 
 interface LoginPageProps {
-  searchParams: Promise<{ error?: string; message?: string }>
+  searchParams: Promise<{ error?: string; message?: string; email?: string }>
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const { error, message } = await searchParams
+  const { error, message, email } = await searchParams
 
   return (
     <main
@@ -134,6 +135,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 required
                 autoComplete="email"
                 placeholder="name@example.com"
+                defaultValue={email ?? ''}
                 className="af-field"
               />
             </div>
@@ -145,15 +147,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               >
                 Passwort
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                autoComplete="current-password"
-                placeholder="••••••••"
-                className="af-field"
-              />
+              <PasswordField />
             </div>
 
             <button type="submit" formAction={signIn} className="af-submit" style={{ marginTop: '4px' }}>

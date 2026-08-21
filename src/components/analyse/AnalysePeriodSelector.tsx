@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useTransition } from 'react'
 
 const PERIODS = ['1M', '3M', '6M', '1J', 'Alles'] as const
@@ -10,6 +10,7 @@ interface Props { current: string }
 export function AnalysePeriodSelector({ current }: Props) {
   const router  = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [pending, startTransition] = useTransition()
 
   return (
@@ -18,7 +19,11 @@ export function AnalysePeriodSelector({ current }: Props) {
         <button
           key={p}
           onClick={() => startTransition(() => {
-            router.push(`${pathname}?period=${p}`, { scroll: false })
+            // Merge into the existing query so switching the period doesn't drop
+            // the account filter set by AnalyseAccountSelector (and vice versa).
+            const params = new URLSearchParams(searchParams)
+            params.set('period', p)
+            router.push(`${pathname}?${params.toString()}`, { scroll: false })
           })}
           className={`px-2.5 py-1 text-xs rounded font-medium transition-all duration-150 ${
             current === p

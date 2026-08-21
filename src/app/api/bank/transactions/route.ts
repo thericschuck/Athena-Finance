@@ -12,11 +12,14 @@ export async function GET(request: Request) {
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
   const { searchParams } = new URL(request.url)
-  const iban     = searchParams.get('iban')
-  const limit    = Math.min(parseInt(searchParams.get('limit') ?? '200', 10), 500)
-  const offset   = parseInt(searchParams.get('offset') ?? '0', 10)
-  const category = searchParams.get('category')
-  const q        = searchParams.get('q')
+  const iban       = searchParams.get('iban')
+  // Default/cap raised from 200/500: monthly aggregation and the balance-history chart need
+  // the account's full ledger, not just the most recent rows — a count cap silently truncates
+  // the oldest visible month and throws off the reconstructed running balance.
+  const limit      = Math.min(parseInt(searchParams.get('limit') ?? '3000', 10), 5000)
+  const offset     = parseInt(searchParams.get('offset') ?? '0', 10)
+  const categoryId = searchParams.get('categoryId')
+  const q          = searchParams.get('q')
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (supabase as any)
@@ -27,9 +30,9 @@ export async function GET(request: Request) {
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
-  if (iban)     query = query.eq('account_iban', iban)
-  if (category) query = query.eq('category', category)
-  if (q)        query = query.ilike('description', `%${q}%`)
+  if (iban)       query = query.eq('account_iban', iban)
+  if (categoryId) query = query.eq('category_id', categoryId)
+  if (q)          query = query.ilike('description', `%${q}%`)
 
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

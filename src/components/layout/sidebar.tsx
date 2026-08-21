@@ -15,6 +15,7 @@ import {
   X,
   Landmark,
   ShoppingCart,
+  Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -31,6 +32,7 @@ type NavItem  = {
 
 const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/assistant', label: 'Assistent', icon: Sparkles },
   {
     href: '/finance', label: 'Finance', icon: TrendingUp,
     children: [
@@ -60,10 +62,10 @@ const navItems: NavItem[] = [
     ],
   },
   { href: '/bank',                  label: 'Banking',              icon: Landmark     },
-  { href: '/lebenshaltungskosten', label: 'Lebenshaltungskosten',  icon: ShoppingCart },
+  { href: '/lebenshaltungskosten', label: 'Fixkosten',  icon: ShoppingCart },
   { href: '/depot',    label: 'Depot',         icon: Briefcase },
-  { href: '/history',  label: 'Historie',      icon: History   },
   { href: '/analyse',  label: 'Analyse',       icon: BarChart2 },
+  { href: '/history',  label: 'Historie',      icon: History   },
   { href: '/settings', label: 'Einstellungen', icon: Settings  },
 ]
 

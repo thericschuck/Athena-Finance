@@ -1,42 +1,34 @@
 'use client'
 
 import { useMemo } from 'react'
-import { useTheme } from 'next-themes'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts'
 import { useSettings } from '@/components/providers/settings-context'
 import { fmtCurrency } from '@/lib/format'
-import { CATEGORIES } from '@/lib/fints/categorize'
-import type { BankTransaction } from '@/types/bank'
+import type { BankTransaction, FinanceCategory } from '@/types/bank'
 
-// Categorical palette validated against this app's card surfaces (#ffffff / #0f172b) with
-// scripts/validate_palette.js from the dataviz skill: lightness band, chroma floor, CVD
-// separation (ΔE 24.2 light / 10.3 dark — legal with the direct labels used here) and
-// contrast all pass. The app's own --chart-1..5 tokens do NOT pass (fail lightness/chroma/CVD),
-// so this chart intentionally uses its own validated set instead of the theme's default ramp.
-const CATEGORICAL_LIGHT = ['#2a78d6', '#1baf7a', '#eda100', '#008300', '#4a3aa7']
-const CATEGORICAL_DARK  = ['#3987e5', '#199e70', '#c98500', '#008300', '#9085e9']
-const OTHER_LIGHT = '#898781'
-const OTHER_DARK  = '#6b7280'
+const UNCATEGORIZED_COLOR = '#93877a'
+const OTHER_COLOR = '#5b5147'
 
 const UNCATEGORIZED = 'Ohne Kategorie'
 const OTHER = 'Andere'
 const MAX_SLOTS = 5
 
-// Color follows the entity: every category name maps to the same hue every time,
-// regardless of which categories happen to be visible in the current filter.
-const CATEGORY_COLOR_INDEX = new Map<string, number>(
-  CATEGORIES.map((c, i) => [c, i % CATEGORICAL_LIGHT.length]),
-)
+interface Datum { name: string; value: number; color: string }
 
-interface Datum { name: string; value: number; colorIndex: number | null }
-
-function buildData(transactions: BankTransaction[]): Datum[] {
+// Uses each category's OWN color (set by the user under /finance/categories) instead of a
+// synthetic palette — these are the real Finance categories, so the bar should look the same
+// color here as it does everywhere else in the app.
+function buildData(transactions: BankTransaction[], categories: FinanceCategory[]): Datum[] {
+  const byId = new Map(categories.map(c => [c.id, c]))
   const totals = new Map<string, number>()
   for (const tx of transactions) {
     if (tx.amount >= 0) continue // expenses only
-    const key = tx.category ?? UNCATEGORIZED
+    // Orphaned category_id (category was deleted) falls back to the same bucket as
+    // "no category" — otherwise both would render under the "Ohne Kategorie" label
+    // as separate bars with a duplicate key.
+    const key = tx.category_id && byId.has(tx.category_id) ? tx.category_id : UNCATEGORIZED
     totals.set(key, (totals.get(key) ?? 0) + Math.abs(tx.amount))
   }
 
@@ -45,12 +37,15 @@ function buildData(transactions: BankTransaction[]): Datum[] {
   const rest = sorted.slice(MAX_SLOTS)
   const restSum = rest.reduce((s, [, v]) => s + v, 0)
 
-  const data: Datum[] = top.map(([name, value]) => ({
-    name,
-    value,
-    colorIndex: CATEGORY_COLOR_INDEX.get(name) ?? null,
-  }))
-  if (restSum > 0) data.push({ name: OTHER, value: restSum, colorIndex: null })
+  const data: Datum[] = top.map(([key, value]) => {
+    const cat = byId.get(key)
+    return {
+      name: cat ? `${cat.icon ?? ''} ${cat.name}`.trim() : UNCATEGORIZED,
+      value,
+      color: cat?.color ?? UNCATEGORIZED_COLOR,
+    }
+  })
+  if (restSum > 0) data.push({ name: OTHER, value: restSum, color: OTHER_COLOR })
 
   return data.sort((a, b) => a.value - b.value) // ascending so the biggest bar ends up on top
 }
@@ -63,14 +58,10 @@ function CustomYAxisTick({ x, y, payload }: { x: number; y: number; payload: { v
   )
 }
 
-export function BankCategoryChart({ transactions }: { transactions: BankTransaction[] }) {
+export function BankCategoryChart({ transactions, categories }: { transactions: BankTransaction[]; categories: FinanceCategory[] }) {
   const { locale } = useSettings()
-  const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === 'dark'
-  const categorical = isDark ? CATEGORICAL_DARK : CATEGORICAL_LIGHT
-  const otherColor  = isDark ? OTHER_DARK : OTHER_LIGHT
 
-  const data = useMemo(() => buildData(transactions), [transactions])
+  const data = useMemo(() => buildData(transactions, categories), [transactions, categories])
 
   if (data.length === 0) {
     return (
@@ -122,8 +113,8 @@ export function BankCategoryChart({ transactions }: { transactions: BankTransact
             }}
           />
           <Bar dataKey="value" radius={4} maxBarSize={22}>
-            {data.map((d) => (
-              <Cell key={d.name} fill={d.colorIndex === null ? otherColor : categorical[d.colorIndex]} />
+            {data.map((d, i) => (
+              <Cell key={`${d.name}-${i}`} fill={d.color} />
             ))}
           </Bar>
         </BarChart>

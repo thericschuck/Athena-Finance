@@ -265,5 +265,9 @@
       "c:\\Users\\eschu\\.claude",
       "C:\\Users\\eschu\\Desktop\\Unternehmensstruktur\\07-Projekte\\Privat\\athena-finance"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "code-review-graph",
+    "symdex"
+  ]
 }

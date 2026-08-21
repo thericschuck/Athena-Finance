@@ -11,7 +11,7 @@ import {
   TrendingUp, BarChart2, FileText, Target, Repeat2,
   Globe, ShieldCheck, Zap, ArrowRight,
   CandlestickChart, Wallet, Landmark, ShoppingCart,
-  Infinity as InfinityIcon, ChevronDown,
+  Infinity as InfinityIcon, ChevronDown, ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { C, F, SPACE, kicker } from './landing-tokens'
@@ -46,6 +46,123 @@ function useReducedMotion() {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   return mounted ? prefersReduced : false
+}
+
+/**
+ * Individueller Cursor für die Landing Page: eine feine Gold-Kontur mit
+ * kurzem Nachlauf plus ein präziser Punkt exakt auf der Zeigerposition —
+ * derselbe Goldton wie Kicker/Divider (`--af-gold-ink`), nur als Interaktion
+ * statt als Ornament. Wächst über Links/Buttons zu einem größeren, sanft
+ * gefüllten Ring auf (siehe HOVER_SELECTOR) und zieht sich beim Klicken
+ * kurz zusammen — dieselbe „schwere", gedämpfte Bewegungssprache wie der
+ * Rest der Seite (vgl. die Easing-Kurven in Reveal/PedimentReveal), hier nur
+ * an die Maus statt an Scroll gekoppelt.
+ *
+ * Zwei Elemente statt eines: der Punkt folgt der Maus 1:1 (Präzision), der
+ * Ring per Lerp mit Verzögerung (der eigentliche "Luxus"-Effekt). Beide
+ * Positionen laufen über direkt gesetzte `transform`-Inline-Styles in einer
+ * `requestAnimationFrame`-Schleife statt über React-State — ein Re-Render
+ * pro Mausbewegung/Frame wäre unnötig teuer und exakt die Art Animation, die
+ * man ohnehin nicht durch Reacts Reconciler schleusen will.
+ *
+ * Rendert IMMER dieselbe Markup-Struktur (kein SSR/Client-Zweig, siehe
+ * useReducedMotion-Kommentar oben) — Sichtbarkeit und „nur mit echter Maus"
+ * laufen rein über die Media Query `(hover: hover) and (pointer: fine)` in
+ * landing.css, kein Hydration-Risiko.
+ */
+function CustomCursor() {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const ringRef = useRef<HTMLDivElement>(null)
+  const dotRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    // Nur mit echter Maus aufwendig genug, um sich zu lohnen — auf Touch-
+    // Geräten gäbe es ohnehin nichts zu verfolgen (kein hover, kein hover-
+    // Zeiger). Dieselbe Bedingung wie die Sichtbarkeits-Media-Query in CSS.
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return
+    const root = rootRef.current
+    const ring = ringRef.current
+    const dot = dotRef.current
+    if (!root || !ring || !dot) return
+
+    const stillMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    let mouseX = window.innerWidth / 2
+    let mouseY = window.innerHeight / 2
+    let ringX = mouseX
+    let ringY = mouseY
+    let active = false
+    let raf = 0
+
+    const ringTransform = () =>
+      `translate(${ringX}px, ${ringY}px) translate(-50%, -50%) scale(${active ? 0.82 : 1})`
+
+    const onMove = (e: PointerEvent) => {
+      mouseX = e.clientX
+      mouseY = e.clientY
+      dot.style.transform = `translate(${mouseX}px, ${mouseY}px) translate(-50%, -50%)`
+      root.classList.add('is-visible')
+      // Reduzierte Bewegung: Ring folgt sofort statt über die Lerp-Schleife
+      // unten — kein separater rAF-Loop nötig, es gibt dann nichts zu tweenen.
+      if (stillMotion) {
+        ringX = mouseX
+        ringY = mouseY
+        ring.style.transform = ringTransform()
+      }
+    }
+    const onLeave = () => root.classList.remove('is-visible')
+
+    // Nachlauf des Rings: läuft dem Punkt in jedem Frame ein Stück näher —
+    // 0.16 ist bewusst kein Vorschlag, sondern erprobt: merklich weicher als
+    // 1:1, aber schnell genug, um nicht "hinterherzuhinken" zu wirken.
+    const tick = () => {
+      ringX += (mouseX - ringX) * 0.16
+      ringY += (mouseY - ringY) * 0.16
+      ring.style.transform = ringTransform()
+      raf = requestAnimationFrame(tick)
+    }
+
+    const HOVER_SELECTOR = 'a, button, [role="button"], input, select, textarea, summary'
+    const onOver = (e: PointerEvent) => {
+      if ((e.target as Element)?.closest?.(HOVER_SELECTOR)) {
+        ring.classList.add('is-hover')
+        dot.classList.add('is-hidden')
+      }
+    }
+    const onOut = (e: PointerEvent) => {
+      if ((e.target as Element)?.closest?.(HOVER_SELECTOR)) {
+        ring.classList.remove('is-hover')
+        dot.classList.remove('is-hidden')
+      }
+    }
+    const onDown = () => { active = true }
+    const onUp = () => { active = false }
+
+    window.addEventListener('pointermove', onMove)
+    document.documentElement.addEventListener('pointerleave', onLeave)
+    document.addEventListener('pointerover', onOver)
+    document.addEventListener('pointerout', onOut)
+    document.addEventListener('pointerdown', onDown)
+    document.addEventListener('pointerup', onUp)
+    if (!stillMotion) raf = requestAnimationFrame(tick)
+
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      document.documentElement.removeEventListener('pointerleave', onLeave)
+      document.removeEventListener('pointerover', onOver)
+      document.removeEventListener('pointerout', onOut)
+      document.removeEventListener('pointerdown', onDown)
+      document.removeEventListener('pointerup', onUp)
+      cancelAnimationFrame(raf)
+    }
+  }, [])
+
+  return (
+    <div ref={rootRef} className="af-cursor" aria-hidden>
+      <div ref={ringRef} className="af-cursor-ring" />
+      <div ref={dotRef} className="af-cursor-dot" />
+    </div>
+  )
 }
 
 // ── Bewegung ──────────────────────────────────────────────────────────────────
@@ -1555,14 +1672,31 @@ function deckGeometry(d: number) {
   return { x: -38 + d * 10, y: 16, scale: 0.9, rotate: -2.6, opacity: 0.16, z: 40 + d }
 }
 
-function AnalyseDeck({ active, onSelect }: { active: number; onSelect: (i: number) => void }) {
+function AnalyseDeck({
+  active,
+  onSelect,
+  registerContainerRef,
+  registerCardRef,
+}: {
+  active: number
+  onSelect: (i: number) => void
+  /**
+   * Nur für die mobile Swipe-Fassung relevant (siehe .analyse-deck unter
+   * 1024px in landing.css und der IntersectionObserver in AnalyseReveal) —
+   * Zugriff auf das Karussell von außen: zum Scroll-zu-Karte per Listenklick
+   * und zum Beobachten, welche Karte gerade zentriert im Bild steht. Am
+   * Desktop ungenutzt (die Karten liegen dort übereinander, kein Karussell).
+   */
+  registerContainerRef?: (el: HTMLDivElement | null) => void
+  registerCardRef?: (i: number, el: HTMLDivElement | null) => void
+}) {
   const still = useReducedMotion()
   // Vor dem ersten Schritt liegt bereits Karte 01 vorn — der Stapel ist so
   // schon beim Heranscrollen als Vorschau lesbar.
   const front = Math.max(0, active)
 
   return (
-    <div className="analyse-deck">
+    <div className="analyse-deck" ref={registerContainerRef}>
       {ANALYSE_CARDS.map((card, i) => {
         const d = i - front
         const g = deckGeometry(d)
@@ -1570,6 +1704,7 @@ function AnalyseDeck({ active, onSelect }: { active: number; onSelect: (i: numbe
         return (
           <m.div
             key={card.title}
+            ref={(el: HTMLDivElement | null) => registerCardRef?.(i, el)}
             className="analyse-deck-card"
             animate={{ x: g.x, y: g.y, scale: g.scale, rotate: g.rotate, opacity: g.opacity }}
             transition={still ? { duration: 0 } : { type: 'spring', stiffness: 210, damping: 26, mass: 0.8 }}
@@ -1650,6 +1785,11 @@ function AnalyseReveal() {
   const leadRef = useRef<HTMLParagraphElement>(null)
   const [step, setStep] = useState(-1)
   const stepRef = useRef(-1)
+  // Nur für das mobile Swipe-Karussell (siehe .analyse-deck unter 1024px in
+  // landing.css) — Container- und Karten-Refs für IntersectionObserver plus
+  // Scroll-zu-Karte per Listenklick (siehe jumpToStep unten).
+  const deckContainerRef = useRef<HTMLDivElement | null>(null)
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([])
 
   useEffect(() => {
     if (still) return
@@ -1710,21 +1850,74 @@ function AnalyseReveal() {
     return () => mm.revert()
   }, [still])
 
+  /*
+   * Mobiles Swipe-Karussell (siehe .analyse-deck unter 1024px in
+   * landing.css): ohne die gepinnte Vertikal-Erzählung übernimmt ein
+   * IntersectionObserver, welche Karte gerade zentriert im sichtbaren
+   * Ausschnitt des horizontalen Containers steht, und schreibt das in
+   * `step` — dieselbe Variable, die am Desktop GSAP treibt. Die Liste links
+   * hebt den passenden Punkt dadurch genauso hervor wie dort, ganz ohne
+   * eigene Styling-Logik nur für den mobilen Fall.
+   *
+   * Eigener Effekt statt im GSAP-Effekt oben: unabhängig von `still`, weil
+   * reines Scroll-Beobachten keine Bewegungs-Animation ist, die
+   * `prefers-reduced-motion` einschränken müsste — nur die Kartenreihe selbst
+   * bleibt dort per CSS die einfache Liste (siehe landing.css), kein
+   * Karussell, das man beobachten müsste.
+   */
+  useEffect(() => {
+    const mm = gsap.matchMedia()
+    mm.add(`(max-width: ${ANALYSE_MIN_WIDTH - 1}px)`, () => {
+      const container = deckContainerRef.current
+      if (!container) return
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const candidates = entries
+            .map((entry) => ({ i: cardRefs.current.findIndex((el) => el === entry.target), ratio: entry.intersectionRatio }))
+            .filter((c) => c.i !== -1)
+          const best = candidates.reduce<{ i: number; ratio: number } | null>(
+            (acc, c) => (!acc || c.ratio > acc.ratio ? c : acc),
+            null,
+          )
+          if (best && best.ratio > 0.6) setStep(best.i)
+        },
+        { root: container, threshold: [0.6, 0.75, 0.9, 1] },
+      )
+      cardRefs.current.forEach((el) => el && observer.observe(el))
+
+      return () => observer.disconnect()
+    })
+
+    return () => mm.revert()
+  }, [])
+
   /**
    * Springt zu der Scrollposition, an der Schritt `i` vorn steht — gezielt in
    * dessen Mitte, damit man nicht auf der Kante zum nächsten landet.
    *
-   * `scrollDistance <= 0` erkennt zuverlässig, ob die Szene überhaupt gepinnt
-   * läuft: unterhalb von ANALYSE_MIN_WIDTH und bei reduzierter Bewegung
-   * bleibt .analyse-scene per CSS auf `height: auto` (siehe landing.css) und
-   * ist nie höher als der Viewport — dort sind ohnehin alle vier Karten
-   * gleichzeitig zu sehen, ein Sprung ergäbe keinen Sinn.
+   * Unterhalb ANALYSE_MIN_WIDTH läuft statt der gepinnten Vertikal-Erzählung
+   * das horizontale Swipe-Karussell (siehe oben) — ein Sprung auf der SEITE
+   * ergäbe dort keinen Sinn, stattdessen scrollt dieser Zweig das Karussell
+   * selbst zur passenden Karte. Erkennung explizit über `matchMedia`, NICHT
+   * über `scene.offsetHeight <= window.innerHeight`: Text plus Liste plus
+   * Karussell sind zusammen oft schon allein höher als ein Handy-Viewport,
+   * `.analyse-scene` bleibt dort trotzdem auf `height: auto` (siehe
+   * landing.css) — die Höhen-Heuristik lieferte in genau diesem Fall ein
+   * falsches Positiv und hielt die Szene fälschlich für gepinnt.
    */
   const jumpToStep = (i: number) => {
     const scene = sceneRef.current
     if (!scene) return
+    if (window.matchMedia(`(max-width: ${ANALYSE_MIN_WIDTH - 1}px)`).matches) {
+      cardRefs.current[i]?.scrollIntoView({ behavior: still ? 'auto' : 'smooth', inline: 'center', block: 'nearest' })
+      return
+    }
     const scrollDistance = scene.offsetHeight - window.innerHeight
-    if (scrollDistance <= 0) return
+    if (scrollDistance <= 0) {
+      cardRefs.current[i]?.scrollIntoView({ behavior: still ? 'auto' : 'smooth', inline: 'center', block: 'nearest' })
+      return
+    }
     const sceneTop = scene.getBoundingClientRect().top + window.scrollY
     const targetVh = (i + 0.5) * ANALYSE_STEP_VH
     scrollToY(sceneTop + (targetVh / ANALYSE_SCROLL_VH) * scrollDistance)
@@ -1848,7 +2041,12 @@ function AnalyseReveal() {
           </Reveal>
 
           <Reveal delay={0.1} className="split-card">
-            <AnalyseDeck active={step} onSelect={jumpToStep} />
+            <AnalyseDeck
+              active={step}
+              onSelect={jumpToStep}
+              registerContainerRef={(el) => { deckContainerRef.current = el }}
+              registerCardRef={(i, el) => { cardRefs.current[i] = el }}
+            />
           </Reveal>
         </div>
       </div>
@@ -2677,7 +2875,7 @@ const FEATURES: Feature[] = [
     tags: ['FinTS', 'HBCI'],
   },
   {
-    title: 'Lebenshaltungskosten',
+    title: 'Fixkosten',
     desc: 'Berechnet das nötige Mindestgehalt auf Basis realer Lebenshaltungskosten.',
     icon: <ShoppingCart size={17} strokeWidth={1.6} />,
     tags: ['Budget', 'Kalkulation'],
@@ -3053,6 +3251,147 @@ const EXTRAS = [
   { icon: <Zap size={18} strokeWidth={1.5} />, title: 'Echtzeitdaten', desc: 'Preise und Portfoliowerte aktualisieren sich automatisch.' },
 ]
 
+/** Zeit zwischen zwei automatischen Weiterschaltungen (siehe ExtrasCarousel). */
+const EXTRAS_AUTOPLAY_MS = 4500
+/** Pause nach einer manuellen Interaktion (Pfeil/Punkt/Wisch), bevor die
+    Automatik wieder übernimmt — verhindert, dass der Autoplay direkt über
+    eine gerade erst selbst gewählte Karte hinwegläuft. */
+const EXTRAS_RESUME_MS = 6000
+
+/**
+ * Horizontales Karussell für „Weitere Eigenschaften" auf sehr schmalen
+ * Displays (siehe .extras-carousel unter 420px in landing.css — darüber
+ * bleibt das bestehende Karten-Raster unverändert, siehe .g-extras). Anders
+ * als die Analyse-Sektion braucht es hier keine gepinnte Vertikal-Erzählung:
+ * die vier Punkte sind reine Zusatzinfos, kein Inhalt, dessen vollständiges
+ * Sehen erzwungen werden müsste — Klicken/Wischen UND ein sanfter Autoplay
+ * genügen (siehe Chat: „horizontal zum Durchklicken … aber so, dass sie von
+ * alleine auch durchwechseln").
+ *
+ * Autoplay pausiert bei jeder manuellen Interaktion (Pfeil, Punkt, Wisch) für
+ * EXTRAS_RESUME_MS und respektiert `prefers-reduced-motion` (kein Autoplay,
+ * Klicken/Wischen bleibt aber voll funktionsfähig) — automatisch weiterlaufende
+ * Inhalte ohne Pause-Möglichkeit sind ein bekanntes A11y-Problem (WCAG 2.2.2).
+ */
+function ExtrasCarousel() {
+  const still = useReducedMotion()
+  const [active, setActive] = useState(0)
+  const activeRef = useRef(0)
+  const deckRef = useRef<HTMLDivElement | null>(null)
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([])
+  const autoplayRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const resumeRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const scrollToIndex = (i: number) => {
+    cardRefs.current[i]?.scrollIntoView({ behavior: still ? 'auto' : 'smooth', inline: 'center', block: 'nearest' })
+  }
+
+  const stopAutoplay = () => {
+    if (autoplayRef.current) clearInterval(autoplayRef.current)
+    autoplayRef.current = null
+  }
+  const startAutoplay = () => {
+    if (still) return
+    stopAutoplay()
+    autoplayRef.current = setInterval(() => {
+      scrollToIndex((activeRef.current + 1) % EXTRAS.length)
+    }, EXTRAS_AUTOPLAY_MS)
+  }
+  // Nach eigenem Klick/Wisch: Automatik kurz aussetzen statt sofort wieder
+  // querzuschalten, dann wie gewohnt fortsetzen.
+  const onManualInteract = () => {
+    stopAutoplay()
+    if (resumeRef.current) clearTimeout(resumeRef.current)
+    resumeRef.current = setTimeout(startAutoplay, EXTRAS_RESUME_MS)
+  }
+
+  // Welche Karte gerade zentriert im Bild steht — dieselbe Technik wie beim
+  // Analyse-Karussell (siehe AnalyseReveal): treibt sowohl die Punkte-Anzeige
+  // als auch, über `activeRef`, das Ziel des nächsten Autoplay-Schritts.
+  useEffect(() => {
+    const container = deckRef.current
+    if (!container) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const candidates = entries
+          .map((entry) => ({ i: cardRefs.current.findIndex((el) => el === entry.target), ratio: entry.intersectionRatio }))
+          .filter((c) => c.i !== -1)
+        const best = candidates.reduce<{ i: number; ratio: number } | null>(
+          (acc, c) => (!acc || c.ratio > acc.ratio ? c : acc),
+          null,
+        )
+        if (best && best.ratio > 0.6) {
+          activeRef.current = best.i
+          setActive(best.i)
+        }
+      },
+      { root: container, threshold: [0.6, 0.75, 0.9, 1] },
+    )
+    cardRefs.current.forEach((el) => el && observer.observe(el))
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    startAutoplay()
+    return () => {
+      stopAutoplay()
+      if (resumeRef.current) clearTimeout(resumeRef.current)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [still])
+
+  return (
+    <div className="extras-carousel">
+      <div className="extras-carousel-deck" ref={deckRef} onPointerDown={onManualInteract}>
+        {EXTRAS.map((f, i) => (
+          <div key={f.title} className="extras-carousel-card" ref={(el) => { cardRefs.current[i] = el }}>
+            <span style={{ color: C.oliveDeep }}>{f.icon}</span>
+            <div style={{ height: '1px', backgroundColor: C.rule }} />
+            <h4 style={{ fontFamily: F.display, fontSize: '17px', fontWeight: 500, color: C.ink, margin: 0 }}>
+              {f.title}
+            </h4>
+            <p style={{ fontFamily: F.serif, fontSize: '13px', lineHeight: 1.75, color: C.inkBody, margin: 0 }}>
+              {f.desc}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="extras-carousel-controls">
+        <button
+          type="button"
+          className="extras-carousel-arrow"
+          aria-label="Vorherige Eigenschaft"
+          onClick={() => { onManualInteract(); scrollToIndex((activeRef.current - 1 + EXTRAS.length) % EXTRAS.length) }}
+        >
+          <ChevronLeft size={16} strokeWidth={1.8} />
+        </button>
+        <div className="extras-carousel-dots" role="tablist" aria-label="Eigenschaft wählen">
+          {EXTRAS.map((f, i) => (
+            <button
+              key={f.title}
+              type="button"
+              role="tab"
+              aria-selected={active === i}
+              aria-label={`Zu „${f.title}" springen`}
+              className={`extras-carousel-dot${active === i ? ' active' : ''}`}
+              onClick={() => { onManualInteract(); scrollToIndex(i) }}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          className="extras-carousel-arrow"
+          aria-label="Nächste Eigenschaft"
+          onClick={() => { onManualInteract(); scrollToIndex((activeRef.current + 1) % EXTRAS.length) }}
+        >
+          <ChevronRight size={16} strokeWidth={1.8} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 const SHELL: React.CSSProperties = {
   maxWidth: '1160px',
   margin: '0 auto',
@@ -3233,6 +3572,7 @@ export function LandingClient() {
         overflowX: 'clip',
       }}
     >
+      <CustomCursor />
       <SectionProgressBar />
 
       {/*
@@ -3427,7 +3767,12 @@ export function LandingClient() {
               Portfolio · Ausgaben · Verträge · Strategie
             </p>
 
-            <div className="af-rise" style={{ animationDelay: '.46s', marginTop: 'clamp(26px, 4vh, 48px)' }}>
+            {/* Unter 640px aus (siehe .hero-lozenge in landing.css) — der Steg
+                aus Linie + Raute sitzt dort direkt auf dem Verlaufs-Auslauf der
+                Kuppel (siehe .hero-dome) statt wie am Desktop auf ruhigem
+                Parchment, und liest sich in diesem Übergang als überflüssige
+                zweite Linie neben dem eigentlichen Bühnenrand (siehe Chat). */}
+            <div className="af-rise hero-lozenge" style={{ animationDelay: '.46s', marginTop: 'clamp(26px, 4vh, 48px)' }}>
               <Lozenge />
             </div>
           </div>
@@ -3706,6 +4051,11 @@ export function LandingClient() {
                 </Reveal>
               ))}
             </div>
+            {/* Unter 420px läuft statt des Rasters oben ein horizontales
+                Karussell (siehe .extras-carousel in landing.css und
+                ExtrasCarousel-Komponente) — beide immer gemountet, per CSS
+                gegeneinander ausgeblendet (siehe Chat). */}
+            <ExtrasCarousel />
           </div>
         </section>
       </div>
