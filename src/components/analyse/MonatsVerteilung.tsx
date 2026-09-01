@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import {
-  ComposedChart, Bar, Area, XAxis, YAxis, CartesianGrid, ReferenceLine,
+  ComposedChart, Bar, Area, XAxis, YAxis, CartesianGrid, ReferenceLine, ReferenceDot,
   ResponsiveContainer, Tooltip, Cell,
 } from 'recharts'
 import { useSettings } from '@/components/providers/settings-context'
@@ -198,6 +198,8 @@ export function MonatsVerteilung({ history, current }: Props) {
 
   const med        = median(values)
   const medianBin  = bins.find(b => med >= b.from && med <= b.to)
+  // Die Klasse, in die der laufende Monat fällt — Ankerpunkt für den Marker auf der Kurve.
+  const currentBin = bins.find(b => b.isCurrent) ?? null
   const percentile = currentValue != null ? computePercentileRank(values, currentValue) : null
   const countBelow = currentValue != null ? values.filter(v => v < currentValue).length : null
   // Auffällig heißt „liegt am Rand der eigenen Historie" — in beide Richtungen
@@ -266,17 +268,51 @@ export function MonatsVerteilung({ history, current }: Props) {
           </Bar>
           {/* Die KDE liegt als gestrichelte Linie über den Balken: die Balken
               sind die gezählten Monate, die Kurve die geschätzte Form dahinter
-              — gestrichelt, damit die beiden nicht verwechselt werden. */}
+              — gestrichelt, damit die beiden nicht verwechselt werden.
+              Kräftiger als vorher (2 px, "3 3", kein Fill): über den Balken in
+              derselben Farbe war die feine Strichlinie kaum auszumachen. Der
+              lange Strich und die auslaufende Fläche darunter machen sie als
+              Kurve lesbar, ohne die Balken zu übermalen — daher nur 14 % Deckung
+              am Kurvenrand und der Verlauf gegen 0 nach unten. */}
+          <defs>
+            <linearGradient id={`kde-fill-${mode}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stopColor={color} stopOpacity={0.14} />
+              <stop offset="100%" stopColor={color} stopOpacity={0} />
+            </linearGradient>
+          </defs>
           <Area
             type="monotone"
             dataKey="kurve"
             stroke={color}
-            strokeWidth={2}
-            strokeDasharray="3 3"
-            fill="none"
+            strokeWidth={2.5}
+            strokeDasharray="7 4"
+            fill={`url(#kde-fill-${mode})`}
             dot={false}
             activeDot={false}
           />
+          {/* Der laufende Monat als Punkt AUF der Kurve, nicht nur als umrandeter
+              Balken: die Umrandung ging in derselben Farbe wie die Füllung unter,
+              vor allem bei nur einem Monat in der Klasse. Der Punkt sitzt auf der
+              Klassenmitte, also exakt auf einem Stützpunkt der Kurve — die X-Achse
+              ist kategorial, feiner als die Klasse geht es nicht. Der weiße Ring
+              (--card) hebt ihn von Balken und Kurve ab. */}
+          {currentBin && (
+            <ReferenceDot
+              x={currentBin.label}
+              y={currentBin.kurve}
+              r={5}
+              fill={color}
+              stroke="var(--card)"
+              strokeWidth={2}
+              label={currentBin.label === medianBin?.label ? undefined : {
+                value: 'Dieser Monat',
+                position: 'top',
+                fontSize: 10,
+                fontWeight: 600,
+                fill: 'var(--foreground)',
+              }}
+            />
+          )}
           {medianBin && (
             <ReferenceLine
               x={medianBin.label}
@@ -299,12 +335,17 @@ export function MonatsVerteilung({ history, current }: Props) {
           Monate je Klasse
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block w-3.5 border-t-2 border-dashed" style={{ borderColor: color }} />
+          <span className="inline-block w-4 border-t-[2.5px] border-dashed" style={{ borderColor: color }} />
           Dichtekurve
         </span>
         {currentValue != null && (
           <span className="flex items-center gap-1.5">
-            <span className="inline-block w-2.5 h-2.5 rounded-sm border-[1.5px] border-foreground" />
+            {/* Punkt auf der Kurve + umrandeter Balken meinen dieselbe Klasse — ein
+                Legendeneintrag für beides. */}
+            <span
+              className="inline-block w-2.5 h-2.5 rounded-full ring-2 ring-card"
+              style={{ backgroundColor: color }}
+            />
             Dieser Monat
           </span>
         )}

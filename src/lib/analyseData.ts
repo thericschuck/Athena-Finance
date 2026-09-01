@@ -42,7 +42,13 @@ export interface MonthlyComparison {
   month:     string
   einnahmen: number
   ausgaben:  number
-  sparquote: number
+  /**
+   * Gespartes in Prozent der Einnahmen. `null` bei einem Monat ohne Einnahmen —
+   * dann ist die Quote nicht definiert (Division durch 0) und die Linie in
+   * MonatsVergleich bekommt eine Lücke. Vorher stand dort 0, was im Chart wie
+   * eine schwarze Null aussah, obwohl in dem Monat nur Geld rausging.
+   */
+  sparquote: number | null
 }
 
 /** Umschaltbare Sicht der Analyse-Karten (Heatmap, Verteilung). */

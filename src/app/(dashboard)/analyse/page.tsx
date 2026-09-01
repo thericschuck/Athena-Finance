@@ -161,6 +161,7 @@ function buildCashflow(txns: TxnRow[]): CashflowEvent[] {
 // income/expense/sparquote shape directly from the (account-filtered) transactions.
 function buildMonthlyComparisonFromTxns(
   txns: Pick<TxnRow, 'date' | 'type' | 'amount' | 'amount_base'>[],
+  currentMonthKey: string,
 ): MonthlyComparison[] {
   const map = new Map<string, { income: number; expenses: number }>()
   for (const t of txns) {
@@ -175,7 +176,7 @@ function buildMonthlyComparisonFromTxns(
   const rows: MonthlySummaryRow[] = [...map.entries()].map(([month, v]) => ({
     month, total_income: v.income, total_expenses: v.expenses,
   }))
-  return buildMonthlyComparison(rows)
+  return buildMonthlyComparison(rows, currentMonthKey)
 }
 
 // Historie für die Verteilungs-Karte — bis zu 24 ABGESCHLOSSENE Monate, der
@@ -259,8 +260,18 @@ function currentMonthTotals(txns: TxnRow[], currentMonthKey: string): MonthTotal
   }
 }
 
-function buildMonthlyComparison(rows: MonthlySummaryRow[]): MonthlyComparison[] {
+// Der laufende Monat fliegt raus — dieselbe Regel wie in buildMonthSeries, hier aber aus
+// einem zweiten Grund: `monthly_finance_summary` wird per Cron geschrieben und hat die Zeile
+// für den laufenden Monat noch nicht, der Transaktionspfad kennt sie sofort. Ohne den Filter
+// zeigte dieselbe Karte je nach Konten-Auswahl unterschiedliche Monate — und am Monatsanfang
+// eine Sparquote aus zwei Buchungen (1.9.: 80 € ein, 174 € aus, also −117 %), die den ganzen
+// Achsenbereich verzogen hat.
+function buildMonthlyComparison(
+  rows: MonthlySummaryRow[],
+  currentMonthKey: string,
+): MonthlyComparison[] {
   return [...rows]
+    .filter(r => r.month.slice(0, 7) !== currentMonthKey)
     .sort((a, b) => a.month.localeCompare(b.month))
     .slice(-6)
     .map(r => {
@@ -270,9 +281,12 @@ function buildMonthlyComparison(rows: MonthlySummaryRow[]): MonthlyComparison[] 
       // NEGATIVE Sparquote. Auf 0 % gezogen sah der Dezember 2025 (881,50 € Einnahmen,
       // 3.874,60 € Ausgaben, also −339 %) aus wie eine schwarze Null. Die Achse in
       // MonatsVergleich skaliert jetzt passend mit.
+      // `null` statt 0 bei einem Monat ohne Einnahmen: eine Sparquote von „0 %" behauptet
+      // eine ausgeglichene Bilanz, tatsächlich ist die Quote ohne Einnahmen gar nicht
+      // definiert. Die Linie bekommt an der Stelle eine Lücke (siehe MonthlyComparison).
       const sparquote = r.total_income > 0
         ? Math.round(((r.total_income - r.total_expenses) / r.total_income) * 100)
-        : 0
+        : null
       return {
         month,
         einnahmen: Math.round(r.total_income),
@@ -424,8 +438,8 @@ export default async function AnalysePage({
   const monthlyRows    = (monthlyRes?.data ?? []) as MonthlySummaryRow[]
   const monthlyTxns    = (monthlyTxnRes?.data ?? []) as Pick<TxnRow, 'date' | 'type' | 'amount' | 'amount_base'>[]
   const monthlyComparison = hasAccountFilter
-    ? buildMonthlyComparisonFromTxns(monthlyTxns)
-    : buildMonthlyComparison(monthlyRows)
+    ? buildMonthlyComparisonFromTxns(monthlyTxns, currentMonthKey)
+    : buildMonthlyComparison(monthlyRows, currentMonthKey)
   const monthSeries = hasAccountFilter
     ? buildMonthSeriesFromTxns(monthlyTxns, currentMonthKey)
     : buildMonthSeries(monthlyRows, currentMonthKey)
