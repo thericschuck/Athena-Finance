@@ -1,8 +1,8 @@
 'use client'
 
 import { useActionState } from 'react'
-import { upsertIncomeTarget } from '@/app/(dashboard)/lebenshaltungskosten/actions'
-import type { IncomeTarget } from '@/app/(dashboard)/lebenshaltungskosten/page'
+import { upsertIncomeTarget } from '@/app/(dashboard)/finance/budget/actions'
+import type { IncomeTarget } from '@/app/(dashboard)/finance/budget/page'
 
 interface Props {
   target: IncomeTarget | null

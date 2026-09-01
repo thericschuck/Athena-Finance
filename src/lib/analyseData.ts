@@ -45,6 +45,23 @@ export interface MonthlyComparison {
   sparquote: number
 }
 
+/** Umschaltbare Sicht der Analyse-Karten (Heatmap, Verteilung). */
+export type AnalyseMode = 'ausgaben' | 'einnahmen' | 'guv'
+
+/** Monatsreihen für die Verteilungs-Karte — je Modus ein Wert pro abgeschlossenem Monat. */
+export interface MonthSeries {
+  ausgaben:  number[]
+  einnahmen: number[]
+  guv:       number[]
+}
+
+/** Die drei Summen des laufenden Monats, gegen die Historie verglichen wird. */
+export interface MonthTotals {
+  ausgaben:  number
+  einnahmen: number
+  guv:       number
+}
+
 export interface CategoryDatum {
   name:  string
   value: number  // positiv = Einnahme, negativ = Ausgabe

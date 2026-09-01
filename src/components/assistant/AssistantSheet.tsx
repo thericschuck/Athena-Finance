@@ -15,6 +15,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { AthenaAvatar } from '@/components/assistant/AthenaAvatar'
+import { AVOID_SELECTOR, useAvoidOverlap } from '@/lib/hooks/use-avoid-overlap'
 import { AthenaChat, erzeugeChat } from '@/components/assistant/AthenaChat'
 import { SessionPicker } from '@/components/assistant/SessionPicker'
 import type { PendingActionStatus } from '@/components/assistant/PendingActionCard'
@@ -49,6 +50,12 @@ export function AssistantSheet() {
   const [sitzung, setSitzung] = useState<Sitzung>(() => ({ chat: erzeugeChat() }))
   const [wechselt, setWechselt] = useState(false)
 
+  // Der Knopf weicht nach oben aus, wenn unter ihm etwas liegt, das anklickbar bleiben muss
+  // (Blätterleisten markieren sich dafür selbst). Vorher deckte er auf der Transaktions-
+  // seite „Weiter" und „Letzte Seite" ab — der Klick landete auf Athena statt auf dem Knopf
+  // darunter, und das sah aus, als würde das Blättern nicht funktionieren.
+  const { ref: schwebeRef, lift } = useAvoidOverlap<HTMLDivElement>(AVOID_SELECTOR)
+
   async function wechsle(id: string) {
     if (id === sitzung.chat.id) return
     setWechselt(true)
@@ -66,20 +73,30 @@ export function AssistantSheet() {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        {/* Der Auslöser zeigt Athena selbst statt eines generischen
-            Funkel-Icons — dasselbe Gesicht wie an jeder ihrer Antworten, damit
-            der Knopf nicht nach „irgendeine KI" aussieht. `p-0`, weil das
-            Medaillon die Fläche ganz ausfüllen soll. */}
-        <Button
-          size="icon-lg"
-          variant="outline"
-          className="fixed bottom-5 right-5 z-40 overflow-hidden rounded-full p-0 shadow-lg transition-transform hover:scale-105"
-          aria-label="Athena öffnen"
-        >
-          <AthenaAvatar size={40} />
-        </Button>
-      </SheetTrigger>
+      {/* Die Positionierung liegt auf dem Rahmen, nicht auf dem Knopf: die Anhebung ist
+          ein `translateY`, und der Knopf braucht seine eigene transform-Klasse für den
+          Hover-Effekt. Beide auf demselben Element würden sich gegenseitig überschreiben —
+          ein Inline-Style schlägt jede Utility-Klasse. */}
+      <div
+        ref={schwebeRef}
+        style={{ transform: lift ? `translateY(-${lift}px)` : undefined }}
+        className="fixed bottom-5 right-5 z-40 transition-transform duration-300 ease-out"
+      >
+        <SheetTrigger asChild>
+          {/* Der Auslöser zeigt Athena selbst statt eines generischen
+              Funkel-Icons — dasselbe Gesicht wie an jeder ihrer Antworten, damit
+              der Knopf nicht nach „irgendeine KI" aussieht. `p-0`, weil das
+              Medaillon die Fläche ganz ausfüllen soll. */}
+          <Button
+            size="icon-lg"
+            variant="outline"
+            className="overflow-hidden rounded-full p-0 shadow-lg transition-transform hover:scale-105"
+            aria-label="Athena öffnen"
+          >
+            <AthenaAvatar size={40} />
+          </Button>
+        </SheetTrigger>
+      </div>
 
       {/* `showCloseButton={false}`: das eingebaute X sitzt absolut auf `top-4 right-4` und lag
           damit genau auf dem Vergrößern-Knopf. Statt beide gegeneinander zu verschieben, wird

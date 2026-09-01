@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
-import type { BudgetCategory, BudgetItem, IncomeTarget } from '@/app/(dashboard)/lebenshaltungskosten/page'
+import type { BudgetCategory, BudgetItem, IncomeTarget } from '@/app/(dashboard)/finance/budget/page'
 import { OverviewTab } from './OverviewTab'
 import { KategorienTab } from './KategorienTab'
 import { EinstellungenTab } from './EinstellungenTab'
@@ -27,9 +27,9 @@ export function LebenshaltungskostenClient({ categories, items, target }: Props)
   return (
     <div className="p-8 space-y-6 max-w-5xl">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Fixkosten</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Budget</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          Budget-Planung, Produktverbrauch und Mindestgehalt-Kalkulation
+          Lebenshaltungskosten, Produktverbrauch und Mindestgehalt-Kalkulation
         </p>
       </div>
 

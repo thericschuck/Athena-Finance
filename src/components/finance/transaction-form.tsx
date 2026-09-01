@@ -38,7 +38,7 @@ import {
   updateTransactionCategory,
   deleteTransaction,
   type TransactionActionState,
-} from '@/app/(dashboard)/finance/transactions/actions'
+} from '@/app/(dashboard)/finance/(transaktionen)/transactions/actions'
 import { Database } from '@/types/database'
 
 type Account = Pick<

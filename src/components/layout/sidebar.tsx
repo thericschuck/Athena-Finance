@@ -5,15 +5,11 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
   TrendingUp,
-  CircleDollarSign,
-  Target,
-  Briefcase,
-  History,
+  LineChart,
   BarChart2,
   Settings,
   LogOut,
   X,
-  ShoppingCart,
   Sparkles,
   Gem,
 } from 'lucide-react'
@@ -24,43 +20,65 @@ import { signOut } from '@/app/login/actions'
 import { useSettings } from '@/components/providers/settings-context'
 import { MeanderFrieze } from '@/components/landing/olive-vines'
 
-type NavChild = { href: string; label: string }
+type NavChild = {
+  href:   string
+  label:  string
+  /**
+   * Prefixe für die Aktiv-Erkennung, falls sie nicht am `href` hängen: „Planung"
+   * zeigt auf /finance/contracts, soll aber auch auf Schulden und Sparzielen
+   * leuchten. Gesetzt, ersetzt die Liste den `href`-Vergleich.
+   */
+  match?: string[]
+}
 type NavItem  = {
   href:      string
   label:     string
   icon:      React.ElementType
   children?: NavChild[]
+  /**
+   * Zusätzliche Prefixe, unter denen der Bereich als aktiv gilt. Nötig für
+   * Gruppen, deren Kinder auf fremde Pfade zeigen („Investing" → /crypto,
+   * /depot, /strategy).
+   */
+  match?:    string[]
 }
 
 const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/assistant', label: 'Athena', icon: Sparkles },
+  // Die sechs Finance-Punkte waren nicht gleichrangig: Konten und Transaktionen
+  // sind Alltag, Verträge/Schulden/Sparziele sind Vorhaben mit Zukunftsbezug,
+  // Kategorien ist Stammdatenpflege. Jetzt vier Einträge, die tiefere Ebene
+  // hängt an der Tab-Leiste der jeweiligen Route-Group (siehe
+  // finance/(transaktionen)/ und finance/(planung)/layout.tsx).
   {
     href: '/finance', label: 'Finance', icon: TrendingUp,
     children: [
       { href: '/finance/accounts',     label: 'Konten' },
-      { href: '/finance/transactions', label: 'Transaktionen' },
-      { href: '/finance/categories',   label: 'Kategorien' },
-      { href: '/finance/debts',        label: 'Schulden' },
-      { href: '/finance/contracts',    label: 'Verträge' },
-      { href: '/finance/goals',        label: 'Sparziele' },
+      { href: '/finance/transactions', label: 'Transaktionen',
+        match: ['/finance/transactions', '/finance/categories'] },
+      { href: '/finance/contracts',    label: 'Planung',
+        match: ['/finance/contracts', '/finance/debts', '/finance/goals'] },
+      // Hieß „Fixkosten" und lag auf /lebenshaltungskosten — derselbe Name, den
+      // die Vertragsseite für ihre gebuchten Verpflichtungen benutzt („Fixkosten
+      // nach Konto"). Zwei Nav-Punkte, ein Wort, zwei Datenmodelle: das hier
+      // rechnet auf `budget_items` das nötige Mindesteinkommen aus.
+      { href: '/finance/budget',       label: 'Budget' },
     ],
   },
+  // „Crypto", „Depot" und „Strategy" waren drei eigene Bereiche, sind aber
+  // dasselbe Thema: Kapital, das Rendite erzeugen soll (Finance daneben ist das
+  // Alltagsgeld). Als eine Gruppe braucht die Sidebar drei Einträge statt acht —
+  // die Unterseiten der Bereiche hängen an der Tab-Leiste im Seitenkopf
+  // (`SectionTabs`, siehe crypto/ und strategy/layout.tsx). Die URLs sind
+  // bewusst unverändert geblieben; /investing leitet auf /crypto weiter.
   {
-    href: '/crypto', label: 'Crypto', icon: CircleDollarSign,
+    href: '/investing', label: 'Investing', icon: LineChart,
+    match: ['/crypto', '/depot', '/strategy'],
     children: [
-      { href: '/crypto',              label: 'Portfolio' },
-      { href: '/crypto/rebalancing',  label: 'Rebalancing' },
-      { href: '/crypto/assets',       label: 'Assets' },
-    ],
-  },
-  {
-    href: '/strategy', label: 'Strategy', icon: Target,
-    children: [
-      { href: '/strategy/indicators', label: 'Indikatoren' },
-      { href: '/strategy/tests',      label: 'Backtests' },
-      { href: '/strategy/combos',     label: 'Combos' },
-      { href: '/strategy/strategies', label: 'Strategien' },
+      { href: '/crypto',              label: 'Krypto' },
+      { href: '/depot',               label: 'Depot' },
+      { href: '/strategy/indicators', label: 'Strategie', match: ['/strategy'] },
     ],
   },
   // Banking hatte hier bis vor Kurzem einen eigenen Punkt mit „Sync" und „Auswertung".
@@ -68,9 +86,6 @@ const navItems: NavItem[] = [
   // aktualisiert Konten), die Auswertung als Unterpunkt von Analyse (sie wertet aus). Ein
   // Bereich weniger, und die Frage „verwalte ich Konten in Finance oder in Banking?"
   // stellt sich nicht mehr.
-  { href: '/lebenshaltungskosten', label: 'Fixkosten',  icon: ShoppingCart },
-  { href: '/depot',    label: 'Depot',         icon: Briefcase },
-  { href: '/inventar', label: 'Inventar',      icon: Gem       },
   {
     href: '/analyse', label: 'Analyse', icon: BarChart2,
     children: [
@@ -78,9 +93,14 @@ const navItems: NavItem[] = [
       // die gesyncten Rohdaten — der Unterschied steht im Kopf der jeweiligen Seite.
       { href: '/analyse',         label: 'Übersicht' },
       { href: '/analyse/banking', label: 'Bankdaten' },
+      // War ein eigener Top-Level-Punkt „Historie" auf /history. Beides ist
+      // Rückblick — die Charts hier, die Snapshot-Tabellen (Net Worth, Konten,
+      // Portfolio, Monatsübersicht) dort — und die Frage „wo sehe ich die
+      // Entwicklung meines Vermögens?" hatte zwei plausible Antworten.
+      { href: '/analyse/verlauf', label: 'Verlauf' },
     ],
   },
-  { href: '/history',  label: 'Historie',      icon: History   },
+  { href: '/inventar', label: 'Inventar',      icon: Gem       },
   { href: '/settings', label: 'Einstellungen', icon: Settings  },
 ]
 
@@ -137,8 +157,10 @@ export function Sidebar({ email, displayName, avatarUrl, mobileOpen = false, onM
 
       {/* Navigation */}
       <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-        {navItems.map(({ href, label, icon: Icon, children }) => {
-          const sectionActive = pathname === href || pathname.startsWith(`${href}/`)
+        {navItems.map(({ href, label, icon: Icon, children, match }) => {
+          const sectionActive = [href, ...(match ?? [])].some(
+            prefix => pathname === prefix || pathname.startsWith(`${prefix}/`),
+          )
 
           return (
             <div key={href}>
@@ -179,12 +201,14 @@ export function Sidebar({ email, displayName, avatarUrl, mobileOpen = false, onM
                   <div className="subnav-inner">
                     <div className="ml-3 mt-0.5 mb-1 pl-3 border-l border-sidebar-border space-y-0.5">
                       {children.map(child => {
-                        // Zeigt ein Kind auf die Bereichswurzel („Übersicht", „Portfolio"),
-                        // gilt nur die exakte URL: mit `startsWith` wäre es auf jedem
-                        // Unterpunkt mit-aktiv und zwei Einträge leuchteten gleichzeitig.
-                        const childActive = child.href === href
-                          ? pathname === child.href
-                          : pathname === child.href || pathname.startsWith(`${child.href}/`)
+                        // Zeigt ein Kind auf die Bereichswurzel („Übersicht" in
+                        // Analyse), gilt nur die exakte URL: mit `startsWith` wäre es
+                        // auf jedem Unterpunkt mit-aktiv und zwei Einträge leuchteten
+                        // gleichzeitig.
+                        const prefix = child.match ?? child.href
+                        const childActive = prefix === href
+                          ? pathname === prefix
+                          : pathname === prefix || pathname.startsWith(`${prefix}/`)
                         return (
                           <Button
                             key={child.href}

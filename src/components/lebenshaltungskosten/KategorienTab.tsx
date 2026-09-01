@@ -6,8 +6,8 @@ import { cn } from '@/lib/utils'
 import {
   createCategory, updateCategory, deleteCategory,
   createItem,     updateItem,     deleteItem,
-} from '@/app/(dashboard)/lebenshaltungskosten/actions'
-import type { BudgetCategory, BudgetItem } from '@/app/(dashboard)/lebenshaltungskosten/page'
+} from '@/app/(dashboard)/finance/budget/actions'
+import type { BudgetCategory, BudgetItem } from '@/app/(dashboard)/finance/budget/page'
 
 function monthlyItem(item: BudgetItem): number {
   return (item.unit_price * item.quantity) / item.interval_days * 30

@@ -1,7 +1,7 @@
 'use client'
 
 import { Wallet, Landmark, ShoppingBasket } from 'lucide-react'
-import type { BudgetCategory, BudgetItem, IncomeTarget } from '@/app/(dashboard)/lebenshaltungskosten/page'
+import type { BudgetCategory, BudgetItem, IncomeTarget } from '@/app/(dashboard)/finance/budget/page'
 
 function monthlyItem(item: BudgetItem): number {
   return (item.unit_price * item.quantity) / item.interval_days * 30

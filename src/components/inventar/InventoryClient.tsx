@@ -11,6 +11,7 @@ import { ValuableIcon } from './ValuableIcon'
 import { ValuableForm } from './ValuableForm'
 import { ValuableActions } from './ValuableActions'
 import { ValuableMedia } from './ValuableMedia'
+import { ShowcaseCorners, ValuablePlinth } from './ValuablePlinth'
 import {
   KATEGORIEN, kategorieLabel, wertstufe, zustandLabel, haltedauerLabel,
   type ValuableWithImage,
@@ -112,6 +113,11 @@ export function InventoryClient({ items, locale }: Props) {
  * Das Spielgefühl kommt aus Rahmen, Sockelschimmer und dem Sheen beim Überfahren — nicht
  * aus Farbe. Alles Farbige stammt aus Theme-Tokens (siehe WERTSTUFEN in lib/valuables.ts),
  * damit die Karte unter allen acht Presets funktioniert.
+ *
+ * Die Kachel ist in zwei Hälften gebaut, wie eine echte Vitrinenposition: oben das Podest
+ * mit dem Objekt, unten der Sockel mit der Beschriftung (siehe ValuablePlinth). Vorher war
+ * die untere Hälfte nackte Kartenfläche mit zwei Textzeilen darauf — Ausstellung oben,
+ * Tabelle unten.
  */
 function Karte({
   item, eur, onOpen,
@@ -257,47 +263,52 @@ function Karte({
         />
       </div>
 
-      {/* Beschriftung */}
-      <div className="pointer-events-none relative z-10 mt-3 space-y-0.5">
-        <p className="truncate text-sm font-medium text-foreground">{item.name}</p>
-        <p className="truncate text-xs text-muted-foreground">
-          {item.marke ?? kategorieLabel(item.kategorie)}
-        </p>
-      </div>
+      {/* Sockel mit Beschriftung. Er lässt Klicks durch (siehe ValuablePlinth) — sie
+          gehören der flächigen Schaltfläche darunter, die die Kachel öffnet. */}
+      <ValuablePlinth id={`fries-${item.id}`} akzent={stufe.border}>
+        <div className="space-y-0.5">
+          <p className="truncate text-sm font-medium text-foreground">{item.name}</p>
+          <p className="truncate text-xs text-muted-foreground">
+            {item.marke ?? kategorieLabel(item.kategorie)}
+          </p>
+        </div>
 
-      <div className="pointer-events-none relative z-10 mt-2 flex items-baseline justify-between gap-2">
-        <span className="text-sm font-semibold tabular-nums">
-          {item.aktueller_wert != null ? eur(item.aktueller_wert) : '—'}
-        </span>
-        {/* Null Prozent wird nicht angezeigt: frisch angelegt ist der aktuelle Wert der
-            Kaufpreis, und ein „+0 %" an jeder neuen Karte sieht aus wie ein Fehler statt
-            wie „noch keine Wertentwicklung". */}
-        {item.rendite_prozent != null && item.rendite_prozent !== 0 && (
-          <span
-            className={`text-[11px] font-medium tabular-nums ${
-              item.rendite_prozent > 0 ? 'text-success' : 'text-danger'
-            }`}
-          >
-            {item.rendite_prozent > 0 ? '+' : ''}{item.rendite_prozent} %
+        <div className="mt-2 flex items-baseline justify-between gap-2">
+          <span className="text-sm font-semibold tabular-nums">
+            {item.aktueller_wert != null ? eur(item.aktueller_wert) : '—'}
           </span>
-        )}
-      </div>
-
-      {/* Statusmarken. Nur was zutrifft — leere Plätze wären nur Rauschen. */}
-      {(item.versichert || !item.im_vermoegen) && (
-        <div className="pointer-events-none relative z-10 mt-2 flex items-center gap-1.5">
-          {item.versichert && (
-            <span title="Versichert" className="text-muted-foreground">
-              <ShieldCheck className="size-3.5" />
-            </span>
-          )}
-          {!item.im_vermoegen && (
-            <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-              nicht in Summe
+          {/* Null Prozent wird nicht angezeigt: frisch angelegt ist der aktuelle Wert der
+              Kaufpreis, und ein „+0 %" an jeder neuen Karte sieht aus wie ein Fehler statt
+              wie „noch keine Wertentwicklung". */}
+          {item.rendite_prozent != null && item.rendite_prozent !== 0 && (
+            <span
+              className={`text-[11px] font-medium tabular-nums ${
+                item.rendite_prozent > 0 ? 'text-success' : 'text-danger'
+              }`}
+            >
+              {item.rendite_prozent > 0 ? '+' : ''}{item.rendite_prozent} %
             </span>
           )}
         </div>
-      )}
+
+        {/* Statusmarken. Nur was zutrifft — leere Plätze wären nur Rauschen. */}
+        {(item.versichert || !item.im_vermoegen) && (
+          <div className="mt-2 flex items-center gap-1.5">
+            {item.versichert && (
+              <span title="Versichert" className="text-muted-foreground">
+                <ShieldCheck className="size-3.5" />
+              </span>
+            )}
+            {!item.im_vermoegen && (
+              <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                nicht in Summe
+              </span>
+            )}
+          </div>
+        )}
+      </ValuablePlinth>
+
+      <ShowcaseCorners akzent={stufe.border} />
     </div>
   )
 }

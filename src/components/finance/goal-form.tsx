@@ -19,7 +19,7 @@ import {
 import { PiggyBank, Pencil, Plus, Trash2 } from 'lucide-react'
 import {
   createGoal, updateGoal, deleteGoal, addGoalPayment, type GoalActionState,
-} from '@/app/(dashboard)/finance/goals/actions'
+} from '@/app/(dashboard)/finance/(planung)/goals/actions'
 import { Database } from '@/types/database'
 
 type GoalRow = Database['public']['Tables']['savings_goals']['Row']

@@ -334,7 +334,13 @@ function DepotCard({ depot, locale }: { depot: DepotWithSummary; locale: string 
     <Link href="/depot" className="block">
       <div className="rounded-lg border border-border bg-card px-4 py-3 hover:bg-muted/30 transition-colors">
         <div className="flex items-center gap-3">
-          <span className="size-2.5 rounded-full shrink-0 bg-[#3b82f6]" />
+          {/* Gedämpftes Perlblau statt sattem Tailwind-Blau (#3b82f6) — passt zur warmen
+              Athena-Erdtonpalette, statt wie ein generischer Fremdkörper draufgeklatscht zu
+              wirken. Der helle Rand gibt dem Punkt den "Perlmutt"-Anklang. */}
+          <span
+            className="size-2.5 rounded-full shrink-0 border border-white/50"
+            style={{ backgroundColor: '#8FAEC2' }}
+          />
           <div className="min-w-0">
             <p className="font-medium text-foreground">{depot.name}</p>
             <p className="text-xs text-muted-foreground font-mono">{depot.isin}</p>
@@ -346,7 +352,7 @@ function DepotCard({ depot, locale }: { depot: DepotWithSummary; locale: string 
                 : '–'}
             </p>
             {depot.returnPct !== null && (
-              <p className="text-xs" style={{ color: depot.returnPct >= 0 ? '#3fb950' : '#f85149' }}>
+              <p className="text-xs" style={{ color: depot.returnPct >= 0 ? 'var(--success)' : 'var(--danger)' }}>
                 {depot.returnPct >= 0 ? '+' : ''}{depot.returnPct.toFixed(2)} %
               </p>
             )}

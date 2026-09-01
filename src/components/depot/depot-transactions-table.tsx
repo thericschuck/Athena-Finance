@@ -44,7 +44,7 @@ export function DepotTransactionsTable({
         <tbody>
           {transactions.map(tx => {
             const typeLabel = tx.transaction_type === 'initial' ? 'Bestand' : tx.transaction_type === 'savings_plan' ? 'Sparplan' : 'Kauf'
-            const typeColor = tx.transaction_type === 'initial' ? 'text-yellow-500' : tx.transaction_type === 'savings_plan' ? 'text-primary' : 'text-green-500'
+            const typeColor = tx.transaction_type === 'initial' ? 'text-warning' : tx.transaction_type === 'savings_plan' ? 'text-primary' : 'text-success'
             return (
               <tr key={tx.id} className="group border-b border-border/50 hover:bg-muted/20 transition-colors">
                 <td className="px-5 py-2.5 text-foreground whitespace-nowrap">{fmtDate(tx.transaction_date)}</td>

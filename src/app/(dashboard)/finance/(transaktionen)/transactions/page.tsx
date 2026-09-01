@@ -9,6 +9,7 @@ import { fmtCurrency, fmtDateShort } from '@/lib/format'
 import { Landmark } from 'lucide-react'
 import { UrlFiltersProvider, FilterPending } from '@/components/providers/url-filters'
 import { UrlPagination } from '@/components/ui/url-pagination'
+import { parsePage, parsePageSize } from '@/lib/pagination'
 import { CategorySuggestionsPanel } from '@/components/bank/category-suggestions-panel'
 
 type TxRow = Database['public']['Tables']['transactions']['Row']
@@ -49,38 +50,24 @@ interface PageProps {
     to?: string
     q?: string
     page?: string
+    per?: string
   }>
 }
 
-/**
- * Zeilen pro Seite.
+/*
+ * Zur Seiteneinteilung: vorher wurden 500 Zeilen auf einmal geholt UND gerendert. Der
+ * Flaschenhals war dabei nicht die Abfrage, sondern die Tabelle — jede Zeile bringt drei
+ * Client-Komponenten mit (Kategorie-Auswahl, Bearbeiten-Dialog, Löschen-Knopf). Bei 500
+ * Zeilen sind das 1.500 interaktive Inseln, die hydriert werden müssen, bevor die Seite auf
+ * Klicks reagiert.
  *
- * Vorher wurden 500 auf einmal geholt UND gerendert. Der Flaschenhals war dabei nicht die
- * Abfrage, sondern die Tabelle: jede Zeile bringt drei Client-Komponenten mit (Kategorie-
- * Auswahl, Bearbeiten-Dialog, Loeschen-Knopf). Bei 500 Zeilen sind das 1.500 interaktive
- * Inseln, die hydriert werden muessen, bevor die Seite auf Klicks reagiert.
+ * Die Seitengröße ist deshalb eine Grenze für den DOM, nicht fürs Netz — und sie bleibt
+ * konstant, egal wie lang der Verlauf wird. Genau das kann eine wachsende Liste („mehr
+ * anzeigen", unendliches Scrollen) nicht: dort ist man nach zehn Klicks wieder bei 500.
  *
- * 50 ist deshalb eine Grenze fuer den DOM, nicht fuers Netz — und sie bleibt konstant, egal
- * wie lang der Verlauf wird. Genau das kann eine wachsende Liste („mehr anzeigen",
- * unendliches Scrollen) nicht: dort ist man nach zehn Klicks wieder bei 500 Zeilen.
+ * Werte und Grenzen stehen in `lib/pagination`, weil die Blätterleiste im Browser dieselben
+ * braucht.
  */
-const PAGE_SIZE = 50
-
-/**
- * Obergrenze fuer die Seitenzahl. Sie wird direkt zum OFFSET der Abfrage — `page=99999999`
- * waere sonst die Aufforderung an die Datenbank, Millionen Zeilen zu ueberspringen.
- */
-const MAX_PAGE = 10_000
-
-/**
- * Seitenzahl aus der URL. Alles Unbrauchbare wird Seite 1 — der Parameter kommt aus einer
- * Adresszeile, die jeder von Hand aendern kann.
- */
-function parsePage(value: string | undefined): number {
-  const n = Number(value)
-  if (!Number.isInteger(n) || n <= 1) return 1
-  return Math.min(n, MAX_PAGE)
-}
 
 
 function formatAmount(amount: number, currency: string, type: string, locale: string) {
@@ -131,6 +118,7 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
   // (einige Tausend Zeilen) ist der Zaehlvorgang nicht messbar; erst bei Hunderttausenden
   // waere `'planned'` die richtige Wahl.
   const page = parsePage(filters.page)
+  const pageSize = parsePageSize(filters.per)
 
   let query = supabase
     .from('unified_transactions')
@@ -156,12 +144,16 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
     if (term) query = query.or(`description.ilike.%${term}%,merchant.ilike.%${term}%`)
   }
 
-  const von = (page - 1) * PAGE_SIZE
-  const { data: transactions, count, error } = await query.range(von, von + PAGE_SIZE - 1)
+  const von = (page - 1) * pageSize
+  const { data: transactions, count, error } = await query.range(von, von + pageSize - 1)
 
   const rows = (transactions ?? []) as UnifiedRow[]
   const total = count ?? rows.length
-  const hasFilters = Object.entries(filters).some(([key, value]) => key !== 'page' && value)
+  // `page`/`per` sind Ansichtseinstellungen, keine Filter — sonst stünde bei „100 pro
+  // Seite" dauerhaft „(gefiltert)" hinter der Anzahl.
+  const hasFilters = Object.entries(filters).some(
+    ([key, value]) => key !== 'page' && key !== 'per' && value,
+  )
 
   // Von Hand eingetippte oder veraltete Seitenzahl (ein Lesezeichen auf Seite 12, waehrend
   // inzwischen gefiltert wird). PostgREST antwortet auf einen Bereich hinter dem Ende je
@@ -235,7 +227,7 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
                   {/* Innerhalb von `FilterPending`: beim Blaettern soll dieselbe Rueckmeldung
                       kommen wie beim Filtern — Balken oben, Inhalt abgeblendet — und der
                       Blaetterer waehrenddessen keine zweite Navigation annehmen. */}
-                  <UrlPagination page={page} pageSize={PAGE_SIZE} total={total} />
+                  <UrlPagination page={page} pageSize={pageSize} total={total} />
                 </>
               )}
             </FilterPending>

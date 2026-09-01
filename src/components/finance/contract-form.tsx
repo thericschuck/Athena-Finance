@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import {
   createContract, updateContract, deleteContract, type ContractActionState,
-} from '@/app/(dashboard)/finance/contracts/actions'
+} from '@/app/(dashboard)/finance/(planung)/contracts/actions'
 import { Database } from '@/types/database'
 import { CONTRACT_TYPES, FREQUENCIES, TRANSFER_TYPES } from '@/lib/finance/contract-constants'
 

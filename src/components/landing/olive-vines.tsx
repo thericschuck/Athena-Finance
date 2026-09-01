@@ -533,15 +533,33 @@ export function MeanderFrieze({
   id,
   color = C.ink,
   opacity = 0.24,
+  scale = 1,
 }: {
   id: string
   color?: string
   opacity?: number
+  /**
+   * Verkleinert das Muster mitsamt Bandhöhe. `1` ist die Fassung in der Seitenleiste; für
+   * eine Inventar-Kachel ist die zu grob, dort läuft der Fries auf etwa 0,55.
+   *
+   * Über `patternTransform` statt über neue Pfadmaße: der Mäander ist ein einziger
+   * Linienzug, und den in zwei Größen von Hand zu pflegen hiesse, ihn beim nächsten Feinbau
+   * an zwei Stellen zu ändern. Die Strichbreite skaliert mit — bei kleinem Fries ist ein
+   * feiner Strich ohnehin richtig.
+   */
+  scale?: number
 }) {
+  const kachel = { w: 20 * scale, h: 16 * scale }
   return (
-    <svg aria-hidden width="100%" height={16} style={{ display: 'block' }}>
+    <svg aria-hidden width="100%" height={kachel.h} style={{ display: 'block' }}>
       <defs>
-        <pattern id={id} width={20} height={16} patternUnits="userSpaceOnUse">
+        <pattern
+          id={id}
+          width={kachel.w}
+          height={kachel.h}
+          patternUnits="userSpaceOnUse"
+          patternTransform={scale === 1 ? undefined : `scale(${scale})`}
+        >
           <path
             d="M1.5 14 H16.5 V2.5 H6 V10 H11.5"
             fill="none"

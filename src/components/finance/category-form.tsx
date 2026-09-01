@@ -36,7 +36,7 @@ import {
   updateCategory,
   deleteCategory,
   type CategoryActionState,
-} from '@/app/(dashboard)/finance/categories/actions'
+} from '@/app/(dashboard)/finance/(transaktionen)/categories/actions'
 import { Database } from '@/types/database'
 
 type Category = Database['public']['Tables']['categories']['Row']

@@ -1,12 +1,16 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import type { HeatmapDay } from '@/lib/analyseData'
+import type { AnalyseMode, HeatmapDay } from '@/lib/analyseData'
 import { useClampedPosition } from '@/lib/hooks/use-clamped-position'
+import { ModeSwitch, ANALYSE_MODE_OPTIONS } from './ModeSwitch'
 
 interface Props { data: HeatmapDay[]; initialMode?: Mode }
 
-export type Mode = 'ausgaben' | 'einnahmen' | 'guv'
+// Der Typ liegt jetzt bei den geteilten Analyse-Typen, weil Heatmap UND
+// Verteilungs-Karte auf denselben drei Sichten umschalten. Das Alias bleibt,
+// damit `type Mode as HeatmapMode` in analyse/page.tsx weiter funktioniert.
+export type Mode = AnalyseMode
 
 const MONTH_LABELS = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez']
 const DAY_LABELS   = ['Mo', '', 'Mi', '', 'Fr', '', '']
@@ -116,21 +120,7 @@ export function AusgabenHeatmap({ data, initialMode = 'ausgaben' }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h2 className="text-sm font-medium text-foreground">{modeLabel}-Heatmap</h2>
-        <div className="flex gap-1">
-          {(['ausgaben', 'einnahmen', 'guv'] as Mode[]).map(m => (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
-              className={`px-2.5 py-1 text-[10px] rounded font-medium capitalize transition-all duration-150 ${
-                mode === m
-                  ? 'bg-foreground text-background scale-105'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-              }`}
-            >
-              {m === 'ausgaben' ? 'Ausgaben' : m === 'einnahmen' ? 'Einnahmen' : 'GuV'}
-            </button>
-          ))}
-        </div>
+        <ModeSwitch value={mode} options={ANALYSE_MODE_OPTIONS} onChange={setMode} />
       </div>
 
       {/* Grid */}

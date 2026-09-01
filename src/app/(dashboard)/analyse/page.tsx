@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import type {
   HeatmapDay, SankeyData, SankeyNodeDatum, SankeyLinkDatum,
-  CashflowEvent, MonthlyComparison, CategoryDatum,
+  CashflowEvent, MonthlyComparison, CategoryDatum, MonthSeries, MonthTotals,
 } from '@/lib/analyseData'
 import { AnalysePeriodSelector }  from '@/components/analyse/AnalysePeriodSelector'
 import { AnalyseAccountSelector } from '@/components/analyse/AnalyseAccountSelector'
@@ -10,7 +10,7 @@ import { GeldflussChart }        from '@/components/analyse/GeldflussChart'
 import { CashflowKalender }      from '@/components/analyse/CashflowKalender'
 import { MonatsVergleich }       from '@/components/analyse/MonatsVergleich'
 import { KategorienChart }       from '@/components/analyse/KategorienChart'
-import { AusgabenVerteilung }    from '@/components/analyse/AusgabenVerteilung'
+import { MonatsVerteilung }      from '@/components/analyse/MonatsVerteilung'
 import { getSettings }          from '@/lib/settings'
 import { periodCutoff }         from '@/lib/period'
 import { UrlFiltersProvider, FilterPending } from '@/components/providers/url-filters'
@@ -178,49 +178,85 @@ function buildMonthlyComparisonFromTxns(
   return buildMonthlyComparison(rows)
 }
 
-// Historie für die KDE-Ausgabenverteilung — bis zu 24 ABGESCHLOSSENE Monate,
-// der laufende Monat (currentMonthKey) fliegt bewusst raus: er ist per
-// Definition unvollständig und würde die Dichtekurve künstlich nach unten
-// ziehen. Er wird stattdessen separat als Vergleichswert (currentMonthExpense)
-// gegen genau diese Historie getestet (siehe computePercentileRank).
-function buildExpenseHistory(rows: MonthlySummaryRow[], currentMonthKey: string): number[] {
-  return rows
+// Historie für die Verteilungs-Karte — bis zu 24 ABGESCHLOSSENE Monate, der
+// laufende Monat (currentMonthKey) fliegt bewusst raus: er ist per Definition
+// unvollständig und würde die Verteilung künstlich nach unten ziehen. Er wird
+// stattdessen separat als Vergleichswert (currentMonthTotals) gegen genau diese
+// Historie getestet (siehe computePercentileRank).
+//
+// Alle drei Reihen kommen aus demselben Durchlauf, weil die Karte zwischen
+// Ausgaben, Einnahmen und GuV umschaltbar ist — ein Umschalten soll keinen
+// Server-Roundtrip kosten.
+function buildMonthSeries(rows: MonthlySummaryRow[], currentMonthKey: string): MonthSeries {
+  const months = rows
     .filter(r => r.month.slice(0, 7) !== currentMonthKey)
     .sort((a, b) => a.month.localeCompare(b.month))
     .slice(-24)
-    .map(r => Math.round(r.total_expenses))
+  return {
+    ausgaben:  months.map(r => Math.round(r.total_expenses)),
+    einnahmen: months.map(r => Math.round(r.total_income)),
+    guv:       months.map(r => Math.round(r.total_income - r.total_expenses)),
+  }
 }
 
 // Gleiches Prinzip wie buildMonthlyComparisonFromTxns oben — monthly_finance_summary
 // hat keine account_id, bei aktivem Konten-Filter wird stattdessen direkt aus den
 // (bereits kontogefilterten) Transaktionen aggregiert.
-function buildExpenseHistoryFromTxns(
+//
+// Ein Monat mit Einnahmen aber ohne Ausgaben zählt hier als 0 in der
+// Ausgabenreihe. Die frühere, rein ausgabenbasierte Variante hat ihn
+// stillschweigend übersprungen — der Summary-Pfad oben liefert für denselben
+// Monat aber eine Zeile mit total_expenses = 0. Beide Pfade sagen jetzt
+// dasselbe.
+function buildMonthSeriesFromTxns(
   txns: Pick<TxnRow, 'date' | 'type' | 'amount' | 'amount_base'>[],
   currentMonthKey: string,
-): number[] {
-  const map = new Map<string, number>()
+): MonthSeries {
+  const map = new Map<string, { income: number; expenses: number }>()
   for (const t of txns) {
-    if (t.type !== 'expense') continue
+    if (t.type !== 'income' && t.type !== 'expense') continue
     const month = t.date.slice(0, 7)
     if (month === currentMonthKey) continue
-    map.set(month, (map.get(month) ?? 0) + toEur(t))
+    const cur = map.get(month) ?? { income: 0, expenses: 0 }
+    if (t.type === 'income') cur.income += toEur(t)
+    else cur.expenses += toEur(t)
+    map.set(month, cur)
   }
-  return [...map.entries()]
+  const months = [...map.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .slice(-24)
-    .map(([, v]) => Math.round(v))
+    .map(([, v]) => v)
+  return {
+    ausgaben:  months.map(v => Math.round(v.expenses)),
+    einnahmen: months.map(v => Math.round(v.income)),
+    guv:       months.map(v => Math.round(v.income - v.expenses)),
+  }
 }
 
-// Ausgaben des laufenden Monats — aus `txns` (der ohnehin schon geladenen,
+// Summen des laufenden Monats — aus `txns` (der ohnehin schon geladenen,
 // periodengefilterten Transaktionsliste) statt einer eigenen Query: jeder
 // Zeitraum (period) endet an "heute", der laufende Monat ist also immer
 // Teilmenge von `txns`, unabhängig von der gewählten Periode.
-function currentMonthExpense(txns: TxnRow[], currentMonthKey: string): number {
-  return Math.round(
-    txns
-      .filter(t => t.type === 'expense' && t.date.slice(0, 7) === currentMonthKey)
-      .reduce((s, t) => s + toEur(t), 0),
-  )
+//
+// `null` bei einem Monat ohne jede Buchung. Die Vorgängerfunktion gab in dem
+// Fall 0 zurück, was in der Karte als "dieser Monat: 0 €" ankam und den Marker
+// an den linken Rand setzte — ein Monat ohne Daten ist aber kein Monat mit
+// Nullausgaben.
+function currentMonthTotals(txns: TxnRow[], currentMonthKey: string): MonthTotals | null {
+  let einnahmen = 0
+  let ausgaben  = 0
+  let seen      = 0
+  for (const t of txns) {
+    if (t.date.slice(0, 7) !== currentMonthKey) continue
+    if (t.type === 'income')       { einnahmen += toEur(t); seen++ }
+    else if (t.type === 'expense') { ausgaben  += toEur(t); seen++ }
+  }
+  if (seen === 0) return null
+  return {
+    einnahmen: Math.round(einnahmen),
+    ausgaben:  Math.round(ausgaben),
+    guv:       Math.round(einnahmen - ausgaben),
+  }
 }
 
 function buildMonthlyComparison(rows: MonthlySummaryRow[]): MonthlyComparison[] {
@@ -390,10 +426,10 @@ export default async function AnalysePage({
   const monthlyComparison = hasAccountFilter
     ? buildMonthlyComparisonFromTxns(monthlyTxns)
     : buildMonthlyComparison(monthlyRows)
-  const expenseHistory = hasAccountFilter
-    ? buildExpenseHistoryFromTxns(monthlyTxns, currentMonthKey)
-    : buildExpenseHistory(monthlyRows, currentMonthKey)
-  const thisMonthExpense = currentMonthExpense(txns, currentMonthKey)
+  const monthSeries = hasAccountFilter
+    ? buildMonthSeriesFromTxns(monthlyTxns, currentMonthKey)
+    : buildMonthSeries(monthlyRows, currentMonthKey)
+  const thisMonth = currentMonthTotals(txns, currentMonthKey)
 
   return (
     // Zeitraum- und Kontenwahl schreiben in die URL und lösen ein Server-Rendering aus.
@@ -427,10 +463,10 @@ export default async function AnalysePage({
               <KategorienChart data={categoryData} />
             </div>
 
-            {/* Ausgabenverteilung (KDE) — eigene, kategorieunabhängige Sicht auf die
-                historischen Gesamtausgaben, deshalb unabhängig vom Konten-Filter
-                immer über den vollen 24-Monats-Horizont statt der `period`-Auswahl. */}
-            <AusgabenVerteilung historicalExpenses={expenseHistory} currentMonthExpense={thisMonthExpense} />
+            {/* Verteilung — eigene, kategorieunabhängige Sicht auf die Monatssummen,
+                deshalb immer über den vollen 24-Monats-Horizont statt der
+                `period`-Auswahl (der Konten-Filter greift dagegen schon). */}
+            <MonatsVerteilung history={monthSeries} current={thisMonth} />
           </div>
         </FilterPending>
       </div>

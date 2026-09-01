@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-const PATH = '/lebenshaltungskosten'
+const PATH = '/finance/budget'
 type State = { error: string } | { success: true } | null
 
 // ── Categories ─────────────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts'
@@ -13,18 +13,23 @@ const OTHER_COLOR = 'var(--chart-muted-2)'
 
 const UNCATEGORIZED = 'Ohne Kategorie'
 const OTHER = 'Andere'
-const MAX_SLOTS = 5
+// War 5 — bei mehr als 5 Ausgabenkategorien landete der Großteil in einem einzigen
+// unspezifischen "Andere"-Balken. 8 zeigt deutlich mehr Kategorien einzeln, bevor der
+// Rest gebündelt wird, ohne den Chart bei einer üblichen Kontoübersicht zu sprengen.
+const MAX_SLOTS = 8
+
+type Mode = 'ausgaben' | 'einnahmen'
 
 interface Datum { name: string; value: number; color: string }
 
 // Uses each category's OWN color (set by the user under /finance/categories) instead of a
 // synthetic palette — these are the real Finance categories, so the bar should look the same
 // color here as it does everywhere else in the app.
-function buildData(transactions: BankTransaction[], categories: FinanceCategory[]): Datum[] {
+function buildData(transactions: BankTransaction[], categories: FinanceCategory[], mode: Mode): Datum[] {
   const byId = new Map(categories.map(c => [c.id, c]))
   const totals = new Map<string, number>()
   for (const tx of transactions) {
-    if (tx.amount >= 0) continue // expenses only
+    if (mode === 'ausgaben' ? tx.amount >= 0 : tx.amount <= 0) continue
     // Orphaned category_id (category was deleted) falls back to the same bucket as
     // "no category" — otherwise both would render under the "Ohne Kategorie" label
     // as separate bars with a duplicate key.
@@ -60,25 +65,48 @@ function CustomYAxisTick({ x, y, payload }: { x: number; y: number; payload: { v
 
 export function BankCategoryChart({ transactions, categories }: { transactions: BankTransaction[]; categories: FinanceCategory[] }) {
   const { locale } = useSettings()
+  const [mode, setMode] = useState<Mode>('ausgaben')
 
-  const data = useMemo(() => buildData(transactions, categories), [transactions, categories])
+  const data = useMemo(() => buildData(transactions, categories, mode), [transactions, categories, mode])
+
+  const header = (
+    <div className="mb-4 flex items-center justify-between gap-2">
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+        {mode === 'ausgaben' ? 'Ausgaben nach Kategorie' : 'Einnahmen nach Kategorie'}
+      </p>
+      <div className="flex gap-1">
+        {(['ausgaben', 'einnahmen'] as Mode[]).map(m => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setMode(m)}
+            className={`rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${
+              mode === m
+                ? 'bg-foreground text-background'
+                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+            }`}
+          >
+            {m === 'ausgaben' ? 'Ausgaben' : 'Einnahmen'}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
 
   if (data.length === 0) {
     return (
       <div className="rounded-lg border border-border bg-card p-5">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-4">
-          Ausgaben nach Kategorie
+        {header}
+        <p className="text-sm text-muted-foreground py-8 text-center">
+          {mode === 'ausgaben' ? 'Keine Ausgaben im aktuellen Filter.' : 'Keine Einnahmen im aktuellen Filter.'}
         </p>
-        <p className="text-sm text-muted-foreground py-8 text-center">Keine Ausgaben im aktuellen Filter.</p>
       </div>
     )
   }
 
   return (
     <div className="rounded-lg border border-border bg-card p-5">
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-4">
-        Ausgaben nach Kategorie
-      </p>
+      {header}
       <ResponsiveContainer width="100%" height={Math.max(data.length * 34 + 16, 140)}>
         <BarChart data={data} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
           <CartesianGrid stroke="currentColor" strokeOpacity={0.1} horizontal={false} />

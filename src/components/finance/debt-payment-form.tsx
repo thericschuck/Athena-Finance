@@ -26,7 +26,7 @@ import {
   deleteDebt,
   recordPayment,
   type DebtActionState,
-} from '@/app/(dashboard)/finance/debts/actions'
+} from '@/app/(dashboard)/finance/(planung)/debts/actions'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,

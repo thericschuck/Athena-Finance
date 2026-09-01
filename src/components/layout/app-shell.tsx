@@ -19,12 +19,14 @@ type VineVariant = { sides: Array<'l' | 'r'>; maxBranches?: number; opacity: num
 const VINE_VARIANTS: Record<string, VineVariant | null> = {
   '/dashboard':             { sides: ['l', 'r'], maxBranches: 2, opacity: 0.09, width: '130px' },
   '/finance':               { sides: ['r'],                     opacity: 0.11, width: '150px' },
+  // Investing ist ein Bereich (Sidebar-Gruppe über /crypto, /depot, /strategy) —
+  // dieselbe Ranken-Platzierung, damit sich der Wechsel zwischen den drei
+  // Unterbereichen nicht wie ein Sprung in eine andere Gegend anfühlt.
+  '/investing':             { sides: ['l'],      maxBranches: 2, opacity: 0.12, width: '160px' },
   '/crypto':                { sides: ['l'],      maxBranches: 2, opacity: 0.12, width: '160px' },
-  '/strategy':              { sides: ['l', 'r'], maxBranches: 1, opacity: 0.08, width: '120px' },
-  '/lebenshaltungskosten':  { sides: ['l'],                     opacity: 0.09, width: '130px' },
-  '/depot':                 { sides: ['r'],                     opacity: 0.11, width: '150px' },
+  '/strategy':              { sides: ['l'],      maxBranches: 2, opacity: 0.12, width: '160px' },
+  '/depot':                 { sides: ['l'],      maxBranches: 2, opacity: 0.12, width: '160px' },
   '/analyse':               { sides: ['l'],      maxBranches: 2, opacity: 0.1,  width: '150px' },
-  '/history':               { sides: ['l', 'r'], maxBranches: 1, opacity: 0.07, width: '110px' },
   '/settings':              null,
   '/assistant':             null,
 }

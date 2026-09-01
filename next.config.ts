@@ -14,6 +14,11 @@ const nextConfig: NextConfig = {
     return [
       { source: '/bank', destination: '/finance/accounts', permanent: false },
       { source: '/bank/auswertung', destination: '/analyse/banking', permanent: false },
+      // Dasselbe für den zweiten Aufräum-Durchgang: „Historie" ist zum Analyse-
+      // Unterpunkt „Verlauf" geworden, „Fixkosten" zu Finance/Budget (der Name
+      // kollidierte mit den gebuchten Fixkosten auf der Vertragsseite).
+      { source: '/history', destination: '/analyse/verlauf', permanent: false },
+      { source: '/lebenshaltungskosten', destination: '/finance/budget', permanent: false },
     ]
   },
 };

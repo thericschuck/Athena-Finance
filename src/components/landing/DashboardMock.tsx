@@ -53,7 +53,7 @@ const DepotChart = dynamic(() => import('@/components/depot/depot-chart').then((
  * Analyse- und Crypto-Szene ziehen jetzt ebenfalls echte recharts-
  * Komponenten aus der eingeloggten App statt handgebauter SVG-Charts
  * (BarsChart, LiveChart, AllocationDonut) nach. Bewusst NICHT übernommen:
- * AusgabenHeatmap.tsx, KategorienChart-impl.tsx, dashboard/portfolio-donut.tsx
+ * AusgabenHeatmap.tsx, dashboard/portfolio-donut.tsx
  * und net-worth-chart.tsx — die nutzen entweder eine komplett andere,
  * Aurum-fremde Hex-Palette oder eine andere Kategorisierung (Konten/Depot/
  * Krypto/Gesamt bzw. Finanzen/Depot/Krypto/Sparziele statt Depot/Crypto/
