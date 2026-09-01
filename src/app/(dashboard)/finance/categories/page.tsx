@@ -37,11 +37,11 @@ function buildTree(categories: Category[]): CategoryNode[] {
 const TYPE_CONFIG: Record<string, { label: string; classes: string }> = {
   expense: {
     label: 'Ausgabe',
-    classes: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+    classes: 'bg-danger/10 text-danger',
   },
   income: {
     label: 'Einnahme',
-    classes: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+    classes: 'bg-success/10 text-success',
   },
   neutral: {
     label: 'Neutral',

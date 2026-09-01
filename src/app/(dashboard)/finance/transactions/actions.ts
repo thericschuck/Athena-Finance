@@ -98,6 +98,38 @@ export async function updateTransaction(
   return { success: true }
 }
 
+// Lean, single-column update for the inline category Select in the transactions table — the
+// full `updateTransaction` action needs every field (date/account/amount/...), which is
+// pointless round-trip weight for a change that's visually just "pick a category". `source`
+// picks the right underlying table: bank-synced rows in the unified view are really
+// `bank_transactions` rows (see the `unified_transactions` view, migration 20260821010000),
+// not `transactions`.
+export async function updateTransactionCategory(
+  id: string,
+  categoryId: string | null,
+  source: 'manual' | 'bank_sync',
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Nicht eingeloggt' }
+
+  const table = source === 'bank_sync' ? 'bank_transactions' : 'transactions'
+  const { error } = await supabase
+    .from(table)
+    .update({ category_id: categoryId })
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+  // Beide Seiten neu rendern: dieselbe Select steckt auch in der Buchungstabelle der
+  // Kontodetailseite. Ohne den zweiten Aufruf zeigte die dort nach einer Änderung auf
+  // /finance/transactions noch die alte Kategorie — samt der daraus gerechneten
+  // „Größte Ausgaben nach Kategorie".
+  revalidatePath('/finance/transactions')
+  revalidatePath('/finance/accounts/[id]', 'page')
+  return {}
+}
+
 export async function deleteTransaction(id: string): Promise<{ error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

@@ -1,6 +1,7 @@
 {
   "crons": [
-    { "path": "/api/bank-sync", "schedule": "0 */6 * * *" }
+    { "path": "/api/bank-sync", "schedule": "0 */6 * * *" },
+    { "path": "/api/cron/kraken-sync", "schedule": "30 */6 * * *" }
   ],
   "functions": {
     "api/bank-sync.py": {

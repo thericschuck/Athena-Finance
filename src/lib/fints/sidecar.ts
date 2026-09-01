@@ -12,6 +12,24 @@
 import { spawn } from 'node:child_process'
 import path from 'node:path'
 import fs from 'node:fs'
+import os from 'node:os'
+
+/**
+ * Persisted python-fints client state for one bank login, keyed by a hash of
+ * "<blz>:<username>" (computed inside the sidecar — see bank_key() there).
+ *
+ * `blob` carries the Kundensystem-ID: handing it back on the next run stops the bank
+ * from treating the sync as a brand-new access, which is what makes PSD2's 90-day
+ * SCA exemption apply instead of an app approval on every single sync.
+ */
+export interface BankClientState {
+  blob: string
+  label?: string
+  /** True if this run actually performed an app approval — used to stamp last_sca_at. */
+  scaPerformed?: boolean
+}
+
+export type BankClientStateMap = Record<string, BankClientState>
 
 export interface SidecarAccount {
   bankLabel: string | null
@@ -42,6 +60,8 @@ export interface SidecarBalance {
   bankLabel: string | null
   iban: string | null
   bic: string | null
+  /** Set by the probe path for explicitly configured accounts (Bausparvertrag, Depot). */
+  accountName?: string | null
   bookedBalance: number | null
   availableBalance: number | null
   currency: string
@@ -75,6 +95,10 @@ export interface SidecarSuccess {
   holdings: SidecarHolding[]
   /** One message per bank profile that failed (e.g. wrong PIN) — others still succeed. */
   warnings: string[]
+  /** Labels of bank profiles that aborted because they'd need an app approval (--no-sca). */
+  scaRequired?: string[]
+  /** Client state to persist; written by runSidecar() from the state file, not by Python. */
+  state?: BankClientStateMap
 }
 
 interface SidecarError {
@@ -90,6 +114,13 @@ export interface SidecarOptions {
   endDate?: Date
   balances?: boolean
   skipTransactions?: boolean
+  /** Previously persisted client state, keyed by bank. Omit on a first-ever sync. */
+  state?: BankClientStateMap
+  /**
+   * Unattended run (cron): abort instead of waiting for a SecureGo plus approval.
+   * The sidecar then exits with code 'sca_required' rather than polling for minutes.
+   */
+  noSca?: boolean
 }
 
 // Decoupled SCA polling in the Python side can take several minutes while the user
@@ -125,11 +156,43 @@ export async function runSidecar(opts: SidecarOptions = {}): Promise<SidecarSucc
     throw new Error(`FinTS-Sidecar-Skript nicht gefunden: ${script}`)
   }
 
+  // The client state travels through a temp file rather than argv/env: the blob is a
+  // few KB of binary (base64'd) and both platforms cap those. The sidecar reads it at
+  // startup and rewrites it before exiting; we persist whatever it wrote.
+  const stateFile = path.join(
+    fs.mkdtempSync(path.join(os.tmpdir(), 'athena-fints-')),
+    'state.json',
+  )
+  try {
+    fs.writeFileSync(stateFile, JSON.stringify(opts.state ?? {}), { mode: 0o600 })
+  } catch (err) {
+    // Not fatal: without state the sync still works, it just costs an app approval.
+    console.warn('[fints] State-Datei konnte nicht geschrieben werden:', err)
+  }
+
   const args = [script]
   if (opts.startDate) args.push('--start', opts.startDate.toISOString())
   if (opts.endDate) args.push('--end', opts.endDate.toISOString())
   if (opts.balances) args.push('--balances')
   if (opts.skipTransactions) args.push('--no-txns')
+  if (opts.noSca) args.push('--no-sca')
+  args.push('--state-file', stateFile)
+
+  /** Read back what the sidecar wrote, then remove the temp dir either way. */
+  const readAndCleanupState = (): BankClientStateMap | undefined => {
+    let parsed: BankClientStateMap | undefined
+    try {
+      const raw = fs.readFileSync(stateFile, 'utf8')
+      const data = JSON.parse(raw) as BankClientStateMap
+      if (data && typeof data === 'object') parsed = data
+    } catch {
+      // Sidecar crashed before writing, or wrote garbage — nothing to persist.
+    }
+    try {
+      fs.rmSync(path.dirname(stateFile), { recursive: true, force: true })
+    } catch { /* temp dir cleanup is best-effort */ }
+    return parsed
+  }
 
   return new Promise<SidecarSuccess>((resolve, reject) => {
     const child = spawn(python, args, {
@@ -146,6 +209,7 @@ export async function runSidecar(opts: SidecarOptions = {}): Promise<SidecarSucc
       if (settled) return
       settled = true
       child.kill()
+      readAndCleanupState()
       reject(new Error('FinTS-Zeitüberschreitung: keine Antwort vom Bank-Sidecar.'))
     }, SIDECAR_TIMEOUT_MS)
 
@@ -161,6 +225,7 @@ export async function runSidecar(opts: SidecarOptions = {}): Promise<SidecarSucc
       if (settled) return
       settled = true
       clearTimeout(timer)
+      readAndCleanupState()
       reject(new Error(`FinTS-Sidecar konnte nicht gestartet werden (${python}): ${err.message}`))
     })
 
@@ -169,6 +234,9 @@ export async function runSidecar(opts: SidecarOptions = {}): Promise<SidecarSucc
       settled = true
       clearTimeout(timer)
 
+      // Read the state before inspecting the payload: even a run that ultimately failed
+      // (one bank down out of two) may have produced a usable state for the others.
+      const state = readAndCleanupState()
       const payload = parsePayload(stdout)
       if (!payload) {
         reject(new Error(
@@ -178,10 +246,16 @@ export async function runSidecar(opts: SidecarOptions = {}): Promise<SidecarSucc
         return
       }
       if (!payload.ok) {
-        reject(new Error(payload.error || 'Unbekannter FinTS-Fehler'))
+        const error = new Error(payload.error || 'Unbekannter FinTS-Fehler') as Error & {
+          code?: string
+          state?: BankClientStateMap
+        }
+        error.code = payload.code
+        error.state = state
+        reject(error)
         return
       }
-      resolve(payload)
+      resolve({ ...payload, state })
     })
   })
 }

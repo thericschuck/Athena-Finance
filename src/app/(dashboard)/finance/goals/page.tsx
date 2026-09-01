@@ -79,13 +79,13 @@ function sortGoals(goals: Goal[]): Goal[] {
 
 // ─── Badge configs ────────────────────────────────────────────────────────────
 const PRIORITY_BADGE: Record<string, { label: string; classes: string }> = {
-  hoch:    { label: 'Hoch',    classes: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+  hoch:    { label: 'Hoch',    classes: 'bg-warning/10 text-warning' },
   mittel:  { label: 'Mittel',  classes: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
   niedrig: { label: 'Niedrig', classes: 'bg-muted text-muted-foreground' },
 }
 
 const STATUS_ICON: Record<string, React.ReactNode> = {
-  offen:        <Circle className="size-4 text-green-500" />,
+  offen:        <Circle className="size-4 text-success" />,
   geschlossen:  <CheckCircle2 className="size-4 text-muted-foreground" />,
 }
 
@@ -170,7 +170,7 @@ function GoalCard({ goal, locale, dateFormat }: { goal: Goal; locale: string; da
   const barColor = isClosed
     ? 'bg-muted-foreground/40'
     : pct >= 100
-    ? 'bg-green-500 dark:bg-green-400'
+    ? 'bg-success'
     : 'bg-primary'
 
   return (
@@ -261,7 +261,7 @@ function SavingsPlanBadge({ gap, locale }: { gap: number; locale: string }) {
   // Small buffer: ±5 € counts as "on track"
   if (gap >= -5) {
     return (
-      <div className="flex items-center gap-1.5 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-2.5 py-1.5 text-xs text-green-700 dark:text-green-400">
+      <div className="flex items-center gap-1.5 rounded-md bg-success/10 border border-success/30 px-2.5 py-1.5 text-xs text-success">
         <TrendingUp className="size-3.5 shrink-0" />
         <span>
           {gap >= 5
@@ -273,7 +273,7 @@ function SavingsPlanBadge({ gap, locale }: { gap: number; locale: string }) {
   }
 
   return (
-    <div className="flex items-center gap-1.5 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-2.5 py-1.5 text-xs text-amber-700 dark:text-amber-400">
+    <div className="flex items-center gap-1.5 rounded-md bg-warning/10 border border-warning/30 px-2.5 py-1.5 text-xs text-warning">
       <TrendingDown className="size-3.5 shrink-0" />
       <span><strong>{fmt(gap)}</strong> im Rückstand</span>
     </div>

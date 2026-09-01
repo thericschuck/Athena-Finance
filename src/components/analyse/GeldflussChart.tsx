@@ -1,6 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
+import { SkeletonChart } from '@/components/ui/skeleton'
 import type { SankeyData } from '@/lib/analyseData'
 
 interface Props { data: SankeyData }
@@ -13,6 +14,6 @@ export const GeldflussChart = dynamic<Props>(
   () => import('./GeldflussChart-impl').then(m => m.GeldflussChart),
   {
     ssr: false,
-    loading: () => <div className="bg-[#13161e] border border-[#1e2130] rounded-xl p-5 h-114 animate-pulse" />,
+    loading: () => <SkeletonChart variant="area" height={388} />,
   },
 )

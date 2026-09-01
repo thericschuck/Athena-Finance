@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { Wand2, Check, X, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -27,10 +27,14 @@ interface Props {
   onAccept: (id: string, categoryId: string) => Promise<void>
 }
 
+/** `neu` = bisher ohne Kategorie. `aenderung` = es steht schon eine drin. */
+type GroupKind = 'neu' | 'aenderung'
+
 interface Group {
   key: string
   label: string
   items: CategorySuggestion[]
+  kind: GroupKind
 }
 
 function categoryLabel(c: { icon: string | null; name: string }): string {
@@ -40,15 +44,49 @@ function categoryLabel(c: { icon: string | null; name: string }): string {
 // Groups by the same normalized-counterparty key the learned-category map uses — "Rewe Markt"
 // showing up 15 times is the same recurring expense, not 15 separate decisions. A suggestion
 // without a counterparty name (rare) just gets its own single-item group.
-function groupSuggestions(suggestions: CategorySuggestion[]): Group[] {
+//
+// `kind` steckt im Schlüssel, weil derselbe Empfänger in beiden Listen auftauchen kann (eine
+// alte Buchung kategorisiert, eine neue nicht) — ohne Präfix träfen sich beide im `chosen`-
+// State und würden sich gegenseitig überschreiben.
+function groupSuggestions(suggestions: CategorySuggestion[], kind: GroupKind): Group[] {
   const groups = new Map<string, Group>()
   for (const s of suggestions) {
-    const key = s.counterpart_name ? normalizeCounterpart(s.counterpart_name) : `__single__${s.id}`
+    const base = s.counterpart_name ? normalizeCounterpart(s.counterpart_name) : `__single__${s.id}`
+    const key = `${kind}:${base}`
     const existing = groups.get(key)
     if (existing) existing.items.push(s)
-    else groups.set(key, { key, label: s.counterpart_name ?? s.description ?? '—', items: [s] })
+    else groups.set(key, { key, label: s.counterpart_name ?? s.description ?? '—', items: [s], kind })
   }
   return [...groups.values()].sort((a, b) => b.items.length - a.items.length)
+}
+
+/**
+ * Trennt Erstkategorisierung von Umkategorisierung.
+ *
+ * Die API liefert beides in einer Liste: Buchungen ohne Kategorie UND solche, bei denen der
+ * Vorschlag von der gesetzten Kategorie abweicht. Letzteres entsteht dadurch, dass
+ * `buildLearnedCategoryMap` pro Empfänger die HÄUFIGSTE Kategorie gewinnen lässt — wer
+ * PayPal-Buchungen bewusst mal auf „Shopping" und mal auf „Freizeit" legt, bekommt für die
+ * Minderheit dauerhaft einen Änderungsvorschlag.
+ *
+ * Vermischt in einer Liste mit einem „Alle übernehmen"-Knopf ist das gefährlich: ein Klick
+ * hätte hier 64 bereits richtig zugeordnete Buchungen per Mehrheitsentscheid umgeschrieben.
+ * Deshalb zwei Abschnitte, und der Sammelknopf fasst nur die unkategorisierten an.
+ */
+function buildGroups(list: CategorySuggestion[]): { neue: Group[]; aenderungen: Group[] } {
+  const ohne: CategorySuggestion[] = []
+  const mit: CategorySuggestion[] = []
+  for (const s of list) (s.current_category ? mit : ohne).push(s)
+  return {
+    neue: groupSuggestions(ohne, 'neu'),
+    aenderungen: groupSuggestions(mit, 'aenderung'),
+  }
+}
+
+/** Die Kategorien, die in dieser Gruppe überschrieben würden — für die Anzeige „bisher: …". */
+function bisherLabels(g: Group): string {
+  const namen = [...new Set(g.items.map(i => i.current_category?.name).filter(Boolean))] as string[]
+  return namen.join(', ')
 }
 
 export function CategorySuggestions({ categories, onAccept }: Props) {
@@ -62,7 +100,8 @@ export function CategorySuggestions({ categories, onAccept }: Props) {
   const [busyKey, setBusyKey] = useState<string | null>(null)
   const [isApplyingAll, setIsApplyingAll] = useState(false)
 
-  const groups = useMemo(() => groupSuggestions(suggestions), [suggestions])
+  const { neue, aenderungen } = useMemo(() => buildGroups(suggestions), [suggestions])
+  const neueCount = useMemo(() => neue.reduce((n, g) => n + g.items.length, 0), [neue])
 
   const loadSuggestions = async () => {
     setIsLoading(true)
@@ -73,8 +112,9 @@ export function CategorySuggestions({ categories, onAccept }: Props) {
       if (data.error) throw new Error(data.error)
       const list = data.suggestions ?? []
       setSuggestions(list)
+      const { neue: n, aenderungen: a } = buildGroups(list)
       setChosen(Object.fromEntries(
-        groupSuggestions(list).map(g => [g.key, g.items[0].suggested_category.id]),
+        [...n, ...a].map(g => [g.key, g.items[0].suggested_category.id]),
       ))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Vorschläge konnten nicht geladen werden')
@@ -107,16 +147,19 @@ export function CategorySuggestions({ categories, onAccept }: Props) {
     setSuggestions(prev => prev.filter(s => !ids.has(s.id)))
   }
 
-  const acceptAll = async () => {
+  // Bewusst NUR die unkategorisierten. Die Änderungsvorschläge bleiben stehen und müssen
+  // einzeln bestätigt werden — siehe buildGroups.
+  const acceptAllNew = async () => {
     setIsApplyingAll(true)
     try {
       await Promise.all(
-        groups.flatMap(g => {
+        neue.flatMap(g => {
           const categoryId = resolvedCategoryId(g)
           return g.items.map(item => onAccept(item.id, categoryId))
         }),
       )
-      setSuggestions([])
+      const ids = new Set(neue.flatMap(g => g.items.map(i => i.id)))
+      setSuggestions(prev => prev.filter(s => !ids.has(s.id)))
     } finally {
       setIsApplyingAll(false)
     }
@@ -134,7 +177,8 @@ export function CategorySuggestions({ categories, onAccept }: Props) {
           <SheetTitle>Kategorie-Vorschläge</SheetTitle>
           <SheetDescription>
             Nach Empfänger gruppiert — eine Kategorie pro Gruppe übernehmen, statt jede
-            einzelne Buchung zu bestätigen. Bei Bedarf danach in der Tabelle einzeln anpassen.
+            einzelne Buchung zu bestätigen. Oben die Buchungen ohne Kategorie, darunter
+            Vorschläge, die eine bereits gesetzte Kategorie ersetzen würden.
           </SheetDescription>
         </SheetHeader>
 
@@ -147,16 +191,32 @@ export function CategorySuggestions({ categories, onAccept }: Props) {
             <p className="text-sm text-destructive py-8 text-center">{error}</p>
           )}
 
-          {!isLoading && !error && groups.length === 0 && (
+          {!isLoading && !error && neue.length === 0 && aenderungen.length === 0 && (
             <p className="text-sm text-muted-foreground py-8 text-center">
               Keine offenen Vorschläge — alles ist bereits passend kategorisiert.
             </p>
           )}
 
-          {groups.map(g => (
+          {neue.length > 0 && (
+            <p className="pt-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              Ohne Kategorie · {neueCount} {neueCount === 1 ? 'Buchung' : 'Buchungen'}
+            </p>
+          )}
+
+          {/* Eine Liste statt zweier Schleifen — die Zwischenüberschrift wird an der
+              Bruchstelle eingeschoben. Zwei getrennte `.map()` hätten die komplette
+              Gruppenkarte dupliziert. */}
+          {[...neue, ...aenderungen].map((g, i) => (
+            <Fragment key={g.key}>
+              {i === neue.length && aenderungen.length > 0 && (
+                <p className="pt-3 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Änderungsvorschläge · einzeln prüfen
+                </p>
+              )}
             <div
-              key={g.key}
-              className="rounded-lg border border-border p-3 space-y-2"
+              className={`rounded-lg border p-3 space-y-2 ${
+                g.kind === 'aenderung' ? 'border-dashed border-border/70' : 'border-border'
+              }`}
             >
               <div className="flex items-center gap-1.5">
                 <p className="text-xs font-medium truncate flex-1 min-w-0">{g.label}</p>
@@ -166,6 +226,13 @@ export function CategorySuggestions({ categories, onAccept }: Props) {
                   </span>
                 )}
               </div>
+              {g.kind === 'aenderung' && (
+                // Ohne diese Zeile sieht ein Änderungsvorschlag genauso aus wie eine noch
+                // gar nicht kategorisierte Buchung — man übernimmt ihn dann versehentlich.
+                <p className="text-[11px] text-muted-foreground">
+                  bisher: <span className="text-foreground">{bisherLabels(g)}</span>
+                </p>
+              )}
               <Select
                 value={resolvedCategoryId(g)}
                 onValueChange={v => setChosen(prev => ({ ...prev, [g.key]: v }))}
@@ -209,16 +276,20 @@ export function CategorySuggestions({ categories, onAccept }: Props) {
                 </Button>
               </div>
             </div>
+            </Fragment>
           ))}
         </div>
 
-        {suggestions.length > 0 && (
+        {neueCount > 0 && (
           <SheetFooter>
-            <Button onClick={acceptAll} disabled={isApplyingAll}>
+            {/* Fasst ausschliesslich die unkategorisierten an. Die Änderungsvorschläge
+                bleiben nach dem Klick stehen — sie sollen eine bewusste Entscheidung
+                bleiben, keine Beifang eines Sammelknopfs. */}
+            <Button onClick={acceptAllNew} disabled={isApplyingAll}>
               {isApplyingAll
                 ? <Loader2 className="size-4 animate-spin" />
                 : <Check className="size-4" />}
-              Alle {suggestions.length} Buchungen übernehmen ({groups.length} Gruppen)
+              Alle {neueCount} ohne Kategorie übernehmen ({neue.length} Gruppen)
             </Button>
           </SheetFooter>
         )}

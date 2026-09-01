@@ -10,32 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
-  }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -79,6 +54,7 @@ export type Database = {
       }
       accounts: {
         Row: {
+          bank_iban: string | null
           color: string | null
           created_at: string
           currency: string
@@ -93,6 +69,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          bank_iban?: string | null
           color?: string | null
           created_at?: string
           currency: string
@@ -107,6 +84,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          bank_iban?: string | null
           color?: string | null
           created_at?: string
           currency?: string
@@ -124,21 +102,158 @@ export type Database = {
       }
       ai_conversations: {
         Row: {
+          archived_at: string | null
           created_at: string
           id: string
+          pinned: boolean
           title: string | null
+          updated_at: string
           user_id: string
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string
           id?: string
+          pinned?: boolean
           title?: string | null
+          updated_at?: string
           user_id: string
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
           id?: string
+          pinned?: boolean
           title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_knowledge: {
+        Row: {
+          content: string
+          content_tsv: unknown
+          created_at: string
+          id: string
+          pinned: boolean
+          source: string
+          source_url: string | null
+          tags: string[]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          content_tsv?: unknown
+          created_at?: string
+          id?: string
+          pinned?: boolean
+          source?: string
+          source_url?: string | null
+          tags?: string[]
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          content_tsv?: unknown
+          created_at?: string
+          id?: string
+          pinned?: boolean
+          source?: string
+          source_url?: string | null
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_logs: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          duration_ms: number | null
+          event: string
+          id: string
+          level: string
+          message: string | null
+          meta: Json | null
+          user_id: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          event: string
+          id?: string
+          level?: string
+          message?: string | null
+          meta?: Json | null
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          event?: string
+          id?: string
+          level?: string
+          message?: string | null
+          meta?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_logs_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_memories: {
+        Row: {
+          category: string
+          confidence: number
+          content: string
+          content_tsv: unknown
+          created_at: string
+          id: string
+          key: string
+          last_used_at: string | null
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          confidence?: number
+          content: string
+          content_tsv?: unknown
+          created_at?: string
+          id?: string
+          key: string
+          last_used_at?: string | null
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          confidence?: number
+          content?: string
+          content_tsv?: unknown
+          created_at?: string
+          id?: string
+          key?: string
+          last_used_at?: string | null
+          source?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -150,9 +265,13 @@ export type Database = {
           content_tsv: unknown
           conversation_id: string
           created_at: string
+          duration_ms: number | null
+          finish_reason: string | null
           id: string
+          model: string | null
           role: string
           tool_calls: Json | null
+          usage: Json | null
           user_id: string
         }
         Insert: {
@@ -161,9 +280,13 @@ export type Database = {
           content_tsv?: unknown
           conversation_id: string
           created_at?: string
+          duration_ms?: number | null
+          finish_reason?: string | null
           id?: string
+          model?: string | null
           role: string
           tool_calls?: Json | null
+          usage?: Json | null
           user_id: string
         }
         Update: {
@@ -172,9 +295,13 @@ export type Database = {
           content_tsv?: unknown
           conversation_id?: string
           created_at?: string
+          duration_ms?: number | null
+          finish_reason?: string | null
           id?: string
+          model?: string | null
           role?: string
           tool_calls?: Json | null
+          usage?: Json | null
           user_id?: string
         }
         Relationships: [
@@ -186,6 +313,105 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ai_pending_actions: {
+        Row: {
+          action: string
+          conversation_id: string | null
+          created_at: string
+          error: string | null
+          id: string
+          input: Json
+          message_id: string | null
+          resolved_at: string | null
+          result: Json | null
+          status: string
+          summary: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          conversation_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          input: Json
+          message_id?: string | null
+          resolved_at?: string | null
+          result?: Json | null
+          status?: string
+          summary: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          conversation_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          input?: Json
+          message_id?: string | null
+          resolved_at?: string | null
+          result?: Json | null
+          status?: string
+          summary?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_pending_actions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_pending_actions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "ai_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_settings: {
+        Row: {
+          auto_memory: boolean
+          custom_instructions: string | null
+          daily_message_cap: number
+          effort: string
+          max_steps: number
+          memory_enabled: boolean
+          model: string
+          updated_at: string
+          user_id: string
+          web_research: boolean
+        }
+        Insert: {
+          auto_memory?: boolean
+          custom_instructions?: string | null
+          daily_message_cap?: number
+          effort?: string
+          max_steps?: number
+          memory_enabled?: boolean
+          model?: string
+          updated_at?: string
+          user_id: string
+          web_research?: boolean
+        }
+        Update: {
+          auto_memory?: boolean
+          custom_instructions?: string | null
+          daily_message_cap?: number
+          effort?: string
+          max_steps?: number
+          memory_enabled?: boolean
+          model?: string
+          updated_at?: string
+          user_id?: string
+          web_research?: boolean
+        }
+        Relationships: []
       }
       ai_tool_calls: {
         Row: {
@@ -332,6 +558,7 @@ export type Database = {
           notes: string | null
           portfolio_name: string | null
           quantity: number | null
+          source: string
           symbol: string | null
           type: string
           updated_at: string
@@ -348,6 +575,7 @@ export type Database = {
           notes?: string | null
           portfolio_name?: string | null
           quantity?: number | null
+          source?: string
           symbol?: string | null
           type: string
           updated_at?: string
@@ -364,6 +592,7 @@ export type Database = {
           notes?: string | null
           portfolio_name?: string | null
           quantity?: number | null
+          source?: string
           symbol?: string | null
           type?: string
           updated_at?: string
@@ -1179,6 +1408,36 @@ export type Database = {
           created_at?: string
           exchange?: string
           id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      fints_client_state: {
+        Row: {
+          bank_key: string
+          bank_label: string | null
+          last_sca_at: string | null
+          sca_required_since: string | null
+          state_blob: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bank_key: string
+          bank_label?: string | null
+          last_sca_at?: string | null
+          sca_required_since?: string | null
+          state_blob: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bank_key?: string
+          bank_label?: string | null
+          last_sca_at?: string | null
+          sca_required_since?: string | null
+          state_blob?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -2532,6 +2791,200 @@ export type Database = {
         }
         Relationships: []
       }
+      valuables: {
+        Row: {
+          box_vorhanden: boolean
+          created_at: string
+          gekauft_am: string | null
+          id: string
+          im_vermoegen: boolean
+          is_active: boolean
+          kategorie: string
+          kaufpreis: number | null
+          kaufquelle: string | null
+          lagerort: string | null
+          marke: string | null
+          modell: string | null
+          name: string
+          notizen: string | null
+          papiere_vorhanden: boolean
+          referenz: string | null
+          seriennummer: string | null
+          sort_order: number
+          updated_at: string
+          user_id: string
+          verkauft_am: string | null
+          verkaufspreis: number | null
+          versichert: boolean
+          versicherungsnummer: string | null
+          waehrung: string
+          zustand: string | null
+        }
+        Insert: {
+          box_vorhanden?: boolean
+          created_at?: string
+          gekauft_am?: string | null
+          id?: string
+          im_vermoegen?: boolean
+          is_active?: boolean
+          kategorie?: string
+          kaufpreis?: number | null
+          kaufquelle?: string | null
+          lagerort?: string | null
+          marke?: string | null
+          modell?: string | null
+          name: string
+          notizen?: string | null
+          papiere_vorhanden?: boolean
+          referenz?: string | null
+          seriennummer?: string | null
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+          verkauft_am?: string | null
+          verkaufspreis?: number | null
+          versichert?: boolean
+          versicherungsnummer?: string | null
+          waehrung?: string
+          zustand?: string | null
+        }
+        Update: {
+          bild_url?: string | null
+          foto_url?: string | null
+          box_vorhanden?: boolean
+          created_at?: string
+          gekauft_am?: string | null
+          id?: string
+          im_vermoegen?: boolean
+          is_active?: boolean
+          kategorie?: string
+          kaufpreis?: number | null
+          kaufquelle?: string | null
+          lagerort?: string | null
+          marke?: string | null
+          modell?: string | null
+          name?: string
+          notizen?: string | null
+          papiere_vorhanden?: boolean
+          referenz?: string | null
+          seriennummer?: string | null
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+          verkauft_am?: string | null
+          verkaufspreis?: number | null
+          versichert?: boolean
+          versicherungsnummer?: string | null
+          waehrung?: string
+          zustand?: string | null
+        }
+        Relationships: []
+      }
+      valuable_images: {
+        Row: {
+          art: string
+          basis_bild_id: string | null
+          created_at: string
+          hinweis: string | null
+          id: string
+          ist_hauptbild: boolean
+          pfad: string
+          prompt: string | null
+          sort_order: number
+          user_id: string
+          valuable_id: string
+        }
+        Insert: {
+          art?: string
+          basis_bild_id?: string | null
+          created_at?: string
+          hinweis?: string | null
+          id?: string
+          ist_hauptbild?: boolean
+          pfad: string
+          prompt?: string | null
+          sort_order?: number
+          user_id: string
+          valuable_id: string
+        }
+        Update: {
+          art?: string
+          basis_bild_id?: string | null
+          created_at?: string
+          hinweis?: string | null
+          id?: string
+          ist_hauptbild?: boolean
+          pfad?: string
+          prompt?: string | null
+          sort_order?: number
+          user_id?: string
+          valuable_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "valuable_images_basis_bild_id_fkey"
+            columns: ["basis_bild_id"]
+            isOneToOne: false
+            referencedRelation: "valuable_images"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "valuable_images_valuable_id_fkey"
+            columns: ["valuable_id"]
+            isOneToOne: false
+            referencedRelation: "valuables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      valuable_valuations: {
+        Row: {
+          bewertet_am: string
+          created_at: string
+          id: string
+          notiz: string | null
+          quelle: string
+          user_id: string
+          valuable_id: string
+          wert: number
+        }
+        Insert: {
+          bewertet_am?: string
+          created_at?: string
+          id?: string
+          notiz?: string | null
+          quelle?: string
+          user_id: string
+          valuable_id: string
+          wert: number
+        }
+        Update: {
+          bewertet_am?: string
+          created_at?: string
+          id?: string
+          notiz?: string | null
+          quelle?: string
+          user_id?: string
+          valuable_id?: string
+          wert?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "valuable_valuations_valuable_id_fkey"
+            columns: ["valuable_id"]
+            isOneToOne: false
+            referencedRelation: "valuables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "valuable_valuations_valuable_id_fkey"
+            columns: ["valuable_id"]
+            isOneToOne: false
+            referencedRelation: "valuables_current"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       webhook_events: {
         Row: {
           action: string | null
@@ -2708,10 +3161,112 @@ export type Database = {
         }
         Relationships: []
       }
+      unified_transactions: {
+        Row: {
+          account_color: string | null
+          account_id: string | null
+          account_name: string | null
+          amount: number | null
+          amount_base: number | null
+          booked_date: string | null
+          category_color: string | null
+          category_id: string | null
+          category_name: string | null
+          category_type: string | null
+          contract_id: string | null
+          currency: string | null
+          date: string | null
+          description: string | null
+          fx_rate: number | null
+          id: string | null
+          merchant: string | null
+          signed_amount: number | null
+          source: string | null
+          tags: string[] | null
+          transfer_to: string | null
+          type: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      valuables_current: {
+        Row: {
+          aktueller_wert: number | null
+          bild_anzahl: number | null
+          foto_anzahl: number | null
+          hauptbild_pfad: string | null
+          box_vorhanden: boolean | null
+          created_at: string | null
+          gekauft_am: string | null
+          id: string | null
+          im_vermoegen: boolean | null
+          is_active: boolean | null
+          kategorie: string | null
+          kaufpreis: number | null
+          kaufquelle: string | null
+          lagerort: string | null
+          marke: string | null
+          modell: string | null
+          name: string | null
+          notizen: string | null
+          papiere_vorhanden: boolean | null
+          referenz: string | null
+          rendite_prozent: number | null
+          seriennummer: string | null
+          sort_order: number | null
+          updated_at: string | null
+          user_id: string | null
+          verkauft_am: string | null
+          verkaufspreis: number | null
+          versichert: boolean | null
+          versicherungsnummer: string | null
+          waehrung: string | null
+          wert_quelle: string | null
+          wert_stand: string | null
+          zustand: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      fn_valuables_total: {
+        Args: { p_date: string; p_uid: string }
+        Returns: number
+      }
       check_combo_guard: { Args: { p_combo_id: string }; Returns: undefined }
+      fn_ensure_linked_account: {
+        Args: {
+          p_account_name: string
+          p_booked_balance: number
+          p_currency: string
+          p_iban: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       fn_take_snapshot: { Args: { target_date?: string }; Returns: Json }
+      search_ai_knowledge: {
+        Args: { max_results?: number; q: string }
+        Returns: {
+          content: string
+          id: string
+          rank: number
+          source_url: string
+          tags: string[]
+          title: string
+        }[]
+      }
+      search_ai_memories: {
+        Args: { max_results?: number; q: string }
+        Returns: {
+          category: string
+          content: string
+          id: string
+          key: string
+          rank: number
+          source: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
@@ -2840,9 +3395,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },

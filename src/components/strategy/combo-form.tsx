@@ -97,7 +97,7 @@ function IndicatorList({
       <input type="hidden" name="indicators_json" value={json} />
 
       {options.length === 0 && (
-        <p className="text-xs text-amber-600 dark:text-amber-400">
+        <p className="text-xs text-warning">
           Erst Indikatoren in der Bibliothek anlegen, bevor du sie einer Combo hinzufügst.
         </p>
       )}

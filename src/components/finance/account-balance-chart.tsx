@@ -1,28 +1,15 @@
 'use client'
 
-import { useState, useMemo } from 'react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import { useSettings } from '@/components/providers/settings-context'
 import { fmtCurrency as libFmtCurrency } from '@/lib/format'
+import { periodDateFormat, type Period } from '@/lib/period'
 
 export type AccountBalancePoint = {
   snapshot_date: string
   balance:       number
-}
-
-type FilterKey = '1W' | '1M' | '3M' | '6M' | '1J' | 'All'
-const FILTERS: FilterKey[] = ['1W', '1M', '3M', '6M', '1J', 'All']
-
-function cutoff(key: FilterKey): Date | null {
-  const d = new Date()
-  if (key === '1W') { d.setDate(d.getDate() - 7);        return d }
-  if (key === '1M') { d.setMonth(d.getMonth() - 1);      return d }
-  if (key === '3M') { d.setMonth(d.getMonth() - 3);      return d }
-  if (key === '6M') { d.setMonth(d.getMonth() - 6);      return d }
-  if (key === '1J') { d.setFullYear(d.getFullYear() - 1); return d }
-  return null
 }
 
 function fmtShort(n: number) {
@@ -48,30 +35,28 @@ function ChartTooltip({ active, payload, label }: {
   )
 }
 
+/**
+ * Rein darstellend: `points` sind bereits auf den Zeitraum zugeschnitten, `period` dient
+ * nur noch dem Achsenformat. Der Umschalter sass frueher hier drin und galt deshalb nur
+ * fuer den Chart — waehrend Einnahmen/Ausgaben/Saldo daneben die volle Historie summierten.
+ * Jetzt steuert ein Zeitraum im Seitenkopf die ganze Seite.
+ */
 export function AccountBalanceChart({
   points,
+  period,
   currency = 'EUR',
   color,
 }: {
   points:    AccountBalancePoint[]
+  period:    Period
   currency?: string
   color?:    string | null
 }) {
   const { locale } = useSettings()
-  const [filter, setFilter] = useState<FilterKey>('1J')
+  const data = points
 
-  const xFormatter = (v: string, key: FilterKey): string => {
-    const d = new Date(v)
-    if (key === '1W' || key === '1M') {
-      return d.toLocaleDateString(locale, { day: '2-digit', month: 'short' })
-    }
-    return d.toLocaleDateString(locale, { month: 'short', year: '2-digit' })
-  }
-
-  const data = useMemo(() => {
-    const from = cutoff(filter)
-    return (from ? points.filter(p => new Date(p.snapshot_date) >= from) : points)
-  }, [points, filter])
+  const xFormatter = (v: string): string =>
+    new Date(v).toLocaleDateString(locale, periodDateFormat(period))
 
   if (points.length === 0) {
     return (
@@ -85,30 +70,20 @@ export function AccountBalanceChart({
 
   const isPositive = (data.at(-1)?.balance ?? 0) >= 0
   const lineColor = isPositive
-    ? (color ?? 'hsl(var(--primary))')
-    : 'hsl(var(--destructive))'
+    ? (color ?? 'var(--primary)')
+    : 'var(--destructive)'
 
   return (
     <div className="rounded-lg border border-border bg-card p-5">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-baseline justify-between mb-4 gap-3">
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
           Kontostand Verlauf {currency !== 'EUR' ? `(${currency})` : ''}
         </p>
-        <div className="flex gap-1">
-          {FILTERS.map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-2.5 py-1 text-xs rounded font-medium transition-all ${
-                filter === f
-                  ? 'bg-foreground text-background scale-105'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-              }`}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
+        {data.length > 0 && (
+          <p className="text-sm font-semibold tabular-nums text-foreground">
+            {libFmtCurrency(data[data.length - 1].balance, currency, locale, { fractionDigits: 2 })}
+          </p>
+        )}
       </div>
 
       <ResponsiveContainer width="100%" height={200}>
@@ -122,7 +97,7 @@ export function AccountBalanceChart({
           <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
           <XAxis
             dataKey="snapshot_date"
-            tickFormatter={v => xFormatter(v, filter)}
+            tickFormatter={xFormatter}
             tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
             axisLine={false} tickLine={false} minTickGap={40}
           />

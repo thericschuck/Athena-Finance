@@ -14,9 +14,9 @@ function CustomTooltip({ active, payload }: any) {
   const { name, value } = payload[0]?.payload as CategoryDatum
   const isIncome = value >= 0
   return (
-    <div className="rounded-lg border border-[#1e2130] bg-[#0d0f14] p-2.5 shadow-xl text-xs">
-      <p className="text-[#d1d5db] font-medium mb-0.5">{name}</p>
-      <p className={`font-semibold tabular-nums ${isIncome ? 'text-[#8CA277]' : 'text-[#A9553C]'}`}>
+    <div className="rounded-lg border border-border bg-popover p-2.5 shadow-xl text-xs">
+      <p className="text-popover-foreground font-medium mb-0.5">{name}</p>
+      <p className={`font-semibold tabular-nums ${isIncome ? 'text-(--chart-income)' : 'text-(--chart-expense)'}`}>
         {isIncome ? '+' : ''}{Math.abs(value).toLocaleString('de-DE')} €
       </p>
     </div>
@@ -26,7 +26,7 @@ function CustomTooltip({ active, payload }: any) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function CustomYAxisTick({ x, y, payload }: any) {
   return (
-    <text x={x - 6} y={y} textAnchor="end" dominantBaseline="middle" fontSize={11} fill="#6b7280">
+    <text x={x - 6} y={y} textAnchor="end" dominantBaseline="middle" fontSize={11} fill="var(--muted-foreground)">
       {payload.value}
     </text>
   )
@@ -39,16 +39,16 @@ export function KategorienChart({ data }: Props) {
   const domain  = [-maxAbs * 1.1, maxAbs * 1.1]
 
   return (
-    <div className="bg-[#13161e] border border-[#1e2130] rounded-xl p-5">
+    <div className="bg-card border border-border rounded-xl p-5">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <h2 className="text-sm font-medium text-[#f3f0ea]">Einnahmen & Ausgaben nach Kategorie</h2>
-        <div className="flex items-center gap-4 text-[10px] text-[#6b7280]">
+        <h2 className="text-sm font-medium text-foreground">Einnahmen & Ausgaben nach Kategorie</h2>
+        <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
           <span className="flex items-center gap-1.5">
-            <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#8CA277] opacity-75" />
+            <span className="inline-block w-2.5 h-2.5 rounded-sm bg-(--chart-income) opacity-75" />
             Einnahmen
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#A9553C] opacity-75" />
+            <span className="inline-block w-2.5 h-2.5 rounded-sm bg-(--chart-expense) opacity-75" />
             Ausgaben
           </span>
         </div>
@@ -60,12 +60,12 @@ export function KategorienChart({ data }: Props) {
           layout="vertical"
           margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#1e2130" horizontal={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
           <XAxis
             type="number"
             domain={domain}
             tickFormatter={v => `${Math.round(Math.abs(v as number) / 1000 * 10) / 10}k`}
-            tick={{ fontSize: 10, fill: '#6b7280' }}
+            tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
             axisLine={false}
             tickLine={false}
           />
@@ -77,13 +77,13 @@ export function KategorienChart({ data }: Props) {
             axisLine={false}
             tickLine={false}
           />
-          <ReferenceLine x={0} stroke="#2d3148" strokeWidth={1.5} />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: '#1e2130', fillOpacity: 0.5 }} />
+          <ReferenceLine x={0} stroke="var(--border)" strokeWidth={1.5} />
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--muted)', fillOpacity: 0.5 }} />
           <Bar dataKey="value" radius={4} maxBarSize={22}>
             {sorted.map((entry) => (
               <Cell
                 key={entry.name}
-                fill={entry.value >= 0 ? '#8CA277' : '#A9553C'}
+                fill={entry.value >= 0 ? 'var(--chart-income)' : 'var(--chart-expense)'}
                 fillOpacity={0.78}
               />
             ))}

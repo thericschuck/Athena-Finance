@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { fmtCurrency, fmtDate } from '@/lib/format'
+import { SkeletonTable } from '@/components/ui/skeleton'
 import { useSettings } from '@/components/providers/settings-context'
 import type { BankTransaction, FinanceCategory } from '@/types/bank'
 
@@ -20,6 +21,8 @@ interface Props {
   transactions:     BankTransaction[]
   categories:       FinanceCategory[]
   isLoading:        boolean
+  /** Mindestens eine Antwort ist da — erst dann darf der Leerzustand gezeigt werden. */
+  hasLoaded:        boolean
   onFilter:         (params: { q?: string; categoryId?: string }) => void
   onUpdateCategory: (id: string, categoryId: string | null) => void
 }
@@ -28,14 +31,103 @@ function categoryLabel(c: FinanceCategory): string {
   return c.icon ? `${c.icon} ${c.name}` : c.name
 }
 
-export function BankTransactionsView({ transactions, categories, isLoading, onFilter, onUpdateCategory }: Props) {
+/** Wie viele Zeilen zunaechst gerendert werden, bevor „Mehr laden“ noetig ist. */
+const PAGE = 60
+
+/**
+ * Kategorie-Zelle, die ihre Auswahlliste erst beim Anklicken aufbaut.
+ *
+ * Vorher hing in JEDER Zeile eine fertige Radix-Select. Bei 609 Buchungen und 19
+ * Kategorien waren das 609 Select-Instanzen mit gut 12.000 Eintraegen — und Radix ist
+ * kein natives <select>, sondern richtet pro Instanz Context, Portal, Fokusverwaltung und
+ * eine Collection ein. Genau daran hing die Seite beim Laden.
+ *
+ * Jetzt steht dort ein einfacher Button; die Select entsteht erst, wenn man ihn benutzt,
+ * und verschwindet danach wieder. Statt 609 gleichzeitig existiert nie mehr als eine.
+ */
+function CategoryCell({
+  tx, current, categories, onUpdateCategory,
+}: {
+  tx: BankTransaction
+  current: FinanceCategory | undefined
+  categories: FinanceCategory[]
+  onUpdateCategory: (id: string, categoryId: string | null) => void
+}) {
+  const [editing, setEditing] = useState(false)
+
+  const chipStyle = current?.color
+    ? { backgroundColor: `${current.color}1a`, color: current.color }
+    : undefined
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        aria-label="Kategorie ändern"
+        className={`inline-flex h-7 max-w-[160px] items-center gap-1 truncate rounded-full px-2.5 text-xs transition-colors ${
+          current ? '' : 'text-muted-foreground hover:bg-muted'
+        }`}
+        style={chipStyle}
+      >
+        <span className="truncate">{current ? categoryLabel(current) : 'Kategorisieren…'}</span>
+      </button>
+    )
+  }
+
+  return (
+    <Select
+      defaultOpen
+      value={tx.category_id ?? NO_CATEGORY}
+      onValueChange={v => {
+        onUpdateCategory(tx.id, v === NO_CATEGORY ? null : v)
+        setEditing(false)
+      }}
+      // Schliesst der Nutzer ohne Auswahl, faellt die Zelle auf den Button zurueck —
+      // sonst bliebe die Select fuer den Rest der Sitzung gemountet.
+      onOpenChange={open => { if (!open) setEditing(false) }}
+    >
+      <SelectTrigger
+        size="sm"
+        aria-label="Kategorie ändern"
+        className="h-7 max-w-[160px] rounded-full border-none px-2.5 text-xs shadow-none"
+        style={chipStyle}
+      >
+        <SelectValue placeholder="Kategorisieren…">
+          {current ? categoryLabel(current) : 'Kategorisieren…'}
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={NO_CATEGORY}>Ohne Kategorie</SelectItem>
+        {categories.map(c => (
+          <SelectItem key={c.id} value={c.id}>
+            <span className="flex items-center gap-2">
+              <span
+                className="size-2 rounded-full shrink-0"
+                style={{ backgroundColor: c.color ?? '#94a3b8' }}
+              />
+              {categoryLabel(c)}
+            </span>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
+export function BankTransactionsView({ transactions, categories, isLoading, hasLoaded, onFilter, onUpdateCategory }: Props) {
   const { locale, dateFormat } = useSettings()
   const fmtEur = (n: number) => fmtCurrency(n, 'EUR', locale, { fractionDigits: 2 })
 
   const [search,     setSearch]     = useState('')
   const [categoryId, setCategoryId] = useState('')
+  // Nicht alle Buchungen auf einmal ins DOM: 609 Zeilen mit je fuenf Zellen sind rund
+  // 3.000 Elemente, die der Browser bei jedem Rendern anfassen muss.
+  const [visible, setVisible] = useState(PAGE)
 
   const categoriesById = new Map(categories.map(c => [c.id, c]))
+  const shown = transactions.slice(0, visible)
+  const rest  = transactions.length - shown.length
 
   // Debounce search input
   useEffect(() => {
@@ -46,11 +138,27 @@ export function BankTransactionsView({ transactions, categories, isLoading, onFi
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, categoryId])
 
+  // Nach einem Filterwechsel wieder oben anfangen — sonst zeigt eine Suche mit drei
+  // Treffern immer noch „300 von 609“ aus dem vorherigen Zustand.
+  useEffect(() => { setVisible(PAGE) }, [search, categoryId, transactions.length])
+
   // ── Empty / loading states ──────────────────────────────────────────────────
-  if (isLoading) {
+  // Die Filterleiste steht in allen drei Zuständen an derselben Stelle und wird nie
+  // ausgehängt. Vorher ersetzte der Ladezustand die komplette Ansicht: 300 ms nach dem
+  // ersten Tastendruck verschwand das Suchfeld samt Fokus, und man tippte ins Leere.
+  const filterBar = (
+    <FilterBar
+      search={search} setSearch={setSearch}
+      categoryId={categoryId} setCategoryId={setCategoryId}
+      categories={categories}
+    />
+  )
+
+  if (isLoading || !hasLoaded) {
     return (
-      <div className="py-12 text-center text-sm text-muted-foreground">
-        Transaktionen werden geladen…
+      <div className="space-y-4">
+        {filterBar}
+        <SkeletonTable rows={8} cols={[72, 120, 200, 120, 80]} />
       </div>
     )
   }
@@ -58,11 +166,7 @@ export function BankTransactionsView({ transactions, categories, isLoading, onFi
   if (transactions.length === 0) {
     return (
       <div className="space-y-4">
-        <FilterBar
-          search={search} setSearch={setSearch}
-          categoryId={categoryId} setCategoryId={setCategoryId}
-          categories={categories}
-        />
+        {filterBar}
         <div className="rounded-lg border border-dashed border-border py-14 text-center">
           <p className="text-sm font-medium">Keine Transaktionen</p>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -76,11 +180,7 @@ export function BankTransactionsView({ transactions, categories, isLoading, onFi
   // ── Transaction table ───────────────────────────────────────────────────────
   return (
     <div className="space-y-4">
-      <FilterBar
-        search={search} setSearch={setSearch}
-        categoryId={categoryId} setCategoryId={setCategoryId}
-        categories={categories}
-      />
+      {filterBar}
 
       <div className="rounded-lg border border-border overflow-hidden">
         <div className="overflow-x-auto">
@@ -95,9 +195,9 @@ export function BankTransactionsView({ transactions, categories, isLoading, onFi
               </tr>
             </thead>
             <tbody>
-              {transactions.map((tx, i) => {
+              {shown.map((tx, i) => {
                 const isCredit = tx.amount >= 0
-                const isLast   = i === transactions.length - 1
+                const isLast   = i === shown.length - 1
                 const current  = tx.category_id ? categoriesById.get(tx.category_id) : undefined
 
                 return (
@@ -124,41 +224,18 @@ export function BankTransactionsView({ transactions, categories, isLoading, onFi
                       </span>
                     </td>
                     <td className="px-4 py-2.5">
-                      <Select
-                        value={tx.category_id ?? NO_CATEGORY}
-                        onValueChange={v => onUpdateCategory(tx.id, v === NO_CATEGORY ? null : v)}
-                      >
-                        <SelectTrigger
-                          size="sm"
-                          aria-label="Kategorie ändern"
-                          className="h-7 max-w-[160px] rounded-full border-none px-2.5 text-xs shadow-none"
-                          style={current?.color ? { backgroundColor: `${current.color}1a`, color: current.color } : undefined}
-                        >
-                          <SelectValue placeholder="Kategorisieren…">
-                            {current ? categoryLabel(current) : 'Kategorisieren…'}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={NO_CATEGORY}>Ohne Kategorie</SelectItem>
-                          {categories.map(c => (
-                            <SelectItem key={c.id} value={c.id}>
-                              <span className="flex items-center gap-2">
-                                <span
-                                  className="size-2 rounded-full shrink-0"
-                                  style={{ backgroundColor: c.color ?? '#94a3b8' }}
-                                />
-                                {categoryLabel(c)}
-                              </span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <CategoryCell
+                        tx={tx}
+                        current={current}
+                        categories={categories}
+                        onUpdateCategory={onUpdateCategory}
+                      />
                     </td>
                     <td className="px-4 py-2.5 text-right whitespace-nowrap">
                       <span className={`flex items-center justify-end gap-1 font-medium ${
                         isCredit
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-red-600 dark:text-red-400'
+                          ? 'text-success'
+                          : 'text-danger'
                       }`}>
                         {isCredit
                           ? <TrendingUp  className="size-3.5 shrink-0" />
@@ -175,9 +252,22 @@ export function BankTransactionsView({ transactions, categories, isLoading, onFi
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground text-right">
-        {transactions.length} Transaktionen
-      </p>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        {rest > 0 ? (
+          <button
+            type="button"
+            onClick={() => setVisible(v => v + PAGE)}
+            className="h-8 rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+          >
+            Weitere {Math.min(rest, PAGE)} laden
+          </button>
+        ) : <span />}
+        <p className="text-xs text-muted-foreground">
+          {rest > 0
+            ? `${shown.length} von ${transactions.length} Transaktionen`
+            : `${transactions.length} Transaktionen`}
+        </p>
+      </div>
     </div>
   )
 }

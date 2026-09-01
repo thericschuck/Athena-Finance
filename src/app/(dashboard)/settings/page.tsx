@@ -6,9 +6,16 @@ export default async function SettingsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [profile, settings] = await Promise.all([
+  const [profile, settings, { data: accountRows }] = await Promise.all([
     getProfile(user!.id),
     getSettings(user!.id),
+    supabase
+      .from('accounts')
+      .select('id, name, color')
+      .eq('user_id', user!.id)
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true }),
   ])
 
   return (
@@ -17,6 +24,7 @@ export default async function SettingsPage() {
       <SettingsShell
         initialProfile={profile ?? { id: user!.id, display_name: null, avatar_url: null, timezone: 'Europe/Berlin', currency: 'EUR' }}
         initialSettings={settings}
+        accounts={accountRows ?? []}
         email={user!.email ?? ''}
       />
     </div>

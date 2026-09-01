@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { getPrices } from '@/lib/crypto/coingecko'
+import { getPrices, getEurUsdRate } from '@/lib/crypto/coingecko'
 import type { Json } from '@/types/database'
 import {
   DEFAULT_STRATEGY_SIGNALS,
@@ -10,10 +10,17 @@ import {
   type StrategySignals,
   type PortfolioAllocations,
 } from '@/lib/crypto/rebalancing-defaults'
-import { FIAT_EUR_PRICES, findBySymbol } from '@/lib/crypto/coin-registry'
+import { FIAT_EUR_PRICES } from '@/lib/crypto/coin-registry'
 import { decrypt } from '@/lib/encryption'
-import { fetchKrakenBalances, krakenCodeToSymbol } from '@/lib/kraken'
-import type { ExchangeKeyRow } from '@/types/exchange-keys'
+import {
+  fetchKrakenAssetPairs,
+  fetchKrakenOpenPositions,
+  buildKrakenPriceMap,
+  type KrakenAssetPair,
+  type KrakenOpenPosition,
+} from '@/lib/kraken'
+import { fetchKrakenFuturesOpenPositions, type KrakenFuturesPosition } from '@/lib/kraken/futures'
+import { syncKrakenForUser } from '@/lib/kraken/sync'
 
 export type AssetActionState = { error: string } | { success: true } | null
 
@@ -250,20 +257,14 @@ export async function updateAssetPrices(
       const quantity    = existingAsset?.quantity ?? 0
       const totalValue  = quantity * price
 
-      // Delete today's entry if it exists, then re-insert (UPSERT via delete+insert)
-      await supabase
-        .from('asset_valuations')
-        .delete()
-        .eq('asset_id', id)
-        .eq('valuation_date', today)
-
-      const { error } = await supabase.from('asset_valuations').insert({
+      // Real upsert — asset_valuations has a unique (asset_id, valuation_date) constraint.
+      const { error } = await supabase.from('asset_valuations').upsert({
         asset_id:       id,
         price_per_unit: price,
         total_value:    totalValue,
         valuation_date: today,
         source:         'coingecko',
-      })
+      }, { onConflict: 'asset_id,valuation_date' })
 
       if (error) {
         errors.push(`${coingecko_id}: ${error.message}`)
@@ -314,11 +315,9 @@ export async function refreshPrices(): Promise<{ error?: string; updated?: numbe
     source:         'coingecko',
   }))
 
-  const ids = matched.map(a => a.id)
-
-  await supabase.from('asset_valuations').delete().in('asset_id', ids).eq('valuation_date', today)
-
-  const { error: e1 } = await supabase.from('asset_valuations').insert(valuationInserts)
+  const { error: e1 } = await supabase
+    .from('asset_valuations')
+    .upsert(valuationInserts, { onConflict: 'asset_id,valuation_date' })
 
   if (e1) return { error: e1.message }
 
@@ -435,152 +434,203 @@ export async function getCryptoSource(userId: string): Promise<CryptoSource> {
 }
 
 // ─── Kraken Sync ──────────────────────────────────────────────────────────────
-export type SyncState = { error: string } | { success: true; synced: number } | null
+export type SyncState =
+  | { error: string }
+  | { success: true; synced: number; warnings: string[] }
+  | null
 
 export async function syncFromKraken(): Promise<SyncState> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  // 1. Load + decrypt Kraken credentials
-  // exchange_keys not in generated types yet — remove cast after `supabase gen types`
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: keyRow } = await (supabase as any)
+  const result = await syncKrakenForUser(supabase, user.id)
+  if ('success' in result) revalidatePath('/crypto')
+  return result
+}
+
+// ─── Open Positions (margin/leveraged, read-only, not persisted) ──────────────
+// Kraken keeps these entirely separate from spot Balance, and Kraken Futures positions are
+// separate again from Spot-margin ones (different product, different API key). Fetched live
+// on each page load (like `getEurUsdRate()`) rather than synced into `assets` — a leveraged
+// position (side, margin, unrealized P&L, liquidation risk) doesn't fit the plain
+// quantity/avg-price model spot holdings use, so it gets its own read-only section instead of
+// a fake "asset" row.
+export interface OpenPositionView {
+  source:     'spot' | 'futures'
+  pair:       string
+  side:       'long' | 'short'
+  volume:     number
+  /** Positionswert / eingesetzte Margin. Kraken liefert keinen Hebelfaktor im Klartext,
+   *  beide Groessen aber schon. null, wo er nicht bestimmbar ist (siehe Futures). */
+  leverage:   number | null
+  entryPrice: number | null
+  marginEur:  number | null
+  costEur:    number | null
+  valueEur:   number | null
+  netPnlEur:  number | null
+  /** Bereits angefallene Gebuehren (Spot: Order- + Rollover-Gebuehr, Futures: Funding). */
+  feeEur:     number | null
+  openedAt:   string | null
+}
+
+/**
+ * Woher die Positionsliste stammt — damit die Karte "es gibt keine Positionen" von
+ * "danach wurde gar nicht gefragt" unterscheiden kann. Vorher gab `getFuturesPositions()`
+ * bei fehlendem API-Schluessel still `[]` zurueck und die Karte meldete "keine offenen
+ * gehebelten Positionen" — auch wenn welche offen waren und nur der Schluessel fehlte.
+ */
+export interface OpenPositionsMeta {
+  spotChecked:    boolean
+  futuresChecked: boolean
+}
+
+async function getDecryptedKey(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  exchange: string,
+): Promise<{ apiKey: string; apiSecret: string } | null> {
+  const { data: keyRow } = await supabase
     .from('exchange_keys')
     .select('api_key, api_secret')
-    .eq('user_id', user.id)
-    .eq('exchange', 'kraken')
-    .maybeSingle() as { data: Pick<ExchangeKeyRow, 'api_key' | 'api_secret'> | null }
+    .eq('user_id', userId)
+    .eq('exchange', exchange)
+    .maybeSingle()
+  if (!keyRow) return null
+  return { apiKey: decrypt(keyRow.api_key), apiSecret: decrypt(keyRow.api_secret) }
+}
 
-  if (!keyRow) return { error: 'Kein Kraken-Konto verbunden. Bitte erst unter Einstellungen → Integrationen verbinden.' }
+async function getSpotMarginPositions(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<{ positions: OpenPositionView[]; error?: string; checked: boolean }> {
+  const key = await getDecryptedKey(supabase, userId, 'kraken').catch(
+    (e: Error) => ({ error: `Entschlüsselung fehlgeschlagen: ${e.message}` } as const)
+  )
+  if (!key) return { positions: [], checked: false }
+  if ('error' in key) return { positions: [], error: key.error, checked: false }
 
-  let apiKey: string, apiSecret: string
+  let rawPositions: KrakenOpenPosition[]
   try {
-    apiKey    = decrypt(keyRow.api_key)
-    apiSecret = decrypt(keyRow.api_secret)
+    rawPositions = await fetchKrakenOpenPositions(key.apiKey, key.apiSecret)
   } catch (e) {
-    return { error: `Entschlüsselung fehlgeschlagen: ${(e as Error).message}` }
+    return { positions: [], error: `Kraken Spot API Fehler: ${(e as Error).message}`, checked: false }
   }
+  if (rawPositions.length === 0) return { positions: [], checked: true }
 
-  // 2. Fetch balances from Kraken
-  let raw: Record<string, string>
+  let assetPairs: Record<string, KrakenAssetPair> = {}
+  let usdPerEur = 1
   try {
-    raw = await fetchKrakenBalances(apiKey, apiSecret)
-  } catch (e) {
-    return { error: `Kraken API Fehler: ${(e as Error).message}` }
+    assetPairs = await fetchKrakenAssetPairs()
+    ;({ usdPerEur } = await buildKrakenPriceMap([], assetPairs))
+  } catch {
+    // best-effort — EUR conversion below just falls through to unavailable (null) figures
   }
 
-  // 3. Map codes → CoinGecko IDs, skip fiat + unknown
-  type SyncEntry = { symbol: string; name: string; type: string; quantity: number }
-  const candidates: SyncEntry[] = []
-
-  for (const [code, amountStr] of Object.entries(raw)) {
-    const quantity = parseFloat(amountStr)
-    if (quantity <= 0) continue
-
-    const tradingSymbol = krakenCodeToSymbol(code)
-    const coin = findBySymbol(tradingSymbol)
-    if (!coin || !coin.coingecko_id) continue  // skip fiat + unknown
-
-    candidates.push({ symbol: coin.coingecko_id, name: coin.name, type: coin.type, quantity })
+  const toEur = (value: string | undefined, quote: string | undefined): number | null => {
+    if (value == null) return null
+    const n = parseFloat(value)
+    if (isNaN(n)) return null
+    if (quote === 'ZEUR') return n
+    if (quote === 'ZUSD') return n / usdPerEur
+    return null // quoted in something other than EUR/USD — not converted, shown as unavailable
   }
 
-  if (candidates.length === 0) return { error: 'Keine bekannten Krypto-Assets im Kraken-Konto gefunden.' }
+  const positions: OpenPositionView[] = rawPositions.map(p => {
+    const quote  = assetPairs[p.pair]?.quote
+    const cost   = parseFloat(p.cost)
+    const margin = parseFloat(p.margin)
+    const vol    = parseFloat(p.vol)
 
-  // 4. Fetch prices first — needed to filter out dust (< 1 €)
-  const prices = await getPrices(candidates.map(e => e.symbol)).catch(() => ({} as Record<string, number>))
-  const today  = new Date().toISOString().split('T')[0]
-
-  // Keep only assets worth ≥ 1 € (or price unknown — keep to be safe)
-  const MIN_EUR_VALUE = 1
-  const toSync = candidates.filter(e => {
-    const price = prices[e.symbol]
-    if (price == null) return true               // unknown price → keep
-    return e.quantity * price >= MIN_EUR_VALUE
+    return {
+      source:     'spot',
+      pair:       p.pair,
+      side:       p.type === 'sell' ? 'short' : 'long',
+      volume:     vol - parseFloat(p.vol_closed || '0'),
+      // Kraken meldet `cost` (voller Positionswert bei Eroeffnung) und `margin` (davon
+      // eigenes Kapital). 2x Hebel heisst margin = cost/2.
+      leverage:   margin > 0 && Number.isFinite(cost) ? cost / margin : null,
+      entryPrice: vol > 0 && Number.isFinite(cost) ? toEur(String(cost / vol), quote) : null,
+      marginEur:  toEur(p.margin, quote),
+      costEur:    toEur(p.cost, quote),
+      valueEur:   toEur(p.value, quote),
+      netPnlEur:  toEur(p.net, quote),
+      feeEur:     toEur(p.fee, quote),
+      openedAt:   p.time ? new Date(p.time * 1000).toISOString() : null,
+    }
   })
+  return { positions, checked: true }
+}
 
-  if (toSync.length === 0) return { error: 'Keine Assets mit ausreichendem Wert im Kraken-Konto gefunden (minimum 1 €).' }
-
-  // 5. Load existing Kraken-sourced assets for this user
-  const { data: existingAssets } = await supabase
-    .from('assets')
-    .select('id, symbol, quantity, portfolio_name')
-    .eq('user_id', user.id)
-    .eq('exchange', 'Kraken')
-
-  const existingMap = new Map<string, { id: string; portfolio_name: string | null }>(
-    (existingAssets ?? []).filter(a => a.symbol != null).map(a => [a.symbol!, { id: a.id, portfolio_name: a.portfolio_name }])
+async function getFuturesPositions(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<{ positions: OpenPositionView[]; error?: string; checked: boolean }> {
+  const key = await getDecryptedKey(supabase, userId, 'kraken_futures').catch(
+    (e: Error) => ({ error: `Entschlüsselung fehlgeschlagen: ${e.message}` } as const)
   )
-  const syncedSymbols = new Set(toSync.map(e => e.symbol))
+  if (!key) return { positions: [], checked: false }
+  if ('error' in key) return { positions: [], error: key.error, checked: false }
 
-  // 6. Upsert: update existing, insert new (each entry targets a distinct asset row, independent of the others)
-  await Promise.all(
-    toSync.map(async entry => {
-      const existing = existingMap.get(entry.symbol)
-      if (existing) {
-        await supabase.from('assets').update({
-          quantity:       entry.quantity,
-          portfolio_name: 'Kraken',
-          updated_at:     new Date().toISOString(),
-        }).eq('id', existing.id)
-      } else {
-        await supabase.from('assets').insert({
-          user_id:        user.id,
-          name:           entry.name,
-          symbol:         entry.symbol,
-          type:           entry.type,
-          quantity:       entry.quantity,
-          currency:       'EUR',
-          exchange:       'Kraken',
-          portfolio_name: 'Kraken',
-        })
-      }
-    })
-  )
+  let rawPositions: KrakenFuturesPosition[]
+  try {
+    rawPositions = await fetchKrakenFuturesOpenPositions(key.apiKey, key.apiSecret)
+  } catch (e) {
+    return { positions: [], error: `Kraken Futures API Fehler: ${(e as Error).message}`, checked: false }
+  }
+  if (rawPositions.length === 0) return { positions: [], checked: true }
 
-  // 7. Remove assets that are no longer in balance OR now below the dust threshold
-  const staleIds: string[] = []
-  for (const a of existingAssets ?? []) {
-    if (a.symbol == null || !syncedSymbols.has(a.symbol)) staleIds.push(a.id)
+  // pnlCurrency is virtually always USD for Futures — EUR is not something Kraken Futures
+  // itself quotes against, so this always goes through the CoinGecko-derived rate.
+  const usdPerEur = await getEurUsdRate()
+  const toEur = (n: number, currency: string): number | null => {
+    if (currency === 'EUR') return n
+    if (currency === 'USD') return n / usdPerEur
+    return null
   }
 
-  if (staleIds.length > 0) {
-    await supabase.from('assets').delete().in('id', staleIds)
+  const positions: OpenPositionView[] = rawPositions.map(p => {
+    const notional = p.price * p.size
+    return {
+      source:     'futures',
+      pair:       p.symbol,
+      side:       p.side,
+      volume:     p.size,
+      // Kraken Futures rechnet Margin standardmaessig auf Kontoebene (cross margin) —
+      // `/openpositions` fuehrt zu einer einzelnen Position deshalb keine Margin. Nur bei
+      // fixem Hebel steht ein Faktor drin; sonst bleibt das Feld ehrlich leer, statt eine
+      // aus Kontosummen geschaetzte Zahl als Positions-Hebel auszugeben.
+      leverage:   p.maxFixedLeverage ?? null,
+      entryPrice: toEur(p.price, p.pnlCurrency),
+      marginEur:  null,
+      costEur:    toEur(notional, p.pnlCurrency),
+      valueEur:   toEur(notional + p.unrealizedPnl, p.pnlCurrency),
+      netPnlEur:  toEur(p.unrealizedPnl, p.pnlCurrency),
+      feeEur:     toEur(-p.unrealizedFunding, p.pnlCurrency),
+      openedAt:   p.fillTime ?? null,
+    }
+  })
+  return { positions, checked: true }
+}
+
+export async function getKrakenOpenPositions(): Promise<
+  { positions: OpenPositionView[]; warnings: string[]; meta: OpenPositionsMeta } | { error: string }
+> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Nicht eingeloggt' }
+
+  const [spot, futures] = await Promise.all([
+    getSpotMarginPositions(supabase, user.id),
+    getFuturesPositions(supabase, user.id),
+  ])
+
+  const warnings = [spot.error, futures.error].filter((w): w is string => !!w)
+  return {
+    positions: [...spot.positions, ...futures.positions],
+    warnings,
+    meta: { spotChecked: spot.checked, futuresChecked: futures.checked },
   }
-
-  // 8. Write fresh valuations (prices already fetched above)
-  const { data: freshAssets } = await supabase
-    .from('assets')
-    .select('id, symbol, quantity')
-    .eq('user_id', user.id)
-    .eq('exchange', 'Kraken')
-
-  // Each asset's delete-then-insert pair must stay ordered, but different assets are independent of each other.
-  await Promise.all(
-    (freshAssets ?? []).map(async asset => {
-      if (!asset.symbol) return
-      const price = prices[asset.symbol]
-      if (price == null) return
-      // Delete ALL existing valuations (prevents stale totals from old quantities)
-      await supabase.from('asset_valuations').delete().eq('asset_id', asset.id)
-      await supabase.from('asset_valuations').insert({
-        asset_id:       asset.id,
-        price_per_unit: price,
-        total_value:    (asset.quantity ?? 0) * price,
-        valuation_date: today,
-        source:         'coingecko',
-      })
-    })
-  )
-
-  // 9. Save last sync timestamp
-  await supabase.from('user_settings').upsert(
-    { user_id: user.id, key: 'kraken_last_sync', value: new Date().toISOString() as unknown as Json },
-    { onConflict: 'user_id,key' }
-  )
-
-  revalidatePath('/crypto')
-  return { success: true, synced: toSync.length }
 }
 
 // ─── Portfolio Management ─────────────────────────────────────────────────────

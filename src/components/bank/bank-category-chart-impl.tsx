@@ -8,8 +8,8 @@ import { useSettings } from '@/components/providers/settings-context'
 import { fmtCurrency } from '@/lib/format'
 import type { BankTransaction, FinanceCategory } from '@/types/bank'
 
-const UNCATEGORIZED_COLOR = '#93877a'
-const OTHER_COLOR = '#5b5147'
+const UNCATEGORIZED_COLOR = 'var(--chart-muted-1)'
+const OTHER_COLOR = 'var(--chart-muted-2)'
 
 const UNCATEGORIZED = 'Ohne Kategorie'
 const OTHER = 'Andere'
@@ -112,7 +112,8 @@ export function BankCategoryChart({ transactions, categories }: { transactions: 
               )
             }}
           />
-          <Bar dataKey="value" radius={4} maxBarSize={22}>
+          {/* Ohne das animiert recharts bei jedem Zeitraumwechsel alle Balken neu. */}
+          <Bar dataKey="value" radius={4} maxBarSize={22} isAnimationActive={false}>
             {data.map((d, i) => (
               <Cell key={`${d.name}-${i}`} fill={d.color} />
             ))}

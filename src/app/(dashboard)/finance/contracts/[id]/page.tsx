@@ -169,7 +169,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
                       {tx.description ?? c.name}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums font-medium">
-                      <span className={tx.type === 'expense' ? 'text-red-600 dark:text-red-400' : ''}>
+                      <span className={tx.type === 'expense' ? 'text-danger' : ''}>
                         {tx.type === 'expense' ? '−' : ''}{fmtEur(tx.amount, tx.currency)}
                       </span>
                     </td>

@@ -73,43 +73,42 @@ export function DepotChart({ chartTab, history, height = 220 }: { chartTab: Char
     <ResponsiveContainer width="100%" height={height}>
       {chartTab === 'Rendite' ? (
         <LineChart data={history} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#30363d" vertical={false} />
-          <XAxis dataKey="date" tickFormatter={fmtDateShort} tick={{ fill: '#8b949e', fontSize: 11 }} axisLine={false} tickLine={false} />
-          <YAxis tickFormatter={v => yTickFmt(v, chartTab)} tick={{ fill: '#8b949e', fontSize: 11 }} axisLine={false} tickLine={false} width={50} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+          <XAxis dataKey="date" tickFormatter={fmtDateShort} tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} axisLine={false} tickLine={false} />
+          <YAxis tickFormatter={v => yTickFmt(v, chartTab)} tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} axisLine={false} tickLine={false} width={50} />
           <Tooltip content={<ChartTooltip />} />
-          <ReferenceLine y={0} stroke="#30363d" strokeDasharray="4 2" />
-          {/* Gold statt GitHub-Dark-Blau (#58a6ff) — dieselbe gedeckte Oliv/
-              Gold/Terrakotta-Sprache wie Analyse/Dashboard/Crypto-Mockup-Szene
-              (siehe GeldflussChart-impl.tsx & Co.), damit Depot sich nicht wie
-              eine fünfte, andere Palette anfühlt. */}
-          <Line type="monotone" dataKey="returnPct" stroke="#CDA564" dot={false} strokeWidth={2} />
+          <ReferenceLine y={0} stroke="var(--border)" strokeDasharray="4 2" />
+          {/* Theme-Akzentfarbe statt fixem Gold — dieselbe --chart-accent-
+              Variable wie Dashboard/Bank/Crypto (siehe globals.css), damit
+              Depot pro Theme-Preset mitzieht statt fest auf Aurum zu zeigen. */}
+          <Line type="monotone" dataKey="returnPct" stroke="var(--chart-accent)" dot={false} strokeWidth={2} />
         </LineChart>
       ) : (
         <AreaChart data={history} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="gradValue"    x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor="#CDA564" stopOpacity={0.25} />
-              <stop offset="95%" stopColor="#CDA564" stopOpacity={0} />
+              <stop offset="5%"  stopColor="var(--chart-accent)" stopOpacity={0.25} />
+              <stop offset="95%" stopColor="var(--chart-accent)" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="gradInvested" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor="#8CA277" stopOpacity={0.18} />
-              <stop offset="95%" stopColor="#8CA277" stopOpacity={0} />
+              <stop offset="5%"  stopColor="var(--chart-income)" stopOpacity={0.18} />
+              <stop offset="95%" stopColor="var(--chart-income)" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#30363d" vertical={false} />
-          <XAxis dataKey="date" tickFormatter={fmtDateShort} tick={{ fill: '#8b949e', fontSize: 11 }} axisLine={false} tickLine={false} />
-          <YAxis tickFormatter={v => yTickFmt(v, chartTab)} tick={{ fill: '#8b949e', fontSize: 11 }} axisLine={false} tickLine={false} width={50} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+          <XAxis dataKey="date" tickFormatter={fmtDateShort} tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} axisLine={false} tickLine={false} />
+          <YAxis tickFormatter={v => yTickFmt(v, chartTab)} tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} axisLine={false} tickLine={false} width={50} />
           <Tooltip content={<ChartTooltip />} />
           {chartTab === 'Wert' && (
-            <Area type="monotone" dataKey="portfolioValue" stroke="#CDA564" fill="url(#gradValue)" strokeWidth={2} dot={false} />
+            <Area type="monotone" dataKey="portfolioValue" stroke="var(--chart-accent)" fill="url(#gradValue)" strokeWidth={2} dot={false} />
           )}
           {chartTab === 'Anteile' && (
-            <Area type="monotone" dataKey="totalShares" stroke="#CDA564" fill="url(#gradValue)" strokeWidth={2} dot={false} />
+            <Area type="monotone" dataKey="totalShares" stroke="var(--chart-accent)" fill="url(#gradValue)" strokeWidth={2} dot={false} />
           )}
           {chartTab === 'Cost Basis' && (
             <>
-              <Area type="monotone" dataKey="portfolioValue" stroke="#CDA564" fill="url(#gradValue)" strokeWidth={2} dot={false} />
-              <Area type="monotone" dataKey="totalInvested" stroke="#8CA277" fill="url(#gradInvested)" strokeWidth={2} dot={false} />
+              <Area type="monotone" dataKey="portfolioValue" stroke="var(--chart-accent)" fill="url(#gradValue)" strokeWidth={2} dot={false} />
+              <Area type="monotone" dataKey="totalInvested" stroke="var(--chart-income)" fill="url(#gradInvested)" strokeWidth={2} dot={false} />
             </>
           )}
         </AreaChart>

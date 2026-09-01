@@ -38,11 +38,11 @@ function sortRows(rows: IndicatorWithCobra[], key: SortKey, asc: boolean) {
 function CobraScore({ value, color }: { value: number | null; color: 'green' | 'red' }) {
   if (value == null) return <span className="text-muted-foreground">—</span>
   const cls = color === 'green'
-    ? value >= 6 ? 'text-green-600 dark:text-green-400'
-    : value >= 4 ? 'text-amber-600 dark:text-amber-400'
+    ? value >= 6 ? 'text-success'
+    : value >= 4 ? 'text-warning'
     : 'text-muted-foreground'
-    : value >= 6 ? 'text-red-600 dark:text-red-400'
-    : value >= 4 ? 'text-amber-600 dark:text-amber-400'
+    : value >= 6 ? 'text-danger'
+    : value >= 4 ? 'text-warning'
     : 'text-muted-foreground'
   return <span className={`font-medium tabular-nums ${cls}`}>{value}</span>
 }
@@ -165,7 +165,7 @@ export function IndicatorsTable({
                 {/* Repaints */}
                 <td className="px-3 py-3 text-center">
                   {ind.repaints
-                    ? <RefreshCw className="size-3.5 text-amber-500 mx-auto" aria-label="Repaints" />
+                    ? <RefreshCw className="size-3.5 text-warning mx-auto" aria-label="Repaints" />
                     : <span className="text-muted-foreground/30">—</span>}
                 </td>
 

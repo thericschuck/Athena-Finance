@@ -92,7 +92,7 @@ function IndicatorFields({
           />
           <div
             aria-hidden="true"
-            className={`relative w-9 h-5 rounded-full transition-colors ${repaints ? 'bg-amber-500' : 'bg-muted'}`}
+            className={`relative w-9 h-5 rounded-full transition-colors ${repaints ? 'bg-warning' : 'bg-muted'}`}
           >
             <span className={`absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform ${repaints ? 'translate-x-4' : ''}`} />
           </div>

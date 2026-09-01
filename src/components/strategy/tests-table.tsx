@@ -69,11 +69,11 @@ function SortTh({
 function CobraCell({ value, color }: { value: number | null; color: 'green' | 'red' }) {
   if (value == null) return <td className="px-3 py-2.5 text-right text-muted-foreground/40">—</td>
   const cls = color === 'green'
-    ? value >= 6 ? 'text-green-600 dark:text-green-400 font-semibold'
-    : value >= 4 ? 'text-amber-600 dark:text-amber-400 font-medium'
+    ? value >= 6 ? 'text-success font-semibold'
+    : value >= 4 ? 'text-warning font-medium'
     : 'text-muted-foreground'
-    : value >= 6 ? 'text-red-600 dark:text-red-400 font-semibold'
-    : value >= 4 ? 'text-amber-600 dark:text-amber-400 font-medium'
+    : value >= 6 ? 'text-danger font-semibold'
+    : value >= 4 ? 'text-warning font-medium'
     : 'text-muted-foreground'
   return <td className={`px-3 py-2.5 text-right tabular-nums ${cls}`}>{value}</td>
 }

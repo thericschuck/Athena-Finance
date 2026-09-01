@@ -122,7 +122,7 @@ function AccountFields({
               id="acc-color"
               name="color"
               type="color"
-              defaultValue={account?.color ?? '#6366f1'}
+              defaultValue={account?.color ?? '#64748b'}
               className="h-9 w-12 cursor-pointer rounded-md border border-input bg-background p-1"
             />
             <span className="text-xs text-muted-foreground">Konto-Farbe</span>

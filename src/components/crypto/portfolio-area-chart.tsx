@@ -11,11 +11,13 @@ import {
 import { useSettings } from '@/components/providers/settings-context'
 import { fmtCurrency } from '@/lib/format'
 
-// Oliv/Gold/Terrakotta-Familie statt Indigo/Amber/Emerald/Rot/Violett/Cyan —
-// dieselbe gedeckte Erdton-Sprache wie die Analyse-Komponenten (siehe
-// GeldflussChart-impl.tsx/AusgabenHeatmap.tsx), damit Crypto- und Analyse-
-// Szene im Landing-Mockup nicht wie zwei verschiedene Paletten wirken.
-const COLORS = ['#8CA277', '#CDA564', '#A9553C', '#748563', '#BF9B6E', '#6B3427']
+// Theme-Kategorienpalette (siehe --chart-cat-* in globals.css) statt fixer
+// Hex-Werte — zieht pro aktivem Dashboard-Theme mit, statt überall Aurums
+// Oliv/Gold/Terrakotta zu zeigen.
+const COLORS = [
+  'var(--chart-cat-1)', 'var(--chart-cat-2)', 'var(--chart-cat-3)',
+  'var(--chart-cat-4)', 'var(--chart-cat-5)', 'var(--chart-cat-6)',
+]
 
 function formatY(value: number): string {
   if (value >= 1_000_000) return `€${(value / 1_000_000).toFixed(1)}M`

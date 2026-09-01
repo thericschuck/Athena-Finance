@@ -81,10 +81,10 @@ export function EinstellungenTab({ target }: Props) {
           </div>
 
           {'error' in (state ?? {}) && (
-            <p className="text-sm text-red-500">{(state as { error: string }).error}</p>
+            <p className="text-sm text-danger">{(state as { error: string }).error}</p>
           )}
           {'success' in (state ?? {}) && (
-            <p className="text-sm text-green-600 dark:text-green-400">Gespeichert.</p>
+            <p className="text-sm text-success">Gespeichert.</p>
           )}
 
           <button

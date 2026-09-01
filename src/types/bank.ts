@@ -33,6 +33,13 @@ export interface BankBalance {
   currency: string
   fetched_at: string
   created_at: string
+  /**
+   * ID des verknüpften Kontos aus `accounts` (über accounts.bank_iban, siehe Migration
+   * 20260821010000). Wird von /api/bank/balance nachgereicht, damit von der Banking-Seite
+   * auf die Kontodetailseite unter Finance verlinkt werden kann — sonst zeigen beide
+   * Bereiche dasselbe Konto, ohne dass man zwischen ihnen wechseln kann.
+   */
+  account_id?: string | null
 }
 
 // ── Depot holdings (auto-synced via FinTS HKWPD, e.g. Union Investment) ────────

@@ -25,11 +25,16 @@ const COIN_COLORS: Record<string, string> = {
   'pax-gold':         '#D4AF37',
 }
 // Fällt nur für Coins ohne Markenfarbe oben (z. B. neuere Listings wie
-// 'hyperliquid') zurück — dieselbe gedeckte Oliv/Gold/Terrakotta-Familie wie
-// die Analyse-Komponenten, statt eines beliebigen Regenbogens. COIN_COLORS
-// selbst bleiben unangetastet: das sind echte Markenfarben (Bitcoin-Orange,
-// Ethereum-Blau, Solana-Lila, …), die müssen stimmen, nicht zur Palette passen.
-const FALLBACK_COLORS = ['#8CA277', '#CDA564', '#A9553C', '#748563', '#BF9B6E', '#6B3427', '#D4A85C', '#B9694F']
+// 'hyperliquid') zurück — dieselbe Theme-Kategorienpalette wie die Analyse-
+// Komponenten (siehe --chart-cat-* in globals.css), statt eines fixen,
+// Aurum-fremden Regenbogens oder eines von Theme zu Theme identischen Sets.
+// COIN_COLORS selbst bleiben unangetastet: das sind echte Markenfarben
+// (Bitcoin-Orange, Ethereum-Blau, Solana-Lila, …), die müssen stimmen, nicht
+// zur Palette passen.
+const FALLBACK_COLORS = [
+  'var(--chart-cat-1)', 'var(--chart-cat-2)', 'var(--chart-cat-3)',
+  'var(--chart-cat-4)', 'var(--chart-cat-5)', 'var(--chart-cat-6)',
+]
 
 function getColor(coingeckoId: string, index: number): string {
   return COIN_COLORS[coingeckoId] ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length]

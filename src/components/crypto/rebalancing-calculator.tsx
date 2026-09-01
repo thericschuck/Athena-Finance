@@ -40,8 +40,8 @@ function SubBadge({ row }: { row: RebalancingRow }) {
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 const STATUS_BADGE_CLASS: Record<RebalancingRow['status'], string> = {
-  underweight: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
-  overweight:  'bg-red-100   text-red-700   dark:bg-red-900/40   dark:text-red-300',
+  underweight: 'bg-success/10 text-success',
+  overweight:  'bg-danger/10 text-danger',
   balanced:    'bg-muted text-muted-foreground',
 }
 const STATUS_BADGE_LABEL: Record<RebalancingRow['status'], string> = {
@@ -163,7 +163,7 @@ export function RebalancingCalculator({
           <StatCard
             label="Rebalancing-Volumen"
             value={fmtEur(result.rebalancing_volume)}
-            valueClass={result.rebalancing_volume > 0 ? 'text-amber-600 dark:text-amber-400' : ''}
+            valueClass={result.rebalancing_volume > 0 ? 'text-warning' : ''}
           />
         </div>
 
@@ -178,9 +178,9 @@ export function RebalancingCalculator({
 
       {/* ── Balanced state ───────────────────────────────────────────────── */}
       {isBalanced && (
-        <div className="flex items-center gap-3 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 px-5 py-4">
-          <CheckCircle2 className="size-5 text-green-600 dark:text-green-400 shrink-0" />
-          <p className="text-sm font-medium text-green-700 dark:text-green-300">
+        <div className="flex items-center gap-3 rounded-lg border border-success/30 bg-success/10 px-5 py-4">
+          <CheckCircle2 className="size-5 text-success shrink-0" />
+          <p className="text-sm font-medium text-success">
             Portfolio ist balanced — kein Rebalancing nötig
           </p>
         </div>
@@ -206,8 +206,8 @@ export function RebalancingCalculator({
               {sortedRows.map((row, i) => {
                 const isLast    = i === sortedRows.length - 1
                 const diffClass =
-                  row.action === 'buy'  ? 'text-green-600 dark:text-green-400' :
-                  row.action === 'sell' ? 'text-red-600 dark:text-red-400'     : 'text-muted-foreground'
+                  row.action === 'buy'  ? 'text-success' :
+                  row.action === 'sell' ? 'text-danger'     : 'text-muted-foreground'
 
                 return (
                   <tr
@@ -250,15 +250,15 @@ export function RebalancingCalculator({
       {/* ── Summary footer ───────────────────────────────────────────────── */}
       {result.rebalancing_volume > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-4 space-y-1">
-            <p className="text-xs text-green-700 dark:text-green-400">Kaufen gesamt</p>
-            <p className="text-lg font-semibold text-green-700 dark:text-green-300 tabular-nums">
+          <div className="rounded-lg border border-success/30 bg-success/10 p-4 space-y-1">
+            <p className="text-xs text-success">Kaufen gesamt</p>
+            <p className="text-lg font-semibold text-success tabular-nums">
               +{fmtEur(result.total_buy_eur)}
             </p>
           </div>
-          <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4 space-y-1">
-            <p className="text-xs text-red-700 dark:text-red-400">Verkaufen gesamt</p>
-            <p className="text-lg font-semibold text-red-700 dark:text-red-300 tabular-nums">
+          <div className="rounded-lg border border-danger/30 bg-danger/10 p-4 space-y-1">
+            <p className="text-xs text-danger">Verkaufen gesamt</p>
+            <p className="text-lg font-semibold text-danger tabular-nums">
               −{fmtEur(result.total_sell_eur)}
             </p>
           </div>

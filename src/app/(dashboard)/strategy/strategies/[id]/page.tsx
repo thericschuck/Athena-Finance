@@ -10,9 +10,9 @@ import { getSettings } from '@/lib/settings'
 const STATUS_STYLE: Record<string, string> = {
   development: 'bg-muted text-muted-foreground',
   testing:     'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  slapper:     'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  slapper:     'bg-warning/10 text-warning',
   submitted:   'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
-  live:        'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  live:        'bg-success/10 text-success',
   archived:    'bg-muted text-muted-foreground opacity-60',
 }
 
@@ -33,10 +33,10 @@ function TestRow({ label, result }: { label: string; result: string | null }) {
     <div className="flex items-center justify-between py-2 border-b border-border last:border-0">
       <span className="text-sm text-muted-foreground">{label}</span>
       <div className="flex items-center gap-1.5">
-        {pass && <CheckCircle2 className="size-4 text-green-500" />}
-        {fail && <XCircle      className="size-4 text-red-500"   />}
+        {pass && <CheckCircle2 className="size-4 text-success" />}
+        {fail && <XCircle      className="size-4 text-danger"   />}
         {!pass && !fail && <Minus className="size-4 text-muted-foreground/40" />}
-        <span className={`text-xs font-medium ${pass ? 'text-green-600 dark:text-green-400' : fail ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
+        <span className={`text-xs font-medium ${pass ? 'text-success' : fail ? 'text-danger' : 'text-muted-foreground'}`}>
           {result ?? '—'}
         </span>
       </div>
@@ -109,10 +109,10 @@ export default async function StrategyDetailPage({
             <h1 className="text-2xl font-semibold tracking-tight">{strategy.name}</h1>
             <StatusBadge status={strategy.status} />
             {robustnessPasses === true && (
-              <CheckCircle2 className="size-5 text-green-500" aria-label="Robustness: all pass" />
+              <CheckCircle2 className="size-5 text-success" aria-label="Robustness: all pass" />
             )}
             {robustnessPasses === false && (
-              <XCircle className="size-5 text-red-500" aria-label="Robustness: failures" />
+              <XCircle className="size-5 text-danger" aria-label="Robustness: failures" />
             )}
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
@@ -123,7 +123,7 @@ export default async function StrategyDetailPage({
             <span>v{strategy.version}</span>
             <span>${strategy.initial_capital.toLocaleString(locale)}</span>
             {strategy.process_on_close && (
-              <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+              <span className="text-xs px-1.5 py-0.5 rounded bg-warning/10 text-warning">
                 Process on Close
               </span>
             )}
@@ -161,7 +161,7 @@ export default async function StrategyDetailPage({
         <div className="rounded-lg border border-border bg-card p-5 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-sm">Submission Checklist</h2>
-            <span className={`text-xs font-medium tabular-nums ${checklistDone === 7 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+            <span className={`text-xs font-medium tabular-nums ${checklistDone === 7 ? 'text-success' : 'text-muted-foreground'}`}>
               {checklistDone}/7
             </span>
           </div>
@@ -172,8 +172,8 @@ export default async function StrategyDetailPage({
         <div className="rounded-lg border border-border bg-card p-5 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-sm">Robustness Status</h2>
-            {robustnessPasses === true  && <span className="text-xs font-medium text-green-600 dark:text-green-400">All Pass</span>}
-            {robustnessPasses === false && <span className="text-xs font-medium text-red-600 dark:text-red-400">Failures</span>}
+            {robustnessPasses === true  && <span className="text-xs font-medium text-success">All Pass</span>}
+            {robustnessPasses === false && <span className="text-xs font-medium text-danger">Failures</span>}
             {robustnessPasses == null   && <span className="text-xs text-muted-foreground">Kein Ergebnis</span>}
           </div>
 

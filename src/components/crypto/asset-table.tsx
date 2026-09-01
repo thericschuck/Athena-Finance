@@ -61,8 +61,8 @@ function getSubPortfolio(portfolioName: string): 'core' | 'adam' | 'high_beta' |
 }
 
 const STATUS_CLASS: Record<string, string> = {
-  underweight: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
-  overweight:  'bg-red-100   text-red-700   dark:bg-red-900/40   dark:text-red-300',
+  underweight: 'bg-success/10 text-success',
+  overweight:  'bg-danger/10 text-danger',
   balanced:    'bg-muted text-muted-foreground',
 }
 const STATUS_LABEL: Record<string, string> = {
@@ -70,6 +70,11 @@ const STATUS_LABEL: Record<string, string> = {
   overweight:  'Übergewichtet',
   balanced:    'Balanced',
 }
+
+// Below this, a position reads as clutter rather than information — mostly leftover residue
+// from a Kraken sync that (deliberately) no longer filters anything out at import time. Hidden
+// from the row list, but still counted in every total below so the portfolio value stays exact.
+const DUST_THRESHOLD_EUR = 1
 
 // ─── Group section ────────────────────────────────────────────────────────────
 function GroupSection({ group, rebalancingRows, fmt, readonly }: { group: Group; rebalancingRows?: RebalancingRow[]; fmt: Fmt; readonly?: boolean }) {
@@ -79,6 +84,10 @@ function GroupSection({ group, rebalancingRows, fmt, readonly }: { group: Group;
   const groupCost    = pricedAssets.reduce((s, a) => s + a.avg_buy_price! * (a.quantity ?? 0), 0)
   const pricedValue  = pricedAssets.reduce((s, a) => s + (a.current_value ?? 0), 0)
   const groupPnL = groupCost > 0 ? pricedValue - groupCost : null
+
+  const visibleAssets = group.assets.filter(a => a.current_value == null || a.current_value >= DUST_THRESHOLD_EUR)
+  const dustAssets     = group.assets.filter(a => a.current_value != null && a.current_value < DUST_THRESHOLD_EUR)
+  const dustValue      = dustAssets.reduce((s, a) => s + (a.current_value ?? 0), 0)
 
   const subKey      = getSubPortfolio(group.name)
   const groupRebRows = rebalancingRows?.filter(r => r.sub_portfolio === subKey) ?? []
@@ -92,7 +101,7 @@ function GroupSection({ group, rebalancingRows, fmt, readonly }: { group: Group;
         </h2>
         <div className="flex items-center gap-3">
           {groupPnL != null && (
-            <span className={`text-xs font-medium ${groupPnL >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+            <span className={`text-xs font-medium ${groupPnL >= 0 ? 'text-success' : 'text-danger'}`}>
               {groupPnL >= 0 ? '+' : ''}{fmt.eur(groupPnL)}
             </span>
           )}
@@ -120,7 +129,7 @@ function GroupSection({ group, rebalancingRows, fmt, readonly }: { group: Group;
             </tr>
           </thead>
           <tbody>
-            {group.assets.map((asset, i) => {
+            {visibleAssets.map((asset, i) => {
               const rebRow = rebalancingRows?.find(r =>
                 r.coingecko_id === asset.symbol &&
                 r.sub_portfolio === subKey
@@ -129,7 +138,7 @@ function GroupSection({ group, rebalancingRows, fmt, readonly }: { group: Group;
                 <AssetRow
                   key={asset.id}
                   asset={asset}
-                  isLast={i === group.assets.length - 1}
+                  isLast={i === visibleAssets.length - 1 && dustAssets.length === 0}
                   rebRow={rebRow}
                   hasReb={hasReb}
                   fmt={fmt}
@@ -137,6 +146,14 @@ function GroupSection({ group, rebalancingRows, fmt, readonly }: { group: Group;
                 />
               )
             })}
+            {dustAssets.length > 0 && (
+              <tr className="border-b border-border text-xs text-muted-foreground">
+                <td className="px-4 py-2" colSpan={7 + (hasReb ? 3 : 0) + (readonly ? 0 : 1)}>
+                  +{dustAssets.length} Position{dustAssets.length > 1 ? 'en' : ''} unter {fmt.eur(DUST_THRESHOLD_EUR)} ausgeblendet
+                  {' '}(Σ {fmt.eur(dustValue)}) — {dustAssets.map(a => a.name).join(', ')}
+                </td>
+              </tr>
+            )}
             <SumRow assets={group.assets} groupRebRows={groupRebRows} hasReb={hasReb} fmt={fmt} readonly={readonly} />
           </tbody>
         </table>
@@ -167,12 +184,12 @@ function AssetRow({
   const isPositive   = pnlAbs != null && pnlAbs >= 0
 
   const pnlClass = isPositive
-    ? 'text-green-600 dark:text-green-400'
-    : 'text-red-600 dark:text-red-400'
+    ? 'text-success'
+    : 'text-danger'
 
   const diffClass = rebRow
-    ? rebRow.action === 'buy'  ? 'text-green-600 dark:text-green-400'
-    : rebRow.action === 'sell' ? 'text-red-600 dark:text-red-400'
+    ? rebRow.action === 'buy'  ? 'text-success'
+    : rebRow.action === 'sell' ? 'text-danger'
     : 'text-muted-foreground'
     : ''
 
@@ -270,12 +287,12 @@ function SumRow({ assets, groupRebRows, hasReb, fmt, readonly }: { assets: Asset
   const totalPnL     = totalCost > 0 ? pricedValue - totalCost : null
   const totalPnLPct  = totalPnL != null && totalCost > 0 ? (totalPnL / totalCost) * 100 : null
   const isPositive   = totalPnL != null && totalPnL >= 0
-  const pnlClass     = isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+  const pnlClass     = isPositive ? 'text-success' : 'text-danger'
 
   const totalTarget = groupRebRows.reduce((s, r) => s + r.target_eur, 0)
   const totalDiff   = groupRebRows.reduce((s, r) => s + r.diff_eur, 0)
-  const diffClass   = totalDiff > 50  ? 'text-green-600 dark:text-green-400'
-                    : totalDiff < -50 ? 'text-red-600 dark:text-red-400'
+  const diffClass   = totalDiff > 50  ? 'text-success'
+                    : totalDiff < -50 ? 'text-danger'
                     : 'text-muted-foreground'
 
   return (

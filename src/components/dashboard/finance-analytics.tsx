@@ -125,36 +125,34 @@ export function IncomeExpenseChart({ summaries, locale, height = 200 }: { summar
       {mounted ? (
         <ResponsiveContainer width="100%" height={height}>
           <ComposedChart data={data} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
             <XAxis
               dataKey="label"
-              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+              tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
               axisLine={false} tickLine={false}
             />
             <YAxis
               tickFormatter={abbr}
-              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+              tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
               axisLine={false} tickLine={false}
             />
             <ReTooltip
               content={<ChartTooltip fmt={fmt} />}
-              cursor={{ fill: 'hsl(var(--muted))', fillOpacity: 0.4 }}
+              cursor={{ fill: 'var(--muted)', fillOpacity: 0.4 }}
             />
-            <ReferenceLine y={0} stroke="hsl(var(--border))" />
-            {/* Oliv/Terrakotta statt gesättigtem Emerald/Rot, Gold statt Indigo
-                für die Netto-Linie — dieselbe gedeckte Erdton-Sprache wie die
-                Analyse-Komponenten (siehe GeldflussChart-impl.tsx/
-                AusgabenHeatmap.tsx/MonatsVergleich-impl.tsx), damit Dashboard-
-                und Analyse-Szene im Landing-Mockup nicht wie zwei verschiedene
-                Paletten wirken. */}
-            <Bar dataKey="Einnahmen" fill="#8CA277" fillOpacity={0.85} radius={[3, 3, 0, 0]} maxBarSize={32} />
-            <Bar dataKey="Ausgaben"  fill="#A9553C" fillOpacity={0.85} radius={[3, 3, 0, 0]} maxBarSize={32} />
+            <ReferenceLine y={0} stroke="var(--border)" />
+            {/* Theme-Variablen statt fester Hex-Werte — jedes Theme-Preset
+                (siehe globals.css) definiert eigene --chart-income/-expense/
+                -accent, damit z. B. Obsidian nicht Aurums Oliv/Terrakotta/Gold
+                zeigt. */}
+            <Bar dataKey="Einnahmen" fill="var(--chart-income)" fillOpacity={0.85} radius={[3, 3, 0, 0]} maxBarSize={32} />
+            <Bar dataKey="Ausgaben"  fill="var(--chart-expense)" fillOpacity={0.85} radius={[3, 3, 0, 0]} maxBarSize={32} />
             <Line
               dataKey="Netto"
-              stroke="#f0d98c"
+              stroke="var(--chart-accent)"
               strokeWidth={2}
-              dot={{ r: 3, fill: '#f0d98c', strokeWidth: 0 }}
-              activeDot={{ r: 5, fill: '#f0d98c' }}
+              dot={{ r: 3, fill: 'var(--chart-accent)', strokeWidth: 0 }}
+              activeDot={{ r: 5, fill: 'var(--chart-accent)' }}
             />
           </ComposedChart>
         </ResponsiveContainer>
@@ -215,20 +213,20 @@ function CategoryChart({ summaries, locale }: { summaries: Summary[]; locale: st
       {mounted ? (
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={data} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
             <XAxis
               dataKey="label"
-              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+              tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
               axisLine={false} tickLine={false}
             />
             <YAxis
               tickFormatter={abbr}
-              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+              tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
               axisLine={false} tickLine={false}
             />
             <ReTooltip
               content={<ChartTooltip fmt={fmt} />}
-              cursor={{ fill: 'hsl(var(--muted))', fillOpacity: 0.4 }}
+              cursor={{ fill: 'var(--muted)', fillOpacity: 0.4 }}
             />
             {ALL_CATS.filter(cat => active.has(cat)).map(cat => (
               <Bar key={cat} dataKey={cat} stackId="a" fill={CAT_COLORS[cat]} fillOpacity={0.85} maxBarSize={36} />
@@ -276,15 +274,15 @@ function DeviationTable({ summaries, locale }: { summaries: Summary[]; locale: s
             <div
               key={m.month}
               className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm border ${
-                isBadMonth  ? 'bg-red-500/10   border-red-500/25'   :
-                isGoodMonth ? 'bg-green-500/10 border-green-500/25' :
+                isBadMonth  ? 'bg-danger/10 border-danger/25'   :
+                isGoodMonth ? 'bg-success/10 border-success/25' :
                               'bg-muted/20 border-transparent'
               }`}
             >
               {/* Icon */}
               <div className="w-4 shrink-0">
-                {isBadMonth  ? <AlertTriangle className="size-3.5 text-red-500"   /> :
-                 isGoodMonth ? <TrendingUp    className="size-3.5 text-green-500" /> :
+                {isBadMonth  ? <AlertTriangle className="size-3.5 text-danger"   /> :
+                 isGoodMonth ? <TrendingUp    className="size-3.5 text-success" /> :
                                <Minus className="size-3 text-muted-foreground/30" />}
               </div>
 
@@ -295,14 +293,14 @@ function DeviationTable({ summaries, locale }: { summaries: Summary[]; locale: s
 
               {/* Einnahmen / Ausgaben */}
               <span className="flex-1 text-xs text-muted-foreground hidden sm:block">
-                <span className="text-green-500">{fmt(m.total_income)}</span>
+                <span className="text-success">{fmt(m.total_income)}</span>
                 {' / '}
-                <span className="text-red-500">{fmt(m.total_expenses)}</span>
+                <span className="text-danger">{fmt(m.total_expenses)}</span>
               </span>
 
               {/* Netto */}
               <span className={`w-24 text-right text-xs font-semibold tabular-nums shrink-0 ${
-                isPositive ? 'text-green-500' : 'text-red-500'
+                isPositive ? 'text-success' : 'text-danger'
               }`}>
                 {isPositive ? '+' : ''}{fmt(nb)}
               </span>
@@ -310,8 +308,8 @@ function DeviationTable({ summaries, locale }: { summaries: Summary[]; locale: s
               {/* Abweichung vs. Ø – nur mit mehreren Monaten sinnvoll */}
               {multiMonth && (
                 <span className={`w-24 text-right text-xs tabular-nums shrink-0 ${
-                  dev > 0 ? 'text-green-500' :
-                  dev < 0 ? 'text-red-500'   : 'text-muted-foreground'
+                  dev > 0 ? 'text-success' :
+                  dev < 0 ? 'text-danger'   : 'text-muted-foreground'
                 }`}>
                   {dev > 0 ? '+' : ''}{fmt(dev)}
                 </span>

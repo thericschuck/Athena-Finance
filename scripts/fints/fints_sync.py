@@ -63,7 +63,9 @@ STDOUT JSON shape:
 """
 
 import argparse
+import base64
 import datetime as dt
+import hashlib
 import json
 import os
 import re
@@ -87,6 +89,133 @@ FULL_HISTORY_START = dt.date(2000, 1, 1)
 
 # Sanity cap on how many FINTS_BANK{N}_* profiles to scan for. Raise if genuinely needed.
 MAX_BANK_PROFILES = 6
+
+# Whether this run may wait for an interactive SecureGo-plus approval. Set from --no-sca
+# in main(). An unattended run (cron) sets this to False: nobody is looking at their phone,
+# so blocking for five minutes on an approval that will never come is worse than failing
+# fast with a clear reason. Module-level rather than threaded through every settle() call
+# site — this script is a single-run process.
+ALLOW_SCA = True
+
+# Set by resolve_decoupled() when an app approval was actually carried out. main() reads
+# and resets it per bank profile, so the caller can stamp last_sca_at (and thus know when
+# the 90-day exemption window started) only for the banks that really re-authenticated.
+SCA_PERFORMED = False
+
+
+class ScaRequired(RuntimeError):
+    """The bank demanded a strong customer authentication, but this run may not wait for one.
+
+    Raised only when ALLOW_SCA is False. Signals to the caller that the persisted client
+    state has expired (PSD2's 90-day exemption window is over) or never existed, and that a
+    manual, interactive sync is needed to re-establish it.
+    """
+
+
+def bank_key(profile):
+    """Stable identifier for one bank login, used as the client-state key.
+
+    Hashed rather than stored as plain "<blz>:<username>" so the VR-NetKey never lands in
+    the database. Independent of the profile's position in FINTS_BANK{N}_*, so renumbering
+    the env vars doesn't orphan a stored state (and thereby trigger a fresh SCA).
+    """
+    raw = f"{profile['blz']}:{profile['user']}".encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()[:32]
+
+
+def load_state_file(path):
+    """Read the client-state map the Node side handed us:
+    {bank_key: {"blob": <base64>, "label": <str>, "scaPerformed": <bool>}}.
+
+    Missing/corrupt is not an error — it just means "no state yet", i.e. this run will
+    need an SCA."""
+    if not path or not os.path.exists(path):
+        return {}
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError) as exc:
+        log(f"[fints] State-Datei nicht lesbar ({exc}) — Sync läuft ohne gespeicherten Zustand.")
+        return {}
+
+
+def write_state_file(path, state):
+    """Write the updated map back for the Node side to persist to Supabase. Best-effort:
+    a failure here costs the next run an extra app approval, but must not fail the sync
+    whose data has already been fetched."""
+    if not path:
+        return
+    try:
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(state, fh)
+    except OSError as exc:
+        log(f"[fints] State konnte nicht gespeichert werden ({exc}) — "
+            f"der nächste Sync verlangt erneut eine App-Freigabe.")
+
+
+def get_balance_national(client, acc):
+    """get_balance() for an account addressed by Kontonummer instead of by IBAN.
+
+    python-fints' get_balance() always picks the HIGHEST HKSAL the bank offers. HKSAL7
+    addresses the account through KTI1, and its from_sepa_account() only fills the IBAN/BIC
+    pair — so an account that has no IBAN loses its identity entirely:
+
+        HKSAL7 -> KTI1(bic='FFVBDEFFXXX')                      # no account number at all
+        HKSAL6 -> Account3(account_number='21499214', subaccount_number='V01', ...)
+
+    The bank then answers "9380 Verarbeitung nicht möglich. Unerwarteter Aufbau der
+    Auftragsdaten", which reads like a permission problem but is a malformed request.
+
+    Two ways out, in order of preference:
+      1. HKSAL5/6, whose Account2/Account3 are national by construction.
+      2. HKSAL7 with a hand-built KTI1. KTI1 *does* have account_number, subaccount_number
+         and bank_identifier fields — from_sepa_account() simply never populates them. Filling
+         them directly serialises to  HKSAL::7+::21499214:V01:280:50190000+N'  which is a
+         well-formed national Kontoverbindung.
+
+    Raiffeisenbank (BLZ 50190000) offers HISALS 4 and 7 only, and python-fints implements no
+    HKSAL4 — so route 2 is the one that actually applies there.
+    """
+    from fints.exceptions import FinTSUnsupportedOperation
+    from fints.formals import KTI1, BankIdentifier
+    from fints.segments.saldo import HKSAL5, HKSAL6, HKSAL7
+
+    try:
+        hksal = client._find_highest_supported_command(HKSAL5, HKSAL6)
+        account_field = hksal._fields['account'].type.from_sepa_account(acc)
+    except FinTSUnsupportedOperation:
+        hksal = client._find_highest_supported_command(HKSAL7)
+        account_field = KTI1(
+            account_number=getattr(acc, "accountnumber", None),
+            subaccount_number=getattr(acc, "subaccount", None),
+            bank_identifier=BankIdentifier(
+                country_identifier='280',           # 280 = Germany, per FinTS Kreditinstitutskennung
+                bank_code=getattr(acc, "blz", None),
+            ),
+        )
+
+    with client._get_dialog() as dialog:
+        seg = hksal(account=account_field, all_accounts=False)
+        return client._send_with_possible_retry(dialog, seg, client._get_balance)
+
+
+def balance_amount(balance):
+    """The numeric value of a python-fints balance, or None if there isn't one.
+
+    A rejected HKSAL still yields a truthy object whose .amount is None — without this check
+    a hard bank refusal was logged as "Saldo erfolgreich abgerufen (None EUR)".
+    """
+    if balance is None:
+        return None
+    amount_obj = getattr(balance, "amount", None)
+    if amount_obj is None:
+        return None
+    raw = getattr(amount_obj, "amount", amount_obj)
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return None
 
 
 def log(msg):
@@ -222,14 +351,26 @@ def resolve_decoupled(client, response, NeedTANResponse):
 
     Returns the real operation result once the user approves in their app.
     Raises RuntimeError on timeout or if the method is not decoupled (we cannot
-    prompt for a typed TAN in this non-interactive sidecar).
+    prompt for a typed TAN in this non-interactive sidecar), and ScaRequired if this
+    run isn't allowed to wait for an approval at all (--no-sca).
     """
+    if not ALLOW_SCA:
+        raise ScaRequired(
+            "Die Bank verlangt eine Freigabe in der SecureGo plus App. Dieser Lauf ist "
+            "unbeaufsichtigt (--no-sca) und wartet deshalb nicht darauf. Bitte einmal "
+            "manuell synchronisieren — danach ist der Zugang wieder ca. 90 Tage "
+            "freigabefrei."
+        )
+
     if not getattr(response, "decoupled", False):
         raise RuntimeError(
             "Die Bank verlangt eine getippte TAN, aber dieser Dienst unterstützt nur "
             "die App-Direktfreigabe (SecureGo plus decoupled). Bitte in der VR-Banking / "
             "SecureGo plus App die Direktfreigabe (decoupled) aktivieren."
         )
+
+    global SCA_PERFORMED
+    SCA_PERFORMED = True
 
     challenge = (getattr(response, "challenge", "") or "").strip()
     marker("PUSH_SENT")
@@ -257,6 +398,86 @@ def settle(client, result, NeedTANResponse):
     if isinstance(result, NeedTANResponse):
         return resolve_decoupled(client, result, NeedTANResponse)
     return result
+
+
+def settle_transactions(client, result, NeedTANResponse):
+    """settle() for get_transactions(), which needs one more step after an app approval.
+
+    python-fints parses the camt XML *outside* the fetch, in get_transactions() itself:
+
+        response = self._get_transactions_xml(...)
+        if isinstance(response, NeedTANResponse):
+            return response                      # <-- early exit, parsing skipped
+        booked_streams, pending_streams = response
+        transactions = [Transaction(t) for s in booked_streams for t in camt053_to_dict(s)]
+
+    When the bank interrupts that fetch with an SCA, the early exit is taken and the parsing
+    never happens. Resuming through send_tan() lands in _continue_fetch_with_touchdowns,
+    whose response processor returns the RAW (booked_streams, pending_streams) tuple of camt
+    XML byte strings — not transactions.
+
+    Iterating that tuple yields two lists, so every SCA-protected account silently imported
+    NOTHING while logging "N Transaktion(en) ohne Datum/IBAN/Betrag verworfen" (two bogus
+    entries per affected account). That is why a full-history sync kept coming back empty:
+    both Girokonten need an approval, and both lost their entire result.
+
+    So: detect the raw tuple and run the parsing step python-fints skipped.
+    """
+    settled = settle(client, result, NeedTANResponse)
+
+    # A parsed result is a list of Transaction objects; the unparsed one is exactly the
+    # 2-tuple that _response_handler_get_transactions_xml builds. Matching on that shape
+    # (rather than on "not a list") lets an MT940 bank, whose resume path DOES return parsed
+    # data, pass straight through.
+    if isinstance(settled, tuple) and len(settled) == 2:
+        from fints.camt_parser import camt053_to_dict
+        from fints.models import Transaction
+
+        booked_streams, _pending_streams = settled
+        parsed = []
+        for stream in booked_streams or []:
+            try:
+                parsed.extend(Transaction(t) for t in camt053_to_dict(stream))
+            except Exception as exc:  # noqa: BLE001
+                log(f"[fints] camt-Auszug nach App-Freigabe nicht lesbar ({exc}) — "
+                    f"dieser Teil der Umsätze fehlt.")
+        log(f"[fints] Umsätze nach App-Freigabe nachträglich geparst: {len(parsed)} "
+            f"Buchung(en) aus {len(booked_streams or [])} camt-Auszug/-Auszügen.")
+        return parsed
+
+    return settled
+
+
+def settle_holdings(client, result, NeedTANResponse):
+    """settle() for get_holdings(), which has the same post-approval gap as
+    settle_transactions(): get_holdings() parses MT535 only after _fetch_with_touchdowns()
+    returns, so a run resumed through send_tan() hands back raw HIWPD segments instead of
+    Holding objects. Parse them the same way get_holdings() would.
+    """
+    settled = settle(client, result, NeedTANResponse)
+    if not settled:
+        return []
+
+    # Raw segments carry `.holdings`; already-parsed Holding objects do not.
+    if not any(hasattr(item, "holdings") for item in settled):
+        return settled
+
+    from fints.utils import MT535_Miniparser
+
+    holdings = []
+    for resp in settled:
+        raw = getattr(resp, "holdings", None)
+        if raw is None:
+            continue
+        text = raw.decode() if isinstance(raw, bytes) else raw
+        lines = str.splitlines(text)
+        if lines and not lines[0].strip():
+            del lines[0]  # get_holdings() drops the same leading empty line
+        try:
+            holdings.extend(MT535_Miniparser().parse(lines))
+        except Exception as exc:  # noqa: BLE001
+            log(f"[fints] Depotaufstellung nach App-Freigabe nicht lesbar ({exc}).")
+    return holdings
 
 
 def serialize_account(bank_label, acc, name=None):
@@ -379,20 +600,45 @@ def serialize_transaction(bank_label, acc, txn):
     }
 
 
-def sync_one_bank(profile, start_date, end_date, args, client_classes):
+def sync_one_bank(profile, start_date, end_date, args, client_classes, prev_state=None):
     """Runs the full FinTS dialog for a single bank profile and returns
-    (accounts, transactions, balances, holdings) lists, each item tagged with
-    this profile's bankLabel. Raises on failure — caller decides how to handle
-    a single bank failing (see main()).
+    (accounts, transactions, balances, holdings, state_blob) — the four lists each
+    tagged with this profile's bankLabel, plus the client state to persist for the
+    next run. Raises on failure — caller decides how to handle a single bank failing
+    (see main()).
+
+    `prev_state` is the base64 blob stored after the previous run, or None on a first
+    sync. Handing it back to the client is what keeps the bank from demanding a fresh
+    SCA every time: it carries the Kundensystem-ID, so python-fints skips the
+    HKSYN3(NEW_SYSTEM_ID) handshake and the bank recognises this as the same access it
+    already authenticated — which is the precondition for PSD2's 90-day exemption on
+    account-information requests.
     """
     FinTS3PinTanClient, NeedTANResponse, FinTSOperations = client_classes
     label = profile["label"]
 
     accounts_out, transactions_out, balances_out, holdings_out = [], [], [], []
 
+    from_data = None
+    if prev_state:
+        try:
+            from_data = base64.b64decode(prev_state)
+            log(f"[fints] [{label}] Gespeicherter Client-Zustand geladen "
+                f"— App-Freigabe wird nur verlangt, wenn die 90-Tage-Frist abgelaufen ist.")
+        except (ValueError, TypeError) as exc:
+            # A corrupt blob must not brick the sync — fall back to a fresh handshake,
+            # which costs one app approval and then rewrites a good state.
+            log(f"[fints] [{label}] Gespeicherter Client-Zustand unlesbar ({exc}) — "
+                f"starte mit frischem Zustand.")
+            from_data = None
+    else:
+        log(f"[fints] [{label}] Kein gespeicherter Client-Zustand — "
+            f"dieser Lauf benötigt eine einmalige App-Freigabe.")
+
     client = FinTS3PinTanClient(
         profile["blz"], profile["user"], profile["pin"], profile["url"],
         product_id=profile["product_id"],
+        from_data=from_data,
     )
 
     with client:
@@ -423,6 +669,24 @@ def sync_one_bank(profile, start_date, end_date, args, client_classes):
                 iban = a.get("iban")
                 if iban:
                     names[iban] = a.get("product_name") or a.get("name")
+
+            # Dump the bank's OWN account list verbatim. This is the UPD (HIUPD) the
+            # Rechenzentrum sends for this VR-NetKey, and it is the authoritative answer to
+            # "does FinTS know about my Depot / Bausparvertrag at all?". An account that is
+            # missing here cannot be fixed from our side — it has to become visible in the
+            # regular online banking first, after which the Verbund delivers it here too.
+            upd_accounts = info.get("accounts", [])
+            log(f"[fints] [{label}] Die Bank meldet {len(upd_accounts)} Konto/Konten "
+                f"(HIUPD — das ist die vollständige Liste für diesen VR-NetKey):")
+            for a in upd_accounts:
+                ops = a.get("supported_operations") or {}
+                allowed = sorted(k.name for k, v in ops.items() if v)
+                log(f"[fints] [{label}]   • {a.get('product_name') or a.get('name') or '(ohne Bezeichnung)'} "
+                    f"| Kontonr. {a.get('account_number')}"
+                    f"{'/' + str(a.get('subaccount_number')) if a.get('subaccount_number') else ''} "
+                    f"| IBAN {a.get('iban') or '—'} "
+                    f"| Typ {a.get('type')} "
+                    f"| kann: {', '.join(allowed) if allowed else '(nichts gemeldet)'}")
         except Exception as exc:  # noqa: BLE001
             log(f"[fints] [{label}] Konto-Übersicht (get_information) konnte nicht geladen werden: {exc}")
 
@@ -448,7 +712,7 @@ def sync_one_bank(profile, start_date, end_date, args, client_classes):
             iban = getattr(acc, "iban", "?")
             log(f"[fints] [{label}] Lade Umsätze für {iban} …")
             try:
-                txns = settle(
+                txns = settle_transactions(
                     client,
                     client.get_transactions(acc, start_date, end_date),
                     NeedTANResponse,
@@ -486,7 +750,7 @@ def sync_one_bank(profile, start_date, end_date, args, client_classes):
             if supported.get(FinTSOperations.GET_HOLDINGS):
                 log(f"[fints] [{label}] Lade Depot-Bestand für {extra_label} …")
                 try:
-                    raw_holdings = settle(client, client.get_holdings(extra_acc), NeedTANResponse)
+                    raw_holdings = settle_holdings(client, client.get_holdings(extra_acc), NeedTANResponse)
                     for h in raw_holdings:
                         holdings_out.append(serialize_holding(label, extra_label, extra_acc.accountnumber, h))
                 except Exception as exc:  # noqa: BLE001
@@ -515,7 +779,7 @@ def sync_one_bank(profile, start_date, end_date, args, client_classes):
                 else:
                     log(f"[fints] [{label}] Lade Umsätze für {extra_label} …")
                     try:
-                        txns = settle(
+                        txns = settle_transactions(
                             client,
                             client.get_transactions(extra_acc, start_date, end_date),
                             NeedTANResponse,
@@ -578,39 +842,77 @@ def sync_one_bank(profile, start_date, end_date, args, client_classes):
                 base_num, sep_num = split_account_number(num)
                 probe_acc = _SEPAAccount(iban=None, bic=probe_bic, accountnumber=base_num, subaccount=sep_num, blz=profile["blz"])
 
+            # ORDER MATTERS. Saldo (HKSAL) first, Depotaufstellung (HKWPD) second.
+            #
+            # A Bausparvertrag reaches us through the Verbund login as a plain Spar-/
+            # Darlehenskonto, never as a Wertpapierdepot — HKWPD is simply the wrong segment
+            # for it, and the bank answers "9380 Berechtigung für das Konto nicht ausreichend"
+            # no matter how the access is set up. A Saldo is the ONE thing FinTS returns for
+            # such a contract, so it must not be gated on --balances (it used to be, which
+            # meant the only call that could have worked was never sent) and must not sit
+            # behind a call that just aborted a TAN challenge: the observed follow-up errors
+            # ("9260 Challenge abgebrochen", "3070 Ungültige Challenge-Anforderung") come
+            # from the dialog still carrying the failed HKWPD challenge.
             try:
-                raw_holdings = list(settle(client, client.get_holdings(probe_acc), NeedTANResponse))
-                if raw_holdings:
-                    for h in raw_holdings:
-                        holdings_out.append(serialize_holding(label, probe_label, num, h))
-                    log(f"[fints] [{label}] {probe_label}: Depot-Bestand erfolgreich "
-                        f"({len(raw_holdings)} Position(en)) — wird gespeichert.")
+                if is_iban:
+                    bal = settle(client, client.get_balance(probe_acc), NeedTANResponse)
                 else:
-                    log(f"[fints] [{label}] {probe_label}: get_holdings() lief durch, aber keine Positionen zurückgegeben.")
+                    # Kontonummer-only account — build the HKSAL segment ourselves so the
+                    # account number actually survives into the request (see
+                    # get_balance_national; the library default silently drops it).
+                    bal = settle(client, get_balance_national(client, probe_acc), NeedTANResponse)
+
+                value = balance_amount(bal)
+                if value is None:
+                    # A refused HKSAL still returns an object; only .amount tells us apart.
+                    log(f"[fints] [{label}] {probe_label}: Saldo abgelehnt — die Bank hat keinen "
+                        f"Betrag geliefert (siehe die 9xxx-Meldung oben). Nichts gespeichert.")
+                else:
+                    entry = serialize_balance(label, probe_acc, bal)
+                    entry["accountName"] = probe_label
+                    if not is_iban:
+                        # bank_balance is keyed by (user_id, account_iban), but that column is
+                        # plain text — the bare Kontonummer is just as stable a key, and the
+                        # fn_ensure_linked_account trigger matches it against the accounts row's
+                        # free-text `iban`, which holds exactly this number for the Bausparverträge.
+                        entry["iban"] = num
+                    balances_out.append(entry)
+                    log(f"[fints] [{label}] {probe_label}: Saldo erfolgreich abgerufen "
+                        f"({entry.get('bookedBalance')} {entry.get('currency')}) — wird gespeichert.")
             except Exception as exc:  # noqa: BLE001
-                log(f"[fints] [{label}] {probe_label}: get_holdings() fehlgeschlagen: {exc}")
+                log(f"[fints] [{label}] {probe_label}: get_balance() fehlgeschlagen: {exc}")
                 log(f"[fints] [{label}] {probe_label}: Traceback:\n{traceback.format_exc()}")
 
-            if args.balances:
+            # Only worth asking for a Depotaufstellung where the bank itself reports support.
+            # Firing HKWPD blindly at a Bausparvertrag produces the 9380 above and, worse,
+            # leaves a dead challenge in the dialog that breaks the following call. When
+            # get_information() doesn't list the account at all we still try — that is
+            # exactly the "bank doesn't surface the Depot" case probing exists for.
+            supports_holdings = True
+            if info_entry:
+                ops = info_entry.get("supported_operations") or {}
+                supports_holdings = bool(ops.get(FinTSOperations.GET_HOLDINGS))
+
+            if supports_holdings:
                 try:
-                    bal = settle(client, client.get_balance(probe_acc), NeedTANResponse)
-                    entry = serialize_balance(label, probe_acc, bal)
-                    if is_iban:
-                        entry["accountName"] = probe_label
-                        balances_out.append(entry)
-                        log(f"[fints] [{label}] {probe_label}: Saldo erfolgreich abgerufen "
-                            f"({entry.get('bookedBalance')} {entry.get('currency')}) — wird gespeichert.")
+                    raw_holdings = list(settle_holdings(client, client.get_holdings(probe_acc), NeedTANResponse))
+                    if raw_holdings:
+                        for h in raw_holdings:
+                            holdings_out.append(serialize_holding(label, probe_label, num, h))
+                        log(f"[fints] [{label}] {probe_label}: Depot-Bestand erfolgreich "
+                            f"({len(raw_holdings)} Position(en)) — wird gespeichert.")
                     else:
-                        log(f"[fints] [{label}] {probe_label}: Saldo erfolgreich abgerufen "
-                            f"({entry.get('bookedBalance')} {entry.get('currency')}) — NICHT gespeichert "
-                            f"(bank_balance braucht eine IBAN, dieses Konto hat keine).")
+                        log(f"[fints] [{label}] {probe_label}: get_holdings() lief durch, aber keine Positionen zurückgegeben.")
                 except Exception as exc:  # noqa: BLE001
-                    log(f"[fints] [{label}] {probe_label}: get_balance() fehlgeschlagen: {exc}")
+                    log(f"[fints] [{label}] {probe_label}: get_holdings() fehlgeschlagen: {exc}")
                     log(f"[fints] [{label}] {probe_label}: Traceback:\n{traceback.format_exc()}")
+            else:
+                log(f"[fints] [{label}] {probe_label}: get_holdings() übersprungen "
+                    f"(Bank meldet keine Depot-Unterstützung für dieses Konto).")
 
             if not args.no_txns:
                 try:
-                    txns = list(settle(
+                    txns = list(settle_transactions(
                         client, client.get_transactions(probe_acc, start_date, end_date), NeedTANResponse,
                     ))
                     if is_iban:
@@ -625,7 +927,18 @@ def sync_one_bank(profile, start_date, end_date, args, client_classes):
                     log(f"[fints] [{label}] {probe_label}: get_transactions() fehlgeschlagen: {exc}")
                     log(f"[fints] [{label}] {probe_label}: Traceback:\n{traceback.format_exc()}")
 
-    return accounts_out, transactions_out, balances_out, holdings_out
+    # deconstruct() must run after the dialog is closed — python-fints documents the
+    # client as unusable afterwards. including_private=True keeps UPD/UPA (account list
+    # and the allowed security functions); without it the next run re-fetches them, which
+    # works but throws away part of the point of persisting at all.
+    state_blob = None
+    try:
+        state_blob = base64.b64encode(client.deconstruct(including_private=True)).decode("ascii")
+    except Exception as exc:  # noqa: BLE001
+        log(f"[fints] [{label}] Client-Zustand konnte nicht serialisiert werden ({exc}) — "
+            f"der nächste Sync verlangt erneut eine App-Freigabe.")
+
+    return accounts_out, transactions_out, balances_out, holdings_out, state_blob
 
 
 def main():
@@ -636,7 +949,19 @@ def main():
                         help="Also fetch current balances per account.")
     parser.add_argument("--no-txns", dest="no_txns", action="store_true",
                         help="Skip transaction retrieval (e.g. when only balances are needed).")
+    parser.add_argument("--state-file",
+                        help="Path to a JSON file holding the persisted FinTS client state "
+                             "per bank login. Read at startup and rewritten at the end; the "
+                             "Node caller persists it to Supabase. Omitting it means every "
+                             "run re-authenticates from scratch (i.e. needs an app approval).")
+    parser.add_argument("--no-sca", dest="no_sca", action="store_true",
+                        help="Unattended mode: never wait for a SecureGo plus approval. If the "
+                             "bank demands one, abort with code 'sca_required' instead of "
+                             "polling for minutes on an approval nobody will give.")
     args = parser.parse_args()
+
+    global ALLOW_SCA, SCA_PERFORMED
+    ALLOW_SCA = not args.no_sca
 
     try:
         from fints.client import FinTS3PinTanClient, NeedTANResponse, FinTSOperations
@@ -659,18 +984,42 @@ def main():
     holdings_out = []
     warnings = []
 
+    state = load_state_file(args.state_file)
+    # Banks that aborted because they'd need an app approval this run isn't allowed to
+    # wait for. Reported separately from `warnings` so the caller can tell "needs your
+    # phone once" apart from "something is broken".
+    sca_required = []
+
     for profile in profiles:
         label = profile["label"]
+        key = bank_key(profile)
         log(f"[fints] === {label} (BLZ {profile['blz']}) ===")
+        prev = state.get(key) or {}
+        SCA_PERFORMED = False
         try:
-            accs, txns, bals, holds = sync_one_bank(
+            accs, txns, bals, holds, state_blob = sync_one_bank(
                 profile, start_date, end_date, args,
                 (FinTS3PinTanClient, NeedTANResponse, FinTSOperations),
+                prev_state=prev.get("blob"),
             )
             accounts_out.extend(accs)
             transactions_out.extend(txns)
             balances_out.extend(bals)
             holdings_out.extend(holds)
+            if state_blob:
+                state[key] = {
+                    "blob": state_blob,
+                    "label": label,
+                    "scaPerformed": SCA_PERFORMED,
+                }
+        except ScaRequired as exc:
+            # Keep the existing stored state untouched: it's stale, not wrong, and the
+            # next interactive sync will refresh it. Dropping it here would guarantee an
+            # extra approval even if the bank would still have accepted it.
+            msg = f"{label}: {exc}"
+            log(f"[fints] {msg}")
+            sca_required.append(label)
+            warnings.append(msg)
         except FinTSClientPINError:
             msg = f"{label}: PIN/Zugangsdaten wurden von der Bank abgelehnt."
             log(f"[fints] {msg}")
@@ -684,10 +1033,15 @@ def main():
             log(f"[fints] {msg}")
             warnings.append(msg)
 
+    write_state_file(args.state_file, state)
+
     # Only hard-fail if EVERY configured bank failed — one bad profile (e.g. a
     # not-yet-working Union Investment login) shouldn't take down the rest.
     if not accounts_out and warnings:
-        fail("fints", "; ".join(warnings))
+        # A pure "needs an approval" abort gets its own code so the caller can surface
+        # "bitte einmal manuell synchronisieren" instead of a generic bank error.
+        code = "sca_required" if len(sca_required) == len(profiles) else "fints"
+        fail(code, "; ".join(warnings))
 
     print(json.dumps({
         "ok": True,
@@ -696,6 +1050,7 @@ def main():
         "balances": balances_out,
         "holdings": holdings_out,
         "warnings": warnings,
+        "scaRequired": sca_required,
     }))
     sys.stdout.flush()
 

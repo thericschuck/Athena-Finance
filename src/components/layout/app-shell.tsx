@@ -6,6 +6,35 @@ import { usePathname } from 'next/navigation'
 import { Sidebar } from '@/components/layout/sidebar'
 import { PageWrapper } from '@/components/layout/page-wrapper'
 import { AssistantSheet } from '@/components/assistant/AssistantSheet'
+import { useSettings } from '@/components/providers/settings-context'
+import { OliveVines } from '@/components/landing/olive-vines'
+
+/**
+ * Pro Bereich unterschiedliche Ranken-Platzierung (Seite/Dichte/Größe) statt
+ * überall derselben beidseitigen Vollkachel — die wirkte auf jeder Seite wie
+ * dieselbe Tapete. `null` lässt eine Seite bewusst frei (Settings trägt
+ * bereits die Athena-Statue, Assistant lebt vom Lesefluss).
+ */
+type VineVariant = { sides: Array<'l' | 'r'>; maxBranches?: number; opacity: number; width: string }
+const VINE_VARIANTS: Record<string, VineVariant | null> = {
+  '/dashboard':             { sides: ['l', 'r'], maxBranches: 2, opacity: 0.09, width: '130px' },
+  '/finance':               { sides: ['r'],                     opacity: 0.11, width: '150px' },
+  '/crypto':                { sides: ['l'],      maxBranches: 2, opacity: 0.12, width: '160px' },
+  '/strategy':              { sides: ['l', 'r'], maxBranches: 1, opacity: 0.08, width: '120px' },
+  '/lebenshaltungskosten':  { sides: ['l'],                     opacity: 0.09, width: '130px' },
+  '/depot':                 { sides: ['r'],                     opacity: 0.11, width: '150px' },
+  '/analyse':               { sides: ['l'],      maxBranches: 2, opacity: 0.1,  width: '150px' },
+  '/history':               { sides: ['l', 'r'], maxBranches: 1, opacity: 0.07, width: '110px' },
+  '/settings':              null,
+  '/assistant':             null,
+}
+const DEFAULT_VINE_VARIANT: VineVariant = { sides: ['l', 'r'], maxBranches: 1, opacity: 0.08, width: '120px' }
+
+function vineVariantFor(pathname: string): VineVariant | null {
+  const section = Object.keys(VINE_VARIANTS).find(p => pathname === p || pathname.startsWith(`${p}/`))
+  if (section) return VINE_VARIANTS[section]
+  return DEFAULT_VINE_VARIANT
+}
 
 export function AppShell({
   children, email, displayName, avatarUrl,
@@ -17,6 +46,10 @@ export function AppShell({
 }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
+  const { themePreset } = useSettings()
+  const isDarkAthena = themePreset === 'athena-dark'
+  const isAthena = themePreset === 'athena' || isDarkAthena
+  const vineVariant = isAthena ? vineVariantFor(pathname) : null
 
   // Close drawer on navigation
   useEffect(() => {
@@ -43,7 +76,30 @@ export function AppShell({
         onMobileClose={() => setMobileOpen(false)}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="relative isolate flex min-w-0 flex-1 flex-col overflow-hidden">
+        {/* Olivenranken als leiser Rahmen des Content-Bereichs — nur Athena
+            Light/Dark, statisch (keine Wachs-/Wiege-Animation: reine
+            Dauerdekoration, kein erzählerischer Moment wie im Landing-Hero).
+            `-z-10` schiebt sie hinter Header/PageWrapper — das setzt
+            `isolate` auf DIESEM Wrapper voraus: ohne eigene Stacking-Context
+            würde der negative z-index bis zum nächsten echten Kontext
+            durchschlagen (hier: die äußere `bg-background`-Fläche in
+            AppShell) und die Ranken komplett dahinter verschwinden lassen —
+            sichtbar unsichtbar statt nur "hinter den Karten". */}
+        {vineVariant && (
+          <div className="pointer-events-none absolute inset-0 -z-10">
+            <OliveVines
+              tone={isDarkAthena ? 'dark' : 'light'}
+              opacity={vineVariant.opacity}
+              width={vineVariant.width}
+              sides={vineVariant.sides}
+              maxBranches={vineVariant.maxBranches}
+              static
+              swaying={false}
+            />
+          </div>
+        )}
+
         {/* Mobile top bar */}
         <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-4 md:hidden">
           <button

@@ -9,9 +9,9 @@ import { getSettings } from '@/lib/settings'
 const STATUS_STYLE: Record<string, string> = {
   development: 'bg-muted text-muted-foreground',
   testing:     'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  slapper:     'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  slapper:     'bg-warning/10 text-warning',
   submitted:   'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
-  live:        'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  live:        'bg-success/10 text-success',
   archived:    'bg-muted text-muted-foreground opacity-60',
 }
 
@@ -126,7 +126,7 @@ export default async function StrategiesPage({
                     <h3 className="font-semibold truncate">{s.name}</h3>
                     <StatusBadge status={s.status} />
                     {readyIdSet.has(s.id) && (
-                      <CheckCircle2 className="size-3.5 text-green-500 shrink-0" aria-label="Submission-ready" />
+                      <CheckCircle2 className="size-3.5 text-success shrink-0" aria-label="Submission-ready" />
                     )}
                   </div>
                   <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
@@ -142,7 +142,7 @@ export default async function StrategiesPage({
                 <span>Pine v{s.pine_version}</span>
                 <span>v{s.version}</span>
                 <span>${s.initial_capital.toLocaleString(locale)}</span>
-                {s.process_on_close && <span className="text-amber-600 dark:text-amber-400">PoC</span>}
+                {s.process_on_close && <span className="text-warning">PoC</span>}
                 {s.combo_id && comboMap.has(s.combo_id) && (
                   <span className="truncate max-w-[120px]">{comboMap.get(s.combo_id)}</span>
                 )}

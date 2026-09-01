@@ -133,7 +133,7 @@ function AssetWeightTable({
       </div>
 
       {/* Sum indicator */}
-      <div className={`text-xs flex items-center gap-1 ${isValid ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}>
+      <div className={`text-xs flex items-center gap-1 ${isValid ? 'text-success' : 'text-warning'}`}>
         <span>Summe: {sum.toFixed(1).replace('.', ',')} %</span>
         <span>{isValid ? '✓' : '✗ (muss 100 % ergeben)'}</span>
       </div>
@@ -292,7 +292,7 @@ export function StrategySignals({ initialSignals, initialAllocations, onChange }
         <div className="rounded-lg border border-border bg-card p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-sm">High Beta</h3>
-            <Badge color="bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
+            <Badge color="bg-warning/10 text-warning">
               Experimentell
             </Badge>
           </div>
@@ -354,7 +354,7 @@ export function StrategySignals({ initialSignals, initialAllocations, onChange }
         </p>
         <div className="flex items-center gap-3">
           {saveMsg && (
-            <span className={`text-xs ${saveMsg.ok ? 'text-green-600 dark:text-green-400' : 'text-destructive'}`}>
+            <span className={`text-xs ${saveMsg.ok ? 'text-success' : 'text-danger'}`}>
               {saveMsg.text}
             </span>
           )}

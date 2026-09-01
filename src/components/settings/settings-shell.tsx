@@ -6,6 +6,7 @@ import type { UserProfile, SettingsMap } from '@/lib/settings'
 import { ProfileForm }       from './profile-form'
 import { AppearanceForm }    from './appearance-form'
 import { FinanceForm }       from './finance-form'
+import { AnalyseForm, type AnalyseFormAccount } from './analyse-form'
 import { TradingForm }       from './trading-form'
 import { IntegrationsForm }  from './integrations-form'
 
@@ -13,6 +14,7 @@ const TABS = [
   { id: 'profil',         label: 'Profil' },
   { id: 'darstellung',    label: 'Darstellung' },
   { id: 'finanzen',       label: 'Finanzen' },
+  { id: 'analyse',        label: 'Analyse' },
   { id: 'trading',        label: 'Trading' },
   { id: 'integrationen',  label: 'Integrationen' },
 ] as const
@@ -22,10 +24,12 @@ type TabId = typeof TABS[number]['id']
 export function SettingsShell({
   initialProfile,
   initialSettings,
+  accounts,
   email,
 }: {
   initialProfile: UserProfile
   initialSettings: SettingsMap
+  accounts: AnalyseFormAccount[]
   email: string
 }) {
   const [active, setActive] = useState<TabId>('profil')
@@ -41,7 +45,10 @@ export function SettingsShell({
             className={cn(
               'whitespace-nowrap px-3 py-2 rounded-md text-sm transition-colors shrink-0',
               active === tab.id
-                ? 'bg-accent text-accent-foreground font-medium'
+                // hover:text-foreground statt hover:text-accent-foreground (das wäre schon die
+                // Ruhefarbe) — auf Themes mit dunklem accent-foreground (z. B. Athena) sonst kaum
+                // wahrnehmbarer Hover auf dem eh schon aktiven Tab.
+                ? 'bg-accent text-accent-foreground font-medium hover:text-foreground'
                 : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
             )}
           >
@@ -59,7 +66,10 @@ export function SettingsShell({
             className={cn(
               'text-left px-3 py-2 rounded-md text-sm transition-colors',
               active === tab.id
-                ? 'bg-accent text-accent-foreground font-medium'
+                // hover:text-foreground statt hover:text-accent-foreground (das wäre schon die
+                // Ruhefarbe) — auf Themes mit dunklem accent-foreground (z. B. Athena) sonst kaum
+                // wahrnehmbarer Hover auf dem eh schon aktiven Tab.
+                ? 'bg-accent text-accent-foreground font-medium hover:text-foreground'
                 : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
             )}
           >
@@ -73,6 +83,7 @@ export function SettingsShell({
         {active === 'profil'        && <ProfileForm       initialProfile={initialProfile} email={email} />}
         {active === 'darstellung'   && <AppearanceForm   initialSettings={initialSettings} />}
         {active === 'finanzen'      && <FinanceForm       initialSettings={initialSettings} />}
+        {active === 'analyse'       && <AnalyseForm       initialSettings={initialSettings} accounts={accounts} />}
         {active === 'trading'       && <TradingForm       initialSettings={initialSettings} />}
         {active === 'integrationen' && <IntegrationsForm />}
       </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useOptimistic, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PlusCircle, RefreshCw, CheckCircle2, AlertCircle, Zap, X } from 'lucide-react'
@@ -36,9 +36,19 @@ export function PortfolioSwitcher({ portfolios, activePortfolio, krakenConnected
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [syncPending,   startSync]        = useTransition()
   const [deletePending, startDelete]      = useTransition()
+  const [switchPending, startSwitch]      = useTransition()
+
+  // `activePortfolio` kommt vom Server und aktualisiert sich erst, wenn die neue Seite
+  // fertig gerendert ist. Ohne den optimistischen Wert blieb der geklickte Tab bis dahin
+  // unmarkiert und der alte weiter aktiv — es sah aus, als hätte der Klick nicht gezählt.
+  const [active, setActive] = useOptimistic(activePortfolio)
 
   function switchTo(name: string) {
-    router.push(`/crypto?p=${encodeURIComponent(name)}`)
+    if (name === active) return
+    startSwitch(() => {
+      setActive(name)
+      router.push(`/crypto?p=${encodeURIComponent(name)}`)
+    })
   }
 
   function handleCreate() {
@@ -46,7 +56,10 @@ export function PortfolioSwitcher({ portfolios, activePortfolio, krakenConnected
     if (!trimmed) return
     setCreating(false)
     setNewName('')
-    router.push(`/crypto?p=${encodeURIComponent(trimmed)}`)
+    startSwitch(() => {
+      setActive(trimmed)
+      router.push(`/crypto?p=${encodeURIComponent(trimmed)}`)
+    })
   }
 
   function handleSync() {
@@ -57,6 +70,9 @@ export function PortfolioSwitcher({ portfolios, activePortfolio, krakenConnected
         toast.error(result.error)
       } else {
         toast.success(`${result.synced} Assets von Kraken synchronisiert`)
+        // Surfaced separately from the success toast so a partial problem (e.g. a missing
+        // API-key permission for Trade-History) doesn't get lost under "X Assets synced".
+        for (const warning of result.warnings) toast.warning(warning)
         router.refresh()
       }
     })
@@ -78,14 +94,17 @@ export function PortfolioSwitcher({ portfolios, activePortfolio, krakenConnected
     })
   }
 
-  const isKrakenActive = activePortfolio === 'Kraken'
+  const isKrakenActive = active === 'Kraken'
 
   return (
     <div className="border-b border-border bg-muted/20">
       {/* ── Portfolio tabs ── */}
-      <div className="flex items-center gap-2 px-4 sm:px-8 py-3 overflow-x-auto">
+      <div className={cn(
+        'flex items-center gap-2 px-4 sm:px-8 py-3 overflow-x-auto transition-opacity',
+        switchPending && 'opacity-70',
+      )}>
         {portfolios.map(p => {
-          const isActive = activePortfolio === p.name
+          const isActive = active === p.name
           const isConfirming = confirmDelete === p.name
 
           return (
@@ -217,7 +236,7 @@ export function PortfolioSwitcher({ portfolios, activePortfolio, krakenConnected
 
               {lastSync && !syncPending && (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <CheckCircle2 className="size-3 text-green-500" />
+                  <CheckCircle2 className="size-3 text-success" />
                   Zuletzt: {fmtRelative(lastSync)}
                 </span>
               )}
@@ -227,7 +246,7 @@ export function PortfolioSwitcher({ portfolios, activePortfolio, krakenConnected
               </span>
             </>
           ) : (
-            <span className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+            <span className="flex items-center gap-1.5 text-xs text-warning">
               <AlertCircle className="size-3.5" />
               Kraken nicht verbunden —{' '}
               <Link href="/settings" className="underline underline-offset-2">

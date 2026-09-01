@@ -1,7 +1,6 @@
 'use client'
 
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { useTransition } from 'react'
+import { useUrlFilters } from '@/components/providers/url-filters'
 
 type Props = {
   types:   string[]
@@ -9,17 +8,8 @@ type Props = {
 }
 
 export function IndicatorFilters({ types, authors }: Props) {
-  const router       = useRouter()
-  const pathname     = usePathname()
-  const searchParams = useSearchParams()
-  const [, startTransition] = useTransition()
-
-  function update(key: string, value: string) {
-    const params = new URLSearchParams(searchParams.toString())
-    if (value) params.set(key, value)
-    else params.delete(key)
-    startTransition(() => router.replace(`${pathname}?${params.toString()}`))
-  }
+  const filters = useUrlFilters()
+  const update = (key: string, value: string) => filters.set(key, value)
 
   const selectClass =
     'h-8 rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring'
@@ -29,7 +19,7 @@ export function IndicatorFilters({ types, authors }: Props) {
       {/* Typ */}
       <select
         className={selectClass}
-        defaultValue={searchParams.get('type') ?? ''}
+        value={filters.get('type') ?? ''}
         onChange={e => update('type', e.target.value)}
       >
         <option value="">Alle Typen</option>
@@ -39,7 +29,7 @@ export function IndicatorFilters({ types, authors }: Props) {
       {/* Author */}
       <select
         className={selectClass}
-        defaultValue={searchParams.get('author') ?? ''}
+        value={filters.get('author') ?? ''}
         onChange={e => update('author', e.target.value)}
       >
         <option value="">Alle Autoren</option>
@@ -51,7 +41,7 @@ export function IndicatorFilters({ types, authors }: Props) {
         <input
           type="checkbox"
           className="rounded border-input"
-          defaultChecked={searchParams.get('allowed') === '1'}
+          checked={filters.get('allowed') === '1'}
           onChange={e => update('allowed', e.target.checked ? '1' : '')}
         />
         Nur erlaubte

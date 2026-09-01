@@ -13,14 +13,16 @@ import {
   Settings,
   LogOut,
   X,
-  Landmark,
   ShoppingCart,
   Sparkles,
+  Gem,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/ui/logo'
 import { signOut } from '@/app/login/actions'
+import { useSettings } from '@/components/providers/settings-context'
+import { MeanderFrieze } from '@/components/landing/olive-vines'
 
 type NavChild = { href: string; label: string }
 type NavItem  = {
@@ -32,7 +34,7 @@ type NavItem  = {
 
 const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/assistant', label: 'Assistent', icon: Sparkles },
+  { href: '/assistant', label: 'Athena', icon: Sparkles },
   {
     href: '/finance', label: 'Finance', icon: TrendingUp,
     children: [
@@ -61,10 +63,23 @@ const navItems: NavItem[] = [
       { href: '/strategy/strategies', label: 'Strategien' },
     ],
   },
-  { href: '/bank',                  label: 'Banking',              icon: Landmark     },
+  // Banking hatte hier bis vor Kurzem einen eigenen Punkt mit „Sync" und „Auswertung".
+  // Beides ist dort weg, wo es hingehört: der Sync in den Kopf von Finance/Konten (er
+  // aktualisiert Konten), die Auswertung als Unterpunkt von Analyse (sie wertet aus). Ein
+  // Bereich weniger, und die Frage „verwalte ich Konten in Finance oder in Banking?"
+  // stellt sich nicht mehr.
   { href: '/lebenshaltungskosten', label: 'Fixkosten',  icon: ShoppingCart },
   { href: '/depot',    label: 'Depot',         icon: Briefcase },
-  { href: '/analyse',  label: 'Analyse',       icon: BarChart2 },
+  { href: '/inventar', label: 'Inventar',      icon: Gem       },
+  {
+    href: '/analyse', label: 'Analyse', icon: BarChart2,
+    children: [
+      // „Übersicht" läuft über `unified_transactions` (Bank + manuell), „Bankdaten" über
+      // die gesyncten Rohdaten — der Unterschied steht im Kopf der jeweiligen Seite.
+      { href: '/analyse',         label: 'Übersicht' },
+      { href: '/analyse/banking', label: 'Bankdaten' },
+    ],
+  },
   { href: '/history',  label: 'Historie',      icon: History   },
   { href: '/settings', label: 'Einstellungen', icon: Settings  },
 ]
@@ -84,6 +99,8 @@ function getInitials(name: string | null, email: string): string {
 
 export function Sidebar({ email, displayName, avatarUrl, mobileOpen = false, onMobileClose }: SidebarProps) {
   const pathname = usePathname()
+  const { themePreset } = useSettings()
+  const isAthena = themePreset === 'athena' || themePreset === 'athena-dark'
 
   return (
     <aside
@@ -110,6 +127,14 @@ export function Sidebar({ email, displayName, avatarUrl, mobileOpen = false, onM
         </button>
       </div>
 
+      {/* Mäander-Fries — griechischer Schlüssel als leiser architektonischer
+          Rahmen, nur für Athena Light/Dark (in anderen Themes stilfremd). */}
+      {isAthena && (
+        <div className="px-4 pt-2 text-sidebar-foreground">
+          <MeanderFrieze id="sidebar-meander" color="currentColor" opacity={0.3} />
+        </div>
+      )}
+
       {/* Navigation */}
       <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
         {navItems.map(({ href, label, icon: Icon, children }) => {
@@ -124,12 +149,18 @@ export function Sidebar({ email, displayName, avatarUrl, mobileOpen = false, onM
                 asChild
                 className={cn(
                   'w-full justify-start gap-2.5 font-normal text-sidebar-foreground',
-                  'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                  // dark:hover:bg-sidebar-accent zusätzlich zum einfachen hover: nötig,
+                  // weil der ghost-Button-Variant selbst `dark:hover:bg-accent/50`
+                  // mitbringt (siehe button.tsx) — tailwind-merge dedupliziert nur
+                  // Klassen mit IDENTISCHER Variantenkette. Ohne das Pendant überlebt
+                  // der Accent-Wash in jedem Dark-Theme und legt sich über
+                  // sidebar-accent/-primary (sichtbar als matschiger Hover).
+                  'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground dark:hover:bg-sidebar-accent',
                   // Aktive Blattseite: volle Gold-Fläche mit dunkler Schrift
                   // (sidebar-primary/-foreground), exakt wie im Figma-Redesign —
                   // sidebar-accent bleibt für Hover und die Avatar-Kachel reserviert.
                   sectionActive && !children &&
-                    'bg-sidebar-primary text-sidebar-primary-foreground font-medium hover:bg-sidebar-primary hover:text-sidebar-primary-foreground',
+                    'bg-sidebar-primary text-sidebar-primary-foreground font-medium hover:bg-sidebar-primary hover:text-sidebar-primary-foreground dark:hover:bg-sidebar-primary',
                   // Aktiver Elternpunkt mit aufgeklappten Kindern: nur Text in Gold,
                   // keine volle Fläche (die Kinder öffnen sich direkt darunter).
                   sectionActive && children &&
@@ -148,7 +179,12 @@ export function Sidebar({ email, displayName, avatarUrl, mobileOpen = false, onM
                   <div className="subnav-inner">
                     <div className="ml-3 mt-0.5 mb-1 pl-3 border-l border-sidebar-border space-y-0.5">
                       {children.map(child => {
-                        const childActive = pathname === child.href || pathname.startsWith(`${child.href}/`)
+                        // Zeigt ein Kind auf die Bereichswurzel („Übersicht", „Portfolio"),
+                        // gilt nur die exakte URL: mit `startsWith` wäre es auf jedem
+                        // Unterpunkt mit-aktiv und zwei Einträge leuchteten gleichzeitig.
+                        const childActive = child.href === href
+                          ? pathname === child.href
+                          : pathname === child.href || pathname.startsWith(`${child.href}/`)
                         return (
                           <Button
                             key={child.href}
@@ -157,7 +193,9 @@ export function Sidebar({ email, displayName, avatarUrl, mobileOpen = false, onM
                             asChild
                             className={cn(
                               'w-full justify-start font-normal text-sm text-sidebar-foreground',
-                              'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                              // Siehe Kommentar beim Top-Level-Button oben — derselbe
+                              // ghost-`dark:hover:bg-accent/50`-Konflikt.
+                              'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground dark:hover:bg-sidebar-accent',
                               childActive &&
                                 'bg-sidebar-accent text-sidebar-accent-foreground font-medium',
                             )}
@@ -207,7 +245,7 @@ export function Sidebar({ email, displayName, avatarUrl, mobileOpen = false, onM
             formAction={signOut}
             variant="ghost"
             size="sm"
-            className="w-full justify-start gap-2.5 font-normal text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            className="w-full justify-start gap-2.5 font-normal text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground dark:hover:bg-sidebar-accent"
           >
             <LogOut className="size-4 shrink-0" />
             Abmelden

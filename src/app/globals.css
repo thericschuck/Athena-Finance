@@ -26,6 +26,9 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -80,6 +83,33 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
+
+  /* Semantische Chart-Farben – von jedem Theme-Preset unten überschrieben,
+     damit Einnahmen/Ausgaben/Akzent-Linien/Kategorien-Paletten wirklich pro
+     Theme variieren statt (wie zuvor) überall fest auf Aurums Oliv/Terrakotta/
+     Gold zu zeigen. Diese Defaults gelten nur im "Eigene Farbe"-Modus ohne
+     Preset. */
+  --chart-income: #16a34a;
+  --chart-expense: #dc2626;
+  --chart-accent: var(--primary);
+  --chart-muted-1: #94a3b8;
+  --chart-muted-2: #64748b;
+  --chart-cat-1: #3b82f6;
+  --chart-cat-2: #10b981;
+  --chart-cat-3: #f59e0b;
+  --chart-cat-4: #8b5cf6;
+  --chart-cat-5: #ec4899;
+  --chart-cat-6: #64748b;
+  --shadow-tint: 0 0 0;
+  /* Semantische Status-Farben. Aus --chart-income/--chart-expense des jeweiligen Themes
+     abgeleitet, aber in der Helligkeit so nachgezogen, dass sie als TEXT mindestens 4.5:1
+     gegen background UND card erreichen — Chartflächen dürfen blasser sein als Zahlen.
+     Immer diese statt harter Tailwind-Farben (text-green-600, text-red-500, ...) verwenden,
+     sonst bricht die Zahl aus der Theme-Palette aus - genau das war vorher der Fall. */
+  --success: #12863D;
+  --danger: #DC2626;
+  --warning: #B16105;
+
 }
 
 .dark {
@@ -114,6 +144,17 @@
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
+  /* Semantische Status-Farben. Aus --chart-income/--chart-expense des jeweiligen Themes
+     abgeleitet, aber in der Helligkeit so nachgezogen, dass sie als TEXT mindestens 4.5:1
+     gegen background UND card erreichen — Chartflächen dürfen blasser sein als Zahlen.
+     Immer diese statt harter Tailwind-Farben (text-green-600, text-red-500, ...) verwenden,
+     sonst bricht die Zahl aus der Theme-Palette aus - genau das war vorher der Fall. */
+  --success: #16A74C;
+  --danger: #E76969;
+  --warning: #D97706;
+  --chart-income: #16A74C;
+  --chart-expense: #E76969;
+
 }
 
 @layer base {
@@ -157,7 +198,14 @@ html.lenis-active {
   to   { opacity: 1; transform: translateY(0); }
 }
 .page-enter-active {
-  animation: pageEnter 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  /* `backwards`, nicht `both`: `both` liess `transform: translateY(0)` nach
+     Animationsende dauerhaft am Element haengen — ein Identity-Transform
+     zaehlt trotzdem als Transform und macht dieses (scrollbare!) Element zum
+     Containing Block fuer alle position:fixed-Nachfahren (Heatmap-/Kalender-
+     Tooltips) statt des Viewports. Symptom: Tooltip erscheint weit weg vom
+     Cursor. `backwards` haelt den Start-Frame nur vor Animationsbeginn,
+     laesst den Transform danach aber auf `none` zurueckfallen. */
+  animation: pageEnter 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) backwards;
 }
 
 /* ── Sidebar sub-nav: CSS grid expand/collapse ─────────────────────────────── */
@@ -190,7 +238,7 @@ a, button {
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 .card-hover:hover {
-  box-shadow: 0 4px 16px -2px oklch(0 0 0 / 0.08);
+  box-shadow: 0 4px 16px -2px rgb(var(--shadow-tint) / 0.08);
   transform: translateY(-1px);
 }
 
@@ -230,6 +278,26 @@ tbody tr {
   --sidebar-accent-foreground: #e2e8f0;
   --sidebar-border: rgba(255, 255, 255, 0.06);
   --sidebar-ring: rgba(0, 212, 255, 0.3);
+  --chart-income: #00e6a0;
+  --chart-expense: #ff3b30;
+  --chart-accent: #00d4ff;
+  --chart-muted-1: #64748b;
+  --chart-muted-2: #3a4552;
+  --chart-cat-1: #00d4ff;
+  --chart-cat-2: #ffb000;
+  --chart-cat-3: #00e6a0;
+  --chart-cat-4: #ff5f56;
+  --chart-cat-5: #7dd3fc;
+  --chart-cat-6: #94a3b8;
+  /* Semantische Status-Farben. Aus --chart-income/--chart-expense des jeweiligen Themes
+     abgeleitet, aber in der Helligkeit so nachgezogen, dass sie als TEXT mindestens 4.5:1
+     gegen background UND card erreichen — Chartflächen dürfen blasser sein als Zahlen.
+     Immer diese statt harter Tailwind-Farben (text-green-600, text-red-500, ...) verwenden,
+     sonst bricht die Zahl aus der Theme-Palette aus - genau das war vorher der Fall. */
+  --success: #00E6A0;
+  --danger: #FF3B30;
+  --warning: #F59E0B;
+
 }
 [data-theme="obsidian"] body {
   font-family: var(--font-space-mono), ui-monospace, monospace;
@@ -274,6 +342,29 @@ tbody tr {
   --sidebar-accent-foreground: #f4eee2;
   --sidebar-border: #262119;
   --sidebar-ring: rgba(205, 165, 100, 0.3);
+  /* 1:1 die Werte, die vorher fest in den Chart-Komponenten verdrahtet waren
+     (siehe finance-analytics.tsx & Co.) — Aurum behält damit exakt sein
+     bisheriges Aussehen, nur jetzt als Theme-Variable statt Konstante. */
+  --chart-income: #8CA277;
+  --chart-expense: #A9553C;
+  --chart-accent: #f0d98c;
+  --chart-muted-1: #93877a;
+  --chart-muted-2: #5b5147;
+  --chart-cat-1: #8CA277;
+  --chart-cat-2: #CDA564;
+  --chart-cat-3: #A9553C;
+  --chart-cat-4: #748563;
+  --chart-cat-5: #BF9B6E;
+  --chart-cat-6: #6B3427;
+  /* Semantische Status-Farben. Aus --chart-income/--chart-expense des jeweiligen Themes
+     abgeleitet, aber in der Helligkeit so nachgezogen, dass sie als TEXT mindestens 4.5:1
+     gegen background UND card erreichen — Chartflächen dürfen blasser sein als Zahlen.
+     Immer diese statt harter Tailwind-Farben (text-green-600, text-red-500, ...) verwenden,
+     sonst bricht die Zahl aus der Theme-Palette aus - genau das war vorher der Fall. */
+  --success: #8CA277;
+  --danger: #BE6348;
+  --warning: #B88F51;
+
 }
 [data-theme="aurum"] body {
   font-family: var(--font-playfair), Georgia, serif;
@@ -308,6 +399,26 @@ tbody tr {
   --sidebar-accent-foreground: #0f172a;
   --sidebar-border: #e2e8f0;
   --sidebar-ring: rgba(37, 99, 235, 0.2);
+  --chart-income: #16a34a;
+  --chart-expense: #dc2626;
+  --chart-accent: #2563eb;
+  --chart-muted-1: #94a3b8;
+  --chart-muted-2: #64748b;
+  --chart-cat-1: #2563eb;
+  --chart-cat-2: #0ea5e9;
+  --chart-cat-3: #16a34a;
+  --chart-cat-4: #f59e0b;
+  --chart-cat-5: #8b5cf6;
+  --chart-cat-6: #64748b;
+  /* Semantische Status-Farben. Aus --chart-income/--chart-expense des jeweiligen Themes
+     abgeleitet, aber in der Helligkeit so nachgezogen, dass sie als TEXT mindestens 4.5:1
+     gegen background UND card erreichen — Chartflächen dürfen blasser sein als Zahlen.
+     Immer diese statt harter Tailwind-Farben (text-green-600, text-red-500, ...) verwenden,
+     sonst bricht die Zahl aus der Theme-Palette aus - genau das war vorher der Fall. */
+  --success: #12833B;
+  --danger: #DC2626;
+  --warning: #AD5F05;
+
 }
 
 /* Void – Dark · Neon · Deep Space */
@@ -339,6 +450,26 @@ tbody tr {
   --sidebar-accent-foreground: #e0e7ff;
   --sidebar-border: rgba(129, 140, 248, 0.15);
   --sidebar-ring: rgba(129, 140, 248, 0.3);
+  --chart-income: #34d399;
+  --chart-expense: #f43f5e;
+  --chart-accent: #818cf8;
+  --chart-muted-1: #6366f1;
+  --chart-muted-2: #4b4a7a;
+  --chart-cat-1: #818cf8;
+  --chart-cat-2: #22d3ee;
+  --chart-cat-3: #34d399;
+  --chart-cat-4: #f43f5e;
+  --chart-cat-5: #c084fc;
+  --chart-cat-6: #64748b;
+  /* Semantische Status-Farben. Aus --chart-income/--chart-expense des jeweiligen Themes
+     abgeleitet, aber in der Helligkeit so nachgezogen, dass sie als TEXT mindestens 4.5:1
+     gegen background UND card erreichen — Chartflächen dürfen blasser sein als Zahlen.
+     Immer diese statt harter Tailwind-Farben (text-green-600, text-red-500, ...) verwenden,
+     sonst bricht die Zahl aus der Theme-Palette aus - genau das war vorher der Fall. */
+  --success: #34D399;
+  --danger: #F43F5E;
+  --warning: #F59E0B;
+
 }
 
 /* Copper Wire – Dark · Industrial · Warm */
@@ -370,6 +501,26 @@ tbody tr {
   --sidebar-accent-foreground: #f0e0c0;
   --sidebar-border: rgba(200, 104, 32, 0.15);
   --sidebar-ring: rgba(200, 104, 32, 0.3);
+  --chart-income: #7fae4a;
+  --chart-expense: #cc3300;
+  --chart-accent: #c86820;
+  --chart-muted-1: #8a6840;
+  --chart-muted-2: #4a3b2c;
+  --chart-cat-1: #c86820;
+  --chart-cat-2: #e0a044;
+  --chart-cat-3: #7fae4a;
+  --chart-cat-4: #cc3300;
+  --chart-cat-5: #b08968;
+  --chart-cat-6: #8a6840;
+  /* Semantische Status-Farben. Aus --chart-income/--chart-expense des jeweiligen Themes
+     abgeleitet, aber in der Helligkeit so nachgezogen, dass sie als TEXT mindestens 4.5:1
+     gegen background UND card erreichen — Chartflächen dürfen blasser sein als Zahlen.
+     Immer diese statt harter Tailwind-Farben (text-green-600, text-red-500, ...) verwenden,
+     sonst bricht die Zahl aus der Theme-Palette aus - genau das war vorher der Fall. */
+  --success: #7FAE4A;
+  --danger: #E43900;
+  --warning: #D98C00;
+
 }
 
 /* Sakura – Light · Serif · Editorial */
@@ -401,9 +552,169 @@ tbody tr {
   --sidebar-accent-foreground: #1a0f13;
   --sidebar-border: #f0d6e0;
   --sidebar-ring: rgba(232, 64, 119, 0.2);
+  --chart-income: #4a9d6e;
+  --chart-expense: #dc2626;
+  --chart-accent: #e84077;
+  --chart-muted-1: #9a6070;
+  --chart-muted-2: #c88a9a;
+  --chart-cat-1: #e84077;
+  --chart-cat-2: #8a6a8f;
+  --chart-cat-3: #4a9d6e;
+  --chart-cat-4: #e0a044;
+  --chart-cat-5: #dc2626;
+  --chart-cat-6: #9a6070;
+  /* Semantische Status-Farben. Aus --chart-income/--chart-expense des jeweiligen Themes
+     abgeleitet, aber in der Helligkeit so nachgezogen, dass sie als TEXT mindestens 4.5:1
+     gegen background UND card erreichen — Chartflächen dürfen blasser sein als Zahlen.
+     Immer diese statt harter Tailwind-Farben (text-green-600, text-red-500, ...) verwenden,
+     sonst bricht die Zahl aus der Theme-Palette aus - genau das war vorher der Fall. */
+  --success: #3D815B;
+  --danger: #DC2626;
+  --warning: #AD5F05;
+
 }
 [data-theme="sakura"] body {
   font-family: var(--font-lora), Georgia, serif;
+}
+
+/* Athena Light – Editorial · Onyx & Gold
+ * Trägt die Onyx-&-Cream-Palette der Landing Page (siehe landing-tokens.ts,
+ * Export `C`) ins Dashboard: Parchment-Fläche mit Papier-Karten, dunkle
+ * Onyx-Sidebar als ruhiger Rahmen, Oliv als Primary, Gold/Terrakotta als
+ * zweiter/dritter Akzent statt eines einzelnen Blau- oder Rosatons wie bei
+ * Arctic/Sakura. `--shadow-tint` färbt den geteilten `.card-hover`-Schatten
+ * (siehe unten) warm statt neutral-schwarz; die beiden `radial-gradient`s im
+ * body geben der Fläche ein sehr leises Passepartout-Licht (heller oben,
+ * ein Hauch Gold unten rechts) statt einer komplett flachen Parchment-Fläche.
+ * `--muted`/`--accent` liegen bewusst zwischen `--background` und `--card`
+ * bzw. deutlich wärmer als `--secondary` — das ist die eigentliche
+ * "Tiefe": mehr unterscheidbare Flächen-Ebenen statt nur heller/dunkler.
+ */
+[data-theme="athena"] {
+  --background: #F4EFE4;
+  --foreground: #1A1A1A;
+  --card: #FFFFFF;
+  --card-foreground: #1A1A1A;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A1A1A;
+  --primary: #4A5B3D;
+  --primary-foreground: #F4EFE4;
+  --secondary: #E8E0D0;
+  --secondary-foreground: #1A1A1A;
+  --muted: #EDE6D6;
+  --muted-foreground: #6E675C;
+  --accent: #EFE0C0;
+  --accent-foreground: #6E5426;
+  --destructive: #A9553C;
+  --border: rgba(26, 26, 26, 0.12);
+  --input: rgba(26, 26, 26, 0.07);
+  --ring: rgba(74, 91, 61, 0.35);
+  --radius: 0.625rem;
+  --sidebar: #1A1A1A;
+  --sidebar-foreground: #E8E0D0;
+  --sidebar-primary: #B88F51;
+  --sidebar-primary-foreground: #1A1A1A;
+  --sidebar-accent: #262620;
+  --sidebar-accent-foreground: #F4EFE4;
+  --sidebar-border: rgba(232, 224, 208, 0.14);
+  --sidebar-ring: rgba(184, 143, 81, 0.3);
+  --shadow-tint: 26 26 26;
+  --chart-income: #6B7F5C;
+  --chart-expense: #A9553C;
+  --chart-accent: #B88F51;
+  --chart-muted-1: #8A8378;
+  --chart-muted-2: #6E675C;
+  --chart-cat-1: #4A5B3D;
+  --chart-cat-2: #B88F51;
+  --chart-cat-3: #A9553C;
+  --chart-cat-4: #8CA277;
+  --chart-cat-5: #6E5426;
+  --chart-cat-6: #3D3D3D;
+  /* Semantische Status-Farben. Aus --chart-income/--chart-expense des jeweiligen Themes
+     abgeleitet, aber in der Helligkeit so nachgezogen, dass sie als TEXT mindestens 4.5:1
+     gegen background UND card erreichen — Chartflächen dürfen blasser sein als Zahlen.
+     Immer diese statt harter Tailwind-Farben (text-green-600, text-red-500, ...) verwenden,
+     sonst bricht die Zahl aus der Theme-Palette aus - genau das war vorher der Fall. */
+  --success: #5F7152;
+  --danger: #A9553C;
+  --warning: #856636;
+
+}
+[data-theme="athena"] body {
+  font-family: var(--font-lora), Georgia, serif;
+  background-image:
+    radial-gradient(ellipse 1200px 700px at 50% -12%, rgba(255, 255, 255, 0.6), transparent 60%),
+    radial-gradient(ellipse 900px 500px at 92% 100%, rgba(184, 143, 81, 0.07), transparent 55%);
+  background-attachment: fixed;
+}
+
+/* Athena Dark – Editorial · Ember & Olive
+ * Dieselbe Landing-Page-DNA wie Athena Light, invertiert auf ein warmes
+ * Walnuss-Schwarz statt Aurums neutralem Onyx-Schwarz (#0A0A09) — damit
+ * bleiben beide dunklen Themes trotz überlappender Oliv/Gold/Terrakotta-
+ * Familie klar unterscheidbar. Statt Light einfach zu invertieren, behält
+ * Sidebar hier ihre Rolle als dunkelster Anker: sidebar < background < card
+ * in Helligkeit, dieselbe Drei-Stufen-Logik wie in Light (dort: sidebar ist
+ * die einzige dunkle Fläche, hier ist sie die dunkelste von dreien). Primary
+ * wandert auf das hellere Oliv (oliveLight statt oliveDeep) und Gold bleibt
+ * dem Sidebar-Akzent vorbehalten, damit die Rollenverteilung zu Light passt.
+ */
+[data-theme="athena-dark"] {
+  --background: #1B170F;
+  --foreground: #F0E9D8;
+  --card: #221D15;
+  --card-foreground: #F0E9D8;
+  --popover: #241F17;
+  --popover-foreground: #F0E9D8;
+  --primary: #8CA277;
+  --primary-foreground: #14150F;
+  --secondary: #2A2419;
+  --secondary-foreground: #E8E0D0;
+  --muted: #262115;
+  --muted-foreground: #A79C87;
+  --accent: #3A2E17;
+  --accent-foreground: #D9B26E;
+  --destructive: #C2694A;
+  --border: rgba(240, 233, 216, 0.1);
+  --input: rgba(240, 233, 216, 0.07);
+  --ring: rgba(140, 162, 119, 0.4);
+  --radius: 0.625rem;
+  --sidebar: #0F0D09;
+  --sidebar-foreground: #C9BFA8;
+  --sidebar-primary: #B88F51;
+  --sidebar-primary-foreground: #14120C;
+  --sidebar-accent: #1C1810;
+  --sidebar-accent-foreground: #F0E9D8;
+  --sidebar-border: rgba(240, 233, 216, 0.08);
+  --sidebar-ring: rgba(184, 143, 81, 0.3);
+  --shadow-tint: 0 0 0;
+  --chart-income: #8CA277;
+  --chart-expense: #C2694A;
+  --chart-accent: #D9B26E;
+  --chart-muted-1: #9C8F76;
+  --chart-muted-2: #6E675C;
+  --chart-cat-1: #8CA277;
+  --chart-cat-2: #D9B26E;
+  --chart-cat-3: #C2694A;
+  --chart-cat-4: #4A5B3D;
+  --chart-cat-5: #B88F51;
+  --chart-cat-6: #A79C87;
+  /* Semantische Status-Farben. Aus --chart-income/--chart-expense des jeweiligen Themes
+     abgeleitet, aber in der Helligkeit so nachgezogen, dass sie als TEXT mindestens 4.5:1
+     gegen background UND card erreichen — Chartflächen dürfen blasser sein als Zahlen.
+     Immer diese statt harter Tailwind-Farben (text-green-600, text-red-500, ...) verwenden,
+     sonst bricht die Zahl aus der Theme-Palette aus - genau das war vorher der Fall. */
+  --success: #8CA277;
+  --danger: #C46E50;
+  --warning: #C9A063;
+
+}
+[data-theme="athena-dark"] body {
+  font-family: var(--font-lora), Georgia, serif;
+  background-image:
+    radial-gradient(ellipse 900px 500px at 12% 100%, rgba(184, 143, 81, 0.08), transparent 60%),
+    radial-gradient(ellipse 1200px 700px at 88% -10%, rgba(140, 162, 119, 0.06), transparent 60%);
+  background-attachment: fixed;
 }
 
 /* ── Compact tables ────────────────────────────────────────────────────────── */
@@ -484,4 +795,14 @@ tbody tr {
   --af-rule-soft: rgba(26, 26, 26, 0.08);
   --af-rule-on: rgba(232, 224, 208, 0.16);
   --af-rule-on-soft: rgba(232, 224, 208, 0.09);
+}
+
+
+/* Durchlaufender Schimmer waehrend der Artwork-Generierung (components/inventar/
+   ValuableMedia.tsx). Als Keyframe global, weil Tailwind-Utilities keine eigenen
+   Keyframes erzeugen koennen -- die Animation selbst wird dort per arbitrary value
+   angezogen. `motion-safe:` am Aufrufer respektiert prefers-reduced-motion. */
+@keyframes inventar-sheen {
+  0%   { left: -50%; }
+  100% { left: 150%; }
 }

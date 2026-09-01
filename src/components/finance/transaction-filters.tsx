@@ -1,7 +1,8 @@
 'use client'
 
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useTransition } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Search, X } from 'lucide-react'
+import { useUrlFilters } from '@/components/providers/url-filters'
 import { Database } from '@/types/database'
 
 type Account = Pick<Database['public']['Tables']['accounts']['Row'], 'id' | 'name' | 'color'>
@@ -19,31 +20,78 @@ const TYPES = [
   { value: 'investment', label: 'Investition' },
 ]
 
-export function TransactionFilters({ accounts, categories }: TransactionFiltersProps) {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [, startTransition] = useTransition()
+const KEYS = ['type', 'account', 'category', 'from', 'to', 'q'] as const
 
-  function update(key: string, value: string) {
-    const params = new URLSearchParams(searchParams.toString())
-    if (value) params.set(key, value)
-    else params.delete(key)
-    startTransition(() =>
-      router.replace(`/finance/transactions?${params.toString()}`, { scroll: false })
-    )
-  }
+/** Wartezeit nach dem letzten Tastendruck, bevor gesucht wird. */
+const SEARCH_DEBOUNCE_MS = 350
+
+export function TransactionFilters({ accounts, categories }: TransactionFiltersProps) {
+  // Die Selects sind kontrolliert: ihr Wert kommt aus dem Filter-Context, nicht direkt aus
+  // `useSearchParams()`. Sonst sprang die Auswahl beim Ändern kurz auf den alten Wert
+  // zurück, bis der Server geantwortet hatte.
+  const filters = useUrlFilters()
+
+  // Die Suche schreibt wie die anderen Filter in die URL, aber nicht bei jedem Tastendruck:
+  // jede Aenderung loest ein Server-Rendering aus. Deshalb ein lokaler Entwurf, der erst
+  // nach einer Tippause uebernommen wird.
+  const urlQuery = filters.get('q') ?? ''
+  const [draft, setDraft] = useState(urlQuery)
+  const lastPushed = useRef(urlQuery)
+
+  // Aenderungen von aussen (Zuruecksetzen, Zurueck-Button) ins Eingabefeld spiegeln —
+  // aber nicht die, die wir gerade selbst ausgeloest haben.
+  useEffect(() => {
+    if (urlQuery !== lastPushed.current) {
+      lastPushed.current = urlQuery
+      setDraft(urlQuery)
+    }
+  }, [urlQuery])
+
+  useEffect(() => {
+    if (draft === lastPushed.current) return
+    const id = setTimeout(() => {
+      lastPushed.current = draft
+      filters.set('q', draft || null)
+    }, SEARCH_DEBOUNCE_MS)
+    return () => clearTimeout(id)
+  }, [draft, filters])
 
   const selectClass =
     'h-8 rounded-md border border-border bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring'
 
+  const hasFilters = KEYS.some(k => filters.get(k))
+
   return (
     <div className="flex flex-wrap items-center gap-2">
+      {/* Suche */}
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+        <input
+          type="search"
+          aria-label="Suche"
+          placeholder="Beschreibung, Empfänger …"
+          className={`${selectClass} w-52 pl-7 pr-7`}
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+        />
+        {draft && (
+          <button
+            type="button"
+            aria-label="Suche leeren"
+            onClick={() => setDraft('')}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="size-3.5" />
+          </button>
+        )}
+      </div>
+
       {/* Typ */}
       <select
         aria-label="Typ"
         className={selectClass}
-        value={searchParams.get('type') ?? ''}
-        onChange={(e) => update('type', e.target.value)}
+        value={filters.get('type') ?? ''}
+        onChange={(e) => filters.set('type', e.target.value)}
       >
         <option value="">Alle Typen</option>
         {TYPES.map((t) => (
@@ -57,8 +105,8 @@ export function TransactionFilters({ accounts, categories }: TransactionFiltersP
       <select
         aria-label="Konto"
         className={selectClass}
-        value={searchParams.get('account') ?? ''}
-        onChange={(e) => update('account', e.target.value)}
+        value={filters.get('account') ?? ''}
+        onChange={(e) => filters.set('account', e.target.value)}
       >
         <option value="">Alle Konten</option>
         {accounts.map((a) => (
@@ -72,8 +120,8 @@ export function TransactionFilters({ accounts, categories }: TransactionFiltersP
       <select
         aria-label="Kategorie"
         className={selectClass}
-        value={searchParams.get('category') ?? ''}
-        onChange={(e) => update('category', e.target.value)}
+        value={filters.get('category') ?? ''}
+        onChange={(e) => filters.set('category', e.target.value)}
       >
         <option value="">Alle Kategorien</option>
         {categories.map((c) => (
@@ -88,8 +136,8 @@ export function TransactionFilters({ accounts, categories }: TransactionFiltersP
         type="date"
         aria-label="Von"
         className={selectClass}
-        value={searchParams.get('from') ?? ''}
-        onChange={(e) => update('from', e.target.value)}
+        value={filters.get('from') ?? ''}
+        onChange={(e) => filters.set('from', e.target.value)}
       />
 
       {/* Bis */}
@@ -97,22 +145,14 @@ export function TransactionFilters({ accounts, categories }: TransactionFiltersP
         type="date"
         aria-label="Bis"
         className={selectClass}
-        value={searchParams.get('to') ?? ''}
-        onChange={(e) => update('to', e.target.value)}
+        value={filters.get('to') ?? ''}
+        onChange={(e) => filters.set('to', e.target.value)}
       />
 
       {/* Reset */}
-      {(searchParams.get('type') ||
-        searchParams.get('account') ||
-        searchParams.get('category') ||
-        searchParams.get('from') ||
-        searchParams.get('to')) && (
+      {hasFilters && (
         <button
-          onClick={() =>
-            startTransition(() =>
-              router.replace('/finance/transactions', { scroll: false })
-            )
-          }
+          onClick={() => filters.clear()}
           className="h-8 px-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           Zurücksetzen

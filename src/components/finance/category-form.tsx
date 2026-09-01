@@ -132,7 +132,7 @@ function CategoryFormFields({
             id="cat-color"
             name="color"
             type="color"
-            defaultValue={category?.color ?? '#6366f1'}
+            defaultValue={category?.color ?? '#64748b'}
             className="h-9 w-full cursor-pointer rounded-md border border-input bg-background p-1"
           />
         </div>

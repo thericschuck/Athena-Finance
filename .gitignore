@@ -157,3 +157,7 @@ Desktop.ini
 # Python FinTS sidecar virtualenv
 scripts/fints/.venv/
 scripts/fints/__pycache__/
+
+# Lokale Sicherungen vor Aufräumaktionen (nicht ins Repo)
+backup-cleanup-*/
+.cleanup-backup-dir

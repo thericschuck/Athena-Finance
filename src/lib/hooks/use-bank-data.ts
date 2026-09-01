@@ -14,6 +14,26 @@ import type {
   CategoriesResponse,
 } from '@/types/bank'
 
+/**
+ * Freigabe-Status eines Bank-Logins. Die Bank verlangt nach PSD2 alle 90 Tage erneut eine
+ * starke Authentifizierung (SecureGo plus); dazwischen läuft der Sync freigabefrei — das
+ * ist der Zeitraum, den `exemptionExpiresAt` markiert.
+ */
+export interface BankScaInfo {
+  bankLabel: string | null
+  lastScaAt: string | null
+  exemptionExpiresAt: string | null
+  /** Ein automatischer Sync ist abgebrochen, weil eine Freigabe fällig ist. */
+  scaRequired: boolean
+}
+
+export interface BankDataLoaded {
+  transactions: boolean
+  balances:     boolean
+  holdings:     boolean
+  categories:   boolean
+}
+
 interface UseBankDataReturn {
   transactions:    BankTransaction[]
   balances:        BankBalance[]
@@ -22,9 +42,26 @@ interface UseBankDataReturn {
   syncStatus:      SyncStatus
   isLoadingTxns:   boolean
   isLoadingBal:    boolean
+  /**
+   * Welche Datensätze schon mindestens einmal vom Server zurück sind.
+   *
+   * `isLoading*` allein reicht für Skeletons nicht: die Flags stehen beim allerersten
+   * Rendering noch auf `false` (der Effekt, der lädt, läuft erst nach dem Paint), und
+   * ein leeres Array ist in dem Moment nicht von "es gibt wirklich nichts" zu
+   * unterscheiden. Genau in dieser Lücke zeigte die Bank-Seite bisher nichts an.
+   */
+  loaded:          BankDataLoaded
 
-  /** Start a sync (optionally with date range). Omit both to sync full history. */
-  startSync:       (startDate?: Date, endDate?: Date) => Promise<void>
+  /**
+   * Start a sync. Without arguments this syncs the last 90 days — the window PSD2 exempts
+   * from a fresh strong authentication, so it normally runs without an app approval.
+   * `fullHistory` requests everything the bank still has and always costs one approval.
+   */
+  startSync:       (startDate?: Date, endDate?: Date, opts?: { fullHistory?: boolean }) => Promise<void>
+  /** Freigabe-Status je Bank-Login (letzte SCA, Ablauf der 90-Tage-Frist). */
+  scaStatus:       BankScaInfo[]
+  /** Freigabe-Status neu laden. */
+  loadScaStatus:   () => Promise<void>
   /** Fetch stored transactions from DB. */
   loadTransactions:(params?: { iban?: string; categoryId?: string; q?: string; limit?: number }) => Promise<void>
   /** Fetch live balances from FinTS and persist. */
@@ -47,17 +84,42 @@ export function useBankData(): UseBankDataReturn {
   const [syncStatus,    setSyncStatus]    = useState<SyncStatus>({ type: 'idle' })
   const [isLoadingTxns, setIsLoadingTxns] = useState(false)
   const [isLoadingBal,  setIsLoadingBal]  = useState(false)
+  const [scaStatus,     setScaStatus]     = useState<BankScaInfo[]>([])
+  const [loaded,        setLoaded]        = useState<BankDataLoaded>({
+    transactions: false, balances: false, holdings: false, categories: false,
+  })
+
+  const markLoaded = useCallback((key: keyof BankDataLoaded) => {
+    setLoaded(prev => prev[key] ? prev : { ...prev, [key]: true })
+  }, [])
+
+  // ── Freigabe-Status ─────────────────────────────────────────────────────────
+  const loadScaStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/bank/sca-status')
+      if (!res.ok) return
+      const data = await res.json() as { banks?: BankScaInfo[] }
+      setScaStatus(data.banks ?? [])
+    } catch {
+      // Rein informativ — ein Fehler hier darf die Seite nicht stören.
+    }
+  }, [])
 
   // ── Start sync ──────────────────────────────────────────────────────────────
-  const startSync = useCallback(async (startDate?: Date, endDate?: Date) => {
+  const startSync = useCallback(async (
+    startDate?: Date,
+    endDate?: Date,
+    opts?: { fullHistory?: boolean },
+  ) => {
     setSyncStatus({ type: 'loading' })
     try {
       const res = await fetch('/api/bank/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          startDate: startDate?.toISOString(),
-          endDate:   endDate?.toISOString(),
+          startDate:   startDate?.toISOString(),
+          endDate:     endDate?.toISOString(),
+          fullHistory: opts?.fullHistory === true,
         }),
       })
       if (!res.ok && res.headers.get('content-type')?.includes('text/html')) {
@@ -76,10 +138,12 @@ export function useBankData(): UseBankDataReturn {
         skipped: data.skipped ?? 0,
         warnings: data.warnings,
       })
+      // Eine erfolgreiche Freigabe verschiebt die 90-Tage-Frist — Anzeige aktualisieren.
+      void loadScaStatus()
     } catch (err) {
       setSyncStatus({ type: 'error', message: err instanceof Error ? err.message : 'Fehler' })
     }
-  }, [])
+  }, [loadScaStatus])
 
   // ── Load transactions ───────────────────────────────────────────────────────
   const loadTransactions = useCallback(async (params?: {
@@ -98,9 +162,12 @@ export function useBankData(): UseBankDataReturn {
       const data: TransactionsResponse = await res.json()
       if (data.transactions) setTransactions(data.transactions)
     } finally {
+      // Auch nach einem Fehler als "geladen" markieren — sonst bliebe das Skeleton
+      // für immer stehen statt in den Leerzustand zu fallen.
+      markLoaded('transactions')
       setIsLoadingTxns(false)
     }
-  }, [])
+  }, [markLoaded])
 
   // ── Load balances ───────────────────────────────────────────────────────────
   const loadBalances = useCallback(async () => {
@@ -111,9 +178,10 @@ export function useBankData(): UseBankDataReturn {
       const data: BalanceResponse = await res.json()
       if (data.balances) setBalances(data.balances)
     } finally {
+      markLoaded('balances')
       setIsLoadingBal(false)
     }
-  }, [])
+  }, [markLoaded])
 
   // ── Load depot holdings ─────────────────────────────────────────────────────
   const loadHoldings = useCallback(async () => {
@@ -124,8 +192,10 @@ export function useBankData(): UseBankDataReturn {
       if (data.holdings) setHoldings(data.holdings)
     } catch {
       // best-effort; depot holdings are a nice-to-have on this page
+    } finally {
+      markLoaded('holdings')
     }
-  }, [])
+  }, [markLoaded])
 
   // ── Load categories ─────────────────────────────────────────────────────────
   const loadCategories = useCallback(async () => {
@@ -136,8 +206,10 @@ export function useBankData(): UseBankDataReturn {
       if (data.categories) setCategories(data.categories)
     } catch {
       // best-effort; category dropdowns just fall back to empty
+    } finally {
+      markLoaded('categories')
     }
-  }, [])
+  }, [markLoaded])
 
   // ── Update category ────────────────────────────────────────────────────────
   const updateCategory = useCallback(async (id: string, categoryId: string | null) => {
@@ -168,7 +240,10 @@ export function useBankData(): UseBankDataReturn {
     syncStatus,
     isLoadingTxns,
     isLoadingBal,
+    loaded,
     startSync,
+    scaStatus,
+    loadScaStatus,
     loadTransactions,
     loadBalances,
     loadHoldings,

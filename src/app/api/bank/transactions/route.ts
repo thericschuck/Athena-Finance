@@ -21,10 +21,17 @@ export async function GET(request: Request) {
   const categoryId = searchParams.get('categoryId')
   const q          = searchParams.get('q')
 
+  // Spalten explizit statt '*': external_id ist ein base64-Hash, den ausschliesslich die
+  // Dedup beim Sync braucht — im Browser wird sie nie gelesen, macht aber rund 12 % der
+  // uebertragenen Nutzlast aus.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (supabase as any)
     .from('bank_transactions')
-    .select('*')
+    .select(
+      'id, user_id, bank_label, account_iban, account_bic, amount, currency, value_date, ' +
+      'entry_date, description, counterpart_name, counterpart_iban, counterpart_bic, ' +
+      'category_id, raw_description, bank_reference, created_at',
+    )
     .eq('user_id', user.id)
     .order('value_date', { ascending: false })
     .order('created_at', { ascending: false })

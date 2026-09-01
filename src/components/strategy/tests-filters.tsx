@@ -1,22 +1,11 @@
 'use client'
 
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { useTransition } from 'react'
+import { useUrlFilters } from '@/components/providers/url-filters'
 
 export function TestsFilters() {
-  const router       = useRouter()
-  const pathname     = usePathname()
-  const searchParams = useSearchParams()
-  const [, startTransition] = useTransition()
-
-  function update(key: string, value: string) {
-    const params = new URLSearchParams(searchParams.toString())
-    if (value) params.set(key, value)
-    else params.delete(key)
-    // reset to page 1 on filter change
-    params.delete('page')
-    startTransition(() => router.replace(`${pathname}?${params.toString()}`))
-  }
+  // `resetKeys="page"` im Provider setzt bei jeder Filteränderung auf Seite 1 zurück.
+  const filters = useUrlFilters()
+  const update = (key: string, value: string) => filters.set(key, value)
 
   const selectClass =
     'h-8 rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring'
@@ -29,7 +18,7 @@ export function TestsFilters() {
       <select
         aria-label="Asset-Klasse"
         className={selectClass}
-        defaultValue={searchParams.get('asset_class') ?? ''}
+        value={filters.get('asset_class') ?? ''}
         onChange={e => update('asset_class', e.target.value)}
       >
         <option value="">Alle Klassen</option>
@@ -44,7 +33,7 @@ export function TestsFilters() {
           id="min-cg"
           type="number" min="0" max="7" step="1"
           className={inputClass}
-          defaultValue={searchParams.get('min_cg') ?? ''}
+          value={filters.get('min_cg') ?? ''}
           onChange={e => update('min_cg', e.target.value)}
           placeholder="0–7"
         />
@@ -57,7 +46,7 @@ export function TestsFilters() {
           id="min-cr"
           type="number" min="0" max="7" step="1"
           className={inputClass}
-          defaultValue={searchParams.get('min_cr') ?? ''}
+          value={filters.get('min_cr') ?? ''}
           onChange={e => update('min_cr', e.target.value)}
           placeholder="0–7"
         />
@@ -70,7 +59,7 @@ export function TestsFilters() {
           id="min-pf"
           type="number" min="0" step="0.1"
           className={inputClass}
-          defaultValue={searchParams.get('min_pf') ?? ''}
+          value={filters.get('min_pf') ?? ''}
           onChange={e => update('min_pf', e.target.value)}
           placeholder="1.5"
         />
@@ -83,7 +72,7 @@ export function TestsFilters() {
           id="min-wr"
           type="number" min="0" max="100" step="1"
           className={inputClass}
-          defaultValue={searchParams.get('min_wr') ?? ''}
+          value={filters.get('min_wr') ?? ''}
           onChange={e => update('min_wr', e.target.value)}
           placeholder="%"
         />

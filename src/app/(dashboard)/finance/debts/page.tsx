@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency, fmtDate } from '@/lib/format'
 import { Database } from '@/types/database'
-import { AddDebtDialog, DebtPaymentDialog, EditDebtDialog, DeleteDebtButton } from '@/components/finance/debt-payment-form'
+import { AddDebtDialog, DebtPaymentDialog, SettleDebtButton, EditDebtDialog, DeleteDebtButton } from '@/components/finance/debt-payment-form'
 import { CalendarDays, TrendingDown, TrendingUp } from 'lucide-react'
 
 type Debt = Database['public']['Tables']['debts']['Row']
@@ -129,8 +129,8 @@ function SummaryCard({
   icon: React.ReactNode
   locale: string
 }) {
-  const bg = color === 'red' ? 'bg-red-50 dark:bg-red-900/20' : 'bg-green-50 dark:bg-green-900/20'
-  const text = color === 'red' ? 'text-red-700 dark:text-red-400' : 'text-green-700 dark:text-green-400'
+  const bg = color === 'red' ? 'bg-danger/10' : 'bg-success/10'
+  const text = color === 'red' ? 'text-danger' : 'text-success'
 
   return (
     <div className={`rounded-lg border border-border px-4 py-3 ${bg}`}>
@@ -189,13 +189,13 @@ function DebtCard({ debt, accentColor, locale, dateFormat }: { debt: Debt; accen
   const barColor = !debt.is_active
     ? 'bg-muted-foreground/40'
     : accentColor === 'red'
-    ? 'bg-red-500 dark:bg-red-400'
-    : 'bg-green-500 dark:bg-green-400'
+    ? 'bg-danger'
+    : 'bg-success'
 
   const badgeClasses =
     accentColor === 'red'
-      ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-      : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+      ? 'bg-danger/10 text-danger'
+      : 'bg-success/10 text-success'
 
   return (
     <div className="rounded-lg border border-border bg-card p-4 flex flex-col gap-3">
@@ -267,6 +267,7 @@ function DebtCard({ debt, accentColor, locale, dateFormat }: { debt: Debt; accen
         </div>
         <div className="flex items-center gap-1">
           {debt.is_active && <DebtPaymentDialog debt={debt} />}
+          {debt.is_active && <SettleDebtButton debt={debt} />}
           <EditDebtDialog debt={debt} />
           <DeleteDebtButton debt={debt} />
         </div>

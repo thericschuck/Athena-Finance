@@ -1,32 +1,32 @@
 'use client'
 
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { useTransition } from 'react'
+import { useUrlFilters } from '@/components/providers/url-filters'
 
 const PERIODS = ['1M', '3M', '6M', '1J', 'Alles'] as const
 
-interface Props { current: string }
+interface Props {
+  /** Zeitraum aus der URL — nur noch der Startwert für das erste Rendering. */
+  current: string
+}
 
 export function AnalysePeriodSelector({ current }: Props) {
-  const router  = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const [pending, startTransition] = useTransition()
+  // Merge in die bestehende Query, damit ein Zeitraumwechsel den Kontenfilter aus
+  // AnalyseAccountSelector nicht wegwirft (und umgekehrt).
+  const filters = useUrlFilters()
+
+  // Der optimistische Wert markiert den geklickten Button sofort; erst wenn der Server
+  // geantwortet hat, kommt er wieder aus der echten URL.
+  const active = filters.get('period') ?? current
 
   return (
-    <div className={`flex gap-1 transition-opacity ${pending ? 'opacity-60' : ''}`}>
+    <div className="flex gap-1">
       {PERIODS.map(p => (
         <button
           key={p}
-          onClick={() => startTransition(() => {
-            // Merge into the existing query so switching the period doesn't drop
-            // the account filter set by AnalyseAccountSelector (and vice versa).
-            const params = new URLSearchParams(searchParams)
-            params.set('period', p)
-            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-          })}
+          onClick={() => filters.set('period', p)}
+          aria-pressed={active === p}
           className={`px-2.5 py-1 text-xs rounded font-medium transition-all duration-150 ${
-            current === p
+            active === p
               ? 'bg-foreground text-background scale-105'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted'
           }`}

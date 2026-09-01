@@ -1,12 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { TrendingUp, TrendingDown, AlertCircle, Clock, Minus, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertCircle, Clock, Minus, ArrowUpRight, ArrowDownRight, Gem } from 'lucide-react'
 import { CryptoWidget } from '@/components/dashboard/crypto-widget'
 import { RebalancingAlert } from '@/components/dashboard/rebalancing-alert'
 import { FixedCostsWidget } from '@/components/finance/fixed-costs-widget'
 import { NetWorthChart } from '@/components/dashboard/net-worth-chart'
 import { PortfolioDonut } from '@/components/dashboard/portfolio-donut'
 import { FinanceAnalytics } from '@/components/dashboard/finance-analytics'
+import { AthenaInsights, type InsightRow } from '@/components/dashboard/athena-insights'
 import { getStrategySignals, getPortfolioAllocations, getLastRebalancing } from '@/app/(dashboard)/crypto/actions'
 import { getDepotsSummaries } from '@/app/actions/depot'
 import { calculateRebalancing } from '@/lib/crypto/rebalancing'
@@ -71,6 +72,34 @@ function liveAccountBucket(type: string): string | null {
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
+/**
+ * Einheitlicher Kopf für alle Abschnitte des Dashboards: gleiche Typo, gleicher Abstand
+ * nach unten, optionaler Zähler und optionaler Link rechts. Vorher war jeder Abschnitt
+ * einzeln ausgeschrieben — dadurch unterschiedliche Höhen und Abstände.
+ */
+function SectionHeader({ title, count, href, linkLabel = 'Alle ansehen' }: {
+  title: string
+  count?: string | number
+  href?: string
+  linkLabel?: string
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 mb-3 min-h-6">
+      <h2 className="text-sm font-semibold">
+        {title}
+        {count != null && count !== 0 && (
+          <span className="ml-2 text-xs font-normal text-muted-foreground">{count}</span>
+        )}
+      </h2>
+      {href && (
+        <Link href={href} className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0">
+          {linkLabel} →
+        </Link>
+      )}
+    </div>
+  )
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -95,23 +124,42 @@ export default async function DashboardPage() {
     { data: goalsRaw },
     { data: cryptoAssetsRaw },
     { data: contractsRaw },
+    { data: insightsRaw },
     cryptoSignals,
     cryptoAllocations,
     lastRebalancing,
     depotSummaries,
+    { data: valuablesRaw },
   ] = await Promise.all([
-    supabase.from('accounts').select('id, name, type, color, currency, is_active').eq('user_id', user!.id).order('sort_order'),
-    supabase.from('transactions').select('account_id, type, amount, currency').eq('user_id', user!.id),
-    supabase.from('transactions').select('type, amount').eq('user_id', user!.id).gte('date', monthStart),
+    supabase.from('accounts').select('id, name, type, color, currency, is_active, bank_iban').eq('user_id', user!.id).order('sort_order'),
+    // unified_transactions (see migration 20260821010000) merges in FinTS-synced bank
+    // transactions for linked accounts, so net worth / monthly totals below include them too.
+    supabase.from('unified_transactions').select('account_id, type, amount, currency').eq('user_id', user!.id),
+    supabase.from('unified_transactions').select('type, amount').eq('user_id', user!.id).gte('date', monthStart),
     supabase.from('debts').select('outstanding, type').eq('user_id', user!.id).eq('is_active', true),
     supabase.from('savings_goals').select('*').eq('user_id', user!.id).eq('status', 'offen'),
     supabase.from('assets').select('id, symbol, name, portfolio_name, quantity, avg_buy_price').in('type', ['crypto', 'stable', 'fiat']).eq('user_id', user!.id),
     supabase.from('contracts').select('id,name,provider,frequency,amount,currency,end_date,notice_days,auto_renews,account_id').eq('user_id', user!.id).eq('is_active', true),
+    // Hinweise, die Athena angelegt hat (siehe lib/assistant/actions.ts, createInsight).
+    supabase.from('insights').select('id, type, severity, title, body, created_at').eq('user_id', user!.id).is('dismissed_at', null).order('created_at', { ascending: false }).limit(6),
     getStrategySignals(user!.id),
     getPortfolioAllocations(user!.id),
     getLastRebalancing(user!.id),
     getDepotsSummaries(),
+    // Inventar. Bewusst NICHT im Net Worth (siehe Migration 20260831000002) -- die
+    // Kachel unten steht daneben, nicht darin.
+    supabase.from('valuables_current').select('aktueller_wert, kaufpreis, im_vermoegen')
+      .eq('user_id', user!.id).eq('is_active', true),
   ])
+
+  // ── Inventar ──────────────────────────────────────────────────────────────
+  // Getrennt vom Vermoegen gehalten: der Wert einer Uhr ist geschaetzt, und in den Net
+  // Worth gemischt macht er aus einer harten Zahl eine weiche.
+  const valuables = (valuablesRaw ?? []) as { aktueller_wert: number | null; kaufpreis: number | null; im_vermoegen: boolean | null }[]
+  const inventarWert = valuables
+    .filter(v => v.im_vermoegen !== false)
+    .reduce((s, v) => s + (v.aktueller_wert ?? 0), 0)
+  const inventarStueck = valuables.length
 
   // Monthly finance summaries (last 12 months)
   // month is stored as "YYYY-MM-01" (full date string) by the cron
@@ -143,17 +191,38 @@ export default async function DashboardPage() {
   const goals     = (goalsRaw ?? []) as unknown as GoalDash[]
 
   // ── Account balances from transactions ────────────────────────────────────
+  type BalTxRow = { account_id: string; type: string; amount: number; currency: string }
+  const balTxAll = (txAll ?? []) as BalTxRow[]
   const balMap = new Map<string, number>()
-  for (const tx of (txAll ?? [])) {
+  for (const tx of balTxAll) {
     const cur = balMap.get(tx.account_id) ?? 0
     if (tx.type === 'income')   balMap.set(tx.account_id, cur + tx.amount)
     if (tx.type === 'expense')  balMap.set(tx.account_id, cur - tx.amount)
     // transfers / investments: neutral for simple balance sum
   }
 
+  // For a bank-linked account the sum above is NOT a balance. FinTS only ever hands out a
+  // window of transactions (90 days on a routine sync), so summing them from zero yields the
+  // movement over that window, not what is on the account — Girokonto came out at 517.45 €
+  // against a real 1544.57 €. bank_balance holds the figure the bank itself reported, so it
+  // wins wherever it exists; the same precedence the accounts page already applies.
+  const { data: bankBalances } = await supabase
+    .from('bank_balance')
+    .select('account_iban, booked_balance')
+    .eq('user_id', user!.id)
+  const bankBalanceByIban = new Map(
+    (bankBalances ?? []).map(b => [b.account_iban, Number(b.booked_balance)]),
+  )
+  for (const a of accounts) {
+    if (!a.bank_iban) continue
+    const real = bankBalanceByIban.get(a.bank_iban)
+    if (real != null) balMap.set(a.id, real)
+  }
+
   // ── Monthly income / expenses ─────────────────────────────────────────────
+  type MonthTxRow = { type: string; amount: number }
   let monthIncome = 0, monthExpense = 0
-  for (const tx of (txMonth ?? [])) {
+  for (const tx of ((txMonth ?? []) as MonthTxRow[])) {
     if (tx.type === 'income')  monthIncome  += tx.amount
     if (tx.type === 'expense') monthExpense += tx.amount
   }
@@ -249,7 +318,7 @@ export default async function DashboardPage() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="p-8 space-y-8 max-w-6xl">
+    <div className="p-6 lg:p-8 space-y-8 mx-auto w-full max-w-[1600px]">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
@@ -258,13 +327,15 @@ export default async function DashboardPage() {
         </p>
       </div>
 
+      <AthenaInsights insights={(insightsRaw ?? []) as InsightRow[]} />
+
       {/* ── Row 1: Net Worth + Monat + Crypto ───────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 
         {/* Net Worth */}
         <Card className="p-5">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Net Worth</p>
-          <p className={`text-4xl font-bold tabular-nums tracking-tight ${netWorth < 0 ? 'text-red-600 dark:text-red-400' : ''}`}>
+          <p className={`text-4xl font-bold tabular-nums tracking-tight ${netWorth < 0 ? 'text-danger' : ''}`}>
             {fmt(netWorth)}
           </p>
           <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2.5">
@@ -279,8 +350,8 @@ export default async function DashboardPage() {
               <div key={label}>
                 <p className="text-xs text-muted-foreground">{label}</p>
                 <p className={`text-sm font-semibold tabular-nums ${
-                  color === 'red'   ? 'text-red-600 dark:text-red-400' :
-                  color === 'green' ? 'text-green-600 dark:text-green-400' : ''
+                  color === 'red'   ? 'text-danger' :
+                  color === 'green' ? 'text-success' : ''
                 }`}>
                   {color === 'red' ? '−' : ''}{fmt(val)}
                 </p>
@@ -299,27 +370,27 @@ export default async function DashboardPage() {
           ) : (
             <>
               <div className="flex items-center gap-2 mb-4">
-                <p className={`text-4xl font-bold tabular-nums tracking-tight ${monthNet >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                <p className={`text-4xl font-bold tabular-nums tracking-tight ${monthNet >= 0 ? 'text-success' : 'text-danger'}`}>
                   {monthNet >= 0 ? '+' : ''}{fmt(monthNet)}
                 </p>
                 {monthNet >= 0
-                  ? <TrendingUp  className="size-5 text-green-500" />
-                  : <TrendingDown className="size-5 text-red-500"  />
+                  ? <TrendingUp  className="size-5 text-success" />
+                  : <TrendingDown className="size-5 text-danger"  />
                 }
               </div>
               <div className="flex gap-5">
                 <div className="flex items-start gap-1.5">
-                  <ArrowUpRight className="size-4 text-green-500 shrink-0 mt-0.5" />
+                  <ArrowUpRight className="size-4 text-success shrink-0 mt-0.5" />
                   <div>
                     <p className="text-xs text-muted-foreground">Einnahmen</p>
-                    <p className="text-sm font-semibold tabular-nums text-green-600 dark:text-green-400">{fmt(monthIncome)}</p>
+                    <p className="text-sm font-semibold tabular-nums text-success">{fmt(monthIncome)}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-1.5">
-                  <ArrowDownRight className="size-4 text-red-500 shrink-0 mt-0.5" />
+                  <ArrowDownRight className="size-4 text-danger shrink-0 mt-0.5" />
                   <div>
                     <p className="text-xs text-muted-foreground">Ausgaben</p>
-                    <p className="text-sm font-semibold tabular-nums text-red-600 dark:text-red-400">{fmt(monthExpense)}</p>
+                    <p className="text-sm font-semibold tabular-nums text-danger">{fmt(monthExpense)}</p>
                   </div>
                 </div>
               </div>
@@ -334,13 +405,13 @@ export default async function DashboardPage() {
                       <>
                         <div className="flex justify-between text-xs text-muted-foreground">
                           <span>Budget</span>
-                          <span className={over ? 'text-red-500 font-medium' : ''}>
+                          <span className={over ? 'text-danger font-medium' : ''}>
                             {fmt(monthExpense)} / {fmt(monthlyBudget)} ({pct}%)
                           </span>
                         </div>
                         <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all ${over ? 'bg-red-500' : pct > 80 ? 'bg-amber-500' : 'bg-primary'}`}
+                            className={`h-full rounded-full transition-all ${over ? 'bg-danger' : pct > 80 ? 'bg-warning' : 'bg-primary'}`}
                             style={{ width: `${pct}%` }}
                           />
                         </div>
@@ -364,11 +435,11 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* ── Net Worth Chart ───────────────────────────────────────────────────── */}
-      <NetWorthChart snapshots={snapshotsWithToday} />
-
-      {/* ── Portfolio Donut ───────────────────────────────────────────────────── */}
-      <div className="max-w-xs">
+      {/* ── Net-Worth-Verlauf + Aufteilung ────────────────────────────────────── */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2 min-w-0">
+          <NetWorthChart snapshots={snapshotsWithToday} />
+        </div>
         <PortfolioDonut
           financeTotal={financeTotal}
           depotTotal={depotTotal}
@@ -386,23 +457,15 @@ export default async function DashboardPage() {
       {/* ── Depots ────────────────────────────────────────────────────────────── */}
       {depotSummaries.length > 0 && (
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold">
-              Depots
-              <span className="ml-2 text-xs font-normal text-muted-foreground">{depotSummaries.length}</span>
-            </h2>
-            <Link href="/depot" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-              Zum Depot →
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <SectionHeader title="Depots" count={depotSummaries.length} href="/depot" linkLabel="Zum Depot" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {depotSummaries.map(d => {
               const hasValue = d.depotValue !== null && d.depotValue > 0
               return (
                 <Link key={d.id} href="/depot">
                   <Card className="p-4 hover:border-primary/50 transition-colors cursor-pointer">
                     <div className="flex items-center gap-2 mb-2 min-w-0">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-success shrink-0" />
                       <p className="text-xs text-muted-foreground font-medium truncate">{d.name}</p>
                       <span className="text-xs text-muted-foreground font-mono ml-auto shrink-0">{d.isin}</span>
                     </div>
@@ -414,7 +477,7 @@ export default async function DashboardPage() {
                         {d.totalShares > 0 ? `${d.totalShares.toFixed(4)} Anteile` : 'Keine Anteile'}
                       </p>
                       {d.returnPct !== null && (
-                        <p className={`text-xs font-medium tabular-nums ${d.returnPct >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                        <p className={`text-xs font-medium tabular-nums ${d.returnPct >= 0 ? 'text-success' : 'text-danger'}`}>
                           {d.returnPct >= 0 ? '+' : ''}{d.returnPct.toFixed(2)} %
                         </p>
                       )}
@@ -427,27 +490,47 @@ export default async function DashboardPage() {
         </div>
       )}
 
+      {/* ── Inventar ──────────────────────────────────────────────────────────── */}
+      {/* Eigene Kachel statt einer Zeile in der Vermoegensaufteilung: der Sammlungswert ist
+          geschaetzt und soll neben den harten Zahlen stehen, nicht in ihnen. Der Hinweis
+          darunter sagt das explizit -- sonst rechnet man ihn im Kopf doch dazu. */}
+      {inventarStueck > 0 && (
+        <div>
+          <SectionHeader title="Inventar" count={`${inventarStueck} Stück`} href="/inventar" linkLabel="Zur Vitrine" />
+          <Link href="/inventar">
+            <Card className="p-4 hover:border-primary/50 transition-colors cursor-pointer">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted/60">
+                    <Gem className="size-4 text-muted-foreground" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-xl font-bold tabular-nums leading-tight">{fmt(inventarWert)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Sammlungswert · geschätzt, nicht Teil des Vermögens
+                    </p>
+                  </div>
+                </div>
+                <ArrowUpRight className="size-4 text-muted-foreground shrink-0" />
+              </div>
+            </Card>
+          </Link>
+        </div>
+      )}
+
       {/* ── Rebalancing alert ──────────────────────────────────────────────────── */}
       <RebalancingAlert rebalancingVolume={rebalancingVolume} lastRebalancing={lastRebalancing} locale={locale} dateFormat={dateFormat} />
 
       {/* ── Konten ────────────────────────────────────────────────────────────── */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold">
-            Konten
-            <span className="ml-2 text-xs font-normal text-muted-foreground">{activeAccounts.length} aktiv</span>
-          </h2>
-          <Link href="/finance/accounts" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-            Alle ansehen →
-          </Link>
-        </div>
+        <SectionHeader title="Konten" count={`${activeAccounts.length} aktiv`} href="/finance/accounts" />
 
         {activeAccounts.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border py-10 text-center">
+          <div className="rounded-lg border border-dashed border-border p-8 text-center">
             <p className="text-sm text-muted-foreground">Keine aktiven Konten.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
             {activeAccounts.map(a => {
               const bal = balMap.get(a.id) ?? 0
               const neg = bal < 0
@@ -459,7 +542,7 @@ export default async function DashboardPage() {
                       {a.color && <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: a.color }} />}
                       <p className="text-xs text-muted-foreground font-medium truncate">{a.name}</p>
                     </div>
-                    <p className={`text-xl font-bold tabular-nums leading-tight ${neg ? 'text-red-600 dark:text-red-400' : ''}`}>
+                    <p className={`text-xl font-bold tabular-nums leading-tight ${neg ? 'text-danger' : ''}`}>
                       {hasTransactions
                         ? fmtCurrency(bal, a.currency, locale)
                         : '—'}
@@ -478,17 +561,13 @@ export default async function DashboardPage() {
 
         {/* Sparziele */}
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold">
-              Sparziele
-              {goals.length > 0 && <span className="ml-2 text-xs font-normal text-muted-foreground">{goals.length} aktiv</span>}
-            </h2>
-            <Link href="/finance/goals" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-              Alle ansehen →
-            </Link>
-          </div>
+          <SectionHeader
+            title="Sparziele"
+            count={goals.length > 0 ? `${goals.length} aktiv` : undefined}
+            href="/finance/goals"
+          />
           {goals.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border py-10 text-center">
+            <div className="rounded-lg border border-dashed border-border p-8 text-center">
               <p className="text-sm text-muted-foreground">Keine aktiven Sparziele</p>
             </div>
           ) : (
@@ -499,11 +578,11 @@ export default async function DashboardPage() {
                 const pct = Math.min(100, Math.round((current / g.target_amount) * 100))
                 const done = pct >= 100
                 return (
-                  <Card key={g.id} className="px-4 py-3">
+                  <Card key={g.id} className="p-4">
                     <div className="flex items-center justify-between mb-1.5 gap-2">
                       <p className="text-sm font-medium truncate">{g.description}</p>
                       {done ? (
-                        <span className="text-xs font-medium text-green-600 dark:text-green-400 shrink-0">Erreicht ✓</span>
+                        <span className="text-xs font-medium text-success shrink-0">Erreicht ✓</span>
                       ) : (
                         <p className="text-xs text-muted-foreground shrink-0 tabular-nums">
                           noch <span className="text-foreground font-medium">{fmt(missing)}</span>
@@ -512,7 +591,7 @@ export default async function DashboardPage() {
                     </div>
                     <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all ${done ? 'bg-green-500' : 'bg-primary'}`}
+                        className={`h-full rounded-full transition-all ${done ? 'bg-success' : 'bg-primary'}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -536,12 +615,13 @@ export default async function DashboardPage() {
 
         {/* Vertragsfristen */}
         <div>
-          <h2 className="text-sm font-semibold mb-3">
-            Kündbarkeit in Kürze
-            {upcoming.length > 0 && <span className="ml-2 text-xs font-normal text-muted-foreground">{upcoming.length}</span>}
-          </h2>
+          <SectionHeader
+            title="Kündbarkeit in Kürze"
+            count={upcoming.length > 0 ? upcoming.length : undefined}
+            href="/finance/contracts"
+          />
           {upcoming.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border py-10 text-center">
+            <div className="rounded-lg border border-dashed border-border p-8 text-center">
               <p className="text-sm text-muted-foreground">Keine Verträge in den nächsten 45 Tagen kündbar</p>
             </div>
           ) : (
@@ -553,15 +633,15 @@ export default async function DashboardPage() {
                 return (
                   <div
                     key={c.id}
-                    className={`rounded-lg border px-4 py-3 flex items-center justify-between gap-3 ${
-                      overdue || urgent ? 'border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-950/20'
-                      : warning        ? 'border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/20'
+                    className={`rounded-lg border p-4 flex items-center justify-between gap-3 ${
+                      overdue || urgent ? 'border-danger/30 bg-danger/10'
+                      : warning        ? 'border-warning/30 bg-warning/10'
                       : 'border-border bg-card'
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      {overdue || urgent ? <AlertCircle className="size-4 text-red-500 shrink-0" />
-                        : warning        ? <Clock       className="size-4 text-amber-500 shrink-0" />
+                      {overdue || urgent ? <AlertCircle className="size-4 text-danger shrink-0" />
+                        : warning        ? <Clock       className="size-4 text-warning shrink-0" />
                         :                  <Minus       className="size-4 text-muted-foreground/40 shrink-0" />}
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">{c.name}</p>
@@ -572,8 +652,8 @@ export default async function DashboardPage() {
                     </div>
                     <div className="text-right shrink-0">
                       <p className={`text-sm font-semibold tabular-nums ${
-                        overdue || urgent ? 'text-red-600 dark:text-red-400'
-                        : warning        ? 'text-amber-600 dark:text-amber-400'
+                        overdue || urgent ? 'text-danger'
+                        : warning        ? 'text-warning'
                         : 'text-muted-foreground'
                       }`}>
                         {overdue ? `${Math.abs(c.days)}d überfällig` : `${c.days}d`}

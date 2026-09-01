@@ -64,6 +64,26 @@ const RULES: CategoryRule[] = [
     ],
   },
   {
+    // Nahverkehr, Tanken, Parken. Parkhäuser waren die häufigste unkategorisierte
+    // Alltagsbuchung, obwohl es die Kategorie „Transport" längst gibt.
+    candidates: ['Transport'],
+    patterns: [
+      /\b(parkhaus|parkplatz|parkservice|parkraum|parkgebühr|parken)\b/i,
+      /\b(tankstelle|aral|shell|esso|jet\s?tankstelle|total\s?energies|agip|avia)\b/i,
+      /\b(db\s?vertrieb|deutsche\s?bahn|flixbus|vgn|rmv|vrn|mvg|taxi|uber\s?bv|bolt\s?operations)\b/i,
+      /\b(werkstatt|tüv|dekra|kfz|autohaus)\b/i,
+    ],
+  },
+  {
+    // „MVZ" = Medizinisches Versorgungszentrum, so heißen die Labor-Rechnungen im
+    // Verwendungszweck. „KVUE" ist die Kassenärztliche Vereinigung.
+    candidates: ['Gesundheit'],
+    patterns: [
+      /\b(apotheke|arzt|ärzt|zahnarzt|klinik|krankenhaus|praxis|labor|mvz|kvue|physio|orthopäd|radiolog)\b/i,
+      /\b(krankenkasse|krankenversicherung|aok|barmer|dak|techniker\s?krankenkasse)\b/i,
+    ],
+  },
+  {
     candidates: ['Gehalt'],
     patterns: [
       /\b(gehalt|lohn|entgelt|vergütung|gehaltseingang|lohneingang)\b/i,
@@ -78,12 +98,34 @@ const RULES: CategoryRule[] = [
     patterns: [/\b(rechnung|honorar|auftrag|freelance|projektzahlung)\b/i],
   },
   {
+    // `payward`: Kraken tritt auf dem Kontoauszug NIE als „Kraken" auf, sondern unter der
+    // Rechtsform „Payward Ireland Limited". Das waren allein 12 Buchungen über 8.610 EUR,
+    // die deshalb unkategorisiert blieben, obwohl es die Kategorie „Crypto" gibt.
     candidates: ['Crypto'],
-    patterns: [/\b(kraken|binance|bitpanda|coinbase|bitcoin|krypto|crypto)\b/i],
+    patterns: [/\b(kraken|payward|binance|bitpanda|coinbase|bitcoin|krypto|crypto)\b/i],
+  },
+  {
+    // Vor der Depot-Regel: ein Bausparvertrag ist kein Wertpapierdepot. „BSV" ist die
+    // Abkürzung im Verwendungszweck der LBS, gefolgt von der Vertragsnummer.
+    //
+    // Ziel ist bewusst die OBERkategorie „Bausparverträge" und nicht einer der drei
+    // Verträge (10.000/20.000/30.000 EUR) — welcher gemeint ist, steht nur in der
+    // Vertragsnummer, und die falsch zu raten wäre schlimmer als eine Ebene zu grob.
+    candidates: ['Bausparverträge', 'Sparkonto'],
+    patterns: [
+      /\b(lbs|bausparen|bausparvertrag|bausparkasse|schwäbisch\s?hall|wüstenrot)\b/i,
+      /\bbsv\s?\d/i,
+    ],
   },
   {
     candidates: ['Depot', 'Sparkonto'],
     patterns: [/\b(sparplan|festgeld|tagesgeld|fonds|etf|aktien|wertpapier|dividende|trade\s?republic|comdirect|ing\s?diba|scalable\s?capital)\b/i],
+  },
+  {
+    // Kontoabschluss und Zinsgutschriften. Winzige Beträge, aber sie stehen dauerhaft als
+    // „ohne Kategorie" in der Liste und lassen sie voller aussehen als sie ist.
+    candidates: ['Zinsen', 'Einnahmen'],
+    patterns: [/\b(abschluss\s?per|rechnungsabschluss|habenzins|sollzins|zinsgutschrift)\b/i],
   },
   {
     candidates: ['Schulden'],
@@ -96,7 +138,12 @@ const RULES: CategoryRule[] = [
   },
 ]
 
-/** Case-insensitive name match; prefers the duplicate with an icon set (the actively-used one — this account has a few leftover duplicate category rows with the same name and no icon). */
+/**
+ * Case-insensitive Namenstreffer. Gibt es den Namen mehrfach, gewinnt die Variante MIT Icon:
+ * das ist erfahrungsgemäß die gepflegte, die ohne Icon eine Altlast. Aktuell sind die
+ * Kategorien dieses Accounts duplikatfrei — die Auswahl bleibt trotzdem stehen, weil sie
+ * genau dann greift, wenn beim Anlegen wieder ein Doppel entsteht.
+ */
 function pickCategoryByName(name: string, categories: FinanceCategory[]): FinanceCategory | null {
   const matches = categories.filter(c => c.name.toLowerCase() === name.toLowerCase())
   if (matches.length === 0) return null

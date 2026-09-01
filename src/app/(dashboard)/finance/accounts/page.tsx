@@ -1,13 +1,33 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { Landmark } from 'lucide-react'
 import { AddAccountDialog, EditAccountDialog, DeleteAccountButton } from '@/components/finance/account-form'
 import { Database } from '@/types/database'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency } from '@/lib/format'
 import { getDepotsSummaries } from '@/app/actions/depot'
 import type { DepotWithSummary } from '@/app/actions/depot'
+import { UrlFiltersProvider, FilterPending } from '@/components/providers/url-filters'
+import { UrlPeriodSelector } from '@/components/ui/period-selector'
+import { AccountSparkline } from '@/components/finance/account-sparkline'
+import { BankSyncPanel } from '@/components/bank/bank-sync-panel'
+import { SyncedHoldingsSection } from '@/components/bank/synced-holdings-section'
+import { parsePeriod, periodCutoff, type Period } from '@/lib/period'
+import { fetchBalanceHistory } from '@/lib/account-history'
 
 type Account = Database['public']['Tables']['accounts']['Row']
+
+/**
+ * Saldenverlauf eines Kontos im gewaehlten Zeitraum. `first`/`last` mitgefuehrt, weil die
+ * Sparkline ihre Punkte immer ueber die volle Breite streckt: ein Konto mit sechs Wochen
+ * Historie sieht bei „1J" genauso breit aus wie eines mit zwoelf Monaten. Der abgedeckte
+ * Zeitraum steht deshalb im Tooltip, statt die Kurve stillschweigend passend zu machen.
+ */
+interface AccountHistory {
+  values: number[]
+  first:  string
+  last:   string
+}
 
 const TYPE_LABELS: Record<string, string> = {
   checking:         'Girokonto',
@@ -19,13 +39,21 @@ const TYPE_LABELS: Record<string, string> = {
   credit:           'Kreditkarte',
 }
 
-export default async function AccountsPage() {
+export default async function AccountsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ period?: string }>
+}) {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const [{ period: rawPeriod }, { data: { user } }] = await Promise.all([
+    searchParams,
+    supabase.auth.getUser(),
+  ])
 
-  const [{ data: accounts }, { data: transactions }, settings, depots] = await Promise.all([
+  const period: Period = parsePeriod(rawPeriod)
+  const cutoff = periodCutoff(period)
+
+  const [{ data: accounts }, { data: transactions }, { data: bankBalances }, settings, depots] = await Promise.all([
     supabase
       .from('accounts')
       .select('*')
@@ -36,13 +64,40 @@ export default async function AccountsPage() {
       .from('transactions')
       .select('account_id, amount, type')
       .eq('user_id', user!.id),
+    supabase
+      .from('bank_balance')
+      .select('account_iban, booked_balance')
+      .eq('user_id', user!.id),
     getSettings(user!.id),
     getDepotsSummaries(),
   ])
 
   const locale = (settings.number_format as string) ?? 'de-DE'
 
-  // Compute balance per account from transactions
+  // Verlauf je Konto für die Sparklines. Eigene Query statt eines Joins über `accounts`,
+  // weil die Zeilenzahl hier vom Zeitraum abhängt und nicht von der Kontenzahl — bei
+  // „Alles" reicht ein Konto (Geschäftsanteile) bis 2018 zurück. Seitenweise, weil das
+  // die 1.000-Zeilen-Grenze von PostgREST sonst still am jüngsten Ende abschneidet
+  // (Begründung samt Zahlen in `fetchBalanceHistory`).
+  const history = await fetchBalanceHistory(supabase, { from: cutoff })
+
+  const historyMap = new Map<string, AccountHistory>()
+  for (const row of history) {
+    const entry = historyMap.get(row.account_id)
+    if (entry) {
+      entry.values.push(row.balance)
+      entry.last = row.snapshot_date
+    } else {
+      historyMap.set(row.account_id, {
+        values: [row.balance],
+        first:  row.snapshot_date,
+        last:   row.snapshot_date,
+      })
+    }
+  }
+
+  // Compute balance per account from manually-entered transactions — used for accounts that
+  // aren't linked to a synced bank account.
   const balanceMap = new Map<string, number>()
   for (const tx of transactions ?? []) {
     const cur = balanceMap.get(tx.account_id) ?? 0
@@ -50,24 +105,49 @@ export default async function AccountsPage() {
     if (tx.type === 'expense') balanceMap.set(tx.account_id, cur - tx.amount)
   }
 
+  // For accounts linked via accounts.bank_iban (see migration 20260821010000), the synced
+  // bank_balance is the real, live balance — prefer it over summing local transactions.
+  const bankBalanceByIban = new Map((bankBalances ?? []).map(b => [b.account_iban, b.booked_balance]))
+  for (const account of accounts ?? []) {
+    if (account.bank_iban && bankBalanceByIban.has(account.bank_iban)) {
+      balanceMap.set(account.id, bankBalanceByIban.get(account.bank_iban)!)
+    }
+  }
+
   return (
+    <UrlFiltersProvider>
     <div className="p-4 sm:p-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Konten</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
             Verwalte deine Bankkonten und Depots
           </p>
         </div>
-        <AddAccountDialog />
+        <div className="flex items-start gap-3 flex-wrap justify-end">
+          {/* Steuert nur den Verlauf; der Kontostand rechts ist immer der aktuelle. */}
+          <UrlPeriodSelector current={period} />
+          <AddAccountDialog />
+          {/* Der FinTS-Sync. Lag bis zum Wegfall des Hauptpunkts „Banking" auf einer
+              eigenen Seite — für verknüpfte Konten ist der gesyncte Saldo aber schon der
+              Kontostand in der Tabelle unten, der Knopf gehört also hierher. */}
+          <BankSyncPanel />
+        </div>
       </div>
 
       {/* Table */}
       {!accounts || accounts.length === 0 ? (
         <EmptyState />
       ) : (
-        <AccountTable accounts={accounts} balanceMap={balanceMap} locale={locale} />
+        <FilterPending>
+          <AccountTable
+            accounts={accounts}
+            balanceMap={balanceMap}
+            historyMap={historyMap}
+            locale={locale}
+          />
+        </FilterPending>
       )}
 
       {/* Depot cards */}
@@ -79,11 +159,21 @@ export default async function AccountsPage() {
           ))}
         </div>
       )}
+
+      {/* Über FinTS mitgelieferte Fondsbestände (Union Investment o.ä.) — sonst nirgends
+          zu sehen, und der richtige Nachbar der Depots. */}
+      <SyncedHoldingsSection />
     </div>
+    </UrlFiltersProvider>
   )
 }
 
-function AccountTable({ accounts, balanceMap, locale }: { accounts: Account[]; balanceMap: Map<string, number>; locale: string }) {
+function AccountTable({ accounts, balanceMap, historyMap, locale }: {
+  accounts: Account[]
+  balanceMap: Map<string, number>
+  historyMap: Map<string, AccountHistory>
+  locale: string
+}) {
   return (
     <div className="rounded-lg border border-border bg-card overflow-x-auto">
       <table className="w-full text-sm">
@@ -93,6 +183,7 @@ function AccountTable({ accounts, balanceMap, locale }: { accounts: Account[]; b
             <th className="px-4 py-3 text-left font-medium text-muted-foreground">Typ</th>
             <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden sm:table-cell">Institution</th>
             <th className="px-4 py-3 text-left font-medium text-muted-foreground">Währung</th>
+            <th className="px-4 py-3 text-center font-medium text-muted-foreground hidden md:table-cell">Verlauf</th>
             <th className="px-4 py-3 text-right font-medium text-muted-foreground">Kontostand</th>
             <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
             <th className="px-4 py-3" />
@@ -100,7 +191,13 @@ function AccountTable({ accounts, balanceMap, locale }: { accounts: Account[]; b
         </thead>
         <tbody className="divide-y divide-border">
           {accounts.map((account) => (
-            <AccountRow key={account.id} account={account} balance={balanceMap.get(account.id) ?? null} locale={locale} />
+            <AccountRow
+              key={account.id}
+              account={account}
+              balance={balanceMap.get(account.id) ?? null}
+              history={historyMap.get(account.id) ?? null}
+              locale={locale}
+            />
           ))}
         </tbody>
       </table>
@@ -108,7 +205,24 @@ function AccountTable({ accounts, balanceMap, locale }: { accounts: Account[]; b
   )
 }
 
-function AccountRow({ account, balance, locale }: { account: Account; balance: number | null; locale: string }) {
+function AccountRow({ account, balance, history, locale }: {
+  account: Account
+  balance: number | null
+  history: AccountHistory | null
+  locale: string
+}) {
+  const values = history?.values ?? []
+  // Veränderung über den gewählten Zeitraum. Ohne diese Zahl ist die Sparkline nur eine
+  // Form ohne Maßstab — man sieht, DASS es hoch ging, aber nicht um wie viel.
+  const delta = values.length >= 2 ? values[values.length - 1] - values[0] : null
+
+  const fmtDay = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString(locale)
+  // Reicht die Historie nicht über den ganzen Zeitraum, wird trotzdem gezeigt was da ist —
+  // der Tooltip nennt dann den tatsächlich abgedeckten Ausschnitt.
+  const rangeLabel = history && values.length >= 2
+    ? `Verlauf ${fmtDay(history.first)} – ${fmtDay(history.last)}`
+    : undefined
+
   return (
     <tr className="hover:bg-muted/30 transition-colors group">
       {/* Name + color dot */}
@@ -124,6 +238,18 @@ function AccountRow({ account, balance, locale }: { account: Account; balance: n
             >
               {account.name}
             </Link>
+            {account.bank_iban && (
+              // Kein Link mehr: das Ziel war die Banking-Seite, und die gibt es nicht mehr —
+              // der Sync steht oben im Kopf dieser Seite. Bleibt als Merkmal „der Saldo
+              // rechts kommt per FinTS von der Bank, nicht aus manuellen Buchungen".
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                title={`Per FinTS synchronisiert · ${account.bank_iban}`}
+              >
+                <Landmark className="size-2.5" />
+                Bank
+              </span>
+            )}
         </div>
       </td>
 
@@ -144,12 +270,34 @@ function AccountRow({ account, balance, locale }: { account: Account; balance: n
         </span>
       </td>
 
+      {/* Verlauf */}
+      <td className="px-4 py-3 hidden md:table-cell">
+        <div className="flex items-center justify-center gap-2" title={rangeLabel}>
+          <AccountSparkline
+            values={values}
+            color={account.color}
+            uid={account.id}
+            className="text-muted-foreground"
+          />
+          {delta !== null && (
+            <span
+              className={`text-[11px] tabular-nums ${
+                delta > 0 ? 'text-success' : delta < 0 ? 'text-danger' : 'text-muted-foreground'
+              }`}
+            >
+              {delta > 0 ? '+' : ''}
+              {fmtCurrency(delta, account.currency, locale, { fractionDigits: 0 })}
+            </span>
+          )}
+        </div>
+      </td>
+
       {/* Kontostand */}
       <td className="px-4 py-3 text-right tabular-nums">
         {balance === null ? (
           <span className="text-muted-foreground">—</span>
         ) : (
-          <span className={balance < 0 ? 'text-red-600 dark:text-red-400' : ''}>
+          <span className={balance < 0 ? 'text-danger' : ''}>
             {['BTC', 'ETH'].includes(account.currency)
               ? `${balance.toFixed(6)} ${account.currency}`
               : fmtCurrency(balance, account.currency, locale, { fractionDigits: 2 })}
@@ -162,7 +310,7 @@ function AccountRow({ account, balance, locale }: { account: Account; balance: n
         <span
           className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
             account.is_active
-              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+              ? 'bg-success/10 text-success'
               : 'bg-muted text-muted-foreground'
           }`}
         >

@@ -25,8 +25,8 @@ export function useSettings(): UserSettings {
   return useContext(SettingsContext)
 }
 
-const DARK_PRESETS  = new Set(['obsidian', 'aurum', 'void', 'copper'])
-const LIGHT_PRESETS = new Set(['arctic', 'sakura'])
+const DARK_PRESETS  = new Set(['obsidian', 'aurum', 'void', 'copper', 'athena-dark'])
+const LIGHT_PRESETS = new Set(['arctic', 'sakura', 'athena'])
 
 export function SettingsProvider({
   settings,

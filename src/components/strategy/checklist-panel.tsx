@@ -65,7 +65,7 @@ export function ChecklistPanel({
             <span className={`
               flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors
               ${checked
-                ? 'border-green-500 bg-green-500 dark:border-green-400 dark:bg-green-400'
+                ? 'border-success bg-success'
                 : 'border-border bg-background'}
             `}>
               {checked && <Check className="size-3 text-white dark:text-black" strokeWidth={3} />}

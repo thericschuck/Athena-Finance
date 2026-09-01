@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import type { ChartTab } from '@/components/depot/depot-chart'
 import { DepotTransactionsTable } from '@/components/depot/depot-transactions-table'
+import { Skeleton, SkeletonChartBody } from '@/components/ui/skeleton'
 import {
   addInitialHolding,
   addManualDeposit,
@@ -64,15 +65,11 @@ function fmtTime(iso: string) {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse rounded bg-muted/60 ${className ?? ''}`} />
-}
-
 function StatCard({ title, value, sub, color, loading }: {
   title: string; value: string; sub?: string
   color?: 'green' | 'red' | 'neutral'; loading?: boolean
 }) {
-  const colorClass = color === 'green' ? 'text-green-500' : color === 'red' ? 'text-destructive' : 'text-foreground'
+  const colorClass = color === 'green' ? 'text-success' : color === 'red' ? 'text-danger' : 'text-foreground'
   return (
     <div className="rounded-xl border border-border bg-card p-4">
       <p className="text-xs text-muted-foreground mb-1">{title}</p>
@@ -355,8 +352,8 @@ export function DepotDashboard() {
   const priceStatus = livePrice === null
     ? { dot: 'bg-destructive', label: 'Offline',    color: 'text-destructive' }
     : isLive
-    ? { dot: 'bg-green-500',   label: 'LIVE',        color: 'text-green-500' }
-    : { dot: 'bg-yellow-500',  label: 'Verzögert',   color: 'text-yellow-500' }
+    ? { dot: 'bg-success',   label: 'LIVE',        color: 'text-success' }
+    : { dot: 'bg-warning',  label: 'Verzögert',   color: 'text-warning' }
 
   // ─── Empty state: no depots yet ──────────────────────────────────────────────
   if (!depotsLoading && depots.length === 0) {
@@ -508,11 +505,11 @@ export function DepotDashboard() {
 
       {/* Due plans banner */}
       {duePlans.length > 0 && (
-        <div className="mb-5 rounded-xl border border-yellow-500/40 bg-yellow-500/10 px-4 py-3">
+        <div className="mb-5 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3">
           {duePlans.map(plan => (
             <div key={plan.id} className="flex items-center gap-3">
-              <Zap className="size-4 text-yellow-500 shrink-0" />
-              <p className="text-sm text-yellow-500 flex-1">
+              <Zap className="size-4 text-warning shrink-0" />
+              <p className="text-sm text-warning flex-1">
                 Sparplan fällig — {plan.fund_name}{' '}
                 {plan.monthly_amount.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €
               </p>
@@ -520,7 +517,7 @@ export function DepotDashboard() {
                 size="sm"
                 disabled={!livePrice}
                 onClick={() => handleExecutePlan(plan)}
-                className="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-500 border border-yellow-500/40 text-xs"
+                className="bg-warning/20 hover:bg-warning/30 text-warning border border-warning/40 text-xs"
               >
                 Jetzt ausführen
               </Button>
@@ -780,7 +777,7 @@ export function DepotDashboard() {
             </div>
 
             {loading ? (
-              <Skeleton className="h-52 w-full" />
+              <SkeletonChartBody variant="area" height={208} />
             ) : !hasData ? (
               <div className="flex items-center justify-center h-52 text-sm text-muted-foreground">
                 Noch keine Daten – trage deinen ersten Kauf ein.

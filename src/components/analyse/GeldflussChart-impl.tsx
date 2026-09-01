@@ -6,17 +6,24 @@ import type { SankeyData, SankeyNodeDatum } from '@/lib/analyseData'
 
 interface Props { data: SankeyData }
 
-// Terrakotta-Skala für Ausgabenkategorien statt gesättigtem Rot/Orange/Pink —
-// dieselbe gedeckte Erdton-Familie wie Wohnen/Lebensmittel/Mobilität/Freizeit
-// in der "III · Die Analyse"-Sektion der Landing Page (siehe SANKEY_TARGETS
-// in LandingClient.tsx), nur auf acht statt vier Kategorien gestreckt.
-const EXPENSE_PALETTE = ['#A9553C','#B9694F','#C4816A','#CE9A85','#8E4634','#6B3427','#BF9B6E','#D4A85C']
-// Oliv-Skala für Einkommensquellen — dieselbe Familie wie Gewinntage in der
-// GuV-Heatmap (Gehalt/Freelance in LandingClient.tsx sind oliveLight/gold,
-// hier zwei Oliv-Stufen statt einer zweiten, unpassenden Goldquelle).
-const INCOME_PALETTE = ['#8CA277', '#41522F', '#5B6E4B', '#748563']
-const EINNAHMEN_COLOR = '#f0d98c'
-const UEBERSCHUSS_COLOR = '#B7CDA0'
+// Abstufungen von --chart-expense (siehe globals.css) statt fester Terrakotta-
+// Hex-Werte — zieht pro Theme-Preset mit, statt überall Aurums Palette zu
+// zeigen. color-mix() erzeugt die Stufen zur Laufzeit aus der Theme-Farbe.
+const EXPENSE_PALETTE = [0, 15, 30, 45, -15, -30, 60, 75].map(
+  (l) => l >= 0
+    ? `color-mix(in srgb, var(--chart-expense) ${100 - l}%, white ${l}%)`
+    : `color-mix(in srgb, var(--chart-expense) ${100 + l}%, black ${-l}%)`,
+)
+// Abstufungen von --chart-income für Einkommensquellen — analog zur
+// Ausgaben-Skala oben, zwei helle und zwei dunkle Varianten statt einer
+// zweiten, thematisch unpassenden Goldquelle.
+const INCOME_PALETTE = [0, -25, -40, 20].map(
+  (l) => l >= 0
+    ? `color-mix(in srgb, var(--chart-income) ${100 - l}%, white ${l}%)`
+    : `color-mix(in srgb, var(--chart-income) ${100 + l}%, black ${-l}%)`,
+)
+const EINNAHMEN_COLOR = 'var(--chart-accent)'
+const UEBERSCHUSS_COLOR = 'color-mix(in srgb, var(--chart-income) 70%, var(--chart-accent) 30%)'
 
 /**
  * Eine Farbe je Knotenname statt getrennter Index-Logik in Node und Link —
@@ -65,7 +72,7 @@ function SankeyNode(props: any) {
         x={isLeft ? x - 10 : x + width + 10}
         y={y + h / 2}
         textAnchor={isLeft ? 'end' : 'start'}
-        fill="#d1d5db"
+        fill="var(--foreground)"
         fontSize={11}
         fontFamily="inherit"
         dominantBaseline="middle"
@@ -130,11 +137,15 @@ function SankeyTooltip({ active, payload }: any) {
 
   const isLink = item.source !== undefined
   if (isLink) {
+    // realValue statt value: `value` ist die auf das Sankey-Layout normierte Bandbreite,
+    // bei Ausgaben also gestaucht, sobald mehr ausgegeben als eingenommen wurde. Der
+    // Tooltip soll den echten Betrag nennen (siehe SankeyLinkDatum in lib/analyseData.ts).
+    const betrag = (item.realValue ?? item.value) as number
     return (
       <div className="rounded-lg border border-border bg-popover shadow-lg p-2.5 text-xs">
         <p className="text-muted-foreground">{item.source?.name} → {item.target?.name}</p>
         <p className="text-popover-foreground font-semibold mt-0.5 tabular-nums">
-          {Math.round(item.value as number).toLocaleString('de-DE')} €
+          {Math.round(betrag).toLocaleString('de-DE')} €
         </p>
       </div>
     )
@@ -154,15 +165,15 @@ export function GeldflussChart({ data }: Props) {
 
   if (!data.nodes.length) {
     return (
-      <div className="bg-[#13161e] border border-[#1e2130] rounded-xl p-5 flex items-center justify-center h-48">
-        <p className="text-sm text-[#4b5563]">Keine Transaktionsdaten</p>
+      <div className="bg-card border border-border rounded-xl p-5 flex items-center justify-center h-48">
+        <p className="text-sm text-muted-foreground">Keine Transaktionsdaten</p>
       </div>
     )
   }
 
   return (
-    <div className="bg-[#13161e] border border-[#1e2130] rounded-xl p-5">
-      <h2 className="text-sm font-medium text-[#f3f0ea] mb-4">Geldfluss</h2>
+    <div className="bg-card border border-border rounded-xl p-5">
+      <h2 className="text-sm font-medium text-foreground mb-4">Geldfluss</h2>
       <ResponsiveContainer width="100%" height={380}>
         <Sankey
           data={data}

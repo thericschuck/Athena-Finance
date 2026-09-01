@@ -1,5 +1,5 @@
 // Deploy:   supabase functions deploy daily-snapshot
-// Schedule: Supabase Dashboard → Cron Jobs → "59 23 * * *" → POST /functions/v1/daily-snapshot
+// Schedule: pg_cron job "Daily-Snapshot" — 59 23 * * * → POST /functions/v1/daily-snapshot
 //
 // Ablauf:
 //   1. CoinGecko-Preise holen → in crypto_price_cache schreiben
@@ -8,9 +8,14 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-// ─── CoinGecko symbol → coin ID ───────────────────────────────────────────────
+// ─── Ticker → CoinGecko-ID ────────────────────────────────────────────────────
+// Nur noch ein Fallback: `assets.symbol` enthält für jeden Coin, der in der Coin-Registry
+// steht, bereits die CoinGecko-ID ("bitcoin", nicht "BTC") — siehe `dbSymbol` in
+// syncFromKraken(). Diese Tabelle greift für die Handvoll Assets, die manuell mit einem
+// Ticker angelegt wurden.
 const GECKO_IDS: Record<string, string> = {
   BTC:   'bitcoin',
+  XBT:   'bitcoin',
   ETH:   'ethereum',
   SOL:   'solana',
   BNB:   'binancecoin',
@@ -29,6 +34,31 @@ const GECKO_IDS: Record<string, string> = {
   OP:    'optimism',
   DOGE:  'dogecoin',
   SHIB:  'shiba-inu',
+  USDT:  'tether',
+  USDC:  'usd-coin',
+  DAI:   'dai',
+  PAXG:  'pax-gold',
+  CRV:   'curve-dao-token',
+  CVX:   'convex-finance',
+  SUI:   'sui',
+  PEPE:  'pepe',
+  HYPE:  'hyperliquid',
+  WIF:   'dogwifcoin',
+}
+
+/**
+ * Kraken hängt an Staking-/Earn-Guthaben ein Suffix an (`SOL.S`, `USDG.F`, `XXBT.M`, `.B`).
+ * Ohne Abschneiden findet weder CoinGecko noch die Registry etwas und die Position wird mit
+ * 0 bewertet.
+ */
+function stripKrakenSuffix(symbol: string): string {
+  return symbol.replace(/\.(S|M|F|B|P)$/i, '')
+}
+
+/** `assets.symbol` → CoinGecko-ID. Symbole SIND meist schon IDs, deshalb Registry vor Map. */
+function toGeckoId(symbol: string): string {
+  const bare = stripKrakenSuffix(symbol)
+  return GECKO_IDS[bare.toUpperCase()] ?? bare.toLowerCase()
 }
 
 function isoDate(d = new Date()): string {
@@ -37,10 +67,16 @@ function isoDate(d = new Date()): string {
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
-  // Allow Supabase dashboard cron (no auth header) + manual calls with secret
-  const auth = req.headers.get('Authorization') ?? ''
+  // Die Function läuft mit verify_jwt=true, die Plattform hat den Bearer also bereits
+  // geprüft, bevor dieser Code überhaupt startet. Der CRON_SECRET-Check hier ist nur die
+  // zweite Schranke für manuelle Aufrufe — er darf einen gültigen Supabase-JWT NICHT
+  // ablehnen. Genau das hat er vorher getan: der pg_cron-Job schickt den anon-Key, nicht das
+  // Secret, also lief die Function seit Monaten in einen 401 und `crypto_price_cache` blieb
+  // auf dem Stand von März stehen.
+  const auth   = req.headers.get('Authorization') ?? ''
   const secret = Deno.env.get('CRON_SECRET') ?? ''
-  if (secret && auth !== `Bearer ${secret}`) {
+  const isJwt  = auth.startsWith('Bearer eyJ')
+  if (secret && !isJwt && auth !== `Bearer ${secret}`) {
     return new Response('Unauthorized', { status: 401 })
   }
 
@@ -57,37 +93,50 @@ Deno.serve(async (req) => {
   const { data: cryptoAssets } = await supabase
     .from('assets')
     .select('symbol')
-    .eq('type', 'crypto')
+    .in('type', ['crypto', 'stable'])
     .not('symbol', 'is', null)
     .gt('quantity', 0)
 
-  const symbols = [...new Set(
-    (cryptoAssets ?? []).map(a => (a.symbol as string).toUpperCase())
-  )]
+  // Ein Coin kann unter mehreren Schreibweisen in `assets` stehen (z.B. "SOL" manuell und
+  // "solana" vom Kraken-Sync). Der Cache wird auf upper(assets.symbol) gejoint, also braucht
+  // JEDE Schreibweise ihre eigene Zeile — deshalb symbol→geckoId als Paar führen.
+  const bySymbol = new Map<string, string>()
+  for (const a of cryptoAssets ?? []) {
+    const sym = (a.symbol as string).toUpperCase()
+    if (!bySymbol.has(sym)) bySymbol.set(sym, toGeckoId(a.symbol as string))
+  }
 
-  if (symbols.length) {
-    const geckoIds = symbols.map(s => GECKO_IDS[s] ?? s.toLowerCase()).join(',')
+  if (bySymbol.size) {
+    const geckoIds = [...new Set(bySymbol.values())]
     try {
       const res = await fetch(
-        `https://api.coingecko.com/api/v3/simple/price?ids=${geckoIds}&vs_currencies=eur`,
+        `https://api.coingecko.com/api/v3/simple/price?ids=${geckoIds.join(',')}&vs_currencies=eur`,
         { headers: { Accept: 'application/json' } },
       )
       if (res.ok) {
         const data = await res.json() as Record<string, { eur?: number }>
-        const rows = symbols
-          .map(sym => ({
-            symbol:     sym,
-            price_eur:  data[GECKO_IDS[sym] ?? sym.toLowerCase()]?.eur ?? 0,
+        const rows = [...bySymbol.entries()]
+          .map(([symbol, geckoId]) => ({
+            symbol,
+            price_eur:  data[geckoId]?.eur ?? 0,
             updated_at: new Date().toISOString(),
           }))
           .filter(r => r.price_eur > 0)
 
-        const { error } = await supabase
-          .from('crypto_price_cache')
-          .upsert(rows, { onConflict: 'symbol' })
+        const missing = [...bySymbol.entries()]
+          .filter(([, id]) => !(data[id]?.eur))
+          .map(([sym, id]) => `${sym}→${id}`)
 
-        if (error) log.push(`crypto_price_cache ERR: ${error.message}`)
-        else        log.push(`crypto prices updated: ${rows.map(r => `${r.symbol}=€${r.price_eur}`).join(', ')}`)
+        if (rows.length) {
+          const { error } = await supabase
+            .from('crypto_price_cache')
+            .upsert(rows, { onConflict: 'symbol' })
+          if (error) log.push(`crypto_price_cache ERR: ${error.message}`)
+          else        log.push(`crypto prices updated: ${rows.map(r => `${r.symbol}=€${r.price_eur}`).join(', ')}`)
+        }
+        // Fehlende Zuordnungen sind der häufigste Grund für eine 0-Bewertung — sie gehören
+        // ins Log, nicht ins Schweigen.
+        if (missing.length) log.push(`no CoinGecko price for: ${missing.join(', ')}`)
       } else {
         log.push(`CoinGecko HTTP ${res.status}`)
       }

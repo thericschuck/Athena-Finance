@@ -1,6 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
+import { SkeletonChart } from '@/components/ui/skeleton'
 import type { BankTransaction, FinanceCategory } from '@/types/bank'
 
 interface Props { transactions: BankTransaction[]; categories: FinanceCategory[] }
@@ -13,6 +14,6 @@ export const BankCategoryChart = dynamic<Props>(
   () => import('./bank-category-chart-impl').then(m => m.BankCategoryChart),
   {
     ssr: false,
-    loading: () => <div className="rounded-lg border border-border bg-card p-5 h-40 animate-pulse" />,
+    loading: () => <SkeletonChart variant="hbars" height={220} />,
   },
 )

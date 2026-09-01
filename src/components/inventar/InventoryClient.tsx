@@ -1,0 +1,485 @@
+'use client'
+
+import { useMemo, useState } from 'react'
+import { Gem, Plus, ShieldCheck, Package, FileText, MapPin, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+} from '@/components/ui/sheet'
+import { fmtCurrency } from '@/lib/format'
+import { ValuableIcon } from './ValuableIcon'
+import { ValuableForm } from './ValuableForm'
+import { ValuableActions } from './ValuableActions'
+import { ValuableMedia } from './ValuableMedia'
+import {
+  KATEGORIEN, kategorieLabel, wertstufe, zustandLabel, haltedauerLabel,
+  type ValuableWithImage,
+} from '@/lib/valuables'
+
+interface Props {
+  items: ValuableWithImage[]
+  locale: string
+}
+
+export function InventoryClient({ items, locale }: Props) {
+  const [kategorie, setKategorie] = useState<string | null>(null)
+  // Nur die ID merken, nicht das Objekt.
+  //
+  // Vorher lag hier eine KOPIE des Gegenstands. Nach einem `router.refresh()` — also nach
+  // jedem Upload, jedem Artwork, jedem Hauptbildwechsel — kam die frische Liste zwar an,
+  // das Panel zeigte aber weiter den Stand von vor dem Öffnen: kein neues Foto, kein neues
+  // Artwork. Schlimmer noch, ValuableMedia sah dadurch weiterhin null Fotos, blendete die
+  // Vorlagen-Auswahl nicht ein und generierte ohne Vorlagenbild.
+  const [offenId, setOffenId] = useState<string | null>(null)
+  const offen = useMemo(
+    () => items.find(i => i.id === offenId) ?? null,
+    [items, offenId],
+  )
+
+  const eur = (n: number, digits = 0) => fmtCurrency(n, 'EUR', locale, { fractionDigits: digits })
+
+  // Nur Kategorien anbieten, in denen wirklich etwas liegt — eine Filterleiste mit zwölf
+  // Chips, von denen zehn leere Ergebnisse liefern, ist keine Hilfe.
+  const belegt = useMemo(() => {
+    const anzahl = new Map<string, number>()
+    for (const i of items) anzahl.set(i.kategorie, (anzahl.get(i.kategorie) ?? 0) + 1)
+    return KATEGORIEN.filter(k => anzahl.has(k.key)).map(k => ({ ...k, n: anzahl.get(k.key)! }))
+  }, [items])
+
+  const sichtbar = useMemo(
+    () => (kategorie ? items.filter(i => i.kategorie === kategorie) : items),
+    [items, kategorie],
+  )
+
+  return (
+    <div className="space-y-4">
+      {/* Werkzeugleiste */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {belegt.length > 1 && (
+            <>
+              <Chip aktiv={kategorie === null} onClick={() => setKategorie(null)}>
+                Alle <span className="opacity-60">{items.length}</span>
+              </Chip>
+              {belegt.map(k => (
+                <Chip
+                  key={k.key}
+                  aktiv={kategorie === k.key}
+                  onClick={() => setKategorie(kategorie === k.key ? null : k.key)}
+                >
+                  {k.label} <span className="opacity-60">{k.n}</span>
+                </Chip>
+              ))}
+            </>
+          )}
+        </div>
+        <ValuableForm
+          trigger={
+            <Button size="sm">
+              <Plus className="size-4" />
+              Gegenstand anlegen
+            </Button>
+          }
+        />
+      </div>
+
+      {/* Vitrine */}
+      {sichtbar.length === 0 ? (
+        <LeereVitrine hatObjekte={items.length > 0} />
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+          {sichtbar.map(item => (
+            <Karte key={item.id} item={item} eur={eur} onOpen={() => setOffenId(item.id)} />
+          ))}
+        </div>
+      )}
+
+      {/* Detail */}
+      <Sheet open={offen !== null} onOpenChange={o => { if (!o) setOffenId(null) }}>
+        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+          {offen && <Detail item={offen} eur={eur} locale={locale} />}
+        </SheetContent>
+      </Sheet>
+    </div>
+  )
+}
+
+// ── Karte ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Ein Slot in der Vitrine.
+ *
+ * Das Spielgefühl kommt aus Rahmen, Sockelschimmer und dem Sheen beim Überfahren — nicht
+ * aus Farbe. Alles Farbige stammt aus Theme-Tokens (siehe WERTSTUFEN in lib/valuables.ts),
+ * damit die Karte unter allen acht Presets funktioniert.
+ */
+function Karte({
+  item, eur, onOpen,
+}: {
+  item: ValuableWithImage
+  eur: (n: number, digits?: number) => string
+  onOpen: () => void
+}) {
+  const stufe = wertstufe(item.aktueller_wert)
+
+  // Blättern direkt in der Vitrine, ohne das Detail zu öffnen. Nur Bilder mit URL — eine
+  // abgelaufene Signatur wäre sonst eine leere Position im Karussell.
+  const bilder = useMemo(() => item.bilder.filter(b => b.url), [item.bilder])
+  const [index, setIndex] = useState(0)
+  // Nach dem Löschen eines Bildes kann der Index ins Leere zeigen.
+  const sicher = bilder.length > 0 ? Math.min(index, bilder.length - 1) : 0
+  const aktuell = bilder[sicher]?.url ?? item.anzeige_url
+  const mehrere = bilder.length > 1
+
+  // Die Karte ist ein <div> mit einer flächigen Schaltfläche darunter, kein <button> um
+  // alles. Ein Button in einem Button ist ungültiges HTML, und die Pfeile zum Blättern
+  // müssen anklickbar sein, ohne das Detail-Panel zu öffnen.
+  const blaettern = (richtung: 1 | -1) => (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setIndex(i => {
+      const n = bilder.length
+      return n === 0 ? 0 : (((i + richtung) % n) + n) % n
+    })
+  }
+
+  return (
+    <div
+      className="group relative overflow-hidden rounded-xl border bg-card p-3 text-left transition-all duration-200 hover:-translate-y-0.5 focus-within:ring-2 focus-within:ring-ring"
+      style={{ borderColor: stufe.border }}
+    >
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={`${item.name} öffnen`}
+        className="absolute inset-0 z-0 cursor-pointer focus:outline-none"
+      />
+
+      {/* Sockel. `pointer-events-none`, damit Klicks auf die Fläche darunter durchgehen —
+          die Blätter-Pfeile holen sich ihre Klickbarkeit einzeln zurück. */}
+      <div
+        className="pointer-events-none relative aspect-square overflow-hidden rounded-lg"
+        style={{ background: `radial-gradient(120% 80% at 50% 100%, ${stufe.glow}, transparent 70%)` }}
+      >
+        {/* Die Hover-Vergrösserung sitzt auf dem Rahmen, nicht auf dem Bild: die Bilder
+            tragen ihre eigene Transformation für den Wechsel, und zwei `transform` auf
+            demselben Element würden sich gegenseitig überschreiben. */}
+        <div className="absolute inset-0 transition-transform duration-300 group-hover:scale-[1.04]">
+          {bilder.length > 0 ? (
+            // Alle Bilder liegen übereinander und werden über Deckkraft und Versatz
+            // ein- und ausgeblendet. Sie erst beim Blättern zu laden hiesse, bei jedem
+            // Klick ein Aufblitzen zu sehen — bei WebP von rund 150 KB kostet das
+            // Vorhalten weniger als der Ruckler kosten würde.
+            bilder.map((b, i) => {
+              const abstand = i - sicher
+              return (
+                // Bewusst <img> statt next/image: die URL ist eine signierte Storage-URL
+                // mit Ablaufdatum. Sie durch den Optimizer zu schicken hiesse, jede
+                // Signatur zu cachen — der Eintrag überlebt die Signatur und liefert
+                // danach 400.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={b.id}
+                  src={b.url!}
+                  alt={i === sicher ? item.name : ''}
+                  aria-hidden={i !== sicher}
+                  loading={i === 0 ? undefined : 'lazy'}
+                  decoding="async"
+                  className="absolute inset-0 size-full object-contain p-2 will-change-[opacity,transform] motion-safe:transition-[opacity,transform] motion-safe:duration-500 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)]"
+                  style={{
+                    // Nachbarn warten seitlich in Blätterrichtung und leicht verkleinert —
+                    // das macht aus dem Überblenden eine erkennbare Bewegung, ohne dass
+                    // etwas über den Rahmen hinausschiebt.
+                    opacity: abstand === 0 ? 1 : 0,
+                    transform:
+                      abstand === 0
+                        ? 'translateX(0) scale(1)'
+                        : `translateX(${abstand * 14}%) scale(0.94)`,
+                    pointerEvents: 'none',
+                  }}
+                />
+              )
+            })
+          ) : aktuell ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={aktuell}
+              alt={item.name}
+              loading="lazy"
+              decoding="async"
+              className="absolute inset-0 size-full object-contain p-2"
+            />
+          ) : (
+            <ValuableIcon
+              kategorie={item.kategorie}
+              className="absolute inset-0 m-auto size-1/2 text-muted-foreground/50"
+            />
+          )}
+        </div>
+
+        {mehrere && (
+          <>
+            <button
+              type="button"
+              onClick={blaettern(-1)}
+              aria-label="Vorheriges Bild"
+              className="pointer-events-auto absolute left-1 top-1/2 z-20 -translate-y-1/2 rounded-full border border-border/60 bg-background/80 p-1 opacity-0 shadow-sm backdrop-blur-sm transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+            >
+              <ChevronLeft className="size-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={blaettern(1)}
+              aria-label="Nächstes Bild"
+              className="pointer-events-auto absolute right-1 top-1/2 z-20 -translate-y-1/2 rounded-full border border-border/60 bg-background/80 p-1 opacity-0 shadow-sm backdrop-blur-sm transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+            >
+              <ChevronRight className="size-3.5" />
+            </button>
+
+            {/* Punkte immer sichtbar, nicht erst beim Überfahren: sie sind der Hinweis
+                darauf, dass es überhaupt mehr als ein Bild gibt. */}
+            <div className="absolute inset-x-0 bottom-1.5 z-10 flex justify-center gap-1">
+              {bilder.map((b, i) => (
+                <span
+                  key={b.id}
+                  className={`size-1.5 rounded-full transition-colors ${
+                    i === sicher ? 'bg-foreground/70' : 'bg-foreground/25'
+                  }`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Sheen — ein schräger Lichtstreifen, der beim Hover einmal durchläuft. */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 -left-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-foreground/10 to-transparent transition-all duration-700 ease-out group-hover:left-[150%]"
+        />
+      </div>
+
+      {/* Beschriftung */}
+      <div className="pointer-events-none relative z-10 mt-3 space-y-0.5">
+        <p className="truncate text-sm font-medium text-foreground">{item.name}</p>
+        <p className="truncate text-xs text-muted-foreground">
+          {item.marke ?? kategorieLabel(item.kategorie)}
+        </p>
+      </div>
+
+      <div className="pointer-events-none relative z-10 mt-2 flex items-baseline justify-between gap-2">
+        <span className="text-sm font-semibold tabular-nums">
+          {item.aktueller_wert != null ? eur(item.aktueller_wert) : '—'}
+        </span>
+        {/* Null Prozent wird nicht angezeigt: frisch angelegt ist der aktuelle Wert der
+            Kaufpreis, und ein „+0 %" an jeder neuen Karte sieht aus wie ein Fehler statt
+            wie „noch keine Wertentwicklung". */}
+        {item.rendite_prozent != null && item.rendite_prozent !== 0 && (
+          <span
+            className={`text-[11px] font-medium tabular-nums ${
+              item.rendite_prozent > 0 ? 'text-success' : 'text-danger'
+            }`}
+          >
+            {item.rendite_prozent > 0 ? '+' : ''}{item.rendite_prozent} %
+          </span>
+        )}
+      </div>
+
+      {/* Statusmarken. Nur was zutrifft — leere Plätze wären nur Rauschen. */}
+      {(item.versichert || !item.im_vermoegen) && (
+        <div className="pointer-events-none relative z-10 mt-2 flex items-center gap-1.5">
+          {item.versichert && (
+            <span title="Versichert" className="text-muted-foreground">
+              <ShieldCheck className="size-3.5" />
+            </span>
+          )}
+          {!item.im_vermoegen && (
+            <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+              nicht in Summe
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Detail ────────────────────────────────────────────────────────────────────
+
+function Detail({
+  item, eur, locale,
+}: {
+  item: ValuableWithImage
+  eur: (n: number, digits?: number) => string
+  locale: string
+}) {
+  const datum = (d: string | null) =>
+    d ? new Date(`${d}T12:00:00`).toLocaleDateString(locale, { day: '2-digit', month: 'long', year: 'numeric' }) : null
+
+  const delta =
+    item.kaufpreis != null && item.aktueller_wert != null
+      ? item.aktueller_wert - item.kaufpreis
+      : null
+
+  return (
+    <>
+      <SheetHeader>
+        <SheetTitle>{item.name}</SheetTitle>
+        <SheetDescription>
+          {[item.marke, item.modell, item.referenz].filter(Boolean).join(' · ') ||
+            kategorieLabel(item.kategorie)}
+        </SheetDescription>
+      </SheetHeader>
+
+      <div className="space-y-5 px-4 pb-6">
+        {/* Bilder — Hauptbild, Galerie, Upload und Artwork */}
+        <ValuableMedia item={item} />
+
+        {/* Statblock */}
+        <div className="rounded-lg border border-border divide-y divide-border text-sm">
+          <Zeile label="Aktueller Wert" value={item.aktueller_wert != null ? eur(item.aktueller_wert, 2) : '—'} stark />
+          <Zeile label="Kaufpreis" value={item.kaufpreis != null ? eur(item.kaufpreis, 2) : '—'} />
+          {delta !== null && (
+            <Zeile
+              label="Differenz"
+              value={`${delta >= 0 ? '+' : ''}${eur(delta, 2)}${
+                item.rendite_prozent != null ? `  (${item.rendite_prozent >= 0 ? '+' : ''}${item.rendite_prozent} %)` : ''
+              }`}
+              className={delta >= 0 ? 'text-success' : 'text-danger'}
+            />
+          )}
+          <Zeile label="Gekauft" value={datum(item.gekauft_am) ?? '—'} />
+          <Zeile label="Im Besitz" value={haltedauerLabel(item.gekauft_am) ?? '—'} />
+          <Zeile label="Zustand" value={zustandLabel(item.zustand) ?? '—'} />
+          <Zeile label="Kategorie" value={kategorieLabel(item.kategorie)} />
+          {item.wert_stand && (
+            <Zeile
+              label="Wert vom"
+              value={`${datum(item.wert_stand)}${item.wert_quelle ? ` · ${item.wert_quelle}` : ''}`}
+            />
+          )}
+        </div>
+
+        {/* Ausstattung — die Frage, die beim Wiederverkauf als Erstes kommt. */}
+        <div className="flex flex-wrap gap-2">
+          <Marke an={item.box_vorhanden} icon={<Package className="size-3.5" />} label="Box" />
+          <Marke an={item.papiere_vorhanden} icon={<FileText className="size-3.5" />} label="Papiere" />
+          <Marke an={item.versichert} icon={<ShieldCheck className="size-3.5" />} label="Versichert" />
+        </div>
+
+        {/* Register — der eigentliche Zweck der Seite. */}
+        {(item.seriennummer || item.lagerort || item.kaufquelle || item.versicherungsnummer) && (
+          <div className="rounded-lg border border-border divide-y divide-border text-sm">
+            {item.seriennummer && <Zeile label="Seriennummer" value={item.seriennummer} mono />}
+            {item.lagerort && (
+              <Zeile
+                label="Lagerort"
+                value={
+                  <span className="inline-flex items-center gap-1.5">
+                    <MapPin className="size-3.5 text-muted-foreground" />
+                    {item.lagerort}
+                  </span>
+                }
+              />
+            )}
+            {item.kaufquelle && <Zeile label="Gekauft bei" value={item.kaufquelle} />}
+            {item.versicherungsnummer && <Zeile label="Police" value={item.versicherungsnummer} mono />}
+          </div>
+        )}
+
+        {item.notizen && (
+          <div className="rounded-lg border border-border bg-muted/20 p-3">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Notizen</p>
+            <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{item.notizen}</p>
+          </div>
+        )}
+
+        {!item.im_vermoegen && (
+          <p className="text-xs text-muted-foreground">
+            Zählt nicht in den Sammlungswert oben.
+          </p>
+        )}
+
+        <ValuableActions item={item} />
+      </div>
+    </>
+  )
+}
+
+// ── Bausteine ─────────────────────────────────────────────────────────────────
+
+function Zeile({
+  label, value, stark, mono, className = '',
+}: {
+  label: string
+  value: React.ReactNode
+  stark?: boolean
+  mono?: boolean
+  className?: string
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 px-3 py-2">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span
+        className={`text-right tabular-nums ${stark ? 'text-base font-semibold' : 'text-sm'} ${
+          mono ? 'font-mono text-xs' : ''
+        } ${className}`}
+      >
+        {value}
+      </span>
+    </div>
+  )
+}
+
+function Marke({ an, icon, label }: { an: boolean; icon: React.ReactNode; label: string }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${
+        an
+          ? 'border-border bg-muted/40 text-foreground'
+          : 'border-dashed border-border/60 text-muted-foreground/60'
+      }`}
+    >
+      {icon}
+      {label}
+      {!an && <span className="text-[10px]">fehlt</span>}
+    </span>
+  )
+}
+
+function Chip({
+  aktiv, onClick, children,
+}: {
+  aktiv: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={aktiv}
+      className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+        aktiv
+          ? 'border-primary bg-primary/10 text-foreground'
+          : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function LeereVitrine({ hatObjekte }: { hatObjekte: boolean }) {
+  return (
+    <div className="rounded-xl border border-dashed border-border bg-card py-16 text-center">
+      <Gem className="mx-auto size-8 text-muted-foreground/40" />
+      <p className="mt-3 text-sm font-medium text-foreground">
+        {hatObjekte ? 'Nichts in dieser Kategorie' : 'Die Vitrine ist leer'}
+      </p>
+      <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+        {hatObjekte
+          ? 'Wähle oben eine andere Kategorie.'
+          : 'Leg deinen ersten Gegenstand an — Uhr, Feuerzeug, Schmuckstück. Seriennummer und Kaufbeleg sind später schwerer zusammenzusuchen als heute.'}
+      </p>
+    </div>
+  )
+}

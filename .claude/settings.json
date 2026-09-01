@@ -26,7 +26,19 @@
       "Bash(node -e \"console.log\\(typeof require\\('ai'\\).convertToModelMessages\\)\")",
       "Bash(netstat -ano)",
       "Bash(curl -s -o /dev/null -w \"assistant page: %{http_code}\\\\n\" http://localhost:3000/assistant)",
-      "Bash(curl -s -o /dev/null -w \"dashboard page: %{http_code}\\\\n\" http://localhost:3000/dashboard)"
+      "Bash(curl -s -o /dev/null -w \"dashboard page: %{http_code}\\\\n\" http://localhost:3000/dashboard)",
+      "Bash(echo \"EXIT_CODE=$?\")",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(curl -s -o /dev/null -w \"port 3000: %{http_code}\\\\n\" http://localhost:3000/ --max-time 3)",
+      "Bash(python3 scripts/search.py \"editorial earth-tone fintech dashboard dark mode depth elevation warm luxury\" --domain style -n 4)",
+      "Bash(python3 \"C:\\\\Users\\\\eschu\\\\.claude\\\\plugins\\\\cache\\\\ui-ux-pro-max-skill\\\\ui-ux-pro-max\\\\2.5.0\\\\src\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"editorial earth-tone fintech dashboard depth elevation warm luxury dark mode\" --domain style -n 5)",
+      "Bash(xargs grep -l \"tw-shadow-color\")",
+      "Bash(find / -maxdepth 6 -iname \"*chromium-cli*\" 2>/dev/null | head -5; npm ls -g 2>/dev/null | grep -i chrom; echo \"---\"; cat \"c:\\\\Users\\\\eschu\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\bundled-skills\\\\2.1.238\\\\b721c816287958aea5a1671a82da8629\\\\run\\\\examples\\\\playwright.md\" 2>/dev/null | head -80)",
+      "Read(//c//**)",
+      "Bash(command -v chromium-cli)",
+      "Bash(where chromium-cli *)",
+      "Bash(curl -s -o /dev/null -w \"landing / : %{http_code}\\\\n\" http://localhost:3000/ --max-time 10)",
+      "Bash(curl -s -o /dev/null -w \"login /login : %{http_code}\\\\n\" http://localhost:3000/login --max-time 10)"
     ]
   },
   "hooks": {

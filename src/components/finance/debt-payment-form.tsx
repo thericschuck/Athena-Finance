@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { CreditCard, Pencil, Plus, Trash2 } from 'lucide-react'
+import { CheckCircle2, CreditCard, Pencil, Plus, Trash2 } from 'lucide-react'
 import {
   createDebt,
   updateDebt,
@@ -482,5 +482,57 @@ export function DebtPaymentDialog({ debt }: { debt: Debt }) {
         </form>
       </DialogContent>
     </Dialog>
+  )
+}
+
+// ─────────────────────────────────────────────
+// Settle Debt Button — bucht den vollen ausstehenden Betrag als eine
+// Zahlung über recordPayment, statt Betrag manuell einzutippen.
+// ─────────────────────────────────────────────
+export function SettleDebtButton({ debt }: { debt: Debt }) {
+  const { locale } = useSettings()
+  const fmt = (amount: number, currency: string) => fmtCurrency(amount, currency, locale)
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+
+  function handleSettle() {
+    const formData = new FormData()
+    formData.set('debt_id', debt.id)
+    formData.set('payment_date', new Date().toISOString().split('T')[0])
+    formData.set('amount', String(debt.outstanding))
+
+    startTransition(async () => {
+      const result = await recordPayment(null, formData)
+      if (result && 'error' in result) setError(result.error)
+      else router.refresh()
+    })
+  }
+
+  return (
+    <AlertDialog onOpenChange={() => setError(null)}>
+      <AlertDialogTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-1.5 text-success hover:text-success">
+          <CheckCircle2 className="size-3.5" />
+          Begleichen
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Schuld vollständig begleichen?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Bucht eine Zahlung über <strong>{fmt(debt.outstanding, debt.currency)}</strong> für{' '}
+            <strong>{debt.name}</strong> und markiert die Schuld als abgeschlossen.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        {error && <p className="text-sm text-destructive px-1">{error}</p>}
+        <AlertDialogFooter>
+          <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+          <AlertDialogAction onClick={handleSettle} disabled={isPending}>
+            {isPending ? 'Wird gebucht…' : 'Begleichen'}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }

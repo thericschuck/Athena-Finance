@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useReducer, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import {
   Dialog,
   DialogContent,
@@ -34,6 +35,7 @@ import { ArrowLeftRight, Loader2, Pencil, Plus, Trash2 } from 'lucide-react'
 import {
   createTransaction,
   updateTransaction,
+  updateTransactionCategory,
   deleteTransaction,
   type TransactionActionState,
 } from '@/app/(dashboard)/finance/transactions/actions'
@@ -45,9 +47,15 @@ type Account = Pick<
 >
 type Category = Pick<
   Database['public']['Tables']['categories']['Row'],
-  'id' | 'name' | 'color'
+  'id' | 'name' | 'color' | 'icon'
 >
 type TxRow = Database['public']['Tables']['transactions']['Row']
+
+const NO_CATEGORY = '__none__'
+
+function categoryLabel(c: Category): string {
+  return c.icon ? `${c.icon} ${c.name}` : c.name
+}
 
 const CURRENCIES = ['EUR', 'USD', 'CHF', 'GBP', 'BTC', 'ETH']
 
@@ -490,6 +498,66 @@ export function EditTransactionDialog({
         </form>
       </DialogContent>
     </Dialog>
+  )
+}
+
+// Inline, optimistic category picker for the transactions table — changing a category used to
+// mean opening the full Edit dialog, resubmitting every field, and waiting for a full page
+// refresh just to update one value. This updates instantly and only talks to the server in the
+// background (matching the Banking tab's inline category Select), with a rollback + toast if
+// the background save fails. `source` picks manual `transactions` vs. bank-synced
+// `bank_transactions` — see `updateTransactionCategory`.
+export function TransactionCategorySelect({
+  tx,
+  categories,
+}: {
+  tx: { id: string; category_id: string | null; source: 'manual' | 'bank_sync' }
+  categories: Category[]
+}) {
+  const [categoryId, setCategoryId] = useState(tx.category_id ?? NO_CATEGORY)
+  const [, startTransition] = useTransition()
+
+  const current = categories.find(c => c.id === categoryId)
+
+  function handleChange(next: string) {
+    const previous = categoryId
+    setCategoryId(next)
+    startTransition(async () => {
+      const result = await updateTransactionCategory(tx.id, next === NO_CATEGORY ? null : next, tx.source)
+      if (result.error) {
+        setCategoryId(previous)
+        toast.error(result.error)
+      }
+    })
+  }
+
+  return (
+    <Select value={categoryId} onValueChange={handleChange}>
+      <SelectTrigger
+        size="sm"
+        aria-label="Kategorie ändern"
+        className="h-7 max-w-[160px] rounded-full border-none px-2.5 text-xs shadow-none"
+        style={current?.color ? { backgroundColor: `${current.color}1a`, color: current.color } : undefined}
+      >
+        <SelectValue placeholder="Kategorisieren…">
+          {current ? categoryLabel(current) : 'Ohne Kategorie'}
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={NO_CATEGORY}>Ohne Kategorie</SelectItem>
+        {categories.map(c => (
+          <SelectItem key={c.id} value={c.id}>
+            <span className="flex items-center gap-2">
+              <span
+                className="size-2 rounded-full shrink-0"
+                style={{ backgroundColor: c.color ?? '#94a3b8' }}
+              />
+              {categoryLabel(c)}
+            </span>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 }
 

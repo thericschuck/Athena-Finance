@@ -11,7 +11,24 @@ async function readCachedBalances(supabase: any, userId: string) {
     .order('account_iban')
 
   if (error) throw new Error(error.message)
-  return data ?? []
+
+  // Verknüpftes accounts-Konto nachreichen. Zwei Queries statt eines Embeds, weil die
+  // Beziehung nur über accounts.bank_iban besteht und kein Fremdschlüssel ist — PostgREST
+  // kann daraus keinen Join ableiten.
+  const { data: linked } = await supabase
+    .from('accounts')
+    .select('id, bank_iban')
+    .eq('user_id', userId)
+    .not('bank_iban', 'is', null)
+
+  const idByIban = new Map(
+    (linked ?? []).map((a: { id: string; bank_iban: string }) => [a.bank_iban, a.id]),
+  )
+
+  return (data ?? []).map((b: { account_iban: string }) => ({
+    ...b,
+    account_id: idByIban.get(b.account_iban) ?? null,
+  }))
 }
 
 /**

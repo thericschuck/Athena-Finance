@@ -404,10 +404,21 @@ export function OliveVines({
   width = 'clamp(112px, 26vw, 450px)',
   swaying = true,
   static: staticVines = false,
+  sides = ['l', 'r'],
+  maxBranches,
 }: {
   tone?: 'light' | 'dark'
   opacity?: number
   width?: string
+  /** Nur einzelne Ranken-Vorhänge zeigen statt beider Seiten — für
+      abwechslungsreichere Platzierungen außerhalb des Hero (siehe
+      VINE_VARIANTS in app-shell.tsx), wo dieselbe beidseitige Vollkachel auf
+      jeder Seite sonst wie Tapete wirken würde. */
+  sides?: Array<'l' | 'r'>
+  /** Nur die ersten N Zweige je Seite (aus LEFT/RIGHT, siehe oben) statt
+      aller — für eine sparsamere Variante auf Seiten, die schon andere
+      Schmuckelemente tragen. */
+  maxBranches?: number
   /**
    * `false` unterdrückt die endlose Wiege-Animation (siehe vine-sway-* in
    * vines.css) — die einmalige Wachs-Animation (Stängel/Blätter) bleibt
@@ -445,14 +456,14 @@ export function OliveVines({
       className={staticVines ? 'vine-layer vine-layer-static' : 'vine-layer'}
       style={{ position: 'absolute', inset: 0, pointerEvents: 'none', opacity }}
     >
-      {VINE_SIDES.map((side, si) => (
+      {VINE_SIDES.filter(side => sides.includes(side.key)).map((side, si) => (
         <svg
           key={side.key}
           viewBox={`0 0 ${VB.w} ${VB.h}`}
           preserveAspectRatio={side.par}
           style={{ position: 'absolute', top: 0, height: '100%', width, ...side.pos }}
         >
-          {side.branches.map((b, i) => (
+          {(maxBranches ? side.branches.slice(0, maxBranches) : side.branches).map((b, i) => (
             <VineBranch key={i} spec={b} delay={0.15 + i * 0.22 + si * 0.11} tone={t} swaying={swaying} />
           ))}
         </svg>

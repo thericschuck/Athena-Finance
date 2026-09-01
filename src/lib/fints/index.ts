@@ -17,7 +17,11 @@
  */
 
 import { suggestCategory, type LearnedCategoryMap } from './categorize'
-import { runSidecar, type SidecarAccount, type SidecarTransaction, type SidecarHolding } from './sidecar'
+import {
+  runSidecar,
+  type SidecarAccount, type SidecarTransaction, type SidecarHolding, type SidecarBalance,
+  type BankClientStateMap,
+} from './sidecar'
 import type { FinanceCategory } from '@/types/bank'
 
 // ── Error helpers ────────────────────────────────────────────────────────────
@@ -97,8 +101,48 @@ export interface SyncResult {
   transactions: ParsedTransaction[]
   accounts: SEPAAccount[]
   holdings: ParsedHolding[]
+  /**
+   * Current balance per account as the bank reported it. This is the only trustworthy
+   * balance figure: FinTS hands out a limited window of transactions, so summing them
+   * yields a period delta, not a balance. It is also the ONLY thing FinTS returns for a
+   * Bausparvertrag — those come through the Verbund login as a plain Spar-/Darlehenskonto
+   * (HKSAL), never as a Wertpapierdepot, so a balance is all there is to fetch.
+   */
+  balances: FetchedBalance[]
   /** One message per configured bank that failed this sync (others still succeed). */
   warnings: string[]
+  /**
+   * Client state to persist via saveBankClientState(). Carries the Kundensystem-ID —
+   * storing it is what keeps the next sync from triggering another app approval.
+   */
+  state?: BankClientStateMap
+  /** Bank labels that aborted because an app approval was needed but not allowed (noSca). */
+  scaRequired: string[]
+}
+
+export interface StartSyncOptions {
+  /** Previously persisted client state (loadBankClientState()). Omit on a first sync. */
+  state?: BankClientStateMap
+  /**
+   * Unattended run: don't wait for a SecureGo plus approval. The sidecar aborts with
+   * 'sca_required' instead of blocking for minutes on an approval nobody will give.
+   */
+  noSca?: boolean
+}
+
+/**
+ * Rolling window that stays inside PSD2's exemption for account information: with a valid
+ * persisted client state, transactions from the last 90 days are retrievable without a fresh
+ * app approval. Anything older is SCA-bound regardless of stored state, which is why the
+ * full-history sync is a separate, explicitly requested action.
+ */
+export const SCA_FREE_LOOKBACK_DAYS = 90
+
+/** Start date for a routine sync — SCA_FREE_LOOKBACK_DAYS back from today. */
+export function scaFreeStartDate(): Date {
+  const d = new Date()
+  d.setDate(d.getDate() - SCA_FREE_LOOKBACK_DAYS)
+  return d
 }
 
 // ── Mapping ──────────────────────────────────────────────────────────────────
@@ -223,8 +267,17 @@ export async function startSync(
   endDate?: Date,
   categories: FinanceCategory[] = [],
   learnedMap: LearnedCategoryMap = new Map(),
+  options: StartSyncOptions = {},
 ): Promise<SyncResult> {
-  const result = await runSidecar({ startDate, endDate })
+  // balances: true is what makes HKSAL run. Without it the sidecar only ever issues
+  // HKKAZ/HKWPD, which is why bank_balance never refreshed from this route and why the
+  // probed Bausparverträge produced nothing — the one segment they answer was never sent.
+  const result = await runSidecar({
+    startDate, endDate,
+    balances: true,
+    state: options.state,
+    noSca: options.noSca,
+  })
 
   const transactions = result.transactions
     .map(tx => mapTransaction(tx, categories, learnedMap))
@@ -238,8 +291,82 @@ export async function startSync(
     accounts:     result.accounts.map(mapAccount),
     transactions,
     holdings:     result.holdings.map(mapHolding).filter((h): h is ParsedHolding => h !== null),
+    balances:     mapBalances(result.balances, result.accounts),
     warnings:     result.warnings ?? [],
+    state:        result.state,
+    scaRequired:  result.scaRequired ?? [],
   }
+}
+
+/**
+ * Narrows sidecar balances to the ones that can actually be stored. bank_balance is keyed by
+ * (user_id, account_iban), so an entry needs *some* stable account identifier — a real IBAN
+ * for the Girokonten, or the bare Kontonummer the probe path reports for a Bausparvertrag
+ * (the column is plain text; the fn_ensure_linked_account trigger matches it against the
+ * accounts row's free-text `iban` the same way either fits).
+ */
+function mapBalances(balances: SidecarBalance[], accounts: SidecarAccount[]): FetchedBalance[] {
+  return balances
+    .filter(b => b.iban && b.bookedBalance != null)
+    .map(b => {
+      const account = accounts.find(a => a.iban === b.iban)
+      return {
+        bankLabel:        b.bankLabel ?? null,
+        iban:             b.iban!,
+        bic:              b.bic ?? '',
+        accountName:      b.accountName ?? account?.accountName ?? account?.accountNumber ?? b.iban!,
+        bookedBalance:    b.bookedBalance!,
+        availableBalance: b.availableBalance ?? b.bookedBalance!,
+        currency:         b.currency || 'EUR',
+      }
+    })
+}
+
+/**
+ * Upserts the bank-reported balances. Writing these is what keeps every downstream balance
+ * honest — the fn_ensure_linked_account trigger on bank_balance mirrors each one into
+ * account_balances for today, and the daily snapshot anchors its history on them.
+ */
+export async function upsertBankBalances(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  userId: string,
+  balances: FetchedBalance[],
+): Promise<{ synced: number }> {
+  if (balances.length === 0) return { synced: 0 }
+
+  const rows = balances.map(b => ({
+    user_id:           userId,
+    bank_label:        b.bankLabel,
+    account_iban:      b.iban,
+    account_bic:       b.bic || null,
+    account_name:      b.accountName,
+    booked_balance:    b.bookedBalance,
+    available_balance: b.availableBalance,
+    currency:          b.currency,
+    fetched_at:        new Date().toISOString(),
+  }))
+
+  const { error } = await supabase
+    .from('bank_balance')
+    .upsert(rows, { onConflict: 'user_id,account_iban' })
+
+  if (error) throw new Error(error.message)
+  return { synced: rows.length }
+}
+
+/**
+ * True if this error is the sidecar refusing to wait for an app approval (--no-sca).
+ * Callers use it to surface "bitte einmal manuell synchronisieren" instead of a bank error.
+ */
+export function isScaRequiredError(err: unknown): boolean {
+  return typeof err === 'object' && err !== null && (err as { code?: string }).code === 'sca_required'
+}
+
+/** The client state a failed sidecar run still managed to produce, if any. */
+export function stateFromError(err: unknown): BankClientStateMap | undefined {
+  if (typeof err !== 'object' || err === null) return undefined
+  return (err as { state?: BankClientStateMap }).state
 }
 
 /**
@@ -260,34 +387,94 @@ export async function upsertBankTransactions(
   // rewrite on a later fetch of the very same posting. Those rows' external_id won't match
   // what today's bank_reference-based hash produces for that same transaction, so a blind
   // upsert would insert a second copy of it. Backfill the reference onto the existing row
-  // instead — but only for an unambiguous 1:1 match on (iban, date, amount); if two+ legacy
-  // rows already share that key (e.g. two coincidentally same-amount card payments on one
-  // day), there's no way to tell which incoming reference belongs to which, so those are left
-  // alone rather than risk merging two genuinely different transactions into one.
-  const { data: legacyRows, error: legacyErr } = await supabase
+  // instead, or — when the posting is already stored under its reference-based id — delete
+  // the leftover legacy copy.
+  //
+  // Matching happens on (iban, date, amount) PLUS the purpose text, and only falls back to
+  // (iban, date, amount) alone when that is already unambiguous. Amount+date on its own is
+  // not selective enough in practice: two same-day card payments of the identical amount
+  // (observed: an ANTHROPIC and a VERCEL charge, both -21.61 on the same day) made the match
+  // ambiguous, so BOTH legacy rows were left in place as permanent duplicates — and because
+  // a balance series is reconstructed by subtracting the ledger from the current balance,
+  // each stray row shifts the ENTIRE history. Six such rows put the Girokonto's derived
+  // opening balance at -269.66 EUR instead of +287.12 EUR.
+  const { data: existingRows, error: legacyErr } = await supabase
     .from('bank_transactions')
-    .select('id, account_iban, value_date, amount')
+    .select('id, account_iban, value_date, amount, external_id, bank_reference, description, raw_description')
     .eq('user_id', userId)
-    .is('bank_reference', null)
 
   if (legacyErr) throw new Error(legacyErr.message)
 
-  const legacyByKey = new Map<string, string[]>()
-  for (const row of (legacyRows ?? []) as { id: string; account_iban: string; value_date: string; amount: number }[]) {
-    const key = `${row.account_iban}|${row.value_date}|${row.amount}`
-    const ids = legacyByKey.get(key)
-    if (ids) ids.push(row.id)
-    else legacyByKey.set(key, [row.id])
+  type ExistingRow = {
+    id: string; account_iban: string; value_date: string; amount: number
+    external_id: string | null; bank_reference: string | null
+    description: string | null; raw_description: string | null
   }
+  const existing = (existingRows ?? []) as ExistingRow[]
+
+  // Every external_id already in the table. The reconcile UPDATE below writes into a UNIQUE
+  // (user_id, external_id) index, so without this set it can collide with a row that already
+  // holds the incoming id — which is exactly what aborted the whole sync with
+  // "duplicate key value violates unique constraint bank_transactions_external_id_idx".
+  const takenExternalIds = new Set(existing.map(r => r.external_id).filter(Boolean) as string[])
+
+  // The bank rewrites the purpose text between fetches (it appends "SecureGo plus IBAN: ..."
+  // to transfers), so the two sides of a match are compared on a normalised prefix rather
+  // than on equality: case-folded, whitespace-collapsed, and cut to the length both sides
+  // are known to share.
+  const DESC_MATCH_LEN = 30
+  const descKey = (text: string | null | undefined) =>
+    (text ?? '').toLowerCase().replace(/\s+/g, ' ').trim().slice(0, DESC_MATCH_LEN)
+
+  const coarseKey = (iban: string, date: string, amount: number) => `${iban}|${date}|${amount}`
+
+  const legacyByCoarse = new Map<string, string[]>()
+  const legacyByFine   = new Map<string, string[]>()
+  const push = (map: Map<string, string[]>, key: string, id: string) => {
+    const ids = map.get(key)
+    if (ids) ids.push(id)
+    else map.set(key, [id])
+  }
+  for (const row of existing) {
+    if (row.bank_reference !== null) continue
+    const coarse = coarseKey(row.account_iban, row.value_date, row.amount)
+    push(legacyByCoarse, coarse, row.id)
+    push(legacyByFine, `${coarse}|${descKey(row.description ?? row.raw_description)}`, row.id)
+  }
+
+  const consumed = new Set<string>()
+  const available = (ids: string[] | undefined) => (ids ?? []).filter(id => !consumed.has(id))
 
   const toInsert: ParsedTransaction[] = []
   let reconciled = 0
+  let deduped    = 0
 
   for (const tx of transactions) {
-    const key = `${tx.accountIban}|${tx.valueDate}|${tx.amount}`
-    const candidateIds = tx.bankReference ? legacyByKey.get(key) : undefined
+    if (!tx.bankReference) { toInsert.push(tx); continue }
 
-    if (candidateIds?.length === 1) {
+    const coarse = coarseKey(tx.accountIban, tx.valueDate, tx.amount)
+    const fine   = `${coarse}|${descKey(tx.description ?? tx.rawDescription)}`
+
+    // Purpose text first — it is what tells two same-day, same-amount postings apart.
+    let candidates = available(legacyByFine.get(fine))
+    if (candidates.length !== 1) candidates = available(legacyByCoarse.get(coarse))
+
+    if (candidates.length !== 1) { toInsert.push(tx); continue }
+    const legacyId = candidates[0]
+    consumed.add(legacyId) // spoken for; never match a second transaction to it
+
+    if (takenExternalIds.has(tx.externalId)) {
+      // This posting is ALREADY stored under its bank_reference-based id, and the legacy
+      // row is the second, purpose-hashed copy of that very same posting — the situation
+      // the reconcile is meant to heal. Stamping the (taken) id onto the legacy row would
+      // violate the unique index; the legacy row is the redundant one, so drop it.
+      const { error } = await supabase
+        .from('bank_transactions')
+        .delete()
+        .eq('id', legacyId)
+      if (error) throw new Error(error.message)
+      deduped++
+    } else {
       const { error } = await supabase
         .from('bank_transactions')
         .update({
@@ -298,16 +485,14 @@ export async function upsertBankTransactions(
           entry_date:      tx.entryDate,
           bank_label:      tx.bankLabel,
         })
-        .eq('id', candidateIds[0])
+        .eq('id', legacyId)
       if (error) throw new Error(error.message)
-      legacyByKey.delete(key) // this legacy row is spoken for; don't match another tx to it
+      takenExternalIds.add(tx.externalId)
       reconciled++
-    } else {
-      toInsert.push(tx)
     }
   }
 
-  if (toInsert.length === 0) return { imported: 0, skipped: reconciled }
+  if (toInsert.length === 0) return { imported: 0, skipped: reconciled + deduped }
 
   const rows = toInsert.map(tx => ({
     user_id:          userId,
@@ -336,7 +521,7 @@ export async function upsertBankTransactions(
   if (error) throw new Error(error.message)
 
   const imported = (data as { id: string }[] | null)?.length ?? 0
-  const skipped  = rows.length - imported + reconciled
+  const skipped  = rows.length - imported + reconciled + deduped
   return { imported, skipped }
 }
 
@@ -391,6 +576,10 @@ export interface CloudSyncResult {
   imported: number
   skipped: number
   balances: number
+  /** The cloud function stopped because the bank wants an app approval (90-day window over). */
+  scaRequired?: boolean
+  /** Human-readable explanation when scaRequired is set. */
+  message?: string
 }
 
 /** True when running as a Vercel Function (Vercel sets this automatically). */
@@ -403,16 +592,34 @@ export function isCloudRuntime(): boolean {
  * configured bank account (BANK_SYNC_USER_ID) — callers should confirm the requesting user
  * matches before calling this, otherwise a different logged-in user could trigger a sync
  * whose data lands under someone else's account.
+ *
+ * `allowSca` must be true for a user-initiated sync: only then is somebody around to
+ * approve in the SecureGo plus app. The cron path calls the function directly without it,
+ * so it aborts instead of blocking on an approval nobody will give.
  */
-export async function triggerCloudBankSync(origin: string): Promise<CloudSyncResult> {
-  const res = await fetch(`${origin}/api/bank-sync`, {
+export async function triggerCloudBankSync(
+  origin: string,
+  opts: { allowSca?: boolean; fullHistory?: boolean } = {},
+): Promise<CloudSyncResult> {
+  const url = new URL(`${origin}/api/bank-sync`)
+  if (opts.allowSca)    url.searchParams.set('sca',  '1')
+  if (opts.fullHistory) url.searchParams.set('full', '1')
+
+  const res = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
   })
   const body = await res.json().catch(() => ({})) as {
-    ok?: boolean; imported?: number; skipped?: number; balances?: number; error?: string
+    ok?: boolean; imported?: number; skipped?: number; balances?: number
+    error?: string; skippedReason?: string; message?: string
   }
   if (!res.ok || body.ok === false) {
     throw new Error(body.error ?? `Cloud-Sync fehlgeschlagen (HTTP ${res.status})`)
   }
-  return { imported: body.imported ?? 0, skipped: body.skipped ?? 0, balances: body.balances ?? 0 }
+  return {
+    imported: body.imported ?? 0,
+    skipped: body.skipped ?? 0,
+    balances: body.balances ?? 0,
+    scaRequired: body.skippedReason === 'sca_required',
+    message: body.message,
+  }
 }

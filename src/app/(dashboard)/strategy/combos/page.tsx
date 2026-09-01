@@ -29,8 +29,8 @@ type ComboRow = {
 const STATUS_BADGE: Record<string, string> = {
   draft:    'bg-muted text-muted-foreground',
   testing:  'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  passed:   'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  failed:   'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  passed:   'bg-success/10 text-success',
+  failed:   'bg-danger/10 text-danger',
   archived: 'bg-muted text-muted-foreground',
 }
 
@@ -52,8 +52,8 @@ function AssetClassBadge({ cls }: { cls: string }) {
 }
 
 function GuardIcon({ passes }: { passes: boolean | null }) {
-  if (passes === true)  return <CheckCircle2 className="size-4 text-green-500" />
-  if (passes === false) return <XCircle      className="size-4 text-red-500"   />
+  if (passes === true)  return <CheckCircle2 className="size-4 text-success" />
+  if (passes === false) return <XCircle      className="size-4 text-danger"   />
   return <CircleDashed className="size-4 text-muted-foreground/50" />
 }
 
@@ -144,7 +144,7 @@ export default async function CombosPage() {
             {combo.guard_failures && combo.guard_failures.length > 0 && (
               <div className="px-5 pb-2 flex flex-wrap gap-1">
                 {combo.guard_failures.map(f => (
-                  <span key={f} className="text-xs rounded-full px-2 py-0.5 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                  <span key={f} className="text-xs rounded-full px-2 py-0.5 bg-danger/10 text-danger">
                     {f}
                   </span>
                 ))}
@@ -174,13 +174,13 @@ export default async function CombosPage() {
               <div className="border-t border-border px-5 py-3 space-y-2">
                 {combo.long_condition && (
                   <div>
-                    <p className="text-xs font-medium text-green-600 dark:text-green-400 mb-0.5">Long</p>
+                    <p className="text-xs font-medium text-success mb-0.5">Long</p>
                     <p className="text-xs text-muted-foreground line-clamp-2">{combo.long_condition}</p>
                   </div>
                 )}
                 {combo.short_condition && (
                   <div>
-                    <p className="text-xs font-medium text-red-600 dark:text-red-400 mb-0.5">Short</p>
+                    <p className="text-xs font-medium text-danger mb-0.5">Short</p>
                     <p className="text-xs text-muted-foreground line-clamp-2">{combo.short_condition}</p>
                   </div>
                 )}

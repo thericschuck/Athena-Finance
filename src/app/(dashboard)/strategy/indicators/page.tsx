@@ -4,6 +4,7 @@ import { Database } from '@/types/database'
 import { AddIndicatorDialog } from '@/components/strategy/indicator-form'
 import { IndicatorExportDialog, IndicatorImportDialog } from '@/components/strategy/indicator-export-dialog'
 import { IndicatorFilters } from '@/components/strategy/indicator-filters'
+import { UrlFiltersProvider, FilterPending } from '@/components/providers/url-filters'
 import { IndicatorsTable } from '@/components/strategy/indicators-table'
 import { Suspense } from 'react'
 
@@ -112,22 +113,28 @@ export default async function IndicatorsPage({
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters + Table — der Provider quittiert die Auswahl sofort und blendet die
+          Tabelle ab, bis der Server die gefilterte Liste geliefert hat. */}
       <Suspense>
-        <IndicatorFilters types={allTypes} authors={allAuthors} />
-      </Suspense>
+        <UrlFiltersProvider replace>
+          <div className="space-y-6">
+            <IndicatorFilters types={allTypes} authors={allAuthors} />
 
-      {/* Table */}
-      {enriched.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <IndicatorsTable
-          rows={enriched}
-          perfs={perfs}
-          defaultAssetClass={defaultAssetClass}
-          defaultTimeframe={defaultTimeframe}
-        />
-      )}
+            <FilterPending>
+              {enriched.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <IndicatorsTable
+                  rows={enriched}
+                  perfs={perfs}
+                  defaultAssetClass={defaultAssetClass}
+                  defaultTimeframe={defaultTimeframe}
+                />
+              )}
+            </FilterPending>
+          </div>
+        </UrlFiltersProvider>
+      </Suspense>
     </div>
   )
 }

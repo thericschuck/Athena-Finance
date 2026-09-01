@@ -115,6 +115,33 @@ export async function saveFinance(
   return { success: true }
 }
 
+// ─── Analyse ──────────────────────────────────────────────────────────────────
+export async function saveAnalyseDefaults(
+  _prev: SettingsState,
+  formData: FormData
+): Promise<SettingsState> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Nicht eingeloggt' }
+
+  const period      = formData.get('analyse_default_period') as string
+  const heatmapMode = formData.get('analyse_default_heatmap_mode') as string
+  // Multiple checkboxes share the name "analyse_default_accounts" — getAll collects every
+  // checked value. Empty array is a valid, meaningful choice ("alle Konten").
+  const accountIds  = formData.getAll('analyse_default_accounts') as string[]
+
+  const { error } = await upsertSettings(supabase, user.id, {
+    analyse_default_period:       period || null,
+    analyse_default_heatmap_mode: heatmapMode || null,
+    analyse_default_accounts:     accountIds,
+  })
+
+  if (error) return { error: error.message }
+  revalidatePath('/analyse')
+  REVALIDATE()
+  return { success: true }
+}
+
 // ─── Password ─────────────────────────────────────────────────────────────────
 export async function changePassword(
   _prev: SettingsState,
@@ -170,9 +197,7 @@ export async function saveExchangeKey(
     return { error: `Verschlüsselung fehlgeschlagen: ${(e as Error).message}` }
   }
 
-  // exchange_keys not yet in generated types — remove cast after `supabase gen types`
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('exchange_keys')
     .upsert(
       {
@@ -184,7 +209,7 @@ export async function saveExchangeKey(
       { onConflict: 'user_id,exchange' }
     )
 
-  if (error) return { error: (error as { message: string }).message }
+  if (error) return { error: error.message }
   revalidatePath('/depot')
   return { success: true }
 }
@@ -199,15 +224,13 @@ export async function deleteExchangeKey(
 
   const exchange = (formData.get('exchange') as string)?.trim() ?? 'kraken'
 
-  // exchange_keys not yet in generated types — remove cast after `supabase gen types`
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('exchange_keys')
     .delete()
     .eq('user_id', user.id)
     .eq('exchange', exchange)
 
-  if (error) return { error: (error as { message: string }).message }
+  if (error) return { error: error.message }
   revalidatePath('/depot')
   return { success: true }
 }

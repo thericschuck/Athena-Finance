@@ -1,6 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
+import { SkeletonChart } from '@/components/ui/skeleton'
 import type { MonthlyComparison } from '@/lib/analyseData'
 
 interface Props { data: MonthlyComparison[] }
@@ -13,6 +14,6 @@ export const MonatsVergleich = dynamic<Props>(
   () => import('./MonatsVergleich-impl').then(m => m.MonatsVergleich),
   {
     ssr: false,
-    loading: () => <div className="bg-[#13161e] border border-[#1e2130] rounded-xl p-5 h-89 animate-pulse" />,
+    loading: () => <SkeletonChart variant="bars" height={288} />,
   },
 )

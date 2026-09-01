@@ -66,7 +66,7 @@ function ItemForm({
       <Inp name="interval_days" placeholder="Tage"        defaultValue={item?.interval_days}  className="w-16" required />
       <Inp name="notes"         placeholder="Notiz"       defaultValue={item?.notes ?? ''}   className="w-36" />
       {'error' in (state ?? {}) && (
-        <span className="text-xs text-red-500 w-full">{(state as {error:string}).error}</span>
+        <span className="text-xs text-destructive w-full">{(state as {error:string}).error}</span>
       )}
       <button
         type="submit"
@@ -117,7 +117,7 @@ function ItemRow({ item, onEdit }: { item: BudgetItem; onEdit: () => void }) {
             onClick={handleDelete}
             disabled={deleting}
             aria-label="Produkt löschen"
-            className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-red-500 disabled:opacity-40"
+            className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive disabled:opacity-40"
           >
             <Trash2 className="size-3.5" />
           </button>
@@ -170,7 +170,7 @@ function CategoryCard({
           <Inp name="name"           defaultValue={category.name}                 placeholder="Name" className="w-36" required />
           <Inp name="monthly_budget" defaultValue={category.monthly_budget ?? ''} placeholder="Ziel € (opt.)" step="0.01" className="w-28" />
           {'error' in (catState ?? {}) && (
-            <span className="text-xs text-red-500 w-full">{(catState as {error:string}).error}</span>
+            <span className="text-xs text-destructive w-full">{(catState as {error:string}).error}</span>
           )}
           <button type="submit" disabled={catPending} aria-label="Speichern" className="h-8 px-3 rounded-md bg-primary text-primary-foreground text-sm">
             <Check className="size-4" />
@@ -192,12 +192,17 @@ function CategoryCard({
             }
           }}
         >
-          <span className="text-lg w-7 text-center shrink-0">{category.icon ?? '📦'}</span>
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-base">
+            {category.icon ?? '📦'}
+          </span>
           <span className="flex-1 font-medium text-sm">{category.name}</span>
           <span className="flex items-center gap-2 mr-2">
             <span className="text-sm font-semibold tabular-nums">{fmt(total)}</span>
             {budget != null && (
-              <span className={cn('text-xs tabular-nums', delta! > 0 ? 'text-red-500' : 'text-green-500')}>
+              <span
+                className="text-xs tabular-nums"
+                style={{ color: delta! > 0 ? 'var(--chart-expense)' : 'var(--chart-income)' }}
+              >
                 Ziel: {fmt(budget)} ({delta! > 0 ? '+' : ''}{fmt(delta!)})
               </span>
             )}
@@ -217,7 +222,7 @@ function CategoryCard({
               onClick={handleDeleteCat}
               disabled={deletingCat}
               aria-label="Kategorie löschen"
-              className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-red-500 disabled:opacity-40"
+              className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive disabled:opacity-40"
             >
               <Trash2 className="size-3.5" />
             </button>
@@ -307,7 +312,7 @@ function AddCategoryForm({ onDone }: { onDone: () => void }) {
       <Inp name="name"           placeholder="Kategoriename"  className="w-40" required />
       <Inp name="monthly_budget" placeholder="Budget-Ziel (opt.)" step="0.01" className="w-36" />
       {'error' in (state ?? {}) && (
-        <span className="text-xs text-red-500 w-full">{(state as {error:string}).error}</span>
+        <span className="text-xs text-destructive w-full">{(state as {error:string}).error}</span>
       )}
       <button
         type="submit"

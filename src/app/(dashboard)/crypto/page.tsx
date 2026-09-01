@@ -3,6 +3,7 @@ import { getSettings } from '@/lib/settings'
 import { fmtDate as fmtDateLib } from '@/lib/format'
 import { PortfolioOverview, type AssetWithPrice } from '@/components/crypto/portfolio-overview'
 import { PortfolioSwitcher, type PortfolioMeta } from '@/components/crypto/portfolio-switcher'
+import { OpenPositionsCard } from '@/components/crypto/open-positions-card'
 import { getStrategySignals, getPortfolioAllocations } from '@/app/(dashboard)/crypto/actions'
 import { calculateRebalancing } from '@/lib/crypto/rebalancing'
 import { getEurUsdRate } from '@/lib/crypto/coingecko'
@@ -166,8 +167,8 @@ export default async function CryptoPage({
         rebalancingRows={rebalancingResult.rows}
         eurUsdRate={eurUsdRate}
         activePortfolio={activePortfolio ?? undefined}
-        readonly={activePortfolio === 'Kraken'}
       />
+      {activePortfolio === 'Kraken' && <OpenPositionsCard />}
       <AssetAuditLog entries={(auditLog ?? []) as unknown as AuditEntry[]} locale={locale} dateFormat={dateFormat} />
     </>
   )
@@ -184,9 +185,9 @@ type AuditEntry = {
 }
 
 const ACTION_LABEL: Record<string, { label: string; cls: string }> = {
-  created: { label: 'Erstellt',  cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+  created: { label: 'Erstellt',  cls: 'bg-success/10 text-success' },
   updated: { label: 'Geändert',  cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-  deleted: { label: 'Gelöscht',  cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+  deleted: { label: 'Gelöscht',  cls: 'bg-danger/10 text-danger' },
 }
 
 const FIELD_LABEL: Record<string, string> = {

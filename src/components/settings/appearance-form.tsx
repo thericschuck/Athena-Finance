@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState, useEffect, useState } from 'react'
+import Image from 'next/image'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { saveAppearance, SettingsState } from '@/app/(dashboard)/settings/actions'
@@ -12,6 +13,32 @@ import { Check } from 'lucide-react'
 // ─── Theme Presets ────────────────────────────────────────────────────────────
 
 const THEME_PRESETS = [
+  {
+    id:     'athena',
+    name:   'Athena Light',
+    desc:   'Light · Editorial · Onyx & Gold',
+    bg:     '#F4EFE4',
+    card:   '#FFFFFF',
+    fg:     '#1A1A1A',
+    accent: '#B88F51',
+    border: 'rgba(26,26,26,0.12)',
+    dark:   false,
+    sidebarBg:   '#1A1A1A',
+    sidebarLine: 'rgba(232,224,208,0.25)',
+  },
+  {
+    id:     'athena-dark',
+    name:   'Athena Dark',
+    desc:   'Dark · Editorial · Ember & Olive',
+    bg:     '#1B170F',
+    card:   '#221D15',
+    fg:     '#F0E9D8',
+    accent: '#D9B26E',
+    border: 'rgba(240,233,216,0.1)',
+    dark:   true,
+    sidebarBg:   '#0F0D09',
+    sidebarLine: 'rgba(240,233,216,0.18)',
+  },
   {
     id:     'obsidian',
     name:   'Obsidian Terminal',
@@ -27,11 +54,11 @@ const THEME_PRESETS = [
     id:     'aurum',
     name:   'Aurum',
     desc:   'Dark · Serif · Luxury Finance',
-    bg:     '#0c0800',
-    card:   '#130d00',
-    fg:     '#f0e6c8',
-    accent: '#d4a017',
-    border: 'rgba(212,160,23,0.25)',
+    bg:     '#0a0a09',
+    card:   '#131110',
+    fg:     '#f4eee2',
+    accent: '#cda564',
+    border: '#262119',
     dark:   true,
   },
   {
@@ -140,70 +167,103 @@ function ThemePreviewCard({
   preset,
   selected,
   onSelect,
+  size = 'lg',
 }: {
   preset: typeof THEME_PRESETS[number]
   selected: boolean
   onSelect: () => void
+  /** `sm` für die "Weitere Themes"-Reihe — deutlich kompakter, damit Athena
+      Light/Dark als die beiden großen, unübersehbaren Haupt-Themes wirken
+      statt eines von acht gleichwertigen Kacheln. */
+  size?: 'lg' | 'sm'
 }) {
+  const sm = size === 'sm'
   return (
     <button
       type="button"
       onClick={onSelect}
       className={cn(
-        'relative rounded-xl border-2 overflow-hidden text-left transition-all duration-150 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        'relative rounded-xl overflow-hidden text-left transition-all duration-150 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        sm ? 'border' : 'border-2',
         selected ? 'border-primary shadow-lg shadow-primary/20 scale-[1.02]' : 'border-border hover:border-muted-foreground/40'
       )}
     >
       {/* Mini UI preview */}
-      <div className="h-24 w-full relative" style={{ background: preset.bg }}>
+      <div className={cn('w-full relative', sm ? 'h-12' : 'h-24')} style={{ background: preset.bg }}>
         {/* Sidebar strip */}
         <div
-          className="absolute left-0 top-0 bottom-0 w-8"
-          style={{ background: preset.bg, borderRight: `1px solid ${preset.border}` }}
+          className={cn('absolute left-0 top-0 bottom-0', sm ? 'w-4' : 'w-8')}
+          style={{
+            background: 'sidebarBg' in preset ? preset.sidebarBg : preset.bg,
+            borderRight: `1px solid ${'sidebarLine' in preset ? preset.sidebarLine : preset.border}`,
+          }}
         >
-          <div className="mt-3 mx-1.5 space-y-1">
-            {[1, 2, 3].map(i => (
-              <div
-                key={i}
-                className="h-1.5 rounded-full"
-                style={{ background: i === 1 ? preset.accent : preset.border, width: i === 1 ? '80%' : '60%', opacity: i === 1 ? 1 : 0.4 }}
-              />
-            ))}
-          </div>
+          {sm ? (
+            <div className="mt-1.5 mx-1">
+              <div className="h-1 rounded-full" style={{ background: preset.accent, width: '70%' }} />
+            </div>
+          ) : (
+            <div className="mt-3 mx-1.5 space-y-1">
+              {[1, 2, 3].map(i => (
+                <div
+                  key={i}
+                  className="h-1.5 rounded-full"
+                  style={{
+                    background: i === 1 ? preset.accent : ('sidebarLine' in preset ? preset.sidebarLine : preset.border),
+                    width: i === 1 ? '80%' : '60%',
+                    opacity: i === 1 ? 1 : 0.4,
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </div>
         {/* Content area */}
-        <div className="absolute left-9 right-0 top-0 bottom-0 p-2">
-          <div className="flex items-center justify-between mb-2">
-            <div className="h-2 w-12 rounded" style={{ background: preset.fg, opacity: 0.9 }} />
-            <div className="h-4 w-10 rounded" style={{ background: preset.accent }} />
+        {sm ? (
+          <div className="absolute left-5 right-1.5 top-1.5 bottom-1.5 flex flex-col justify-between">
+            <div className="h-1 w-6 rounded" style={{ background: preset.fg, opacity: 0.9 }} />
+            <div className="flex items-end gap-1">
+              <div className="h-3 flex-1 rounded-sm" style={{ background: preset.card, border: `1px solid ${preset.border}` }} />
+              <div className="h-4 w-3 rounded-sm" style={{ background: preset.accent }} />
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-1 mb-2">
-            {[1, 2].map(i => (
-              <div key={i} className="h-8 rounded" style={{ background: preset.card, border: `1px solid ${preset.border}` }}>
-                <div className="p-1">
-                  <div className="h-1 w-8 rounded mb-1" style={{ background: preset.fg, opacity: 0.3 }} />
-                  <div className="h-1.5 w-6 rounded" style={{ background: i === 1 ? '#22c55e' : '#ef4444', opacity: 0.8 }} />
+        ) : (
+          <div className="absolute left-9 right-0 top-0 bottom-0 p-2">
+            <div className="flex items-center justify-between mb-2">
+              <div className="h-2 w-12 rounded" style={{ background: preset.fg, opacity: 0.9 }} />
+              <div className="h-4 w-10 rounded" style={{ background: preset.accent }} />
+            </div>
+            <div className="grid grid-cols-2 gap-1 mb-2">
+              {[1, 2].map(i => (
+                <div key={i} className="h-8 rounded" style={{ background: preset.card, border: `1px solid ${preset.border}` }}>
+                  <div className="p-1">
+                    <div className="h-1 w-8 rounded mb-1" style={{ background: preset.fg, opacity: 0.3 }} />
+                    <div className="h-1.5 w-6 rounded" style={{ background: i === 1 ? '#22c55e' : '#ef4444', opacity: 0.8 }} />
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            <div className="h-6 rounded" style={{ background: preset.card, border: `1px solid ${preset.border}` }} />
           </div>
-          <div className="h-6 rounded" style={{ background: preset.card, border: `1px solid ${preset.border}` }} />
-        </div>
+        )}
       </div>
 
       {/* Label */}
-      <div className="px-3 py-2 bg-card border-t border-border">
-        <p className="text-xs font-semibold text-foreground">{preset.name}</p>
-        <p className="text-[10px] text-muted-foreground mt-0.5">{preset.desc}</p>
+      <div className={cn('bg-card border-t border-border', sm ? 'px-2 py-1' : 'px-3 py-2')}>
+        <p className={cn('font-semibold text-foreground', sm ? 'text-[10px] truncate' : 'text-xs')}>{preset.name}</p>
+        {!sm && <p className="text-[10px] text-muted-foreground mt-0.5">{preset.desc}</p>}
       </div>
 
       {/* Selected checkmark */}
       {selected && (
         <div
-          className="absolute top-1.5 right-1.5 size-5 rounded-full flex items-center justify-center"
+          className={cn(
+            'absolute rounded-full flex items-center justify-center',
+            sm ? 'top-1 right-1 size-3.5' : 'top-1.5 right-1.5 size-5',
+          )}
           style={{ background: preset.accent }}
         >
-          <Check className="size-3" style={{ color: preset.bg }} />
+          <Check className={sm ? 'size-2' : 'size-3'} style={{ color: preset.bg }} />
         </div>
       )}
     </button>
@@ -269,18 +329,58 @@ export function AppearanceForm({ initialSettings }: { initialSettings: SettingsM
         <p className="text-sm text-muted-foreground mt-0.5">Theme, Farben und Formatierung</p>
       </div>
 
-      {/* Theme Presets */}
-      <div className="space-y-3">
-        <p className="text-sm font-medium">Theme</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {THEME_PRESETS.map(preset => (
-            <ThemePreviewCard
-              key={preset.id}
-              preset={preset}
-              selected={themePreset === preset.id}
-              onSelect={() => handlePresetSelect(preset.id)}
-            />
-          ))}
+      {/* Dieselbe Athena-Illustration wie im Landing-Hero — dort steht sie
+          genauso bodenständig statt oben zu hängen (siehe .hero-athena in
+          landing.css: `bottom: 0; height: clamp(420px, 84vh, 920px)`),
+          hier 1:1 übernommen statt einer eigenen, zu kleinen Top-Positionierung.
+          Die Settings-Seite läuft in `max-w-5xl` (siehe
+          app/(dashboard)/settings/page.tsx), auf breiten Bildschirmen bleibt
+          rechts davon viel Leerraum bis zum Viewport-Rand übrig. `fixed`
+          holt die Statue aus diesem begrenzten Content-Fluss heraus. Nur ab
+          `2xl` (≥1536px): darunter reicht der Bildschirm nicht, um
+          max-w-5xl + Sidebar + echten Leerraum gleichzeitig zu garantieren,
+          die Statue würde sonst über echte Inhalte fallen. */}
+      <Image
+        src="/athena-statue.svg"
+        alt=""
+        aria-hidden
+        width={95}
+        height={142}
+        unoptimized
+        className="pointer-events-none fixed bottom-0 right-16 hidden h-[min(78vh,760px)] w-auto opacity-[0.4] 2xl:block"
+      />
+
+      {/* Theme Presets — Athena Light/Dark groß und zuerst als die beiden
+          Haupt-Themes, alle anderen Presets klein darunter als Alternativen. */}
+      <div className="space-y-5">
+        <div className="space-y-3">
+          <p className="text-sm font-medium">Athena</p>
+          <div className="grid grid-cols-2 gap-3">
+            {THEME_PRESETS.filter(p => p.id === 'athena' || p.id === 'athena-dark').map(preset => (
+              <ThemePreviewCard
+                key={preset.id}
+                preset={preset}
+                selected={themePreset === preset.id}
+                onSelect={() => handlePresetSelect(preset.id)}
+                size="lg"
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-muted-foreground">Weitere Themes</p>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            {THEME_PRESETS.filter(p => p.id !== 'athena' && p.id !== 'athena-dark').map(preset => (
+              <ThemePreviewCard
+                key={preset.id}
+                preset={preset}
+                selected={themePreset === preset.id}
+                onSelect={() => handlePresetSelect(preset.id)}
+                size="sm"
+              />
+            ))}
+          </div>
         </div>
 
         {/* "No preset" / custom option */}

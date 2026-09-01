@@ -1,9 +1,16 @@
 'use client'
 
 import dynamic from 'next/dynamic'
+import { SkeletonChart } from '@/components/ui/skeleton'
 import type { BankTransaction } from '@/types/bank'
 
-interface Props { transactions: BankTransaction[] }
+interface Props {
+  transactions: BankTransaction[]
+  /** `YYYY-MM` des ausgewählten Monats, oder null. */
+  selectedMonth?: string | null
+  /** Klick auf eine Säule. Derselbe Monat nochmal hebt die Auswahl auf. */
+  onSelectMonth?: (month: string | null) => void
+}
 
 // recharts is heavy and this chart only renders once bank transactions exist, so it's
 // loaded on demand via next/dynamic instead of bundled into the initial page JS.
@@ -13,6 +20,6 @@ export const BankTrendChart = dynamic<Props>(
   () => import('./bank-trend-chart-impl').then(m => m.BankTrendChart),
   {
     ssr: false,
-    loading: () => <div className="rounded-lg border border-border bg-card p-5 h-75 animate-pulse" />,
+    loading: () => <SkeletonChart variant="bars" height={220} legend />,
   },
 )

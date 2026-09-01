@@ -4,10 +4,10 @@ import { PieChart, Pie, Cell, Tooltip } from 'recharts'
 import { fmtCurrency } from '@/lib/format'
 
 const SLICES = [
-  { key: 'Finanzen',  color: '#3b82f6' },
-  { key: 'Depot',     color: '#10b981' },
-  { key: 'Krypto',    color: '#f59e0b' },
-  { key: 'Sparziele', color: '#8b5cf6' },
+  { key: 'Finanzen',  color: 'var(--chart-cat-1)' },
+  { key: 'Depot',     color: 'var(--chart-cat-2)' },
+  { key: 'Krypto',    color: 'var(--chart-cat-3)' },
+  { key: 'Sparziele', color: 'var(--chart-cat-4)' },
 ]
 
 type Props = {
@@ -56,8 +56,8 @@ export function PortfolioDonut({ financeTotal, depotTotal, cryptoTotal, savingsT
               <Tooltip
                 formatter={(val: number | undefined) => [fmt(val ?? 0), '' as const]}
                 contentStyle={{
-                  background: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
+                  background: 'var(--card)',
+                  border: '1px solid var(--border)',
                   borderRadius: '8px',
                   fontSize: '12px',
                 }}

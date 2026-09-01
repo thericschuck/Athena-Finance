@@ -30,10 +30,10 @@ const FILTERS: FilterKey[] = ['1W', '1M', '3M', '6M', '1J', 'All']
 const VIEWS: ViewKey[]     = ['Gesamt', 'Konten', 'Depot', 'Krypto']
 
 const VIEW_COLOR: Record<ViewKey, string> = {
-  Gesamt: '#6366f1',
-  Konten: '#3b82f6',
-  Depot:  '#10b981',
-  Krypto: '#f59e0b',
+  Gesamt: 'var(--chart-accent)',
+  Konten: 'var(--chart-cat-1)',
+  Depot:  'var(--chart-cat-2)',
+  Krypto: 'var(--chart-cat-3)',
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -121,7 +121,7 @@ function ChartTooltip({ active, payload, label, view }: {
           {detailRows.filter(([, v]) => v != null && v !== 0).map(([lbl, val]) => (
             <div key={lbl} className="flex justify-between gap-4">
               <span className="text-muted-foreground">{lbl}</span>
-              <span className={`tabular-nums font-medium ${(val ?? 0) < 0 ? 'text-red-500' : 'text-foreground'}`}>
+              <span className={`tabular-nums font-medium ${(val ?? 0) < 0 ? 'text-danger' : 'text-foreground'}`}>
                 {val == null ? '—' : fmt(val)}
               </span>
             </div>

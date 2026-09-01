@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { Database } from '@/types/database'
 import { TestsFilters } from '@/components/strategy/tests-filters'
+import { UrlFiltersProvider, FilterPending } from '@/components/providers/url-filters'
 import { AddBacktestStandaloneDialog } from '@/components/strategy/performance-form'
 import { TestsTable } from '@/components/strategy/tests-table'
 import { Suspense } from 'react'
@@ -77,13 +78,19 @@ export default async function TestsPage({
         />
       </div>
 
-      {/* Filters */}
+      {/* Filters + Table — `resetKeys="page"` springt bei jeder Filteränderung
+          zurück auf Seite 1. */}
       <Suspense>
-        <TestsFilters />
-      </Suspense>
+        <UrlFiltersProvider replace resetKeys="page">
+          <div className="space-y-6">
+            <TestsFilters />
 
-      {/* Table */}
-      <TestsTable rows={rows} />
+            <FilterPending>
+              <TestsTable rows={rows} />
+            </FilterPending>
+          </div>
+        </UrlFiltersProvider>
+      </Suspense>
     </div>
   )
 }

@@ -10,11 +10,47 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { CSV_BOM, parseCsvAmount } from '@/lib/csv'
+
+// ─── Kodierung ────────────────────────────────────────────────────────────────
+
+/**
+ * CSV-Bytes in Text verwandeln, ohne die Kodierung zu raten.
+ *
+ * Hier treffen zwei Welten aufeinander: der eigene Export ist UTF-8 mit BOM (siehe
+ * lib/csv.ts — ohne BOM liest Excel die Datei als ANSI), die Exporte deutscher Banken sind
+ * dagegen meist Windows-1252. Pauschal als Windows-1252 zu lesen — so war es vorher —
+ * macht aus jedem Umlaut im eigenen Export zwei Zeichen.
+ *
+ * `TextDecoder('utf-8')` entfernt ein vorhandenes BOM von selbst; die BOM-Behandlung in
+ * `parseCSV` bleibt trotzdem als Netz für Text, der anders hereinkommt.
+ */
+function decodeCsv(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer)
+
+  // EF BB BF — UTF-8-BOM. Eindeutig, da muss nichts probiert werden.
+  if (bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
+    return new TextDecoder('utf-8').decode(bytes)
+  }
+
+  // Ohne BOM: strikt als UTF-8 versuchen. Schlägt das fehl, enthält die Datei Bytefolgen,
+  // die es in UTF-8 nicht gibt — dann ist es praktisch sicher Windows-1252.
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+  } catch {
+    return new TextDecoder('windows-1252').decode(bytes)
+  }
+}
 
 // ─── CSV Parser ───────────────────────────────────────────────────────────────
 
 function parseCSV(text: string): { headers: string[]; rows: string[][] } {
-  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter((l) => l.trim())
+  // Führendes BOM abschneiden. Der eigene Export schreibt eins, damit Excel die Datei als
+  // UTF-8 erkennt (siehe api/export/transactions/route.ts) — hier bliebe es sonst am ersten
+  // Spaltennamen kleben, aus `datum` würde `<BOM>datum` und die Formaterkennung liefe ins
+  // Leere.
+  const clean = text.startsWith(CSV_BOM) ? text.slice(CSV_BOM.length) : text
+  const lines = clean.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter((l) => l.trim())
   if (lines.length === 0) return { headers: [], rows: [] }
 
   function parseLine(line: string, sep: string): string[] {
@@ -53,6 +89,10 @@ function parseGermanAmount(raw: string): number {
   if (isNaN(value)) return 0
   return isSoll ? -Math.abs(value) : value
 }
+
+// Für das eigene Format kommt der Parser aus lib/csv — dieselbe Stelle, die der Export zum
+// Schreiben benutzt. `parseGermanAmount` oben taugt dafür nicht: es wirft grundsätzlich alle
+// Punkte weg und machte aus einem alten Export mit `-1234.56` ein `-123456`.
 
 // ─── Bank Format Detection ────────────────────────────────────────────────────
 
@@ -113,7 +153,7 @@ function mapRows(
     case 'athena':
       return rows.map((row) => ({
         date: parseSparkasseDate(get(row, 'datum') || get(row, 'date')),
-        amount: parseFloat((get(row, 'betrag') || get(row, 'amount')).replace(',', '.')) || 0,
+        amount: parseCsvAmount(get(row, 'betrag') || get(row, 'amount')),
         description: get(row, 'beschreibung') || get(row, 'description') || undefined,
         merchant: get(row, 'haendler') || get(row, 'merchant') || undefined,
         category_name: get(row, 'kategorie') || get(row, 'category') || undefined,
@@ -274,15 +314,21 @@ export function ImportTransactionsDialog({
   }
 
   function handleFile(file: File) {
-    // Read as Latin-1 first; covers most German bank exports (Sparkasse, DKB, etc.)
-    // For UTF-8 files (Athena export) Latin-1 is a no-op for ASCII content.
+    // Kodierung erkennen statt raten. Vorher wurde jede Datei als Windows-1252 gelesen —
+    // das passt für die Exporte deutscher Banken, zerlegt aber den eigenen UTF-8-Export:
+    // aus „Händler" würde „HÃ¤ndler" und aus dem BOM ein sichtbares „ï»¿" vor dem ersten
+    // Spaltennamen, an dem die Formaterkennung scheitert.
     const reader = new FileReader()
     reader.onload = (e) => {
-      const text = e.target?.result as string
-      handleFileContent(text)
+      const buffer = e.target?.result
+      if (!(buffer instanceof ArrayBuffer)) {
+        setError('Fehler beim Lesen der Datei.')
+        return
+      }
+      handleFileContent(decodeCsv(buffer))
     }
     reader.onerror = () => setError('Fehler beim Lesen der Datei.')
-    reader.readAsText(file, 'windows-1252')
+    reader.readAsArrayBuffer(file)
   }
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -390,7 +436,7 @@ export function ImportTransactionsDialog({
             </div>
 
             {error && (
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              <p className="text-sm text-danger">{error}</p>
             )}
           </div>
         )}
@@ -422,8 +468,12 @@ export function ImportTransactionsDialog({
                   {mappedRows.slice(0, 10).map((row, i) => (
                     <tr key={i} className="hover:bg-muted/20">
                       <td className="px-3 py-2 tabular-nums text-muted-foreground">{row.date}</td>
-                      <td className={`px-3 py-2 text-right tabular-nums font-medium ${row.amount >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                        {row.amount >= 0 ? '+' : ''}{row.amount.toFixed(2)}
+                      <td className={`px-3 py-2 text-right tabular-nums font-medium ${row.amount >= 0 ? 'text-success' : 'text-danger'}`}>
+                        {row.amount >= 0 ? '+' : ''}
+                        {row.amount.toLocaleString('de-DE', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
                       </td>
                       <td className="px-3 py-2 max-w-[150px] truncate text-muted-foreground hidden sm:table-cell">
                         {row.description || '—'}
@@ -446,7 +496,7 @@ export function ImportTransactionsDialog({
             </div>
 
             {error && (
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              <p className="text-sm text-danger">{error}</p>
             )}
 
             <div className="flex items-center justify-between pt-2 shrink-0">

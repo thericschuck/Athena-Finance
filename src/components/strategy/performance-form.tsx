@@ -274,12 +274,12 @@ export function BacktestsDialog({
                     <td className="py-2 pr-3 font-mono text-xs">{p.timeframe}</td>
                     <td className="py-2 pr-3 text-right">
                       {p.cobra_green != null
-                        ? <span className="font-medium text-green-600 dark:text-green-400">{p.cobra_green}</span>
+                        ? <span className="font-medium text-success">{p.cobra_green}</span>
                         : '—'}
                     </td>
                     <td className="py-2 pr-3 text-right">
                       {p.cobra_red != null
-                        ? <span className="font-medium text-red-500 dark:text-red-400">{p.cobra_red}</span>
+                        ? <span className="font-medium text-danger">{p.cobra_red}</span>
                         : '—'}
                     </td>
                     <td className="py-2 pr-3 text-right text-muted-foreground">

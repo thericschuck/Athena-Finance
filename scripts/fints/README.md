@@ -10,9 +10,61 @@ Raiffeisenbank/VR-Bank backend) requires two things `node-fints` cannot do:
 2. **camt.052 statements (HKCAZ)** — this bank does **not** offer MT940 (HKKAZ). python-fints
    falls back to camt automatically.
 
-Against this bank a read-only sync currently returns `3076 – Starke Kundenauthentifizierung
-nicht notwendig`, i.e. the app approval is usually not even prompted for balance/transaction
-reads with a registered product ID. The polling path is in place for when it is.
+Against this bank a read-only sync can return `3076 – Starke Kundenauthentifizierung
+nicht notwendig`, i.e. the app approval is skipped for balance/transaction reads — but only
+if the bank recognises the access. See "Client-State & die 90-Tage-Regel" below; without a
+persisted state it does *not* recognise it and prompts every single time.
+
+## Client-State & die 90-Tage-Regel
+
+**Das war der Grund, warum früher jeder Sync eine SecureGo-plus-Freigabe verlangt hat.**
+
+python-fints handelt beim ersten Dialog eine *Kundensystem-ID* aus
+(`HKSYN3(SynchronizationMode.NEW_SYSTEM_ID)`, siehe `_ensure_system_id()` in
+`fints/client.py`). Wird diese ID nicht über Läufe hinweg gespeichert, wiederholt jeder
+Sync die Erstsynchronisierung: die Bank sieht einen ihr unbekannten Zugang und muss nach
+PSD2 zwingend stark authentifizieren.
+
+Mit gespeicherter System-ID greift dagegen die Ausnahme aus Art. 10 der PSD2-RTS:
+Kontoinformationen der **letzten 90 Tage** sind nach **einer** starken Authentifizierung
+**90 Tage lang** ohne weitere Freigabe abrufbar.
+
+Umsetzung:
+
+- `--state-file <pfad>` — der Sidecar liest beim Start eine JSON-Map
+  `{bank_key: {"blob": <base64>, "label": …, "scaPerformed": …}}` und schreibt sie am Ende
+  aktualisiert zurück. Der Node-Aufrufer (`src/lib/fints/sidecar.ts`) legt dafür eine
+  temporäre Datei an und persistiert das Ergebnis über `src/lib/fints/state.ts` in die
+  Supabase-Tabelle `fints_client_state`.
+- `bank_key` = `sha256("<blz>:<username>")[:32]` — stabil pro Login, ohne den VR-NetKey im
+  Klartext abzulegen, und unabhängig von der Position in `FINTS_BANK{N}_*`.
+- Der Blob ist das Ergebnis von `client.deconstruct(including_private=True)`. Er enthält
+  laut python-fints **weder PIN noch Verbindungsdaten** — nur System-ID, BPD/UPD, gewähltes
+  TAN-Verfahren und TAN-Medium.
+- Supabase statt Dateisystem, weil sich der lokale Sidecar und die Vercel-Python-Function
+  (`api/bank-sync.py`) denselben Zustand teilen müssen. Beide berechnen `bank_key`
+  identisch — driftet das auseinander, hat jeder Ausführungspfad seinen eigenen Zustand und
+  jeder Wechsel kostet wieder eine Freigabe.
+
+### Zeitfenster
+
+| Aufruf | Zeitraum | Freigabe nötig? |
+|--------|----------|-----------------|
+| Cron (`/api/cron/bank-sync`) | 14 Tage | nein (innerhalb der Ausnahme) |
+| Manueller Sync (Button) | 90 Tage | nein, solange die Frist läuft |
+| „Komplette Historie" | ab 2000-01-01 | **ja, immer** — älter als 90 Tage ist nie ausgenommen |
+
+### `--no-sca` (unbeaufsichtigte Läufe)
+
+Der Cron setzt dieses Flag. Verlangt die Bank dann doch eine Freigabe (Frist abgelaufen
+oder noch kein State vorhanden), bricht der Sidecar sofort mit Code `sca_required` ab,
+statt fünf Minuten auf eine Bestätigung zu warten, die niemand gibt. Die Route vermerkt
+das in `fints_client_state.sca_required_since`; die `/bank`-Seite zeigt daraufhin den
+Hinweis, dass **ein** manueller Sync fällig ist.
+
+**Das lässt sich nicht wegprogrammieren:** die 90-Tage-Wiederholung ist regulatorisch
+vorgeschrieben. Realistisch ist also *eine* Freigabe pro Quartal statt einer pro Sync.
+Depotabfragen (HKWPD) fallen ebenfalls nicht unter die Ausnahme.
 
 ## Depot (Union Investment) & Bausparvertrag (Schwäbisch Hall)
 
@@ -175,7 +227,7 @@ Read from the same environment variables the Next.js app uses (loaded from `.env
 ## Usage
 
 ```bash
-python scripts/fints/fints_sync.py [--start YYYY-MM-DD] [--end YYYY-MM-DD] [--balances] [--no-txns]
+python scripts/fints/fints_sync.py [--start YYYY-MM-DD] [--end YYYY-MM-DD] [--balances]                                    [--no-txns] [--state-file PATH] [--no-sca]
 ```
 
 - Emits **exactly one JSON object** on stdout; all logging/progress goes to stderr.

@@ -37,19 +37,33 @@ export function PortfolioDonut({ assets, rebalancingRows, eurUsdRate }: Props) {
     istMap.set(a.symbol, (istMap.get(a.symbol) ?? 0) + a.current_value)
   }
   const totalIst = Array.from(istMap.values()).reduce((s, v) => s + v, 0)
-  const istData: DonutEntry[] = Array.from(istMap.entries())
-    .reduce<DonutEntry[]>((acc, [id, value]) => {
-      if (value > 0) {
-        acc.push({
-          label:        labelMap.get(id) ?? id.toUpperCase(),
-          coingecko_id: id,
-          value,
-          pct:          totalIst > 0 ? (value / totalIst) * 100 : 0,
-        })
-      }
-      return acc
-    }, [])
+
+  // Below this, a slice is too thin to read anything from anyway — same threshold as the
+  // asset table's dust cutoff. Folded into one "Sonstige" slice instead of just dropped, so
+  // the donut's percentages still add up to the real total.
+  const DUST_THRESHOLD_EUR = 1
+  const istEntries = Array.from(istMap.entries()).filter(([, value]) => value > 0)
+  const dustSum = istEntries
+    .filter(([, value]) => value < DUST_THRESHOLD_EUR)
+    .reduce((s, [, value]) => s + value, 0)
+
+  const istData: DonutEntry[] = istEntries
+    .filter(([, value]) => value >= DUST_THRESHOLD_EUR)
+    .map(([id, value]) => ({
+      label:        labelMap.get(id) ?? id.toUpperCase(),
+      coingecko_id: id,
+      value,
+      pct:          totalIst > 0 ? (value / totalIst) * 100 : 0,
+    }))
     .sort((a, b) => b.value - a.value)
+  if (dustSum > 0) {
+    istData.push({
+      label:        'Sonstige',
+      coingecko_id: '__dust__',
+      value:        dustSum,
+      pct:          totalIst > 0 ? (dustSum / totalIst) * 100 : 0,
+    })
+  }
 
   // ── ZIEL data: sum target_eur per coingecko_id from rebalancing rows ─────────
   const zielMap = new Map<string, { label: string; value: number }>()

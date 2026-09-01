@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Plus, RefreshCw } from 'lucide-react'
-import { getPrices } from '@/lib/crypto/coingecko'
 import { refreshPrices } from '@/app/(dashboard)/crypto/actions'
 import { AssetFormDialog } from '@/components/crypto/asset-form'
 import { PortfolioChart, type SnapshotRow } from '@/components/crypto/portfolio-chart'
@@ -22,6 +21,21 @@ export type AssetWithPrice = AssetRow & {
   current_price: number | null
   current_value: number | null
   last_updated: string | null   // valuation_date from asset_valuations
+}
+
+type PriceSource = 'kraken' | 'coingecko' | 'fiat'
+
+/**
+ * Holt EUR-Kurse über /api/crypto/prices — Kraken zuerst, CoinGecko nur als Fallback.
+ *
+ * Vorher rief diese Komponente `getPrices()` (CoinGecko) direkt aus dem Browser auf: ohne
+ * API-Key, gegen das IP-Rate-Limit des Nutzers, im 60-Sekunden-Takt, und pro geöffnetem Tab
+ * erneut. Bei einem 429 blieb der Fehler still und die Anzeige stand auf alten Zahlen.
+ */
+async function fetchPrices(ids: string[]): Promise<{ prices: Record<string, number>; sources: Record<string, PriceSource> }> {
+  const res = await fetch(`/api/crypto/prices?ids=${encodeURIComponent(ids.join(','))}`, { cache: 'no-store' })
+  if (!res.ok) throw new Error(`Kurse nicht abrufbar (${res.status})`)
+  return res.json()
 }
 
 function fmtSecondsAgo(s: number): string {
@@ -51,6 +65,10 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, e
   const [isRefreshing, setIsRefreshing]   = useState(false)
   const [message, setMessage]             = useState<{ text: string; ok: boolean } | null>(null)
   const [assetFormOpen, setAssetFormOpen] = useState(false)
+  const [priceSource, setPriceSource]     = useState<PriceSource | 'mixed' | null>(null)
+  // Ein stiller Fehlschlag hat vorher wie "Kurse sind aktuell" ausgesehen — die Badge zeigt
+  // jetzt an, wenn der letzte Tick nichts geliefert hat.
+  const [priceStale, setPriceStale]       = useState(false)
 
   // Sync when server re-renders (e.g. after adding a new asset)
   useEffect(() => {
@@ -72,16 +90,20 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, e
 
     const tick = async () => {
       try {
-        const prices = await getPrices(coingeckoIds)
+        const { prices, sources } = await fetchPrices(coingeckoIds)
+        if (Object.keys(prices).length === 0) { setPriceStale(true); return }
         setAssets(prev => prev.map(a => {
           if (!a.symbol) return a
           const price = prices[a.symbol]
           if (price == null) return a
           return { ...a, current_price: price, current_value: (a.quantity ?? 0) * price }
         }))
+        const used = [...new Set(Object.values(sources))]
+        setPriceSource(used.length === 1 ? used[0] : used.length > 1 ? 'mixed' : null)
+        setPriceStale(false)
         setSecondsAgo(0)
       } catch {
-        // Non-critical — silently skip
+        setPriceStale(true)
       }
     }
 
@@ -106,13 +128,16 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, e
       const coingeckoIds = [...new Set(
         assets.map(a => a.symbol).filter((s): s is string => !!s)
       )]
-      const prices = await getPrices(coingeckoIds)
+      const { prices, sources } = await fetchPrices(coingeckoIds)
       setAssets(prev => prev.map(a => {
         if (!a.symbol) return a
         const price = prices[a.symbol]
         if (price == null) return a
         return { ...a, current_price: price, current_value: (a.quantity ?? 0) * price }
       }))
+      const used = [...new Set(Object.values(sources))]
+      setPriceSource(used.length === 1 ? used[0] : used.length > 1 ? 'mixed' : null)
+      setPriceStale(false)
       setSecondsAgo(0)
       setMessage({
         text: `${result.updated ?? 0} Preis${result.updated === 1 ? '' : 'e'} aktualisiert`,
@@ -146,7 +171,7 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, e
           <p className="mt-0.5 text-sm text-muted-foreground">
             {assets.length} Assets · Gesamtwert {fmtEur(totalValue)}
             {totalPnL != null && (
-              <span className={`ml-2 font-medium ${isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              <span className={`ml-2 font-medium ${isPositive ? 'text-success' : 'text-danger'}`}>
                 {isPositive ? '+' : ''}{fmtEur(totalPnL)}
                 {totalPnLPct != null && (
                   <> / {isPositive ? '+' : ''}{totalPnLPct.toFixed(2).replace('.', ',')} %</>
@@ -158,8 +183,20 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, e
 
         <div className="flex items-center gap-2 flex-wrap">
           {/* Last-refresh badge */}
-          <span className="text-xs text-muted-foreground border border-border rounded-full px-2.5 py-1">
-            Vor {fmtSecondsAgo(secondsAgo)} aktualisiert
+          <span
+            className={`text-xs border rounded-full px-2.5 py-1 ${
+              priceStale
+                ? 'border-danger/40 text-danger'
+                : 'border-border text-muted-foreground'
+            }`}
+            title={priceStale ? 'Der letzte Kursabruf hat keine Daten geliefert.' : undefined}
+          >
+            {priceStale ? 'Kurse veraltet' : `Vor ${fmtSecondsAgo(secondsAgo)} aktualisiert`}
+            {!priceStale && priceSource && (
+              <span className="ml-1 opacity-70">
+                · {priceSource === 'kraken' ? 'Kraken' : priceSource === 'coingecko' ? 'CoinGecko' : priceSource === 'fiat' ? 'Nennwert' : 'gemischt'}
+              </span>
+            )}
           </span>
 
           {/* Feedback message */}
@@ -188,7 +225,8 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, e
         <div className="rounded-lg border border-dashed border-border bg-card py-16 text-center">
           <p className="text-sm font-medium">Noch keine Crypto-Assets</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Füge dein erstes Asset hinzu und aktualisiere dann die Preise via CoinGecko.
+            Füge dein erstes Asset hinzu — die Kurse kommen dann automatisch von Kraken bzw.
+            CoinGecko.
           </p>
         </div>
       )}

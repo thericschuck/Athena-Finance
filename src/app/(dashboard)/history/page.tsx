@@ -49,7 +49,7 @@ function Td({ children, right, mono, dim, red }: {
       right ? 'text-right' : 'text-left',
       mono  ? 'tabular-nums' : '',
       dim   ? 'text-muted-foreground' : '',
-      red   ? 'text-red-600 dark:text-red-400' : '',
+      red   ? 'text-danger' : '',
     ].join(' ')}>
       {children}
     </td>
@@ -308,13 +308,13 @@ async function MonthlyTab({ supabase, uid, locale, page, from, to }: TabCtx) {
                   <span className="font-medium">{r.month}</span>
                 </Td>
                 <Td right mono>
-                  <span className="text-green-600 dark:text-green-400 font-medium">{fmtEur(r.total_income, locale)}</span>
+                  <span className="text-success font-medium">{fmtEur(r.total_income, locale)}</span>
                 </Td>
                 <Td right mono>
-                  <span className="text-red-600 dark:text-red-400">{fmtEur(r.total_expenses, locale)}</span>
+                  <span className="text-danger">{fmtEur(r.total_expenses, locale)}</span>
                 </Td>
                 <Td right mono>
-                  <span className={pos ? 'text-green-600 dark:text-green-400 font-semibold' : 'text-red-600 dark:text-red-400 font-semibold'}>
+                  <span className={pos ? 'text-success font-semibold' : 'text-danger font-semibold'}>
                     {pos ? '+' : ''}{fmtEur(r.net_balance, locale)}
                   </span>
                 </Td>
