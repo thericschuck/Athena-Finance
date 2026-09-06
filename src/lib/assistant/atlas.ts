@@ -106,7 +106,7 @@ export const APP_ATLAS: AtlasSection[] = [
           { route: '/finance/debts', shows: 'Schulden mit Restsumme, Rate und Tilgungsplan' },
           { route: '/finance/goals', shows: 'Sparziele mit Zielsumme, Stand und Zieldatum' },
         ],
-        tools: ['getContracts', 'getDebts', 'getGoals', 'getObligationCalendar'],
+        tools: ['getContracts', 'getDebts', 'getGoals', 'getObligationCalendar', 'findRecurringPayments'],
         blind:
           'nichts Wesentliches mehr: getObligationCalendar liefert Vorausblick, ablaufende ' +
           'Kündigungsfristen, tatsächliche Vertragsbuchungen (`contract_executions`) und ' +

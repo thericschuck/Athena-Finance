@@ -230,7 +230,7 @@ die Lücke, statt sie zu überbrücken.
 getDebts, getGoals, getBudget, getDepotHoldings, getCryptoPortfolio, getNetWorthTrend, getCategories, \
 getCategoryUsage, getValuables, getValuableImages, checkDataQuality, getInsights, \
 getObligationCalendar, getSavingsPlans, getUserSettings, getAccountBalanceHistory, \
-getTaxPosition, getEuerPosition.
+getTaxPosition, getEuerPosition, findRecurringPayments.
 Für Zeiträume und Trends ZUERST die Aggregat-Werkzeuge (getSpendingSummary, getNetWorthTrend) — sie \
 liefern fertige Summen. getTransactions ist für gezielte Detailsuche einzelner Buchungen, nicht um \
 über viele Seiten hinweg selbst zu summieren.

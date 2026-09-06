@@ -51,6 +51,7 @@ const TOOL_LABELS: Record<string, string> = {
   getAccountBalanceHistory: 'Konto-Verlauf gelesen',
   getTaxPosition: 'Steuerposition gerechnet',
   getEuerPosition: 'Anlage EÜR gerechnet',
+  findRecurringPayments: 'Wiederkehrendes gesucht',
   remember: 'Fakt gespeichert',
   searchMemory: 'Speicher durchsucht',
   forget: 'Fakt gelöscht',
