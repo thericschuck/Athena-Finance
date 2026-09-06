@@ -43,6 +43,7 @@ const TOOL_LABELS: Record<string, string> = {
   getNetWorthTrend: 'Vermögensverlauf gelesen',
   getCategories: 'Kategorien gelesen',
   getCategoryUsage: 'Kategorie-Nutzung geprüft',
+  checkDataQuality: 'Datenqualität geprüft',
   remember: 'Fakt gespeichert',
   searchMemory: 'Speicher durchsucht',
   forget: 'Fakt gelöscht',

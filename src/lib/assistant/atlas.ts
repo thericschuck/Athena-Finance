@@ -68,7 +68,7 @@ export const APP_ATLAS: AtlasSection[] = [
         shows:
           'Netto-Vermögen, Monatssaldo (Einnahmen minus Ausgaben im laufenden Monat), ' +
           'größte Ausgabenkategorien, offene Hinweise',
-        tools: ['getNetWorthTrend', 'getSpendingSummary', 'getAccounts'],
+        tools: ['getNetWorthTrend', 'getSpendingSummary', 'getAccounts', 'checkDataQuality'],
         blind:
           'die Hinweis-Karten selbst (Tabelle `insights`) — du kannst mit createInsight neue ' +
           'vorschlagen, aber die bestehenden nicht lesen',
@@ -84,10 +84,11 @@ export const APP_ATLAS: AtlasSection[] = [
         shows:
           'alle Konten mit aktuellem Saldo, der Bank-Sync (FinTS) und pro Konto eine Detailseite ' +
           'mit den Buchungen dieses Kontos',
-        tools: ['getAccounts', 'getTransactions'],
+        tools: ['getAccounts', 'getTransactions', 'checkDataQuality'],
         blind:
-          'die Saldo-Historie eines einzelnen Kontos (`account_balances`) und der Status des ' +
-          'letzten Bank-Syncs. Vermögensverlauf gesamt geht über getNetWorthTrend',
+          'die Saldo-Historie eines einzelnen Kontos (`account_balances`) als Verlauf. Wie frisch ' +
+          'der letzte Bank-Sync ist und ob App-Saldo und Bankstand auseinanderlaufen, sagt dir ' +
+          'checkDataQuality. Vermögensverlauf gesamt geht über getNetWorthTrend',
       },
       {
         route: '/finance/transactions',
