@@ -5,6 +5,7 @@ import {
   stepCountIs,
   smoothStream,
   convertToModelMessages,
+  type SystemModelMessage,
   type UIMessage,
   type ToolSet,
 } from 'ai'
@@ -74,8 +75,25 @@ export async function POST(request: NextRequest) {
   } = await supabase.auth.getUser()
   if (!user) return new Response('Unauthorized', { status: 401 })
 
-  const body = (await request.json()) as { messages?: UIMessage[]; conversationId?: string }
+  const body = (await request.json()) as {
+    messages?: UIMessage[]
+    conversationId?: string
+    /** Route, auf der Eric stand, als er die Nachricht abschickte. Kommt vom
+        Client mit JEDER Nachricht, nicht einmal pro Session — im schwebenden
+        Sheet navigiert er weiter, waehrend der Chat offen bleibt. Nur ein
+        Hinweis fuer den Prompt (siehe atlas.ts), nie ein Zugriffsrecht: welche
+        Daten Athena lesen darf, entscheiden allein RLS und der Werkzeuggürtel. */
+    route?: string
+  }
   const uiMessages = body.messages ?? []
+  // Auf einen Pfad eingegrenzt, bevor er in den Prompt geht: der Client ist
+  // vertrauenswuerdig, aber ein Freitextfeld aus dem Request im System-Prompt
+  // waere eine offene Tuer fuer Prompt-Injection. Alles, was nicht wie eine
+  // interne Route aussieht, fliegt raus — describeCurrentRoute laesst
+  // unbekannte Pfade ohnehin fallen.
+  const currentRoute = typeof body.route === 'string' && /^\/[A-Za-z0-9\-_/[\]]{0,120}$/.test(body.route)
+    ? body.route
+    : null
 
   const settings = await getAthenaSettings(supabase, user.id)
 
@@ -173,7 +191,7 @@ export async function POST(request: NextRequest) {
   const context = await loadAthenaContext(supabase, user.id, {
     memoryEnabled: settings.memoryEnabled,
   })
-  const system = buildAthenaSystemPrompt(context, settings)
+  const systemBlocks = buildAthenaSystemPrompt(context, settings, new Date(), currentRoute)
 
   const tools: ToolSet = {
     ...buildAthenaTools(supabase, user.id, {
@@ -187,6 +205,44 @@ export async function POST(request: NextRequest) {
   }
 
   const modelMessages = await convertToModelMessages(uiMessages)
+
+  /**
+   * Der System-Prompt als DREI Bloecke mit zwei Cache-Breakpoints.
+   *
+   * Anthropic cacht praefixweise: alles VOR einem Breakpoint wird beim ersten
+   * Aufruf einmal geschrieben (1,25x Eingabepreis) und danach nur noch gelesen
+   * (0,1x). Der grosse Gewinn liegt nicht zwischen zwei Nachrichten, sondern
+   * INNERHALB eines Laufs: ein agentischer Auftrag macht bis zu `maxSteps`
+   * API-Aufrufe, und jeder schickt den kompletten System-Prompt erneut mit.
+   *
+   * Warum drei statt zwei:
+   *  1. `core` — Regeln und Karte der App, fuer jeden Nutzer identisch, aendert
+   *     sich nur mit einem Deployment. Eigener Breakpoint, damit eine
+   *     Einstellungsaenderung diese ~4.000 Tokens NICHT entwertet.
+   *  2. `user` — Haltung, Konten, Kategorien, Speicher, Anweisungen. Innerhalb
+   *     einer Sitzung stabil, aendert sich beim Speichern der Einstellungen.
+   *     Eigener Breakpoint: ab der zweiten Nachricht danach wieder ein Treffer.
+   *  3. `volatile` — aktuelle Seite und Datum, ohne Breakpoint. Laege die Route
+   *     im gecachten Teil, wuerde jeder Navigationsklick den Praefix entwerten.
+   *
+   * Sie gehen ueber `instructions` (nicht `messages`): diese SDK-Version lehnt
+   * System-Nachrichten im Nachrichten-Array ab ("System messages are not
+   * allowed in the prompt or messages fields"). `instructions` nimmt ein Array
+   * von System-Nachrichten; der Anthropic-Provider macht daraus ein
+   * `system`-Array mit `cache_control` je Block (siehe @ai-sdk/anthropic,
+   * convertToAnthropicMessagesPrompt).
+   *
+   * Achtung bei kuenftigen Aenderungen: `tools` rendert VOR `system`. Wird der
+   * Werkzeugguertel pro Request unterschiedlich sortiert oder um ein
+   * zeitabhaengiges Feld ergaenzt, trifft kein Breakpoint. Kontrolle laeuft
+   * ueber cacheReadTokens im run.finish-Log.
+   */
+  const ephemeral = { anthropic: { cacheControl: { type: 'ephemeral' } } } as const
+  const instructions: SystemModelMessage[] = [
+    { role: 'system', content: systemBlocks.core, providerOptions: ephemeral },
+    { role: 'system', content: systemBlocks.user, providerOptions: ephemeral },
+    { role: 'system', content: systemBlocks.volatile },
+  ]
 
   await log({
     event: 'run.start',
@@ -203,7 +259,7 @@ export async function POST(request: NextRequest) {
 
   const result = streamText({
     model: anthropic(settings.model),
-    system,
+    instructions,
     messages: modelMessages,
     tools,
     // Die Leitplanke gegen außer Kontrolle geratene Werkzeugschleifen. Höher
@@ -294,6 +350,14 @@ export async function POST(request: NextRequest) {
           finishReason: final.finishReason,
           usage: final.totalUsage,
           model: settings.model,
+          // Eigene Felder statt nur `usage`: ob der Prompt-Cache greift, ist die
+          // einzige Zahl, an der man einen stillen Cache-Killer erkennt (ein
+          // zeitabhaengiges Feld im stabilen Block, umsortierte Werkzeuge).
+          // cacheRead = 0 bei einem MEHRSCHRITTIGEN Lauf heisst: der
+          // Breakpoint trifft nicht. Bei einem Ein-Schritt-Lauf ist 0 normal —
+          // dann wurde nur geschrieben.
+          cacheReadTokens: final.totalUsage.inputTokenDetails?.cacheReadTokens ?? 0,
+          cacheWriteTokens: final.totalUsage.inputTokenDetails?.cacheWriteTokens ?? 0,
         },
       })
 
@@ -345,7 +409,7 @@ async function titleConversation(
   try {
     const { text } = await generateText({
       model: anthropic(UTILITY_MODEL),
-      system: TITLE_SYSTEM_PROMPT,
+      instructions: TITLE_SYSTEM_PROMPT,
       prompt: firstUserMessage.slice(0, 1000),
       maxOutputTokens: 64,
     })

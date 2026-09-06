@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { BookOpen, Plus, Trash2, Pencil, Pin, PinOff, ExternalLink, Bot, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -186,21 +187,20 @@ export function KnowledgeManager({ entries }: { entries: KnowledgeRow[] }) {
                 >
                   <Pencil className="size-3" />
                 </Button>
-                <Button
-                  size="icon-xs"
-                  variant="ghost"
-                  aria-label="Löschen"
-                  disabled={isPending}
-                  onClick={() => {
-                    if (!confirm(`„${entry.title}" löschen?`)) return
+                <ConfirmDialog
+                  title="Eintrag löschen?"
+                  description={`„${entry.title}" wird aus der Wissensbasis entfernt. Athena kann ihn danach nicht mehr lesen.`}
+                  onConfirm={() =>
                     startTransition(async () => {
                       await deleteKnowledgeEntry(entry.id)
                       router.refresh()
                     })
-                  }}
+                  }
                 >
-                  <Trash2 className="size-3" />
-                </Button>
+                  <Button size="icon-xs" variant="ghost" aria-label="Löschen" disabled={isPending}>
+                    <Trash2 className="size-3" />
+                  </Button>
+                </ConfirmDialog>
               </div>
             </div>
 

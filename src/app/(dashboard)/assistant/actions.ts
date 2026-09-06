@@ -3,7 +3,14 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { runWriteAction, isWriteActionName } from '@/lib/assistant/actions'
-import { getAthenaSettings, type AthenaEffort } from '@/lib/assistant/settings'
+import {
+  ATHENA_PERSONAS,
+  ATHENA_TEXT_MAX,
+  getAthenaSettings,
+  type AthenaEffort,
+  type AthenaPersona,
+} from '@/lib/assistant/settings'
+import { PERSONA_TEMPLATES } from '@/lib/assistant/prompts'
 import { logAi } from '@/lib/assistant/logger'
 import {
   ladeSessionZustand,
@@ -396,6 +403,26 @@ export async function saveAthenaSettings(formData: FormData): Promise<ActionStat
     return { error: 'Schrittlimit muss zwischen 1 und 60 liegen' }
   if (!Number.isFinite(dailyCap) || dailyCap < 1) return { error: 'Tageslimit muss größer als 0 sein' }
 
+  // Gegen die Liste pruefen, nicht blind durchschreiben: die Spalte hat eine
+  // CHECK-Beschraenkung, ein unbekannter Wert wuerde sonst als roher
+  // Postgres-Fehler im Formular landen statt als lesbare Meldung.
+  const persona = formData.get('persona') as string
+  if (!ATHENA_PERSONAS.some(p => p.id === persona)) return { error: 'Unbekannte Persönlichkeit' }
+
+  const personaTextRaw = ((formData.get('persona_text') as string) ?? '').trim()
+  const instructionsRaw = ((formData.get('custom_instructions') as string) ?? '').trim()
+  if (personaTextRaw.length > ATHENA_TEXT_MAX)
+    return { error: `Persönlichkeit ist zu lang (${personaTextRaw.length} von ${ATHENA_TEXT_MAX} Zeichen)` }
+  if (instructionsRaw.length > ATHENA_TEXT_MAX)
+    return { error: `Anweisungen sind zu lang (${instructionsRaw.length} von ${ATHENA_TEXT_MAX} Zeichen)` }
+
+  // Stimmt der Text bis aufs Zeichen mit der Vorlage ueberein, speichern wir
+  // NULL statt einer Kopie: dann bleibt Eric an die Vorlage gebunden und
+  // bekommt spaetere Verbesserungen daran automatisch mit. Eine identische
+  // Kopie in der Datenbank waere ab dem Speichern eingefroren.
+  const vorlage = PERSONA_TEMPLATES[persona as AthenaPersona] ?? ''
+  const personaText = !personaTextRaw || personaTextRaw === vorlage.trim() ? null : personaTextRaw
+
   const { error } = await ctx.supabase.from('ai_settings').upsert(
     {
       user_id: ctx.user.id,
@@ -406,7 +433,9 @@ export async function saveAthenaSettings(formData: FormData): Promise<ActionStat
       auto_memory: formData.get('auto_memory') === 'on',
       max_steps: maxSteps,
       daily_message_cap: dailyCap,
-      custom_instructions: ((formData.get('custom_instructions') as string) ?? '').trim() || null,
+      persona,
+      persona_text: personaText,
+      custom_instructions: instructionsRaw || null,
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'user_id' },
@@ -443,6 +472,8 @@ export async function updateAthenaModelEffort(
       auto_memory: current.autoMemory,
       max_steps: current.maxSteps,
       daily_message_cap: current.dailyMessageCap,
+      persona: current.persona,
+      persona_text: current.personaText,
       custom_instructions: current.customInstructions,
       updated_at: new Date().toISOString(),
     },

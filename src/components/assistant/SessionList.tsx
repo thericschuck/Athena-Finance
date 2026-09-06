@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { MessageSquare, Pin, PinOff, Plus, Trash2, Pencil, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import {
@@ -135,23 +136,22 @@ export function SessionList({
                 >
                   <Pencil className="size-3" />
                 </Button>
-                <Button
-                  size="icon-xs"
-                  variant="ghost"
-                  aria-label="Löschen"
-                  disabled={isPending}
-                  onClick={() => {
-                    if (!confirm('Diese Session mitsamt Nachrichten löschen?')) return
+                <ConfirmDialog
+                  title="Session löschen?"
+                  description={`„${session.title ?? 'Ohne Titel'}" wird mitsamt allen Nachrichten und Vorschlägen daraus entfernt. Das lässt sich nicht zurückholen.`}
+                  onConfirm={() =>
                     startTransition(async () => {
                       await deleteConversation(session.id)
                       // Beim Löschen der offenen Session zurück auf einen leeren Chat.
                       if (isActive) router.push('/assistant')
                       else router.refresh()
                     })
-                  }}
+                  }
                 >
-                  <Trash2 className="size-3" />
-                </Button>
+                  <Button size="icon-xs" variant="ghost" aria-label="Löschen" disabled={isPending}>
+                    <Trash2 className="size-3" />
+                  </Button>
+                </ConfirmDialog>
               </div>
             </div>
           )

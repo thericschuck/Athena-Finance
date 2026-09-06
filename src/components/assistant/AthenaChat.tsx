@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { Chat, useChat } from '@ai-sdk/react'
 import {
   DefaultChatTransport,
@@ -10,7 +11,7 @@ import {
   getToolName,
   type UIMessage,
 } from 'ai'
-import { Brain, Check, ChevronDown, Globe, Loader2, Send, Square, Wrench } from 'lucide-react'
+import { Brain, Check, ChevronDown, ChevronUp, Globe, Loader2, Send, Square, Wrench } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -269,6 +270,27 @@ function shortEffortLabel(effort: AthenaEffort): string {
   return ATHENA_EFFORT_OPTIONS.find((o) => o.value === effort)?.label.split(' — ')[0] ?? effort
 }
 
+/**
+ * Farbe eines Pegel-Balkens: Verlauf von `--success` (gruen) nach `--danger`
+ * (rot) ueber die fuenf Stufen — die Denktiefe ist ein Kosten-Regler, und ein
+ * einheitliches Gruen hat "Maximal" genauso harmlos aussehen lassen wie
+ * "Niedrig".
+ *
+ * `color-mix` mit den THEME-TOKENS statt fester Hex-Werte: jedes Preset bringt
+ * eigene Gruen- und Rottoene mit (Athena z. B. Oliv #8CA277 und Terrakotta
+ * #BE6348 statt Signalgruen und Signalrot), und die Rampe uebernimmt sie
+ * automatisch.
+ *
+ * Interpoliert in `oklch`, nicht in `oklab` oder `srgb`: oklch nimmt den kurzen
+ * Weg ueber den Farbkreis, und der fuehrt von Gruen nach Rot durch Gelb und
+ * Orange. Das ist genau die gewuenschte Ampel-Rampe. In oklab/srgb liefe der
+ * Weg quer durch die Mitte und die mittleren Stufen wuerden schlammig grau.
+ */
+function effortTone(index: number, total: number): string {
+  const anteil = total > 1 ? Math.round((index / (total - 1)) * 100) : 0
+  return `color-mix(in oklch, var(--danger) ${anteil}%, var(--success))`
+}
+
 /** Denktiefe als Pegel statt als Zahl: fünf ansteigende Balken, gefüllt bis zur
     gewählten Stufe. Im Auslöser ersetzt das eine zweite Textzeile, im Popover
     zeigt es dieselbe Skala noch einmal groß. */
@@ -278,11 +300,11 @@ function EffortMeter({ level, className }: { level: number; className?: string }
       {ATHENA_EFFORT_OPTIONS.map((o, i) => (
         <span
           key={o.value}
-          className={cn(
-            'w-[3px] rounded-full transition-colors',
-            i <= level ? 'bg-primary' : 'bg-border',
-          )}
-          style={{ height: 4 + i * 2 }}
+          className={cn('w-[3px] rounded-full transition-colors', i > level && 'bg-border')}
+          style={{
+            height: 4 + i * 2,
+            background: i <= level ? effortTone(i, ATHENA_EFFORT_OPTIONS.length) : undefined,
+          }}
         />
       ))}
     </span>
@@ -305,6 +327,17 @@ function EffortMeter({ level, className }: { level: number; className?: string }
 function ModelEffortPicker() {
   const { model, effort, setModel, setEffort } = useAthenaChatSettings()
   const effortIndex = ATHENA_EFFORT_OPTIONS.findIndex((o) => o.value === effort)
+
+  /**
+   * Eine Stufe weiter, am Ende zurueck auf die niedrigste. Die Balken bleiben
+   * der Weg, um eine Stufe DIREKT zu treffen; das hier ist der schnelle Weg
+   * fuer "eine Stufe mehr", ohne das richtige von fuenf 1,5-px-Zielen zu
+   * suchen. Mit Umlauf statt Anschlag, damit der Knopf nie tot ist.
+   */
+  function naechsteStufe() {
+    const next = ATHENA_EFFORT_OPTIONS[(effortIndex + 1) % ATHENA_EFFORT_OPTIONS.length]
+    setEffort(next.value)
+  }
 
   return (
     <Popover>
@@ -352,7 +385,17 @@ function ModelEffortPicker() {
             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
               Denktiefe
             </p>
-            <p className="text-xs font-medium text-foreground">{shortEffortLabel(effort)}</p>
+            {/* Der Wert selbst ist der Weiterschalter — beschriftet ueber
+                aria-label, weil im Text nur die aktuelle Stufe steht. */}
+            <button
+              type="button"
+              onClick={naechsteStufe}
+              aria-label={`Denktiefe ${shortEffortLabel(effort)} — eine Stufe weiter`}
+              className="flex items-center gap-1 rounded px-1 text-xs font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              {shortEffortLabel(effort)}
+              <ChevronUp className="size-3 opacity-60" />
+            </button>
           </div>
 
           {/* Die Balken sind die Schaltflächen selbst. Die Klickfläche ist
@@ -372,8 +415,12 @@ function ModelEffortPicker() {
                 <span
                   className={cn(
                     'block h-1.5 w-full rounded-full transition-colors',
-                    i <= effortIndex ? 'bg-primary' : 'bg-border group-hover:bg-muted-foreground/40',
+                    i > effortIndex && 'bg-border group-hover:bg-muted-foreground/40',
                   )}
+                  style={{
+                    background:
+                      i <= effortIndex ? effortTone(i, ATHENA_EFFORT_OPTIONS.length) : undefined,
+                  }}
                 />
               </button>
             ))}
@@ -446,6 +493,15 @@ export function AthenaChat({
   const { messages, sendMessage, status, error, stop } = useChat({ chat: instanz })
   const [input, setInput] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
+  // Die Seite, von der aus gefragt wird, geht als Kontext mit (siehe
+  // atlas.ts: describeCurrentRoute). Pro NACHRICHT, nicht pro Session — das
+  // schwebende Sheet bleibt beim Navigieren offen, die Route darunter wechselt.
+  const pathname = usePathname()
+
+  /** Eine Nachricht abschicken, immer mit der aktuellen Route im Gepaeck. */
+  function frage(text: string) {
+    sendMessage({ text }, { body: { route: pathname } })
+  }
 
   // Nur auf die ANZAHL der Nachrichten hören, nicht auf ihren Inhalt: bei
   // `[messages]` feuert der Effekt bei jedem gestreamten Wort und startet die
@@ -461,7 +517,7 @@ export function AthenaChat({
   function submit() {
     const text = input.trim()
     if (!text || busy) return
-    sendMessage({ text })
+    frage(text)
     setInput('')
   }
 
@@ -471,7 +527,7 @@ export function AthenaChat({
 
       <ScrollArea className="min-h-0 flex-1">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-4">
-          {messages.length === 0 && <EmptyState onPick={(q) => sendMessage({ text: q })} />}
+          {messages.length === 0 && <EmptyState onPick={frage} />}
 
           {messages.map((message, index) => {
             const isLast = index === messages.length - 1

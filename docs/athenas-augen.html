@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Athenas Augen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,600&family=Libre+Franklin:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+  /* ── Tokens ──────────────────────────────────────────────────────────────
+     Geerdet im Athena-Theme der App selbst: Gold (--af-gold-ink #8A6A2F),
+     Oliv (--success #5F7152 / #8CA277). Neutrale mit leichtem Oliv-Stich,
+     damit sie zum Gold gehoeren statt daneben zu liegen.
+     Vollstaendige Hell-Palette auf blankem :root, Dunkel nur als
+     Token-Ueberschreibung — nie eine Farbe, die es nur im Media-Query gibt. */
+  :root {
+    --ground:      #F6F5F1;
+    --surface:     #FFFFFF;
+    --surface-alt: #EFEEE7;
+    --ink:         #1B1D19;
+    --ink-soft:    #4A4D45;
+    --ink-mute:    #74776C;
+    --rule:        #E0DED5;
+    --rule-strong: #C9C6B9;
+    --gold:        #8A6A2F;
+    --gold-soft:   #B88F51;
+    --gold-wash:   #F1EADC;
+    --olive:       #55684A;
+    --olive-wash:  #E7ECE1;
+    --rust:        #9B4127;
+    --rust-wash:   #F6E7E1;
+    --amber:       #7A5A1E;
+    --amber-wash:  #F4EBD6;
+
+    --measure: 65ch;
+    --wide: 1000px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #14150F;
+      --surface:     #1B1D15;
+      --surface-alt: #22241B;
+      --ink:         #EDEBE0;
+      --ink-soft:    #C2C0B3;
+      --ink-mute:    #919384;
+      --rule:        #2C2E23;
+      --rule-strong: #414435;
+      --gold:        #CDA664;
+      --gold-soft:   #B88F51;
+      --gold-wash:   #241F13;
+      --olive:       #8CA277;
+      --olive-wash:  #1D2318;
+      --rust:        #D5836A;
+      --rust-wash:   #2A1A14;
+      --amber:       #D2B274;
+      --amber-wash:  #262014;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:      #14150F;
+    --surface:     #1B1D15;
+    --surface-alt: #22241B;
+    --ink:         #EDEBE0;
+    --ink-soft:    #C2C0B3;
+    --ink-mute:    #919384;
+    --rule:        #2C2E23;
+    --rule-strong: #414435;
+    --gold:        #CDA664;
+    --gold-soft:   #B88F51;
+    --gold-wash:   #241F13;
+    --olive:       #8CA277;
+    --olive-wash:  #1D2318;
+    --rust:        #D5836A;
+    --rust-wash:   #2A1A14;
+    --amber:       #D2B274;
+    --amber-wash:  #262014;
+  }
+
+  /* ── Grund ─────────────────────────────────────────────────────────────── */
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Libre Franklin", "Helvetica Neue", Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    padding: 0 24px 120px;
+  }
+
+  .page { max-width: var(--wide); margin: 0 auto; }
+  .col  { max-width: var(--measure); }
+
+  /* ── Kopf ──────────────────────────────────────────────────────────────── */
+  header.masthead {
+    padding: 96px 0 56px;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+  .eyebrow {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  h1 {
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-size: clamp(44px, 8vw, 78px);
+    line-height: 1.02;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    margin: 0;
+  }
+  .standfirst {
+    font-size: 20px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    max-width: 58ch;
+  }
+  .standfirst strong { color: var(--ink); font-weight: 600; }
+
+  /* Kennzahlen-Reihe im Kopf */
+  .figures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-top: 8px;
+  }
+  .figure { background: var(--surface); padding: 18px 20px; }
+  .figure b {
+    display: block;
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-size: 34px;
+    font-weight: 400;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 8px;
+  }
+  .figure span {
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--ink-mute);
+    display: block;
+  }
+  .figure.is-blind b { color: var(--rust); }
+  .figure.is-seen  b { color: var(--olive); }
+
+  /* ── Abschnitte ────────────────────────────────────────────────────────── */
+  section { padding: 72px 0 0; }
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    margin-bottom: 8px;
+  }
+  .numeral {
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-size: 15px;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    flex: 0 0 auto;
+    padding-top: 2px;
+  }
+  h2 {
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-weight: 400;
+    font-size: clamp(28px, 4vw, 40px);
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0;
+  }
+  .sec-sub {
+    color: var(--ink-mute);
+    font-size: 15px;
+    margin: 0 0 32px 33px;
+    max-width: 56ch;
+  }
+  h3 {
+    font-family: "Libre Franklin", sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    margin: 40px 0 10px;
+  }
+  h3 .h3-mark {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    color: var(--gold);
+    margin-right: 10px;
+    font-weight: 400;
+  }
+  p { margin: 0 0 18px; max-width: var(--measure); }
+  p.wide { max-width: 78ch; }
+  a { color: var(--gold); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:focus-visible, [tabindex]:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
+  }
+  strong { font-weight: 600; }
+  code {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.86em;
+    background: var(--surface-alt);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 1px 5px;
+    white-space: nowrap;
+  }
+
+  ul.plain { margin: 0 0 20px; padding-left: 20px; max-width: var(--measure); }
+  ul.plain li { margin-bottom: 9px; }
+  ul.plain li::marker { color: var(--gold-soft); }
+
+  /* ── Deckungs-Matrix ───────────────────────────────────────────────────── */
+  .scroller { overflow-x: auto; margin: 0 0 24px; border: 1px solid var(--rule); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 14.5px; }
+  thead th {
+    text-align: left;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    font-weight: 400;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rule-strong);
+    background: var(--surface-alt);
+    white-space: nowrap;
+  }
+  tbody td { padding: 13px 16px; border-bottom: 1px solid var(--rule); vertical-align: top; line-height: 1.45; }
+  tbody tr:last-child td { border-bottom: none; }
+  td.area { font-weight: 500; white-space: nowrap; }
+  td.area em {
+    display: block;
+    font-family: "JetBrains Mono", monospace;
+    font-style: normal;
+    font-size: 11.5px;
+    color: var(--ink-mute);
+    margin-top: 3px;
+  }
+  td.gap { color: var(--ink-soft); min-width: 300px; }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 4px 9px 4px 8px;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  .chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+  .chip.seen  { color: var(--olive); background: var(--olive-wash); }
+  .chip.seen::before  { background: var(--olive); }
+  .chip.part  { color: var(--amber); background: var(--amber-wash); }
+  .chip.part::before  { background: var(--amber); border-radius: 50% 50% 0 0; transform: rotate(-45deg); }
+  .chip.blind { color: var(--rust); background: var(--rust-wash); }
+  .chip.blind::before { background: transparent; border: 1.5px solid var(--rust); }
+
+  /* ── Schichten-Diagramm ────────────────────────────────────────────────── */
+  .layers { display: grid; gap: 14px; margin: 8px 0 28px; max-width: 860px; }
+  .layer {
+    display: grid;
+    grid-template-columns: 92px 1fr;
+    border: 1px solid var(--rule-strong);
+    background: var(--surface);
+  }
+  .layer-tag {
+    background: var(--surface-alt);
+    border-right: 1px solid var(--rule-strong);
+    padding: 16px 14px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .layer-tag b {
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-size: 24px;
+    font-weight: 400;
+    letter-spacing: 0;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .layer-body { padding: 16px 18px; }
+  .layer-body h4 { margin: 0 0 6px; font-size: 16px; font-weight: 600; }
+  .layer-body p { margin: 0; font-size: 14.5px; color: var(--ink-soft); max-width: 62ch; }
+  .layer-body .cost {
+    margin-top: 10px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11.5px;
+    color: var(--gold);
+  }
+  .layer.is-built { border-color: var(--gold-soft); }
+  .layer.is-built .layer-tag { background: var(--gold-wash); border-right-color: var(--gold-soft); }
+
+  /* ── Merksatz ──────────────────────────────────────────────────────────── */
+  .rule-box {
+    border-left: 2px solid var(--gold);
+    padding: 4px 0 4px 22px;
+    margin: 28px 0;
+    max-width: 62ch;
+  }
+  .rule-box p {
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-size: 22px;
+    line-height: 1.4;
+    margin: 0;
+  }
+  .rule-box cite {
+    display: block;
+    margin-top: 10px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    font-style: normal;
+  }
+
+  /* ── Prompt-Auszug ─────────────────────────────────────────────────────── */
+  .prompt {
+    background: var(--surface);
+    border: 1px solid var(--rule-strong);
+    border-top: 2px solid var(--gold);
+    padding: 22px 24px;
+    margin: 0 0 26px;
+    max-width: 860px;
+  }
+  .prompt-label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 14px;
+  }
+  .prompt p { font-size: 15.5px; max-width: 66ch; }
+  .prompt p:last-child { margin-bottom: 0; }
+  .prompt em { color: var(--gold); font-style: italic; }
+
+  /* ── Kartenpaare ───────────────────────────────────────────────────────── */
+  .duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 0 0 26px; }
+  .card { border: 1px solid var(--rule); background: var(--surface); padding: 20px; }
+  .card h4 {
+    margin: 0 0 8px;
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .card h4 .dot { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; }
+  .card.pro h4 .dot { background: var(--olive); }
+  .card.con h4 .dot { background: var(--rust); }
+  .card p { font-size: 14.5px; margin: 0; color: var(--ink-soft); max-width: none; }
+  .card ul { margin: 0; padding-left: 18px; font-size: 14.5px; color: var(--ink-soft); }
+  .card ul li { margin-bottom: 7px; }
+
+  /* ── Reihenfolge / Schritte ────────────────────────────────────────────── */
+  .steps { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); max-width: 900px; }
+  .step { background: var(--surface); display: grid; grid-template-columns: 56px 1fr auto; gap: 18px; padding: 18px 20px; align-items: start; }
+  .step-n {
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-size: 26px;
+    line-height: 1;
+    color: var(--gold);
+    font-variant-numeric: tabular-nums;
+  }
+  .step-body h4 { margin: 0 0 5px; font-size: 15.5px; font-weight: 600; }
+  .step-body p { margin: 0; font-size: 14.5px; color: var(--ink-soft); max-width: 60ch; }
+  .step-meta {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    text-align: right;
+    white-space: nowrap;
+    padding-top: 4px;
+  }
+  .step.is-done .step-n { color: var(--olive); }
+  .step.is-done .step-meta { color: var(--olive); }
+
+  footer {
+    margin-top: 88px;
+    padding-top: 28px;
+    border-top: 1px solid var(--rule);
+    font-size: 13.5px;
+    color: var(--ink-mute);
+    max-width: 66ch;
+  }
+
+  @media (max-width: 620px) {
+    body { padding: 0 18px 80px; font-size: 16px; }
+    header.masthead { padding: 60px 0 40px; }
+    .step { grid-template-columns: 40px 1fr; }
+    .step-meta { grid-column: 2; text-align: left; padding-top: 8px; }
+    .layer { grid-template-columns: 1fr; }
+    .layer-tag { border-right: none; border-bottom: 1px solid var(--rule-strong); flex-direction: row; align-items: center; gap: 10px; }
+  }
+</style>
+
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <div class="eyebrow">athena-finance · Architektur-Notiz · 2. September 2026</div>
+    <h1>Athenas Augen</h1>
+    <p class="standfirst">
+      Athena hat einen guten Werkzeuggürtel und <strong>kein Bild von der App, in der sie sitzt</strong>.
+      Was ihr fehlt, ist kein Vektorindex — es ist eine Karte, ein Dutzend Werkzeuge
+      und eine Einnahmenseite, die es im Datenmodell noch gar nicht gibt.
+    </p>
+    <div class="figures">
+      <div class="figure is-seen"><b>20</b><span>Tabellen, die sie liest oder beschreibt</span></div>
+      <div class="figure is-blind"><b>43</b><span>Tabellen ohne jeden Zugriff</span></div>
+      <div class="figure"><b>30</b><span>davon mit echtem Fachinhalt, nicht Infrastruktur</span></div>
+      <div class="figure is-blind"><b>2</b><span>Bereiche komplett blind: Strategie, Einstellungen</span></div>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-head"><span class="numeral">I</span><h2>Was heute schon drin ist</h2></div>
+    <p class="sec-sub">Die Karte und der Seiten-Kontext sind gebaut und laufen — der Rest dieses Dokuments ist Vorschlag.</p>
+
+    <p>Zwei Dinge waren unabhängig von jeder späteren Architekturentscheidung nötig, deshalb habe ich sie direkt umgesetzt:</p>
+
+    <h3><span class="h3-mark">01</span>Die Karte der App</h3>
+    <p><code>src/lib/assistant/atlas.ts</code> ist jetzt die einzige Quelle dafür, wie die App aufgebaut ist:
+      pro Bereich die Route, was auf der Seite steht, welche Werkzeuge dazugehören — und, das Wichtigste,
+      <strong>was Athena dort nicht sehen kann</strong>. Der Block geht als
+      Inhaltsverzeichnis in jeden System-Prompt.</p>
+    <p>Kosten: rund <strong>1.500 Tokens</strong>, konstant. Er steht direkt hinter dem
+      unveränderlichen Kern und noch vor allem Nutzerabhängigen, liegt damit im Prompt-Cache
+      und kostet ab der zweiten Nachricht praktisch nichts.</p>
+
+    <h3><span class="h3-mark">02</span>Die Seite, von der aus gefragt wird</h3>
+    <p>Der Chat schickt mit jeder Nachricht die aktuelle Route mit — pro Nachricht, nicht pro Session,
+      weil das schwebende Sheet beim Navigieren offen bleibt. Damit lösen sich Fragen auf,
+      die vorher nicht beantwortbar waren: „was ist das hier für eine Zahl", „sieht das richtig aus?",
+      „erklär mir das". Der Wert wird serverseitig auf ein Pfadmuster eingegrenzt, bevor er in den
+      Prompt geht — ein Freitextfeld aus dem Request im System-Prompt wäre eine offene Tür.</p>
+
+    <div class="rule-box">
+      <p>Die Route ist ein Hinweis, kein Zugriffsrecht. Was Athena lesen darf, entscheiden
+        weiterhin nur RLS und der Werkzeuggürtel.</p>
+      <cite>Kommentar in api/assistant/route.ts</cite>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="numeral">II</span><h2>Wo sie blind ist</h2></div>
+    <p class="sec-sub">Domäne für Domäne, gemessen an den Tabellen, die ihre Werkzeuge tatsächlich anfassen.</p>
+
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Bereich</th><th>Deckung</th><th>Was fehlt</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="area">Transaktionen<em>/finance/transactions</em></td>
+            <td><span class="chip seen">vollständig</span></td>
+            <td class="gap">—</td>
+          </tr>
+          <tr>
+            <td class="area">Budget<em>/finance/budget</em></td>
+            <td><span class="chip seen">vollständig</span></td>
+            <td class="gap">—</td>
+          </tr>
+          <tr>
+            <td class="area">Konten<em>/finance/accounts</em></td>
+            <td><span class="chip part">teilweise</span></td>
+            <td class="gap">Saldo-Historie je Konto (<code>account_balances</code>), Status des letzten Bank-Syncs</td>
+          </tr>
+          <tr>
+            <td class="area">Planung<em>/finance/contracts</em></td>
+            <td><span class="chip part">teilweise</span></td>
+            <td class="gap">Die ganze Historie: <code>contract_executions</code>, <code>debt_payments</code>. Sie sieht Stände, keine Verläufe — und damit auch keine fälligen Kündigungsfristen im Zeitfenster</td>
+          </tr>
+          <tr>
+            <td class="area">Dashboard<em>/dashboard</em></td>
+            <td><span class="chip part">teilweise</span></td>
+            <td class="gap"><code>insights</code> lesend. Sie darf neue Hinweise vorschlagen, kennt die bestehenden aber nicht — also auch keine Duplikate</td>
+          </tr>
+          <tr>
+            <td class="area">Depot<em>/depot</em></td>
+            <td><span class="chip part">teilweise</span></td>
+            <td class="gap"><code>depot_transactions</code>, <code>savings_plans</code>, <code>fund_prices</code>. Der monatliche Fonds-Sparplan läuft per Cron und ist für sie unsichtbar</td>
+          </tr>
+          <tr>
+            <td class="area">Krypto<em>/crypto</em></td>
+            <td><span class="chip part">teilweise</span></td>
+            <td class="gap">Rebalancing-Zielgewichte, Kraken-Verbindungsstatus, <code>positions</code>, <code>trade_fills</code></td>
+          </tr>
+          <tr>
+            <td class="area">Analyse<em>/analyse</em></td>
+            <td><span class="chip part">teilweise</span></td>
+            <td class="gap">Die Bank-Rohdaten als eigene Quelle (<code>bank_balance</code>, <code>fints_client_state</code>). Abweichungen Bank ↔ App kann sie nicht finden</td>
+          </tr>
+          <tr>
+            <td class="area">Inventar<em>/inventar</em></td>
+            <td><span class="chip part">teilweise</span></td>
+            <td class="gap"><code>valuable_valuations</code> — der Wertverlauf eines Stücks, nicht nur der aktuelle Schätzwert</td>
+          </tr>
+          <tr>
+            <td class="area">Strategie<em>/strategy/*</em></td>
+            <td><span class="chip blind">blind</span></td>
+            <td class="gap"><strong>15 Tabellen, kein einziges Werkzeug.</strong> Indikatoren, TPI-Scoring, Kombinationen, Strategien, Robustheitstests, offene Positionen. Der gesamte Investing-Kopf ist für sie nicht vorhanden</td>
+          </tr>
+          <tr>
+            <td class="area">Einstellungen<em>/settings</em></td>
+            <td><span class="chip blind">blind</span></td>
+            <td class="gap"><code>user_settings</code>. Besonders teuer: der Default-Kontenfilter der Analyse. Eine Auswertung dort kann von Athenas Zahl abweichen, ohne dass eine falsch ist — und keiner von beiden weiß warum</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="wide">Von den 43 Tabellen ohne Zugriff sind rund 13 zu Recht dabei: Preis-Caches,
+      Webhook-Events, verschlüsselte Exchange-Keys, ihre eigenen Logs. Die anderen 30 sind Fachinhalt.</p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="numeral">III</span><h2>Nicht RAG. Drei Schichten.</h2></div>
+    <p class="sec-sub">Die Architekturentscheidung, die alles Weitere bestimmt — und der Grund, warum ein Vektorindex hier die falsche Antwort wäre.</p>
+
+    <p class="wide">„Athena Zugriff auf jede Seite geben" klingt nach einem Index über die App.
+      Das ist der Punkt, an dem ich widerspreche: <strong>Seiten sind Ansichten auf die Datenbank.</strong>
+      Sie muss keine Seiten lesen — sie muss wissen, dass es sie gibt, und die Daten dahinter
+      exakt abfragen können. Das sind zwei verschiedene Probleme mit zwei verschiedenen Lösungen.</p>
+
+    <div class="layers">
+      <div class="layer is-built">
+        <div class="layer-tag"><b>1</b><span>gebaut</span></div>
+        <div class="layer-body">
+          <h4>Struktur → komplett in den Prompt</h4>
+          <p>Die Karte. Klein, stabil, für jeden Nutzer identisch. Sie über Retrieval zu holen
+            würde bedeuten, dass Athena erst suchen muss, um zu erfahren, was es zu suchen gibt —
+            genau der Zirkel, an dem semantische Suche über Struktur immer scheitert.</p>
+          <div class="cost">1.500 Tokens, gecacht</div>
+        </div>
+      </div>
+      <div class="layer">
+        <div class="layer-tag"><b>2</b><span>zu bauen</span></div>
+        <div class="layer-body">
+          <h4>Zahlen → ausschließlich Werkzeuge, Aggregat zuerst</h4>
+          <p>Niemals Embeddings. Semantische Suche liefert eine <em>plausible Teilmenge</em>;
+            eine Summe über eine Teilmenge ist falsch, und das Modell kann es nicht merken.
+            Die bestehende Regel „erst Aggregat, dann Zeilen" plus <code>ROW_CAP</code> ist genau richtig
+            und muss für jedes neue Werkzeug gelten.</p>
+          <div class="cost">~12 neue Werkzeuge, +40 Tokens Schema je Stück</div>
+        </div>
+      </div>
+      <div class="layer">
+        <div class="layer-tag"><b>3</b><span>später</span></div>
+        <div class="layer-body">
+          <h4>Text → Retrieval, und nur hier</h4>
+          <p>Wissensbasis, Vertragsdokumente, das Investing-Wissen aus dem Vault. Der einzige
+            Ort, an dem Retrieval fachlich richtig ist. Aktuell deutsche Volltextsuche
+            (<code>websearch_to_tsquery</code>) — das trägt weit. pgvector erst, wenn belegt ist,
+            dass FTS Umschreibungen verfehlt, und dann als zweiter Retriever, nicht als Ersatz.</p>
+          <div class="cost">Index bleibt außerhalb des Prompts</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Ein Graph? Nein.</h3>
+    <p class="wide">Ein Finanz-Wissensgraph über Konten → Buchungen → Kategorien → Verträge wäre eine
+      Neuimplementierung der relationalen Datenbank, die es schon gibt, mit schwächeren Garantien.
+      Der Graph in <code>graphify-out/</code> ist ein Werkzeug für mich beim Arbeiten am Code,
+      nicht für Athena beim Arbeiten an Erics Geld. Nicht verwechseln.</p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="numeral">IV</span><h2>Genauer als jeder Berater</h2></div>
+    <p class="sec-sub">Sechs Mechanismen. Der Vorteil gegenüber einem Menschen ist nicht Klugheit, sondern Frequenz und Vollständigkeit — beides muss man aber bauen.</p>
+
+    <h3><span class="h3-mark">01</span>Erst die Vertrauensschicht, dann alles andere</h3>
+    <p>Das ist Erics eigene Nr. 1, und sie ist eine Vorbedingung, kein Feature: für August 2026 steht
+      <code>total_checking = 0</code>, obwohl die Buchungen ~4.348 € ergeben. Ein Berater, der eine
+      Vermögenszahl nennt, die um 4.348 € falsch ist, ist schlimmer als keiner —
+      <strong>und mehr Augen auf kaputte Daten machen ihn nur zuversichtlicher falsch.</strong></p>
+    <p>Als Werkzeug: <code>checkDataQuality</code> — Snapshot gegen Buchungssumme, Konten ohne Sync seit
+      N Tagen, Anteil unkategorisierter Buchungen, Differenz Bank ↔ App. Als Prompt-Regel: keine
+      Vermögens- oder Verlaufszahl ohne vorherige Plausibilitätsprüfung, und wenn sie nicht aufgeht,
+      steht das <em>vor</em> der Zahl, nicht in einer Fußnote.</p>
+
+    <h3><span class="h3-mark">02</span>Eine Steuer-Engine statt eines Steuer-Prozentsatzes</h3>
+    <p>Heute ist <code>income_targets.tax_pct</code> eine Zahl. Ein Grenzsteuersatz ist eine Funktion —
+      und Eric hat zwei Einkommensarten: Lohn bei Schera und selbständigen Gewinn aus Schuck Webdesign.
+      Ab 2027 trifft sein Grenzsteuersatz jeden Euro Sidehustle-Gewinn.</p>
+    <p>Ein <code>getTaxPosition(jahr)</code> müsste liefern: Gewinn je Quelle, Abstand zur
+      Kleinunternehmergrenze (22.000 € Vorjahr / 50.000 € laufend), Grenzsteuersatz auf den nächsten
+      Euro, bereits gebildete Rücklage. Der Satz, den kein Berater ungefragt zwölfmal im Jahr sagt:</p>
+    <div class="rule-box">
+      <p>Der 1.000-€-Auftrag lässt dir 623 € — die 377 € gehören auf die Rücklage,
+        und die steht heute bei 1.240 € von 2.900 € soll.</p>
+      <cite>Zielbild für getTaxPosition + Rücklage-Tracker</cite>
+    </div>
+
+    <h3><span class="h3-mark">03</span>Grenzbetrachtung statt Kontostand</h3>
+    <p>„Kann ich mir X leisten" wird heute am Saldo beantwortet. Richtig sind drei Zahlen:
+      Runway in Monaten nach dem Kauf, Effekt auf die Fixkostenquote, und der Preis in
+      Arbeitsstunden zum aktuellen effektiven Stundensatz. Die dritte ist die, die weh tut —
+      und die einzige, die die Entscheidung wirklich verändert.</p>
+
+    <h3><span class="h3-mark">04</span>Der Verpflichtungs-Kalender</h3>
+    <p>Aus <code>billing_day</code>, <code>notice_days</code>, <code>end_date</code> und
+      <code>contract_executions</code> ergibt sich, was in den nächsten 90 Tagen fällig wird und
+      welche Kündigungsfrist gerade abläuft. Das ist reine Buchhaltung, kein Modellkönnen — und
+      genau deshalb ist es der Bereich, in dem eine Maschine einen Menschen sicher schlägt.
+      Athena sieht davon heute nichts.</p>
+
+    <h3><span class="h3-mark">05</span>Erkennen statt erinnern</h3>
+    <p>Erics Roadmap-Punkt 4: eine neue wiederkehrende Zahlung in den Buchungen erkannt ⇒ automatisch
+      ein <code>createContract</code>-Vorschlag. Das ist der Punkt, an dem der Agent von „antwortet auf
+      Fragen" zu „stellt sie selbst" wechselt. Bestätigungspflicht bleibt: Vorschlag, ein Klick.</p>
+
+    <h3><span class="h3-mark">06</span>Das Tempo, nicht der Stand</h3>
+    <p>Der „Corvette-Countdown" ist keine Spielerei, sondern die richtige Leitkennzahl:
+      Vermögensaufbau <em>pro Monat</em>, ehrlich extrapoliert. Und weil Tempo eine Funktion des
+      Umsatzes ist und nicht der Sparquote, ist es gleichzeitig die Brücke zum nächsten Abschnitt.</p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="numeral">V</span><h2>Der Offense-Bias</h2></div>
+    <p class="sec-sub">Kein Sparbüchsen-Wächter. Aber „mehr verdienen" ist im Datenmodell aktuell nicht messbar — und das ist das eigentliche Problem.</p>
+
+    <p class="wide">Von Belfort ist genau eine Sache brauchbar, und sie ist es wirklich:
+      <strong>Einkommen als Variable behandeln, die man steuert, nicht als Konstante, um die man
+      herum spart.</strong> Dazu Pipeline-Disziplin, Preise nach Wert statt nach Stunden, und die
+      Bereitschaft, nach mehr zu fragen. Der Rest seiner Geschichte ist Betrug und für ein Werkzeug,
+      das Erics Geld anfasst, unbrauchbar. Die Trennung ist einfach zu ziehen — und sie muss im
+      Prompt stehen, nicht in meinem Kopf.</p>
+
+    <div class="duo">
+      <div class="card pro">
+        <h4><span class="dot"></span>Übernehmen</h4>
+        <ul>
+          <li>Umsatz ist eine Entscheidung, kein Wetter</li>
+          <li>Jede Sparidee wird gegen die Umsatzalternative gerechnet</li>
+          <li>Preis nach Ergebnis, nicht nach Aufwand</li>
+          <li>Pipeline ist eine Zahl, kein Gefühl</li>
+          <li>Konkrete nächste Handlung, kein Ratschlag</li>
+        </ul>
+      </div>
+      <div class="card con">
+        <h4><span class="dot"></span>Nicht übernehmen</h4>
+        <ul>
+          <li>Zahlen aufhübschen — die Nummern-Regel bleibt hart</li>
+          <li>Druck als Ton; Dringlichkeit gilt für Handlungen, nicht für Menschen</li>
+          <li>Risiko schönreden: Runway und Steuerlast werden nie weggelassen</li>
+          <li>Etwas empfehlen, was für Eric schlecht ist, weil es aggressiv klingt</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Das Loch im Datenmodell</h3>
+    <p class="wide">Die Ausgabenseite ist fein aufgelöst: Kategorien, Verträge, Budget-Posten,
+      Fixkostenquote. Die Einnahmenseite ist <strong>ein einziger Eimer</strong>:
+      <code>transactions.type = 'income'</code>. Kein Kunde, kein Projekt, kein Angebot, keine offene
+      Rechnung, kein Stundensatz. Eine Athena mit Offense-Bias auf diesem Modell kann motivieren,
+      aber nichts messen — und motivieren ohne messen ist genau das „bla bla", das du nicht willst.</p>
+
+    <p>Vier Tabellen schließen die Lücke, und sie sind alle klein:</p>
+    <ul class="plain">
+      <li><code>clients</code> — Kunde, Status, Herkunft. Ermöglicht Umsatzkonzentration: welcher Anteil hängt an einem Namen (= dein größtes Risiko).</li>
+      <li><code>deals</code> — Angebot mit Wert, Stufe und Abschlusswahrscheinlichkeit. Ermöglicht gewichteten Pipeline-Wert gegen das Mindesteinkommen aus <code>/finance/budget</code>, das es ja schon gibt.</li>
+      <li><code>invoices</code> — gestellt / bezahlt / offen. Ermöglicht Forderungen und Zahlungsdauer. „3.400 € sind seit 41 Tagen offen" ist die wertvollste Zeile, die eine Finanz-App anzeigen kann.</li>
+      <li><code>project_hours</code> — geschätzte oder erfasste Stunden je Projekt. Ermöglicht den effektiven Stundensatz je Kunde, und damit die Antwort auf „welchen Kunden solltest du nicht mehr annehmen".</li>
+    </ul>
+
+    <p class="wide">Erst damit greifen Sätze, die sonst nur Attitüde wären: <em>„Du willst 200 €/Monat
+      bei Abos sparen — das sind 2.400 € im Jahr. Kunde Nr. 3 hat dir letztes Jahr 2.800 € gebracht
+      und braucht 6 Stunden im Monat. Ein zweiter davon ist schneller als zwölf Monate Verzicht."</em>
+      Das ist derselbe Satz wie oben, nur mit Datengrundlage statt Bauchgefühl.</p>
+
+    <div class="prompt">
+      <div class="prompt-label">Prompt-Baustein, direkt übernehmbar</div>
+      <p><strong>## Haltung</strong></p>
+      <p>Erics Einnahmen sind eine Variable, die er steuert — keine Konstante, um die herum du sparst.
+        Deine erste Frage bei jeder Geldfrage ist deshalb nicht „wo kann er kürzen", sondern
+        <em>„was ist hier der Hebel auf der Einnahmenseite"</em>.</p>
+      <p>Konkret: Schlägst du eine Einsparung von mehr als 50 €/Monat vor, rechne sie auf das Jahr
+        hoch und stelle daneben, was dieselbe Summe auf der Umsatzseite kostet — in Aufträgen,
+        Stunden oder einer Preisanpassung. Nenne beide Wege und sag, welchen du für den kürzeren
+        hältst. Zwei Sätze, keine Abhandlung.</p>
+      <p>Was du damit <em>nicht</em> tust: Zahlen freundlicher machen als sie sind, Risiko weglassen,
+        oder Druck aufbauen. Runway, Steuerlast und Konzentrationsrisiko gehören in jede
+        Umsatzempfehlung. Die Regeln zu Zahlen und zur Bestätigungspflicht gelten unverändert
+        weiter — Offensive ist eine Frage der Reihenfolge, nicht der Sorgfalt.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="numeral">VI</span><h2>Reihenfolge</h2></div>
+    <p class="sec-sub">Nach deiner eigenen Priorisierung: Datenqualität zuerst. Der Rest hängt an ihr, nicht umgekehrt.</p>
+
+    <div class="steps">
+      <div class="step is-done">
+        <div class="step-n">0</div>
+        <div class="step-body">
+          <h4>Karte + Seiten-Kontext</h4>
+          <p>Athena weiß, wie die App aufgebaut ist, wo sie blind ist und von welcher Seite aus gefragt wurde.</p>
+        </div>
+        <div class="step-meta">erledigt</div>
+      </div>
+      <div class="step">
+        <div class="step-n">1</div>
+        <div class="step-body">
+          <h4>Snapshot-Datenqualität + <code>checkDataQuality</code></h4>
+          <p>Deine Nr. 1. Erst den Cron-Pfad und die Nullwerte fixen, dann das Prüf-Werkzeug, dann die Prompt-Regel. Alles darüber baut auf diesen Zahlen auf.</p>
+        </div>
+        <div class="step-meta">Vorbedingung</div>
+      </div>
+      <div class="step">
+        <div class="step-n">2</div>
+        <div class="step-body">
+          <h4>Die günstigen blinden Flecken schließen</h4>
+          <p><code>insights</code> lesend, Verpflichtungs-Kalender aus <code>contract_executions</code>, <code>savings_plans</code>, <code>user_settings</code>, Bank-Rohdaten. Jeweils ein Aggregat-Werkzeug, keine Zeilenschleudern.</p>
+        </div>
+        <div class="step-meta">~6 Werkzeuge</div>
+      </div>
+      <div class="step">
+        <div class="step-n">3</div>
+        <div class="step-body">
+          <h4>Steuer-Engine + Rücklage</h4>
+          <p>Deine Roadmap-Punkte 1 und 2 zusammen: <code>getTaxPosition</code>, dann der Rücklage-Vorschlag als Sparziel. Vor 2027 fertig, sonst wird die Erklärung 2028 die Überraschung, die du vermeiden willst.</p>
+        </div>
+        <div class="step-meta">Frist: 2027</div>
+      </div>
+      <div class="step">
+        <div class="step-n">4</div>
+        <div class="step-body">
+          <h4>Einnahmenseite: 4 Tabellen + Offense-Bias</h4>
+          <p>Kunden, Angebote, Rechnungen, Stunden. Erst danach ist der Prompt-Baustein aus Abschnitt V mehr als eine Haltung — und erst dann ist Athena auf der Seite stark, die dir wichtig ist.</p>
+        </div>
+        <div class="step-meta">größter Brocken</div>
+      </div>
+      <div class="step">
+        <div class="step-n">5</div>
+        <div class="step-body">
+          <h4>Strategie anschließen</h4>
+          <p>15 Tabellen, der letzte komplett blinde Bereich. Bewusst zuletzt: er ist groß, und für „besser als jeder Finanzberater" ist er der am wenigsten wichtige — bis du dort aktiv handelst.</p>
+        </div>
+        <div class="step-meta">zurückgestellt</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Abschnitt I ist gebaut und im Build grün. Alles ab Abschnitt II ist Vorschlag —
+    inklusive der Reihenfolge, die sich an deiner eigenen Liste orientiert und Punkt 3
+    von dort nach vorn zieht, weil jede Beratung auf falschen Snapshots wertlos ist.
+    Von den sieben Ideen deiner Liste habe ich nichts angefangen.
+  </footer>
+
+</div>
+</body>
+</html>

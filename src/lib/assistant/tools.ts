@@ -79,8 +79,8 @@ export function buildAthenaTools(supabase: DB, userId: string, options: AthenaTo
     // ── Konten ─────────────────────────────────────────────────────────────
     getAccounts: tool({
       description:
-        'Listet alle Konten des Nutzers (Giro, Tagesgeld, Cash, …) mit Typ, Währung und Institut. ' +
-        'Enthält keine Salden — für aktuelle Salden siehe getNetWorthTrend.',
+        'Listet alle Konten des Nutzers (Giro, Tagesgeld, Bausparer, Geschäftsanteile, …) mit Typ, ' +
+        'Währung, Institut und aktuellem Saldo. Für die Vermögensentwicklung über Zeit siehe getNetWorthTrend.',
       inputSchema: z.object({}),
       execute: async () => {
         const { data, error } = await supabase
@@ -89,7 +89,34 @@ export function buildAthenaTools(supabase: DB, userId: string, options: AthenaTo
           .eq('user_id', userId)
           .order('sort_order')
         if (error) return { error: error.message }
-        return { accounts: data ?? [] }
+
+        // Salden bewusst aus `account_balances` und nicht selbst nachgerechnet:
+        // das ist dieselbe Tabelle, aus der fn_take_snapshot summiert. Eine zweite
+        // Rechnung hier hätte genau den Effekt, den wir gerade abgestellt haben —
+        // Athena nennt andere Zahlen als das Dashboard.
+        const ids = (data ?? []).map(a => a.id)
+        const saldoMap = new Map<string, { balance: number; stand: string }>()
+        if (ids.length > 0) {
+          const { data: balances } = await supabase
+            .from('account_balances')
+            .select('account_id, balance, snapshot_date')
+            .in('account_id', ids)
+            .order('snapshot_date', { ascending: false })
+          // Absteigend sortiert — der erste Treffer je Konto ist der jüngste Stand.
+          for (const b of balances ?? []) {
+            if (!saldoMap.has(b.account_id)) {
+              saldoMap.set(b.account_id, { balance: Number(b.balance), stand: b.snapshot_date })
+            }
+          }
+        }
+
+        return {
+          accounts: (data ?? []).map(a => ({
+            ...a,
+            balance:      saldoMap.get(a.id)?.balance ?? null,
+            balance_date: saldoMap.get(a.id)?.stand   ?? null,
+          })),
+        }
       },
     }),
 
@@ -119,7 +146,7 @@ export function buildAthenaTools(supabase: DB, userId: string, options: AthenaTo
           // Schreiben die richtige Quelltabelle (transactions vs.
           // bank_transactions) zu treffen — die View führt beide zusammen.
           .select(
-            'id, date, amount, signed_amount, currency, type, merchant, description, category_id, category_name, account_id, source',
+            'id, date, amount, signed_amount, currency, type, flow_kind, merchant, description, category_id, category_name, account_id, source',
             { count: 'exact' },
           )
           .eq('user_id', userId)
@@ -161,11 +188,14 @@ export function buildAthenaTools(supabase: DB, userId: string, options: AthenaTo
       execute: async ({ startDate, endDate, groupBy }) => {
         const { data, error } = await supabase
           .from('unified_transactions')
-          .select('amount, type, date, category_id, category_name')
+          .select('amount, amount_base, type, date, category_id, category_name')
           .eq('user_id', userId)
           .gte('date', startDate)
           .lte('date', endDate)
-          .neq('type', 'transfer')
+          // Nur echte Einnahmen/Ausgaben. `neq('type','transfer')` reichte nicht:
+          // Krypto-Kaeufe, Bauspar-Einzahlungen und Schuldenrueckzahlungen zaehlten
+          // als Konsum mit — siehe unified_transactions.flow_kind.
+          .eq('flow_kind', 'echt')
         if (error) return { error: error.message }
 
         const groups = new Map<string, { label: string; income: number; expense: number }>()
@@ -180,8 +210,9 @@ export function buildAthenaTools(supabase: DB, userId: string, options: AthenaTo
               ? row.date.slice(0, 7)
               : (row.category_name ?? 'Ohne Kategorie')
           const entry = groups.get(key) ?? { label, income: 0, expense: 0 }
-          if (row.type === 'income') entry.income += row.amount
-          else entry.expense += row.amount
+          const betrag = row.amount_base ?? row.amount
+          if (row.type === 'income') entry.income += betrag
+          else entry.expense += betrag
           groups.set(key, entry)
         }
 
@@ -338,7 +369,7 @@ export function buildAthenaTools(supabase: DB, userId: string, options: AthenaTo
         const { data, error } = await supabase
           .from('net_worth_snapshots')
           .select(
-            'snapshot_date, net_worth, total_checking, total_savings, total_cash, total_depot, total_crypto, total_debts',
+            'snapshot_date, net_worth, total_checking, total_investment, total_savings, total_cash, total_bausparer, total_depot, total_crypto, total_debts',
           )
           .eq('user_id', userId)
           .gte('snapshot_date', sinceIso)
