@@ -100,8 +100,8 @@ export default async function SteuerPage({
           ist die eigentliche Gefahr dieser Seite. */}
       {p.warnungen.length > 0 && (
         <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 px-4 py-3 space-y-1.5">
-          {p.warnungen.map((w, i) => (
-            <div key={i} className="flex gap-2 text-sm">
+          {p.warnungen.map(w => (
+            <div key={w} className="flex gap-2 text-sm">
               <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
               <span>{w}</span>
             </div>
