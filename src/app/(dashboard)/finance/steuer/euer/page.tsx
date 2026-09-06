@@ -150,7 +150,7 @@ export default async function EuerPage({
             <div className="overflow-hidden rounded-lg border border-border bg-card">
               {e.einnahmen.map(z => <Zeile key={z.zeile} z={z} />)}
               {e.summe_einnahmen && (
-                <div className="flex items-baseline gap-4 border-t border-rule bg-muted/40 px-4 py-3">
+                <div className="flex items-baseline gap-4 border-t border-border bg-muted/40 px-4 py-3">
                   <span className="w-10 shrink-0 font-mono text-sm tabular-nums text-muted-foreground">
                     {e.summe_einnahmen.zeile}
                   </span>
