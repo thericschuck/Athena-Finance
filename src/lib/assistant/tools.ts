@@ -12,6 +12,8 @@ import type { AiLogger } from '@/lib/assistant/logger'
 import { KATEGORIEN } from '@/lib/valuables'
 import { fetchBalanceHistory } from '@/lib/account-history'
 import { alsTag, alsIso, tageDazu, faelligkeitenIm } from '@/lib/assistant/recurrence'
+import { ladeSteuerdaten } from '@/lib/tax/laden'
+import { berechneSteuerposition } from '@/lib/tax/position'
 
 type DB = SupabaseClient<Database>
 
@@ -1021,6 +1023,44 @@ export function buildAthenaTools(supabase: DB, userId: string, options: AthenaTo
           (a, b) => a.konto.localeCompare(b.konto) || a.monat.localeCompare(b.monat),
         )
         return { monate: months, verlauf }
+      },
+    }),
+
+    // ── Steuerposition ───────────────────────────────────────────────────────
+    getTaxPosition: tool({
+      description:
+        'Die Steuerposition eines Jahres: Betriebseinnahmen und -ausgaben aus Schuck Webdesign, Gewinn, ' +
+        'geschätztes zu versteuerndes Einkommen, Einkommensteuer nach § 32a EStG, der GRENZSTEUERSATZ auf ' +
+        'den nächsten Euro, was von einem 1.000-€-Auftrag netto bleibt, der Abstand zu den ' +
+        'Kleinunternehmergrenzen und das Soll der Steuerrücklage. ' +
+        'Benutze das für jede Frage nach Steuer, Rücklage, "was bleibt mir von", "lohnt sich der Auftrag" ' +
+        'und für jede Empfehlung auf der Einnahmenseite — NICHT den pauschalen tax_pct aus getBudget. ' +
+        'Wichtig: die absolute Steuerlast ist eine Schätzung (siehe `quelle` je Zahl und `warnungen`), ' +
+        'der Grenzsteuersatz ist die belastbare Zahl.',
+      inputSchema: z.object({
+        jahr: z.number().int().min(2020).max(2100).default(new Date().getFullYear())
+          .describe('Veranlagungsjahr. Ohne Angabe das laufende Jahr.'),
+      }),
+      execute: async ({ jahr }) => {
+        try {
+          const { eingaben, rollen, ruecklageZiel } = await ladeSteuerdaten(supabase, userId, jahr)
+          const position = berechneSteuerposition(eingaben)
+          return {
+            ...position,
+            kategorie_zuordnung: rollen,
+            ruecklage_sparziel: ruecklageZiel,
+            hinweis_zur_deutung:
+              'Alles unter `steuer` und `zve` ist geschätzt — die Vorsorgeaufwendungen kennt die App ' +
+              'nicht genau. Der Grenzsteuersatz ist robust, weil ihn Abzüge nur verschieben, wenn sie ' +
+              'eine Zonengrenze überschreiten. Sag beides so, statt eine geschätzte Jahressteuer als ' +
+              'Fakt zu nennen. Fehlt ein Rücklage-Sparziel, schlag es mit createSavingsGoal vor ' +
+              '("Steuerrücklage <Jahr>", Zielbetrag = ruecklage.soll) — Eric bestätigt das mit einem Klick.',
+          }
+        } catch (fehler) {
+          // Der Lader wirft bei fehlendem Tarif oder Datenbankfehlern. Lieber
+          // eine klare Meldung als eine Steuerzahl aus halben Daten.
+          return { error: fehler instanceof Error ? fehler.message : 'Steuerposition nicht berechenbar.' }
+        }
       },
     }),
 

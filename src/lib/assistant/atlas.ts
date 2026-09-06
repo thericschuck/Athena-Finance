@@ -118,7 +118,11 @@ export const APP_ATLAS: AtlasSection[] = [
         shows:
           'die Fixkosten-Posten nach Budget-Kategorie und daraus das nötige Mindesteinkommen ' +
           '(Fixkosten hochgerechnet plus Puffer-, Steuer- und Sparanteil aus den Zielvorgaben)',
-        tools: ['getBudget'],
+        tools: ['getBudget', 'getTaxPosition'],
+        blind:
+          'nichts Wesentliches. Der `tax_pct` hier ist eine Planungsgroesse fuer das '  +
+          'Mindesteinkommen und KEIN Steuersatz — die echte Steuerposition samt '        +
+          'Grenzsteuersatz liefert getTaxPosition',
       },
     ],
   },
