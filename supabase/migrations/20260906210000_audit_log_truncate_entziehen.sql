@@ -6,3 +6,9 @@ revoke truncate on public.audit_log from authenticated, anon;
 -- Dasselbe fuers Belegarchiv: keine DELETE-Policy zu vergeben, aber TRUNCATE
 -- offen zu lassen, waere derselbe Fehler.
 revoke truncate on public.belege from authenticated, anon;
+
+-- Loeschen von Belegen ist schon durch die fehlende DELETE-Policy blockiert
+-- (RLS an, keine Policy = kein Zugriff). Das Recht trotzdem zu entziehen ist
+-- die zweite Schicht: faellt die Policy je weg oder wird RLS abgeschaltet,
+-- bleibt das Archiv trotzdem unloeschbar.
+revoke delete on public.belege from authenticated, anon;
