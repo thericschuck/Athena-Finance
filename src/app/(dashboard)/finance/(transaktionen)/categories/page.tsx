@@ -10,6 +10,7 @@ import { getSettings } from '@/lib/settings'
 import { fmtCurrency } from '@/lib/format'
 
 type Category = Database['public']['Tables']['categories']['Row']
+type EuerZeile = Database['public']['Tables']['euer_zeilen']['Row']
 type CategoryNode = Category & { children: CategoryNode[] }
 
 // Build parent→child tree from flat list
@@ -55,7 +56,7 @@ export default async function CategoriesPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const [{ data: categories }, settings] = await Promise.all([
+  const [{ data: categories }, settings, { data: euerRows }] = await Promise.all([
     supabase
       .from('categories')
       .select('*')
@@ -63,10 +64,24 @@ export default async function CategoriesPage() {
       .order('sort_order', { ascending: true })
       .order('name', { ascending: true }),
     getSettings(user!.id),
+    // Die Zeilen der Anlage EUER, damit die Zuordnung im Formular eine Auswahl
+    // ist und keine Nummer, die man irgendwo nachschlagen muss. Nur Zeilen, in
+    // die Buchungen fliessen -- Summen- und Ergebniszeilen rechnet die App.
+    supabase
+      .from('euer_zeilen')
+      .select('*')
+      .in('art', ['einnahme', 'ausgabe'])
+      .order('jahr', { ascending: false })
+      .order('zeile', { ascending: true }),
   ])
 
   const locale = (settings.number_format as string) ?? 'de-DE'
   const flat = categories ?? []
+  // Nur der jüngste hinterlegte Jahrgang — zwei Jahrgänge nebeneinander wären
+  // im Auswahlfeld nicht unterscheidbar.
+  const alleEuer = (euerRows ?? []) as EuerZeile[]
+  const euerJahr = alleEuer[0]?.jahr ?? null
+  const euerZeilen = euerJahr === null ? [] : alleEuer.filter((z) => z.jahr === euerJahr)
   const tree = buildTree(flat)
 
   return (
@@ -79,7 +94,7 @@ export default async function CategoriesPage() {
             {flat.length} Kategorien verwalten
           </p>
         </div>
-        <AddCategoryDialog allCategories={flat} />
+        <AddCategoryDialog allCategories={flat} euerZeilen={euerZeilen} />
       </div>
 
       {/* Tree */}
@@ -105,6 +120,7 @@ export default async function CategoriesPage() {
                   <CategoryRow
                     category={parent}
                     allCategories={flat}
+                    euerZeilen={euerZeilen}
                     isParent
                     locale={locale}
                   />
@@ -114,6 +130,7 @@ export default async function CategoriesPage() {
                       key={child.id}
                       category={child}
                       allCategories={flat}
+                      euerZeilen={euerZeilen}
                       isParent={false}
                       locale={locale}
                     />
@@ -131,11 +148,13 @@ export default async function CategoriesPage() {
 function CategoryRow({
   category,
   allCategories,
+  euerZeilen,
   isParent,
   locale,
 }: {
   category: CategoryNode
   allCategories: Category[]
+  euerZeilen: EuerZeile[]
   isParent: boolean
   locale: string
 }) {
@@ -194,7 +213,7 @@ function CategoryRow({
       {/* Actions */}
       <td className="px-4 py-3">
         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <EditCategoryDialog category={category} allCategories={allCategories} />
+          <EditCategoryDialog category={category} allCategories={allCategories} euerZeilen={euerZeilen} />
           <DeleteCategoryButton category={category} />
         </div>
       </td>

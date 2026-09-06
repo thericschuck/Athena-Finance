@@ -3,7 +3,8 @@ import type { Database } from '@/types/database'
 import type { Tarif } from './tarif.ts'
 import type { SteuerEingaben } from './position.ts'
 import { leseSteuerprofil } from './profil.ts'
-import { effektiveRollen } from './rollen.ts'
+import { effektiveRollen, effektiveEuerZeilen } from './rollen.ts'
+import type { EuerBuchung, EuerZeileDef } from './euer.ts'
 
 type DB = SupabaseClient<Database>
 
@@ -15,12 +16,12 @@ type DB = SupabaseClient<Database>
  */
 async function buchungenImJahr(supabase: DB, userId: string, jahr: number) {
   const SEITE = 1000
-  const zeilen: { category_id: string | null; signed_amount: number; date: string }[] = []
+  const zeilen: { category_id: string | null; signed_amount: number; date: string; description: string | null }[] = []
 
   for (let seite = 0; seite < 50; seite++) {
     const { data, error } = await supabase
       .from('unified_transactions')
-      .select('category_id, signed_amount, date')
+      .select('category_id, signed_amount, date, description')
       .eq('user_id', userId)
       .eq('flow_kind', 'echt')
       .gte('date', `${jahr}-01-01`)
@@ -38,6 +39,7 @@ async function buchungenImJahr(supabase: DB, userId: string, jahr: number) {
         category_id: r.category_id,
         signed_amount: Number(r.signed_amount),
         date: r.date,
+        description: r.description,
       })
     }
     if (data.length < SEITE) break
@@ -54,6 +56,13 @@ function istRuecklageZiel(beschreibung: string | null, jahr: number): boolean {
 
 export type LadeErgebnis = {
   eingaben: SteuerEingaben
+  /** Alles, was `berechneEuer` zusaetzlich braucht. */
+  euer: {
+    zeilen: EuerZeileDef[]
+    buchungen: EuerBuchung[]
+    rollen: Map<string, string | null>
+    euerZeilen: Map<string, number | null>
+  }
   /** Fuer die Anzeige: welche Kategorien welche Rolle tragen. */
   rollen: { kategorie: string; rolle: string | null; summe: number }[]
   /** Name des gefundenen Ruecklage-Sparziels, falls vorhanden. */
@@ -72,11 +81,12 @@ export async function ladeSteuerdaten(
   userId: string,
   jahr: number,
 ): Promise<LadeErgebnis> {
-  const [tarifeRes, kategorienRes, profilRes, zieleRes] = await Promise.all([
+  const [tarifeRes, kategorienRes, profilRes, zieleRes, euerRes] = await Promise.all([
     supabase.from('tax_tariffs').select('*').order('jahr', { ascending: true }),
     supabase.from('categories').select('id, name, parent_id, tax_role, type').eq('user_id', userId),
     supabase.from('user_settings').select('value').eq('user_id', userId).eq('key', 'tax_profile').maybeSingle(),
     supabase.from('savings_goals').select('id, description, target_amount, current_amount').eq('user_id', userId),
+    supabase.from('euer_zeilen').select('*').order('zeile', { ascending: true }),
   ])
   if (tarifeRes.error) throw new Error(tarifeRes.error.message)
   if (kategorienRes.error) throw new Error(kategorienRes.error.message)
@@ -95,6 +105,17 @@ export async function ladeSteuerdaten(
 
   const kategorien = kategorienRes.data ?? []
   const rollenMap = effektiveRollen(kategorien)
+  const euerZeilenMap = effektiveEuerZeilen(kategorien)
+
+  // Zeilendefinitionen des naechstgelegenen Jahres -- dieselbe Regel wie beim
+  // Tarif. Die Nummern verschieben sich jaehrlich, deshalb wird das Jahr
+  // mitgegeben und in der Anzeige genannt.
+  const alleEuerZeilen = (euerRes.data ?? []) as EuerZeileDef[]
+  const euerJahre = Array.from(new Set(alleEuerZeilen.map(z => z.jahr)))
+  const euerJahr = euerJahre.length > 0
+    ? euerJahre.reduce((beste, k) => (Math.abs(k - jahr) < Math.abs(beste - jahr) ? k : beste))
+    : null
+  const euerZeilen = euerJahr === null ? [] : alleEuerZeilen.filter(z => z.jahr === euerJahr)
   const nameMap = new Map(kategorien.map(k => [k.id, k.name]))
   const typMap = new Map(kategorien.map(k => [k.id, k.type]))
 
@@ -156,6 +177,25 @@ export async function ladeSteuerdaten(
   const ziel = (zieleRes.data ?? []).find(z => istRuecklageZiel(z.description, jahr)) ?? null
 
   return {
+    euer: {
+      zeilen: euerZeilen,
+      // Nur Betriebsbuchungen weiterreichen -- alles andere gehoert nicht ins
+      // Formular und blaeht die Einzelbuchungsliste nur auf.
+      buchungen: buchungen
+        .filter(x => {
+          const r = x.category_id ? rollenMap.get(x.category_id) ?? null : null
+          return r === 'betriebseinnahme' || r === 'betriebsausgabe'
+        })
+        .map(x => ({
+          datum: x.date,
+          betrag: x.signed_amount,
+          kategorie_id: x.category_id,
+          kategorie: (x.category_id ? nameMap.get(x.category_id) : null) ?? '(ohne Kategorie)',
+          beschreibung: x.description,
+        })),
+      rollen: rollenMap,
+      euerZeilen: euerZeilenMap,
+    },
     eingaben: {
       jahr,
       tarif,

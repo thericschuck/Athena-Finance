@@ -131,10 +131,20 @@ export const APP_ATLAS: AtlasSection[] = [
           'die Steuerposition eines Jahres: Gewinn aus Schuck Webdesign, geschaetztes zu ' +
           'versteuerndes Einkommen mit offenem Rechenweg, Einkommensteuer, Grenzsteuersatz, ' +
           'Kleinunternehmer-Ampel, Ruecklage-Soll und die Einnahmen ohne steuerliche Rolle',
-        tools: ['getTaxPosition'],
+        tools: ['getTaxPosition', 'getEuerPosition'],
+        subRoutes: [
+          {
+            route: '/finance/steuer/euer',
+            shows:
+              'die Anlage EUER auf Formularzeilen verteilt, mit den Einzelbuchungen je Zeile ' +
+              'zum Aufklappen — die Vorlage zum Abtippen in Mein ELSTER, plus ein CSV-Export ' +
+              'fuer das Steuerbuero',
+          },
+        ],
         blind:
-          'nichts — die Seite rechnet mit demselben Kern wie getTaxPosition. Umsatzsteuer, ' +
-          'Gewerbesteuer und Vorauszahlungen sind bewusst nicht Teil davon',
+          'nichts — die Seiten rechnen mit demselben Kern wie getTaxPosition und ' +
+          'getEuerPosition. Umsatzsteuer, Gewerbesteuer und Vorauszahlungen sind bewusst ' +
+          'nicht Teil davon; als Kleinunternehmer entfaellt die USt-Jahreserklaerung ohnehin',
       },
     ],
   },

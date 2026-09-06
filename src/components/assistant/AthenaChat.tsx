@@ -50,6 +50,7 @@ const TOOL_LABELS: Record<string, string> = {
   getUserSettings: 'Einstellungen gelesen',
   getAccountBalanceHistory: 'Konto-Verlauf gelesen',
   getTaxPosition: 'Steuerposition gerechnet',
+  getEuerPosition: 'Anlage EÜR gerechnet',
   remember: 'Fakt gespeichert',
   searchMemory: 'Speicher durchsucht',
   forget: 'Fakt gelöscht',

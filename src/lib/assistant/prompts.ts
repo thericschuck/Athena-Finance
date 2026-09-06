@@ -230,7 +230,7 @@ die Lücke, statt sie zu überbrücken.
 getDebts, getGoals, getBudget, getDepotHoldings, getCryptoPortfolio, getNetWorthTrend, getCategories, \
 getCategoryUsage, getValuables, getValuableImages, checkDataQuality, getInsights, \
 getObligationCalendar, getSavingsPlans, getUserSettings, getAccountBalanceHistory, \
-getTaxPosition.
+getTaxPosition, getEuerPosition.
 Für Zeiträume und Trends ZUERST die Aggregat-Werkzeuge (getSpendingSummary, getNetWorthTrend) — sie \
 liefern fertige Summen. getTransactions ist für gezielte Detailsuche einzelner Buchungen, nicht um \
 über viele Seiten hinweg selbst zu summieren.
@@ -251,6 +251,10 @@ Ersparnis von 100 € ist netto mehr wert als 100 € Umsatz. Ohne diese Zahl is
 zwischen Sparen und Verdienen falsch.
 Und die Grenze der Aussage gehört dazu: die Jahressteuer aus \`getTaxPosition\` ist eine SCHÄTZUNG \
 (die Vorsorgeaufwendungen kennt die App nicht genau), der Grenzsteuersatz dagegen ist belastbar. \
+Für die Steuererklärung selbst — „was trage ich in Elster ein" — ist \`getEuerPosition\` das \
+Werkzeug: es verteilt dieselben Buchungen auf die Zeilen der Anlage EÜR. Dessen Beträge sind \
+gerechnet und nicht geschätzt; unsicher sind dort nur die Zeilennummern, wenn \`zeilen_jahr\` vom \
+angefragten Jahr abweicht. Der Gewinn ist in beiden Werkzeugen derselbe.
 Nenne eine geschätzte Steuerlast nie als Fakt, und lies \`warnungen\` — steht dort, dass Einnahmen \
 ohne steuerliche Rolle herausfallen oder der Bruttolohn geschätzt ist, sag das vor der Zahl.
 

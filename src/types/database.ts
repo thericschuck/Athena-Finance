@@ -844,6 +844,7 @@ export type Database = {
         Row: {
           budget_monthly: number | null
           color: string | null
+          euer_zeile: number | null
           icon: string | null
           id: string
           name: string
@@ -856,6 +857,7 @@ export type Database = {
         Insert: {
           budget_monthly?: number | null
           color?: string | null
+          euer_zeile?: number | null
           icon?: string | null
           id?: string
           name: string
@@ -868,6 +870,7 @@ export type Database = {
         Update: {
           budget_monthly?: number | null
           color?: string | null
+          euer_zeile?: number | null
           icon?: string | null
           id?: string
           name?: string
@@ -1349,6 +1352,36 @@ export type Database = {
           isin?: string
           name?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      euer_zeilen: {
+        Row: {
+          art: string
+          bezeichnung: string
+          geprueft_am: string
+          jahr: number
+          quelle: string
+          sammelzeile: boolean
+          zeile: number
+        }
+        Insert: {
+          art: string
+          bezeichnung: string
+          geprueft_am: string
+          jahr: number
+          quelle: string
+          sammelzeile?: boolean
+          zeile: number
+        }
+        Update: {
+          art?: string
+          bezeichnung?: string
+          geprueft_am?: string
+          jahr?: number
+          quelle?: string
+          sammelzeile?: boolean
+          zeile?: number
         }
         Relationships: []
       }

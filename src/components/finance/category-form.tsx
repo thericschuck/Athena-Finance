@@ -40,6 +40,7 @@ import {
 import { Database } from '@/types/database'
 
 type Category = Database['public']['Tables']['categories']['Row']
+type EuerZeile = Database['public']['Tables']['euer_zeilen']['Row']
 
 const CATEGORY_TYPES = [
   { value: 'expense', label: 'Ausgabe' },
@@ -76,6 +77,9 @@ function CategoryFormFields({
   setParentId,
   taxRole,
   setTaxRole,
+  euerZeile,
+  setEuerZeile,
+  euerZeilen,
 }: {
   allCategories: Category[]
   category?: Category
@@ -85,6 +89,9 @@ function CategoryFormFields({
   setParentId: (v: string) => void
   taxRole: string
   setTaxRole: (v: string) => void
+  euerZeile: string
+  setEuerZeile: (v: string) => void
+  euerZeilen: EuerZeile[]
 }) {
   // Exclude self from parent options (prevent circular ref)
   const parentOptions = allCategories.filter(
@@ -97,6 +104,7 @@ function CategoryFormFields({
       <input type="hidden" name="type" value={type} />
       <input type="hidden" name="parent_id" value={parentId} />
       <input type="hidden" name="tax_role" value={taxRole === '__none__' ? '' : taxRole} />
+      <input type="hidden" name="euer_zeile" value={euerZeile === '__none__' ? '' : euerZeile} />
 
       {/* Name */}
       <div className="space-y-1.5">
@@ -205,6 +213,36 @@ function CategoryFormFields({
           </p>
         </div>
       )}
+
+      {/* Formularzeile — nur sinnvoll, wenn die Kategorie überhaupt in die EÜR
+          fließt. Ohne Auswahl landet der Betrag in der Sammelzeile: rechnerisch
+          richtig, im Formular grob. */}
+      {(taxRole === 'betriebseinnahme' || taxRole === 'betriebsausgabe') && euerZeilen.length > 0 && (
+        <div className="space-y-1.5">
+          <Label>Zeile der Anlage EÜR</Label>
+          <Select value={euerZeile} onValueChange={setEuerZeile}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">Sammelzeile (nicht zugeordnet)</SelectItem>
+              {euerZeilen
+                .filter((z) =>
+                  taxRole === 'betriebseinnahme' ? z.art === 'einnahme' : z.art === 'ausgabe',
+                )
+                .map((z) => (
+                  <SelectItem key={z.zeile} value={String(z.zeile)}>
+                    {z.zeile} · {z.bezeichnung}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Zeilennummern des Jahrgangs {euerZeilen[0]?.jahr}. Sie verschieben sich jährlich —
+            vor dem Abtippen gegen das amtliche Formular prüfen.
+          </p>
+        </div>
+      )}
     </>
   )
 }
@@ -212,12 +250,19 @@ function CategoryFormFields({
 // ─────────────────────────────────────────────
 // Create dialog
 // ─────────────────────────────────────────────
-export function AddCategoryDialog({ allCategories }: { allCategories: Category[] }) {
+export function AddCategoryDialog({
+  allCategories,
+  euerZeilen,
+}: {
+  allCategories: Category[]
+  euerZeilen: EuerZeile[]
+}) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [type, setType] = useState('expense')
   const [parentId, setParentId] = useState('__none__')
   const [taxRole, setTaxRole] = useState('__none__')
+  const [euerZeile, setEuerZeile] = useState('__none__')
 
   const [state, formAction, isPending] = useActionState<CategoryActionState, FormData>(
     createCategory,
@@ -237,6 +282,7 @@ export function AddCategoryDialog({ allCategories }: { allCategories: Category[]
       setType('expense')
       setParentId('__none__')
       setTaxRole('__none__')
+      setEuerZeile('__none__')
     }
   }
 
@@ -268,6 +314,9 @@ export function AddCategoryDialog({ allCategories }: { allCategories: Category[]
             setParentId={setParentId}
             taxRole={taxRole}
             setTaxRole={setTaxRole}
+            euerZeile={euerZeile}
+            setEuerZeile={setEuerZeile}
+            euerZeilen={euerZeilen}
           />
           {state && 'error' in state && (
             <p className="text-sm text-destructive">{state.error}</p>
@@ -292,15 +341,20 @@ export function AddCategoryDialog({ allCategories }: { allCategories: Category[]
 export function EditCategoryDialog({
   category,
   allCategories,
+  euerZeilen,
 }: {
   category: Category
   allCategories: Category[]
+  euerZeilen: EuerZeile[]
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [type, setType] = useState(category.type)
   const [parentId, setParentId] = useState(category.parent_id ?? '__none__')
   const [taxRole, setTaxRole] = useState(category.tax_role ?? '__none__')
+  const [euerZeile, setEuerZeile] = useState(
+    category.euer_zeile === null ? '__none__' : String(category.euer_zeile),
+  )
 
   const [state, formAction, isPending] = useActionState<CategoryActionState, FormData>(
     updateCategory,
@@ -320,6 +374,7 @@ export function EditCategoryDialog({
       setType(category.type)
       setParentId(category.parent_id ?? '__none__')
       setTaxRole(category.tax_role ?? '__none__')
+      setEuerZeile(category.euer_zeile === null ? '__none__' : String(category.euer_zeile))
     }
   }
 
@@ -350,6 +405,9 @@ export function EditCategoryDialog({
             setParentId={setParentId}
             taxRole={taxRole}
             setTaxRole={setTaxRole}
+            euerZeile={euerZeile}
+            setEuerZeile={setEuerZeile}
+            euerZeilen={euerZeilen}
           />
           {state && 'error' in state && (
             <p className="text-sm text-destructive">{state.error}</p>

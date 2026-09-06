@@ -13,6 +13,18 @@ export type CategoryActionState = { error: string } | { success: true } | null
  */
 const TAX_ROLES = ['betriebseinnahme', 'betriebsausgabe', 'lohn', 'privat'] as const
 
+/**
+ * Die EUER-Zeile. Geprueft wird nur die Form -- ob es die Nummer im
+ * hinterlegten Jahrgang gibt, entscheidet der Rechenkern, und eine unbekannte
+ * Nummer landet dort in der Sammelzeile statt zu verschwinden.
+ */
+function leseEuerZeile(formData: FormData): number | null {
+  const roh = (formData.get('euer_zeile') as string | null)?.trim()
+  if (!roh) return null
+  const n = Number(roh)
+  return Number.isInteger(n) && n > 0 && n < 200 ? n : null
+}
+
 function leseTaxRole(formData: FormData): string | null {
   const wert = (formData.get('tax_role') as string | null)?.trim()
   if (!wert) return null
@@ -45,6 +57,7 @@ export async function createCategory(
       ? Number(formData.get('budget_monthly'))
       : null,
     tax_role: leseTaxRole(formData),
+    euer_zeile: leseEuerZeile(formData),
   })
 
   if (error) return { error: error.message }
@@ -81,6 +94,7 @@ export async function updateCategory(
         ? Number(formData.get('budget_monthly'))
         : null,
       tax_role: leseTaxRole(formData),
+      euer_zeile: leseEuerZeile(formData),
     })
     .eq('id', id)
     .eq('user_id', user.id)
