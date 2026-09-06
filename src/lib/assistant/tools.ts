@@ -998,11 +998,10 @@ export function buildAthenaTools(supabase: DB, userId: string, options: AthenaTo
         // Über fetchBalanceHistory und nicht direkt: die Tabelle läuft schnell
         // über den 1.000-Zeilen-Deckel von PostgREST, und weil aufsteigend
         // sortiert wird, fehlt dann das JÜNGSTE Ende — ohne Fehlermeldung.
-        const rows = await fetchBalanceHistory(supabase, {
-          accountId,
-          from: seit.toISOString().slice(0, 10),
-        })
-        const { data: konten } = await supabase.from('accounts').select('id, name').eq('user_id', userId)
+        const [rows, { data: konten }] = await Promise.all([
+          fetchBalanceHistory(supabase, { accountId, from: seit.toISOString().slice(0, 10) }),
+          supabase.from('accounts').select('id, name').eq('user_id', userId),
+        ])
         const kontoName = new Map((konten ?? []).map(k => [k.id, k.name]))
 
         // Ein Wert pro Konto und Monat: der letzte des Monats gewinnt, weil
