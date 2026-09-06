@@ -8,6 +8,7 @@
     "build": "node --max-old-space-size=6144 node_modules/next/dist/bin/next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --experimental-strip-types --test \"src/**/*.test.ts\"",
     "setup:fints": "python -m venv scripts/fints/.venv && scripts/fints/.venv/Scripts/pip install -r scripts/fints/requirements.txt"
   },
   "dependencies": {

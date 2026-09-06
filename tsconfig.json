@@ -9,6 +9,10 @@
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
+    // Erlaubt die .ts-Endung in Imports. Node braucht sie, um die Testdatei mit
+    // --experimental-strip-types aufzuloesen; auf den Next-Build hat das keinen
+    // Einfluss (nur mit noEmit erlaubt, und das ist unten gesetzt).
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",

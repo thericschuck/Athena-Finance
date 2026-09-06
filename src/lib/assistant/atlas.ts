@@ -68,10 +68,7 @@ export const APP_ATLAS: AtlasSection[] = [
         shows:
           'Netto-Vermögen, Monatssaldo (Einnahmen minus Ausgaben im laufenden Monat), ' +
           'größte Ausgabenkategorien, offene Hinweise',
-        tools: ['getNetWorthTrend', 'getSpendingSummary', 'getAccounts', 'checkDataQuality'],
-        blind:
-          'die Hinweis-Karten selbst (Tabelle `insights`) — du kannst mit createInsight neue ' +
-          'vorschlagen, aber die bestehenden nicht lesen',
+        tools: ['getNetWorthTrend', 'getSpendingSummary', 'getAccounts', 'checkDataQuality', 'getInsights'],
       },
     ],
   },
@@ -84,11 +81,11 @@ export const APP_ATLAS: AtlasSection[] = [
         shows:
           'alle Konten mit aktuellem Saldo, der Bank-Sync (FinTS) und pro Konto eine Detailseite ' +
           'mit den Buchungen dieses Kontos',
-        tools: ['getAccounts', 'getTransactions', 'checkDataQuality'],
+        tools: ['getAccounts', 'getTransactions', 'checkDataQuality', 'getAccountBalanceHistory'],
         blind:
-          'die Saldo-Historie eines einzelnen Kontos (`account_balances`) als Verlauf. Wie frisch ' +
-          'der letzte Bank-Sync ist und ob App-Saldo und Bankstand auseinanderlaufen, sagt dir ' +
-          'checkDataQuality. Vermögensverlauf gesamt geht über getNetWorthTrend',
+          'nichts Wesentliches mehr: Saldo-Verlauf je Konto über getAccountBalanceHistory, ' +
+          'Frische des Bank-Syncs und Abweichung App ↔ Bank über checkDataQuality, ' +
+          'Vermögensverlauf gesamt über getNetWorthTrend',
       },
       {
         route: '/finance/transactions',
@@ -109,11 +106,11 @@ export const APP_ATLAS: AtlasSection[] = [
           { route: '/finance/debts', shows: 'Schulden mit Restsumme, Rate und Tilgungsplan' },
           { route: '/finance/goals', shows: 'Sparziele mit Zielsumme, Stand und Zieldatum' },
         ],
-        tools: ['getContracts', 'getDebts', 'getGoals'],
+        tools: ['getContracts', 'getDebts', 'getGoals', 'getObligationCalendar'],
         blind:
-          'die Zahlungshistorie: welche Vertragsbuchung wann tatsächlich lief ' +
-          '(`contract_executions`) und welche Tilgungen auf eine Schuld eingegangen sind ' +
-          '(`debt_payments`). Du siehst nur den aktuellen Stand, nicht den Verlauf',
+          'nichts Wesentliches mehr: getObligationCalendar liefert Vorausblick, ablaufende ' +
+          'Kündigungsfristen, tatsächliche Vertragsbuchungen (`contract_executions`) und ' +
+          'Tilgungen (`debt_payments`) — inklusive der Fälligkeiten, die wirklich offen sind',
       },
       {
         route: '/finance/budget',
@@ -148,10 +145,10 @@ export const APP_ATLAS: AtlasSection[] = [
         route: '/depot',
         label: 'Depot',
         shows: 'Wertpapierbestand aus dem Bank-Depot mit Stückzahl, Kurswert und Einstand',
-        tools: ['getDepotHoldings'],
+        tools: ['getDepotHoldings', 'getSavingsPlans'],
         blind:
-          'Depot-Transaktionen (Käufe/Verkäufe, `depot_transactions`) und die Fonds-Sparpläne ' +
-          '(`savings_plans`), die monatlich automatisch ausgeführt werden',
+          'Depot-Transaktionen (Käufe/Verkäufe, `depot_transactions`). Die Fonds-Sparpläne, ' +
+          'die monatlich per Cron laufen, liest getSavingsPlans',
       },
       {
         route: '/strategy/indicators',
@@ -225,11 +222,12 @@ export const APP_ATLAS: AtlasSection[] = [
         route: '/settings',
         label: 'Einstellungen',
         shows: 'Profil, Darstellung, Finanz-Vorgaben, Analyse-Vorgaben, Trading-Vorgaben, Integrationen',
-        tools: [],
+        tools: ['getUserSettings'],
         blind:
-          'die Einstellungen selbst. Besonders relevant: welche Konten in der Analyse ' +
-          'standardmäßig gefiltert sind — eine Auswertung dort kann deshalb von deinen Zahlen ' +
-          'abweichen, ohne dass eine der beiden falsch ist',
+          'die reinen Darstellungseinstellungen (Theme, Zahlen- und Datumsformat, Sidebar) — ' +
+          'absichtlich, sie beeinflussen keine Zahl. Den Kontenfilter der Analyse liest ' +
+          'getUserSettings: eine Auswertung dort kann von deinen Zahlen abweichen, ohne dass ' +
+          'eine der beiden falsch ist',
       },
     ],
   },
