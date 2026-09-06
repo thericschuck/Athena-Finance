@@ -383,6 +383,8 @@ export type Database = {
           max_steps: number
           memory_enabled: boolean
           model: string
+          persona: string
+          persona_text: string | null
           updated_at: string
           user_id: string
           web_research: boolean
@@ -395,6 +397,8 @@ export type Database = {
           max_steps?: number
           memory_enabled?: boolean
           model?: string
+          persona?: string
+          persona_text?: string | null
           updated_at?: string
           user_id: string
           web_research?: boolean
@@ -407,6 +411,8 @@ export type Database = {
           max_steps?: number
           memory_enabled?: boolean
           model?: string
+          persona?: string
+          persona_text?: string | null
           updated_at?: string
           user_id?: string
           web_research?: boolean
@@ -1466,6 +1472,30 @@ export type Database = {
         }
         Relationships: []
       }
+      fund_price_history: {
+        Row: {
+          created_at: string
+          currency: string
+          isin: string
+          price: number
+          price_date: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          isin: string
+          price: number
+          price_date: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          isin?: string
+          price?: number
+          price_date?: string
+        }
+        Relationships: []
+      }
       fund_prices: {
         Row: {
           created_at: string
@@ -1792,6 +1822,7 @@ export type Database = {
           total_crypto: number
           total_debts: number
           total_depot: number
+          total_investment: number
           total_savings: number
           user_id: string
         }
@@ -1809,6 +1840,7 @@ export type Database = {
           total_crypto?: number
           total_debts?: number
           total_depot?: number
+          total_investment?: number
           total_savings?: number
           user_id: string
         }
@@ -1826,6 +1858,7 @@ export type Database = {
           total_crypto?: number
           total_debts?: number
           total_depot?: number
+          total_investment?: number
           total_savings?: number
           user_id?: string
         }
@@ -3177,6 +3210,8 @@ export type Database = {
           currency: string | null
           date: string | null
           description: string | null
+          description_raw: string | null
+          flow_kind: string | null
           fx_rate: number | null
           id: string | null
           merchant: string | null
