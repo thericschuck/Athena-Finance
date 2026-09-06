@@ -539,19 +539,24 @@ export function buildAthenaTools(supabase: DB, userId: string, options: AthenaTo
 
         // 3) Buchungen — wie viel davon ist ungepflegt.
         const seit90 = vorTagen(90)
-        const { count: buchungenGesamt } = await supabase
-          .from('unified_transactions')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', userId)
-          .eq('flow_kind', 'echt')
-          .gte('date', seit90)
-        const { count: buchungenOhneKategorie } = await supabase
-          .from('unified_transactions')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', userId)
-          .eq('flow_kind', 'echt')
-          .gte('date', seit90)
-          .is('category_id', null)
+        // Beide Zaehlungen und die beiden Kursabfragen haengen nicht voneinander
+        // ab — nacheinander erwartet waeren es vier Roundtrips, bevor Athena
+        // ueberhaupt anfangen kann zu antworten.
+        const [{ count: buchungenGesamt }, { count: buchungenOhneKategorie }] = await Promise.all([
+          supabase
+            .from('unified_transactions')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('flow_kind', 'echt')
+            .gte('date', seit90),
+          supabase
+            .from('unified_transactions')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('flow_kind', 'echt')
+            .gte('date', seit90)
+            .is('category_id', null),
+        ])
 
         const anteilOhneKategorie =
           buchungenGesamt && buchungenGesamt > 0
@@ -566,16 +571,18 @@ export function buildAthenaTools(supabase: DB, userId: string, options: AthenaTo
         }
 
         // 4) Kurse — ein alter Cache macht Krypto- und Depotwerte still falsch.
-        const { data: kryptoPreis } = await supabase
-          .from('crypto_price_cache')
-          .select('updated_at')
-          .order('updated_at', { ascending: false })
-          .limit(1)
-        const { data: fondsPreis } = await supabase
-          .from('fund_price_cache')
-          .select('fetched_at')
-          .order('fetched_at', { ascending: false })
-          .limit(1)
+        const [{ data: kryptoPreis }, { data: fondsPreis }] = await Promise.all([
+          supabase
+            .from('crypto_price_cache')
+            .select('updated_at')
+            .order('updated_at', { ascending: false })
+            .limit(1),
+          supabase
+            .from('fund_price_cache')
+            .select('fetched_at')
+            .order('fetched_at', { ascending: false })
+            .limit(1),
+        ])
 
         const kryptoAlterStunden = kryptoPreis?.[0]?.updated_at
           ? Math.floor((heute.getTime() - new Date(kryptoPreis[0].updated_at).getTime()) / 3_600_000)
