@@ -64,22 +64,20 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 /**
- * Achsenbereich der Sparquote.
+ * Achsenbereich der Sparquote: fest −100 % bis +100 %.
  *
- * Vorher fest [0, 60]: alles darunter (ein Monat mit mehr Ausgaben als Einnahmen) und alles
- * darüber (ein Monat mit einer großen Einmalzahlung) lief außerhalb des Bildes und die Linie
- * verschwand am Rand. Untergrenze bei −100 % gedeckelt, weil ein einzelner Ausreißer wie
- * −339 % sonst alle übrigen Monate zu einer flachen Linie zusammendrückt — der Tooltip nennt
- * den echten Wert weiterhin.
+ * Vorher mitwandernd (Untergrenze am kleinsten Monat, Obergrenze mindestens 60 %). Das nutzte
+ * die Kartenhöhe besser aus, hatte aber zwei Nachteile: die Null lag bei jedem Datenstand
+ * woanders, und ohne Blick auf die rechte Achse war nicht zu sehen, ob ein Punkt bei 30 oder
+ * bei 70 % liegt. Symmetrisch ist die Achse selbsterklärend — obere Hälfte heißt „mehr als
+ * die Hälfte der Einnahmen gespart", die Mittellinie ist die Null, untere Hälfte ist Minus.
+ *
+ * +100 % ist zugleich das mathematische Maximum (nur bei Ausgaben von 0 €), die Skala
+ * verschenkt oben also nichts. Nach unten ist sie offen — −733 % gibt es real; solche Monate
+ * kappt toRows auf −100 %, statt alle anderen zu einer flachen Linie zusammenzudrücken.
  */
-function sparquoteDomain(data: MonthlyComparison[]): [number, number] {
-  const werte = data.map(d => d.sparquote).filter((v): v is number => v != null)
-  if (werte.length === 0) return [0, 60]
-  const min = Math.max(-100, Math.min(0, ...werte))
-  const max = Math.max(60, ...werte)
-  // Auf 20er-Schritte runden, damit die Ticks glatte Zahlen zeigen.
-  return [Math.floor(min / 20) * 20, Math.ceil(max / 20) * 20]
-}
+const PCT_DOMAIN: [number, number] = [-100, 100]
+const PCT_TICKS  = [-100, -50, 0, 50, 100]
 
 /**
  * Kappt die Sparquote auf den Achsenbereich.
@@ -110,8 +108,7 @@ function SparquoteDot({ cx, cy, payload }: any) {
 }
 
 export function MonatsVergleich({ data }: Props) {
-  const pctDomain = sparquoteDomain(data)
-  const rows      = toRows(data, pctDomain)
+  const rows = toRows(data, PCT_DOMAIN)
 
   return (
     <div className="bg-card border border-border rounded-xl p-5">
@@ -161,11 +158,14 @@ export function MonatsVergleich({ data }: Props) {
           <YAxis
             yAxisId="pct"
             orientation="right"
-            tickFormatter={v => `${v}%`}
+            tickFormatter={v => `${v} %`}
             tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
             axisLine={false}
             tickLine={false}
-            domain={pctDomain}
+            domain={PCT_DOMAIN}
+            // Feste Marken statt recharts-Automatik: −100/−50/0/50/100 machen die Halbierung
+            // der Karte an der Null sichtbar, die Automatik käme auf 25er-Schritte.
+            ticks={PCT_TICKS}
             // Zusammen mit toRows die Garantie, dass nichts aus der Karte läuft: die Werte
             // sind gekappt, und falls doch etwas durchrutscht, clippt recharts es weg.
             allowDataOverflow
@@ -191,26 +191,25 @@ export function MonatsVergleich({ data }: Props) {
             radius={[3, 3, 0, 0]}
             maxBarSize={28}
           />
-          {/* Nulllinie der Sparquote — nur wenn es überhaupt Minusmonate gibt: darunter ist
-              mehr rausgegangen als reinkam. Ohne sie liest man die rechte Achse falsch,
-              weil die Balken auf der EUR-Null unten stehen. */}
-          {pctDomain[0] < 0 && (
-            <ReferenceLine
-              yAxisId="pct"
-              y={0}
-              stroke="var(--chart-accent)"
-              strokeOpacity={0.45}
-              strokeDasharray="4 4"
-              // Bewusst INNEN: `position: 'right'` legt die Schrift auf die Ticks der
-              // rechten Achse, die je nach Wertebereich selbst keine 0 zeigt.
-              label={{
-                value: '0 % Sparquote',
-                position: 'insideTopRight',
-                fontSize: 9,
-                fill: 'var(--muted-foreground)',
-              }}
-            />
-          )}
+          {/* Nulllinie der Sparquote, jetzt fest auf halber Kartenhöhe: darunter ist mehr
+              rausgegangen als reinkam. Ohne sie liest man die rechte Achse falsch, weil die
+              Balken auf der EUR-Null unten stehen. Nicht mehr an Minusmonate gebunden — bei
+              symmetrischer Achse ist sie die Mittellinie, die die Karte halbiert. */}
+          <ReferenceLine
+            yAxisId="pct"
+            y={0}
+            stroke="var(--chart-accent)"
+            strokeOpacity={0.45}
+            strokeDasharray="4 4"
+            // Bewusst INNEN: `position: 'right'` legt die Schrift auf die Ticks der
+            // rechten Achse.
+            label={{
+              value: '0 % Sparquote',
+              position: 'insideTopRight',
+              fontSize: 9,
+              fill: 'var(--muted-foreground)',
+            }}
+          />
           <Line
             yAxisId="pct"
             type="monotone"

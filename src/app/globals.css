@@ -226,6 +226,31 @@ html.lenis-active {
   min-height: 0;
 }
 
+/* Auf hohen, breiten Viewports steht die Navigation komplett offen: alle
+   Unterpunkte sichtbar, jede Zeile immer an derselben Stelle (kein Springen
+   beim Bereichswechsel) und jede Seite einen Klick entfernt. Als reine
+   Media-Query, damit die Sidebar keinen JS-Breakpoint-State braucht.
+   Darunter — kurze Laptops — bleibt das Akkordeon: 17 Zeilen wuerden dort
+   scrollen und genau den Vorteil wieder aufheben.
+   Gleiche Werte wie `.open`, deshalb kein Specificity-Konflikt. */
+@media (min-width: 768px) and (min-height: 820px) {
+  .subnav-container {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+
+/* Dieselbe „alles offen"-Ansicht auch im Mobile-Drawer: der scrollt ohnehin
+   schon (eigenes overflow-y-auto), ein paar zusaetzliche Zeilen kosten dort
+   nichts, und Eric wollte auf dem Handy dieselbe Uebersicht wie auf dem
+   Desktop statt eines Akkordeons, das nur den aktiven Bereich zeigt. */
+@media (max-width: 767px) {
+  .subnav-container {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+
 /* ── Global interactive transitions ───────────────────────────────────────── */
 a, button {
   transition-property: color, background-color, border-color, box-shadow, opacity, transform;

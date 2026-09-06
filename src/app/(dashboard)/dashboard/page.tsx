@@ -57,16 +57,22 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
   return <div className={`rounded-lg border border-border bg-card ${className}`}>{children}</div>
 }
 
-// Mirror the accountBucket logic from the cron job
+// Spiegelt die Bucket-Zuordnung aus fn_take_snapshot (v3). Muss deckungsgleich
+// bleiben: sonst rechnet der heutige Punkt im Verlauf anders als alle davor.
+// `investment` hat seit 2026-09-02 seinen eigenen Bucket — 1.500 € Geschäftsanteile
+// als „Girokonto" auszuweisen hat die Kachel um genau diesen Betrag zu liquide
+// aussehen lassen. 'bausparer', 'business', 'loan' und 'debt' stehen hier nicht
+// mehr: accounts_type_check erlaubt sie gar nicht, die Zweige waren toter Code.
 function liveAccountBucket(type: string): string | null {
   switch (type) {
-    case 'checking':
-    case 'investment':       return 'checking'
+    case 'checking':         return 'checking'
+    case 'investment':       return 'investment'
     case 'savings':          return 'savings'
-    case 'cash':             return 'cash'
-    case 'bausparer':
+    case 'cash':
+    case 'other':            return 'cash'
     case 'building_savings': return 'bausparer'
-    case 'business':         return 'business'
+    case 'credit':           return 'debts'
+    case 'crypto':           return 'crypto'
     default:                 return null
   }
 }
@@ -134,8 +140,12 @@ export default async function DashboardPage() {
     supabase.from('accounts').select('id, name, type, color, currency, is_active, bank_iban').eq('user_id', user!.id).order('sort_order'),
     // unified_transactions (see migration 20260821010000) merges in FinTS-synced bank
     // transactions for linked accounts, so net worth / monthly totals below include them too.
+    // Für die Kontostände bewusst OHNE flow_kind-Filter: ein Krypto-Kauf ist keine
+    // Ausgabe, senkt das Girokonto aber sehr wohl.
     supabase.from('unified_transactions').select('account_id, type, amount, currency').eq('user_id', user!.id),
-    supabase.from('unified_transactions').select('type, amount').eq('user_id', user!.id).gte('date', monthStart),
+    // Für „Einnahmen/Ausgaben diesen Monat" dagegen nur echte Bewegungen — sonst
+    // zählen Umbuchungen, Krypto-Käufe und Bauspar-Einzahlungen als Konsum.
+    supabase.from('unified_transactions').select('type, amount').eq('user_id', user!.id).gte('date', monthStart).eq('flow_kind', 'echt'),
     supabase.from('debts').select('outstanding, type').eq('user_id', user!.id).eq('is_active', true),
     supabase.from('savings_goals').select('*').eq('user_id', user!.id).eq('status', 'offen'),
     supabase.from('assets').select('id, symbol, name, portfolio_name, quantity, avg_buy_price').in('type', ['crypto', 'stable', 'fiat']).eq('user_id', user!.id),
@@ -178,7 +188,7 @@ export default async function DashboardPage() {
   snapshotFrom.setFullYear(snapshotFrom.getFullYear() - 2)
   const { data: netWorthSnapshots } = await supabase
     .from('net_worth_snapshots')
-    .select('snapshot_date,net_worth,total_checking,total_savings,total_cash,total_depot,total_crypto,total_bausparer,total_business,total_debts,total_assets')
+    .select('snapshot_date,net_worth,total_checking,total_investment,total_savings,total_cash,total_depot,total_crypto,total_bausparer,total_business,total_debts,total_assets')
     .eq('user_id', user!.id)
     .gte('snapshot_date', snapshotFrom.toISOString().split('T')[0])
     .order('snapshot_date')
@@ -252,33 +262,59 @@ export default async function DashboardPage() {
     a.avg_buy_price != null && a.quantity != null ? s + a.avg_buy_price * a.quantity : s, 0)
 
   // ── Net Worth ─────────────────────────────────────────────────────────────
-  const financeTotal  = accounts.reduce((s, a) => s + (balMap.get(a.id) ?? 0), 0)
-  // borrowed = I owe → reduces net worth; lent = others owe me → increases net worth
+  // Nur aktive Konten — fn_take_snapshot filtert genauso. Vorher standen hier alle,
+  // inaktive inklusive.
+  const financeTotal  = activeAccounts.reduce((s, a) => s + (balMap.get(a.id) ?? 0), 0)
+  const depotTotal    = depotSummaries.reduce((s, d) => s + (d.depotValue ?? 0), 0)
+
+  /**
+   * Nettovermögen = Konten + Krypto + Depot. Festgelegt am 2026-09-02.
+   *
+   * Vorher rechnete diese Kachel `+ savingsTotal + lentTotal − borrowedTotal` und
+   * lief damit an der Snapshot-Historie vorbei: die Kachel zeigte 14.238,61 €, die
+   * Kurve daneben 13.694,93 €, und der als „heute" angehängte Punkt im Verlauf war
+   * nach einer anderen Formel gerechnet als jeder Punkt links davon.
+   *
+   * Die drei Posten sind absichtlich draußen:
+   *  • Sparziele haben keine Kontoverknüpfung. Die 1.610 € für die China-Reise
+   *    liegen auf dem Girokonto und steckten damit doppelt im Nettovermögen.
+   *  • Verliehenes und geschuldetes Geld stehen als eigene Kacheln daneben —
+   *    dieselbe Trennung wie beim Inventar (siehe oben).
+   */
+  const netWorth = financeTotal + cryptoTotal + depotTotal
+
+  // Nur noch für die Kacheln neben dem Nettovermögen, nicht mehr Teil davon.
   const borrowedTotal = (debtsRaw ?? []).filter(d => d.type === 'borrowed').reduce((s, d) => s + (d.outstanding ?? 0), 0)
   const lentTotal     = (debtsRaw ?? []).filter(d => d.type === 'lent').reduce((s, d) => s + (d.outstanding ?? 0), 0)
   const savingsTotal  = goals.reduce((s, g) => s + (g.current_amount ?? 0), 0)
-  const depotTotal    = depotSummaries.reduce((s, d) => s + (d.depotValue ?? 0), 0)
-  const netWorth      = financeTotal + cryptoTotal + savingsTotal + lentTotal + depotTotal - borrowedTotal
 
   // ── Today's snapshot for chart (live data point) ──────────────────────────
-  const liveBuckets: Record<string, number> = { checking: 0, savings: 0, cash: 0, bausparer: 0, business: 0 }
-  for (const a of accounts) {
+  const liveBuckets: Record<string, number> = {
+    checking: 0, investment: 0, savings: 0, cash: 0, bausparer: 0, crypto: 0, debts: 0,
+  }
+  for (const a of activeAccounts) {
     const bucket = liveAccountBucket(a.type)
     if (bucket) liveBuckets[bucket] = (liveBuckets[bucket] ?? 0) + (balMap.get(a.id) ?? 0)
   }
   const todayDateStr = now.toISOString().split('T')[0]
   const todaySnapshot = {
-    snapshot_date:   todayDateStr,
-    net_worth:       netWorth,
-    total_checking:  liveBuckets.checking,
-    total_savings:   liveBuckets.savings,
-    total_cash:      liveBuckets.cash,
-    total_depot:     depotTotal,
-    total_crypto:    cryptoTotal,
-    total_bausparer: liveBuckets.bausparer,
-    total_business:  liveBuckets.business,
-    total_debts:     borrowedTotal,
-    total_assets:    0,
+    snapshot_date:    todayDateStr,
+    net_worth:        netWorth,
+    total_checking:   liveBuckets.checking,
+    total_investment: liveBuckets.investment,
+    total_savings:    liveBuckets.savings,
+    total_cash:       liveBuckets.cash,
+    total_depot:      depotTotal,
+    // Kryptokonten sind Konten, keine Positionen — genau wie in fn_take_snapshot
+    // kommen sie zum Positionswert dazu.
+    total_crypto:     cryptoTotal + liveBuckets.crypto,
+    total_bausparer:  liveBuckets.bausparer,
+    // 'business' ist kein erlaubter Kontotyp mehr; die Spalte trägt nur noch Historie.
+    total_business:   0,
+    // Schulden aus KONTEN vom Typ 'credit', nicht aus der Tabelle `debts` —
+    // wie im Snapshot. Sonst wäre der heutige Punkt wieder anders gerechnet.
+    total_debts:      Math.abs(liveBuckets.debts),
+    total_assets:     0,
   }
   const existingSnapshots = netWorthSnapshots ?? []
   const snapshotsWithToday = existingSnapshots.filter(s => s.snapshot_date !== todayDateStr).concat(todaySnapshot)
@@ -338,26 +374,49 @@ export default async function DashboardPage() {
           <p className={`text-4xl font-bold tabular-nums tracking-tight ${netWorth < 0 ? 'text-danger' : ''}`}>
             {fmt(netWorth)}
           </p>
+          {/* Oben die Posten, die die Zahl darüber ergeben — die Summe muss aufgehen.
+              Unten, hinter der Trennlinie, was daneben steht: Sparziele liegen schon
+              auf dem Girokonto, Schulden und Forderungen sind per Entscheidung vom
+              2026-09-02 nicht Teil des Nettovermögens. Vorher stand alles in einem
+              Block und sah damit aus, als würde es sich zur Zahl oben addieren. */}
           <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2.5">
             {([
-              ['Finanzen',        financeTotal,   'neutral'],
-              ['Depot',           depotTotal,     'neutral'],
-              ['Krypto',          cryptoTotal,    'neutral'],
-              ['Sparziele',       savingsTotal,   'neutral'],
-              ['Ich schulde',     borrowedTotal,  'red'],
-              ['Mir geschuldet',  lentTotal,      lentTotal > 0 ? 'green' : 'neutral'],
-            ] as [string, number, 'neutral' | 'red' | 'green'][]).filter(([, val]) => val > 0).map(([label, val, color]) => (
+              ['Konten',          liveBuckets.checking + liveBuckets.savings + liveBuckets.cash + liveBuckets.bausparer],
+              ['Geschäftsanteile', liveBuckets.investment],
+              ['Depot',           depotTotal],
+              ['Krypto',          cryptoTotal + liveBuckets.crypto],
+            ] as [string, number][]).filter(([, val]) => val !== 0).map(([label, val]) => (
               <div key={label}>
                 <p className="text-xs text-muted-foreground">{label}</p>
-                <p className={`text-sm font-semibold tabular-nums ${
-                  color === 'red'   ? 'text-danger' :
-                  color === 'green' ? 'text-success' : ''
-                }`}>
-                  {color === 'red' ? '−' : ''}{fmt(val)}
-                </p>
+                <p className="text-sm font-semibold tabular-nums">{fmt(val)}</p>
               </div>
             ))}
           </div>
+
+          {[savingsTotal, borrowedTotal, lentTotal].some(v => v > 0) && (
+            <div className="mt-4 pt-3 border-t border-border">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">
+                Nicht im Net Worth
+              </p>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-2.5">
+                {([
+                  ['Sparziele',      savingsTotal,   'neutral'],
+                  ['Ich schulde',    borrowedTotal,  'red'],
+                  ['Mir geschuldet', lentTotal,      lentTotal > 0 ? 'green' : 'neutral'],
+                ] as [string, number, 'neutral' | 'red' | 'green'][]).filter(([, val]) => val > 0).map(([label, val, color]) => (
+                  <div key={label}>
+                    <p className="text-xs text-muted-foreground">{label}</p>
+                    <p className={`text-sm font-semibold tabular-nums ${
+                      color === 'red'   ? 'text-danger' :
+                      color === 'green' ? 'text-success' : ''
+                    }`}>
+                      {color === 'red' ? '−' : ''}{fmt(val)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </Card>
 
         {/* Monatsbilanz */}
@@ -440,11 +499,14 @@ export default async function DashboardPage() {
         <div className="lg:col-span-2 min-w-0">
           <NetWorthChart snapshots={snapshotsWithToday} />
         </div>
+        {/* Dieselben Bausteine wie in der Net-Worth-Kachel, damit die Mitte des Rings
+            dieselbe Summe zeigt. `financeTotal` wäre hier falsch: es enthält die
+            Geschäftsanteile schon mit, die als eigener Ring ausgewiesen werden. */}
         <PortfolioDonut
-          financeTotal={financeTotal}
+          kontenTotal={liveBuckets.checking + liveBuckets.savings + liveBuckets.cash + liveBuckets.bausparer}
+          investmentTotal={liveBuckets.investment}
           depotTotal={depotTotal}
-          cryptoTotal={cryptoTotal}
-          savingsTotal={savingsTotal}
+          cryptoTotal={cryptoTotal + liveBuckets.crypto}
           locale={locale}
         />
       </div>

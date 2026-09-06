@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import {
   ComposedChart, Bar, Area, XAxis, YAxis, CartesianGrid, ReferenceLine, ReferenceDot,
-  ResponsiveContainer, Tooltip, Cell,
+  ResponsiveContainer, Tooltip,
 } from 'recharts'
 import { useSettings } from '@/components/providers/settings-context'
 import { fmtCurrency } from '@/lib/format'
@@ -14,6 +14,13 @@ import { ModeSwitch, ANALYSE_MODE_OPTIONS } from './ModeSwitch'
 /** Unter dieser Monatszahl ist eine Verteilung nicht verlässlich genug — lieber
     ehrlich „noch nicht genug Historie" als ein Histogramm aus drei Werten. */
 const MIN_MONTHS = 12
+
+/** Echtes Minuszeichen (U+2212) statt Bindestrich. Auf der Achse standen vorher
+    Klassenbereiche wie „-787--51", in denen Vorzeichen und Bis-Strich identisch
+    aussahen. Die Achse zeigt jetzt Einzelbeträge (s. u.); das Minus bleibt
+    trotzdem das typografisch richtige — es ist so breit wie eine Ziffer und
+    fällt damit nicht mehr mit einem Bindestrich zusammen. */
+const MINUS = '−'
 
 const TITLE: Record<AnalyseMode, string> = {
   ausgaben:  'Ausgabenverteilung',
@@ -42,16 +49,45 @@ interface Bin {
   from:      number
   to:        number
   count:     number
-  /** Erwartete Monate in dieser Klasse laut KDE — siehe buildBins. */
-  kurve:     number
   isCurrent: boolean
+}
+
+/** Stützpunkt der Dichtekurve: Betrag → erwartete Monate. */
+interface KurvePunkt {
+  x: number
+  y: number
+}
+
+/**
+ * Wie fein die Dichtekurve abgetastet wird.
+ *
+ * Sie hing vorher an den Klassenmitten, also an 6–12 Punkten, und lief nur von der ersten
+ * bis zur letzten Mitte. Beides hat sie flachgedrückt: das Maximum der Dichte liegt fast
+ * nie genau auf einer Klassenmitte (der Scheitel wurde also gekappt und die Kurve bekam
+ * einen breiten Rücken statt eines Extrempunkts), und die abgeschnittenen Ausläufer links
+ * und rechts fehlten, an denen man eine Verteilung überhaupt als Glocke erkennt.
+ */
+const KURVE_PUNKTE = 121
+
+interface Verteilung {
+  bins:  Bin[]
+  kurve: KurvePunkt[]
+  /** Betragsachse: Außenkanten der ersten und der letzten Klasse. */
+  min:   number
+  max:   number
+  width: number
+  /** KDE-Bandbreite — wird für den Marker des laufenden Monats erneut gebraucht. */
+  h:     number
+  ticks: number[]
 }
 
 /** 2.340 → „2,3k", 340 → „340", −1.200 → „−1,2k" */
 function compact(v: number): string {
   const abs = Math.abs(v)
-  if (abs < 1000) return v.toLocaleString('de-DE', { maximumFractionDigits: 0 })
-  return (v / 1000).toLocaleString('de-DE', { maximumFractionDigits: abs >= 10000 ? 0 : 1 }) + 'k'
+  const s = abs < 1000
+    ? v.toLocaleString('de-DE', { maximumFractionDigits: 0 })
+    : (v / 1000).toLocaleString('de-DE', { maximumFractionDigits: abs >= 10000 ? 0 : 1 }) + 'k'
+  return s.replace('-', MINUS)
 }
 
 function quantile(sorted: number[], p: number): number {
@@ -67,15 +103,13 @@ function median(values: number[]): number {
 }
 
 /**
- * Klassenzahl nach Freedman-Diaconis (Klassenbreite = 2·IQR/n^⅓).
- *
- * Eine feste Zahl war hier zu grob: Eric hat einzelne Ausreißermonate (ein
- * Dezember mit 3.874 € Ausgaben gegen einen Sockel um 2.000 €). Die spannen den
- * Wertebereich auf, und mit 8 festen Klassen landeten 11 von 18 Monaten in einem
- * einzigen Balken — die Verteilung war ein Klotz mit einer leeren Wüste rechts
- * daneben. FD orientiert die Breite am Interquartilsabstand, also an der Mitte
- * der Daten statt an den Rändern: derselbe Datensatz zerfällt damit in 8/6/2
- * statt 11/5/0/…, und gleichmäßige Daten bekommen weiterhin nur 6 Klassen.
+ * Referenz-Klassenzahl nach Freedman-Diaconis (Klassenbreite = 2·IQR/n^⅓) — NICHT mehr für
+ * die angezeigten Balken (die zeigen jetzt jeden Monat einzeln, siehe `displayBinCountFor`),
+ * sondern für die Bandbreite der Dichtekurve in `buildVerteilung`. Eine feste Zahl war dafür
+ * zu grob: Eric hat einzelne Ausreißermonate (ein Dezember mit 3.874 € Ausgaben gegen einen
+ * Sockel um 2.000 €), die den Wertebereich aufspannen. FD orientiert die Breite am
+ * Interquartilsabstand, also an der Mitte der Daten statt an den Rändern, und bleibt damit
+ * auch als reine Glättungs-Referenz robust gegen genau solche Ausreißer.
  */
 function binCountFor(values: number[]): number {
   const s = [...values].sort((a, b) => a - b)
@@ -86,25 +120,67 @@ function binCountFor(values: number[]): number {
 }
 
 /**
- * Klassiert die Monatswerte und legt die KDE-Kurve auf dasselbe Raster.
+ * Klassenzahl für die ANGEZEIGTEN Balken: eine Klasse je Monat.
  *
- * `kurve` ist Dichte × Monate × Klassenbreite, also die Anzahl Monate, die man
- * in dieser Klasse ERWARTEN würde. Damit stehen Balken und Kurve auf derselben
- * Y-Achse („Monate") — eine reine Dichteachse war der Grund, warum die Y-Achse
+ * Vorher liefen alle Monate durch dieselbe 6–12er-Einteilung wie oben, mehrere Monate
+ * teilten sich also eine breite Klasse (als gestapelte Einheiten unterscheidbar gemacht,
+ * aber eben nebeneinander in EINER Spalte). Mit einer Klasse pro Monat rückt jeder Monat in
+ * eine eigene, schmalere Spalte — nebeneinander statt übereinander gestapelt. Teilt sich
+ * ausnahmsweise doch mal eine Klasse zwei exakt gleich gerundete Monate, greift dort
+ * weiterhin die Stapel-Darstellung aus `monthStackShape`.
+ */
+function displayBinCountFor(values: number[]): number {
+  return Math.max(6, values.length)
+}
+
+/**
+ * Achsenmarken auf runden Beträgen innerhalb von [min, max].
+ *
+ * Bewusst selbst gerechnet statt recharts überlassen: eine number-Achse rundet
+ * dort ihre Domain auf glatte Werte auf. Die Klassen hängen aber an min/max der
+ * Daten, nicht an runden Zahlen — mit gerundeter Domain läge das Pixelraster der
+ * Betragsachse neben dem der Balken, und genau darauf setzt der Marker des
+ * laufenden Monats auf. Also: Domain fest, nur die Marken werden gerundet.
+ */
+function niceTicks(min: number, max: number, target = 5): number[] {
+  const span = max - min
+  if (!(span > 0)) return [min]
+  const raw  = span / target
+  const mag  = Math.pow(10, Math.floor(Math.log10(raw)))
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw) ?? 10 * mag
+  const out: number[] = []
+  // Toleranz gegen Fließkomma-Drift beim Aufaddieren (3000,0000000000005 > 3000).
+  for (let t = Math.ceil(min / step) * step; t <= max + step * 1e-9; t += step) {
+    out.push(Math.round(t * 1e6) / 1e6)
+  }
+  return out.length >= 2 ? out : [min, max]
+}
+
+/**
+ * Klassiert die Monatswerte und tastet die KDE über denselben Wertebereich ab.
+ *
+ * `kurve.y` ist Dichte × Monate × Klassenbreite, also die Anzahl Monate, die man in einer
+ * Klasse dieser Breite an dieser Stelle ERWARTEN würde. Damit stehen Balken und Kurve auf
+ * derselben Y-Achse („Monate") — eine reine Dichteachse war der Grund, warum die Y-Achse
  * vorher ausgeblendet werden musste und die Karte nicht wie ein Diagramm aussah.
  */
-function buildBins(values: number[], binCount: number, currentValue: number | null): Bin[] {
+function buildVerteilung(values: number[], binCount: number, currentValue: number | null): Verteilung {
   const min   = Math.min(...values)
-  const max   = Math.max(...values)
-  const span  = max - min || Math.abs(max) || 1
+  const span  = (Math.max(...values) - min) || Math.abs(min) || 1
+  const max   = min + span
   const width = span / binCount
-  // Bandbreite an die Klassenbreite gekoppelt, NICHT nach Silverman: Silverman
-  // optimiert die Dichteschätzung für sich, hier muss die Kurve aber zu den
-  // Balken daneben passen. Gemessen an Erics Ausreißer-Datensatz erreichte die
-  // Silverman-Kurve nur 42 % der Balkenspitze — sie lag flach unter dem
-  // Histogramm und sah aus wie ein Rechenfehler. Mit 0,8 × Klassenbreite sind es
-  // 66-79 %: erkennbar dieselbe Verteilung, nur geglättet.
-  const h     = width * 0.8
+  // Bandbreite bewusst NICHT an die (jetzt sehr feine, ein Monat pro Klasse) Anzeige-
+  // Klassenbreite gekoppelt — das hätte die Kurve bei bis zu 24 schmalen Klassen selbst
+  // löchrig und spitz gemacht, sie soll aber die geglättete Form zeigen, nicht jeden Monat
+  // einzeln nachzeichnen. Referenz ist stattdessen die grobe FD-Klassenzahl von
+  // `binCountFor` (6–12), unabhängig davon, wie fein die Balken tatsächlich gezeichnet
+  // werden. NICHT nach Silverman: Silverman optimiert die Dichteschätzung für sich, hier
+  // muss die Kurve aber zu den Balken daneben passen — gemessen an Erics Ausreißer-
+  // Datensatz erreichte die Silverman-Kurve nur 42 % der Balkenspitze und sah wie ein
+  // Rechenfehler aus. Mit 0,8 × (grober) Klassenbreite sind es 66-79 %: erkennbar dieselbe
+  // Verteilung, nur geglättet.
+  const smoothWidth = span / binCountFor(values)
+  const h     = smoothWidth * 0.8
 
   // Liegt der laufende Monat außerhalb der Historie (neuer Höchst- oder
   // Tiefstwert), fällt er auf die Randklasse — das Perzentil im Kopf sagt mit
@@ -113,25 +189,32 @@ function buildBins(values: number[], binCount: number, currentValue: number | nu
     ? -1
     : Math.min(binCount - 1, Math.max(0, Math.floor((currentValue - min) / width)))
 
-  return Array.from({ length: binCount }, (_, i) => {
-    const last   = i === binCount - 1
-    const from   = min + i * width
+  const bins = Array.from({ length: binCount }, (_, i) => {
+    const last = i === binCount - 1
+    const from = min + i * width
     // Die letzte Klasse endet exakt auf dem Maximum statt auf `from + width`:
     // bei 11 Klassen über 2.240 € liefert die Summe der Breiten durch
     // Fließkomma-Rundung 4.019,999… statt 4.020 — der teuerste Monat fiel
     // dadurch komplett aus dem Histogramm (17 von 18 Monaten gezählt).
-    const to     = last ? max : from + width
-    const center = from + width / 2
+    const to = last ? max : from + width
     return {
-      label: compact(from) + '–' + compact(to),
+      // Nur noch Tooltip-Schlüssel und React-key — beschriftet wird die Achse
+      // mit Beträgen, nicht mehr mit Klassenbereichen.
+      label: compact(from) + ' bis ' + compact(to),
       from,
       to,
       // Die letzte Klasse schließt oben ein, sonst fiele das Maximum durchs Raster.
       count: values.filter(v => v >= from && (last ? v <= to : v < to)).length,
-      kurve: kdeDensityAt(values, center, h) * values.length * width,
       isCurrent: i === currentIdx,
     }
   })
+
+  const kurve = Array.from({ length: KURVE_PUNKTE }, (_, i) => {
+    const x = min + (span * i) / (KURVE_PUNKTE - 1)
+    return { x, y: kdeDensityAt(values, x, h) * values.length * width }
+  })
+
+  return { bins, kurve, min, max, width, h, ticks: niceTicks(min, max) }
 }
 
 /**
@@ -147,12 +230,19 @@ function BinTooltip({ active, payload, fmt }: {
   fmt: (n: number) => string
 }) {
   if (!active || !payload?.length) return null
-  const b = payload[0]?.payload as Bin | undefined
+  // Gezielt die Klassenzeile suchen, nicht payload[0] nehmen: die Dichtekurve hat ihren
+  // eigenen Datensatz (feineres Raster als die Klassen) und landet ebenfalls im payload.
+  const b = payload.find(p => p?.payload && 'from' in p.payload)?.payload as Bin | undefined
   if (!b) return null
   return (
     <div className="rounded-lg border border-border bg-popover px-2.5 py-1.5 shadow-lg text-xs">
+      {/* „bis" ausgeschrieben statt Gedankenstrich: bei negativen Klassen stand
+          hier „−787 – −51", und Bis-Strich und Vorzeichen waren nicht mehr
+          auseinanderzuhalten. */}
       <p className="text-popover-foreground font-medium tabular-nums">
-        {fmt(b.from)} – {fmt(b.to)}
+        {fmt(b.from)}
+        <span className="font-normal text-muted-foreground"> bis </span>
+        {fmt(b.to)}
       </p>
       <p className="text-muted-foreground mt-0.5">
         {b.count} {b.count === 1 ? 'Monat' : 'Monate'}
@@ -162,26 +252,90 @@ function BinTooltip({ active, payload, fmt }: {
   )
 }
 
+/**
+ * Der Punkt des laufenden Monats auf der Dichtekurve.
+ *
+ * Eigene Komponente statt einer im Render definierten Funktion (react-hooks/static-
+ * components): sie braucht eigenen Hover-State, der bei jedem Neu-Erzeugen verloren ginge.
+ * Der Betrag stand vorher permanent über dem Chart — dort kollidierte er mit der
+ * Median-Beschriftung und dem Scheitel der Dichtekurve und wurde deshalb bei Kollision
+ * ausgeblendet (ganz ohne Wert). Jetzt zeigt der Punkt den Betrag erst beim Hover/Fokus
+ * direkt an sich selbst — „auf der Linie anfokussieren", nicht dauerhaft im Weg.
+ */
+function CurrentMonthDot({ cx, cy, color, fmt, value, align }: {
+  cx?: number
+  cy?: number
+  color: string
+  fmt: (n: number) => string
+  value: number
+  /** Ausrichtung der Wertblase relativ zum Punkt, damit sie am Rand der Zeichenfläche
+      nicht abgeschnitten wird — grob aus der Position des Punkts im Wertebereich abgeleitet. */
+  align: 'start' | 'middle' | 'end'
+}) {
+  const [hover, setHover] = useState(false)
+  if (cx == null || cy == null) return null
+
+  const text = fmt(value)
+  const boxW = Math.max(46, text.length * 6.5 + 16)
+  const boxX = align === 'start' ? cx : align === 'end' ? cx - boxW : cx - boxW / 2
+  // Sitzt der Punkt hoch (z. B. am Kurvenscheitel), fehlt über ihm der Platz für die
+  // Blase — dann erscheint sie unter dem Punkt statt darüber.
+  const above = cy > 40
+  const boxY  = above ? cy - 34 : cy + 12
+  const textY = above ? cy - 19 : cy + 27
+
+  return (
+    <g
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{ cursor: 'pointer' }}
+    >
+      {/* Unsichtbarer, großzügiger Hit-Bereich — der sichtbare Punkt allein ist zu klein,
+          um ihn zuverlässig zu treffen. */}
+      <circle cx={cx} cy={cy} r={14} fill="transparent" />
+      <circle cx={cx} cy={cy} r={hover ? 6.5 : 5} fill={color} stroke="var(--card)" strokeWidth={2} />
+      {hover && (
+        <g>
+          <rect
+            x={boxX} y={boxY} width={boxW} height={22} rx={5}
+            fill="var(--popover)" stroke="var(--border)"
+          />
+          <text
+            x={boxX + boxW / 2} y={textY}
+            textAnchor="middle" fontSize={11} fontWeight={600}
+            fill="var(--popover-foreground)"
+          >
+            {text}
+          </text>
+        </g>
+      )}
+    </g>
+  )
+}
+
 export function MonatsVerteilung({ history, current }: Props) {
   const { locale } = useSettings()
   const fmt = (n: number) => fmtCurrency(n, 'EUR', locale, { fractionDigits: 0 })
 
-  const [mode, setMode] = useState<AnalyseMode>('ausgaben')
+  // GuV als Vorgabe: „habe ich diesen Monat mehr eingenommen als ausgegeben" ist
+  // die Frage, die die Karte beantworten soll — Ausgaben und Einnahmen einzeln
+  // sind der Blick dahinter.
+  const [mode, setMode] = useState<AnalyseMode>('guv')
   const values       = history[mode]
   const currentValue = current?.[mode] ?? null
   const color        = COLOR[mode]
 
   const binCount = useMemo(
-    () => (values.length >= MIN_MONTHS ? binCountFor(values) : 6),
+    () => (values.length >= MIN_MONTHS ? displayBinCountFor(values) : 6),
     [values],
   )
 
-  const bins = useMemo(
-    () => (values.length >= MIN_MONTHS ? buildBins(values, binCount, currentValue) : null),
+  const vert = useMemo(
+    () => (values.length >= MIN_MONTHS ? buildVerteilung(values, binCount, currentValue) : null),
     [values, binCount, currentValue],
   )
 
-  if (!bins) {
+  if (!vert) {
     return (
       <div className="bg-card border border-border rounded-xl p-5">
         <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
@@ -196,10 +350,8 @@ export function MonatsVerteilung({ history, current }: Props) {
     )
   }
 
+  const { bins, kurve, min, max, width, h, ticks } = vert
   const med        = median(values)
-  const medianBin  = bins.find(b => med >= b.from && med <= b.to)
-  // Die Klasse, in die der laufende Monat fällt — Ankerpunkt für den Marker auf der Kurve.
-  const currentBin = bins.find(b => b.isCurrent) ?? null
   const percentile = currentValue != null ? computePercentileRank(values, currentValue) : null
   const countBelow = currentValue != null ? values.filter(v => v < currentValue).length : null
   // Auffällig heißt „liegt am Rand der eigenen Historie" — in beide Richtungen
@@ -208,6 +360,58 @@ export function MonatsVerteilung({ history, current }: Props) {
   // jedem Theme byte-identisch mit --chart-expense und wäre von der Verteilung
   // selbst nicht zu unterscheiden.
   const striking = percentile != null && (percentile >= 75 || percentile <= 25)
+
+  // Der Marker sitzt auf dem exakten Betrag des laufenden Monats, nicht mehr auf der
+  // Klassenmitte — dafür die zweite Achse „betrag" unten. Geklemmt wird nur auf den
+  // Rand der Achse: ein Monat jenseits der Historie hat kein Stück Kurve, auf dem er
+  // sitzen könnte, das Perzentil im Kopf sagt dazu ohnehin 0 bzw. 100.
+  const dotX = currentValue == null ? null : Math.min(max, Math.max(min, currentValue))
+  const dotY = dotX == null ? null : kdeDensityAt(values, dotX, h) * values.length * width
+  const dotAlign: 'start' | 'middle' | 'end' =
+    dotX == null ? 'middle'
+    : dotX < min + (max - min) * 0.25 ? 'start'
+    : dotX > max - (max - min) * 0.25 ? 'end'
+    : 'middle'
+
+  // Zeichnet eine Klasse als Stapel einzelner, durch schmale Lücken getrennter Einheiten
+  // statt eines durchgehenden Balkens — eine Einheit pro Monat in dieser Klasse. Keine
+  // eigene Komponente nötig (kein Hook, kein State): recharts ruft das bei jedem Render neu
+  // auf, `mode`/`color` kommen aus dem Closure.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function monthStackShape(props: any) {
+    const { x = 0, y = 0, width: w = 0, height: hgt = 0, payload } = props
+    const b = payload as Bin
+    if (!b || b.count === 0) return <g />
+
+    const fill = mode === 'guv'
+      ? (b.to <= 0 ? 'var(--chart-expense)' : 'var(--chart-income)')
+      : color
+    const gap   = Math.min(2, hgt / b.count / 4)
+    const unitH = Math.max(1, (hgt - gap * (b.count - 1)) / b.count)
+
+    return (
+      <g>
+        {Array.from({ length: b.count }, (_, i) => (
+          <rect
+            key={i}
+            x={x}
+            // Von unten nach oben stapeln, damit die Klasse wie ein Balken vom Nullpunkt
+            // aus wächst statt von oben herunterzuhängen.
+            y={y + hgt - (i + 1) * unitH - i * gap}
+            width={w}
+            height={unitH}
+            rx={Math.min(2, unitH / 2)}
+            fill={fill}
+            fillOpacity={0.75}
+            // Der laufende Monat wird umrandet, nicht umgefärbt — sonst wäre in der
+            // GuV-Ansicht seine Vorzeichenfarbe überschrieben.
+            stroke={b.isCurrent ? 'var(--foreground)' : undefined}
+            strokeWidth={b.isCurrent ? 1 : 0}
+          />
+        ))}
+      </g>
+    )
+  }
 
   return (
     <div className="bg-card border border-border rounded-xl p-5">
@@ -232,40 +436,68 @@ export function MonatsVerteilung({ history, current }: Props) {
       </div>
 
       <ResponsiveContainer width="100%" height={215}>
-        <ComposedChart data={bins} margin={{ top: 14, right: 8, left: -22, bottom: 0 }} barCategoryGap={2}>
+        {/* right: 8 reichte nicht für den Hover-Punkt des laufenden Monats — liegt der
+            Monat außerhalb der bisherigen Spanne (neuer Höchst-/Tiefstwert), klemmt
+            `dotX` exakt auf `max`, also an den rechten Rand der Zeichenfläche. Dort blieb
+            dem Punkt (Hit-Kreis r=14) kaum Luft, er wurde vom SVG-Rand angeschnitten —
+            das sah aus wie eine durchgezogene goldene Linie, war aber der halb
+            abgeschnittene Punkt.
+            top: 46 statt 30 — die Y-Domain bekommt zwar unten eine Einheit Puffer über der
+            höchsten Klasse (siehe YAxis), aber Domain-Puffer ist relativ zur Datenspanne:
+            je höher der höchste Stapel (mehr Monate mit demselben gerundeten Betrag, seit
+            jeder Monat seine eigene, feine Klasse hat), desto mehr Einheiten teilen sich
+            dieselbe Zeichenfläche und desto WENIGER Pixel bleiben pro Einheit übrig — eine
+            feste Domain-Einheit Puffer schrumpft also in echten Pixeln, je höher der Stapel
+            wird. Ab ~5 Bausteinen reichte das nicht mehr, der oberste wirkte angeschnitten.
+            Der Rand hier ist dagegen ein fester Pixelwert, unabhängig von der Stapelhöhe. */}
+        <ComposedChart data={bins} margin={{ top: 46, right: 32, left: -22, bottom: 0 }} barCategoryGap={2}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+          {/* Zwei X-Achsen über derselben Zeichenfläche:
+              • die kategoriale trägt die Balken, ist aber ausgeblendet — sie war
+                mit den Klassenbereichen beschriftet („−787 bis −51"), und bis zu
+                zwölf davon nebeneinander waren nicht mehr zu lesen;
+              • die Betragsachse zeigt stattdessen runde Beträge und trägt alles,
+                was an einer exakten Stelle sitzen muss: Kurve, Median, Marker.
+              Beide rastern identisch: die Domain [min, max] sind genau die
+              Außenkanten der Klassen, also bildet Klasse i in der Band-Skala
+              (Breite/Klassenzahl) und in der Betragsskala auf dieselben Pixel ab. */}
+          <XAxis dataKey="label" hide />
           <XAxis
-            dataKey="label"
+            xAxisId="betrag"
+            type="number"
+            // Positionsschlüssel für die Dichtekurve, die auf dieser Achse liegt.
+            dataKey="x"
+            domain={[min, max]}
+            // Pflicht, nicht Deko: ohne allowDataOverflow verwirft recharts eine
+            // feste Domain, sobald die Achse keine eigene Serie hat (siehe
+            // parseNumericalUserDomain — dataDomain == null ⇒ undefined), und
+            // rechnet sich eine eigene aus. Damit wäre das Raster wieder verschoben.
+            allowDataOverflow
+            ticks={ticks}
+            tickFormatter={compact}
             tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
             axisLine={false}
             tickLine={false}
           />
-          {/* Ganze Monate, keine Zwischenschritte — die Achse zählt Monate. */}
+          {/* Ganze Monate, keine Zwischenschritte — die Achse zählt Monate. Domain mit einer
+              Einheit Luft nach oben statt recharts' Default [0, dataMax]: sonst reicht die
+              höchste Klasse exakt bis an den oberen Rand der Zeichenfläche, und ihre
+              abgerundeten Ecken bzw. der Punkt des laufenden Monats (falls er dort sitzt)
+              werden vom Rand abgeschnitten. */}
           <YAxis
             allowDecimals={false}
+            domain={[0, (max: number) => Math.ceil(max) + 1]}
             tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
             axisLine={false}
             tickLine={false}
           />
           <Tooltip content={<BinTooltip fmt={fmt} />} cursor={{ fill: 'var(--muted)', fillOpacity: 0.4 }} />
-          <Bar dataKey="count" radius={[2, 2, 0, 0]}>
-            {bins.map(b => (
-              <Cell
-                key={b.label}
-                // In der GuV-Ansicht trägt das Vorzeichen die Aussage: Klassen
-                // bis 0 sind Verlustmonate. In den anderen Modi ist das
-                // Vorzeichen konstant, da genügt die Modusfarbe.
-                fill={mode === 'guv'
-                  ? (b.to <= 0 ? 'var(--chart-expense)' : 'var(--chart-income)')
-                  : color}
-                fillOpacity={0.75}
-                // Der laufende Monat wird umrandet, nicht umgefärbt — sonst wäre
-                // in der GuV-Ansicht seine Vorzeichenfarbe überschrieben.
-                stroke={b.isCurrent ? 'var(--foreground)' : undefined}
-                strokeWidth={b.isCurrent ? 1.5 : 0}
-              />
-            ))}
-          </Bar>
+          {/* Ein durchgehender Balken zeigte 7 Monate als einen einzigen Klotz — nicht zu
+              unterscheiden von einem einzelnen Monat mit siebenfacher Ausprägung. Die Klasse
+              stapelt sich jetzt aus einzelnen, durch schmale Lücken getrennten Einheiten,
+              eine je Monat: derselbe Gesamteindruck der Verteilung, aber „7 Monate" ist jetzt
+              auch optisch 7 Dinge, nicht eine Größe. */}
+          <Bar dataKey="count" isAnimationActive={false} shape={monthStackShape} />
           {/* Die KDE liegt als gestrichelte Linie über den Balken: die Balken
               sind die gezählten Monate, die Kurve die geschätzte Form dahinter
               — gestrichelt, damit die beiden nicht verwechselt werden.
@@ -280,9 +512,15 @@ export function MonatsVerteilung({ history, current }: Props) {
               <stop offset="100%" stopColor={color} stopOpacity={0} />
             </linearGradient>
           </defs>
+          {/* Eigener, feiner Datensatz auf der Betragsachse statt der Klassenzeilen: nur
+              so hat die Kurve ihren echten Scheitel und ihre Ausläufer (s. KURVE_PUNKTE).
+              tooltipType="none", weil der Tooltip die Klasse erklärt, nicht die Dichte. */}
           <Area
+            xAxisId="betrag"
+            data={kurve}
+            dataKey="y"
             type="monotone"
-            dataKey="kurve"
+            tooltipType="none"
             stroke={color}
             strokeWidth={2.5}
             strokeDasharray="7 4"
@@ -292,40 +530,38 @@ export function MonatsVerteilung({ history, current }: Props) {
           />
           {/* Der laufende Monat als Punkt AUF der Kurve, nicht nur als umrandeter
               Balken: die Umrandung ging in derselben Farbe wie die Füllung unter,
-              vor allem bei nur einem Monat in der Klasse. Der Punkt sitzt auf der
-              Klassenmitte, also exakt auf einem Stützpunkt der Kurve — die X-Achse
-              ist kategorial, feiner als die Klasse geht es nicht. Der weiße Ring
-              (--card) hebt ihn von Balken und Kurve ab. */}
-          {currentBin && (
+              vor allem bei nur einem Monat in der Klasse. Der Ring in --card hebt
+              ihn von Balken und Kurve ab. Der Betrag steht nicht mehr permanent
+              daneben (siehe CurrentMonthDot) — erst beim Hover, direkt am Punkt. */}
+          {dotX != null && dotY != null && (
             <ReferenceDot
-              x={currentBin.label}
-              y={currentBin.kurve}
-              r={5}
-              fill={color}
-              stroke="var(--card)"
-              strokeWidth={2}
-              label={currentBin.label === medianBin?.label ? undefined : {
-                value: 'Dieser Monat',
-                position: 'top',
-                fontSize: 10,
-                fontWeight: 600,
-                fill: 'var(--foreground)',
-              }}
+              xAxisId="betrag"
+              x={dotX}
+              y={dotY}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              shape={(props: any) => (
+                <CurrentMonthDot
+                  cx={props.cx}
+                  cy={props.cy}
+                  color={color}
+                  fmt={fmt}
+                  value={currentValue!}
+                  align={dotAlign}
+                />
+              )}
             />
           )}
-          {medianBin && (
-            <ReferenceLine
-              x={medianBin.label}
-              stroke="var(--muted-foreground)"
-              strokeDasharray="4 3"
-              label={{
-                value: 'Median ' + fmt(med),
-                position: 'top',
-                fontSize: 10,
-                fill: 'var(--muted-foreground)',
-              }}
-            />
-          )}
+          {/* Median auf dem exakten Betrag, nicht mehr auf der Klassenmitte. Ohne
+              Beschriftung oben: die stand direkt im Scheitel der (goldenen) Dichtekurve
+              und wirkte dadurch wie ein Teil davon, obwohl beide nichts miteinander zu tun
+              haben — die Linie hier ist grau, nicht golden. Der Wert steht stattdessen
+              unten in der Legende. */}
+          <ReferenceLine
+            xAxisId="betrag"
+            x={med}
+            stroke="var(--muted-foreground)"
+            strokeDasharray="4 3"
+          />
         </ComposedChart>
       </ResponsiveContainer>
 
@@ -338,9 +574,13 @@ export function MonatsVerteilung({ history, current }: Props) {
           <span className="inline-block w-4 border-t-[2.5px] border-dashed" style={{ borderColor: color }} />
           Dichtekurve
         </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block w-4 border-t-[2.5px] border-dashed border-muted-foreground" />
+          Median {fmt(med)}
+        </span>
         {currentValue != null && (
           <span className="flex items-center gap-1.5">
-            {/* Punkt auf der Kurve + umrandeter Balken meinen dieselbe Klasse — ein
+            {/* Punkt auf der Kurve + umrandeter Balken meinen denselben Monat — ein
                 Legendeneintrag für beides. */}
             <span
               className="inline-block w-2.5 h-2.5 rounded-full ring-2 ring-card"

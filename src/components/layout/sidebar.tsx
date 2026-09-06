@@ -216,7 +216,15 @@ export function Sidebar({ email, displayName, avatarUrl, mobileOpen = false, onM
                             size="sm"
                             asChild
                             className={cn(
-                              'w-full justify-start font-normal text-sm text-sidebar-foreground',
+                              // h-7 statt der 32px von size="sm": auf großen Schirmen
+                              // stehen alle drei Untergruppen dauerhaft offen, die vier
+                              // Pixel pro Zeile entscheiden mit, ab welcher Fensterhöhe
+                              // das ohne Scrollen passt.
+                              'h-7 w-full justify-start font-normal text-sm text-sidebar-foreground',
+                              // Unterpunkte fremder Bereiche sind dann ebenfalls sichtbar —
+                              // gedämpft, damit nicht alle Zeilen gleich laut sind und der
+                              // aktive Bereich weiter heraussticht.
+                              !sectionActive && 'text-sidebar-foreground/55 hover:text-sidebar-accent-foreground',
                               // Siehe Kommentar beim Top-Level-Button oben — derselbe
                               // ghost-`dark:hover:bg-accent/50`-Konflikt.
                               'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground dark:hover:bg-sidebar-accent',

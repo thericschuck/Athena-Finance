@@ -13,6 +13,8 @@ export type NetWorthSnapshot = {
   snapshot_date:    string
   net_worth:        number | null
   total_checking:   number | null
+  /** Geschäftsanteile — eigener Bucket seit 2026-09-02, davor in total_checking. */
+  total_investment: number | null
   total_savings:    number | null
   total_cash:       number | null
   total_depot:      number | null
@@ -64,12 +66,34 @@ function useMounted() {
   return useSyncExternalStore(subscribeNever, () => true, () => false)
 }
 
+/**
+ * Die drei Teilansichten müssen die Gesamtansicht ergeben — sonst erzählt derselbe
+ * Chart je nach Tab eine andere Geschichte.
+ *
+ * „Konten" wurde vorher rückwärts gerechnet (`net_worth + debts − depot − crypto`).
+ * Das lieferte zwar dieselbe Zahl, war aber nicht nachprüfbar: welche Kontoarten
+ * drinstecken, stand nirgends, und eine neue Bucket-Spalte wäre stillschweigend
+ * mit reingerutscht. Jetzt wird jeder Baustein einzeln addiert und `Gesamt` ist
+ * per Konstruktion die Summe der drei Tabs minus Schulden.
+ */
+function kontenValue(s: NetWorthSnapshot): number {
+  return (s.total_checking   ?? 0)
+       + (s.total_investment ?? 0)
+       + (s.total_savings    ?? 0)
+       + (s.total_cash       ?? 0)
+       + (s.total_bausparer  ?? 0)
+       + (s.total_business   ?? 0)
+}
+
 function viewValue(s: NetWorthSnapshot, view: ViewKey): number {
   switch (view) {
-    case 'Konten': return (s.net_worth ?? 0) + (s.total_debts ?? 0) - (s.total_depot ?? 0) - (s.total_crypto ?? 0)
+    case 'Konten': return kontenValue(s)
     case 'Depot':  return s.total_depot  ?? 0
     case 'Krypto': return s.total_crypto ?? 0
-    default:       return s.net_worth    ?? 0
+    // Bewusst nicht `s.net_worth`: so ist im Chart sichtbar dasselbe gerechnet
+    // wie in den Tabs. In der Datenbank ist net_worth eine generierte Spalte mit
+    // genau dieser Formel, die beiden können also nicht auseinanderlaufen.
+    default:       return kontenValue(s) + (s.total_depot ?? 0) + (s.total_crypto ?? 0) - (s.total_debts ?? 0)
   }
 }
 
@@ -91,21 +115,23 @@ function ChartTooltip({ active, payload, label, view }: {
 
   const detailRows: [string, number | null][] =
     view === 'Gesamt' ? [
-      ['Girokonto',  d.total_checking],
-      ['Sparkonto',  d.total_savings],
-      ['Cash',       d.total_cash],
-      ['Depot',      d.total_depot],
-      ['Krypto',     d.total_crypto],
-      ['Bausparer',  d.total_bausparer],
-      ['Business',   d.total_business],
-      ['Schulden',   d.total_debts ? -d.total_debts : null],
+      ['Girokonten',       d.total_checking],
+      ['Geschäftsanteile', d.total_investment],
+      ['Sparkonto',        d.total_savings],
+      ['Cash',             d.total_cash],
+      ['Depot',            d.total_depot],
+      ['Krypto',           d.total_crypto],
+      ['Bausparer',        d.total_bausparer],
+      ['Business',         d.total_business],
+      ['Schulden',         d.total_debts ? -d.total_debts : null],
     ] :
     view === 'Konten' ? [
-      ['Konten/Inv.', d.total_checking],
-      ['Sparkonto',  d.total_savings],
-      ['Cash',       d.total_cash],
-      ['Bausparer',  d.total_bausparer],
-      ['Business',   d.total_business],
+      ['Girokonten',       d.total_checking],
+      ['Geschäftsanteile', d.total_investment],
+      ['Sparkonto',        d.total_savings],
+      ['Cash',             d.total_cash],
+      ['Bausparer',        d.total_bausparer],
+      ['Business',         d.total_business],
     ] : []
 
   const fmt = (v: number) => libFmtCurrency(v, 'EUR', locale, { fractionDigits: 0 })

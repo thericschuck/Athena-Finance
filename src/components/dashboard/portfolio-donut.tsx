@@ -3,31 +3,47 @@
 import { PieChart, Pie, Cell, Tooltip } from 'recharts'
 import { fmtCurrency } from '@/lib/format'
 
+/**
+ * Die Ringe sind genau die Bausteine des Nettovermögens — dieselben vier, die die
+ * Net-Worth-Kachel untereinander auflistet, in derselben Reihenfolge.
+ *
+ * Vorher war „Sparziele" ein fünfter Ring. Damit summierte die Mitte des Rings
+ * 15.158,61 € gegen 13.548,61 € in der Kachel daneben: die 1.610 € des Sparziels
+ * „China Reise" liegen auf dem Girokonto und waren im Ring doppelt drin. Sparziele
+ * sind per Entscheidung vom 2026-09-02 kein Vermögensposten (siehe Kommentar zu
+ * `netWorth` in dashboard/page.tsx), also gehören sie hier nicht rein.
+ */
 const SLICES = [
-  { key: 'Finanzen',  color: 'var(--chart-cat-1)' },
-  { key: 'Depot',     color: 'var(--chart-cat-2)' },
-  { key: 'Krypto',    color: 'var(--chart-cat-3)' },
-  { key: 'Sparziele', color: 'var(--chart-cat-4)' },
+  { key: 'Konten',          color: 'var(--chart-cat-1)' },
+  { key: 'Geschäftsanteile', color: 'var(--chart-cat-4)' },
+  { key: 'Depot',           color: 'var(--chart-cat-2)' },
+  { key: 'Krypto',          color: 'var(--chart-cat-3)' },
 ]
 
 type Props = {
-  financeTotal: number
-  depotTotal:   number
-  cryptoTotal:  number
-  savingsTotal: number
-  locale:       string
+  /** Giro, Spar, Cash, Bausparer — ohne Geschäftsanteile. */
+  kontenTotal:     number
+  investmentTotal: number
+  depotTotal:      number
+  cryptoTotal:     number
+  locale:          string
 }
 
-export function PortfolioDonut({ financeTotal, depotTotal, cryptoTotal, savingsTotal, locale }: Props) {
+export function PortfolioDonut({
+  kontenTotal, investmentTotal, depotTotal, cryptoTotal, locale,
+}: Props) {
   const fmt = (n: number) => fmtCurrency(n, 'EUR', locale)
 
   const data = [
-    { ...SLICES[0], value: financeTotal },
-    { ...SLICES[1], value: depotTotal   },
-    { ...SLICES[2], value: cryptoTotal  },
-    { ...SLICES[3], value: savingsTotal },
+    { ...SLICES[0], value: kontenTotal     },
+    { ...SLICES[1], value: investmentTotal },
+    { ...SLICES[2], value: depotTotal      },
+    { ...SLICES[3], value: cryptoTotal     },
   ].filter(d => d.value > 0)
 
+  // Die Mitte zeigt die Summe der Ringe. Weil die Ringe jetzt genau die
+  // Net-Worth-Bausteine sind, ist das dieselbe Zahl wie in der Kachel — und kann
+  // nicht mehr auseinanderlaufen, ohne dass ein Ring fehlt.
   const total = data.reduce((s, d) => s + d.value, 0)
   if (total <= 0) return null
 
@@ -55,12 +71,18 @@ export function PortfolioDonut({ financeTotal, depotTotal, cryptoTotal, savingsT
               </Pie>
               <Tooltip
                 formatter={(val: number | undefined) => [fmt(val ?? 0), '' as const]}
+                // `color` muss mit: contentStyle setzte nur den Hintergrund, und
+                // recharts schreibt die Textfarbe als Inline-Style auf den Eintrag.
+                // Im dunklen Theme stand damit dunkler Text auf --card, also
+                // schwarz auf schwarz.
                 contentStyle={{
-                  background: 'var(--card)',
+                  background: 'var(--popover)',
                   border: '1px solid var(--border)',
                   borderRadius: '8px',
                   fontSize: '12px',
+                  color: 'var(--popover-foreground)',
                 }}
+                itemStyle={{ color: 'var(--popover-foreground)' }}
                 labelStyle={{ display: 'none' }}
               />
             </PieChart>

@@ -110,6 +110,7 @@ async function NetworthTab({ supabase, uid, locale, dateFormat, page, from, to }
             <Th right>Net Worth</Th>
             <Th right>Assets</Th>
             <Th right>Girokonto</Th>
+            <Th right>Geschäftsant.</Th>
             <Th right>Sparkonto</Th>
             <Th right>Cash</Th>
             <Th right>Depot</Th>
@@ -129,6 +130,7 @@ async function NetworthTab({ supabase, uid, locale, dateFormat, page, from, to }
               </Td>
               <Td right mono>{fmtEur(r.total_assets, locale)}</Td>
               <Td right mono dim>{fmtEur(r.total_checking, locale)}</Td>
+              <Td right mono dim>{fmtEur(r.total_investment, locale)}</Td>
               <Td right mono dim>{fmtEur(r.total_savings, locale)}</Td>
               <Td right mono dim>{fmtEur(r.total_cash, locale)}</Td>
               <Td right mono dim>{fmtEur(r.total_depot, locale)}</Td>

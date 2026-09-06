@@ -101,13 +101,23 @@ function buildSankey(txns: TxnRow[]): SankeyData {
   const totalExpenses = [...expMap.values()].reduce((s, v) => s + v, 0)
   if (totalIncome === 0 && totalExpenses === 0) return { nodes: [], links: [] }
 
-  const surplus = Math.max(0, totalIncome - totalExpenses)
-  // Scale expense outflow to balance with income inflow
-  const expOutflow = Math.min(totalIncome, totalExpenses)
-  const expScale   = totalExpenses > 0 ? expOutflow / totalExpenses : 0
-
   const topInc = [...incMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
   const topExp = [...expMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 7)
+
+  // Balance gegen die Summe der TATSÄCHLICH gezeigten Top-Kategorien, nicht gegen
+  // totalIncome/totalExpenses: gibt es mehr als 5 Einnahme- bzw. 7 Ausgabenkategorien,
+  // fehlt der Rest im Diagramm, aber die vollen Summen zählten ihn trotzdem mit. Der
+  // "Einnahmen"-Knoten bekam dadurch weniger eingehenden Wert (nur die Top 5), als die
+  // abgehenden Bänder (skaliert auf die volle totalIncome) beanspruchten — das Sankey-
+  // Layout ging nicht auf, sichtbar als Balken, an dem die Ausgaben-Bänder nicht bis zum
+  // Rand reichen.
+  const topIncSum = topInc.reduce((s, [, v]) => s + v, 0)
+  const topExpSum = topExp.reduce((s, [, v]) => s + v, 0)
+
+  const surplus = Math.max(0, topIncSum - topExpSum)
+  // Scale expense outflow to balance with income inflow
+  const expOutflow = Math.min(topIncSum, topExpSum)
+  const expScale   = topExpSum > 0 ? expOutflow / topExpSum : 0
 
   const einnahmenIdx = topInc.length
   const expOffset    = topInc.length + 1
@@ -381,6 +391,9 @@ export default async function AnalysePage({
         .select('date, type, amount, amount_base, category_name, description, merchant')
         .eq('user_id', user.id)
         .in('type', ['income', 'expense'])
+        // Nur echte Einnahmen/Ausgaben — Umbuchungen, Anlagen (Krypto/Depot/Bausparer),
+        // Forderungen und Anfangsbestaende zaehlen hier nicht mit.
+        .eq('flow_kind', 'echt')
       if (cutoff) q = q.gte('date', cutoff)
       if (hasAccountFilter) q = q.in('account_id', selectedAccountIds)
       return q.order('date')
@@ -395,6 +408,9 @@ export default async function AnalysePage({
         .gte('date', calStart)
         .lte('date', calEnd)
         .in('type', ['income', 'expense'])
+        // Nur echte Einnahmen/Ausgaben — Umbuchungen, Anlagen (Krypto/Depot/Bausparer),
+        // Forderungen und Anfangsbestaende zaehlen hier nicht mit.
+        .eq('flow_kind', 'echt')
       if (hasAccountFilter) q = q.in('account_id', selectedAccountIds)
       return q.order('date')
     })(),
@@ -423,6 +439,8 @@ export default async function AnalysePage({
           .eq('user_id', user.id)
           .gte('date', monthlyCutoff)
           .in('type', ['income', 'expense'])
+          // Nur echte Einnahmen/Ausgaben — siehe unified_transactions.flow_kind.
+          .eq('flow_kind', 'echt')
           .in('account_id', selectedAccountIds)
           .order('date')
       : Promise.resolve(null),

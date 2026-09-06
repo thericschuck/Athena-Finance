@@ -422,7 +422,7 @@ export async function getDepotsSummaries(): Promise<DepotWithSummary[]> {
 
   const isins = depots.map(d => d.isin)
 
-  const [{ data: transactions }, { data: caches }] = await Promise.all([
+  const [{ data: transactions }, { data: caches }, { data: history }] = await Promise.all([
     supabase
       .from('depot_transactions')
       .select('isin, amount_eur, shares')
@@ -432,14 +432,34 @@ export async function getDepotsSummaries(): Promise<DepotWithSummary[]> {
       .from('fund_price_cache')
       .select('isin, price')
       .in('isin', isins),
+    // Rückfallebene, wenn der Cache leer ist. Ohne sie stand depotValue auf null
+    // und das Dashboard zeigte 0 € Depot, während fn_take_snapshot über
+    // fn_fund_price_eur den letzten bekannten Kurs nimmt — die Kachel und die
+    // Verlaufskurve wären damit sofort wieder auseinandergelaufen.
+    supabase
+      .from('fund_price_history')
+      .select('isin, price, price_date')
+      .in('isin', isins)
+      .order('price_date', { ascending: false }),
   ])
+
+  // Pro ISIN der jüngste Eintrag — die Abfrage liefert absteigend sortiert.
+  const letzterKurs = new Map<string, number>()
+  for (const row of history ?? []) {
+    if (!letzterKurs.has(row.isin)) letzterKurs.set(row.isin, Number(row.price))
+  }
 
   return depots.map(depot => {
     const txs       = (transactions ?? []).filter(t => t.isin === depot.isin)
     const cache     = caches?.find(c => c.isin === depot.isin)
     const totalShares   = txs.reduce((s, t) => s + Number(t.shares), 0)
     const totalInvested = txs.reduce((s, t) => s + Number(t.amount_eur), 0)
-    const livePrice     = cache?.price ? Number(cache.price) : null
+    // Dieselbe Kette wie fn_fund_price_eur: Tagescache, dann letzter bekannter
+    // Kurs, dann mengengewichteter Einstandspreis. Nur wenn zu der ISIN gar
+    // nichts bekannt ist, bleibt es null — dann zeigt die UI „—" statt 0 €.
+    const livePrice     = cache?.price ? Number(cache.price)
+                        : letzterKurs.get(depot.isin)
+                        ?? (totalShares > 0 ? totalInvested / totalShares : null)
     const depotValue    = livePrice && totalShares > 0 ? totalShares * livePrice : null
     const returnPct     = depotValue && totalInvested > 0
       ? ((depotValue - totalInvested) / totalInvested) * 100

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { LazyMotion, domAnimation, m, useReducedMotion as useFramerReducedMotion, useInView } from 'framer-motion'
+import { LazyMotion, domAnimation, m, useInView } from 'framer-motion'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { DashboardMock } from './DashboardMock'
@@ -19,34 +19,9 @@ import './landing.css'
 import { OliveVines, LaurelWreath, MeanderFrieze } from './olive-vines'
 import { SmoothScrollProvider } from './SmoothScrollProvider'
 import { scrollToY, jumpToY } from './scroll-control'
+import { useReducedMotion } from '@/lib/use-reduced-motion'
 
 if (typeof window !== 'undefined') gsap.registerPlugin(ScrollTrigger)
-
-/**
- * framer-motions eigenes `useReducedMotion` liest `window.matchMedia` SYNCHRON
- * schon im allerersten Render (siehe Quelle: `useState(prefersReducedMotion.current)`,
- * ohne SSR-Guard) — auf dem Server (kein `window`) liefert das immer `false`,
- * auf dem Client sofort den ECHTEN Wert. Hat ein/e Nutzer:in Reduced Motion
- * tatsächlich aktiviert, weichen Server- und erster Client-Render damit
- * STRUKTURELL voneinander ab (ganze Abschnitte wie PedimentReveal rendern
- * komplett anderes Markup je nach `still`) — ein garantierter
- * Hydration-Mismatch, den React zwar mit einem kompletten Client-Neu-Render
- * "heilt", aber sichtbar als Flackern beim Laden.
- *
- * Fix: den echten Wert erst NACH dem Mounten übernehmen (klassisches
- * "hasMounted"-Muster). Der erste Client-Render bleibt dadurch exakt so wie
- * der Server-Render (immer `false`); das Umschalten auf Reduced Motion
- * passiert einen Tick später als ganz normaler, unverdächtiger Re-Render
- * statt während der Hydration selbst. Gleicher Name wie das Original, damit
- * alle bestehenden `useReducedMotion()`-Aufrufe im File automatisch diese
- * sichere Fassung bekommen.
- */
-function useReducedMotion() {
-  const prefersReduced = useFramerReducedMotion()
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
-  return mounted ? prefersReduced : false
-}
 
 /**
  * Individueller Cursor für die Landing Page: eine feine Gold-Kontur mit
@@ -65,8 +40,8 @@ function useReducedMotion() {
  * pro Mausbewegung/Frame wäre unnötig teuer und exakt die Art Animation, die
  * man ohnehin nicht durch Reacts Reconciler schleusen will.
  *
- * Rendert IMMER dieselbe Markup-Struktur (kein SSR/Client-Zweig, siehe
- * useReducedMotion-Kommentar oben) — Sichtbarkeit und „nur mit echter Maus"
+ * Rendert IMMER dieselbe Markup-Struktur (kein SSR/Client-Zweig, vgl. den
+ * Hydration-Hinweis in `@/lib/use-reduced-motion`) — Sichtbarkeit und „nur mit echter Maus"
  * laufen rein über die Media Query `(hover: hover) and (pointer: fine)` in
  * landing.css, kein Hydration-Risiko.
  */
