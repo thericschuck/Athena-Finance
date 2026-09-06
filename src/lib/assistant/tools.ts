@@ -692,10 +692,13 @@ export function buildAthenaTools(supabase: DB, userId: string, options: AthenaTo
         const vertraege = vertraegeRes.data ?? []
         const kontoName = new Map((kontenRes.data ?? []).map(k => [k.id, k.name]))
 
-        // Ausführungen und Tilgungen der letzten 90 Tage in einem Zug.
+        // Ausführungen, Tilgungen und die Buchungs-Kandidaten für den Rückblick
+        // hängen alle nur an den IDs von oben — also ein Zug, drei Abfragen.
         const vertragIds = vertraege.map(v => v.id)
         const schuldIds  = (schuldenRes.data ?? []).map(d => d.id)
-        const [ausfuehrungenRes, tilgungenRes] = await Promise.all([
+        const rueckblickVon = tageDazu(vor90, -7)
+        const betraege = Array.from(new Set(vertraege.map(v => Number(v.amount))))
+        const [ausfuehrungenRes, tilgungenRes, kandidatenRes] = await Promise.all([
           vertragIds.length > 0
             ? supabase
                 .from('contract_executions')
@@ -709,6 +712,16 @@ export function buildAthenaTools(supabase: DB, userId: string, options: AthenaTo
                 .select('debt_id, amount, payment_date')
                 .in('debt_id', schuldIds)
                 .order('payment_date', { ascending: false })
+            : Promise.resolve({ data: [], error: null }),
+          betraege.length > 0
+            ? supabase
+                .from('unified_transactions')
+                .select('id, date, amount, account_id')
+                .eq('user_id', userId)
+                .gte('date', alsIso(rueckblickVon))
+                .lte('date', alsIso(heute))
+                .in('amount', betraege)
+                .limit(ROW_CAP)
             : Promise.resolve({ data: [], error: null }),
         ])
 
@@ -797,18 +810,6 @@ export function buildAthenaTools(supabase: DB, userId: string, options: AthenaTo
         // Jede Buchung wird höchstens einer Fälligkeit zugeordnet. Ohne das
         // würde bei zwölf gleich hohen Monatsraten eine einzige Buchung alle
         // zwölf Termine "bezahlen".
-        const rueckblickVon = tageDazu(vor90, -7)
-        const betraege = Array.from(new Set(vertraege.map(v => Number(v.amount))))
-        const kandidatenRes = betraege.length > 0
-          ? await supabase
-              .from('unified_transactions')
-              .select('id, date, amount, account_id')
-              .eq('user_id', userId)
-              .gte('date', alsIso(rueckblickVon))
-              .lte('date', alsIso(heute))
-              .in('amount', betraege)
-              .limit(ROW_CAP)
-          : { data: [], error: null }
         const kandidaten = (kandidatenRes.data ?? []).filter(k => k.date !== null)
         const verbraucht = new Set<string>()
 
