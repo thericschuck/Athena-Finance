@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Json } from '@/types/database'
 import { encrypt } from '@/lib/encryption'
+import { leseSteuerprofil, schreibeSteuerprofil } from '@/lib/tax/profil'
 
 export type SettingsState = { error: string } | { success: true } | null
 
@@ -104,9 +105,46 @@ export async function saveFinance(
   const monthlyBudget = formData.get('monthly_budget') as string
   const taxRate       = formData.get('default_tax_rate') as string
 
+  // Steuerprofil: ein jsonb-Wert unter dem Schluessel `tax_profile`. Gelesen
+  // wird der bisherige Stand mit, weil das Datum `brutto_stand` NUR dann neu
+  // gesetzt wird, wenn sich der Bruttolohn wirklich aendert -- sonst wuerde
+  // jedes Speichern irgendeiner anderen Einstellung den Wert "frisch"
+  // aussehen lassen, und die Warnung vor einem veralteten Lohn waere wertlos.
+  const { data: bisher } = await supabase
+    .from('user_settings')
+    .select('value')
+    .eq('user_id', user.id)
+    .eq('key', 'tax_profile')
+    .maybeSingle()
+  const altesProfil = leseSteuerprofil(bisher?.value ?? null)
+
+  const bruttoEingabe = formData.get('brutto_jahreslohn') as string
+  const bruttoNeu = bruttoEingabe ? parseFloat(bruttoEingabe) : null
+  const bruttoGeaendert = (bruttoNeu ?? null) !== (altesProfil.bruttoJahreslohn ?? null)
+
+  const zahlOderStandard = (feld: string, standard: number) => {
+    const roh = formData.get(feld) as string
+    const n = roh ? parseFloat(roh) : NaN
+    return Number.isFinite(n) ? n : standard
+  }
+
+  const neuesProfil = schreibeSteuerprofil(
+    leseSteuerprofil({
+      brutto_jahreslohn: bruttoNeu,
+      brutto_stand: bruttoGeaendert
+        ? new Date().toISOString().slice(0, 10)
+        : altesProfil.bruttoStand,
+      vorsorge_anteil_pct: zahlOderStandard('vorsorge_anteil_pct', altesProfil.vorsorgeAnteilPct),
+      kirchensteuer_pct:   zahlOderStandard('kirchensteuer_pct', altesProfil.kirchensteuerPct),
+      netto_quote:         zahlOderStandard('netto_quote', altesProfil.nettoQuote),
+      kleinunternehmer:    formData.get('kleinunternehmer') === 'on',
+    }),
+  )
+
   const { error } = await upsertSettings(supabase, user.id, {
     monthly_budget:   monthlyBudget ? parseFloat(monthlyBudget) : null,
     default_tax_rate: taxRate ? parseFloat(taxRate) : null,
+    tax_profile:      neuesProfil,
   })
 
   if (error) return { error: error.message }

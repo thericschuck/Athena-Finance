@@ -5,6 +5,20 @@ import { revalidatePath } from 'next/cache'
 
 export type CategoryActionState = { error: string } | { success: true } | null
 
+/**
+ * Erlaubte Werte fuer die steuerliche Rolle -- muss zum Check-Constraint aus
+ * 20260906140000_tax_engine.sql passen. Leerer String heisst "nicht zugeordnet"
+ * und wird zu NULL: die Steuer-Engine rechnet nur mit gesetzten Rollen und
+ * meldet den Rest als unzugeordnet, statt etwas anzunehmen.
+ */
+const TAX_ROLES = ['betriebseinnahme', 'betriebsausgabe', 'lohn', 'privat'] as const
+
+function leseTaxRole(formData: FormData): string | null {
+  const wert = (formData.get('tax_role') as string | null)?.trim()
+  if (!wert) return null
+  return (TAX_ROLES as readonly string[]).includes(wert) ? wert : null
+}
+
 export async function createCategory(
   _prev: CategoryActionState,
   formData: FormData
@@ -30,6 +44,7 @@ export async function createCategory(
     budget_monthly: formData.get('budget_monthly')
       ? Number(formData.get('budget_monthly'))
       : null,
+    tax_role: leseTaxRole(formData),
   })
 
   if (error) return { error: error.message }
@@ -65,6 +80,7 @@ export async function updateCategory(
       budget_monthly: formData.get('budget_monthly')
         ? Number(formData.get('budget_monthly'))
         : null,
+      tax_role: leseTaxRole(formData),
     })
     .eq('id', id)
     .eq('user_id', user.id)

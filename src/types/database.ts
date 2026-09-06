@@ -849,6 +849,7 @@ export type Database = {
           name: string
           parent_id: string | null
           sort_order: number
+          tax_role: string | null
           type: string
           user_id: string
         }
@@ -860,6 +861,7 @@ export type Database = {
           name: string
           parent_id?: string | null
           sort_order?: number
+          tax_role?: string | null
           type: string
           user_id: string
         }
@@ -871,6 +873,7 @@ export type Database = {
           name?: string
           parent_id?: string | null
           sort_order?: number
+          tax_role?: string | null
           type?: string
           user_id?: string
         }
@@ -2672,6 +2675,78 @@ export type Database = {
           quote_asset?: string
           symbol?: string
           tick_size?: number | null
+        }
+        Relationships: []
+      }
+      tax_tariffs: {
+        Row: {
+          geprueft_am: string
+          grundfreibetrag: number
+          jahr: number
+          kleinunternehmer_laufend: number
+          kleinunternehmer_vorjahr: number
+          quelle: string
+          soli_freigrenze: number | null
+          sonderausgabenpauschale: number
+          werbungskostenpauschale: number
+          zone2_bis: number
+          zone2_faktor: number
+          zone2_konstante: number
+          zone3_bis: number
+          zone3_faktor: number
+          zone3_konstante: number
+          zone3_sockel: number
+          zone4_abzug: number
+          zone4_bis: number
+          zone4_satz: number
+          zone5_abzug: number
+          zone5_satz: number
+        }
+        Insert: {
+          geprueft_am: string
+          grundfreibetrag: number
+          jahr: number
+          kleinunternehmer_laufend: number
+          kleinunternehmer_vorjahr: number
+          quelle: string
+          soli_freigrenze?: number | null
+          sonderausgabenpauschale: number
+          werbungskostenpauschale: number
+          zone2_bis: number
+          zone2_faktor: number
+          zone2_konstante: number
+          zone3_bis: number
+          zone3_faktor: number
+          zone3_konstante: number
+          zone3_sockel: number
+          zone4_abzug: number
+          zone4_bis: number
+          zone4_satz: number
+          zone5_abzug: number
+          zone5_satz: number
+        }
+        Update: {
+          geprueft_am?: string
+          grundfreibetrag?: number
+          jahr?: number
+          kleinunternehmer_laufend?: number
+          kleinunternehmer_vorjahr?: number
+          quelle?: string
+          soli_freigrenze?: number | null
+          sonderausgabenpauschale?: number
+          werbungskostenpauschale?: number
+          zone2_bis?: number
+          zone2_faktor?: number
+          zone2_konstante?: number
+          zone3_bis?: number
+          zone3_faktor?: number
+          zone3_konstante?: number
+          zone3_sockel?: number
+          zone4_abzug?: number
+          zone4_bis?: number
+          zone4_satz?: number
+          zone5_abzug?: number
+          zone5_satz?: number
         }
         Relationships: []
       }

@@ -47,6 +47,23 @@ const CATEGORY_TYPES = [
   { value: 'neutral', label: 'Neutral' },
 ]
 
+/**
+ * Steuerliche Rolle einer Kategorie. Muss zum Check-Constraint aus
+ * 20260906140000_tax_engine.sql passen.
+ *
+ * Standard ist bewusst "nicht zugeordnet": die Steuer-Engine rechnet nur mit
+ * gesetzten Rollen und listet den Rest als unzugeordnet auf, statt zu raten.
+ * Setzt man die Rolle auf einer Hauptkategorie, gilt sie fuer den ganzen
+ * Teilbaum -- ein Klick auf "Business" reicht also.
+ */
+const TAX_ROLES = [
+  { value: '__none__',        label: 'Nicht zugeordnet' },
+  { value: 'betriebseinnahme', label: 'Betriebseinnahme' },
+  { value: 'betriebsausgabe',  label: 'Betriebsausgabe' },
+  { value: 'lohn',             label: 'Lohn / Gehalt' },
+  { value: 'privat',           label: 'Privat (steuerlich irrelevant)' },
+]
+
 // ─────────────────────────────────────────────
 // Shared form fields
 // ─────────────────────────────────────────────
@@ -57,6 +74,8 @@ function CategoryFormFields({
   setType,
   parentId,
   setParentId,
+  taxRole,
+  setTaxRole,
 }: {
   allCategories: Category[]
   category?: Category
@@ -64,6 +83,8 @@ function CategoryFormFields({
   setType: (v: string) => void
   parentId: string
   setParentId: (v: string) => void
+  taxRole: string
+  setTaxRole: (v: string) => void
 }) {
   // Exclude self from parent options (prevent circular ref)
   const parentOptions = allCategories.filter(
@@ -75,6 +96,7 @@ function CategoryFormFields({
       {category && <input type="hidden" name="id" value={category.id} />}
       <input type="hidden" name="type" value={type} />
       <input type="hidden" name="parent_id" value={parentId} />
+      <input type="hidden" name="tax_role" value={taxRole === '__none__' ? '' : taxRole} />
 
       {/* Name */}
       <div className="space-y-1.5">
@@ -159,6 +181,30 @@ function CategoryFormFields({
           />
         </div>
       </div>
+
+      {/* Steuerliche Rolle -- bei neutralen Kategorien (Umbuchungen, Depot,
+          Bausparen) gibt es steuerlich nichts zu entscheiden, deshalb dort
+          ausgeblendet statt mit einer sinnlosen Auswahl belegt. */}
+      {type !== 'neutral' && (
+        <div className="space-y-1.5">
+          <Label>Steuerlich</Label>
+          <Select value={taxRole} onValueChange={setTaxRole}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TAX_ROLES.map((r) => (
+                <SelectItem key={r.value} value={r.value}>
+                  {r.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Gilt auch für Unterkategorien, solange die keine eigene Rolle haben.
+          </p>
+        </div>
+      )}
     </>
   )
 }
@@ -171,6 +217,7 @@ export function AddCategoryDialog({ allCategories }: { allCategories: Category[]
   const [open, setOpen] = useState(false)
   const [type, setType] = useState('expense')
   const [parentId, setParentId] = useState('__none__')
+  const [taxRole, setTaxRole] = useState('__none__')
 
   const [state, formAction, isPending] = useActionState<CategoryActionState, FormData>(
     createCategory,
@@ -189,6 +236,7 @@ export function AddCategoryDialog({ allCategories }: { allCategories: Category[]
     if (next) {
       setType('expense')
       setParentId('__none__')
+      setTaxRole('__none__')
     }
   }
 
@@ -218,6 +266,8 @@ export function AddCategoryDialog({ allCategories }: { allCategories: Category[]
             setType={setType}
             parentId={parentId}
             setParentId={setParentId}
+            taxRole={taxRole}
+            setTaxRole={setTaxRole}
           />
           {state && 'error' in state && (
             <p className="text-sm text-destructive">{state.error}</p>
@@ -250,6 +300,7 @@ export function EditCategoryDialog({
   const [open, setOpen] = useState(false)
   const [type, setType] = useState(category.type)
   const [parentId, setParentId] = useState(category.parent_id ?? '__none__')
+  const [taxRole, setTaxRole] = useState(category.tax_role ?? '__none__')
 
   const [state, formAction, isPending] = useActionState<CategoryActionState, FormData>(
     updateCategory,
@@ -268,6 +319,7 @@ export function EditCategoryDialog({
     if (next) {
       setType(category.type)
       setParentId(category.parent_id ?? '__none__')
+      setTaxRole(category.tax_role ?? '__none__')
     }
   }
 
@@ -296,6 +348,8 @@ export function EditCategoryDialog({
             setType={setType}
             parentId={parentId}
             setParentId={setParentId}
+            taxRole={taxRole}
+            setTaxRole={setTaxRole}
           />
           {state && 'error' in state && (
             <p className="text-sm text-destructive">{state.error}</p>
