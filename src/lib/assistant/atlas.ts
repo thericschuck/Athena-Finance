@@ -124,6 +124,18 @@ export const APP_ATLAS: AtlasSection[] = [
           'Mindesteinkommen und KEIN Steuersatz — die echte Steuerposition samt '        +
           'Grenzsteuersatz liefert getTaxPosition',
       },
+      {
+        route: '/finance/steuer',
+        label: 'Steuer',
+        shows:
+          'die Steuerposition eines Jahres: Gewinn aus Schuck Webdesign, geschaetztes zu ' +
+          'versteuerndes Einkommen mit offenem Rechenweg, Einkommensteuer, Grenzsteuersatz, ' +
+          'Kleinunternehmer-Ampel, Ruecklage-Soll und die Einnahmen ohne steuerliche Rolle',
+        tools: ['getTaxPosition'],
+        blind:
+          'nichts — die Seite rechnet mit demselben Kern wie getTaxPosition. Umsatzsteuer, ' +
+          'Gewerbesteuer und Vorauszahlungen sind bewusst nicht Teil davon',
+      },
     ],
   },
   {

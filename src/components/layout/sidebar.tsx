@@ -64,6 +64,7 @@ const navItems: NavItem[] = [
       // nach Konto"). Zwei Nav-Punkte, ein Wort, zwei Datenmodelle: das hier
       // rechnet auf `budget_items` das nötige Mindesteinkommen aus.
       { href: '/finance/budget',       label: 'Budget' },
+      { href: '/finance/steuer',       label: 'Steuer' },
     ],
   },
   // „Crypto", „Depot" und „Strategy" waren drei eigene Bereiche, sind aber
