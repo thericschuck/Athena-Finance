@@ -28,6 +28,11 @@ function Zeile({ z }: { z: EuerZeileErgebnis }) {
           .slice()
           .sort((a, b) => a.datum.localeCompare(b.datum))
           .map((b, i) => (
+            // Der Index gehoert hier in den Schluessel: zwei identische Betraege
+            // am selben Tag in derselben Kategorie sind moeglich (zwei Rechnungen
+            // ueber dieselbe Summe), und einen stabilen Bezeichner tragen die
+            // Buchungen an dieser Stelle nicht. Die Liste wird deterministisch
+            // sortiert und nie umgeordnet, damit ist der Index stabil.
             <div
               key={`${b.datum}-${b.betrag}-${i}`}
               className="flex items-baseline gap-3 py-1 text-xs"
