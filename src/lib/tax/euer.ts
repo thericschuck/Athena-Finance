@@ -27,6 +27,8 @@ export type EuerZeileDef = {
 }
 
 export type EuerBuchung = {
+  /** ID aus unified_transactions -- daran haengen die Belege. */
+  id: string | null
   datum: string
   /** Vorzeichenbehaftet, wie in unified_transactions. */
   betrag: number

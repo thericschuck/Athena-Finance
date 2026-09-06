@@ -16,12 +16,12 @@ type DB = SupabaseClient<Database>
  */
 async function buchungenImJahr(supabase: DB, userId: string, jahr: number) {
   const SEITE = 1000
-  const zeilen: { category_id: string | null; signed_amount: number; date: string; description: string | null }[] = []
+  const zeilen: { id: string | null; category_id: string | null; signed_amount: number; date: string; description: string | null }[] = []
 
   for (let seite = 0; seite < 50; seite++) {
     const { data, error } = await supabase
       .from('unified_transactions')
-      .select('category_id, signed_amount, date, description')
+      .select('id, category_id, signed_amount, date, description')
       .eq('user_id', userId)
       .eq('flow_kind', 'echt')
       .gte('date', `${jahr}-01-01`)
@@ -36,6 +36,7 @@ async function buchungenImJahr(supabase: DB, userId: string, jahr: number) {
     for (const r of data) {
       if (r.signed_amount === null || r.date === null) continue
       zeilen.push({
+        id: r.id,
         category_id: r.category_id,
         signed_amount: Number(r.signed_amount),
         date: r.date,
@@ -63,6 +64,18 @@ export type LadeErgebnis = {
     rollen: Map<string, string | null>
     euerZeilen: Map<string, number | null>
   }
+  /** Belege des Nutzers, ohne die bereits ersetzten. */
+  belege: {
+    id: string
+    transaction_id: string | null
+    dateiname: string
+    beleg_datum: string | null
+    betrag: number | null
+    aussteller: string | null
+    pfad: string
+    sha256: string | null
+    hochgeladen_am: string
+  }[]
   /** Fuer die Anzeige: welche Kategorien welche Rolle tragen. */
   rollen: { kategorie: string; rolle: string | null; summe: number }[]
   /** Name des gefundenen Ruecklage-Sparziels, falls vorhanden. */
@@ -81,12 +94,13 @@ export async function ladeSteuerdaten(
   userId: string,
   jahr: number,
 ): Promise<LadeErgebnis> {
-  const [tarifeRes, kategorienRes, profilRes, zieleRes, euerRes] = await Promise.all([
+  const [tarifeRes, kategorienRes, profilRes, zieleRes, euerRes, belegeRes] = await Promise.all([
     supabase.from('tax_tariffs').select('*').order('jahr', { ascending: true }),
     supabase.from('categories').select('id, name, parent_id, tax_role, type').eq('user_id', userId),
     supabase.from('user_settings').select('value').eq('user_id', userId).eq('key', 'tax_profile').maybeSingle(),
     supabase.from('savings_goals').select('id, description, target_amount, current_amount').eq('user_id', userId),
     supabase.from('euer_zeilen').select('*').order('zeile', { ascending: true }),
+    supabase.from('belege').select('id, transaction_id, dateiname, beleg_datum, betrag, aussteller, pfad, sha256, hochgeladen_am, ersetzt_durch').eq('user_id', userId),
   ])
   if (tarifeRes.error) throw new Error(tarifeRes.error.message)
   if (kategorienRes.error) throw new Error(kategorienRes.error.message)
@@ -177,6 +191,21 @@ export async function ladeSteuerdaten(
   const ziel = (zieleRes.data ?? []).find(z => istRuecklageZiel(z.description, jahr)) ?? null
 
   return {
+    // Ersetzte Belege bleiben in der Datenbank, gehoeren aber nicht in die
+    // aktuelle Liste -- sonst zaehlt ein korrigierter Beleg doppelt.
+    belege: (belegeRes.data ?? [])
+      .filter(x => x.ersetzt_durch === null)
+      .map(x => ({
+        id: x.id,
+        transaction_id: x.transaction_id,
+        dateiname: x.dateiname,
+        beleg_datum: x.beleg_datum,
+        betrag: x.betrag === null ? null : Number(x.betrag),
+        aussteller: x.aussteller,
+        pfad: x.pfad,
+        sha256: x.sha256,
+        hochgeladen_am: x.hochgeladen_am,
+      })),
     euer: {
       zeilen: euerZeilen,
       // Nur Betriebsbuchungen weiterreichen -- alles andere gehoert nicht ins
@@ -187,6 +216,7 @@ export async function ladeSteuerdaten(
           return r === 'betriebseinnahme' || r === 'betriebsausgabe'
         })
         .map(x => ({
+          id: x.id,
           datum: x.date,
           betrag: x.signed_amount,
           kategorie_id: x.category_id,

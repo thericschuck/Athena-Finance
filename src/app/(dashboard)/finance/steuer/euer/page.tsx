@@ -4,13 +4,20 @@ import { createClient } from '@/lib/supabase/server'
 import { ladeSteuerdaten } from '@/lib/tax/laden'
 import { berechneEuer, type EuerZeileErgebnis } from '@/lib/tax/euer'
 import { AlertTriangle, Download } from 'lucide-react'
+import { BelegUpload } from '@/components/finance/beleg-upload'
 
 const euro = (n: number) =>
   n.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 })
 
 const datum = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('de-DE')
 
-function Zeile({ z }: { z: EuerZeileErgebnis }) {
+function Zeile({
+  z,
+  belegeJeBuchung,
+}: {
+  z: EuerZeileErgebnis
+  belegeJeBuchung: Map<string, string>
+}) {
   return (
     <details className="group border-t border-border first:border-t-0">
       <summary className="flex cursor-pointer items-baseline gap-4 px-4 py-3 hover:bg-muted/30">
@@ -44,6 +51,16 @@ function Zeile({ z }: { z: EuerZeileErgebnis }) {
               <span className="shrink-0 text-muted-foreground">{b.kategorie}</span>
               <span className="w-24 shrink-0 text-right tabular-nums">
                 {euro(Math.abs(b.betrag))}
+              </span>
+              <span className="flex w-20 shrink-0 justify-end">
+                {b.id && (
+                  <BelegUpload
+                    transactionId={b.id}
+                    datum={b.datum}
+                    betrag={b.betrag}
+                    vorhanden={belegeJeBuchung.get(b.id) ?? null}
+                  />
+                )}
               </span>
             </div>
           ))}
@@ -83,6 +100,20 @@ export default async function EuerPage({
 
   const e = berechneEuer({ jahr, ...daten.euer })
   const leer = e.einnahmen.length === 0 && e.ausgaben.length === 0
+
+  const belegeJeBuchung = new Map(
+    daten.belege
+      .filter(x => x.transaction_id !== null)
+      .map(x => [x.transaction_id as string, x.dateiname]),
+  )
+
+  // Betriebsausgaben ohne Beleg. Das ist die Zahl, die im Zweifel Geld kostet:
+  // eine Ausgabe ohne Nachweis kann das Finanzamt streichen.
+  const ohneBeleg = e.ausgaben
+    .flatMap(z => z.buchungen)
+    .filter(b => !b.id || !belegeJeBuchung.has(b.id))
+  const summeOhneBeleg =
+    Math.round(ohneBeleg.reduce((s, b) => s + Math.abs(b.betrag), 0) * 100) / 100
 
   return (
     <div className="space-y-6 p-4 sm:p-8">
@@ -132,6 +163,17 @@ export default async function EuerPage({
         </div>
       )}
 
+      {!leer && ohneBeleg.length > 0 && (
+        <div className="flex gap-2 rounded-lg border border-border bg-card px-4 py-3 text-sm">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+          <span>
+            <strong>{ohneBeleg.length}</strong> Betriebsausgaben über zusammen{' '}
+            <strong>{euro(summeOhneBeleg)}</strong> haben keinen Beleg. Aufklappen und über die
+            Büroklammer hochladen — eine Ausgabe ohne Nachweis kann das Finanzamt streichen.
+          </span>
+        </div>
+      )}
+
       {leer ? (
         <div className="rounded-lg border border-dashed border-border bg-card px-4 py-12 text-center">
           <p className="text-sm text-muted-foreground">
@@ -148,7 +190,9 @@ export default async function EuerPage({
           <section className="space-y-2">
             <h2 className="text-sm font-semibold">Betriebseinnahmen</h2>
             <div className="overflow-hidden rounded-lg border border-border bg-card">
-              {e.einnahmen.map(z => <Zeile key={z.zeile} z={z} />)}
+              {e.einnahmen.map(z => (
+                <Zeile key={z.zeile} z={z} belegeJeBuchung={belegeJeBuchung} />
+              ))}
               {e.summe_einnahmen && (
                 <div className="flex items-baseline gap-4 border-t border-border bg-muted/40 px-4 py-3">
                   <span className="w-10 shrink-0 font-mono text-sm tabular-nums text-muted-foreground">
@@ -167,7 +211,9 @@ export default async function EuerPage({
           <section className="space-y-2">
             <h2 className="text-sm font-semibold">Betriebsausgaben</h2>
             <div className="overflow-hidden rounded-lg border border-border bg-card">
-              {e.ausgaben.map(z => <Zeile key={z.zeile} z={z} />)}
+              {e.ausgaben.map(z => (
+                <Zeile key={z.zeile} z={z} belegeJeBuchung={belegeJeBuchung} />
+              ))}
               {e.summe_ausgaben && (
                 <div className="flex items-baseline gap-4 border-t border-border bg-muted/40 px-4 py-3">
                   <span className="w-10 shrink-0 font-mono text-sm tabular-nums text-muted-foreground">

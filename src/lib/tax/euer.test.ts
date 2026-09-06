@@ -16,8 +16,9 @@ const Z = (jahr: number): EuerZeileDef[] => [
   { jahr, zeile: 76, bezeichnung: 'Gewinn oder Verlust', art: 'ergebnis', sammelzeile: false, quelle: 'Test', geprueft_am: '2026-09-06' },
 ]
 
+let laufend = 0
 const b = (kat: string, betrag: number, datum = '2026-05-01'): EuerBuchung => ({
-  datum, betrag, kategorie_id: kat, kategorie: kat, beschreibung: null,
+  id: `tx-${++laufend}`, datum, betrag, kategorie_id: kat, kategorie: kat, beschreibung: null,
 })
 
 // Erics Baum: Einnahmen, Weiterbildung (eigene Zeile), Tools (keine Zeile).

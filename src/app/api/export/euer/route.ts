@@ -6,12 +6,12 @@ import { berechneSteuerposition } from '@/lib/tax/position'
 import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvValue, formatCsvAmount } from '@/lib/csv'
 
 /**
- * Das Steuerbüro-Paket: eine Datei, drei Abschnitte.
+ * Das Steuerbüro-Paket: eine Datei, vier Abschnitte.
  *
  * Ein Steuerberater will nicht das Formular, sondern die Herleitung -- die
- * EUER-Summen, den Kontennachweis je Kategorie und die Einzelbuchungen, aus
- * denen beides entsteht. Drei getrennte Dateien waeren drei Anhaenge, die man
- * einzeln oeffnen muss; drei Abschnitte in einer Datei sind ein Anhang.
+ * EUER-Summen, den Kontennachweis je Kategorie, die Einzelbuchungen, aus denen
+ * beides entsteht, und die Belege dazu. Vier getrennte Dateien waeren vier
+ * Anhaenge, die man einzeln oeffnen muss; vier Abschnitte sind ein Anhang.
  *
  * Dialekt aus lib/csv.ts -- Semikolon, Dezimalkomma, BOM, CRLF. Deutsches
  * Excel oeffnet das mit einem Doppelklick richtig, und der Import derselben App
@@ -106,12 +106,51 @@ export async function GET(req: NextRequest) {
 
   // ── 3) Einzelbuchungen ─────────────────────────────────────────────────────
   zeilen.push(zeile('3. Einzelbuchungen'))
-  zeilen.push(zeile('Datum', 'EUER-Zeile', 'Kategorie', 'Beschreibung', 'Betrag EUR'))
+  zeilen.push(zeile('Datum', 'EUER-Zeile', 'Kategorie', 'Beschreibung', 'Betrag EUR', 'Beleg'))
+  const belegeJeBuchung = new Map(
+    daten.belege.filter(x => x.transaction_id !== null).map(x => [x.transaction_id as string, x]),
+  )
   const alle = [...e.einnahmen, ...e.ausgaben]
     .flatMap(z => z.buchungen.map(b => ({ z, b })))
     .sort((x, y) => x.b.datum.localeCompare(y.b.datum))
   for (const { z, b } of alle) {
-    zeilen.push(zeile(b.datum, z.zeile, b.kategorie, b.beschreibung, Math.abs(b.betrag)))
+    const beleg = b.id ? belegeJeBuchung.get(b.id) : undefined
+    zeilen.push(zeile(
+      b.datum, z.zeile, b.kategorie, b.beschreibung, Math.abs(b.betrag),
+      beleg ? beleg.dateiname : 'FEHLT',
+    ))
+  }
+  zeilen.push('')
+
+  // ── 4) Belegliste ──────────────────────────────────────────────────────────
+  // Fuer das Steuerbuero die eigentliche Antwort auf "wo ist der Nachweis".
+  // Der Hash steht dabei, weil er zeigt, dass die Datei seit dem Hochladen
+  // unveraendert ist -- die GoBD verlangen genau das.
+  zeilen.push(zeile('4. Belege'))
+  zeilen.push(zeile('Beleg-Datum', 'Aussteller', 'Dateiname', 'Betrag EUR', 'Zugeordnet', 'Hochgeladen', 'SHA-256'))
+  for (const beleg of daten.belege.slice().sort((a, c) =>
+    (a.beleg_datum ?? '').localeCompare(c.beleg_datum ?? ''))) {
+    zeilen.push(zeile(
+      beleg.beleg_datum,
+      beleg.aussteller,
+      beleg.dateiname,
+      beleg.betrag ?? 0,
+      beleg.transaction_id ? 'ja' : 'nein',
+      beleg.hochgeladen_am.slice(0, 10),
+      beleg.sha256,
+    ))
+  }
+
+  const ohneBeleg = e.ausgaben
+    .flatMap(z => z.buchungen)
+    .filter(b => !b.id || !belegeJeBuchung.has(b.id))
+  if (ohneBeleg.length > 0) {
+    const summe = Math.round(ohneBeleg.reduce((s, b) => s + Math.abs(b.betrag), 0) * 100) / 100
+    zeilen.push('')
+    zeilen.push(zeile(
+      'Hinweis',
+      `${ohneBeleg.length} Betriebsausgaben ohne Beleg, zusammen ${summe} EUR`,
+    ))
   }
 
   const csv = CSV_BOM + zeilen.join(CSV_EOL) + CSV_EOL

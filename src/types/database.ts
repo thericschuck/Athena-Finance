@@ -766,6 +766,65 @@ export type Database = {
           },
         ]
       }
+      belege: {
+        Row: {
+          aussteller: string | null
+          beleg_datum: string | null
+          betrag: number | null
+          dateiname: string
+          ersetzt_durch: string | null
+          groesse_bytes: number | null
+          hochgeladen_am: string
+          id: string
+          mime: string | null
+          notiz: string | null
+          pfad: string
+          sha256: string | null
+          transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          aussteller?: string | null
+          beleg_datum?: string | null
+          betrag?: number | null
+          dateiname: string
+          ersetzt_durch?: string | null
+          groesse_bytes?: number | null
+          hochgeladen_am?: string
+          id?: string
+          mime?: string | null
+          notiz?: string | null
+          pfad: string
+          sha256?: string | null
+          transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          aussteller?: string | null
+          beleg_datum?: string | null
+          betrag?: number | null
+          dateiname?: string
+          ersetzt_durch?: string | null
+          groesse_bytes?: number | null
+          hochgeladen_am?: string
+          id?: string
+          mime?: string | null
+          notiz?: string | null
+          pfad?: string
+          sha256?: string | null
+          transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "belege_ersetzt_durch_fkey"
+            columns: ["ersetzt_durch"]
+            isOneToOne: false
+            referencedRelation: "belege"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budget_categories: {
         Row: {
           created_at: string
