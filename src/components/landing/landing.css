@@ -485,7 +485,31 @@
 /* ── Tempelfront (Sektion „Die Säulen") ────────────────────────────────────── */
 
 /* Gebälk: Mäanderfries auf einem Architrav-Balken */
-.entablature { margin-bottom: clamp(4px, 1vw, 10px); }
+.entablature { position: relative; margin-bottom: clamp(4px, 1vw, 10px); }
+/*
+ * Dasselbe Licht, das über die Säulen wandert, streift auch den Architrav —
+ * ohne das läge das Gebälk als einzige Fläche der Sektion in konstanter
+ * Beleuchtung und die Lichtquelle wirkte nicht wie eine Lichtquelle, sondern
+ * wie ein Effekt auf den Säulen. --pillars-sun-x / --pillars-beam-w setzt
+ * PillarsReveal auf .pillars-sticky, von dort erben sie herunter; die
+ * Vorgabewerte entsprechen dem Ruhezustand (mittig und weit), damit das
+ * Gebälk auch ohne laufendes JS gleichmäßig beleuchtet dasteht.
+ */
+.pillars-sticky .entablature::after {
+  content: '';
+  position: absolute;
+  inset: -8px 0;
+  pointer-events: none;
+  /* Wie beim Lichtschleier: verschoben, nicht neu gezeichnet (siehe
+     .pillars-light-beam). Hier ohne Dehnung — der Architrav ist ein schmales
+     Band, ein vierfach gedehnter Fleck darauf wäre nur noch ein
+     gleichmäßiger Schleier ohne erkennbare Richtung. */
+  transform: translate3d(calc(var(--pillars-sun-x, 50%) - 50%), 0, 0);
+  will-change: transform;
+  background: radial-gradient(
+    ellipse 16% 180% at 50% 50%,
+    rgba(232, 224, 208, .20) 0%, transparent 72%);
+}
 .architrave {
   display: block;
   height: 3px;
@@ -513,10 +537,10 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  /* z-index (siehe PillarsReveal, ab PILLARS_MIN_WIDTH) wirkt nur auf
-     positionierte Elemente — ohne das gewann beim Überlappen immer die
-     Säule, die zufällig später im DOM steht, statt die gerade vorderste;
-     durch die dann "durchscheinende" Nachbarsäule wirkten beide transparent. */
+  /* Bezugsrahmen für Fokusring und Lichtpool. Trug früher zusätzlich ein
+     per JS gesetztes z-index, weil die hervorgehobene Säule ihre Nachbarn
+     überlappte — seit die Front stillsteht und nur das Licht wandert (siehe
+     PillarsReveal) überlappt nichts mehr, das z-index entfiel ersatzlos. */
   position: relative;
 }
 
@@ -534,12 +558,12 @@
   box-sizing: border-box;
   padding: 0 clamp(6px, 1.6vw, 20px);
   /*
-   * --pillar-base-alpha (Standard .44, wie zuvor fest codiert): im
-   * Karussell (ab PILLARS_MIN_WIDTH, siehe PillarsReveal) setzt JS diese
-   * Property auf .pillar-inner — dort erbt sie herunter bis hierher. Die
-   * Vordergrundsäule bekommt so eine blickdichte Stufe statt der
-   * halbtransparenten Standardfarbe, die beim Überlappen mit einer
-   * Nachbarsäule sonst deren Kante durchscheinen ließ.
+   * --pillar-base-alpha (Standard .44) steuert, wie hell die Stufe unter
+   * dieser Säule ist. Ab PILLARS_MIN_WIDTH leitet sie sich aus --lit ab
+   * (siehe Media Query unten) und erbt von .pillar-inner herunter: eine
+   * beleuchtete Säule steht auf einer hellen Stufe, eine unbeleuchtete auf
+   * einer dunklen. Ohne das stünde eine angestrahlte Säule auf einer Stufe,
+   * die vom selben Licht sichtbar nichts abbekommen hat.
    */
   border-bottom: 5px solid rgba(232, 224, 208, var(--pillar-base-alpha, .44));
   /* zweite, breitere Stufe — .2 war rund 45% der Kanten-Alpha, dasselbe
@@ -548,8 +572,18 @@
   margin-bottom: clamp(26px, 3.4vw, 42px);
 }
 
-/* Lichtpool am Säulenfuß — auf dunklem Grund erdet ein aufgehelltes
-   Stück Stufe die Säule, ein dunkler Schatten wäre unsichtbar. */
+/*
+ * Lichtpool am Säulenfuß — auf dunklem Grund erdet ein aufgehelltes Stück
+ * Stufe die Säule, ein dunkler Schatten wäre unsichtbar.
+ *
+ * --cast (−1…1, gesetzt von PillarsReveal) ist die Richtung, in die er
+ * kippt: bei 0 steht das Licht direkt über dieser Säule und der Pool liegt
+ * mittig, sonst schert er vom Sonnenstand weg. Das ist der Teil, der die
+ * Wanderung als Bewegung lesbar macht — die Helligkeit allein liefert nur
+ * ein Auf- und Abblenden, erst die kippenden Pools zeigen, WOHER das Licht
+ * kommt. `transform` bewusst statt `left`: Compositor-Property, und der Pool
+ * wird pro Scroll-Frame neu gesetzt.
+ */
 .pillar-shaft::after {
   content: '';
   position: absolute;
@@ -557,10 +591,16 @@
   bottom: 0;
   width: 76%;
   height: 34px;
-  transform: translateX(-50%);
-  /* .14 war rund 32% der Kanten-Alpha, dasselbe Verhältnis hier erhalten */
-  background: radial-gradient(
-    ellipse at center, rgba(232, 224, 208, calc(var(--pillar-base-alpha, .44) * .32)) 0%, transparent 68%);
+  transform:
+    translateX(-50%)
+    translateX(calc(var(--cast, 0) * 38px))
+    skewX(calc(var(--cast, 0) * 26deg));
+  /* Feste Verlaufsfarbe, Helligkeit über `opacity`: ein Verlauf mit
+     veränderlicher Alpha muss pro Frame neu gezeichnet werden, eine
+     veränderliche Deckkraft nicht (dieselbe Überlegung wie beim
+     Lichtschleier). .14/.44 war das ursprüngliche Verhältnis. */
+  background: radial-gradient(ellipse at center, rgba(232, 224, 208, .32) 0%, transparent 68%);
+  opacity: var(--pillar-base-alpha, .44);
   pointer-events: none;
 }
 
@@ -570,11 +610,19 @@
  * Braunton wieder heraus — so stehen sie als Elfenbein in der Onyx-&-Cream-
  * Palette, ohne 30 KB Pfade umfärben zu müssen.
  */
+/* Trägt die beiden übereinanderliegenden Fassungen (siehe PillarsReveal).
+   `position: relative` reicht als Bezug — die Höhe kommt vom unteren,
+   normal im Fluss stehenden Bild. */
+.pillar-img-stack { position: relative; display: block; }
 .pillar-img {
+  display: block;
   height: clamp(168px, 23vw, 300px);
   width: auto;
   filter: sepia(.42) saturate(.52) brightness(1.04) contrast(.96);
 }
+/* Unter PILLARS_MIN_WIDTH läuft keine Lichtwanderung — dort genügt die eine,
+   normal gefilterte Fassung. */
+.pillar-img-warm { display: none; }
 
 /* Beschriftung mittig unter der jeweiligen Säule — die Tempelfront ist
    symmetrisch, linksbündiger Text bricht die Achse. */
@@ -604,33 +652,134 @@
    bekommt den Rest der Höhe und zentriert seine Reihe darin (siehe unten). */
 .pillars-sticky { position: sticky; top: 0; height: 100vh; overflow: visible; display: flex; flex-direction: column; }
 
+/*
+ * Der Lichtkegel selbst: die weiche Aufhellung, die man zwischen den Säulen
+ * hindurchfallen sieht. Position (--pillars-sun-x) und Breite
+ * (--pillars-beam-w) setzt PillarsReveal pro Scroll-Frame auf
+ * .pillars-sticky — hier steht nur, wie daraus ein Kegel wird.
+ *
+ * Liegt hinter der Säulenreihe (siehe z-index bei .g-pillars): Licht fällt
+ * ZWISCHEN die Säulen, ein Schleier davor sähe aus wie Nebel. Die
+ * Vorgabewerte entsprechen dem Ruhezustand der Flutphase (mittig und weit),
+ * damit die Front auch ohne laufendes JS gleichmäßig beleuchtet dasteht.
+ */
+.pillars-light {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  /* Der Kegel wird beim Fluten auf das Vierfache gedehnt und ragt dabei über
+     die Sektion hinaus — hier abschneiden statt die Seite breiter werden zu
+     lassen. */
+  overflow: hidden;
+}
+/*
+ * Der Verlauf selbst sitzt auf einem eigenen Kind, weil er per `transform`
+ * bewegt wird statt über seine Gradient-Position: eine verschobene Ebene
+ * kostet den Compositor fast nichts, ein neu positionierter Verlauf über die
+ * volle Bildschirmhöhe muss dagegen in jedem Scroll-Frame neu gezeichnet
+ * werden. Genau daran hing das Ruckeln der Szene.
+ *
+ * Reihenfolge im transform: erst skalieren (um die eigene Mitte, in der auch
+ * der Verlauf zentriert ist), dann verschieben — andersherum würde die
+ * Verschiebung mitskaliert. Der Prozentwert in translate3d bezieht sich auf
+ * die eigene Breite, die exakt der Sektionsbreite entspricht; --pillars-sun-x
+ * ist deshalb direkt verwendbar, sobald man die Mitte abzieht.
+ */
+.pillars-light-beam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  transform-origin: 50% 38%;
+  transform:
+    translate3d(calc(var(--pillars-sun-x, 50%) - 50%), 0, 0)
+    /* Vorgabe 4.7 = der voll geweitete Kegel der Flutphase: läuft kein JS
+       (reduzierte Bewegung), steht die Front gleichmäßig im Licht — derselbe
+       Ruhezustand, den auch --lit: 1 vorgibt. */
+    scaleX(var(--pillars-beam-scale, 4.7));
+  will-change: transform;
+  background: radial-gradient(
+    ellipse 14% 74% at 50% 38%,
+    rgba(232, 224, 208, .11) 0%,
+    rgba(232, 224, 208, .045) 46%,
+    transparent 74%);
+}
+/* Unter PILLARS_MIN_WIDTH steht die Liste statt der Tempelfront — ein
+   bildschirmhoher Lichtschleier darüber ergäbe dort keinen Sinn. */
+@media (max-width: 1023px) { .pillars-light { display: none; } }
+
 @media (max-width: 1023px) {
   .pillars-scene { height: auto; }
   .pillars-sticky { position: static; height: auto; display: block; }
 }
 
 @media (min-width: 1024px) {
-  .g-pillars { width: 100%; flex: 1; align-content: center; min-height: 0; }
-  /* Übergangsweich statt hart pro Frame gesetzt — GSAP aktualisiert
-     transform/opacity/filter zwar schon weich (scrub folgt der
-     Scrollposition 1:1), eine kurze eigene Transition rundet feine
-     Zwischenschritte ab, ohne dem Scrubbing hinterherzuhinken.
-     NUR auf `transform` (Compositor-Property, praktisch kostenlos neu
-     zu starten) — nicht auf `filter`: das JS setzt `filter` bei JEDEM
-     Scroll-Frame neu (siehe applyEmphasis in PillarsReveal), eine
-     gleichzeitig laufende CSS-Transition auf derselben Property müsste
-     dann bei jedem Frame neu ansetzen und dabei fortlaufend neu
-     rastern (filter hat keinen Compositor-only-Pfad wie transform) —
-     spürbares Ruckeln beim Durchscrollen der Säulen-Sektion, das sich
-     ohne die Filter-Transition (GSAPs eigenes Scrubbing reicht als
-     Glättung völlig aus) erübrigt. */
-  .pillar-inner { transition: transform .15s ease-out; will-change: transform, opacity, filter; cursor: pointer; }
+  /* position/z-index, damit die Reihe über dem Lichtschleier liegt — der ist
+     ein positioniertes Geschwister und stünde sonst je nach DOM-Reihenfolge
+     davor. */
+  .g-pillars { width: 100%; flex: 1; align-content: center; min-height: 0; position: relative; z-index: 1; }
+
+  /*
+   * --lit (0 = im Schatten, 1 = voll im Licht) ist die EINZIGE Zahl, die
+   * PillarsReveal pro Säule setzt; --cast (−1…1) nur die Kipprichtung des
+   * Lichtpools. Alles Weitere — Helligkeit, Farbtemperatur, Stufe,
+   * Textkontrast — leitet sich hier ab. Der Vorteil: was „beleuchtet"
+   * bedeutet, steht an einer Stelle und lässt sich verändern, ohne das JS
+   * anzufassen.
+   *
+   * Vorgabe 1 statt 0, damit die Front auch dann vollständig beleuchtet
+   * dasteht, wenn das JS gar nicht läuft: bei reduzierter Bewegung baut
+   * PillarsReveal keine Timeline, diese Media Query greift aber trotzdem.
+   */
+  .pillar-inner {
+    --lit: 1;
+    --cast: 0;
+    --pillar-base-alpha: calc(.30 + var(--lit) * .64);
+    cursor: pointer;
+  }
   .pillar-inner:focus-visible { outline: 2px solid var(--af-gold); outline-offset: 6px; border-radius: 4px; }
-  /* Begrenzt, wie breit der Text wird, wenn seine Säule zur Mitte wandert —
-     ohne das liefe der lange Beschreibungstext beim Zentrieren+Skalieren in
-     die Nachbarspalten hinein statt einfach mehrzeilig umzubrechen. */
-  .pillar-copy { max-width: 260px; }
+
+  /*
+   * KEINE CSS-Transition auf irgendetwas hiervon: das JS setzt --lit bei
+   * JEDEM Scroll-Frame neu, eine gleichzeitig laufende Transition müsste
+   * dann bei jedem Frame neu ansetzen und liefe dem Scrubbing hinterher.
+   * GSAPs scrub folgt der Scrollposition 1:1 und glättet genug.
+   */
   .pillar-img { height: clamp(200px, 26vw, 360px); }
+  /* Unbeleuchtet: kühles, abgedunkeltes Elfenbein. */
+  .pillar-img-cold { filter: sepia(.42) saturate(.52) brightness(.78) contrast(.96); }
+  /*
+   * Beleuchtet: wärmer UND heller. Die beleuchtete Säule wird nicht nur
+   * aufgehellt, sondern kippt ins Goldene — die Grafiken sind kühles Grau,
+   * erst saturate über dem sepia dreht sie dorthin. Dieser
+   * Farbtemperatur-Unterschied trägt die Hervorhebung auf Onyx deutlich
+   * besser als Helligkeit allein, die schnell nur nach „ausgegraut" aussieht.
+   *
+   * Beide Filter sind FEST — sie werden einmal gerastert. Pro Scroll-Frame
+   * ändert sich nur die Deckkraft dieser oberen Ebene.
+   */
+  .pillar-img-warm {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    filter: sepia(.42) saturate(.92) brightness(1.06) contrast(.96);
+    opacity: var(--lit);
+    will-change: opacity;
+  }
+
+  /*
+   * Nummer und Titel bleiben auf allen vier Säulen lesbar und treten nur
+   * zurück (onCream auf Onyx sind 13:1, bei .62 immer noch rund 6:1) — nur
+   * der Fließtext gehört allein der beleuchteten Säule, dessen Deckkraft
+   * setzt PillarsReveal direkt.
+   *
+   * max-width begrenzt, wie breit der Text läuft: ohne das stünde er über
+   * die volle Rasterspalte und die vier Textblöcke liefen optisch ineinander.
+   */
+  .pillar-copy { max-width: 260px; opacity: calc(.62 + var(--lit) * .38); }
 }
 
 /*
@@ -785,9 +934,23 @@
  * gleichzeitig sehen), plus davor so viel „ruhige" Klebezeit, wie
  * `.overlap-scene`s Höhe über (Sticky-Höhe + 100vh) hinausgeht.
  */
+/*
+ * Höhe = Klebedauer. Die Rechnung dahinter (siehe Absatz oben): der Vorhang
+ * beginnt sich zu zeigen, sobald `Höhe − Sticky-Höhe − 100vh` durchgescrollt
+ * ist — alles darüber ist stille Klebezeit, in der die Sektion nur dasteht.
+ *
+ * Bei den früheren 300vh waren das 100vh: eine volle Bildschirmhöhe
+ * Scrollen, in der sichtbar nichts passiert, bevor „Weitere Eigenschaften"
+ * überhaupt am unteren Rand auftaucht. Die drei Schritte sind da längst
+ * gelesen (ihre Reveals laufen beim Eintritt, nicht beim Kleben), es war
+ * also reine Wartezeit. 230vh lassen 30vh Ruhe — genug, damit der Halt als
+ * Halt wahrnehmbar ist, ohne dass man ihn aussitzen muss. Die eigentliche
+ * Überlappung bleibt davon unberührt: die liegt fest bei 100vh, weil sie am
+ * negativen margin-top von .overlap-cover hängt und nicht an dieser Höhe.
+ */
 .overlap-scene {
   position: relative;
-  height: 300vh;
+  height: 230vh;
 }
 .overlap-sticky {
   position: sticky;
@@ -801,10 +964,52 @@
   margin-top: -100vh;
 }
 
+/*
+ * Scroll-Hinweis am Fuß der gepinnten „Der Weg"-Sektion: Beschriftung über
+ * einem tippenden Pfeil, dieselbe Form wie am Fuß der Kennzahlen-Säule
+ * (.mock-column-next) — deren Keyframe wird bewusst wiederverwendet statt
+ * kopiert, damit beide Hinweise exakt dieselbe Bewegung zeigen.
+ *
+ * Wie dort auch ein echter Knopf: er springt an den Anfang von „Weitere
+ * Eigenschaften", also genau an das Ende der Klebezeit (siehe jumpToExtras).
+ * Der Sprung läuft über Lenis, ist also dieselbe gedämpfte Bewegung wie ein
+ * Scroll von Hand — kein harter Sprung.
+ *
+ * Braucht keine Logik zum Ausblenden: „Weitere Eigenschaften"
+ * (.overlap-cover, z-index 2) schiebt sich darüber und deckt den Hinweis
+ * genau in dem Moment zu, in dem er beantwortet ist.
+ */
+.overlap-cue {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(16px, 3.4vh, 38px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--af-ink-subtle);
+  transition: color .2s ease;
+}
+.overlap-cue:hover,
+.overlap-cue:focus-visible { color: var(--af-gold-ink); }
+.overlap-cue-label { letter-spacing: .24em; }
+.overlap-cue svg { animation: mock-column-next-bounce 1.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .overlap-cue svg { animation: none; }
+}
+
 @media (max-width: 767px), (prefers-reduced-motion: reduce) {
   .overlap-scene { height: auto !important; }
   .overlap-sticky { position: static !important; height: auto !important; display: block !important; }
   .overlap-cover { margin-top: 0 !important; }
+  /* Ohne Pinning gibt es keine Klebezeit, die ein Hinweis überbrücken
+     müsste — er stünde nur mitten im Fließtext herum. */
+  .overlap-cue { display: none !important; }
 }
 
 /* Zwei Säulen als Portal um den Abschluss-Block */
@@ -1071,6 +1276,10 @@
 @media (max-width: 419px) {
   .extras-carousel { display: block; margin-top: 8px; }
   .extras-carousel-deck {
+    /* Bezugsrahmen für offsetLeft der Karten (siehe scrollToIndex in
+       ExtrasCarousel) — ohne das misst offsetLeft gegen irgendeinen
+       positionierten Vorfahren weiter oben und die Zentrierung wäre falsch. */
+    position: relative;
     display: flex;
     flex-direction: row;
     gap: 14px;
@@ -1098,6 +1307,7 @@
     margin-top: 22px;
   }
   .extras-carousel-arrow {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1110,9 +1320,23 @@
     cursor: pointer;
     transition: border-color .2s ease, color .2s ease;
   }
+  /*
+   * Das Karussell gibt es NUR auf Touch-Geräten (diese Media Query ist die
+   * einzige Stelle, an der es sichtbar wird) — dann muss die Bedienfläche
+   * auch die 44px erreichen, die ein Daumen zuverlässig trifft. Der Ring
+   * bleibt bei 32px, weil er sonst neben den Punkten daneben zu wuchtig
+   * wird; die fehlenden 12px kommen als unsichtbarer Rand dazu.
+   */
+  .extras-carousel-arrow::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+  }
   .extras-carousel-arrow:hover { border-color: var(--af-ink); color: var(--af-ink); }
-  .extras-carousel-dots { display: flex; align-items: center; gap: 8px; }
+  .extras-carousel-dots { display: flex; align-items: center; gap: 12px; }
   .extras-carousel-dot {
+    position: relative;
     width: 6px;
     height: 6px;
     padding: 0;
@@ -1122,6 +1346,18 @@
     opacity: .22;
     cursor: pointer;
     transition: opacity .3s ease, transform .3s ease;
+  }
+  /*
+   * Dieselbe Überlegung wie beim Pfeil, aber horizontal begrenzt: die Punkte
+   * stehen nur 12px auseinander, eine allseitig 44px große Fläche würde die
+   * der Nachbarn überlappen und den falschen Punkt treffen lassen. Volle
+   * Höhe, seitlich bis zur Mitte des Abstands — das ist das Maximum, das
+   * hier eindeutig bleibt. Der Abstand ist dafür von 8 auf 12px gewachsen.
+   */
+  .extras-carousel-dot::after {
+    content: '';
+    position: absolute;
+    inset: -19px -6px;
   }
   .extras-carousel-dot.active { opacity: 1; transform: scale(1.3); }
 }
@@ -1386,12 +1622,35 @@
 }
 .mock-subnav-inner { overflow: hidden; min-height: 0; }
 .mock-subnav-item {
-  padding: 6px 10px;
+  /* 5px statt 6px: seit alle drei Gruppen dauerhaft offen stehen (siehe
+     DashboardMock) trägt die Leiste 18 statt 7 Zeilen — die gesparten 22px
+     entscheiden auf einem 720px hohen Fenster darüber, ob „Einstellungen"
+     noch sichtbar ist oder unter dem Fußbereich abgeschnitten wird. */
+  padding: 5px 10px;
   border-radius: 5px;
   font-size: 11px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/*
+ * Athena-Szene: Sessions links, Chat rechts — dieselbe Aufteilung wie die
+ * echte Seite (grid-cols-[16rem_1fr] in assistant/page.tsx). Unter 1100px
+ * fällt die Session-Liste weg statt zu schrumpfen: das Mockup hat dort schon
+ * die Sidebar daneben, drei Spalten nebeneinander lassen dem Gespräch keine
+ * lesbare Breite mehr.
+ */
+.mock-athena {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  gap: clamp(10px, 1.2vw, 16px);
+  flex: 1;
+  min-height: 0;
+}
+@media (max-width: 1099px) {
+  .mock-athena { grid-template-columns: minmax(0, 1fr); }
+  .mock-athena-sessions { display: none; }
 }
 
 /* Live-Signal-Punkt neben „Kurse · Live" — pulsiert statt still zu stehen */
@@ -1574,5 +1833,53 @@
   .mock-label { letter-spacing: .06em !important; }
   /* Kategorie-Spalte entfällt, Datum und Betrag tragen die Information */
   .booking-cat { display: none !important; }
-  .mock-bookings { flex: none !important; }
+
+  /*
+   * Ausdünnen statt schrumpfen.
+   *
+   * Die Szene hat ein festes Höhenbudget (100svh, `overflow: hidden`, siehe
+   * oben) — sie kann nicht wachsen, wenn der Inhalt mehr Platz braucht, sie
+   * schneidet dann stumm ab. Nachgerechnet für ein 375×667-Gerät: Athena-
+   * Hinweise (76) + Kartenreihe (148) + Chart-Reihe (336) + Einnahmen/
+   * Ausgaben (140) + Abstände sind 748px bei 631px verfügbarer Höhe. Rund
+   * 120px wurden also unsichtbar weggeschnitten, und zwar von unten — genau
+   * dort, wo der Vermögensverlauf steht.
+   *
+   * Weiter zu verkleinern hilft dabei nicht: drei Karten nebeneinander sind
+   * auf 339px Inhaltsbreite je 105px breit, ein Ring daneben 110px. Das ist
+   * kein Lesbarkeitsproblem mehr, sondern eins der Sinnhaftigkeit. Also
+   * fällt pro Szene weg, was auf dieser Breite ohnehin nichts mehr aussagt,
+   * und der Rest bekommt die volle Breite: aus dem Dashboard bleiben die
+   * Athena-Hinweise, die Net-Worth-Karte und der Verlauf.
+   *
+   * Was danach noch übersteht, ist die Buchungsliste — die darf angeschnitten
+   * sein, sie ist ohnehin der Hinweis darauf, dass die Seite weitergeht.
+   */
+  .mock-sm-hide { display: none !important; }
+
+  /* Nur noch die Net-Worth-Karte; ohne die zwei Nachbarn auch flacher. */
+  .mock-row-top {
+    grid-template-columns: minmax(0, 1fr) !important;
+    height: clamp(126px, 20vh, 150px) !important;
+  }
+  /* Verlauf über die volle Breite, Portfolio-Ring entfällt. */
+  .mock-row-charts { grid-template-columns: minmax(0, 1fr) !important; }
+  /* Geldfluss über die volle Breite, Cashflow-Kalender entfällt: dessen
+     sieben Spalten mit Tagesbeträgen brauchen mehr als die halbe Breite. */
+  .mock-row-analyse { grid-template-columns: minmax(0, 1fr) !important; }
+  /* Vier Kennzahlen-Kacheln wären je 78px breit — als 2×2 bleiben sie
+     lesbar, und die Reihe darunter gibt die Höhe dafür her. */
+  .mock-row-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  /* Einspaltig, Ziel-Verteilung entfällt — zwei fast gleiche Ringe
+     nebeneinander sind hier der verzichtbare Teil. Einspaltig UND nicht
+     zweispaltig, weil DonutCards Pie feste Pixel-Radien hat (Durchmesser
+     190px, siehe CryptoView): in einer 165px breiten Zelle würde der Ring
+     seitlich abgeschnitten statt kleiner zu werden. Die Assets-Liste rutscht
+     dadurch unter den Ring und wird angeschnitten — als letzte Reihe der
+     Szene ist genau sie der gewollte „hier geht es weiter"-Rest. */
+  .mock-row-crypto { grid-template-columns: minmax(0, 1fr) !important; }
+
+  /* Die Liste trägt jetzt den Rest der Höhe (statt `flex: none`), damit sie
+     genau den verbleibenden Streifen füllt und dort angeschnitten wird. */
+  .mock-bookings { flex: 1 1 0% !important; min-height: 0 !important; }
 }

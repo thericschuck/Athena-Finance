@@ -1,12 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import { getProfile, getSettings } from '@/lib/settings'
+import { listWaitlistFor } from '@/lib/waitlist'
 import { SettingsShell } from '@/components/settings/settings-shell'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [profile, settings, { data: accountRows }] = await Promise.all([
+  const [profile, settings, { data: accountRows }, waitlist] = await Promise.all([
     getProfile(user!.id),
     getSettings(user!.id),
     supabase
@@ -16,6 +17,10 @@ export default async function SettingsPage() {
       .eq('is_active', true)
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true }),
+    // Liefert nur für den Eigentümer Zeilen, sonst null — und genau daran
+    // entscheidet die Shell, ob es den Reiter überhaupt gibt (siehe
+    // lib/waitlist.ts).
+    listWaitlistFor(user!.id),
   ])
 
   return (
@@ -26,6 +31,7 @@ export default async function SettingsPage() {
         initialSettings={settings}
         accounts={accountRows ?? []}
         email={user!.email ?? ''}
+        waitlist={waitlist}
       />
     </div>
   )

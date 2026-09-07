@@ -1,0 +1,211 @@
+/*
+ * /interesse — die Seite zur Interessenten-Liste.
+ *
+ * Bewusst kurz: die Vorgängerfassung lief über fünf Abschnitte und rund sechs
+ * Bildschirmhöhen, obwohl es genau eine Sache zu tun gibt. Jetzt trägt der
+ * erste Bildschirm die Aussage UND das Formular; darunter steht nur noch, was
+ * das Eintragen bedeutet, plus der Fuß.
+ *
+ * Farben aus dem :root-Block in globals.css (siehe landing-tokens.ts).
+ */
+
+.int-root {
+  min-height: 100svh;
+  background-color: var(--af-onyx);
+  color: var(--af-on-cream);
+  /*
+   * Zwei sehr weiche Lichtfelder statt einer flachen schwarzen Fläche —
+   * dieselbe Idee wie der Schimmer, den `[data-theme="athena-dark"] body` auf
+   * die App legt: Gold von unten links, Oliv von oben rechts. Ohne das wirkt
+   * eine bildschirmfüllende Onyx-Fläche wie ein Fehler statt wie eine
+   * Gestaltung.
+   */
+  background-image:
+    radial-gradient(ellipse 900px 520px at 8% 100%, rgba(184, 143, 81, .10), transparent 62%),
+    radial-gradient(ellipse 1100px 640px at 92% -8%, rgba(140, 162, 119, .07), transparent 60%);
+  background-attachment: fixed;
+}
+
+/* ── Kopf ────────────────────────────────────────────────────────────────── */
+
+.int-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px clamp(20px, 5vw, 64px);
+  border-bottom: 1px solid var(--af-rule-on-soft);
+}
+.int-brand { display: flex; align-items: center; gap: 10px; }
+.int-brand-name {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 16px;
+  color: var(--af-cream);
+}
+.int-back {
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 12.5px;
+  color: var(--af-on-subtle);
+  text-decoration: none;
+  transition: color .2s ease;
+  /* Reine Textlinks sind auf Touch schnell zu klein — der Innenabstand hebt
+     die Trefferfläche auf gut 44px, ohne den Link optisch zu verändern. */
+  padding: 12px 4px;
+}
+.int-back:hover, .int-back:focus-visible { color: var(--af-cream); }
+
+/* ── Aufmacher: Text links, Statue rechts ────────────────────────────────── */
+
+.int-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.72fr);
+  align-items: center;
+  gap: clamp(32px, 6vw, 80px);
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: clamp(44px, 7vh, 88px) clamp(20px, 5vw, 64px) clamp(52px, 8vh, 96px);
+}
+
+.int-kicker-row { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+
+.int-title {
+  margin: 0;
+  font-family: var(--font-playfair), Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(32px, 5.2vw, 56px);
+  line-height: 1.1;
+  letter-spacing: -.02em;
+  color: var(--af-cream);
+}
+.int-title em { font-style: italic; color: var(--af-gold); }
+
+.int-lead {
+  margin: 22px 0 0;
+  font-family: var(--font-lora), Georgia, serif;
+  font-size: clamp(15px, 1.5vw, 17px);
+  line-height: 1.8;
+  color: var(--af-on-body);
+  /* 60–70 Zeichen je Zeile: darüber verliert das Auge beim Zeilenwechsel den
+     Anschluss, darunter zerfällt der Satz. */
+  max-width: 34em;
+}
+
+.int-form-wrap { margin-top: clamp(28px, 4vh, 40px); max-width: 460px; }
+
+/* Kleiner Hinweis für den einen Menschen, der hier schon ein Konto hat. */
+.int-signin {
+  margin: 20px 0 0;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 12.5px;
+  color: var(--af-on-subtle);
+}
+.int-signin a { color: var(--af-gold); text-decoration: underline; text-underline-offset: 2px; }
+.int-signin a:hover { color: var(--af-cream); }
+
+/* ── Statue ──────────────────────────────────────────────────────────────── */
+
+.int-statue-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/*
+ * Lichtkegel hinter der Figur. Liegt HINTER ihr (z-index) und ist bewusst
+ * deutlich größer als sie: er soll wie einfallendes Licht wirken, nicht wie
+ * eine Kontur um die Silhouette.
+ */
+.int-statue-glow {
+  position: absolute;
+  inset: -18% -12%;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 46% 52% at 50% 42%,
+    rgba(184, 143, 81, .16) 0%,
+    rgba(184, 143, 81, .05) 42%,
+    transparent 72%);
+}
+.int-statue {
+  position: relative;
+  height: clamp(240px, 44vh, 460px);
+  width: auto;
+  /* Die Grafik ist kühles Grau (siehe .pillar-img in landing.css, dieselbe
+     Herkunft) — sepia plus saturate dreht sie ins Elfenbein/Gold der Palette,
+     ohne 900 Pfade umfärben zu müssen. */
+  filter: sepia(.38) saturate(.7) brightness(1.02) contrast(.97);
+}
+
+/* ── Was das Eintragen bedeutet ──────────────────────────────────────────── */
+
+.int-promises-band {
+  border-top: 1px solid var(--af-rule-on-soft);
+  background-color: rgba(0, 0, 0, .18);
+}
+.int-promises {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(24px, 4vw, 56px);
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: clamp(44px, 6vh, 72px) clamp(20px, 5vw, 64px);
+}
+.int-promise-num {
+  display: block;
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 14px;
+  letter-spacing: .14em;
+  color: var(--af-gold);
+  margin-bottom: 10px;
+}
+.int-promise-rule { height: 1px; background-color: var(--af-rule-on); margin-bottom: 14px; }
+.int-promise-title {
+  margin: 0 0 8px;
+  font-family: var(--font-playfair), Georgia, serif;
+  font-weight: 500;
+  font-size: clamp(17px, 1.8vw, 20px);
+  color: var(--af-cream);
+}
+.int-promise-text {
+  margin: 0;
+  font-family: var(--font-lora), Georgia, serif;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--af-on-body);
+}
+
+/* ── Fuß ─────────────────────────────────────────────────────────────────── */
+
+.int-foot {
+  border-top: 1px solid var(--af-rule-on-soft);
+  padding: 26px clamp(20px, 5vw, 64px) 40px;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--af-on-subtle);
+  text-align: center;
+}
+.int-foot p { margin: 0; }
+.int-foot a { color: var(--af-on-body); text-decoration: underline; text-underline-offset: 2px; }
+.int-foot a:hover { color: var(--af-cream); }
+
+/* ── Tablet und darunter ─────────────────────────────────────────────────── */
+
+@media (max-width: 899px) {
+  /*
+   * Statue über den Text statt daneben: nebeneinander bleiben beiden Spalten
+   * unter 900px je rund 380px, und die Überschrift bricht dann nach jedem
+   * zweiten Wort um. Oben steht sie außerdem dort, wo auf der Landing Page
+   * auch das Aquarell steht — der Einstieg bleibt derselbe.
+   */
+  .int-hero { grid-template-columns: minmax(0, 1fr); }
+  .int-statue-wrap { order: -1; }
+  .int-statue { height: clamp(180px, 30vh, 260px); }
+  .int-form-wrap { max-width: none; }
+}
+
+@media (max-width: 639px) {
+  /* Drei Spalten Fließtext sind bei 375px je 100px breit — untereinander
+     liest sich derselbe Inhalt in Ruhe. */
+  .int-promises { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .int-promise-rule { margin-bottom: 10px; }
+}

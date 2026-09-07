@@ -780,6 +780,22 @@ tbody tr {
   background-size: 800px 100%;
   animation: shimmer 1.5s infinite linear;
 }
+/* ── Scroll-Hinweis (Interesse-Seite) ─────────────────────────────────────────
+ * Reines CSS statt GSAP: ein Auf-und-ab ohne Scroll-Bezug ist kein Kandidat
+ * für ScrollTrigger (der bindet Fortschritt an Scrollposition, hier gibt's
+ * keinen). Media Query statt eines JS-`disabled`-Flags, damit die Regel auch
+ * unabhängig von der React-Komponente greift.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .ig-bounce {
+    animation: ig-bounce 1.6s ease-in-out infinite;
+  }
+}
+@keyframes ig-bounce {
+  0%, 100% { transform: translateY(0); opacity: 0.6; }
+  50%      { transform: translateY(6px); opacity: 1; }
+}
+
 /* ── Onyx & Cream ───────────────────────────────────────────────────────────
  * Palette der Landing Page und des Logins.
  *

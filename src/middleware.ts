@@ -8,7 +8,13 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/api/cron/') ||
     pathname === '/' ||
     pathname === '/login' ||
-    pathname.startsWith('/auth/')
+    pathname.startsWith('/auth/') ||
+    // Öffentliche Prototyp-/Rechtsseiten ohne Login — sonst greift dieselbe
+    // Auth-Prüfung wie überall sonst und schickt jeden nicht eingeloggten
+    // Besuch auf /login, bevor die Seite selbst überhaupt lädt.
+    pathname === '/interesse' ||
+    pathname === '/datenschutz' ||
+    pathname === '/impressum'
   ) {
     return NextResponse.next()
   }

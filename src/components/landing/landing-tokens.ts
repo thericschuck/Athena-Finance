@@ -64,63 +64,64 @@ export const C = {
 } as const
 
 /**
- * „Aurum" — die Farbwelt des echten Dashboards, für das Mockup auf der
- * Landing Page.
+ * Die Farbwelt des echten Dashboards, für das Mockup auf der Landing Page.
  *
- * Eins zu eins die Werte aus `[data-theme="aurum"]` in app/globals.css: das
- * Mockup soll zeigen, was Nutzer nach dem Login wirklich sehen, nicht eine
- * nachempfundene Illustration. Aurum ist zudem das einzige Preset, das
- * ebenfalls Playfair als Grundschrift führt — der Übergang vom Hero ins
- * Mockup bleibt dadurch ohne Stilbruch.
+ * Eins zu eins die Werte aus `[data-theme="athena-dark"]` in app/globals.css:
+ * das Mockup soll zeigen, was Nutzer nach dem Login wirklich sehen, nicht
+ * eine nachempfundene Illustration.
+ *
+ * Athena Dark statt des früheren „Aurum": es trägt dieselbe DNA wie die
+ * Landing Page — Oliv, Gold und Terrakotta auf warmem Walnuss-Schwarz statt
+ * Aurums neutralem Onyx — und führt ebenfalls Lora als Grundschrift. Der
+ * Übergang vom Hero ins Mockup bleibt dadurch ohne Stilbruch, und die
+ * Analyse-Szene (Heatmap/Sankey/Kalender) braucht keine handgezogenen
+ * Sonderfarben mehr, um zur restlichen Seite zu passen: das Preset führt die
+ * Landing-Palette bereits selbst.
  *
  * ACHTUNG: bei Änderungen am Preset in globals.css hier nachziehen. Als
  * JS-Literale nötig, weil Inline-Styles und SVG-Attribute die Theme-
  * Variablen nicht sehen — das Mockup liegt außerhalb des [data-theme]-Scopes.
- *
- * Werte 1:1 aus dem Figma-Redesign übernommen (Datei „Athena-Finance",
- * Variablen surface/*, text/*, brand/gold-500, status/good, chart/cat-*) —
- * ersetzt die ältere, gesättigtere Gold/Braun-Palette (#D4A017 auf #0C0800).
- * Figma setzt auf ein neutraleres Beinahe-Schwarz plus ein gedämpftes,
- * champagnerfarbenes Gold statt sattem Bernstein.
+ * Die MITGERENDERTEN echten App-Komponenten (IncomeExpenseChart,
+ * AusgabenHeatmap, DepotChart, DonutCard …) arbeiten dagegen über
+ * Tailwind-Klassen und beziehen ihre Farben aus `data-theme="athena-dark"`
+ * am Mockup-Wurzelknoten (siehe DashboardMock) — beide Wege müssen deshalb
+ * immer dasselbe Preset meinen.
  */
-export const AU = {
-  bg: '#0A0A09', // --background · Figma surface/bg
-  card: '#131110', // --card · Figma surface/base
-  cardFg: '#F4EEE2', // --card-foreground · Figma text/primary
-  secondary: '#1A1714', // --secondary · Figma surface/raised
-  secondaryFg: '#B7AC98', // --secondary-foreground · Figma text/secondary
-  mutedFg: '#7C7365', // --muted-foreground · Figma text/muted
-  accent: '#3A2E17', // --accent · Figma brand/gold-100 (getönte Gold-Fläche)
-  gold: '#CDA564', // --primary / --accent-foreground · Figma brand/gold-500
-  /** Oliv/Terrakotta statt des saturierteren Figma-Rots — dieselbe gedeckte
-      Erdton-Sprache wie die Analyse-Szene (Heatmap/Sankey/Kalender, siehe
-      GeldflussChart-impl.tsx & Co.), damit alle vier Mockup-Szenen wie EINE
-      Palette wirken statt wie mehrere nebeneinander (siehe Chat). */
-  destructive: '#A9553C',
-  border: '#262119', // --border · Figma border/subtle (deckend statt Gold-Alpha)
-  sidebar: '#0A0A09', // --sidebar · gleiche Fläche wie bg (Figma trennt hier nicht)
-  sidebarFg: '#B7AC98', // --sidebar-foreground · Figma text/secondary
-  /** Nur noch für Hover-Zustand und Avatar-Kachel — der aktive Nav-Eintrag
-      läuft jetzt über `gold`/`bg` (siehe unten), damit die Figma-Pille
-      (volle Gold-Fläche, dunkle Schrift) exakt getroffen wird. */
-  sidebarAccent: '#1A1714',
-  sidebarAccentFg: '#F4EEE2',
-  sidebarBorder: '#262119', // --sidebar-border
-  /** Positiv-Grün — zurück auf die Oliv-Variante (siehe destructive-Kommentar
-      oben): die zwischenzeitlich kräftigere/kühlere Figma-status/good-Fassung
-      (#59B889) passte nicht mehr zur Analyse-Szenen-Palette. Identisch mit
-      C.oliveLight aus der Landing-Palette — bewusst dieselbe Zahl, nicht nur
-      dieselbe Familie, für exakte Farbgleichheit zwischen den Mockup-Szenen. */
-  positive: '#8CA277',
-  /*
-   * Kategorische Chart-Akzente — ebenfalls auf die Analyse-Palette gezogen
-   * (siehe oben) statt der bisherigen, unabhängig gewählten Figma-chart/cat-
-   * Variablen: Konto-/Portfolio-/Rebalancing-Charts sollen sich nicht wie
-   * eine vierte, andere Palette neben Dashboard/Analyse/Depot/Crypto anfühlen.
+export const APP = {
+  bg: '#1B170F', // --background
+  card: '#221D15', // --card
+  cardFg: '#F0E9D8', // --card-foreground
+  secondary: '#2A2419', // --secondary
+  secondaryFg: '#E8E0D0', // --secondary-foreground
+  mutedFg: '#A79C87', // --muted-foreground
+  accent: '#3A2E17', // --accent (getönte Gold-Fläche)
+  /**
+   * --accent-foreground bzw. --chart-accent. Heißt weiterhin `gold`, weil der
+   * Name die Rolle beschreibt (Marken-Akzent), nicht den Hexwert.
+   *
+   * ACHTUNG: das ist NICHT --primary. In Athena Dark ist Primary das Oliv
+   * (siehe `positive`), Gold ist dem Akzent und der Sidebar vorbehalten —
+   * die Rollenverteilung ist eine andere als in Aurum, wo Gold beides war.
    */
-  accentBlue: '#748563', // vormals chart/cat-3-blue (#7B9BDE)
-  accentTeal: '#8CA277', // vormals chart/cat-1-teal (#1FADAD)
-  accentLavender: '#BF9B6E', // vormals chart/cat-5-lavender (#A177BE)
+  gold: '#D9B26E',
+  destructive: '#C2694A', // --destructive
+  border: 'rgba(240, 233, 216, 0.1)', // --border
+  sidebar: '#0F0D09', // --sidebar (dunkelster Anker: sidebar < bg < card)
+  sidebarFg: '#C9BFA8', // --sidebar-foreground
+  /** --sidebar-primary/-foreground: die volle Gold-Fläche des aktiven
+      Nav-Eintrags. Eigene Werte statt `gold`/`bg`, weil das Preset für die
+      Sidebar bewusst ein tieferes Gold führt als für Charts. */
+  sidebarPrimary: '#B88F51',
+  sidebarPrimaryFg: '#14120C',
+  sidebarAccent: '#1C1810', // --sidebar-accent (Hover, aktiver Unterpunkt)
+  sidebarAccentFg: '#F0E9D8', // --sidebar-accent-foreground
+  sidebarBorder: 'rgba(240, 233, 216, 0.08)', // --sidebar-border
+  positive: '#8CA277', // --success / --primary / --chart-income
+  warning: '#C9A063', // --warning (Budget-Balken kurz vor dem Limit)
+  /** --chart-cat-6. Derselbe Wert wie --muted-foreground — das Preset setzt
+      beide bewusst gleich; hier trotzdem eigener Name, weil es an den
+      Verwendungsstellen um eine Kategoriefarbe geht, nicht um Textfarbe. */
+  cat6: '#A79C87',
 } as const
 
 /** Font-Stacks (Variablen kommen aus app/layout.tsx). */

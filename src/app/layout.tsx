@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Space_Mono, Playfair_Display, Lora } from "next/font
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 import "./globals.css";
+import { SITE } from "@/lib/seo";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,31 +32,58 @@ const lora = Lora({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://athena-finance.de"),
+  metadataBase: new URL(SITE.url),
   title: {
     default: "Athena Finance",
     template: "%s · Athena Finance",
   },
-  description: "Personal finance & trading dashboard",
+  description: "Finanzübersicht: Konten, Depots, Verträge und Strategien an einem Ort.",
   applicationName: "Athena Finance",
   appleWebApp: {
     capable: true,
     title: "Athena",
     statusBarStyle: "black-translucent",
   },
+  authors: [{ name: SITE.author, url: SITE.url }],
+  creator: SITE.author,
+  publisher: SITE.author,
+  /*
+   * Voreinstellung für alle Seiten, die nichts Eigenes sagen. Die drei
+   * googleBot-Werte sind der eigentliche Gewinn: ohne sie liefert Google für
+   * eine unbekannte Domain nur eine Miniatur-Vorschau und einen gekürzten
+   * Textausschnitt. `large` erlaubt das grosse Vorschaubild in Discover und in
+   * der Bildersuche, `-1` hebt die Längenbegrenzung des Ausschnitts auf.
+   *
+   * Seiten, die NICHT in den Index sollen (Impressum, Datenschutz), setzen ihr
+   * eigenes `robots` und überschreiben das hier.
+   */
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  /* Verhindert, dass iOS Safari Zahlenkolonnen im Mockup eigenmächtig als
+     Telefonnummern verlinkt und blau einfärbt. */
+  formatDetection: { telephone: false, address: false, email: false },
   openGraph: {
     title: "Athena Finance",
-    description: "Personal finance & trading dashboard",
+    description: "Finanzübersicht: Konten, Depots, Verträge und Strategien an einem Ort.",
     url: "/",
     siteName: "Athena Finance",
-    locale: "de_DE",
+    locale: SITE.locale,
     type: "website",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Athena Finance" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Athena Finance",
-    description: "Personal finance & trading dashboard",
+    description: "Finanzübersicht: Konten, Depots, Verträge und Strategien an einem Ort.",
     images: ["/og-image.png"],
   },
 };

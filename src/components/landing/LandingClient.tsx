@@ -20,6 +20,7 @@ import { OliveVines, LaurelWreath, MeanderFrieze } from './olive-vines'
 import { SmoothScrollProvider } from './SmoothScrollProvider'
 import { scrollToY, jumpToY } from './scroll-control'
 import { useReducedMotion } from '@/lib/use-reduced-motion'
+import { WaitlistPromiseLine } from '@/components/waitlist/WaitlistForm'
 
 if (typeof window !== 'undefined') gsap.registerPlugin(ScrollTrigger)
 
@@ -1881,16 +1882,49 @@ function AnalyseReveal() {
    * landing.css) — die Höhen-Heuristik lieferte in genau diesem Fall ein
    * falsches Positiv und hielt die Szene fälschlich für gepinnt.
    */
+  /**
+   * Schiebt Karte `i` in die Mitte des Swipe-Decks — nur horizontal, im
+   * eigenen Scroll-Container.
+   *
+   * Bewusst kein `scrollIntoView`: das scrollt JEDEN scrollbaren Vorfahren
+   * mit, das Dokument eingeschlossen, sobald das Ziel nicht ohnehin schon
+   * vollständig im Bild steht (`block: 'nearest'` verhindert das nur im
+   * Sonderfall). Ein Listenklick riss dadurch die Seite vertikal mit — und
+   * ein nativer Dokument-Scroll arbeitet zusätzlich gegen Lenis' virtuellen
+   * Scrollstand (siehe scroll-control.ts). Dieselbe Falle steckte im
+   * Extras-Karussell, wo sie über die Automatik sogar von selbst zuschlug.
+   *
+   * offsetLeft ist unabhängig vom Scrollstand, weil `.analyse-deck`
+   * positioniert ist (siehe landing.css).
+   */
+  const scrollDeckTo = (i: number) => {
+    const container = deckContainerRef.current
+    const card = cardRefs.current[i]
+    if (!container || !card) return
+    container.scrollTo({
+      left: card.offsetLeft - (container.clientWidth - card.clientWidth) / 2,
+      behavior: still ? 'auto' : 'smooth',
+    })
+  }
+
   const jumpToStep = (i: number) => {
     const scene = sceneRef.current
     if (!scene) return
     if (window.matchMedia(`(max-width: ${ANALYSE_MIN_WIDTH - 1}px)`).matches) {
-      cardRefs.current[i]?.scrollIntoView({ behavior: still ? 'auto' : 'smooth', inline: 'center', block: 'nearest' })
+      scrollDeckTo(i)
       return
     }
     const scrollDistance = scene.offsetHeight - window.innerHeight
     if (scrollDistance <= 0) {
-      cardRefs.current[i]?.scrollIntoView({ behavior: still ? 'auto' : 'smooth', inline: 'center', block: 'nearest' })
+      /*
+       * Die Szene passt komplett in den Viewport — es gibt keine
+       * Scrollstrecke, an der sich ein Schritt festmachen ließe. Bleibt nur,
+       * die Sektion überhaupt ins Bild zu holen, und auch das über Lenis
+       * statt über scrollIntoView. Nur wenn sie nicht ohnehin schon oben
+       * steht: sonst ruckelt jeder Listenklick die Seite grundlos zurecht.
+       */
+      const top = scene.getBoundingClientRect().top
+      if (top < 0 || top > window.innerHeight * 0.4) scrollToY(top + window.scrollY)
       return
     }
     const sceneTop = scene.getBoundingClientRect().top + window.scrollY
@@ -2899,32 +2933,95 @@ const PILLARS = [
   },
 ]
 
-/** Ab hier läuft die Säulenreihe als scroll-gesteuertes Karussell (siehe
+/** Ab hier läuft die Säulenreihe als scroll-gesteuerte Lichtwanderung (siehe
     PillarsReveal); darunter bleibt die bestehende Grid-/Listen-Darstellung
     unverändert (siehe die .g-pillars-Regeln in landing.css). */
 const PILLARS_MIN_WIDTH = 1024
-/** Scrollstrecke pro Säulen-Wechsel — genug, um Titel und Beschreibung in
-    Ruhe zu lesen, bevor der Vordergrund zur nächsten Säule wandert. */
-const PILLARS_STEP_VH = 70
-const PILLARS_SCENE_VH = 100 + PILLARS_STEP_VH * (PILLARS.length - 1)
-/** Abstand zwischen zwei Säulen auf der 0–1-Fortschrittsachse (4 Säulen an
-    den Stellen 0, ⅓, ⅔, 1). */
+/** Scrollstrecke, während das Licht von einer Säule zur nächsten wandert —
+    genug, um Titel und Beschreibung in Ruhe zu lesen. */
+const PILLARS_STEP_VH = 46
+/**
+ * Schlussphase: das Licht weitet sich, bis die ganze Front beleuchtet ist.
+ * Darauf läuft die Überschrift „Ein Fundament" hinaus — während der
+ * Wanderung steht immer nur eine Säule im Licht, hier stehen zum ersten Mal
+ * alle vier zusammen da, mit allen vier Beschreibungen lesbar.
+ */
+const PILLARS_FLOOD_VH = 44
+const PILLARS_TRAVEL_VH = PILLARS_STEP_VH * (PILLARS.length - 1)
+const PILLARS_SCENE_VH = 100 + PILLARS_TRAVEL_VH + PILLARS_FLOOD_VH
+/**
+ * Anteil der 0–1-Fortschrittsachse, den die Wanderung einnimmt; der Rest
+ * gehört der Flutphase. Die Achse ist reiner Scroll-Fortschritt, teilt sich
+ * also exakt im Verhältnis der beiden Scrollstrecken darüber.
+ */
+const PILLARS_TRAVEL_P = PILLARS_TRAVEL_VH / (PILLARS_TRAVEL_VH + PILLARS_FLOOD_VH)
+/**
+ * Radius des Lichtkegels in Spaltenbreiten. Genau 1.0 hieße: die
+ * Nachbarsäule liegt exakt auf der Kegelkante und bekommt nichts mehr ab —
+ * die Wanderung sähe dann aus wie hartes Umschalten. Etwas darüber lässt der
+ * Rand des Kegels die Nachbarn noch streifen.
+ */
+const PILLARS_BEAM_COLS = 1.15
+/**
+ * Wie magnetisch die Säulenmitten sind (0 = gar nicht, 1 = das Licht kommt
+ * auf jeder Mitte komplett zum Stehen). Bei 0 folgt der Sonnenstand dem
+ * Scroll exakt linear — dann bleibt das Licht genauso gut zwischen zwei
+ * Säulen stehen wie auf einer, und keine Position fühlt sich wie ein
+ * Ruhepunkt an.
+ *
+ * Stand zuerst auf 0.5 mit einer einfachen smoothstep-Kurve; das war messbar
+ * da, aber praktisch unsichtbar. Der Grund lag nicht am Wert, sondern daran,
+ * WO die Bremsung wirkt: nahe einer Mitte ist die betroffene Säule ohnehin
+ * schon voll beleuchtet und ihre Helligkeit ändert sich kaum noch — langsamer
+ * durch eine Zone zu fahren, in der sich nichts tut, sieht nach nichts aus.
+ * Sichtbar wird der Magnet erst über den KONTRAST zwischen Ruhe und Wechsel.
+ *
+ * Ruhedauer und Übergangstempo lassen sich dabei nicht unabhängig einstellen:
+ * die Fläche unter der Kurve ist immer 1, also muss ein längerer Halt genau
+ * so viel schnelleren Wechsel bezahlen. Eine Zwischenfassung übertrieb das
+ * (78 % Ruhe, aber dreifaches Tempo im Wechsel — der wirkte wie ein Sprung).
+ *
+ * Jetzt der ausgewogene Punkt: 1.0 auf einer einfachen (statt doppelten)
+ * smootherstep-Kurve. Das Licht kommt auf jeder Mitte VOLLSTÄNDIG zum Stehen
+ * — Tempo exakt 0 statt nur langsam — und ruht auf rund zwei Dritteln der
+ * Scrollstrecke, wechselt dazwischen aber nur noch mit knapp doppeltem statt
+ * dreifachem Tempo. Der Halt ist dadurch sogar deutlicher als vorher, der
+ * Übergang trotzdem spürbar ruhiger.
+ */
+const PILLARS_MAGNET = 1
+/** Deutlich engerer Kegel für den Fließtext: nur die Säule, auf der das
+    Licht wirklich steht, trägt ihre Beschreibung (siehe applyLight). */
+const PILLARS_TEXT_COLS = 0.62
+/** Abstand zwischen zwei Säulen auf der Wanderungs-Achse (4 Säulen an den
+    Stellen 0, ⅓, ⅔, 1). */
 const PILLARS_PROGRESS_STEP = 1 / (PILLARS.length - 1)
 
 /**
- * „Die Säulen" als scroll-gesteuertes Karussell ab PILLARS_MIN_WIDTH: alle
- * vier bleiben durchgehend sichtbar (nebeneinander, wie im normalen Raster),
- * aber immer genau eine steht gerade im Vordergrund — größer, hell, leicht
- * angehoben — während die anderen kleiner, blasser und leicht zurückversetzt
- * daliegen. Fortschritt beim Scrollen wandert den Vordergrund von Säule zu
- * Säule; kein horizontales Verschieben, nur Größe/Helligkeit/Höhe je Säule.
+ * „Die Säulen" ab PILLARS_MIN_WIDTH: die Kolonnade steht die ganze Zeit
+ * vollständig und unbewegt da — was scrollt, ist der Sonnenstand. Ein
+ * Lichtkegel wandert von Säule I nach Säule IV: die beleuchtete Säule wird
+ * heller UND wärmer, ihre Stufe hellt mit auf, der Lichtpool an ihrem Fuß
+ * richtet sich auf, während die Pools der Nachbarn vom Licht weg kippen.
+ * Zum Schluss rückt die Sonne in die Mitte und der Kegel weitet sich, bis
+ * die ganze Front im Licht steht (siehe PILLARS_FLOOD_VH).
+ *
+ * Bewusst KEINE Bewegung der Säulen selbst: eine Vorgängerfassung zog die
+ * jeweils vorderste zur Bildschirmmitte und skalierte sie. Dadurch
+ * überlappten die Säulen einander — daher der damalige z-index-Fix, die
+ * blickdichte Stufenkante und der harte Cutoff der Beschreibung, damit sich
+ * nicht zwei Fließtexte lesbar überlagern. Und sie nahm die Tempelfront
+ * optisch auseinander, also genau das Gegenteil dessen, was die Überschrift
+ * „Ein Fundament" behauptet. Steht die Front still, entfallen alle drei
+ * Reparaturen ersatzlos.
  *
  * Dieselbe Halte-Technik wie PedimentReveal: die Sektion bekommt
  * zusätzliche Scrollstrecke, ein `position: sticky`-Kind hält den Ausschnitt
  * fest (kein GSAP-`pin`, das erspart dessen Pin-Spacer-DOM), während JS pro
- * Säule Transform/Opacity/Filter direkt setzt statt über React-State zu
- * gehen — bei einem scrub-getriebenen Update pro Scroll-Frame wäre ein
- * Re-Render pro Säule pro Frame spürbar.
+ * Säule nur zwei Custom Properties setzt statt über React-State zu gehen —
+ * bei einem scrub-getriebenen Update pro Scroll-Frame wäre ein Re-Render pro
+ * Säule pro Frame spürbar. Die Umrechnung von „wie hell" in Filter-, Alpha-
+ * und Opacity-Werte steht in landing.css (siehe --lit dort); das JS liefert
+ * nur die Zahl.
  *
  * Unter PILLARS_MIN_WIDTH und bei reduzierter Bewegung bleibt exakt die
  * bisherige Grid-/Listen-Darstellung erhalten (siehe landing.css) — dieselbe
@@ -2934,7 +3031,7 @@ const PILLARS_PROGRESS_STEP = 1 / (PILLARS.length - 1)
 function PillarsReveal() {
   const still = useReducedMotion()
   const sceneRef = useRef<HTMLDivElement>(null)
-  const rowRef = useRef<HTMLDivElement>(null)
+  const stickyRef = useRef<HTMLDivElement>(null)
   const pillarRefs = useRef<(HTMLSpanElement | null)[]>([])
 
   useEffect(() => {
@@ -2945,83 +3042,138 @@ function PillarsReveal() {
     const mm = gsap.matchMedia()
     mm.add(`(min-width: ${PILLARS_MIN_WIDTH}px)`, () => {
       const state = { p: 0 }
+      const sticky = stickyRef.current
+
+      /**
+       * Smoothstep: 0→0, 1→1, an beiden Enden mit Steigung 0. Die weiche
+       * Schulter des Lichtkegels — ohne sie liefe dessen Kante als sichtbar
+       * harte Linie über die Säulen — und zugleich die Rampe der Flutphase.
+       */
+      const smooth = (t: number) => {
+        const x = Math.min(1, Math.max(0, t))
+        return x * x * (3 - 2 * x)
+      }
+
+      /**
+       * Kurve der magnetischen Mitten: smootherstep (6t⁵−15t⁴+10t³).
+       *
+       * Bewusst NICHT dasselbe wie `smooth` oben. Smoothstep ist nur exakt an
+       * den Enden flach und steigt gleich danach wieder an — die Ruhezone um
+       * eine Säulenmitte wäre damit so schmal, dass man sie nicht bemerkt.
+       * Smootherstep hat an den Enden auch die ZWEITE Ableitung null und
+       * bleibt dadurch spürbar länger flach, ohne dass der Übergang zwischen
+       * zwei Säulen dafür steil werden muss.
+       *
+       * Eine Vorfassung verkettete diese Funktion mit sich selbst. Das
+       * verbreiterte die Ruhezone weiter, machte den Wechsel aber dreimal so
+       * schnell wie ein linearer Durchlauf — die Fläche unter der Kurve ist
+       * fest, längerer Halt wird immer mit schnellerem Wechsel bezahlt. Als
+       * Bewegung sah das aus wie ein Sprung, nicht wie wanderndes Licht.
+       *
+       * Monoton und exakt 0→0, 1→1: beides ist hier Bedingung — die Achse
+       * muss dem Scroll in beide Richtungen folgen und die Säulenmitten für
+       * jumpToPillar exakt treffen.
+       */
+      const magnetEase = (t: number) => {
+        const x = Math.min(1, Math.max(0, t))
+        return x * x * x * (x * (x * 6 - 15) + 10)
+      }
 
       /*
-       * Spaltenbreite fürs Zentrieren gecacht statt pro Frame gemessen — ein
+       * Gerechnet wird in Spalten-Koordinaten (Säule I = 0 … Säule IV = 3),
+       * nicht in Pixeln: dadurch gibt es nichts zu messen. Ein
        * offsetWidth-Zugriff in onUpdate einer scrub-Timeline erzwingt sonst
-       * pro Frame ein Re-Layout (dasselbe Prinzip wie der Zylinder-Radius in
-       * PedimentReveal).
+       * pro Frame ein Re-Layout (dasselbe Prinzip wie der gecachte
+       * Zylinder-Radius in PedimentReveal), und der Sonnenstand lässt sich
+       * am Ende direkt als Prozentwert an die CSS weiterreichen.
        */
-      let colWidth = 0
-      const measure = () => {
-        colWidth = (rowRef.current?.offsetWidth ?? 0) / PILLARS.length
-      }
+      const applyLight = () => {
+        const last = PILLARS.length - 1
+        // Wanderung und anschließende Flut teilen sich die Fortschrittsachse
+        // im selben Verhältnis wie ihre Scrollstrecken (PILLARS_TRAVEL_P).
+        const travel = Math.min(1, state.p / PILLARS_TRAVEL_P)
+        const flood = smooth((state.p - PILLARS_TRAVEL_P) / (1 - PILLARS_TRAVEL_P))
+        /*
+         * Magnetische Mitten: der lineare Fortschritt `raw` wird INNERHALB
+         * jedes Säulenabstands verbogen, statt die Sonne stur mit dem Scroll
+         * mitlaufen zu lassen. magnetEase ist an beiden Enden flach —
+         * angewendet auf den Bruchteil zwischen zwei Säulen heißt das: nahe
+         * einer Mitte steht das Licht still, dazwischen zieht es hinüber.
+         * Jede Mitte ist dadurch ein echter Ruhepunkt statt eine von beliebig
+         * vielen gleichwertigen Positionen — ohne dass der Wechsel dazwischen
+         * in einen Sprung kippt (siehe PILLARS_MAGNET).
+         *
+         * Bewusst eine Verzerrung der Achse und kein eigener Snap-Tween: die
+         * Achse bleibt monoton und stetig, folgt dem Scroll also weiter 1:1
+         * und läuft beim Zurückscrollen exakt rückwärts. Ein nachlaufender
+         * Tween müsste gegen das Scrubbing anarbeiten und würde beim
+         * Richtungswechsel sichtbar zucken.
+         *
+         * `idx` auf last-1 gedeckelt, damit am oberen Rand (raw === last)
+         * nicht f = 0 im nicht existierenden Abschnitt dahinter landet.
+         */
+        const raw = travel * last
+        const idx = Math.min(last - 1, Math.floor(raw))
+        const f = raw - idx
+        const sunTravel = raw + PILLARS_MAGNET * (magnetEase(f) - f)
+        // In der Flutphase rückt die Sonne aus der äußersten Position zurück
+        // in die Mitte der Front, damit das Licht am Ende gleichmäßig fällt
+        // statt von ganz rechts.
+        const sun = sunTravel + (last / 2 - sunTravel) * flood
+        const beamCols = PILLARS_BEAM_COLS + flood * 1.6
 
-      const applyEmphasis = () => {
         pillarRefs.current.forEach((el, i) => {
           if (!el) return
-          // 0 an der eigenen Stelle (voll im Vordergrund), 1 sobald eine
-          // volle Säulen-Distanz entfernt oder weiter (weiter entfernte
-          // Säulen sollen nicht noch kleiner werden als der Ruhezustand).
-          const d = Math.min(1, Math.abs(i * PILLARS_PROGRESS_STEP - state.p) / PILLARS_PROGRESS_STEP)
-          const scale = 1.12 - d * 0.3 // 1.12 im Vordergrund → 0.82 im Hintergrund
-          // Plateau statt linearem Abfall: bleibt bis d=0.35 voll deckend,
-          // erst danach setzt das Ausblenden ein. Ohne das war schon die
-          // Säule, die gerade zur Mitte zieht (und dabei Nachbarn optisch
-          // überlappt), selbst leicht transparent — kombiniert mit dem
-          // z-index-Fix (siehe .pillar-inner in landing.css) sah das aus, als
-          // schiene eine Säule durch die andere hindurch.
-          const opacity = d <= 0.35 ? 1 : 1 - ((d - 0.35) / 0.65) * 0.5
-          const dim = d * 0.75 // Entsättigung/Abdunklung der zurückliegenden Säulen
-          // Dieselbe Plateau-Kurve für die Stufenkante am Säulenfuß (siehe
-          // --pillar-base-alpha in .pillar-shaft, landing.css): die
-          // Vordergrundsäule bekommt eine blickdichte Kante (1 statt der
-          // sonst halbtransparenten .44), damit sie beim Überlappen nicht
-          // die Kante der Nachbarsäule durchscheinen lässt.
-          const baseAlpha = d <= 0.35 ? 1 : 1 - ((d - 0.35) / 0.65) * 0.56
+          const dist = Math.abs(i - sun)
+          // Math.max gegen `flood`, statt den Kegel allein breit genug zu
+          // machen: er müsste sonst absurd weit werden, damit auch die
+          // äußerste Säule am Ende wirklich bei 1 ankommt.
+          const lit = Math.max(1 - smooth(dist / beamCols), flood)
+          /*
+           * Kipprichtung des Lichtpools am Säulenfuß: das Licht kommt von
+           * `sun`, eine Säule rechts davon wirft ihren Pool nach rechts. Auf
+           * −1…1 begrenzt, sonst kippt die äußerste Säule bei ganz linkem
+           * Sonnenstand unnatürlich weit weg.
+           */
+          const cast = Math.max(-1, Math.min(1, (i - sun) / 1.8))
+          el.style.setProperty('--lit', lit.toFixed(3))
+          el.style.setProperty('--cast', cast.toFixed(3))
 
           /*
-           * Statt starrer Rasterposition: die eigene Rasterspalte ist der
-           * Ruhepunkt (centerPull = 0), auf dem Weg dorthin wird die Säule
-           * zur Bildschirmmitte gezogen (centerPull → 1 am eigenen Moment) —
-           * die jeweils vorderste steht dadurch immer mittig, statt nur
-           * größer zu werden. Bewusst nur Position/Größe/Licht, keine
-           * Rotation und kein zusätzlicher Bogen-Schwung in der Höhe mehr —
-           * beides sah bei der Bildhöhe von Schaft + Text schnell nach
-           * zufälligem Wackeln statt nach einer klaren Bewegung aus.
+           * Der Fließtext hängt an einem viel engeren Kegel als die Säule
+           * selbst — sonst stünden beim Vorbeiwandern kurz zwei
+           * Beschreibungen halb sichtbar nebeneinander. In der Flutphase
+           * werden dagegen absichtlich ALLE vier lesbar: das ist der Moment,
+           * in dem die Sektion ihr Versprechen einlöst.
+           *
+           * .pillar-copy ist das letzte Kind von .pillar-inner, der
+           * Beschreibungstext wiederum dessen letztes Kind (siehe JSX) —
+           * lastElementChild statt einer erneuten Suche pro Frame.
            */
-          const centerPull = Math.max(0, 1 - d)
-          const naturalCenterOffset = (i - (PILLARS.length - 1) / 2) * colWidth
-          const xArc = -naturalCenterOffset * centerPull
-          const lift = -16 + d * 26
-
-          el.style.transform = `translate(${xArc.toFixed(1)}px, ${lift.toFixed(1)}px) scale(${scale.toFixed(3)})`
-          el.style.opacity = opacity.toFixed(3)
-          el.style.filter = `grayscale(${dim.toFixed(2)}) brightness(${(1.05 - d * 0.22).toFixed(2)})`
-          el.style.zIndex = String(Math.round((1 - d) * 10))
-          el.style.setProperty('--pillar-base-alpha', baseAlpha.toFixed(3))
-
-          // Nur die Beschreibung bekommt einen eigenen, deutlich schärferen
-          // Ausblendverlauf — Nummer und Titel bleiben auf allen vier Säulen
-          // die ganze Zeit sichtbar (auf demselben Dimm-Niveau wie die Säule
-          // selbst), nur der lange Fließtext ist der Vordergrundsäule
-          // vorbehalten. .pillar-copy ist das letzte Kind von .pillar-inner,
-          // .af-balance wiederum dessen letztes Kind (siehe JSX) —
-          // lastElementChild statt einer erneuten Suche pro Frame.
-          //
-          // Harter Cutoff statt sanftem Verlauf: mit einem sanften Verlauf
-          // waren beim Vorbeiziehen zweier Nachbarn kurz BEIDE Beschreibungen
-          // teilweise sichtbar und überlagerten sich lesbar. Ab d>0.35 (genau
-          // die Schwelle, ab der auch die Säule selbst schon abgeblendet
-          // wird) ist die Beschreibung stattdessen ganz weg — beim Übergang
-          // bleibt kurz gar keine sichtbar, statt dass sich zwei überlagern.
           const copy = el.lastElementChild as HTMLElement | null
           const desc = copy?.lastElementChild as HTMLElement | null
-          if (desc) desc.style.opacity = d <= 0.15 ? '1' : Math.max(0, 1 - (d - 0.15) / 0.2).toFixed(3)
+          if (desc) desc.style.opacity = Math.max(1 - smooth(dist / PILLARS_TEXT_COLS), flood).toFixed(3)
         })
+
+        if (sticky) {
+          /*
+           * Sonnenstand als Prozentwert über die Reihe: die Mitte von Säule i
+           * liegt bei (i + ½) / Anzahl. Lichtschleier und Gebälk lesen ihn
+           * (siehe .pillars-light / .entablature::after in landing.css) —
+           * dasselbe Licht, das die Säulen trifft, wandert über den Architrav.
+           *
+           * Beide Werte landen in der CSS in einem `transform`, nicht in der
+           * Gradient-Definition selbst. Als Gradient-Position formuliert
+           * musste der Browser den bildschirmhohen Verlauf bei JEDEM
+           * Scroll-Frame neu zeichnen; als Transform verschiebt er nur eine
+           * einmal gerasterte Ebene. Das war der teuerste Posten der ganzen
+           * Szene.
+           */
+          sticky.style.setProperty('--pillars-sun-x', `${(((sun + 0.5) / PILLARS.length) * 100).toFixed(2)}%`)
+          sticky.style.setProperty('--pillars-beam-scale', (1 + flood * 3.7).toFixed(3))
+        }
       }
-      measure()
-      applyEmphasis()
+      applyLight()
 
       gsap
         .timeline({
@@ -3030,29 +3182,48 @@ function PillarsReveal() {
             start: 'top top',
             end: 'bottom bottom',
             scrub: true,
-            onRefresh: () => {
-              measure()
-              applyEmphasis()
-            },
+            onRefresh: applyLight,
           },
         })
-        .to(state, { p: 1, ease: 'none', onUpdate: applyEmphasis })
+        .to(state, { p: 1, ease: 'none', onUpdate: applyLight })
+
+      /*
+       * mm.revert() setzt nur zurück, was GSAP selbst angefasst hat — die
+       * Custom Properties oben sind direkt gesetzt und blieben sonst am
+       * Element kleben, wenn das Fenster unter PILLARS_MIN_WIDTH schrumpft:
+       * die statische Listendarstellung stünde dann mit dem Lichtstand von
+       * eben da, inklusive einer unsichtbar gebliebenen Beschreibung.
+       */
+      return () => {
+        pillarRefs.current.forEach((el) => {
+          if (!el) return
+          el.style.removeProperty('--lit')
+          el.style.removeProperty('--cast')
+          const copy = el.lastElementChild as HTMLElement | null
+          const desc = copy?.lastElementChild as HTMLElement | null
+          if (desc) desc.style.removeProperty('opacity')
+        })
+        sticky?.style.removeProperty('--pillars-sun-x')
+        sticky?.style.removeProperty('--pillars-beam-scale')
+      }
     })
 
     return () => mm.revert()
   }, [still])
 
   /**
-   * Klick auf eine (auch zurückliegende) Säule springt zu ihrem Moment: die
-   * Vordergrund-Position ist reiner Scroll-Fortschritt (state.p, siehe oben),
-   * „hinspringen" heißt also schlicht dorthin scrollen, wo state.p = i *
-   * PILLARS_PROGRESS_STEP wäre — kein zweiter Animationsmechanismus nötig.
+   * Klick auf eine (auch unbeleuchtete) Säule springt zu ihrem Moment: der
+   * Sonnenstand ist reiner Scroll-Fortschritt (state.p, siehe oben),
+   * „hinspringen" heißt also schlicht dorthin scrollen, wo das Licht auf
+   * Säule i stünde — kein zweiter Animationsmechanismus nötig. Der Faktor
+   * PILLARS_TRAVEL_P, weil die Wanderung nur den vorderen Teil der Szene
+   * einnimmt; dahinter liegt noch die Flutphase.
    *
-   * `scrollDistance <= 0` erkennt zuverlässig, ob das Karussell überhaupt
-   * aktiv ist: unter PILLARS_MIN_WIDTH und bei reduzierter Bewegung bleibt
-   * .pillars-scene per CSS auf `height: auto` (siehe landing.css), dann ist
-   * sie nie größer als der Viewport — genau dann ergibt ein Sprung ohnehin
-   * keinen Sinn, weil nichts gepinnt ist.
+   * `scrollDistance <= 0` erkennt zuverlässig, ob die Lichtwanderung
+   * überhaupt aktiv ist: unter PILLARS_MIN_WIDTH und bei reduzierter
+   * Bewegung bleibt .pillars-scene per CSS auf `height: auto` (siehe
+   * landing.css), dann ist sie nie größer als der Viewport — genau dann
+   * ergibt ein Sprung ohnehin keinen Sinn, weil nichts gepinnt ist.
    */
   const jumpToPillar = (i: number) => {
     const scene = sceneRef.current
@@ -3060,7 +3231,7 @@ function PillarsReveal() {
     const scrollDistance = scene.offsetHeight - window.innerHeight
     if (scrollDistance <= 0) return
     const sceneTop = scene.getBoundingClientRect().top + window.scrollY
-    scrollToY(sceneTop + i * PILLARS_PROGRESS_STEP * scrollDistance)
+    scrollToY(sceneTop + i * PILLARS_PROGRESS_STEP * PILLARS_TRAVEL_P * scrollDistance)
   }
 
   return (
@@ -3084,13 +3255,24 @@ function PillarsReveal() {
           className="pillars-scene"
           style={{ ['--pillars-scene-h' as string]: `${PILLARS_SCENE_VH}vh` }}
         >
-          <div className="pillars-sticky">
+          <div ref={stickyRef} className="pillars-sticky">
+            {/*
+              Der Lichtschleier — der weiche Kegel selbst, den man zwischen
+              den Säulen hindurchfallen sieht. Steht bewusst VOR dem Gebälk
+              im DOM und liegt hinter der Säulenreihe (siehe z-index bei
+              .g-pillars in landing.css): Licht fällt zwischen die Säulen,
+              nicht über sie. Position und Breite kommen aus den Custom
+              Properties, die applyLight auf .pillars-sticky setzt.
+            */}
+            <span className="pillars-light" aria-hidden>
+              <span className="pillars-light-beam" />
+            </span>
             {/*
               Gebälk: bewusst INNERHALB der gepinnten Fläche statt davor —
               bliebe es ein normaler Reveal vor der Szene, wäre es schon
               weggescrollt, sobald das Pinning greift. So bleibt es die ganze
-              Karussell-Dauer über oben stehen, während der Vordergrund
-              darunter wandert (dasselbe Tempelfront-Bild wie zuvor, nur ohne
+              Szene über oben stehen, während das Licht darunter von Säule zu
+              Säule wandert (dasselbe Tempelfront-Bild wie zuvor, nur ohne
               die künstliche Lücke).
             */}
             <Reveal y={16} style={{ marginTop: 'clamp(44px, 6vw, 76px)', flexShrink: 0 }}>
@@ -3101,7 +3283,6 @@ function PillarsReveal() {
             </Reveal>
 
             <div
-              ref={rowRef}
               className="g-pillars"
               style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}
             >
@@ -3140,15 +3321,45 @@ function PillarsReveal() {
                     }}
                   >
                     <span className="pillar-shaft">
-                      <Image
-                        src={p.src}
-                        alt=""
-                        aria-hidden
-                        width={p.w}
-                        height={p.h}
-                        unoptimized
-                        className="pillar-img"
-                      />
+                      {/*
+                        Dieselbe Zeichnung zweimal: unten die unbeleuchtete
+                        Fassung, darüber die beleuchtete, deren Deckkraft am
+                        Lichtstand hängt (siehe --lit in landing.css).
+
+                        Sieht nach Umweg aus, ist aber der Grund, warum die
+                        Szene flüssig läuft. Vorher trug EIN Bild einen
+                        Filter, dessen Werte pro Scroll-Frame neu gesetzt
+                        wurden — `filter` hat keinen Compositor-Pfad, der
+                        Browser musste die Säule (ein SVG mit rund 880 Pfaden,
+                        bis zu 360px hoch) also in jedem Frame neu rastern,
+                        viermal nebeneinander. Zwei Ebenen mit je einem festen
+                        Filter werden dagegen einmal gerastert; pro Frame
+                        ändert sich nur noch die Deckkraft der oberen, und das
+                        macht der Compositor.
+
+                        Zwei <Image> auf dieselbe Datei sind eine Anfrage: der
+                        Browser holt die URL einmal.
+                      */}
+                      <span className="pillar-img-stack">
+                        <Image
+                          src={p.src}
+                          alt=""
+                          aria-hidden
+                          width={p.w}
+                          height={p.h}
+                          unoptimized
+                          className="pillar-img pillar-img-cold"
+                        />
+                        <Image
+                          src={p.src}
+                          alt=""
+                          aria-hidden
+                          width={p.w}
+                          height={p.h}
+                          unoptimized
+                          className="pillar-img pillar-img-warm"
+                        />
+                      </span>
                     </span>
                     <span className="pillar-copy">
                       <span
@@ -3256,9 +3467,40 @@ function ExtrasCarousel() {
   const cardRefs = useRef<(HTMLDivElement | null)[]>([])
   const autoplayRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const resumeRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
+  /* Läuft die Automatik gerade ins Leere? Siehe den Effekt weiter unten. */
+  const inViewRef = useRef(false)
 
+  /**
+   * Schiebt Karte `i` in die Mitte des Decks — ausschließlich über den
+   * eigenen horizontalen Scrollstand des Decks.
+   *
+   * Vorher stand hier `scrollIntoView({ inline: 'center', block: 'nearest' })`,
+   * und das war ein handfester Fehler: `block: 'nearest'` verzichtet nur dann
+   * auf vertikales Scrollen, wenn das Element ohnehin schon vollständig im
+   * Bild steht. Steht es das nicht — und beim Seitenaufruf steht dieses
+   * Karussell ganz unten auf der Seite —, dann scrollt der Browser JEDEN
+   * scrollbaren Vorfahren mit, das Dokument eingeschlossen. Die Automatik
+   * riss die Seite also 4,5 Sekunden nach dem Laden von selbst bis nach unten
+   * zu „Weitere Eigenschaften". Nur auf schmalen Displays sichtbar, weil das
+   * Karussell erst unter 420px überhaupt eine Box hat (siehe
+   * .extras-carousel) — darüber ist es `display: none` und scrollIntoView ein
+   * No-op.
+   *
+   * Dazu kam, dass ein nativer Dokument-Scroll gegen Lenis' virtuellen
+   * Scrollstand arbeitet (siehe scroll-control.ts) — das Scrollen fühlte
+   * sich danach auch dort kaputt an, wo man wieder hingescrollt hatte.
+   *
+   * `container.scrollTo` fasst dagegen nur die eigene Scrollbox an. offsetLeft
+   * ist unabhängig vom aktuellen Scrollstand, solange das Deck selbst
+   * positioniert ist (siehe `position: relative` in landing.css).
+   */
   const scrollToIndex = (i: number) => {
-    cardRefs.current[i]?.scrollIntoView({ behavior: still ? 'auto' : 'smooth', inline: 'center', block: 'nearest' })
+    const container = deckRef.current
+    const card = cardRefs.current[i]
+    if (!container || !card) return
+    const left = card.offsetLeft - (container.clientWidth - card.clientWidth) / 2
+    container.scrollTo({ left, behavior: still ? 'auto' : 'smooth' })
   }
 
   const stopAutoplay = () => {
@@ -3269,6 +3511,11 @@ function ExtrasCarousel() {
     if (still) return
     stopAutoplay()
     autoplayRef.current = setInterval(() => {
+      // Weiterschalten nur im Bild: sonst hat der Nutzer beim Zurückkommen
+      // eine Karte vor sich, die er nie gewählt hat — und auf allen Breiten
+      // über 420px, wo das Karussell gar nicht sichtbar ist (siehe
+      // .extras-carousel), liefe die Automatik ohnehin ins Leere.
+      if (!inViewRef.current) return
       scrollToIndex((activeRef.current + 1) % EXTRAS.length)
     }, EXTRAS_AUTOPLAY_MS)
   }
@@ -3306,6 +3553,26 @@ function ExtrasCarousel() {
     return () => observer.disconnect()
   }, [])
 
+  /*
+   * Sichtbarkeit des Karussells selbst — steuert `inViewRef` oben. Bewusst
+   * ein zweiter Observer neben dem für die aktive Karte: der beobachtet die
+   * Karten INNERHALB des Decks (root = Deck), dieser hier das Deck im
+   * Viewport. Ein `display: none`-Element gilt dabei nie als sichtbar, damit
+   * deckt derselbe Mechanismus auch gleich alle Breiten über 420px mit ab.
+   */
+  useEffect(() => {
+    const el = rootRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        inViewRef.current = entry.isIntersecting
+      },
+      { threshold: 0.3 },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
   useEffect(() => {
     startAutoplay()
     return () => {
@@ -3316,15 +3583,15 @@ function ExtrasCarousel() {
   }, [still])
 
   return (
-    <div className="extras-carousel">
+    <div className="extras-carousel" ref={rootRef}>
       <div className="extras-carousel-deck" ref={deckRef} onPointerDown={onManualInteract}>
         {EXTRAS.map((f, i) => (
           <div key={f.title} className="extras-carousel-card" ref={(el) => { cardRefs.current[i] = el }}>
             <span style={{ color: C.oliveDeep }}>{f.icon}</span>
             <div style={{ height: '1px', backgroundColor: C.rule }} />
-            <h4 style={{ fontFamily: F.display, fontSize: '17px', fontWeight: 500, color: C.ink, margin: 0 }}>
+            <h3 style={{ fontFamily: F.display, fontSize: '17px', fontWeight: 500, color: C.ink, margin: 0 }}>
               {f.title}
-            </h4>
+            </h3>
             <p style={{ fontFamily: F.serif, fontSize: '13px', lineHeight: 1.75, color: C.inkBody, margin: 0 }}>
               {f.desc}
             </p>
@@ -3481,6 +3748,22 @@ function FooterSections() {
 export function LandingClient() {
   const stillMotion = useReducedMotion()
   const heroRef = useRef<HTMLElement>(null)
+  /*
+   * Ziel des Scroll-Knopfs am Fuß von „IV · Der Weg": der Anfang von
+   * „Weitere Eigenschaften". Bewusst über einen Ref auf das Element statt
+   * über nachgerechnete vh-Beträge — die Sektion sitzt per negativem
+   * margin-top an einer Stelle, die sich aus .overlap-scene-Höhe MINUS
+   * 100vh ergibt (siehe landing.css); jede Änderung an einer der beiden
+   * Zahlen würde eine nachgerechnete Formel hier still falsch machen.
+   */
+  const extrasRef = useRef<HTMLDivElement>(null)
+  const jumpToExtras = () => {
+    const el = extrasRef.current
+    if (!el) return
+    // Oberkante der überziehenden Sektion auf Viewport-Oberkante: exakt der
+    // Moment, in dem der Vorhang zugezogen ist und das Pinning endet.
+    scrollToY(el.getBoundingClientRect().top + window.scrollY)
+  }
   const heroPhotoImgRef = useRef<HTMLImageElement>(null)
 
   /*
@@ -3995,6 +4278,21 @@ export function LandingClient() {
               </div>
             </div>
           </section>
+
+          {/* Scroll-Hinweis für die Klebezeit dieser Sektion — siehe
+              .overlap-cue in landing.css. Geschwister der <section>, nicht
+              Kind: er soll am unteren Rand des gepinnten VIEWPORTS sitzen,
+              nicht am Ende des (vertikal zentrierten, kürzeren) Inhalts.
+
+              Beschriftung plus tippender Pfeil, wie am Fuß der
+              Kennzahlen-Säule (.mock-column-next). Die erste Fassung
+              übernahm die fallende Goldlinie vom Giebel — die ist auf hellem
+              Grund und ohne Beschriftung zu leise für eine Stelle, an der man
+              sonst denkt, die Seite hänge. */}
+          <button type="button" className="overlap-cue" onClick={jumpToExtras} aria-label="Weiter">
+            <span className="overlap-cue-label" style={{ ...kicker, fontSize: '10px' }}>Scroll</span>
+            <ChevronDown size={16} strokeWidth={1.6} aria-hidden />
+          </button>
         </div>
       </div>
 
@@ -4004,9 +4302,23 @@ export function LandingClient() {
           Fluss — kein eigenes Sticky-Pinning mehr, sonst hängt sie nach
           dem Überziehen tot in der Luft, bevor der Abschluss aufschließt.
           Der Abschluss folgt direkt danach, ohne weiteren Vorhang ══ */}
-      <div className="overlap-cover" style={{ zIndex: 2, backgroundColor: C.parchment }}>
+      <div ref={extrasRef} className="overlap-cover" style={{ zIndex: 2, backgroundColor: C.parchment }}>
         <section style={{ width: '100%', padding: `clamp(56px, 7vw, 88px) ${SPACE.gutter}`, borderTop: `1px solid ${C.rule}` }}>
           <div style={{ maxWidth: '1160px', margin: '0 auto' }}>
+            {/*
+              Nur für Screenreader und Suchmaschinen sichtbar.
+              Gestalterisch braucht dieser Streifen keine Überschrift — er ist
+              der ruhige Ausklang nach vier betitelten Kapiteln. In der
+              Dokumentgliederung fehlte damit aber die Ebene dazwischen: die
+              vier Kacheln standen als h4 direkt unter dem h1 der Seite, ohne
+              h2 und h3 dazwischen. Ein Sprung in der Ebenenfolge ist für
+              Screenreader-Nutzer ein Orientierungsverlust („wo bin ich
+              gelandet?"), und Suchmaschinen lesen die Gliederung als Aussage
+              darüber, wie die Seite aufgebaut ist.
+
+              Die Kacheln selbst sind jetzt h3 unter diesem h2.
+            */}
+            <h2 className="sr-only">Weitere Eigenschaften</h2>
             <div
               className="g-extras"
               style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'clamp(24px, 3vw, 40px)' }}
@@ -4016,9 +4328,9 @@ export function LandingClient() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     <span style={{ color: C.oliveDeep }}>{f.icon}</span>
                     <div style={{ height: '1px', backgroundColor: C.rule }} />
-                    <h4 style={{ fontFamily: F.display, fontSize: '17px', fontWeight: 500, color: C.ink, margin: 0 }}>
+                    <h3 style={{ fontFamily: F.display, fontSize: '17px', fontWeight: 500, color: C.ink, margin: 0 }}>
                       {f.title}
-                    </h4>
+                    </h3>
                     <p style={{ fontFamily: F.serif, fontSize: '13px', lineHeight: 1.75, color: C.inkBody, margin: 0 }}>
                       {f.desc}
                     </p>
@@ -4043,7 +4355,7 @@ export function LandingClient() {
           positionierte Geschwister — unabhängig von der DOM-Reihenfolge.
           Ohne das hier würde „Der Weg" (z-index 1) durch den Abschluss
           hindurchscheinen ══ */}
-      <section style={{ position: 'relative', zIndex: 3, padding: `${SPACE.section} ${SPACE.gutter}`, backgroundColor: C.parchment }}>
+      <section id="warteliste" style={{ position: 'relative', zIndex: 3, padding: `${SPACE.section} ${SPACE.gutter}`, backgroundColor: C.parchment }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <Reveal y={30}>
             <div
@@ -4110,16 +4422,54 @@ export function LandingClient() {
                     fontSize: 'clamp(14px, 1.3vw, 16px)',
                     lineHeight: 1.85,
                     color: C.onBody,
-                    maxWidth: '480px',
-                    margin: '26px auto 38px',
+                    maxWidth: '520px',
+                    margin: '26px auto 34px',
                   }}
                 >
                   Athena Finance bündelt Konten, Depots, Verträge und Strategien in einer
-                  einzigen Oberfläche — damit jede Entscheidung auf vollständigen Daten beruht.
+                  einzigen Oberfläche — damit jede Entscheidung auf vollständigen Daten
+                  beruht. Fertig ist das nicht: Es entsteht gerade, für den eigenen
+                  Gebrauch. Wer den Weg dorthin mitverfolgen will, trägt sich ein.
                 </p>
-                <Link href="/login" className="af-btn af-btn-cream">
-                  Anmelden <ArrowRight size={15} strokeWidth={2} />
+
+                {/*
+                  Hier stand bisher ein „Anmelden"-Knopf. Der ging für fast
+                  jeden ins Leere: es gibt keine offene Registrierung, das
+                  Projekt läuft heute für eine Person. Der Abschluss der Seite
+                  ist aber genau der Moment, in dem jemand alles gesehen hat —
+                  also steht hier die Handlung, die tatsächlich möglich ist.
+
+                  Eine Zwischenfassung hatte das Eintragefeld direkt hier
+                  stehen, um den Seitenwechsel zu sparen. Der Knopf ist die
+                  bessere Lösung: /interesse erklärt in Ruhe, worauf man sich
+                  einträgt (und worauf ausdrücklich nicht — kein Zugang, kein
+                  Datum), und dieser Abschluss bleibt ein Abschluss statt
+                  mitten im letzten Bild zu einem Formular zu werden. Ohne den
+                  Knopf war die Seite außerdem von der Startseite aus praktisch
+                  nur über den Fuß erreichbar.
+
+                  Die drei Zusagen stehen trotzdem schon HIER, nicht erst
+                  drüben: sie nehmen die Sorge weg, die jemanden vor dem Klick
+                  abhält, und wer sie liest, kommt entschiedener an.
+                */}
+                <Link href="/interesse" className="af-btn af-btn-cream">
+                  Am Bau teilhaben <ArrowRight size={15} strokeWidth={2} />
                 </Link>
+                <WaitlistPromiseLine />
+
+                <p
+                  style={{
+                    fontFamily: F.sans,
+                    fontSize: '12.5px',
+                    color: C.onSubtle,
+                    margin: 'clamp(26px, 3vw, 34px) 0 0',
+                  }}
+                >
+                  Du hast schon einen Zugang?{' '}
+                  <Link href="/login" style={{ color: C.gold, textDecoration: 'underline', textUnderlineOffset: '2px' }}>
+                    Anmelden
+                  </Link>
+                </p>
               </div>
             </div>
           </Reveal>
@@ -4178,6 +4528,11 @@ export function LandingClient() {
                   Kontakt
                 </span>
               </a>
+              <Link href="/interesse" className="foot-link">
+                <span className="af-quiet af-micro" style={{ ...kicker, fontSize: '11px', color: C.inkSubtle }}>
+                  Am Bau teilhaben
+                </span>
+              </Link>
               <Link href="/login" className="foot-link">
                 <span className="af-quiet af-micro" style={{ ...kicker, fontSize: '11px', color: C.inkSubtle }}>
                   Anmelden

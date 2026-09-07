@@ -3185,6 +3185,27 @@ export type Database = {
           },
         ]
       }
+      waitlist_signups: {
+        Row: {
+          consent: boolean
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          consent?: boolean
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          consent?: boolean
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
       webhook_events: {
         Row: {
           action: string | null

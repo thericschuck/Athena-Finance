@@ -4,20 +4,21 @@ import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import {
-  LayoutDashboard, TrendingUp, CircleDollarSign, Target, ShoppingCart,
-  Briefcase, BarChart2, History, Settings, ArrowUpRight, ArrowDownRight, Dot,
+  LayoutDashboard, Sparkles, TrendingUp, LineChart, BarChart2, Gem, Settings,
+  ArrowUpRight, ArrowDownRight, ArrowUp, Dot, Info, AlertTriangle, MessageSquare,
+  Plus, Check, X,
 } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
-import { AU, F, kicker } from './landing-tokens'
-import type { PortfolioHistoryPoint } from '@/app/actions/depot'
-import type { ChartTab } from '@/components/depot/depot-chart'
+import { AthenaAvatar } from '@/components/assistant/AthenaAvatar'
+import type { NetWorthSnapshot } from '@/components/dashboard/net-worth-chart'
+import { APP, F, kicker } from './landing-tokens'
 import type { Summary } from '@/components/dashboard/finance-analytics'
 import type { DonutEntry } from '@/components/crypto/portfolio-donut-card'
 import type { HeatmapDay, SankeyData, CashflowEvent, MonthlyComparison, CategoryDatum } from '@/lib/analyseData'
 
 /**
- * Dritter Schritt desselben Musters (siehe DepotChart/IncomeExpenseChart-
- * Kommentare oben): die Analyse-Szene zog bisher drei erfundene Mini-Karten
+ * Dritter Schritt desselben Musters (siehe die Kommentare an den
+ * Chart-Importen unten): die Analyse-Szene zog bisher drei erfundene Mini-Karten
  * (Sparziele/Top-Kategorien/Ø Ausgabe) statt echter Analyse-Bausteine — die
  * gab es auf der echten Analyse-Seite so gar nicht. Jetzt echtes Heatmap +
  * Geldfluss (Sankey) + Cashflow-Kalender aus der eingeloggten App, dieselben
@@ -46,19 +47,42 @@ import { KategorienChart } from '@/components/analyse/KategorienChart'
  * dependency ... non-critical, below-the-fold UI"). Läuft der Pilot sauber,
  * ziehen wir Dashboard-/Analyse-/Crypto-Charts in einem zweiten Schritt nach.
  */
-const DepotChart = dynamic(() => import('@/components/depot/depot-chart').then((m) => m.DepotChart), { ssr: false })
+/*
+ * Die beiden Charts der ersten Dashboard-Reihe, direkt aus der App statt
+ * nachgebaut. Bis zum Theme-Wechsel ging das nicht: beide färben über
+ * var(--chart-*), und unter Aurum trafen die nicht die Palette, auf die das
+ * Mockup von Hand gezogen war (siehe Kommentar oben, der genau das als Grund
+ * fürs Nicht-Übernehmen nannte). Seit das Mockup auf demselben Preset läuft
+ * wie die App (data-theme="athena-dark"), ist der Grund weg — und mit ihm
+ * die handgebaute LiveChart-/PortfolioMixCard-Nachbildung, deren Auflösung,
+ * Achsen und Tabs nie ganz die der echten Charts trafen.
+ *
+ * NetWorthChart bringt seine Zeitraum- und Ansicht-Tabs (1W…All, Gesamt/
+ * Konten/Depot/Krypto) selbst mit — die früheren PeriodTabs/AssetTabs im
+ * Mockup waren nur deren Attrappe.
+ */
+const NetWorthChart = dynamic(
+  () => import('@/components/dashboard/net-worth-chart').then((m) => m.NetWorthChart),
+  { ssr: false },
+)
+const PortfolioDonut = dynamic(
+  () => import('@/components/dashboard/portfolio-donut').then((m) => m.PortfolioDonut),
+  { ssr: false },
+)
 
 /**
- * Zweiter Schritt desselben Musters (siehe DepotChart oben): Dashboard-,
- * Analyse- und Crypto-Szene ziehen jetzt ebenfalls echte recharts-
- * Komponenten aus der eingeloggten App statt handgebauter SVG-Charts
- * (BarsChart, LiveChart, AllocationDonut) nach. Bewusst NICHT übernommen:
- * AusgabenHeatmap.tsx, dashboard/portfolio-donut.tsx
- * und net-worth-chart.tsx — die nutzen entweder eine komplett andere,
- * Aurum-fremde Hex-Palette oder eine andere Kategorisierung (Konten/Depot/
- * Krypto/Gesamt bzw. Finanzen/Depot/Krypto/Sparziele statt Depot/Crypto/
- * Cash) als das Figma-Redesign. Sie 1:1 zu übernehmen würde die bereits
- * hergestellte Figma-Treue wieder zerstören statt sie zu verbessern.
+ * Weitere Charts direkt aus der eingeloggten App statt handgebauter
+ * SVG-Nachbildungen.
+ *
+ * Eine frühere Fassung dieses Kommentars führte hier eine Ausnahmeliste:
+ * net-worth-chart.tsx, portfolio-donut.tsx und AusgabenHeatmap.tsx seien
+ * bewusst NICHT übernommen, weil sie über var(--chart-*) färben und damit
+ * eine andere Palette trafen als die von Hand auf Aurum gezogenen
+ * Mockup-Farben. Diese Begründung ist mit dem Wechsel auf
+ * data-theme="athena-dark" hinfällig geworden — das Mockup läuft jetzt auf
+ * demselben Preset wie die App, also treffen die Variablen genau richtig.
+ * Alle drei sind inzwischen übernommen; nachgebaut wird nur noch, was an
+ * Server-Actions oder API-Routen hängt (siehe AthenaInsightsCard/AthenaView).
  */
 const IncomeExpenseChart = dynamic(
   () => import('@/components/dashboard/finance-analytics').then((m) => m.IncomeExpenseChart),
@@ -76,13 +100,13 @@ const DonutCard = dynamic(
 /**
  * Illustratives Dashboard für die Vollbild-Enthüllung.
  *
- * Sidebar-Struktur, Navigation und Aurum-Grundpalette bleiben wiedererkennbar,
+ * Sidebar-Struktur, Navigation und Grundpalette bleiben wiedererkennbar,
  * Kartenform und Layout pro Szene sind freie Illustration für die Landing
  * Page — aber die CHARTS selbst (Gridlines, Tooltips, Donut mit
  * Center-Label, Composed Bar+Line, Filter-Pills/Chips) übernehmen bewusst
  * exakt die visuelle Sprache der echten Chart-Komponenten (siehe
  * src/components/dashboard/net-worth-chart.tsx, finance-analytics.tsx,
- * portfolio-donut.tsx), nur auf Aurum-Tokens statt Tailwind-Theme-Klassen
+ * portfolio-donut.tsx), nur auf die APP-Tokens statt Tailwind-Theme-Klassen
  * übertragen. Jede der vier Szenen (siehe MOCK_VIEWS) hat ihr eigenes Layout
  * statt nur getauschter Karten im selben Raster.
  *
@@ -98,13 +122,11 @@ const DonutCard = dynamic(
  */
 const NAV = [
   { icon: LayoutDashboard, label: 'Dashboard' },
-  { icon: TrendingUp, label: 'Finance', children: ['Konten', 'Transaktionen', 'Kategorien', 'Schulden', 'Verträge', 'Sparziele'] },
-  { icon: CircleDollarSign, label: 'Crypto', children: ['Portfolio', 'Rebalancing', 'Assets'] },
-  { icon: Target, label: 'Strategy' },
-  { icon: ShoppingCart, label: 'Fixkosten' },
-  { icon: Briefcase, label: 'Depot' },
-  { icon: BarChart2, label: 'Analyse' },
-  { icon: History, label: 'Historie' },
+  { icon: Sparkles, label: 'Athena' },
+  { icon: TrendingUp, label: 'Finance', children: ['Konten', 'Transaktionen', 'Planung', 'Budget', 'Steuer'] },
+  { icon: LineChart, label: 'Investing', children: ['Krypto', 'Depot', 'Strategie'] },
+  { icon: BarChart2, label: 'Analyse', children: ['Übersicht', 'Bankdaten', 'Verlauf'] },
+  { icon: Gem, label: 'Inventar' },
   { icon: Settings, label: 'Einstellungen' },
 ]
 
@@ -120,28 +142,76 @@ const NAV = [
  */
 const MOCK_VIEWS = [
   { nav: 'Dashboard' },
-  { nav: 'Analyse' },
-  { nav: 'Depot' },
-  { nav: 'Crypto' },
+  { nav: 'Analyse', child: 'Übersicht' },
+  { nav: 'Athena' },
+  { nav: 'Investing', child: 'Krypto' },
 ] as const
 
-/** Vermögens-Kennzahl für den Header von NetWorthCard. War früher ein Array
+/** Vermögens-Kennzahl der Net-Worth-Karte (siehe DashboardTopRow). War früher ein Array
     mit drei weiteren Einträgen (Einnahmen/Monat, Ausgaben/Monat, Sparquote)
     als eigene Mini-Karten — die doppelten sich mit der rotierenden Säule
     daneben (siehe MOCK_VIEWS-Kommentar oben) und sind raus. */
 const NET_WORTH_STAT = { label: 'Vermögen', value: 84320, suffix: ' €', delta: '+12,4 %', up: true }
 
-/** Vier Kennzahlen-Kacheln über der NetWorthCard — 1:1 aus dem Figma-
-    Redesign (StatsRow: Gesamtvermögen/Depot/Crypto/Cash, jeweils mit
-    ↑-Delta „ggü. Vormonat"). Fehlte im Mockup bisher komplett (siehe Chat) —
-    NetWorthCard allein deckte nur die Gesamtsumme ab, nicht die Aufteilung
-    je Anlageklasse auf einen Blick. */
-const DASHBOARD_STATS = [
-  { label: 'Gesamtvermögen', value: '84.320 €', delta: '+12,4 %' },
-  { label: 'Depot', value: '42.160 €', delta: '+8,1 %' },
-  { label: 'Crypto', value: '25.296 €', delta: '+21,7 %' },
-  { label: 'Cash', value: '16.864 €', delta: '+1,2 %' },
+/**
+ * Die erste Reihe der echten Dashboard-Seite: Net Worth · Monatsbilanz ·
+ * Krypto (siehe app/(dashboard)/dashboard/page.tsx). Ersetzt die frühere
+ * Vier-Kacheln-Reihe aus dem Figma-Redesign (Gesamtvermögen/Depot/Crypto/
+ * Cash) — die gibt es in der App so nicht mehr.
+ *
+ * Die vier Posten addieren sich bewusst EXAKT auf NET_WORTH_STAT.value: die
+ * echte Karte zeigt oben die Summe und darunter, woraus sie besteht. Geht
+ * die Rechnung im Mockup nicht auf, fällt genau das jemandem auf, der die
+ * App kennt.
+ */
+const NET_WORTH_PARTS = [
+  { label: 'Konten', value: '14.464 €' },
+  { label: 'Geschäftsanteile', value: '2.400 €' },
+  { label: 'Depot', value: '42.160 €' },
+  { label: 'Krypto', value: '25.296 €' },
 ] as const
+
+/** Monatsbilanz — dieselben Zahlen wie der letzte Eintrag in MONTHS, damit
+    diese Karte und der Einnahmen/Ausgaben-Chart weiter unten in derselben
+    Szene nicht zwei verschiedene Septembers zeigen. */
+const MONTH_CARD = {
+  label: 'September 2026',
+  net: '+2.660 €',
+  income: '4.850 €',
+  expense: '2.190 €',
+  budgetPct: 78,
+  budgetLabel: '2.190 € / 2.800 €',
+} as const
+
+/** Krypto-Kachel der ersten Reihe (CryptoWidget in der echten App): Wert,
+    Veränderung, größte Positionen. Prozente wie in CRYPTO_ASSETS. */
+const CRYPTO_CARD = {
+  value: '25.296 €',
+  delta: '+21,7 %',
+  top: [
+    { label: 'PAXG', pct: '69,6 %' },
+    { label: 'SOLANA', pct: '30,4 %' },
+  ],
+} as const
+
+/**
+ * Athenas Hinweise über dem Dashboard (siehe
+ * components/dashboard/athena-insights.tsx). Der sichtbarste Zuwachs der App
+ * seit der letzten Fassung dieses Mockups — und der Grund, warum „Athena"
+ * inzwischen ein eigener Punkt direkt unter Dashboard in der Sidebar ist.
+ */
+const ATHENA_INSIGHTS = [
+  {
+    severity: 'warning' as const,
+    title: 'Abo „Cloud Pro" seit drei Monaten ungenutzt',
+    body: 'Kündbar bis 30.09. · 14,99 € im Monat',
+  },
+  {
+    severity: 'info' as const,
+    title: 'Sparquote diesen Monat bei 54 %',
+    body: 'Höchster Wert seit Februar',
+  },
+]
 
 const MONTHS = [
   { m: 'Apr', ein: 4200, aus: 2600 },
@@ -175,22 +245,6 @@ const FINANCE_SUMMARIES: Summary[] = MONTHS.map((b, i) => ({
   created_at: '2026-01-01T00:00:00Z',
 }))
 
-/** Portfolio-Mix — Beträge statt fixer Prozente, damit Anteil UND
-    Gesamtsumme wie im echten PortfolioDonut aus denselben Zahlen entstehen.
-    Labels bewusst wie die Sidebar-Sektionen (siehe NAV: „Depot", „Crypto")
-    statt eigener Begriffe — dieselben Namen taucht auch in ASSET_TABS
-    wieder auf (siehe NetWorthCard). */
-const MIX = [
-  { label: 'Depot', amount: 42200, color: AU.gold },
-  { label: 'Crypto', amount: 25300, color: AU.positive },
-  { label: 'Cash', amount: 16820, color: AU.secondaryFg },
-]
-
-/** Nicht wirklich filternde Asset-Tabs für den Gesamtvermögen-Chart (siehe
-    NetWorthCard) — reine Chrome, soll aber zeigen: hier ließen sich später
-    einzelne Verläufe je Anlageklasse abrufen statt nur die Summe. */
-const ASSET_TABS = ['Gesamt', ...MIX.map((m) => m.label)]
-
 const BOOKINGS = [
   { day: '01.09.', label: 'Miete', cat: 'Wohnen', amount: -1200 },
   { day: '30.08.', label: 'Gehalt', cat: 'Einkommen', amount: 3800 },
@@ -202,27 +256,60 @@ const BOOKINGS = [
   { day: '24.08.', label: 'Dividende Allianz', cat: 'Depot', amount: 124.6 },
 ]
 
-/** Gesamtvermögen-Verlauf für die Dashboard-Szene — Cash, Depot und Krypto
-    zusammen (siehe MIX). Letzter Wert deckungsgleich mit NET_WORTH_STAT.value,
-    damit Header-Zahl und Chart in NetWorthCard dieselbe Geschichte erzählen.
-    Bewusst mit echten Rückgängen statt einer glatten Aufwärtskurve (ein Depot-/Krypto-Mix
-    schwankt real) — sonst sähe der Chart neben Kontostand/Portfolio-Wert
-    (beide mit sichtbaren Dellen) unmotiviert linear aus. Gold statt Blau/
-    Teal: anders als die beiden ist das hier die zentrale Vermögenskennzahl,
-    kein neutraler Einzel-Verlauf. */
-const NET_WORTH_HISTORY = [
-  { label: 'Nov', value: 58400 },
-  { label: 'Dez', value: 61100 },
-  { label: 'Jan', value: 59200 },
-  { label: 'Feb', value: 63800 },
-  { label: 'Mär', value: 68400 },
-  { label: 'Apr', value: 65100 },
-  { label: 'Mai', value: 71900 },
-  { label: 'Jun', value: 76200 },
-  { label: 'Jul', value: 73800 },
-  { label: 'Aug', value: 79600 },
-  { label: 'Sep', value: 84320 },
-]
+/**
+ * Bausteine des Nettovermögens, deckungsgleich mit NET_WORTH_PARTS und in der
+ * Summe mit NET_WORTH_STAT.value. Speisen sowohl den echten PortfolioDonut
+ * als auch (skaliert über die Monate) die Snapshots für den NetWorthChart —
+ * beide Charts stehen nebeneinander in derselben Szene und dürfen sich nicht
+ * widersprechen.
+ */
+const NET_WORTH_BUCKETS = { konten: 14464, investment: 2400, depot: 42160, crypto: 25296 } as const
+
+/** Monatswerte des Gesamtvermögens. Bewusst mit echten Rückgängen statt einer
+    glatten Aufwärtskurve: ein Depot-/Krypto-Mix schwankt real, und eine
+    lineare Linie sieht neben den anderen Charts der Seite erfunden aus. */
+const NET_WORTH_MONTHLY = [58400, 61100, 59200, 63800, 68400, 65100, 71900, 76200, 73800, 79600, 81700, 84320]
+
+/**
+ * NET_WORTH_MONTHLY im Snapshot-Format des echten NetWorthChart.
+ *
+ * Die Stichtage werden beim Aufruf aus dem HEUTIGEN Datum zurückgerechnet
+ * (dasselbe Vorgehen wie buildMockHeatmapData weiter unten), nicht fest
+ * notiert: der Chart filtert standardmäßig auf „1J" ab jetzt: mit
+ * hartkodierten Daten stünde die Kachel in einem Jahr leer da, ohne dass
+ * jemand etwas geändert hätte.
+ *
+ * Die Buckets werden proportional mitskaliert, `total_checking` nimmt den
+ * Rest auf — so ist die Gesamtsumme in jedem Monat exakt der Monatswert, und
+ * die Tabs Gesamt/Konten/Depot/Krypto rechnen auf dieselbe Zahl wie die
+ * Net-Worth-Kachel darüber.
+ */
+function buildMockSnapshots(): NetWorthSnapshot[] {
+  const last = NET_WORTH_MONTHLY[NET_WORTH_MONTHLY.length - 1]
+  const today = new Date()
+  return NET_WORTH_MONTHLY.map((value, i) => {
+    const d = new Date(today)
+    d.setMonth(d.getMonth() - (NET_WORTH_MONTHLY.length - 1 - i))
+    const r = value / last
+    const investment = Math.round(NET_WORTH_BUCKETS.investment * r)
+    const depot = Math.round(NET_WORTH_BUCKETS.depot * r)
+    const crypto = Math.round(NET_WORTH_BUCKETS.crypto * r)
+    return {
+      snapshot_date: d.toISOString().slice(0, 10),
+      net_worth: value,
+      total_checking: value - investment - depot - crypto,
+      total_investment: investment,
+      total_savings: 0,
+      total_cash: 0,
+      total_depot: depot,
+      total_crypto: crypto,
+      total_bausparer: 0,
+      total_business: 0,
+      total_debts: 0,
+      total_assets: value,
+    }
+  })
+}
 
 /** Portfolio-Wert für die Crypto-Szene — volatiler als der Kontostand,
     deshalb sichtbar unruhigerer Verlauf. */
@@ -239,7 +326,8 @@ const PORTFOLIO_HISTORY = [
 
 /** PORTFOLIO_HISTORY im Format von PortfolioAreaChart (echte Crypto-
     Komponente, siehe Import oben) — ISO-Datum statt deutschem Label
-    (dieselbe Begründung wie bei DEPOT_DATES_ISO), eine Spalte "Portfolio"
+    (die Komponente formatiert selbst und braucht ein echtes Datum), eine
+    Spalte "Portfolio"
     statt mehrerer Depots: die Landing-Szene zeigt nur einen Gesamtverlauf. */
 const CRYPTO_CHART_DATA: Array<Record<string, string | number>> = PORTFOLIO_HISTORY.map((p, i) => ({
   date: `2026-${String(2 + i).padStart(2, '0')}-01`,
@@ -248,102 +336,47 @@ const CRYPTO_CHART_DATA: Array<Record<string, string | number>> = PORTFOLIO_HIST
 const CRYPTO_MONTH_ABBR = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
 const cryptoXFormatter = (v: string) => CRYPTO_MONTH_ABBR[Number(v.slice(5, 7)) - 1]
 
-/** Wert (Marktwert) UND Cost Basis (Einstand) zusammen für die Depot-Szene —
-    Zahlen 1:1 aus dem echten Depot übernommen (Screenshot der echten Seite),
-    nicht mehr frei erfunden: dieselbe Geschichte wie DEPOT_STATS unten. Cost
-    Basis bleibt nach Anfangs-Einzahlung + einer Sparplanrate flach bei 1990,
-    Wert schwankt darüber bis zum aktuellen Live-Kurs-Stand. */
-const DEPOT_HISTORY = [
-  { label: '13. März 26', wert: 1965, cost: 1965 },
-  { label: '27. März 26', wert: 2010, cost: 1965 },
-  { label: '10. Apr 26', wert: 1980, cost: 1990 },
-  { label: '24. Apr 26', wert: 2090, cost: 1990 },
-  { label: '07. Mai 26', wert: 2150, cost: 1990 },
-  { label: '20. Mai 26', wert: 2230, cost: 1990 },
-  { label: '02. Juni 26', wert: 2260, cost: 1990 },
-  { label: '16. Juni 26', wert: 2280, cost: 1990 },
-  { label: '30. Juni 26', wert: 2295, cost: 1990 },
-  { label: '14. Juli 26', wert: 2300, cost: 1990 },
-  { label: '28. Juli 26', wert: 2305, cost: 1990 },
-  { label: '14. Aug 26', wert: 2310.93, cost: 1990.13 },
-]
-
-/** Anteile-Verlauf für den "Anteile"-Chart-Tab — wächst nur an den beiden
-    Transaktionsterminen (siehe DEPOT_TX), sonst flach: Anteile entstehen
-    nur durch Käufe, nicht durch Kursbewegung. */
-const DEPOT_ANTEILE_HISTORY = [
-  { label: '13. März 26', value: 4.42099 },
-  { label: '27. März 26', value: 4.478554 },
-  { label: '10. Apr 26', value: 4.478554 },
-  { label: '24. Apr 26', value: 4.478554 },
-  { label: '07. Mai 26', value: 4.478554 },
-  { label: '20. Mai 26', value: 4.478554 },
-  { label: '02. Juni 26', value: 4.478554 },
-  { label: '16. Juni 26', value: 4.478554 },
-  { label: '30. Juni 26', value: 4.478554 },
-  { label: '14. Juli 26', value: 4.478554 },
-  { label: '28. Juli 26', value: 4.478554 },
-  { label: '14. Aug 26', value: 4.478554 },
-]
-
-/** ISO-Daten parallel zu DEPOT_HISTORY/DEPOT_ANTEILE_HISTORY (dieselbe
-    Reihenfolge, dieselben 12 Stichtage) — nur für DEPOT_HISTORY_RC gebraucht,
-    weil PortfolioHistoryPoint['date'] ein echtes Datum statt eines
-    deutschen Anzeige-Labels erwartet (siehe fmtDate/fmtDateShort in
-    depot-chart.tsx). */
-const DEPOT_DATES_ISO = [
-  '2026-03-13', '2026-03-27', '2026-04-10', '2026-04-24', '2026-05-07', '2026-05-20',
-  '2026-06-02', '2026-06-16', '2026-06-30', '2026-07-14', '2026-07-28', '2026-08-14',
-]
-
-/** DEPOT_HISTORY (+ Anteile aus DEPOT_ANTEILE_HISTORY, + Rendite abgeleitet)
-    im Format PortfolioHistoryPoint — Eingabedaten für die echte DepotChart-
-    Komponente (siehe Import oben), damit die Landing-Szene exakt denselben
-    Chart-Code rendert wie das eingeloggte Depot. */
-const DEPOT_HISTORY_RC: PortfolioHistoryPoint[] = DEPOT_HISTORY.map((p, i) => ({
-  date: DEPOT_DATES_ISO[i],
-  price: p.wert / DEPOT_ANTEILE_HISTORY[i].value,
-  totalShares: DEPOT_ANTEILE_HISTORY[i].value,
-  totalInvested: p.cost,
-  portfolioValue: p.wert,
-  returnPct: ((p.wert - p.cost) / p.cost) * 100,
-}))
-
-/** Kennzahlen-Kacheln der Depot-Szene — 1:1 aus dem echten Depot-Screenshot:
-    Portfoliowert trägt die Anteile als Unterzeile (nicht als eigene Kachel),
-    die vierte Kachel ist der Live-Kurs statt „Anteile". */
-const DEPOT_STATS = {
-  portfolioWert: 2310.93,
-  investiert: 1990.13,
-  gewinnAbs: 320.8,
-  gewinnPct: 16.12,
-  anteile: 4.478554,
-  livePrice: 516.0,
-  liveTime: '14:00',
-}
-
-/** Transaktionen der Depot-Szene — dieselben Spalten wie die echte
-    Transaktionstabelle (Datum/Typ/Betrag/Kurs/Anteile/Notiz). */
-const DEPOT_TX = [
-  { date: '24.03.2026', type: 'Sparplan', amount: '25,00 €', price: '434,30 €', shares: '0,057564', note: 'Sparplan-Ausführung' },
-  { date: '09.03.2026', type: 'Bestand',  amount: '1.965,13 €', price: '444,50 €', shares: '4,42099', note: 'Bestandsübernahme' },
+/**
+ * Athena-Szene: Sessions links, Gespräch rechts. Der Verlauf führt bewusst
+ * auf eine Schreibaktion hinaus — dass Athena eine Änderung VORSCHLÄGT und
+ * erst ein Klick sie ausführt, ist das Prinzip, nach dem der Assistent
+ * gebaut ist, und lässt sich in einem Standbild sonst nicht zeigen.
+ */
+const ATHENA_SESSIONS = [
+  { title: 'Abos & Fixkosten', when: 'Heute', active: true },
+  { title: 'Steuerschätzung 2026', when: 'Gestern', active: false },
+  { title: 'Depot-Rebalancing', when: 'Mo', active: false },
+  { title: 'Budget September', when: '2. Sep', active: false },
 ] as const
+
+/** Die vorgeschlagene Schreibaktion — Aufbau wie PendingActionCard:
+    Klartext-Satz plus die Aufschlüsselung, auf der die Entscheidung beruht.
+    „Vertrag kündigen" allein ist keine Grundlage für ein Ja. */
+const ATHENA_ACTION = {
+  summary: 'Vertrag „Cloud Pro" zum 30.09.2026 kündigen',
+  label: 'Vertrag kündigen',
+  details: [
+    { label: 'Vertrag', value: 'Cloud Pro · 14,99 € / Monat' },
+    { label: 'Kündigungsfrist', value: '4 Wochen zum Monatsende' },
+    { label: 'Nächster Termin', value: '30.09.2026' },
+  ],
+} as const
 
 /** Aktuelle Verteilung der Crypto-Szene — nur noch für „Größte Position" in
     den Stat-Kacheln gebraucht (siehe CryptoView); die Ring-Charts selbst
     laufen längst über CURRENT_ALLOCATION_ENTRIES/TARGET_ALLOCATION_ENTRIES
     unten (echte DonutCard-Komponente, eigenes DonutEntry-Shape). */
 const CURRENT_ALLOCATION = [
-  { label: 'PAXG', pct: 70, color: AU.gold },
-  { label: 'SOLANA', pct: 30, color: AU.accentLavender },
+  { label: 'PAXG', pct: 70, color: APP.gold },
+  { label: 'SOLANA', pct: 30, color: APP.cat6 },
 ]
 /** color/pct hier dieselben Werte wie CURRENT_ALLOCATION (siehe oben) —
     Farbpunkt und Anteils-Balken je Zeile in AssetsList sollen sich sichtbar
     auf den „Aktuelle Verteilung"-Ring daneben beziehen, nicht zufällig
     andersfarbig sein. */
 const CRYPTO_ASSETS = [
-  { label: 'PAXG', sub: '1.035 · 69,6 %', amount: '1.035 €', pct: 70, color: AU.gold },
-  { label: 'SOLANA', sub: '3,42 · 30,4 %', amount: '459 €', pct: 30, color: AU.accentLavender },
+  { label: 'PAXG', sub: '1.035 · 69,6 %', amount: '1.035 €', pct: 70, color: APP.gold },
+  { label: 'SOLANA', sub: '3,42 · 30,4 %', amount: '459 €', pct: 30, color: APP.cat6 },
 ] as const
 
 /** CURRENT_ALLOCATION_ENTRIES/TARGET_ALLOCATION_ENTRIES für die echte
@@ -503,11 +536,6 @@ const fmtEurPlain = (n: number) =>
 const fmtPrice = (n: number) =>
   n.toLocaleString('de-DE', { minimumFractionDigits: n >= 1000 ? 0 : 2, maximumFractionDigits: n >= 1000 ? 0 : 2 })
 
-/** Anteile-Format der Depot-Szene — wie fmtShares in der echten Depot-
-    Dashboard-Komponente (4-6 Nachkommastellen, Bruchteile sind hier üblich). */
-const fmtShares = (n: number) =>
-  n.toLocaleString('de-DE', { minimumFractionDigits: 4, maximumFractionDigits: 6 })
-
 /**
  * Zählt eine Zahl hoch, sobald `run` true wird.
  *
@@ -643,13 +671,13 @@ function useTilt() {
 }
 
 const cardStyle: React.CSSProperties = {
-  backgroundColor: AU.card,
-  border: `1px solid ${AU.border}`,
+  backgroundColor: APP.card,
+  border: `1px solid ${APP.border}`,
   borderRadius: '10px',
   padding: 'clamp(14px, 1.6vw, 22px)',
 }
 
-/** Gemeinsame Karten-Hülle: Aurum-Fläche plus Cursor-Tilt/Glanzlicht (siehe
+/** Gemeinsame Karten-Hülle: Theme-Kartenfläche plus Cursor-Tilt/Glanzlicht (siehe
     useTilt). Ersetzt die früher pro Karte einzeln notierte cardStyle-Hülle. */
 function TiltCard({
   children,
@@ -678,7 +706,7 @@ function CardLabel({ children }: { children: React.ReactNode }) {
   return (
     <span
       className="mock-label"
-      style={{ ...kicker, fontSize: 'clamp(9px, .75vw, 11px)', color: AU.mutedFg, position: 'relative' }}
+      style={{ ...kicker, fontSize: 'clamp(9px, .75vw, 11px)', color: APP.mutedFg, position: 'relative' }}
     >
       {children}
     </span>
@@ -696,7 +724,7 @@ function DeltaChip({ up, delta, big = false }: { up: boolean; delta: string; big
         gap: '4px',
         fontFamily: F.mono,
         fontSize: big ? 'clamp(12px, 1vw, 14px)' : 'clamp(10px, .8vw, 12px)',
-        color: up ? AU.positive : AU.destructive,
+        color: up ? APP.positive : APP.destructive,
       }}
     >
       <Arrow size={big ? 14 : 12} strokeWidth={2} />
@@ -714,10 +742,10 @@ function StatTile({ label, value, sub, valueColor }: { label: string; value: Rea
   return (
     <TiltCard style={{ display: 'flex', flexDirection: 'column', gap: '6px', justifyContent: 'center' }}>
       <CardLabel>{label}</CardLabel>
-      <span style={{ fontFamily: F.mono, fontSize: 'clamp(15px, 1.5vw, 19px)', color: valueColor ?? AU.cardFg, fontVariantNumeric: 'tabular-nums' }}>
+      <span style={{ fontFamily: F.mono, fontSize: 'clamp(15px, 1.5vw, 19px)', color: valueColor ?? APP.cardFg, fontVariantNumeric: 'tabular-nums' }}>
         {value}
       </span>
-      {sub && <span style={{ fontSize: 'clamp(9px, .75vw, 11px)', color: AU.mutedFg }}>{sub}</span>}
+      {sub && <span style={{ fontSize: 'clamp(9px, .75vw, 11px)', color: APP.mutedFg }}>{sub}</span>}
     </TiltCard>
   )
 }
@@ -725,13 +753,17 @@ function StatTile({ label, value, sub, valueColor }: { label: string; value: Rea
 function StatTilesRow({
   tiles,
   style,
+  className,
 }: {
   tiles: Array<{ label: string; value: React.ReactNode; sub?: React.ReactNode; valueColor?: string }>
   style?: React.CSSProperties
+  /** Für szenenspezifische Überschreibungen der Spaltenzahl auf schmalen
+      Displays (siehe .mock-row-* in landing.css). */
+  className?: string
 }) {
   return (
     <div
-      className="mock-charts"
+      className={`mock-charts${className ? ` ${className}` : ''}`}
       style={{ display: 'grid', gridTemplateColumns: `repeat(${tiles.length}, minmax(0,1fr))`, gap: 'clamp(10px, 1.2vw, 16px)', flexShrink: 0, ...style }}
     >
       {tiles.map((t) => <StatTile key={t.label} {...t} />)}
@@ -756,328 +788,13 @@ function PulseValue({
       className={dir ? 'mock-pulse' : undefined}
       style={{
         display: 'inline-block',
-        color: dir === 'up' ? AU.positive : dir === 'down' ? AU.destructive : baseColor,
+        color: dir === 'up' ? APP.positive : dir === 'down' ? APP.destructive : baseColor,
         transition: 'color .5s ease',
         fontVariantNumeric: 'tabular-nums',
       }}
     >
       {children}
     </span>
-  )
-}
-
-/** Quadratische Kurve durch alle Punkte, Kontrollpunkt jeweils der Punkt
-    selbst, Zielpunkt der Mittelpunkt zum nächsten — ergibt eine durchgehend
-    glatte Linie ohne Ecken an den Datenpunkten. */
-function smoothPath(points: { x: number; y: number }[]) {
-  if (points.length < 2) return ''
-  let d = `M ${points[0].x} ${points[0].y}`
-  for (let i = 1; i < points.length - 1; i++) {
-    const cur = points[i]
-    const next = points[i + 1]
-    d += ` Q ${cur.x} ${cur.y} ${(cur.x + next.x) / 2} ${(cur.y + next.y) / 2}`
-  }
-  const last = points[points.length - 1]
-  d += ` L ${last.x} ${last.y}`
-  return d
-}
-
-/**
- * Tooltip-Karte im Stil der echten Chart-Tooltips (siehe ChartTooltip in
- * net-worth-chart.tsx / finance-analytics.tsx: `rounded-lg border bg-popover
- * shadow p-3 text-xs`, fetter Titel, darunter Zeilen mit Farbpunkt + Wert).
- * `left`/`top` in Prozent der Eltern-Box, damit sie sowohl über einem
- * `<svg>`-Chart (LiveChart/BarsChart) als auch über Flex-Balken positioniert
- * werden kann.
- */
-function ChartTooltipCard({
-  left,
-  top = 0,
-  title,
-  rows,
-}: {
-  left: number
-  top?: number
-  title: string
-  rows: { label: string; value: string; color: string }[]
-}) {
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        left: `${left}%`,
-        top: `${top}%`,
-        transform: 'translate(-50%, -100%)',
-        marginTop: '-8px',
-        backgroundColor: AU.card,
-        border: `1px solid ${AU.border}`,
-        borderRadius: '8px',
-        boxShadow: '0 8px 24px -8px rgba(0,0,0,.5)',
-        padding: '10px 12px',
-        minWidth: '140px',
-        pointerEvents: 'none',
-        zIndex: 2,
-      }}
-    >
-      <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: 600, color: AU.cardFg }}>{title}</p>
-      {rows.map((r) => (
-        <div key={r.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', marginTop: '3px' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px', color: AU.mutedFg }}>
-            <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: r.color, flexShrink: 0 }} />
-            {r.label}
-          </span>
-          <span style={{ fontFamily: F.mono, fontSize: '11px', fontWeight: 500, color: AU.cardFg, fontVariantNumeric: 'tabular-nums' }}>
-            {r.value}
-          </span>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-/**
- * Gestrichelte horizontale Gridlines wie `CartesianGrid strokeDasharray="3 3"
- * vertical={false}` im echten Dashboard — nur horizontal, keine Achsenlinie,
- * kein Tick. `rows` Linien gleichmäßig über die Höhe verteilt.
- */
-function ChartGrid({ W, H, rows = 3 }: { W: number; H: number; rows?: number }) {
-  return (
-    <g aria-hidden>
-      {Array.from({ length: rows }, (_, i) => {
-        const y = (H / rows) * (i + 1)
-        return <line key={i} x1={0} y1={y} x2={W} y2={y} stroke={AU.border} strokeWidth="1" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
-      })}
-    </g>
-  )
-}
-
-/**
- * Verlaufs-Chart (Linie + Fläche) mit Crosshair, das der Maus stetig folgt
- * — Basis für Kontostand-Verlauf (Finance) und Portfolio-Wert (Crypto).
- *
- * Der Wert unter dem Cursor wird zwischen den beiden nächsten Datenpunkten
- * interpoliert statt auf den nächsten Punkt einzurasten: das liest sich wie
- * ein echtes „Fahre über den Verlauf" statt wie diskrete Hover-Zonen.
- *
- * Enthüllung per `clip-path` von links nach rechts statt stroke-dashoffset:
- * dafür bräuchte es die exakte Pfadlänge (per getTotalLength, erst nach dem
- * ersten Render bekannt) — ein Rechteck-Ausschnitt braucht das nicht.
- */
-function LiveChart({
-  title,
-  points,
-  color,
-  run,
-  showHeader = true,
-}: {
-  title: string
-  points: { label: string; value: number }[]
-  color: string
-  run: boolean
-  /** Aus, wenn ein Elternteil (z. B. NetWorthCard) Titel/Wert schon selbst
-      groß darstellt — verhindert die Zahl doppelt zu zeigen. */
-  showHeader?: boolean
-}) {
-  const wrapRef = useRef<HTMLDivElement>(null)
-  const [hoverX, setHoverX] = useState<number | null>(null)
-  const W = 300
-  const H = 140
-  const PAD = 6
-  const min = Math.min(...points.map((p) => p.value))
-  const max = Math.max(...points.map((p) => p.value))
-  const range = max - min || 1
-  const coords = points.map((p, i) => ({
-    x: PAD + (i / (points.length - 1)) * (W - PAD * 2),
-    y: PAD + (1 - (p.value - min) / range) * (H - PAD * 2),
-  }))
-  const linePath = smoothPath(coords)
-  const areaPath = `${linePath} L ${coords[coords.length - 1].x} ${H} L ${coords[0].x} ${H} Z`
-  const gradientId = `mock-grad-${title.replace(/[^a-z0-9]/gi, '')}`
-  const last = points[points.length - 1]
-
-  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const wrap = wrapRef.current
-    if (!wrap) return
-    const rect = wrap.getBoundingClientRect()
-    const relX = ((e.clientX - rect.left) / rect.width) * W
-    setHoverX(Math.max(PAD, Math.min(W - PAD, relX)))
-  }
-
-  let hover: { x: number; y: number; value: number; label: string } | null = null
-  if (hoverX !== null) {
-    let i = 0
-    while (i < coords.length - 2 && coords[i + 1].x < hoverX) i++
-    const a = coords[i]
-    const b = coords[i + 1] ?? coords[i]
-    const t = b.x === a.x ? 0 : Math.max(0, Math.min(1, (hoverX - a.x) / (b.x - a.x)))
-    const y = a.y + (b.y - a.y) * t
-    const va = points[i].value
-    const vb = points[Math.min(i + 1, points.length - 1)].value
-    const label = t < 0.5 ? points[i].label : points[Math.min(i + 1, points.length - 1)].label
-    hover = { x: hoverX, y, value: va + (vb - va) * t, label }
-  }
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%' }}>
-      {showHeader && (
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-          <CardLabel>{title}</CardLabel>
-          <span style={{ position: 'relative', fontFamily: F.mono, fontSize: 'clamp(15px, 1.5vw, 20px)', color: AU.cardFg, fontVariantNumeric: 'tabular-nums' }}>
-            {last.value.toLocaleString('de-DE')} €
-          </span>
-        </div>
-      )}
-      <div
-        ref={wrapRef}
-        onMouseMove={handleMove}
-        onMouseLeave={() => setHoverX(null)}
-        style={{ position: 'relative', flex: 1, marginTop: showHeader ? '12px' : 0, minHeight: 0 }}
-      >
-        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: '100%', height: '100%', display: 'block' }}>
-          <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity="0.16" />
-              <stop offset="100%" stopColor={color} stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <ChartGrid W={W} H={H} />
-          <g style={{ clipPath: run ? 'inset(0 0% 0 0)' : 'inset(0 100% 0 0)', transition: 'clip-path 1.1s cubic-bezier(.16,1,.3,1)' }}>
-            <path d={areaPath} fill={`url(#${gradientId})`} stroke="none" />
-            <path d={linePath} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-          </g>
-          {hover && (
-            <line x1={hover.x} y1={0} x2={hover.x} y2={H} stroke={color} strokeWidth="1" strokeDasharray="3 3" opacity="0.55" vectorEffect="non-scaling-stroke" />
-          )}
-        </svg>
-        {hover && (
-          <>
-            {/*
-              Als HTML-Overlay statt als <circle> im SVG: `viewBox="0 0 300 140"`
-              mit `preserveAspectRatio="none"` (siehe oben) staucht/streckt x
-              und y unterschiedlich stark, sobald die Karte nicht exakt im
-              300:140-Seitenverhältnis gerendert wird (z. B. seit der Chart auf
-              Halbbreite läuft, siehe DashboardView) — ein <circle> mit festem
-              r wird darin zur Ellipse, weil `vector-effect="non-scaling-
-              stroke"` nur den Strich, nicht den Radius vor der Verzerrung
-              schützt. Ein „echter" DOM-Kreis mit fixer Pixelgröße bleibt
-              unabhängig vom SVG-Streckungsfaktor rund.
-            */}
-            <div
-              style={{
-                position: 'absolute',
-                left: `${(hover.x / W) * 100}%`,
-                top: `${(hover.y / H) * 100}%`,
-                transform: 'translate(-50%, -50%)',
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: color,
-                border: `2px solid ${AU.card}`,
-                pointerEvents: 'none',
-              }}
-            />
-            <ChartTooltipCard
-              left={(hover.x / W) * 100}
-              top={(hover.y / H) * 100}
-              title={hover.label}
-              rows={[{ label: title, value: `${Math.round(hover.value).toLocaleString('de-DE')} €`, color }]}
-            />
-          </>
-        )}
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-        {points.map((p) => (
-          <span key={p.label} style={{ fontFamily: F.mono, fontSize: 'clamp(8px, .65vw, 10px)', color: AU.mutedFg, opacity: .7 }}>
-            {p.label}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/** Eigenständige Portfolio-Mix-Kachel neben dem Gesamtvermögen-Chart (siehe
-    DashboardView) — vorher ein schmaler Streifen ÜBER dem Chart (Ring plus
-    einzeilige Legende, siehe Git-Historie), jetzt eine gleichrangige zweite
-    Kachel neben dem auf Halbbreite reduzierten Chart: größerer Ring plus
-    vertikale Legende mit Beträgen UND Prozenten, analog zu den Donut-Karten
-    der Crypto-Szene (siehe DonutCard) — nur mit den MIX-eigenen Farben
-    (Depot/Crypto/Cash) statt Coin-Markenfarben, deshalb hier weiterhin
-    handgebaut statt DonutCard selbst wiederzuverwenden. */
-function PortfolioMixCard({ run }: { run: boolean }) {
-  const [hover, setHover] = useState<number | null>(null)
-  const total = MIX.reduce((s, m) => s + m.amount, 0)
-  // Segmente als gestrichelter Kreis, Umfang 2πr bei r=42. Offsets vorab
-  // kumulieren statt im map() mitzuzählen — eine Variable während des
-  // Renderns fortzuschreiben ist in React nicht zulässig und liefert bei
-  // unterbrochenem Rendering falsche Werte.
-  const R = 42
-  const CIRC = 2 * Math.PI * R
-  const GAP = CIRC * 0.018 // Lücke zwischen Segmenten, wie paddingAngle im echten Donut
-  const SEGMENTS = MIX.reduce<{ seg: (typeof MIX)[number]; pct: number; offset: number }[]>((list, seg) => {
-    const prev = list[list.length - 1]
-    const pct = (seg.amount / total) * 100
-    const offset = prev ? prev.offset + (prev.pct / 100) * CIRC : 0
-    return [...list, { seg, pct, offset }]
-  }, [])
-
-  return (
-    <TiltCard style={{ minHeight: 0, display: 'flex', flexDirection: 'column', padding: 'clamp(18px, 2vw, 26px)' }}>
-      <CardLabel>Portfolio-Mix</CardLabel>
-      <p style={{ margin: '3px 0 0', fontFamily: F.mono, fontSize: 'clamp(9px, .75vw, 11px)', color: AU.mutedFg }}>
-        {fmtEurPlain(total)}
-      </p>
-      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 'clamp(14px, 1.8vw, 22px)' }}>
-        <div style={{ position: 'relative', width: 'clamp(84px, 8vw, 116px)', flexShrink: 0 }}>
-          <svg viewBox="0 0 100 100" style={{ width: '100%', transform: 'rotate(-90deg)' }}>
-            <circle cx="50" cy="50" r={R} fill="none" stroke={AU.secondary} strokeWidth="16" />
-            {SEGMENTS.map(({ seg, pct, offset }, i) => (
-              <circle
-                key={seg.label}
-                cx="50"
-                cy="50"
-                r={R}
-                fill="none"
-                stroke={seg.color}
-                strokeWidth={hover === i ? 19 : 16}
-                strokeLinecap="butt"
-                strokeDasharray={`${Math.max(0, (pct / 100) * CIRC - GAP) * (run ? 1 : 0)} ${CIRC}`}
-                strokeDashoffset={-(offset + GAP / 2) * (run ? 1 : 0)}
-                opacity={hover === null || hover === i ? 1 : 0.4}
-                style={{ transition: 'stroke-dasharray 1s cubic-bezier(.16,1,.3,1), stroke-dashoffset 1s cubic-bezier(.16,1,.3,1), stroke-width .2s ease, opacity .2s ease' }}
-              />
-            ))}
-          </svg>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(6px, .9vh, 10px)', width: '100%' }}>
-          {SEGMENTS.map(({ seg, pct }, i) => (
-            <div
-              key={seg.label}
-              onMouseEnter={() => setHover(i)}
-              onMouseLeave={() => setHover(null)}
-              style={{
-                display: 'flex',
-                alignItems: 'baseline',
-                justifyContent: 'space-between',
-                gap: '10px',
-                opacity: hover === null || hover === i ? 1 : 0.45,
-                transition: 'opacity .2s ease',
-                cursor: 'default',
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'clamp(11px, .9vw, 13px)', color: AU.secondaryFg, minWidth: 0 }}>
-                <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: seg.color, flexShrink: 0 }} />
-                {seg.label}
-              </span>
-              <span style={{ display: 'flex', alignItems: 'baseline', gap: '6px', fontFamily: F.mono, flexShrink: 0 }}>
-                <span style={{ fontSize: 'clamp(10px, .85vw, 12px)', color: AU.cardFg }}>{fmtEurPlain(seg.amount)}</span>
-                <span style={{ fontSize: 'clamp(9px, .75vw, 11px)', color: AU.mutedFg }}>{Math.round(pct)}%</span>
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </TiltCard>
   )
 }
 
@@ -1109,7 +826,7 @@ function AssetsList({
     <TiltCard style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(14px, 1.6vw, 20px)', minHeight: 0 }}>
       <div>
         <CardLabel>{title}</CardLabel>
-        <p style={{ margin: '3px 0 0', fontSize: 'clamp(9px, .75vw, 11px)', color: AU.mutedFg }}>{sub}</p>
+        <p style={{ margin: '3px 0 0', fontSize: 'clamp(9px, .75vw, 11px)', color: APP.mutedFg }}>{sub}</p>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(14px, 1.6vw, 18px)' }}>
         {rows.map((r) => (
@@ -1118,15 +835,15 @@ function AssetsList({
               <span style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0 }}>
                 <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: r.color, flexShrink: 0 }} />
                 <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                  <span style={{ fontSize: 'clamp(11px, .9vw, 13px)', color: AU.cardFg }}>{r.label}</span>
-                  <span style={{ fontFamily: F.mono, fontSize: 'clamp(9px, .7vw, 10px)', color: AU.mutedFg }}>{r.sub}</span>
+                  <span style={{ fontSize: 'clamp(11px, .9vw, 13px)', color: APP.cardFg }}>{r.label}</span>
+                  <span style={{ fontFamily: F.mono, fontSize: 'clamp(9px, .7vw, 10px)', color: APP.mutedFg }}>{r.sub}</span>
                 </span>
               </span>
-              <span style={{ fontFamily: F.mono, fontSize: 'clamp(11px, .9vw, 13px)', color: AU.cardFg, whiteSpace: 'nowrap' }}>
+              <span style={{ fontFamily: F.mono, fontSize: 'clamp(11px, .9vw, 13px)', color: APP.cardFg, whiteSpace: 'nowrap' }}>
                 {r.amount}
               </span>
             </div>
-            <div style={{ height: '3px', borderRadius: '2px', backgroundColor: AU.secondary, overflow: 'hidden' }}>
+            <div style={{ height: '3px', borderRadius: '2px', backgroundColor: APP.secondary, overflow: 'hidden' }}>
               <div style={{ width: `${r.pct}%`, height: '100%', borderRadius: '2px', backgroundColor: r.color }} />
             </div>
           </div>
@@ -1136,14 +853,14 @@ function AssetsList({
         style={{
           marginTop: 'auto',
           paddingTop: 'clamp(10px, 1.2vw, 14px)',
-          borderTop: `1px solid ${AU.border}`,
+          borderTop: `1px solid ${APP.border}`,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'baseline',
         }}
       >
-        <span style={{ ...kicker, fontSize: 'clamp(9px, .75vw, 11px)', color: AU.mutedFg }}>Gesamt</span>
-        <span style={{ fontFamily: F.mono, fontSize: 'clamp(12px, 1vw, 14px)', color: AU.cardFg }}>{total}</span>
+        <span style={{ ...kicker, fontSize: 'clamp(9px, .75vw, 11px)', color: APP.mutedFg }}>Gesamt</span>
+        <span style={{ fontFamily: F.mono, fontSize: 'clamp(12px, 1vw, 14px)', color: APP.cardFg }}>{total}</span>
       </div>
     </TiltCard>
   )
@@ -1168,23 +885,23 @@ function BookingsList({ title, bookings }: { title: string; bookings: typeof BOO
               padding: 'clamp(7px, .9vw, 12px) 8px',
               margin: '0 -8px',
               borderRadius: '6px',
-              borderBottom: `1px solid ${AU.border}`,
-              backgroundColor: hover === i ? AU.secondary : 'transparent',
+              borderBottom: `1px solid ${APP.border}`,
+              backgroundColor: hover === i ? APP.secondary : 'transparent',
               transition: 'background-color .18s ease',
             }}
           >
-            <span style={{ fontFamily: F.mono, fontSize: 'clamp(10px, .8vw, 12px)', color: AU.mutedFg }}>{b.day}</span>
-            <span style={{ fontSize: 'clamp(12px, 1vw, 14px)', color: AU.cardFg, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <span style={{ fontFamily: F.mono, fontSize: 'clamp(10px, .8vw, 12px)', color: APP.mutedFg }}>{b.day}</span>
+            <span style={{ fontSize: 'clamp(12px, 1vw, 14px)', color: APP.cardFg, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {b.label}
             </span>
-            <span className="booking-cat" style={{ ...kicker, fontSize: 'clamp(8px, .7vw, 10px)', color: AU.mutedFg }}>
+            <span className="booking-cat" style={{ ...kicker, fontSize: 'clamp(8px, .7vw, 10px)', color: APP.mutedFg }}>
               {b.cat}
             </span>
             <span
               style={{
                 fontFamily: F.mono,
                 fontSize: 'clamp(11px, .95vw, 14px)',
-                color: b.amount > 0 ? AU.positive : AU.destructive,
+                color: b.amount > 0 ? APP.positive : APP.destructive,
                 fontVariantNumeric: 'tabular-nums',
                 textAlign: 'right',
                 minWidth: 'clamp(80px, 7vw, 110px)',
@@ -1199,49 +916,15 @@ function BookingsList({ title, bookings }: { title: string; bookings: typeof BOO
   )
 }
 
-/** Transaktionstabelle der Depot-Szene — dieselben Spalten wie die echte
-    Tabelle (Datum/Typ/Betrag/Kurs/Anteile), als CSS-Grid statt <table>: die
-    übrige Szene ist schon durchgehend divs/spans, ein <table> bräuchte hier
-    eigene Breiten-Logik ohne echten Zugewinn. */
-function DepotTxTable() {
-  return (
-    <>
-      <CardLabel>Transaktionen</CardLabel>
-      <div
-        style={{
-          marginTop: '14px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
-          gap: '8px 12px',
-          alignItems: 'center',
-        }}
-      >
-        {['Datum', 'Typ', 'Betrag', 'Kurs', 'Anteile', 'Notiz'].map((h) => (
-          <span key={h} style={{ ...kicker, fontSize: 'clamp(8px, .65vw, 10px)', color: AU.mutedFg }}>
-            {h}
-          </span>
-        ))}
-        {DEPOT_TX.map((tx) => (
-          <Fragment key={tx.date}>
-            <span style={{ fontFamily: F.mono, fontSize: 'clamp(10px, .85vw, 12px)', color: AU.secondaryFg }}>{tx.date}</span>
-            <span style={{ fontSize: 'clamp(10px, .85vw, 12px)', color: tx.type === 'Sparplan' ? AU.gold : AU.mutedFg }}>{tx.type}</span>
-            <span style={{ fontFamily: F.mono, fontSize: 'clamp(10px, .85vw, 12px)', color: AU.cardFg }}>{tx.amount}</span>
-            <span style={{ fontFamily: F.mono, fontSize: 'clamp(10px, .85vw, 12px)', color: AU.mutedFg }}>{tx.price}</span>
-            <span style={{ fontFamily: F.mono, fontSize: 'clamp(10px, .85vw, 12px)', color: AU.gold }}>{tx.shares}</span>
-            <span style={{ fontSize: 'clamp(10px, .85vw, 12px)', color: AU.mutedFg, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.note}</span>
-          </Fragment>
-        ))}
-      </div>
-    </>
-  )
-}
+/** Reiter-Leiste für den Zeitraum-Filter der Analyse-Szene (siehe
+    PeriodTabs): aktiv = gefüllte Pille mit leichtem Scale, inaktiv =
+    Ghost-Text mit Hover. Echt umschaltbar (eigener State je Instanz), aber
+    ohne Wirkung auf die Charts darunter — reine Chrome.
 
-/** Reiter-Leiste, gemeinsame Bauart für Zeitraum- UND Asset-Filter (siehe
-    PeriodTabs/AssetTabs): aktiv = gefüllte Pille mit leichtem Scale, inaktiv
-    = Ghost-Text mit Hover. Echt umschaltbar (eigener State je Instanz), aber
-    ohne Wirkung auf die Charts darunter — reine Chrome, die zeigen soll,
-    dass sich der Verlauf theoretisch nach Zeitraum und Anlageklasse
-    aufschlüsseln ließe (siehe NetWorthCard). */
+    In der Dashboard-Szene gab es dieselbe Leiste zweimal als Attrappe über
+    dem Vermögens-Chart; die ist weg, seit dort der echte NetWorthChart steht,
+    der seine Zeitraum- und Ansicht-Tabs selbst mitbringt und sie tatsächlich
+    auswertet. */
 function TabPills({ options, active, onChange }: { options: string[]; active: string; onChange: (v: string) => void }) {
   return (
     <div style={{ display: 'flex', gap: '2px' }}>
@@ -1261,8 +944,8 @@ function TabPills({ options, active, onChange }: { options: string[]; active: st
               borderRadius: '6px',
               border: 'none',
               whiteSpace: 'nowrap',
-              backgroundColor: isActive ? AU.cardFg : 'transparent',
-              color: isActive ? AU.bg : AU.mutedFg,
+              backgroundColor: isActive ? APP.cardFg : 'transparent',
+              color: isActive ? APP.bg : APP.mutedFg,
               transform: isActive ? 'scale(1.05)' : 'none',
             }}
           >
@@ -1279,115 +962,244 @@ function PeriodTabs() {
   return <TabPills options={['3M', '6M', '1J', 'Alle']} active={active} onChange={setActive} />
 }
 
-/** Anlageklassen-Filter neben den Zeitraum-Tabs — Labels wie ASSET_TABS
-    (Gesamt + dieselben Namen wie in MIX/der Sidebar), damit klar wird: hier
-    könnte statt der Summe auch nur Depot oder Crypto allein angezeigt
-    werden. */
-function AssetTabs() {
-  const [active, setActive] = useState('Gesamt')
-  return <TabPills options={ASSET_TABS} active={active} onChange={setActive} />
-}
-
-/** Großer, zusammengesetzter „Gesamtvermögen"-Aufmacher der Dashboard-Szene:
-    Zahl + Delta, darunter Zeitraum-/Asset-Tabs (siehe TabPills — ohne echte
-    Wirkung) und der Verlauf selbst. Portfolio-Mix ist keine Zeile mehr HIER
-    drin, sondern eine eigene Kachel daneben (siehe PortfolioMixCard/
-    DashboardView) — dieser Chart läuft deshalb jetzt nur über die halbe
-    Kartenbreite statt volle Breite. Ersetzt die frühere Kennzahlen-Reihe
-    (Vermögen/Einnahmen/Ausgaben/Sparquote): die drei Nebenkennzahlen
-    doppelten sich mit der rotierenden Säule daneben (siehe PedimentReveal/
-    STATS) — hier bleibt nur, was die Säule NICHT schon zeigt: Verlauf und
-    Zusammensetzung des Vermögens. */
-function NetWorthCard({ run }: { run: boolean }) {
-  const stat = NET_WORTH_STAT
-  const shown = useCountUp(stat.value, run, 0)
-
-  return (
-    <>
-      <div>
-        <CardLabel>{stat.label}</CardLabel>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginTop: '4px', flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: F.display, fontSize: 'clamp(28px, 3.4vw, 44px)', lineHeight: 1, color: AU.cardFg }}>
-            {shown}{stat.suffix}
-          </span>
-          <DeltaChip up={stat.up} delta={stat.delta} />
-        </div>
-      </div>
-
-      {/*
-        Eigene Zeile für die Tabs statt (wie zuvor) rechts NEBEN Zahl/Delta,
-        seit diese Karte nur noch halbe Breite hat (siehe DashboardView) —
-        beides nebeneinander in ~460px passte nicht mehr auf eine Zeile und
-        `flexWrap` warf die Tabs ungeplant auf eine dritte Zeile darunter.
-        Das war kein kosmetischer Fehler, sondern hat dem darunterliegenden
-        Chart-Div (flex: 1) einen Großteil seiner Höhe weggenommen — der
-        Hover-Punkt wurde dadurch zur Ellipse (siehe LiveChart-Kommentar).
-        Eine EIGENE, IMMER zweizeilige Kopfzeile (Zahl, dann Tabs) reserviert
-        eine feste, vorhersagbare Höhe unabhängig von der Kartenbreite. */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginTop: 'clamp(10px, 1.2vw, 14px)' }}>
-        <PeriodTabs />
-        <AssetTabs />
-      </div>
-
-      <div style={{ flex: 1, minHeight: 0, marginTop: 'clamp(14px, 1.8vw, 22px)' }}>
-        <LiveChart title="Gesamtvermögen" points={NET_WORTH_HISTORY} color={AU.gold} run={run} showHeader={false} />
-      </div>
-    </>
-  )
-}
-
 // ── Die vier Szenen — jede mit eigenem Layout statt getauschter Karten im
 //    selben Raster ───────────────────────────────────────────────────────────
 
+/**
+ * Athenas Hinweise. Nachbau von athena-insights.tsx statt Import: die echte
+ * Komponente ist ein Client-Formular mit Server-Action zum Wegklicken
+ * (dismissInsight) — im Mockup wäre das eine Schaltfläche, die nichts tut,
+ * und der Import zöge die Server-Action mitsamt Supabase-Client in das
+ * Landing-Bundle, das sonst keinen davon braucht.
+ */
+function AthenaInsightsCard() {
+  return (
+    <div
+      style={{
+        border: `1px solid ${APP.border}`,
+        borderRadius: '10px',
+        padding: 'clamp(10px, 1.1vw, 15px)',
+        flexShrink: 0,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '9px' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: 'clamp(11px, .95vw, 13px)', fontWeight: 600, color: APP.cardFg }}>
+          <Sparkles size={13} strokeWidth={1.8} style={{ color: APP.positive, flexShrink: 0 }} />
+          Athena
+          <span style={{ fontWeight: 400, color: APP.mutedFg }}>{ATHENA_INSIGHTS.length}</span>
+        </span>
+        <span style={{ fontSize: 'clamp(10px, .8vw, 12px)', color: APP.mutedFg, whiteSpace: 'nowrap' }}>Chat →</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+        {ATHENA_INSIGHTS.map((it) => {
+          const Icon = it.severity === 'warning' ? AlertTriangle : Info
+          return (
+            <div key={it.title} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+              <Icon
+                size={13}
+                strokeWidth={1.7}
+                style={{ flexShrink: 0, marginTop: '2px', color: it.severity === 'warning' ? APP.warning : APP.mutedFg }}
+              />
+              <div style={{ minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: 'clamp(11px, .9vw, 12.5px)', lineHeight: 1.35, color: APP.cardFg, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {it.title}
+                </p>
+                <p style={{ margin: '1px 0 0', fontSize: 'clamp(10px, .78vw, 11.5px)', lineHeight: 1.35, color: APP.mutedFg, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {it.body}
+                </p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/** Kleine Beschriftung + Wert, wie sie in der Net-Worth-Karte viermal und in
+    der Monatsbilanz zweimal vorkommt. */
+function MiniStat({ label, value, color, icon }: { label: string; value: string; color?: string; icon?: React.ReactNode }) {
+  return (
+    <div style={{ minWidth: 0 }}>
+      <p style={{ margin: 0, fontSize: 'clamp(9px, .72vw, 10.5px)', color: APP.mutedFg, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {label}
+      </p>
+      <p style={{ margin: '1px 0 0', display: 'flex', alignItems: 'center', gap: '4px', fontFamily: F.mono, fontSize: 'clamp(10px, .84vw, 12px)', color: color ?? APP.cardFg, fontVariantNumeric: 'tabular-nums' }}>
+        {icon}
+        {value}
+      </p>
+    </div>
+  )
+}
+
+/**
+ * Die erste Kartenreihe der Dashboard-Szene.
+ *
+ * Bewusst drei ungleiche Karten statt einer Reihe gleichförmiger
+ * Kennzahlen-Kacheln (so sah das Mockup vorher aus): Net Worth trägt seine
+ * Aufschlüsselung, die Monatsbilanz einen Budget-Balken, Krypto seine
+ * größten Positionen. Genau diese Ungleichheit unterscheidet die echte Seite
+ * von einer Statistik-Leiste — eine Reihe aus vier identischen Kacheln sähe
+ * zwar aufgeräumter aus, wäre aber nicht die App.
+ *
+ * Feste Höhe statt Inhaltshöhe: die Szene läuft in einem Ausschnitt mit
+ * fester Viewport-Höhe (siehe .mock-root), die Reihen darunter holen sich
+ * den Rest per flex. Ohne feste Höhe hier verschöbe jede Textänderung in
+ * einer der Karten stillschweigend die Größe von Chart und Buchungsliste.
+ */
+function DashboardTopRow({ run }: { run: boolean }) {
+  const netWorth = useCountUp(NET_WORTH_STAT.value, run, 0)
+  return (
+    <div
+      className="mock-charts mock-row-top"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, minmax(0,1fr))',
+        gap: 'clamp(10px, 1.2vw, 16px)',
+        flexShrink: 0,
+        height: 'clamp(148px, 19vh, 186px)',
+      }}
+    >
+      <TiltCard style={{ display: 'flex', flexDirection: 'column', gap: '5px', overflow: 'hidden' }}>
+        <CardLabel>Net Worth</CardLabel>
+        <span style={{ fontFamily: F.display, fontSize: 'clamp(21px, 2.2vw, 30px)', lineHeight: 1.05, color: APP.cardFg }}>
+          {netWorth}{NET_WORTH_STAT.suffix}
+        </span>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', columnGap: '12px', rowGap: '4px', marginTop: '3px' }}>
+          {NET_WORTH_PARTS.map((p) => <MiniStat key={p.label} label={p.label} value={p.value} />)}
+        </div>
+      </TiltCard>
+
+      <TiltCard className="mock-sm-hide" style={{ display: 'flex', flexDirection: 'column', gap: '5px', overflow: 'hidden' }}>
+        <CardLabel>{MONTH_CARD.label}</CardLabel>
+        <span style={{ fontFamily: F.display, fontSize: 'clamp(21px, 2.2vw, 30px)', lineHeight: 1.05, color: APP.positive }}>
+          {MONTH_CARD.net}
+        </span>
+        <div style={{ display: 'flex', gap: '18px', marginTop: '3px' }}>
+          <MiniStat
+            label="Einnahmen"
+            value={MONTH_CARD.income}
+            color={APP.positive}
+            icon={<ArrowUpRight size={11} strokeWidth={2} />}
+          />
+          <MiniStat
+            label="Ausgaben"
+            value={MONTH_CARD.expense}
+            color={APP.destructive}
+            icon={<ArrowDownRight size={11} strokeWidth={2} />}
+          />
+        </div>
+        {/* Budget-Balken — in der echten Karte grün bis 80 %, dann warning,
+            über 100 % destructive. Der Mock-Wert liegt knapp unter der
+            ersten Schwelle, zeigt also den Normalfall. */}
+        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'clamp(9px, .72vw, 10.5px)', color: APP.mutedFg }}>
+            <span>Budget</span>
+            <span style={{ fontFamily: F.mono, fontVariantNumeric: 'tabular-nums' }}>{MONTH_CARD.budgetLabel}</span>
+          </div>
+          <div style={{ height: '5px', borderRadius: '999px', backgroundColor: APP.secondary, overflow: 'hidden' }}>
+            <div
+              style={{
+                height: '100%',
+                borderRadius: '999px',
+                width: run ? `${MONTH_CARD.budgetPct}%` : '0%',
+                backgroundColor: MONTH_CARD.budgetPct > 80 ? APP.warning : APP.positive,
+                transition: 'width 1.4s cubic-bezier(.22,1,.36,1) .3s',
+              }}
+            />
+          </div>
+        </div>
+      </TiltCard>
+
+      <TiltCard className="mock-sm-hide" style={{ display: 'flex', flexDirection: 'column', gap: '5px', overflow: 'hidden' }}>
+        <CardLabel>Krypto</CardLabel>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ fontFamily: F.display, fontSize: 'clamp(21px, 2.2vw, 30px)', lineHeight: 1.05, color: APP.cardFg }}>
+            {CRYPTO_CARD.value}
+          </span>
+          <DeltaChip up delta={CRYPTO_CARD.delta} />
+        </div>
+        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          {CRYPTO_CARD.top.map((t, i) => (
+            <div key={t.label} style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: 'clamp(10px, .8vw, 11.5px)' }}>
+              <span style={{ width: '7px', height: '7px', borderRadius: '50%', flexShrink: 0, backgroundColor: i === 0 ? APP.gold : APP.cat6 }} />
+              <span style={{ color: APP.secondaryFg, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.label}</span>
+              <span style={{ fontFamily: F.mono, color: APP.mutedFg, fontVariantNumeric: 'tabular-nums' }}>{t.pct}</span>
+            </div>
+          ))}
+        </div>
+      </TiltCard>
+    </div>
+  )
+}
+
 function DashboardView({ run }: { run: boolean }) {
+  // Die Stichtage hängen am heutigen Datum (siehe buildMockSnapshots) —
+  // einmal pro Mount berechnet, nicht bei jedem Scroll-Frame neu.
+  const snapshots = useMemo(() => buildMockSnapshots(), [])
   return (
     <>
-      <StatTilesRow
-        style={{ height: 'clamp(88px, 12vh, 110px)' }}
-        tiles={DASHBOARD_STATS.map((s) => ({
-          label: s.label,
-          value: s.value,
-          sub: (
-            <>
-              <span style={{ color: AU.positive }}>↑ {s.delta}</span> ggü. Vormonat
-            </>
-          ),
-        }))}
-      />
-      {/* Chart-Kachel jetzt nur noch halbe Breite, Portfolio-Mix als
-          gleichrangige zweite Kachel daneben statt als Streifen darüber
-          (siehe PortfolioMixCard/NetWorthCard-Kommentar) — dadurch wirkt die
-          Reihe ausgewogener aufgeteilt statt einer schmalen Zeile über einem
-          sehr breiten Chart.
-          `gridAutoRows: '1fr'` ist hier Pflicht, kein Kosmetik-Detail: anders
-          als ein Flex-Container sizt CSS Grid eine implizite Zeile per
-          Default auf `auto` (= Inhaltshöhe), statt sie auf die verfügbare
-          Höhe des Grid-Containers zu strecken. Das `flex: 1` am Chart-Div in
-          LiveChart konnte die Zeile dadurch nicht mehr aufziehen wie zuvor
-          (als NetWorthCard noch alleine, ohne Grid, direkt in einer Flex-
-          Column-TiltCard saß) — die Zeile kollabierte auf die Minimalhöhe
-          des SVGs (~25px), wodurch auch der Hover-Punkt zur Ellipse wurde
-          (siehe LiveChart-Kommentar). `1fr` zwingt die Zeile stattdessen auf
-          die volle Höhe des Grid-Containers (der seinerseits ganz normal per
-          `flex: 2 1 0%` von seinem Flex-Eltern-Element seine Höhe bekommt). */}
+      {/* Reihenfolge wie auf der echten Seite: Athenas Hinweise stehen ganz
+          oben, noch vor den Zahlen — sie sind der Grund, warum man morgens
+          überhaupt hinschaut. */}
+      <AthenaInsightsCard />
+      <DashboardTopRow run={run} />
+      {/*
+        Verlauf und Aufteilung — beide direkt aus der App (siehe Imports
+        oben), im selben 2:1-Verhältnis wie dort. Sie bringen ihre Karten-
+        Chrome (Rahmen, Titel, Tabs) selbst mit, deshalb bewusst KEIN
+        TiltCard darum — sonst stünde eine Karte in einer Karte.
+
+        `gridAutoRows: '1fr'` ist hier Pflicht, kein Kosmetik-Detail: anders
+        als ein Flex-Container sizt CSS Grid eine implizite Zeile per Default
+        auf `auto` (= Inhaltshöhe) statt sie auf die verfügbare Höhe zu
+        strecken. Die Zeile kollabierte dadurch auf die Minimalhöhe des SVGs.
+        `1fr` zwingt sie stattdessen auf die volle Höhe des Grid-Containers,
+        der seinerseits per `flex: 2 1 0%` seine Höhe vom Eltern-Flex bekommt.
+
+        `minHeight: 336px` ist der Kern der Sache, nicht Feinschliff: beide
+        Charts haben eine feste Innenhöhe (NetWorthChart 220px Container plus
+        Tabs und Innenabstand, der Donut 144px Ring plus vierzeilige Legende
+        — rund 300 bzw. 330px). Als reines `flex: 2` teilte sich diese Zeile
+        nur den Rest der Szenenhöhe und blieb auf einem 900px-Fenster rund
+        60px darunter: Achsenbeschriftung und die unteren Legendenzeilen
+        wurden abgeschnitten, und der Chart selbst stand gestaucht da. Mit
+        einer Untergrenze wird stattdessen die Buchungsliste darunter kürzer
+        — die darf angeschnitten sein, sie ist ohnehin der Hinweis darauf,
+        dass die Seite weitergeht.
+
+        minHeight/overflow an den Zellen selbst bleibt trotzdem: auf sehr
+        niedrigen Fenstern soll die Zeile beschnitten werden, nicht die ganze
+        Szene aufschieben.
+      */}
       <div
-        style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gridAutoRows: '1fr', gap: 'clamp(10px, 1.2vw, 16px)', flex: '2 1 0%', minHeight: 0 }}
+        style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gridAutoRows: '1fr', gap: 'clamp(10px, 1.2vw, 16px)', flex: '1 1 auto', minHeight: '336px' }}
+        className="mock-charts mock-row-charts"
       >
-        <TiltCard style={{ minHeight: 0, display: 'flex', flexDirection: 'column', padding: 'clamp(18px, 2vw, 26px)' }}>
-          <NetWorthCard run={run} />
-        </TiltCard>
-        <PortfolioMixCard run={run} />
+        <div style={{ minHeight: 0, overflow: 'hidden' }}>
+          <NetWorthChart snapshots={snapshots} />
+        </div>
+        <div className="mock-sm-hide" style={{ minHeight: 0, overflow: 'hidden' }}>
+          <PortfolioDonut
+            kontenTotal={NET_WORTH_BUCKETS.konten}
+            investmentTotal={NET_WORTH_BUCKETS.investment}
+            depotTotal={NET_WORTH_BUCKETS.depot}
+            cryptoTotal={NET_WORTH_BUCKETS.crypto}
+            locale="de-DE"
+          />
+        </div>
       </div>
       {/* Echte recharts-Komponente aus dem eingeloggten Dashboard (siehe
           Import oben) statt der handgebauten BarsChart-SVG — bringt ihre
           eigene <Card>-Chrome (Titel „Einnahmen vs. Ausgaben" + Rahmen)
           gleich mit, deshalb hier bewusst KEIN umschließender TiltCard
-          (sonst doppelte Karten-Chrome, siehe DepotChart-Kommentar unten). */}
-      <div style={{ flexShrink: 0 }}>
+          (sonst doppelte Karten-Chrome — dasselbe gilt für NetWorthChart und
+          PortfolioDonut in der Reihe darüber). */}
+      <div className="mock-sm-hide" style={{ flexShrink: 0 }}>
         <IncomeExpenseChart summaries={FINANCE_SUMMARIES} locale="de-DE" height={140} />
       </div>
       <TiltCard className="mock-bookings" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <BookingsList title="Letzte Buchungen" bookings={BOOKINGS.slice(0, 5)} />
+        <BookingsList title="Letzte Buchungen" bookings={BOOKINGS.slice(0, 4)} />
       </TiltCard>
     </>
   )
@@ -1400,7 +1212,7 @@ function DashboardView({ run }: { run: boolean }) {
  * Titel jetzt „Analyse" statt „Ausgaben-Analyse": die Szene deckt nicht mehr
  * nur Ausgaben ab, sondern — wie die echte Seite — Heatmap, Geldfluss UND
  * Cashflow-Kalender. AusgabenHeatmap bringt eigene Card-Chrome mit (wie
- * DepotChart/IncomeExpenseChart/DonutCard), deshalb kein TiltCard-Wrapper.
+ * IncomeExpenseChart/NetWorthChart/DonutCard), deshalb kein TiltCard-Wrapper.
  * Heatmap-Zellen sind hier 11px (Original-Komponente) statt der vorher
  * frei erfundenen ~50px-Kacheln — dadurch von selbst kompakt statt riesig.
  */
@@ -1416,14 +1228,14 @@ function AnalyseView() {
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-        <span style={{ fontFamily: F.display, fontSize: 'clamp(18px, 1.8vw, 24px)', color: AU.cardFg }}>Analyse</span>
+        <span style={{ fontFamily: F.display, fontSize: 'clamp(18px, 1.8vw, 24px)', color: APP.cardFg }}>Analyse</span>
         <PeriodTabs />
       </div>
       <div style={{ flexShrink: 0 }}>
         <AusgabenHeatmap data={heatmapData} />
       </div>
       <div
-        className="mock-charts"
+        className="mock-charts mock-row-analyse"
         style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 'clamp(10px, 1.2vw, 16px)', flexShrink: 0 }}
       >
         <div style={{ height: cardHeight, overflow: 'hidden' }}>
@@ -1435,7 +1247,7 @@ function AnalyseView() {
             nichts anklicken können (siehe Chat: "Reaktivität rausnehmen").
             Die Tageszahlen selbst bleiben sichtbar, nur Hover/Klick greifen
             nicht mehr. */}
-        <div style={{ height: cardHeight, overflow: 'hidden', pointerEvents: 'none' }}>
+        <div className="mock-sm-hide" style={{ height: cardHeight, overflow: 'hidden', pointerEvents: 'none' }}>
           <CashflowKalender events={cashflowEvents} />
         </div>
       </div>
@@ -1447,7 +1259,7 @@ function AnalyseView() {
           dass da theoretisch noch was kommt") — ein Blick auf den Anfang von
           Monatsvergleich/Kategorien, wie auf der echten Analyse-Seite. */}
       <div
-        className="mock-charts"
+        className="mock-charts mock-sm-hide"
         style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 'clamp(10px, 1.2vw, 16px)', flexShrink: 0 }}
       >
         <MonatsVergleich data={MONTHLY_COMPARISON} />
@@ -1457,144 +1269,120 @@ function AnalyseView() {
   )
 }
 
-/** Depot-Szene — an das Figma-Mockup angeglichen: vier Stat-Kacheln
-    (Portfoliowert/Investiert/Gewinn-Verlust/Anteile), „Wertentwicklung"
-    darunter die Transaktionstabelle. War vorher „Finance" mit Kontostand-
-    Verlauf + Buchungsliste — die Kontostand-Geschichte erzählt die
-    Dashboard-Szene (NetWorthCard) bereits, hier war die Dopplung unnötig.
-    Der Chart selbst läuft seit dem recharts-Pilot über dieselbe DepotChart-
-    Komponente wie das echte, eingeloggte Depot (siehe Import oben) statt
-    über eine eigene handgebaute SVG-Nachbildung. */
-/** Statisches Formularfeld fürs Depot-Formular — sieht wie ein echtes
-    Input aus (Label + Wert in einer Box), ist aber reine Anzeige: die
-    restliche Szene ist ebenfalls nicht wirklich interaktiv (siehe
-    CardLabel-Kommentare an anderer Stelle), ein echtes Input wäre hier
-    ohne Tastatureingabe-Handling irreführend. */
-function MockField({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-      <span style={{ fontSize: 'clamp(10px, .85vw, 12px)', color: AU.mutedFg }}>{label}</span>
-      <span
-        style={{
-          borderRadius: '6px',
-          border: `1px solid ${AU.border}`,
-          backgroundColor: AU.bg,
-          padding: '9px 12px',
-          fontFamily: F.mono,
-          fontSize: 'clamp(12px, 1vw, 14px)',
-          color: value ? AU.cardFg : AU.mutedFg,
-          minHeight: '1.4em',
-        }}
-      >
-        {value}
-      </span>
-    </div>
-  )
-}
-
 /**
- * Depot-Szene — 1:1 am echten Depot ausgerichtet (Screenshot der echten
- * Seite, nicht mehr am Figma-Entwurf, siehe Chat): Kopfzeile mit Live-Badge,
- * Sparplan-Fällig-Banner, links das Buchungsformular (Tabs Einzahlung/
- * Bestand/Sparplan, hier per TabPills echt umschaltbar wie sonst im Mockup
- * auch), rechts Stat-Kacheln + Chart mit denselben vier Tabs wie im echten
- * DepotChart (Wert/Anteile/Cost Basis/Rendite) + Transaktionstabelle.
+ * Athena-Szene — der Chat-Tab, aufgebaut wie die echte Seite
+ * (app/(dashboard)/assistant/page.tsx): links die Session-Liste, rechts das
+ * Gespräch mit Eingabezeile darunter.
+ *
+ * Klassen und Markup sind aus AthenaChat, SessionList und PendingActionCard
+ * übernommen, nicht nachempfunden — möglich, seit das Mockup auf
+ * data-theme="athena-dark" läuft: bg-muted, bg-primary, text-muted-foreground
+ * und border-border treffen hier dieselben Farben wie in der App.
+ *
+ * Nachgebaut statt importiert: AthenaChat ist ein 30-KB-Client mit
+ * Streaming-Anbindung an /api/assistant, SessionList und PendingActionCard
+ * hängen an Server-Actions. Auf der Landing Page wären das Bedienelemente,
+ * die entweder nichts tun oder echte Anfragen auslösen — und sie zögen den
+ * halben Assistenten in ein Bundle, das ihn sonst nicht braucht.
+ * AthenaAvatar ist die Ausnahme und wird direkt verwendet: reine Darstellung,
+ * keine Logik.
+ *
+ * Der Verlauf endet bewusst auf einem VORSCHLAG statt auf einer erledigten
+ * Änderung: dass Athena Schreibaktionen nur vorschlägt und erst ein Klick sie
+ * ausführt, ist das Prinzip des Assistenten — in einem Standbild lässt es
+ * sich nur so zeigen.
  */
-/** Kein `run`-Prop (anders als die übrigen Szenen): der Chart läuft über
-    die echte recharts-DepotChart-Komponente (siehe Import oben), die ihre
-    Eintritts-Animation selbst beim Mount auslöst — passt zusammen mit dem
-    `key={view}`-Remount in DashboardMock (siehe dort) ohnehin genau auf den
-    Moment, in dem die Depot-Szene aktiv wird. */
-function DepotView() {
-  const [formTab, setFormTab] = useState('Einzahlung')
-  const [chartTab, setChartTab] = useState('Wert')
-
+function AthenaView() {
   return (
-    <>
-      {/* Kopfzeile: Titel + Live-Kurs-Badge */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', flexShrink: 0 }}>
-        <div>
-          <span style={{ fontFamily: F.display, fontSize: 'clamp(18px, 1.9vw, 24px)', color: AU.cardFg }}>Depot</span>
-          <p style={{ margin: '3px 0 0', fontSize: 'clamp(11px, .9vw, 13px)', color: AU.secondaryFg }}>UniGlobal · DE0008491051</p>
+    <div className="mock-athena">
+      <aside className="mock-athena-sessions flex min-h-0 flex-col overflow-hidden rounded-lg border border-border">
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-3 py-2">
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Sessions</span>
+          <Plus className="size-3.5 text-muted-foreground" aria-hidden />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: `1px solid ${AU.border}`, borderRadius: '8px', padding: '7px 14px', backgroundColor: AU.card, flexShrink: 0 }}>
-          <Dot size={16} strokeWidth={5} color={AU.positive} className="mock-live-dot" />
-          <span style={{ fontSize: 'clamp(10px, .85vw, 12px)', color: AU.positive, fontWeight: 500 }}>LIVE</span>
-          <span style={{ fontFamily: F.mono, fontSize: 'clamp(13px, 1.15vw, 16px)', color: AU.cardFg }}>{fmtEurPlain(DEPOT_STATS.livePrice)}</span>
-          <span style={{ fontSize: 'clamp(9px, .75vw, 11px)', color: AU.mutedFg, whiteSpace: 'nowrap' }}>Stand: {DEPOT_STATS.liveTime}</span>
-        </div>
-      </div>
-
-      {/* Formular links, Kacheln/Chart/Tabelle rechts — dieselbe Aufteilung
-          wie im echten Depot (dort: 1/3-Spalte links, Rest rechts). */}
-      <div style={{ display: 'flex', gap: 'clamp(12px, 1.4vw, 20px)', flex: 1, minHeight: 0 }}>
-        <TiltCard style={{ width: 'clamp(220px, 28%, 340px)', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '14px', minHeight: 0, overflow: 'hidden' }}>
-          <TabPills options={['Einzahlung', 'Bestand', 'Sparplan']} active={formTab} onChange={setFormTab} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minHeight: 0, overflow: 'hidden' }}>
-            <MockField label="Datum" value="14.08.2026" />
-            <MockField label="Betrag (€)" value="50" />
-            <MockField label="Kurs (NAV)" value="516,0000" />
-            <MockField label="Notiz (optional)" value="" />
-          </div>
-          <p style={{ margin: 0, fontSize: 'clamp(10px, .85vw, 12px)', color: AU.mutedFg, lineHeight: 1.5 }}>
-            ≈ <span style={{ color: AU.gold, fontFamily: F.mono }}>0,096899</span> Anteile bei{' '}
-            <span style={{ color: AU.cardFg, fontFamily: F.mono }}>516,00 €</span> / Anteil
-          </p>
-          <span
-            style={{
-              marginTop: 'auto',
-              textAlign: 'center',
-              padding: '10px',
-              borderRadius: '6px',
-              backgroundColor: AU.gold,
-              color: AU.bg,
-              fontSize: 'clamp(12px, 1vw, 14px)',
-              fontWeight: 600,
-            }}
-          >
-            Einzahlung speichern
-          </span>
-        </TiltCard>
-
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 1.4vw, 20px)', minHeight: 0 }}>
-          <StatTilesRow
-            tiles={[
-              { label: 'Portfoliowert', value: fmtEurPlain(DEPOT_STATS.portfolioWert), sub: `${fmtShares(DEPOT_STATS.anteile)} Anteile` },
-              { label: 'Investiert', value: fmtEurPlain(DEPOT_STATS.investiert) },
-              {
-                label: 'Gewinn / Verlust',
-                value: `+${fmtEurPlain(DEPOT_STATS.gewinnAbs)}`,
-                sub: `+${DEPOT_STATS.gewinnPct.toFixed(2).replace('.', ',')} %`,
-                valueColor: AU.positive,
-              },
-              { label: 'Live-Kurs', value: fmtEurPlain(DEPOT_STATS.livePrice), sub: `LIVE ${DEPOT_STATS.liveTime}`, valueColor: AU.positive },
-            ]}
-          />
-          {/* flex 1.15 statt vorher 'auto': der Chart darf nicht mehr
-              unbegrenzt wachsen und die Transaktionstabelle darunter aus dem
-              (fest hohen, überlaufversteckten) Mockup-Viewport verdrängen —
-              siehe minHeight:0-Kommentar an .mock-content weiter oben. */}
-          <TiltCard style={{ flex: '1.15 1 0%', minHeight: 0, display: 'flex', flexDirection: 'column', padding: 'clamp(16px, 1.8vw, 24px)' }}>
-            <TabPills options={['Wert', 'Anteile', 'Cost Basis', 'Rendite']} active={chartTab} onChange={setChartTab} />
-            {/* Echte recharts-Komponente aus dem eingeloggten Depot (siehe
-                Import oben) statt handgebautem SVG — chartTab entspricht
-                1:1 dem ChartTab-Union-Typ von depot-chart.tsx (dieselben
-                vier Labels). height="100%" statt eines festen Pixelwerts:
-                ResponsiveContainer füllt damit exakt die vom Flex-Layout
-                zugewiesene Höhe dieses Wrappers (flex:1, minHeight:0 —
-                dieselbe Technik wie bei den handgebauten SVG-Charts, siehe
-                LiveChart), statt am App-Default (220px) hängenzubleiben und
-                darunter leeren Raum in der Karte zu lassen. */}
-            <div style={{ flex: 1, minHeight: 0, marginTop: '14px' }}>
-              <DepotChart chartTab={chartTab as ChartTab} history={DEPOT_HISTORY_RC} height="100%" />
+        <div className="min-h-0 flex-1 overflow-hidden p-1.5">
+          {ATHENA_SESSIONS.map((sess) => (
+            <div
+              key={sess.title}
+              className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-xs ${
+                sess.active ? 'bg-accent text-foreground' : 'text-muted-foreground'
+              }`}
+            >
+              <MessageSquare className="size-3.5 shrink-0" aria-hidden />
+              <span className="min-w-0 flex-1 truncate">{sess.title}</span>
+              <span className="shrink-0 text-[10px] opacity-70">{sess.when}</span>
             </div>
-          </TiltCard>
-          <TiltCard className="mock-bookings" style={{ flex: '1 1 0%', minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <DepotTxTable />
-          </TiltCard>
+          ))}
+        </div>
+      </aside>
+
+      <div className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-border">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-4">
+          <div className="max-w-[85%] self-end rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground">
+            Wie viel zahle ich diesen Monat für Abos?
+          </div>
+
+          <div className="flex gap-2.5">
+            <AthenaAvatar size={28} className="mt-0.5" />
+            <div className="min-w-0 flex-1 rounded-lg bg-muted px-3 py-2 text-sm text-foreground">
+              87,94 € auf sechs Verträge. Zwei davon hast du seit Juni nicht mehr
+              benutzt: <span className="font-medium">Cloud Pro</span> (14,99 €) und
+              Design Suite (24,00 €).
+            </div>
+          </div>
+
+          <div className="max-w-[85%] self-end rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground">
+            Kündige Cloud Pro zum nächstmöglichen Termin.
+          </div>
+
+          {/* Bestätigungskarte — Aufbau 1:1 wie PendingActionCard: Icon,
+              Klartext-Satz, darunter die Aufschlüsselung, auf der die
+              Entscheidung beruht, und erst dann die beiden Knöpfe. */}
+          <div className="flex gap-2.5">
+            <AthenaAvatar size={28} className="mt-0.5" />
+            <div className="min-w-0 flex-1 rounded-lg border border-border bg-card p-3 text-sm">
+              <div className="flex gap-2">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <p className="m-0 font-medium text-foreground">{ATHENA_ACTION.summary}</p>
+                  <ul className="mt-2 space-y-1.5 border-t border-border/60 pt-2">
+                    {ATHENA_ACTION.details.map((d) => (
+                      <li key={d.label} className="flex items-baseline justify-between gap-3 text-xs">
+                        <span className="min-w-0 flex-1 text-muted-foreground">{d.label}</span>
+                        <span className="shrink-0 text-right font-medium tabular-nums text-foreground">{d.value}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Athena schlägt das vor — noch wurde nichts geändert.
+                    <span className="ml-1.5 opacity-60">{ATHENA_ACTION.label}</span>
+                  </p>
+                </div>
+              </div>
+              <div className="mt-2 flex gap-2 pl-6">
+                <span className="inline-flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground">
+                  <Check className="size-3.5" aria-hidden />
+                  Bestätigen
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                  <X className="size-3.5" aria-hidden />
+                  Verwerfen
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="shrink-0 border-t border-border p-3">
+          <div className="mx-auto flex w-full max-w-3xl items-center gap-2 rounded-xl border border-input bg-card px-3 py-2">
+            <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">Frag Athena…</span>
+            <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <ArrowUp className="size-3.5" aria-hidden />
+            </span>
+          </div>
         </div>
       </div>
-    </>
+    </div>
   )
 }
 
@@ -1615,11 +1403,12 @@ function CryptoView({ visible }: { visible: boolean }) {
   return (
     <>
       <StatTilesRow
+        className="mock-row-tiles"
         tiles={[
           {
             label: 'Portfolio-Wert',
             value: (
-              <PulseValue value={lastPortfolioValue} baseColor={AU.cardFg}>
+              <PulseValue value={lastPortfolioValue} baseColor={APP.cardFg}>
                 {fmtEurPlain(lastPortfolioValue)}
               </PulseValue>
             ),
@@ -1627,18 +1416,18 @@ function CryptoView({ visible }: { visible: boolean }) {
           {
             label: '24h Änderung',
             value: (
-              <PulseValue value={btc.deltaPct} baseColor={up ? AU.positive : AU.destructive}>
+              <PulseValue value={btc.deltaPct} baseColor={up ? APP.positive : APP.destructive}>
                 {`${up ? '+' : '−'}${Math.abs(btc.deltaPct).toFixed(1).replace('.', ',')} %`}
               </PulseValue>
             ),
-            valueColor: up ? AU.positive : AU.destructive,
+            valueColor: up ? APP.positive : APP.destructive,
           },
           { label: 'Größte Position', value: `${CURRENT_ALLOCATION[0].label} · ${CURRENT_ALLOCATION[0].pct} %` },
           {
             label: 'Live-Kurs',
             value: (
               <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <Dot size={16} strokeWidth={5} color={AU.positive} className="mock-live-dot" />
+                <Dot size={16} strokeWidth={5} color={APP.positive} className="mock-live-dot" />
                 {fmtPrice(btc.price)} €
               </span>
             ),
@@ -1647,16 +1436,15 @@ function CryptoView({ visible }: { visible: boolean }) {
         ]}
       />
       {/* Echte recharts-Komponente aus dem eingeloggten Crypto-Portfolio
-          (siehe Import oben) statt der handgebauten LiveChart-SVG — headless
-          wie DepotChart (kein eigenes Card-Chrome), deshalb weiterhin in
+          (siehe Import oben) — headless (kein eigenes Card-Chrome), deshalb weiterhin in
           TiltCard mit eigenem CardLabel als Titel.
-          `color: AU.cardFg` explizit gesetzt: PortfolioAreaChart stylt seine
+          `color: APP.cardFg` explizit gesetzt: PortfolioAreaChart stylt seine
           Achsen-Ticks über `fill: 'currentColor'` (siehe Komponente) — ohne
           einen ererbten hellen `color`-Wert an dieser Stelle greift stattdessen
           die Fließtextfarbe der (hellen, cremefarbenen) Landingpage außerhalb
           dieses dunklen Mockups, macht die Beschriftung auf dunklem Grund
           quasi unsichtbar (siehe Screenshot im Chat). */}
-      <TiltCard style={{ flex: '1 1 0%', minHeight: 0, display: 'flex', flexDirection: 'column', padding: 'clamp(18px, 2vw, 26px)', color: AU.cardFg }}>
+      <TiltCard style={{ flex: '1 1 0%', minHeight: 0, display: 'flex', flexDirection: 'column', padding: 'clamp(18px, 2vw, 26px)', color: APP.cardFg }}>
         <CardLabel>Portfolio-Wert</CardLabel>
         <div style={{ flex: 1, minHeight: 0, marginTop: '14px' }}>
           <PortfolioAreaChart
@@ -1678,10 +1466,10 @@ function CryptoView({ visible }: { visible: boolean }) {
           selbst hat reichlich Platz (per Messung ~430px hoch), das war also
           nie eine echte Platznot, nur ein zu niedrig gegriffener Wert. */}
       <div
-        className="mock-charts"
+        className="mock-charts mock-row-crypto"
         style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 'clamp(10px, 1.2vw, 16px)', flex: '1.5 1 0%', minHeight: 0 }}
       >
-        <div style={{ minHeight: 0, overflowY: 'auto', color: AU.cardFg }}>
+        <div style={{ minHeight: 0, overflowY: 'auto', color: APP.cardFg }}>
           <DonutCard
             title="Aktuelle Verteilung"
             subtitle={`${currentAllocationTotal.toLocaleString('de-DE')} €`}
@@ -1689,7 +1477,7 @@ function CryptoView({ visible }: { visible: boolean }) {
             height={210}
           />
         </div>
-        <div style={{ minHeight: 0, overflowY: 'auto', color: AU.cardFg }}>
+        <div className="mock-sm-hide" style={{ minHeight: 0, overflowY: 'auto', color: APP.cardFg }}>
           <DonutCard
             title="Ziel-Verteilung"
             subtitle={`${targetAllocationTotal.toLocaleString('de-DE')} €`}
@@ -1726,7 +1514,15 @@ export function DashboardMock({
   // -1 = Säule noch leer (siehe PedimentReveal, phi startet bei
   // COLUMN_START_DEG) — zeigt trotzdem schon die volle Dashboard-Szene
   // (kein Skeleton-Zwischenschritt mehr), Math.max fängt nur den Index ab.
-  const active = MOCK_VIEWS[Math.max(view, 0)]?.nav ?? 'Dashboard'
+  const activeView = MOCK_VIEWS[Math.max(view, 0)] ?? MOCK_VIEWS[0]
+  const active = activeView.nav
+  /*
+   * Seit der Umbau der echten Sidebar Depot und Krypto unter „Investing"
+   * gruppiert hat (siehe NAV), reicht die Gruppe allein nicht mehr, um die
+   * Szene zu benennen: zwei der vier Szenen leuchten auf demselben
+   * Hauptpunkt. Der Unterpunkt sagt, welche gemeint ist.
+   */
+  const activeChild = 'child' in activeView ? activeView.child : undefined
   // Gate für Hintergrund-Arbeit, die pausieren soll, sobald das Mockup aus
   // dem Viewport gescrollt ist (siehe useLiveTicker/CryptoView) — `view`
   // bleibt nach der Säulen-Rotation dauerhaft auf dem letzten Stand stehen
@@ -1739,20 +1535,34 @@ export function DashboardMock({
     <div
       ref={rootRef}
       aria-hidden
-      // data-theme="aurum": DashboardMock liegt außerhalb des normalen
-      // [data-theme]-Scopes (siehe landing-tokens.ts) — die eigenen
-      // AU-Inline-Styles brauchten das bisher nicht. Für den recharts-Pilot
-      // (siehe DepotChart) UND die echten Dashboard-/Crypto-Komponenten,
-      // die jetzt hier mitgerendert werden (IncomeExpenseChart,
-      // PortfolioAreaChart, DonutCard), ist es Pflicht: die nutzen
-      // Tailwind-Klassen wie bg-card/border-border/text-muted-foreground,
-      // die erst über dieses Attribut die Aurum- statt der Default-Light-
-      // Palette bekommen.
-      data-theme="aurum"
+      /*
+       * data-theme="athena-dark": DashboardMock liegt außerhalb des normalen
+       * [data-theme]-Scopes (siehe landing-tokens.ts) — die eigenen
+       * APP-Inline-Styles bräuchten das Attribut nicht. Für die echten
+       * App-Komponenten, die hier mitgerendert werden (IncomeExpenseChart,
+       * PortfolioAreaChart, DonutCard, AusgabenHeatmap, GeldflussChart,
+       * CashflowKalender, NetWorthChart, PortfolioDonut), ist es dagegen
+       * Pflicht: die arbeiten
+       * mit Tailwind-Klassen wie bg-card/border-border/text-muted-foreground
+       * und bekämen ohne dieses Attribut die Default-Light-Palette.
+       *
+       * MUSS deshalb immer dasselbe Preset nennen wie die APP-Tokens in
+       * landing-tokens.ts — sonst laufen zwei Paletten nebeneinander im
+       * selben Mockup.
+       */
+      data-theme="athena-dark"
       style={{
         width: '100%',
         height: '100%',
-        backgroundColor: AU.bg,
+        backgroundColor: APP.bg,
+        /* Derselbe Schimmer, den `[data-theme="athena-dark"] body` in
+           globals.css auf die echte App legt — ohne ihn wirkt die Fläche
+           hier flacher als im eingeloggten Zustand. Prozentwerte statt der
+           dortigen px-Radien, weil das Mockup nur einen Ausschnitt der
+           Fensterbreite einnimmt. */
+        backgroundImage:
+          'radial-gradient(ellipse 70% 60% at 12% 100%, rgba(184, 143, 81, 0.08), transparent 60%),'
+          + ' radial-gradient(ellipse 90% 70% at 88% -10%, rgba(140, 162, 119, 0.06), transparent 60%)',
         display: 'grid',
         gridTemplateColumns: 'minmax(0, 224px) minmax(0, 1fr)',
         overflow: 'hidden',
@@ -1773,8 +1583,8 @@ export function DashboardMock({
       <aside
         className="mock-side"
         style={{
-          backgroundColor: AU.sidebar,
-          borderRight: `1px solid ${AU.sidebarBorder}`,
+          backgroundColor: APP.sidebar,
+          borderRight: `1px solid ${APP.sidebarBorder}`,
           display: 'flex',
           flexDirection: 'column',
           minHeight: 0,
@@ -1789,11 +1599,11 @@ export function DashboardMock({
             padding: '0 16px',
             height: '56px',
             flexShrink: 0,
-            borderBottom: `1px solid ${AU.sidebarBorder}`,
+            borderBottom: `1px solid ${APP.sidebarBorder}`,
           }}
         >
           <Logo variant="transparent" size={22} />
-          <span style={{ fontFamily: F.display, fontSize: '15px', color: AU.sidebarAccentFg, whiteSpace: 'nowrap' }}>
+          <span style={{ fontFamily: F.display, fontSize: '15px', color: APP.sidebarAccentFg, whiteSpace: 'nowrap' }}>
             Athena Finance
           </span>
         </div>
@@ -1818,8 +1628,8 @@ export function DashboardMock({
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    color: isActive ? AU.bg : AU.sidebarFg,
-                    backgroundColor: isActive ? AU.gold : isHovered ? 'rgba(205,165,100,.07)' : 'transparent',
+                    color: isActive ? APP.sidebarPrimaryFg : APP.sidebarFg,
+                    backgroundColor: isActive ? APP.sidebarPrimary : isHovered ? 'rgba(184,143,81,.08)' : 'transparent',
                     fontWeight: isActive ? 500 : 400,
                     transition: 'background-color .35s ease, color .35s ease',
                   }}
@@ -1827,34 +1637,47 @@ export function DashboardMock({
                   <Icon
                     size={15}
                     strokeWidth={1.6}
-                    style={{ flexShrink: 0, color: isActive ? AU.bg : 'currentColor', transition: 'color .35s ease' }}
+                    style={{ flexShrink: 0, color: isActive ? APP.sidebarPrimaryFg : 'currentColor', transition: 'color .35s ease' }}
                   />
                   {label}
                 </div>
 
                 {/*
-                  Immer gemountet (nicht nur bei isActive) — nur so kann die
-                  CSS-Grid-Höhe beim Auf- UND Zuklappen animieren, dieselbe
-                  Technik wie .subnav-container in der echten Sidebar (siehe
-                  globals.css), hier unter eigenem Namen, damit sich Landing-
-                  und App-Stylesheet nicht überschneiden.
+                  Anders als in der echten Sidebar stehen hier IMMER alle
+                  Untermenüs offen, nicht nur das der aktiven Gruppe. Bewusste
+                  Abweichung: in der App kennt man den Umfang längst und ein
+                  zugeklapptes Menü hält die Liste kurz — auf der Landing Page
+                  ist diese Sidebar das einzige Inhaltsverzeichnis der App, das
+                  jemand zu sehen bekommt. Zugeklappt verschwieg sie elf der
+                  achtzehn Bereiche.
+
+                  Die Klasse bleibt trotzdem `open` statt fest ins CSS gezogen
+                  zu werden: das Auf-/Zuklappen soll dieselbe Regel bleiben wie
+                  in der echten Sidebar (.subnav-container in globals.css),
+                  falls hier je wieder umgeschaltet wird.
                 */}
                 {children && (
-                  <div className={`mock-subnav-container${isActive ? ' open' : ''}`}>
+                  <div className="mock-subnav-container open">
                     <div className="mock-subnav-inner">
-                      {children.map((child, ci) => (
-                        <div
-                          key={child}
-                          className="mock-subnav-item"
-                          style={{
-                            color: ci === 0 ? AU.sidebarAccentFg : AU.mutedFg,
-                            backgroundColor: ci === 0 ? AU.sidebarAccent : 'transparent',
-                            fontWeight: ci === 0 ? 500 : 400,
-                          }}
-                        >
-                          {child}
-                        </div>
-                      ))}
+                      {children.map((child) => {
+                        // Vorher fest der erste Unterpunkt — das stimmte nur
+                        // zufällig, solange jede Szene der erste Eintrag ihrer
+                        // Gruppe war. Bei „Investing" ist Depot der zweite.
+                        const childActive = child === activeChild
+                        return (
+                          <div
+                            key={child}
+                            className="mock-subnav-item"
+                            style={{
+                              color: childActive ? APP.sidebarAccentFg : APP.mutedFg,
+                              backgroundColor: childActive ? APP.sidebarAccent : 'transparent',
+                              fontWeight: childActive ? 500 : 400,
+                            }}
+                          >
+                            {child}
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
                 )}
@@ -1864,7 +1687,7 @@ export function DashboardMock({
         </nav>
 
         {/* Fußbereich: Konto → Einstellungen, wie im echten Dashboard */}
-        <div style={{ borderTop: `1px solid ${AU.sidebarBorder}`, padding: '10px 8px', flexShrink: 0 }}>
+        <div style={{ borderTop: `1px solid ${APP.sidebarBorder}`, padding: '10px 8px', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 8px', borderRadius: '6px' }}>
             <Image
               src="/avatar.webp"
@@ -1877,14 +1700,14 @@ export function DashboardMock({
                 borderRadius: '50%',
                 objectFit: 'cover',
                 flexShrink: 0,
-                border: `1px solid ${AU.sidebarBorder}`,
+                border: `1px solid ${APP.sidebarBorder}`,
               }}
             />
             <div style={{ minWidth: 0, flex: 1 }}>
-              <p style={{ margin: 0, fontSize: '12px', fontWeight: 500, color: AU.sidebarAccentFg, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <p style={{ margin: 0, fontSize: '12px', fontWeight: 500, color: APP.sidebarAccentFg, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 Eric Schuck
               </p>
-              <p style={{ margin: 0, fontSize: '11px', color: AU.mutedFg, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <p style={{ margin: 0, fontSize: '11px', color: APP.mutedFg, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 eric@athena-finance.de
               </p>
             </div>
@@ -1933,7 +1756,7 @@ export function DashboardMock({
           {/* -1 (Säule noch leer) fällt bewusst auf die Dashboard-Szene durch
               — kein Skeleton-Zwischenschritt mehr, siehe Kommentar bei `active`. */}
           {view === 1 ? <AnalyseView />
-            : view === 2 ? <DepotView />
+            : view === 2 ? <AthenaView />
             : view === 3 ? <CryptoView visible={visible} />
             : <DashboardView run={run} />}
         </div>

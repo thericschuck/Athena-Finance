@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  BarChart2, CandlestickChart, Palette, Plug, User, Wallet,
+  BarChart2, CandlestickChart, Mail, Palette, Plug, User, Wallet,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useReducedMotion } from '@/lib/use-reduced-motion'
@@ -14,6 +14,8 @@ import { FinanceForm }       from './finance-form'
 import { AnalyseForm, type AnalyseFormAccount } from './analyse-form'
 import { TradingForm }       from './trading-form'
 import { IntegrationsForm }  from './integrations-form'
+import { WaitlistPanel }     from './waitlist-panel'
+import type { WaitlistRow }  from '@/lib/waitlist'
 
 const TABS = [
   { id: 'profil',         label: 'Profil',         icon: User             },
@@ -22,6 +24,10 @@ const TABS = [
   { id: 'analyse',        label: 'Analyse',        icon: BarChart2        },
   { id: 'trading',        label: 'Trading',        icon: CandlestickChart },
   { id: 'integrationen',  label: 'Integrationen',  icon: Plug            },
+  // Erscheint nur, wenn die Seite überhaupt Zeilen mitgeliefert hat — also für
+  // den Eigentümer (siehe lib/waitlist.ts). Für alle anderen ist der Reiter
+  // nicht etwa deaktiviert, sondern gar nicht vorhanden.
+  { id: 'warteliste',     label: 'Warteliste',     icon: Mail             },
 ] as const
 
 type TabId = typeof TABS[number]['id']
@@ -55,15 +61,22 @@ export function SettingsShell({
   initialSettings,
   accounts,
   email,
+  waitlist,
 }: {
   initialProfile: UserProfile
   initialSettings: SettingsMap
   accounts: AnalyseFormAccount[]
   email: string
+  /** `null`, wenn die Liste für dieses Konto nicht sichtbar ist. */
+  waitlist?: WaitlistRow[] | null
 }) {
   // Richtung im selben State wie der Tab, nicht in einer Ref: `AnimatePresence`
   // liest sie beim Rendern, und genau das darf man mit einer Ref nicht tun
   // (react-hooks/refs) — sie wuerde beim Wechsel auch gar nicht neu gelesen.
+  // Die tatsächlich angezeigten Reiter. Der Index-Vergleich in `select` unten
+  // rechnet mit dieser Liste, nicht mit TABS — sonst stimmte die Richtung der
+  // Panel-Animation nicht mehr, sobald ein Reiter fehlt.
+  const tabs = useMemo(() => TABS.filter(t => t.id !== 'warteliste' || waitlist != null), [waitlist])
   const [{ active, dir }, setTab] = useState<{ active: TabId; dir: number }>({ active: 'profil', dir: 1 })
   const still = useReducedMotion()
   const direction = still ? 0 : dir
@@ -71,7 +84,7 @@ export function SettingsShell({
   function select(id: TabId) {
     setTab(prev => prev.active === id ? prev : {
       active: id,
-      dir: TABS.findIndex(t => t.id === id) > TABS.findIndex(t => t.id === prev.active) ? 1 : -1,
+      dir: tabs.findIndex(t => t.id === id) > tabs.findIndex(t => t.id === prev.active) ? 1 : -1,
     })
   }
 
@@ -82,7 +95,7 @@ export function SettingsShell({
           nur aus) — mit derselben ID würde framer-motion zwei Kandidaten für
           denselben Indikator sehen und zwischen ihnen hin und her messen. */}
       <nav className="-mx-4 flex shrink-0 gap-1 overflow-x-auto border-b border-border px-4 pb-1 sm:hidden">
-        {TABS.map(tab => {
+        {tabs.map(tab => {
           const isActive = active === tab.id
           return (
             <button
@@ -112,7 +125,7 @@ export function SettingsShell({
 
       {/* Desktop: vertikale Navigation */}
       <nav className="hidden w-44 shrink-0 flex-col gap-0.5 sm:flex">
-        {TABS.map(({ id, label, icon: Icon }) => {
+        {tabs.map(({ id, label, icon: Icon }) => {
           const isActive = active === id
           return (
             <button
@@ -175,6 +188,7 @@ export function SettingsShell({
             {active === 'analyse'       && <AnalyseForm      initialSettings={initialSettings} accounts={accounts} />}
             {active === 'trading'       && <TradingForm      initialSettings={initialSettings} />}
             {active === 'integrationen' && <IntegrationsForm />}
+            {active === 'warteliste'    && waitlist != null && <WaitlistPanel rows={waitlist} />}
           </motion.div>
         </AnimatePresence>
       </div>
