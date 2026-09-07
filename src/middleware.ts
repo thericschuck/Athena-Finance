@@ -60,6 +60,11 @@ export const config = {
     // Auth-Prüfung sie ohne Session per 307 auf /login — und der
     // Image-Optimizer, der die Datei über denselben Server holt, quittiert
     // das mit 400. Neue Bildformate deshalb immer mit aufnehmen.
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)',
+    //
+    // Dieselbe Falle trifft die von Next.js generierten Metadata-Routes:
+    // robots.txt, sitemap.xml und manifest.webmanifest laufen ohne Session-
+    // Cookie ebenfalls in die Auth-Prüfung und landeten deshalb bisher als
+    // HTML-Login-Seite statt als robots/sitemap/manifest beim Crawler.
+    '/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)',
   ],
 }
