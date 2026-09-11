@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { Database } from '@/types/database'
 import {
   AddContractDialog,
@@ -101,8 +101,7 @@ const FREQ_LABEL = Object.fromEntries(FREQUENCIES.map(f => [f.value, f.label]))
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default async function ContractsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
 
   const [{ data: contracts }, { data: accounts }, { data: categories }, { data: savingsPlansRaw }, settings] = await Promise.all([
     supabase.from('contracts').select('*').eq('user_id', user!.id).order('name'),

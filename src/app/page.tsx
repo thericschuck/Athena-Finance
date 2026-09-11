@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { LandingClient } from '@/components/landing/LandingClient'
 import { JsonLd } from '@/components/seo/json-ld'
@@ -88,8 +88,7 @@ const STRUCTURED_DATA = {
 }
 
 export default async function LandingPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user } = await getAuthUser()
   if (user) redirect('/dashboard')
   return (
     <>

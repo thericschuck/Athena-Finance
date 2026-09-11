@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { suggestCategory, buildLearnedCategoryMap } from '@/lib/fints/categorize'
 import type { FinanceCategory } from '@/types/bank'
 
@@ -13,8 +13,7 @@ import type { FinanceCategory } from '@/types/bank'
  * PATCH /api/bank/transactions/:id.
  */
 export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
   const { data: categories, error: catError } = await supabase
@@ -29,12 +28,24 @@ export async function GET() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('bank_transactions')
-    .select('id, description, counterpart_name, category_id, amount, value_date')
+    .select('id, description, counterpart_name, counterpart_iban, category_id, amount, value_date')
     .eq('user_id', user.id)
     .order('value_date', { ascending: false })
     .limit(5000)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Umbuchungen zwischen Erics eigenen Konten (Gegen-IBAN = eigene bank_iban) brauchen keinen
+  // Vorschlag — sie sind über die IBAN eindeutig als Umbuchung erkannt (siehe
+  // unified_transactions.flow_kind) und würden hier sonst z.B. als "Freizeit" vorgeschlagen,
+  // nur weil der Empfängername zufällig auf eine Schlüsselwort-Regel passt.
+  const { data: ownAccounts } = await supabase
+    .from('accounts')
+    .select('bank_iban')
+    .eq('user_id', user.id)
+    .not('bank_iban', 'is', null)
+  const normIban = (iban: string) => iban.replace(/\s+/g, '').toUpperCase()
+  const ownIbans = new Set((ownAccounts ?? []).map(a => normIban(a.bank_iban as string)))
 
   // Learn "this counterparty is always category X" from what's already categorized, so a
   // transaction the user manually fixed (or an earlier suggestion they accepted) improves
@@ -44,6 +55,7 @@ export async function GET() {
   )
 
   const suggestions = (data ?? [])
+    .filter((tx: { counterpart_iban: string | null }) => !tx.counterpart_iban || !ownIbans.has(normIban(tx.counterpart_iban)))
     .map((tx: { id: string; description: string | null; counterpart_name: string | null; category_id: string | null; amount: number; value_date: string }) => {
       const suggested = suggestCategory(tx.counterpart_name, tx.description, categories ?? [], learnedMap)
       return suggested && suggested.id !== tx.category_id

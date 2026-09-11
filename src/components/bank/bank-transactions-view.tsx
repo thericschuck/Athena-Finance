@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Search, TrendingDown, TrendingUp } from 'lucide-react'
+import { ArrowLeftRight, Search, TrendingDown, TrendingUp } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -25,6 +25,13 @@ interface Props {
   hasLoaded:        boolean
   onFilter:         (params: { q?: string; categoryId?: string }) => void
   onUpdateCategory: (id: string, categoryId: string | null) => void
+  /**
+   * Erkennt Umbuchungen zwischen Erics eigenen Konten (Gegen-IBAN = eigene bank_iban) —
+   * dieselbe Regel, mit der `unified_transactions` sie aus den Auswertungen herausrechnet
+   * (siehe [[flow_kind_regel]]). Hier nur zur Anzeige: die Zeile bleibt in der Liste und
+   * bleibt kategorisierbar, sie wird nur nicht mehr als Einnahme/Ausgabe eingefärbt.
+   */
+  isInternalTransfer?: (tx: BankTransaction) => boolean
 }
 
 function categoryLabel(c: FinanceCategory): string {
@@ -115,7 +122,7 @@ function CategoryCell({
   )
 }
 
-export function BankTransactionsView({ transactions, categories, isLoading, hasLoaded, onFilter, onUpdateCategory }: Props) {
+export function BankTransactionsView({ transactions, categories, isLoading, hasLoaded, onFilter, onUpdateCategory, isInternalTransfer }: Props) {
   const { locale, dateFormat } = useSettings()
   const fmtEur = (n: number) => fmtCurrency(n, 'EUR', locale, { fractionDigits: 2 })
 
@@ -196,9 +203,10 @@ export function BankTransactionsView({ transactions, categories, isLoading, hasL
             </thead>
             <tbody>
               {shown.map((tx, i) => {
-                const isCredit = tx.amount >= 0
-                const isLast   = i === shown.length - 1
-                const current  = tx.category_id ? categoriesById.get(tx.category_id) : undefined
+                const isCredit  = tx.amount >= 0
+                const isLast    = i === shown.length - 1
+                const current   = tx.category_id ? categoriesById.get(tx.category_id) : undefined
+                const isTransfer = isInternalTransfer?.(tx) ?? false
 
                 return (
                   <tr
@@ -209,8 +217,15 @@ export function BankTransactionsView({ transactions, categories, isLoading, hasL
                       {fmtDate(tx.value_date, dateFormat)}
                     </td>
                     <td className="px-4 py-2.5 max-w-[160px]">
-                      <span className="truncate block font-medium text-xs">
-                        {tx.counterpart_name ?? '—'}
+                      <span className="flex items-center gap-1.5">
+                        <span className="truncate font-medium text-xs">
+                          {tx.counterpart_name ?? '—'}
+                        </span>
+                        {isTransfer && (
+                          <span className="inline-flex shrink-0 rounded-full px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                            Umbuchung
+                          </span>
+                        )}
                       </span>
                       {tx.counterpart_iban && (
                         <span className="text-xs text-muted-foreground font-mono truncate block">
@@ -233,13 +248,15 @@ export function BankTransactionsView({ transactions, categories, isLoading, hasL
                     </td>
                     <td className="px-4 py-2.5 text-right whitespace-nowrap">
                       <span className={`flex items-center justify-end gap-1 font-medium ${
-                        isCredit
-                          ? 'text-success'
-                          : 'text-danger'
+                        isTransfer
+                          ? 'text-muted-foreground'
+                          : isCredit ? 'text-success' : 'text-danger'
                       }`}>
-                        {isCredit
-                          ? <TrendingUp  className="size-3.5 shrink-0" />
-                          : <TrendingDown className="size-3.5 shrink-0" />
+                        {isTransfer
+                          ? <ArrowLeftRight className="size-3.5 shrink-0" />
+                          : isCredit
+                            ? <TrendingUp  className="size-3.5 shrink-0" />
+                            : <TrendingDown className="size-3.5 shrink-0" />
                         }
                         {isCredit ? '+' : ''}{fmtEur(tx.amount)}
                       </span>

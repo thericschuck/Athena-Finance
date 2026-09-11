@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { AthenaChat } from '@/components/assistant/AthenaChat'
 import { SessionList } from '@/components/assistant/SessionList'
 import { ladeSessionZustand, listeSessions, type SessionZustand } from '@/lib/assistant/sessions'
@@ -12,10 +12,7 @@ export default async function AthenaChatPage({
 }: {
   searchParams: Promise<{ s?: string }>
 }) {
-  const [{ s: activeId }, supabase] = await Promise.all([searchParams, createClient()])
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const [{ s: activeId }, { supabase, user }] = await Promise.all([searchParams, getAuthUser()])
   if (!user) return null
 
   // Beides parallel: die Session-Liste hängt nicht am Verlauf der offenen Session.

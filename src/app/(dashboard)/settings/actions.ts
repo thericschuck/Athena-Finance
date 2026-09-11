@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Json } from '@/types/database'
 import { encrypt } from '@/lib/encryption'
@@ -30,8 +30,7 @@ export async function saveProfile(
   _prev: SettingsState,
   formData: FormData
 ): Promise<SettingsState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   let avatarUrl = (formData.get('avatar_url') as string) || null
@@ -74,8 +73,7 @@ export async function saveAppearance(
   _prev: SettingsState,
   formData: FormData
 ): Promise<SettingsState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { error } = await upsertSettings(supabase, user.id, {
@@ -98,8 +96,7 @@ export async function saveFinance(
   _prev: SettingsState,
   formData: FormData
 ): Promise<SettingsState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const monthlyBudget = formData.get('monthly_budget') as string
@@ -158,8 +155,7 @@ export async function saveAnalyseDefaults(
   _prev: SettingsState,
   formData: FormData
 ): Promise<SettingsState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const period      = formData.get('analyse_default_period') as string
@@ -185,8 +181,7 @@ export async function changePassword(
   _prev: SettingsState,
   formData: FormData
 ): Promise<SettingsState> {
-  const supabase    = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const current = formData.get('current_password') as string
@@ -214,8 +209,7 @@ export async function saveExchangeKey(
   _prev: SettingsState,
   formData: FormData
 ): Promise<SettingsState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const exchange  = (formData.get('exchange')   as string)?.trim()
@@ -256,8 +250,7 @@ export async function deleteExchangeKey(
   _prev: SettingsState,
   formData: FormData
 ): Promise<SettingsState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const exchange = (formData.get('exchange') as string)?.trim() ?? 'kraken'
@@ -278,8 +271,7 @@ export async function saveTrading(
   _prev: SettingsState,
   formData: FormData
 ): Promise<SettingsState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const riskPct   = formData.get('risk_per_trade_pct') as string

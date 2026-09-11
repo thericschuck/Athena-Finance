@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { seedIfEmpty } from './actions'
 import { LebenshaltungskostenClient } from '@/components/lebenshaltungskosten/LebenshaltungskostenClient'
 
@@ -32,11 +32,10 @@ export type IncomeTarget = {
 export default async function LebenshaltungskostenPage() {
   await seedIfEmpty()
 
-  const supabase = await createClient()
   // Layout redirected bereits, falls kein User eingeloggt ist — der Check
   // hier ist trotzdem nötig, um `user.id` unten typsicher (und nicht nur
   // durchs Layout garantiert) an die Queries zu geben.
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) redirect('/login')
 
   // .eq('user_id', ...) zusätzlich zur RLS-Policy — siehe Kommentar in

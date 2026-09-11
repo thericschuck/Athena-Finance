@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { fetchBalances, isCloudRuntime, triggerCloudBankSync } from '@/lib/fints'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -39,8 +39,7 @@ async function readCachedBalances(supabase: any, userId: string) {
  * sync is running (local Task Scheduler and/or the Vercel Python cron function).
  */
 export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
   try {
@@ -59,8 +58,7 @@ export async function GET() {
  * upserts balances itself — this route then just re-reads the cache.
  */
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
   if (isCloudRuntime()) {

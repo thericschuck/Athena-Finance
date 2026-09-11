@@ -66,6 +66,7 @@ const navItems: NavItem[] = [
       { href: '/finance/budget',       label: 'Budget' },
       { href: '/finance/steuer',       label: 'Steuer',
         match: ['/finance/steuer'] },
+      { href: '/finance/reports',      label: 'Reports' },
     ],
   },
   // „Crypto", „Depot" und „Strategy" waren drei eigene Bereiche, sind aber

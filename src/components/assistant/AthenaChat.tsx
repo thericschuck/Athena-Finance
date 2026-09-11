@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { usePathname } from 'next/navigation'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import { Chat, useChat } from '@ai-sdk/react'
 import {
   DefaultChatTransport,
@@ -23,6 +23,7 @@ import {
   PendingActionCard,
   type PendingActionStatus,
 } from '@/components/assistant/PendingActionCard'
+import { AthenaChart, type ChartSpec } from '@/components/assistant/AthenaChart'
 import type { ActionDetail } from '@/lib/assistant/actions'
 import { ATHENA_MODELS, ATHENA_EFFORT_OPTIONS, type AthenaEffort } from '@/lib/assistant/settings'
 import { useAthenaChatSettings } from '@/components/providers/athena-settings-context'
@@ -47,6 +48,7 @@ const TOOL_LABELS: Record<string, string> = {
   getInsights: 'Hinweise gelesen',
   getObligationCalendar: 'Verpflichtungen geprüft',
   getSavingsPlans: 'Sparpläne gelesen',
+  showChart: 'Chart erstellt',
   getUserSettings: 'Einstellungen gelesen',
   getAccountBalanceHistory: 'Konto-Verlauf gelesen',
   getTaxPosition: 'Steuerposition gerechnet',
@@ -86,6 +88,18 @@ function asProposal(
     summary: output.summary,
     details: asDetails(output.details),
   }
+}
+
+/** Erkennt die Antwort des `showChart`-Werkzeugs (siehe tools.ts) — dieselbe
+    Erkennung wie bei `asProposal`, nur ohne Bestätigungspflicht: ein Chart ist
+    eine Aussage Athenas, keine Handlung, die Eric erst freigeben muss. */
+function asChartSpec(part: ToolPart): ChartSpec | null {
+  if (part.state !== 'output-available') return null
+  const output = part.output as Record<string, unknown> | undefined
+  if (!output || output.status !== 'chart') return null
+  const spec = output.spec as ChartSpec | undefined
+  if (!spec || !Array.isArray(spec.points) || spec.points.length === 0) return null
+  return spec
 }
 
 /** Die Werkzeugausgabe kommt aus der Datenbank zurück, also als `unknown`.
@@ -458,6 +472,111 @@ function ModelEffortPicker() {
  * Die Konversations-ID wird hier festgelegt und in den Transport gebacken: die Route legt
  * die Zeile beim ersten Aufruf unter genau dieser ID an (api/assistant/route.ts).
  */
+
+/**
+ * Eine Nachricht, als eigene (gemerkte) Komponente statt inline im `.map` der
+ * Nachrichtenliste.
+ *
+ * Der Grund: Solange Athena noch weiterschreibt, ersetzt `useChat` das
+ * `messages`-Array bei JEDEM gestreamten Wort — und je nach Protokoll dabei
+ * auch die `parts` der zuletzt aktualisierten Nachricht komplett (neue
+ * Objekt-Identität, gleicher Inhalt für schon fertige Teile wie ein
+ * Tool-Ergebnis). Lag die Vorschlags-/Chart-Erkennung inline im `.map`, lief
+ * sie bei jedem Token für ALLE Nachrichten im Verlauf neu — und schlimmer,
+ * `AthenaChart` bekam sein `spec` mit neuer Referenz bei gleichem Inhalt, was
+ * recharts als "neue Daten" wertete und in eine Update-Schleife lief (siehe
+ * `Maximum update depth exceeded`). `useMemo` auf `message.parts` haelt die
+ * abgeleiteten Werte fest, solange sich an DIESER Nachricht nichts aendert,
+ * und `memo` verhindert, dass aeltere, laengst fertige Nachrichten ueberhaupt
+ * neu rendern, nur weil die letzte gerade streamt.
+ */
+const MessageBubble = memo(function MessageBubble({
+  message,
+  isLast,
+  busy,
+  actionStatuses,
+  actionResults,
+}: {
+  message: UIMessage
+  isLast: boolean
+  busy: boolean
+  actionStatuses?: Record<string, PendingActionStatus>
+  actionResults?: Record<string, unknown>
+}) {
+  const proposals = useMemo(
+    () =>
+      message.parts.filter(isToolUIPart).flatMap((part) => {
+        const proposal = asProposal(part)
+        return proposal ? [{ ...proposal, action: getToolName(part) }] : []
+      }),
+    [message.parts],
+  )
+  const charts = useMemo(
+    () =>
+      message.parts.filter(isToolUIPart).flatMap((part) => {
+        const spec = asChartSpec(part)
+        return spec ? [spec] : []
+      }),
+    [message.parts],
+  )
+  const text = useMemo(
+    () => message.parts.filter(isTextUIPart).map((p) => p.text).join('\n'),
+    [message.parts],
+  )
+
+  return (
+    <div className="flex flex-col gap-2">
+      {message.role === 'user' ? (
+        <div className="max-w-[85%] self-end whitespace-pre-wrap rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground">
+          {text}
+        </div>
+      ) : (
+        // Athena bekommt ein Gesicht in der linken Spalte: das
+        // Medaillon macht auf einen Blick klar, wer spricht — den
+        // Unterschied zwischen rechtsbündiger Blase und grauer
+        // Fläche liest man im langen Verlauf sonst nur mit Mühe.
+        <div className="flex w-full gap-2.5">
+          <AthenaAvatar
+            size={28}
+            thinking={isLast && busy}
+            className="mt-0.5 hidden sm:inline-flex"
+          />
+          {/* Antworten nehmen die volle Restbreite. Eine Blase, die
+              sich an den Inhalt anpasst, wächst beim Streamen mit
+              jedem Wort auch in die Breite — der Text springt dann
+              Zeile für Zeile hin und her. Feste Breite: nur die Höhe
+              wächst. */}
+          <div className="min-w-0 flex-1 rounded-lg bg-muted px-3 py-2 text-sm text-foreground">
+            <ReasoningTrace parts={message.parts} streaming={isLast && busy} />
+            <MarkdownLite>{text}</MarkdownLite>
+            {charts.map((spec, i) => (
+              <AthenaChart key={i} spec={spec} />
+            ))}
+            <Sources parts={message.parts} />
+            <ToolTrace parts={message.parts} />
+          </div>
+        </div>
+      )}
+
+      {/* Bestätigungskarten stehen bewusst AUSSERHALB der Sprechblase:
+          sie sind eine Handlung des Nutzers, keine Aussage Athenas. */}
+      {proposals.map((proposal) => (
+        <PendingActionCard
+          key={proposal.actionId}
+          actionId={proposal.actionId}
+          action={proposal.action}
+          label={proposal.label}
+          summary={proposal.summary}
+          details={proposal.details}
+          initialStatus={actionStatuses?.[proposal.actionId] ?? 'pending'}
+          initialResult={actionResults?.[proposal.actionId]}
+          className="self-start"
+        />
+      ))}
+    </div>
+  )
+})
+
 export function erzeugeChat(conversationId?: string, messages?: UIMessage[]): Chat<UIMessage> {
   const id = conversationId ?? crypto.randomUUID()
   return new Chat<UIMessage>({
@@ -506,11 +625,31 @@ export function AthenaChat({
   // atlas.ts: describeCurrentRoute). Pro NACHRICHT, nicht pro Session — das
   // schwebende Sheet bleibt beim Navigieren offen, die Route darunter wechselt.
   const pathname = usePathname()
+  const router = useRouter()
 
   /** Eine Nachricht abschicken, immer mit der aktuellen Route im Gepaeck. */
   function frage(text: string) {
     sendMessage({ text }, { body: { route: pathname } })
   }
+
+  /**
+   * Sobald eine Antwort fertig ist, die Seite (Server Component) neu laden —
+   * NICHT bei jedem gestreamten Wort, nur beim Übergang IN 'ready'. Ohne das
+   * bleibt die Session-Liste links stehen: `conversationId`/Titel/Nachrichten-
+   * zahl liegen serverseitig in `ai_conversations`, `sendMessage` läuft aber
+   * rein über den Client-Transport und stößt von sich aus keine Neuladung an.
+   * `router.refresh()` behält den Chat-Zustand hier bei (der lebt im
+   * `instanz`-State, nicht in Server-Props) und holt nur die Seite drumherum
+   * neu — bei einer brandneuen Session taucht sie dadurch links auf, sobald
+   * die erste Antwort steht, statt erst nach einer zufälligen Navigation.
+   */
+  const vorherigerStatus = useRef(status)
+  useEffect(() => {
+    if (vorherigerStatus.current !== 'ready' && status === 'ready') {
+      router.refresh()
+    }
+    vorherigerStatus.current = status
+  }, [status, router])
 
   // Nur auf die ANZAHL der Nachrichten hören, nicht auf ihren Inhalt: bei
   // `[messages]` feuert der Effekt bei jedem gestreamten Wort und startet die
@@ -538,64 +677,16 @@ export function AthenaChat({
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-4">
           {messages.length === 0 && <EmptyState onPick={frage} />}
 
-          {messages.map((message, index) => {
-            const isLast = index === messages.length - 1
-            const proposals = message.parts.filter(isToolUIPart).flatMap((part) => {
-              const proposal = asProposal(part)
-              return proposal ? [{ ...proposal, action: getToolName(part) }] : []
-            })
-
-            const text = message.parts.filter(isTextUIPart).map((p) => p.text).join('\n')
-
-            return (
-              <div key={message.id} className="flex flex-col gap-2">
-                {message.role === 'user' ? (
-                  <div className="max-w-[85%] self-end whitespace-pre-wrap rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground">
-                    {text}
-                  </div>
-                ) : (
-                  // Athena bekommt ein Gesicht in der linken Spalte: das
-                  // Medaillon macht auf einen Blick klar, wer spricht — den
-                  // Unterschied zwischen rechtsbündiger Blase und grauer
-                  // Fläche liest man im langen Verlauf sonst nur mit Mühe.
-                  <div className="flex w-full gap-2.5">
-                    <AthenaAvatar
-                      size={28}
-                      thinking={isLast && busy}
-                      className="mt-0.5 hidden sm:inline-flex"
-                    />
-                    {/* Antworten nehmen die volle Restbreite. Eine Blase, die
-                        sich an den Inhalt anpasst, wächst beim Streamen mit
-                        jedem Wort auch in die Breite — der Text springt dann
-                        Zeile für Zeile hin und her. Feste Breite: nur die Höhe
-                        wächst. */}
-                    <div className="min-w-0 flex-1 rounded-lg bg-muted px-3 py-2 text-sm text-foreground">
-                      <ReasoningTrace parts={message.parts} streaming={isLast && busy} />
-                      <MarkdownLite>{text}</MarkdownLite>
-                      <Sources parts={message.parts} />
-                      <ToolTrace parts={message.parts} />
-                    </div>
-                  </div>
-                )}
-
-                {/* Bestätigungskarten stehen bewusst AUSSERHALB der Sprechblase:
-                    sie sind eine Handlung des Nutzers, keine Aussage Athenas. */}
-                {proposals.map((proposal) => (
-                  <PendingActionCard
-                    key={proposal.actionId}
-                    actionId={proposal.actionId}
-                    action={proposal.action}
-                    label={proposal.label}
-                    summary={proposal.summary}
-                    details={proposal.details}
-                    initialStatus={actionStatuses?.[proposal.actionId] ?? 'pending'}
-                    initialResult={actionResults?.[proposal.actionId]}
-                    className="self-start"
-                  />
-                ))}
-              </div>
-            )
-          })}
+          {messages.map((message, index) => (
+            <MessageBubble
+              key={message.id}
+              message={message}
+              isLast={index === messages.length - 1}
+              busy={busy}
+              actionStatuses={actionStatuses}
+              actionResults={actionResults}
+            />
+          ))}
 
           {status === 'submitted' && (
             <div className="flex gap-2.5">

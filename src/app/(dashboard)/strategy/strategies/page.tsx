@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { CheckCircle2, ExternalLink } from 'lucide-react'
 import { AddStrategyDialog } from '@/components/strategy/strategy-form'
@@ -32,8 +32,7 @@ export default async function StrategiesPage({
   const params    = await searchParams
   const onlyReady = params.ready === '1'
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
 
   const settings = await getSettings(user!.id)
   const locale = (settings.number_format as string) ?? 'de-DE'

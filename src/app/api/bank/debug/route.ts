@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { runSidecar } from '@/lib/fints/sidecar'
 
 /**
@@ -10,8 +10,7 @@ import { runSidecar } from '@/lib/fints/sidecar'
 export const maxDuration = 300
 
 export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user } = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
   const url       = process.env.FINTS_URL?.trim()

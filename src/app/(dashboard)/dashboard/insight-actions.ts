@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 
 /**
  * Blendet einen von Athena erzeugten Hinweis aus. Bewusst kein DELETE: der
@@ -10,10 +10,7 @@ import { createClient } from '@/lib/supabase/server'
  * filtert).
  */
 export async function dismissInsight(id: string): Promise<{ error: string } | { success: true }> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { error } = await supabase

@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 const PATH = '/finance/budget'
@@ -9,8 +9,7 @@ type State = { error: string } | { success: true } | null
 // ── Categories ─────────────────────────────────────────────────────────────────
 
 export async function createCategory(_prev: State, formData: FormData): Promise<State> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const name = (formData.get('name') as string)?.trim()
@@ -30,8 +29,7 @@ export async function createCategory(_prev: State, formData: FormData): Promise<
 }
 
 export async function updateCategory(_prev: State, formData: FormData): Promise<State> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const id   = formData.get('id') as string
@@ -56,8 +54,7 @@ export async function updateCategory(_prev: State, formData: FormData): Promise<
 }
 
 export async function deleteCategory(id: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { error } = await supabase.from('budget_categories').delete().eq('id', id).eq('user_id', user.id)
@@ -69,8 +66,7 @@ export async function deleteCategory(id: string): Promise<{ error?: string }> {
 // ── Items ──────────────────────────────────────────────────────────────────────
 
 export async function createItem(_prev: State, formData: FormData): Promise<State> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const name          = (formData.get('name') as string)?.trim()
@@ -100,8 +96,7 @@ export async function createItem(_prev: State, formData: FormData): Promise<Stat
 }
 
 export async function updateItem(_prev: State, formData: FormData): Promise<State> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const id            = formData.get('id') as string
@@ -129,8 +124,7 @@ export async function updateItem(_prev: State, formData: FormData): Promise<Stat
 }
 
 export async function deleteItem(id: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { error } = await supabase.from('budget_items').delete().eq('id', id).eq('user_id', user.id)
@@ -142,8 +136,7 @@ export async function deleteItem(id: string): Promise<{ error?: string }> {
 // ── Income Targets ─────────────────────────────────────────────────────────────
 
 export async function upsertIncomeTarget(_prev: State, formData: FormData): Promise<State> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const id          = formData.get('id') as string | null
@@ -166,12 +159,11 @@ export async function upsertIncomeTarget(_prev: State, formData: FormData): Prom
 // ── Seed ───────────────────────────────────────────────────────────────────────
 
 export async function seedIfEmpty(): Promise<void> {
-  const supabase = await createClient()
   // Server Actions sind eigenständig aufrufbar (nicht nur über den
   // Seiten-Render-Baum, siehe layout.tsx-Redirect) — ohne dieses Gate könnte
   // jeder direkt gegen diese Action posten und beliebig oft Seed-Zeilen
   // einfügen. Gleiches Muster wie createCategory/upsertIncomeTarget oben.
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return
 
   const { count: catCount } = await supabase

@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 /**
@@ -42,8 +42,7 @@ export async function belegHochladen(
   _prev: BelegState,
   formData: FormData,
 ): Promise<BelegState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const datei = formData.get('datei')
@@ -107,8 +106,7 @@ export async function belegHochladen(
  * und zeigt auf seinen Nachfolger.
  */
 export async function belegErsetzen(alt: string, neu: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { error } = await supabase

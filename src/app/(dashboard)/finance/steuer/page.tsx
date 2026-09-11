@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { ladeSteuerdaten } from '@/lib/tax/laden'
 import { berechneSteuerposition } from '@/lib/tax/position'
 import { AlertTriangle, ArrowRight } from 'lucide-react'
@@ -42,8 +42,7 @@ export default async function SteuerPage({
 }: {
   searchParams: Promise<{ jahr?: string }>
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) redirect('/login')
 
   const { jahr: jahrParam } = await searchParams

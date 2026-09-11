@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency, fmtDate } from '@/lib/format'
 import { Database } from '@/types/database'
@@ -27,10 +27,7 @@ export default async function DebtsPage({ searchParams }: PageProps) {
   const { all } = await searchParams
   const showAll = all === '1'
 
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
 
   const settings = await getSettings(user!.id)
   const locale = (settings.number_format as string) ?? 'de-DE'

@@ -1906,10 +1906,10 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          net_worth: number
+          net_worth: number | null
           snapshot_date: string
           source: string
-          total_assets: number
+          total_assets: number | null
           total_bausparer: number
           total_business: number
           total_cash: number
@@ -1924,10 +1924,10 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          net_worth?: number
+          net_worth?: number | null
           snapshot_date: string
           source?: string
-          total_assets?: number
+          total_assets?: number | null
           total_bausparer?: number
           total_business?: number
           total_cash?: number
@@ -1942,10 +1942,10 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          net_worth?: number
+          net_worth?: number | null
           snapshot_date?: string
           source?: string
-          total_assets?: number
+          total_assets?: number | null
           total_bausparer?: number
           total_business?: number
           total_cash?: number
@@ -1956,6 +1956,60 @@ export type Database = {
           total_investment?: number
           total_savings?: number
           user_id?: string
+        }
+        Relationships: []
+      }
+      net_worth_snapshots_backup_20260830: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          net_worth: number | null
+          snapshot_date: string | null
+          source: string | null
+          total_assets: number | null
+          total_bausparer: number | null
+          total_business: number | null
+          total_cash: number | null
+          total_checking: number | null
+          total_crypto: number | null
+          total_debts: number | null
+          total_depot: number | null
+          total_savings: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          net_worth?: number | null
+          snapshot_date?: string | null
+          source?: string | null
+          total_assets?: number | null
+          total_bausparer?: number | null
+          total_business?: number | null
+          total_cash?: number | null
+          total_checking?: number | null
+          total_crypto?: number | null
+          total_debts?: number | null
+          total_depot?: number | null
+          total_savings?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          net_worth?: number | null
+          snapshot_date?: string | null
+          source?: string | null
+          total_assets?: number | null
+          total_bausparer?: number | null
+          total_business?: number | null
+          total_cash?: number | null
+          total_checking?: number | null
+          total_crypto?: number | null
+          total_debts?: number | null
+          total_depot?: number | null
+          total_savings?: number | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -2107,6 +2161,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      reports: {
+        Row: {
+          created_at: string
+          data: Json
+          generated_at: string
+          html: string
+          id: string
+          pdf_path: string | null
+          period_end: string
+          period_start: string
+          sent_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          generated_at?: string
+          html: string
+          id?: string
+          pdf_path?: string | null
+          period_end: string
+          period_start: string
+          sent_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          generated_at?: string
+          html?: string
+          id?: string
+          pdf_path?: string | null
+          period_end?: string
+          period_start?: string
+          sent_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       robustness_tests: {
         Row: {
@@ -2570,6 +2669,78 @@ export type Database = {
           },
         ]
       }
+      tax_tariffs: {
+        Row: {
+          geprueft_am: string
+          grundfreibetrag: number
+          jahr: number
+          kleinunternehmer_laufend: number
+          kleinunternehmer_vorjahr: number
+          quelle: string
+          soli_freigrenze: number | null
+          sonderausgabenpauschale: number
+          werbungskostenpauschale: number
+          zone2_bis: number
+          zone2_faktor: number
+          zone2_konstante: number
+          zone3_bis: number
+          zone3_faktor: number
+          zone3_konstante: number
+          zone3_sockel: number
+          zone4_abzug: number
+          zone4_bis: number
+          zone4_satz: number
+          zone5_abzug: number
+          zone5_satz: number
+        }
+        Insert: {
+          geprueft_am: string
+          grundfreibetrag: number
+          jahr: number
+          kleinunternehmer_laufend: number
+          kleinunternehmer_vorjahr: number
+          quelle: string
+          soli_freigrenze?: number | null
+          sonderausgabenpauschale: number
+          werbungskostenpauschale: number
+          zone2_bis: number
+          zone2_faktor: number
+          zone2_konstante: number
+          zone3_bis: number
+          zone3_faktor: number
+          zone3_konstante: number
+          zone3_sockel: number
+          zone4_abzug: number
+          zone4_bis: number
+          zone4_satz: number
+          zone5_abzug: number
+          zone5_satz: number
+        }
+        Update: {
+          geprueft_am?: string
+          grundfreibetrag?: number
+          jahr?: number
+          kleinunternehmer_laufend?: number
+          kleinunternehmer_vorjahr?: number
+          quelle?: string
+          soli_freigrenze?: number | null
+          sonderausgabenpauschale?: number
+          werbungskostenpauschale?: number
+          zone2_bis?: number
+          zone2_faktor?: number
+          zone2_konstante?: number
+          zone3_bis?: number
+          zone3_faktor?: number
+          zone3_konstante?: number
+          zone3_sockel?: number
+          zone4_abzug?: number
+          zone4_bis?: number
+          zone4_satz?: number
+          zone5_abzug?: number
+          zone5_satz?: number
+        }
+        Relationships: []
+      }
       tpi_daily_scores: {
         Row: {
           avg_score: number
@@ -2770,78 +2941,6 @@ export type Database = {
         }
         Relationships: []
       }
-      tax_tariffs: {
-        Row: {
-          geprueft_am: string
-          grundfreibetrag: number
-          jahr: number
-          kleinunternehmer_laufend: number
-          kleinunternehmer_vorjahr: number
-          quelle: string
-          soli_freigrenze: number | null
-          sonderausgabenpauschale: number
-          werbungskostenpauschale: number
-          zone2_bis: number
-          zone2_faktor: number
-          zone2_konstante: number
-          zone3_bis: number
-          zone3_faktor: number
-          zone3_konstante: number
-          zone3_sockel: number
-          zone4_abzug: number
-          zone4_bis: number
-          zone4_satz: number
-          zone5_abzug: number
-          zone5_satz: number
-        }
-        Insert: {
-          geprueft_am: string
-          grundfreibetrag: number
-          jahr: number
-          kleinunternehmer_laufend: number
-          kleinunternehmer_vorjahr: number
-          quelle: string
-          soli_freigrenze?: number | null
-          sonderausgabenpauschale: number
-          werbungskostenpauschale: number
-          zone2_bis: number
-          zone2_faktor: number
-          zone2_konstante: number
-          zone3_bis: number
-          zone3_faktor: number
-          zone3_konstante: number
-          zone3_sockel: number
-          zone4_abzug: number
-          zone4_bis: number
-          zone4_satz: number
-          zone5_abzug: number
-          zone5_satz: number
-        }
-        Update: {
-          geprueft_am?: string
-          grundfreibetrag?: number
-          jahr?: number
-          kleinunternehmer_laufend?: number
-          kleinunternehmer_vorjahr?: number
-          quelle?: string
-          soli_freigrenze?: number | null
-          sonderausgabenpauschale?: number
-          werbungskostenpauschale?: number
-          zone2_bis?: number
-          zone2_faktor?: number
-          zone2_konstante?: number
-          zone3_bis?: number
-          zone3_faktor?: number
-          zone3_konstante?: number
-          zone3_sockel?: number
-          zone4_abzug?: number
-          zone4_bis?: number
-          zone4_satz?: number
-          zone5_abzug?: number
-          zone5_satz?: number
-        }
-        Relationships: []
-      }
       transactions: {
         Row: {
           account_id: string
@@ -2991,95 +3090,6 @@ export type Database = {
         }
         Relationships: []
       }
-      valuables: {
-        Row: {
-          box_vorhanden: boolean
-          created_at: string
-          gekauft_am: string | null
-          id: string
-          im_vermoegen: boolean
-          is_active: boolean
-          kategorie: string
-          kaufpreis: number | null
-          kaufquelle: string | null
-          lagerort: string | null
-          marke: string | null
-          modell: string | null
-          name: string
-          notizen: string | null
-          papiere_vorhanden: boolean
-          referenz: string | null
-          seriennummer: string | null
-          sort_order: number
-          updated_at: string
-          user_id: string
-          verkauft_am: string | null
-          verkaufspreis: number | null
-          versichert: boolean
-          versicherungsnummer: string | null
-          waehrung: string
-          zustand: string | null
-        }
-        Insert: {
-          box_vorhanden?: boolean
-          created_at?: string
-          gekauft_am?: string | null
-          id?: string
-          im_vermoegen?: boolean
-          is_active?: boolean
-          kategorie?: string
-          kaufpreis?: number | null
-          kaufquelle?: string | null
-          lagerort?: string | null
-          marke?: string | null
-          modell?: string | null
-          name: string
-          notizen?: string | null
-          papiere_vorhanden?: boolean
-          referenz?: string | null
-          seriennummer?: string | null
-          sort_order?: number
-          updated_at?: string
-          user_id: string
-          verkauft_am?: string | null
-          verkaufspreis?: number | null
-          versichert?: boolean
-          versicherungsnummer?: string | null
-          waehrung?: string
-          zustand?: string | null
-        }
-        Update: {
-          bild_url?: string | null
-          foto_url?: string | null
-          box_vorhanden?: boolean
-          created_at?: string
-          gekauft_am?: string | null
-          id?: string
-          im_vermoegen?: boolean
-          is_active?: boolean
-          kategorie?: string
-          kaufpreis?: number | null
-          kaufquelle?: string | null
-          lagerort?: string | null
-          marke?: string | null
-          modell?: string | null
-          name?: string
-          notizen?: string | null
-          papiere_vorhanden?: boolean
-          referenz?: string | null
-          seriennummer?: string | null
-          sort_order?: number
-          updated_at?: string
-          user_id?: string
-          verkauft_am?: string | null
-          verkaufspreis?: number | null
-          versichert?: boolean
-          versicherungsnummer?: string | null
-          waehrung?: string
-          zustand?: string | null
-        }
-        Relationships: []
-      }
       valuable_images: {
         Row: {
           art: string
@@ -3135,6 +3145,13 @@ export type Database = {
             referencedRelation: "valuables"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "valuable_images_valuable_id_fkey"
+            columns: ["valuable_id"]
+            isOneToOne: false
+            referencedRelation: "valuables_current"
+            referencedColumns: ["id"]
+          },
         ]
       }
       valuable_valuations: {
@@ -3185,6 +3202,93 @@ export type Database = {
           },
         ]
       }
+      valuables: {
+        Row: {
+          box_vorhanden: boolean
+          created_at: string
+          gekauft_am: string | null
+          id: string
+          im_vermoegen: boolean
+          is_active: boolean
+          kategorie: string
+          kaufpreis: number | null
+          kaufquelle: string | null
+          lagerort: string | null
+          marke: string | null
+          modell: string | null
+          name: string
+          notizen: string | null
+          papiere_vorhanden: boolean
+          referenz: string | null
+          seriennummer: string | null
+          sort_order: number
+          updated_at: string
+          user_id: string
+          verkaufspreis: number | null
+          verkauft_am: string | null
+          versichert: boolean
+          versicherungsnummer: string | null
+          waehrung: string
+          zustand: string | null
+        }
+        Insert: {
+          box_vorhanden?: boolean
+          created_at?: string
+          gekauft_am?: string | null
+          id?: string
+          im_vermoegen?: boolean
+          is_active?: boolean
+          kategorie?: string
+          kaufpreis?: number | null
+          kaufquelle?: string | null
+          lagerort?: string | null
+          marke?: string | null
+          modell?: string | null
+          name: string
+          notizen?: string | null
+          papiere_vorhanden?: boolean
+          referenz?: string | null
+          seriennummer?: string | null
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+          verkaufspreis?: number | null
+          verkauft_am?: string | null
+          versichert?: boolean
+          versicherungsnummer?: string | null
+          waehrung?: string
+          zustand?: string | null
+        }
+        Update: {
+          box_vorhanden?: boolean
+          created_at?: string
+          gekauft_am?: string | null
+          id?: string
+          im_vermoegen?: boolean
+          is_active?: boolean
+          kategorie?: string
+          kaufpreis?: number | null
+          kaufquelle?: string | null
+          lagerort?: string | null
+          marke?: string | null
+          modell?: string | null
+          name?: string
+          notizen?: string | null
+          papiere_vorhanden?: boolean
+          referenz?: string | null
+          seriennummer?: string | null
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+          verkaufspreis?: number | null
+          verkauft_am?: string | null
+          versichert?: boolean
+          versicherungsnummer?: string | null
+          waehrung?: string
+          zustand?: string | null
+        }
+        Relationships: []
+      }
       waitlist_signups: {
         Row: {
           consent: boolean
@@ -3193,7 +3297,7 @@ export type Database = {
           id: string
         }
         Insert: {
-          consent?: boolean
+          consent: boolean
           created_at?: string
           email: string
           id?: string
@@ -3416,11 +3520,11 @@ export type Database = {
         Row: {
           aktueller_wert: number | null
           bild_anzahl: number | null
-          foto_anzahl: number | null
-          hauptbild_pfad: string | null
           box_vorhanden: boolean | null
           created_at: string | null
+          foto_anzahl: number | null
           gekauft_am: string | null
+          hauptbild_pfad: string | null
           id: string | null
           im_vermoegen: boolean | null
           is_active: boolean | null
@@ -3439,8 +3543,8 @@ export type Database = {
           sort_order: number | null
           updated_at: string | null
           user_id: string | null
-          verkauft_am: string | null
           verkaufspreis: number | null
+          verkauft_am: string | null
           versichert: boolean | null
           versicherungsnummer: string | null
           waehrung: string | null
@@ -3452,11 +3556,21 @@ export type Database = {
       }
     }
     Functions: {
-      fn_valuables_total: {
-        Args: { p_date: string; p_uid: string }
+      check_combo_guard: { Args: { p_combo_id: string }; Returns: undefined }
+      fn_asset_price_eur: {
+        Args: {
+          p_asset_id: string
+          p_avg: number
+          p_date: string
+          p_symbol: string
+          p_type: string
+        }
         Returns: number
       }
-      check_combo_guard: { Args: { p_combo_id: string }; Returns: undefined }
+      fn_clean_bank_description: {
+        Args: { p_fallback: string; p_text: string }
+        Returns: string
+      }
       fn_ensure_linked_account: {
         Args: {
           p_account_name: string
@@ -3467,7 +3581,23 @@ export type Database = {
         }
         Returns: string
       }
+      fn_fund_price_eur: {
+        Args: { p_date: string; p_isin: string }
+        Returns: number
+      }
+      fn_recompute_account_balances: {
+        Args: { p_date: string; p_uid: string }
+        Returns: number
+      }
+      fn_recompute_monthly_summary: {
+        Args: { p_month: string; p_uid: string }
+        Returns: undefined
+      }
       fn_take_snapshot: { Args: { target_date?: string }; Returns: Json }
+      fn_valuables_total: {
+        Args: { p_date: string; p_uid: string }
+        Returns: number
+      }
       search_ai_knowledge: {
         Args: { max_results?: number; q: string }
         Returns: {
@@ -3508,12 +3638,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3537,11 +3667,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3562,11 +3692,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3587,11 +3717,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3604,11 +3734,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

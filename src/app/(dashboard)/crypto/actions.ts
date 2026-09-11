@@ -1,7 +1,8 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { getSettings } from '@/lib/settings'
 import { getPrices, getEurUsdRate } from '@/lib/crypto/coingecko'
 import type { Json } from '@/types/database'
 import {
@@ -29,8 +30,7 @@ export async function createAsset(
   _prev: AssetActionState,
   formData: FormData
 ): Promise<AssetActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const name         = (formData.get('name') as string)?.trim()
@@ -111,8 +111,7 @@ export async function updateAsset(
   _prev: AssetActionState,
   formData: FormData
 ): Promise<AssetActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const id          = formData.get('id') as string
@@ -184,8 +183,7 @@ export async function updateAsset(
 
 // ─── Delete ───────────────────────────────────────────────────────────────────
 export async function deleteAsset(id: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   // Fetch before delete for audit log
@@ -228,8 +226,7 @@ export async function deleteAsset(id: string): Promise<{ error?: string }> {
 export async function updateAssetPrices(
   assets: { id: string; coingecko_id: string }[]
 ): Promise<{ updated: number; errors: string[] }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) throw new Error('Nicht eingeloggt')
 
   const uniqueIds = [...new Set(assets.map(a => a.coingecko_id))]
@@ -280,8 +277,7 @@ export async function updateAssetPrices(
 
 // ─── Refresh prices via CoinGecko (full portfolio) ───────────────────────────
 export async function refreshPrices(): Promise<{ error?: string; updated?: number }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { data: assets } = await supabase
@@ -327,22 +323,17 @@ export async function refreshPrices(): Promise<{ error?: string; updated?: numbe
 
 // ─── Strategy signals ─────────────────────────────────────────────────────────
 export async function getStrategySignals(userId: string): Promise<StrategySignals> {
-  const supabase = await createClient()
-
-  const { data } = await supabase
-    .from('user_settings')
-    .select('value')
-    .eq('user_id', userId)
-    .eq('key', 'strategy_signals')
-    .single()
-
-  if (!data?.value) return DEFAULT_STRATEGY_SIGNALS
-  return data.value as unknown as StrategySignals
+  // getSettings() ist React-cache()-dedupliziert: liest ein Aufrufer im selben
+  // Request bereits alle Settings (z.B. das Dashboard-Layout), kostet das hier
+  // keinen weiteren DB-Roundtrip statt der vorherigen eigenen user_settings-Abfrage.
+  const settings = await getSettings(userId)
+  const value = settings.strategy_signals
+  if (!value) return DEFAULT_STRATEGY_SIGNALS
+  return value as unknown as StrategySignals
 }
 
 export async function saveStrategySignals(signals: StrategySignals): Promise<void> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) throw new Error('Nicht eingeloggt')
 
   const { error } = await supabase.from('user_settings').upsert(
@@ -360,22 +351,14 @@ export async function saveStrategySignals(signals: StrategySignals): Promise<voi
 
 // ─── Portfolio allocations ────────────────────────────────────────────────────
 export async function getPortfolioAllocations(userId: string): Promise<PortfolioAllocations> {
-  const supabase = await createClient()
-
-  const { data } = await supabase
-    .from('user_settings')
-    .select('value')
-    .eq('user_id', userId)
-    .eq('key', 'portfolio_allocations')
-    .single()
-
-  if (!data?.value) return DEFAULT_PORTFOLIO_ALLOCATIONS
-  return data.value as unknown as PortfolioAllocations
+  const settings = await getSettings(userId)
+  const value = settings.portfolio_allocations
+  if (!value) return DEFAULT_PORTFOLIO_ALLOCATIONS
+  return value as unknown as PortfolioAllocations
 }
 
 export async function savePortfolioAllocations(allocations: PortfolioAllocations): Promise<void> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) throw new Error('Nicht eingeloggt')
 
   const { error } = await supabase.from('user_settings').upsert(
@@ -393,25 +376,17 @@ export async function savePortfolioAllocations(allocations: PortfolioAllocations
 
 // ─── Last rebalancing ─────────────────────────────────────────────────────────
 export async function getLastRebalancing(userId: string): Promise<string | null> {
-  const supabase = await createClient()
-
-  const { data } = await supabase
-    .from('user_settings')
-    .select('value')
-    .eq('user_id', userId)
-    .eq('key', 'last_rebalancing')
-    .single()
-
-  if (!data?.value) return null
-  return data.value as unknown as string
+  const settings = await getSettings(userId)
+  const value = settings.last_rebalancing
+  if (!value) return null
+  return value as unknown as string
 }
 
 // ─── Crypto Portfolio Source ──────────────────────────────────────────────────
 export type CryptoSource = 'all' | 'kraken' | 'manual'
 
 export async function saveCryptoSource(source: CryptoSource): Promise<void> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return
 
   await supabase.from('user_settings').upsert(
@@ -440,8 +415,7 @@ export type SyncState =
   | null
 
 export async function syncFromKraken(): Promise<SyncState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const result = await syncKrakenForUser(supabase, user.id)
@@ -616,8 +590,7 @@ async function getFuturesPositions(
 export async function getKrakenOpenPositions(): Promise<
   { positions: OpenPositionView[]; warnings: string[]; meta: OpenPositionsMeta } | { error: string }
 > {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const [spot, futures] = await Promise.all([
@@ -639,8 +612,7 @@ export async function getKrakenOpenPositions(): Promise<
 export async function deletePortfolio(portfolioName: string): Promise<{ error: string } | { success: true }> {
   if (!portfolioName || portfolioName === 'Kraken') return { error: 'Ungültiger Portfolio-Name' }
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { error } = await supabase
@@ -656,8 +628,7 @@ export async function deletePortfolio(portfolioName: string): Promise<{ error: s
 }
 
 export async function markRebalancingDone(): Promise<void> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) throw new Error('Nicht eingeloggt')
 
   const today = new Date().toISOString()

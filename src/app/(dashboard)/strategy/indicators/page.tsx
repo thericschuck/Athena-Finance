@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { Database } from '@/types/database'
 import { AddIndicatorDialog } from '@/components/strategy/indicator-form'
@@ -28,8 +28,7 @@ export default async function IndicatorsPage({
   const filterAuthor = params.author
   const onlyAllowed  = params.allowed === '1'
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
 
   const settings = await getSettings(user!.id)
   const defaultAssetClass = (settings.default_asset_class as string) ?? 'major'

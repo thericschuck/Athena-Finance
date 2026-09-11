@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 export type StrategyActionState = { error: string } | { success: true } | null
@@ -13,8 +13,7 @@ export async function createStrategy(
   _prev: StrategyActionState,
   formData: FormData
 ): Promise<StrategyActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const name      = (formData.get('name') as string)?.trim()
@@ -52,8 +51,7 @@ export async function updateStrategy(
   _prev: StrategyActionState,
   formData: FormData
 ): Promise<StrategyActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const id        = formData.get('id') as string
@@ -95,8 +93,7 @@ export async function updateStrategy(
 
 // ─── Delete ───────────────────────────────────────────────────────────────────
 export async function deleteStrategy(id: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { error } = await supabase
@@ -116,8 +113,7 @@ export async function toggleChecklistItem(
   field: string,
   value: boolean
 ): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { error } = await supabase

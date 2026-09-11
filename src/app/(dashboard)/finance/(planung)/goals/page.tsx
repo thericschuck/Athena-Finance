@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency, fmtDate } from '@/lib/format'
 import { Database } from '@/types/database'
@@ -91,8 +91,7 @@ const STATUS_ICON: Record<string, React.ReactNode> = {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default async function GoalsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
 
   const [{ data: goals }, settings] = await Promise.all([
     supabase

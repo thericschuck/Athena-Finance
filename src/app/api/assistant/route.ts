@@ -14,7 +14,7 @@ import {
   forwardAnthropicContainerIdFromLastStep,
   type AnthropicProviderOptions,
 } from '@ai-sdk/anthropic'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getAuthUser } from '@/lib/supabase/server'
 import { buildAthenaTools } from '@/lib/assistant/tools'
 import { buildAthenaSystemPrompt, TITLE_SYSTEM_PROMPT } from '@/lib/assistant/prompts'
 import { loadAthenaContext } from '@/lib/assistant/context'
@@ -69,10 +69,7 @@ function extractText(parts: UIMessage['parts']): string {
 
 export async function POST(request: NextRequest) {
   const startedAt = Date.now()
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return new Response('Unauthorized', { status: 401 })
 
   const body = (await request.json()) as {

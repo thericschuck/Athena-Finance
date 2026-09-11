@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import type {
   HeatmapDay, SankeyData, SankeyNodeDatum, SankeyLinkDatum,
   CashflowEvent, MonthlyComparison, CategoryDatum, MonthSeries, MonthTotals,
@@ -313,8 +313,7 @@ export default async function AnalysePage({
 }: {
   searchParams: Promise<{ period?: string; accounts?: string }>
 }) {
-  const [{ period: rawPeriod, accounts: rawAccounts }, supabase] = await Promise.all([searchParams, createClient()])
-  const { data: { user } } = await supabase.auth.getUser()
+  const [{ period: rawPeriod, accounts: rawAccounts }, { supabase, user }] = await Promise.all([searchParams, getAuthUser()])
   if (!user) return null
 
   const [{ data: accountRows }, settings] = await Promise.all([

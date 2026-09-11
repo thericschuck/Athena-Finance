@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 export type ComboActionState = { error: string } | { success: true } | null
@@ -29,8 +29,7 @@ export async function createCombo(
   _prev: ComboActionState,
   formData: FormData
 ): Promise<ComboActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const name        = (formData.get('name') as string)?.trim()
@@ -81,8 +80,7 @@ export async function updateCombo(
   _prev: ComboActionState,
   formData: FormData
 ): Promise<ComboActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const id        = formData.get('id') as string
@@ -131,8 +129,7 @@ export async function updateCombo(
 
 // ─── Delete ───────────────────────────────────────────────────────────────────
 export async function deleteCombo(id: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { error } = await supabase
@@ -152,8 +149,7 @@ export async function updateGuardStatus(
   passes: boolean,
   failures: string[]
 ): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { error } = await supabase

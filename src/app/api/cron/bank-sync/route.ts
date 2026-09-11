@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import {
   getFinTSErrorDetails, startSync, upsertBankTransactions, upsertDepotHoldings,
-  upsertBankBalances, isScaRequiredError, stateFromError,
+  upsertBankBalances, isScaRequiredError, stateFromError, applyLearnedCategoriesToBacklog,
 } from '@/lib/fints'
 import { buildLearnedCategoryMap } from '@/lib/fints/categorize'
 import { loadBankClientState, saveBankClientState, markScaRequired } from '@/lib/fints/state'
@@ -83,8 +83,10 @@ export async function GET(req: NextRequest) {
     const { imported, skipped } = await upsertBankTransactions(supabase, userId, result.transactions)
     const { synced: holdingsSynced } = await upsertDepotHoldings(supabase, userId, result.holdings)
     const { synced: balancesSynced } = await upsertBankBalances(supabase, userId, result.balances)
+    const { applied: backlogCategorized } = await applyLearnedCategoriesToBacklog(supabase, userId)
     return NextResponse.json({
       ok: true, imported, skipped, holdingsSynced, balancesSynced,
+      categorized: backlogCategorized,
       warnings: result.warnings,
       scaRequired: result.scaRequired,
     })

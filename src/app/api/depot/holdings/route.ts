@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 
 /**
  * GET /api/depot/holdings
@@ -8,8 +8,7 @@ import { createClient } from '@/lib/supabase/server'
  * as part of /api/bank/sync (same FinTS dialog, same login), which upserts here.
  */
 export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
   const { data, error } = await supabase

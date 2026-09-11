@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 export type AccountActionState = { error: string } | { success: true } | null
@@ -9,10 +9,7 @@ export async function createAccount(
   _prev: AccountActionState,
   formData: FormData
 ): Promise<AccountActionState> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
 
   if (!user) return { error: 'Nicht eingeloggt' }
 
@@ -44,8 +41,7 @@ export async function updateAccount(
   _prev: AccountActionState,
   formData: FormData
 ): Promise<AccountActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const id       = formData.get('id') as string
@@ -79,8 +75,7 @@ export async function updateAccount(
 }
 
 export async function deleteAccount(id: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { error } = await supabase

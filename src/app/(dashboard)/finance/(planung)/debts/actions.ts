@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 export type DebtActionState = { error: string } | { success: true } | null
@@ -10,10 +10,7 @@ export async function createDebt(
   _prev: DebtActionState,
   formData: FormData
 ): Promise<DebtActionState> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const name = (formData.get('name') as string)?.trim()
@@ -62,8 +59,7 @@ export async function updateDebt(
   _prev: DebtActionState,
   formData: FormData
 ): Promise<DebtActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const id             = formData.get('id') as string
@@ -108,8 +104,7 @@ export async function updateDebt(
 
 // ─── Delete a debt entry ──────────────────────────────────────────────────────
 export async function deleteDebt(id: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { error } = await supabase
@@ -128,10 +123,7 @@ export async function recordPayment(
   _prev: DebtActionState,
   formData: FormData
 ): Promise<DebtActionState> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const debtId = formData.get('debt_id') as string

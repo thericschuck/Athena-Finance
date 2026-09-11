@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { AddTransactionDialog, EditTransactionDialog, DeleteTransactionButton, TransactionCategorySelect } from '@/components/finance/transaction-form'
 import { TransactionFilters } from '@/components/finance/transaction-filters'
 import { ExportTransactionsButton } from '@/components/finance/transaction-csv'
@@ -85,10 +85,7 @@ function formatDate(dateStr: string, dateFormat: string) {
 }
 
 export default async function TransactionsPage({ searchParams }: PageProps) {
-  const [filters, supabase] = await Promise.all([searchParams, createClient()])
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const [filters, { supabase, user }] = await Promise.all([searchParams, getAuthUser()])
 
   // Load accounts + categories for dropdowns and filter bar
   const [{ data: accounts }, { data: categories }, settings] = await Promise.all([
@@ -242,7 +239,8 @@ function TransactionRow({ tx, accounts, categories, locale, dateFormat }: { tx: 
   const { sign, display, net } = formatAmount(tx.amount, tx.currency, tx.type, locale)
 
   const amountColor =
-    net > 0 ? 'text-success'
+    tx.type === 'transfer' ? 'text-muted-foreground'
+    : net > 0 ? 'text-success'
     : net < 0 ? 'text-danger'
     : 'text-foreground'
 

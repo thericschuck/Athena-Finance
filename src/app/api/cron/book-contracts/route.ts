@@ -1,165 +1,26 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { TRANSFER_TYPES } from '@/lib/finance/contract-constants'
-import type { Database } from '@/types/database'
+import { NextResponse } from 'next/server'
 
-// ─── Admin client (bypasses RLS) ──────────────────────────────────────────────
-function adminClient() {
-  return createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+// STILLGELEGT (2026-09-09).
+//
+// Diese Route war der erste von zwei Schreibern für Vertragsbuchungen: sie kam aus dem
+// "Auto Booking"-Commit vom 2026-03-09 und wurde nie in vercel.json eingetragen (dort steht
+// seit Aufräumarbeiten nur noch bank-sync/kraken-sync/monthly-report). Die produktive Version
+// ist die Supabase Edge Function `execute-contracts` (pg_cron Job 25, täglich 8 Uhr), die
+// dieselben Tabellen (`transactions`, `contract_executions`) schreibt.
+//
+// Die Route bleibt als sprechender 410 stehen statt gelöscht zu werden, für den Fall, dass im
+// Vercel-Dashboard noch ein eigener Cron auf sie zeigt (wie es beim alten `daily-snapshot` der
+// Fall war) — ein 404 wäre dort nicht von einem Deploy-Fehler zu unterscheiden.
+export async function GET() {
+  return NextResponse.json(
+    {
+      ok: false,
+      deprecated: true,
+      message:
+        'Diese Route ist stillgelegt. Vertragsbuchungen laufen über Supabase: ' +
+        'pg_cron "execute-contracts" (Job 25) → Edge Function execute-contracts. ' +
+        'Falls im Vercel-Dashboard noch ein Cron auf diese Route zeigt, bitte löschen.',
+    },
+    { status: 410 },
   )
-}
-
-// ─── Billing date generator ────────────────────────────────────────────────────
-function billingDatesInRange(
-  startDate: string,
-  frequency: string,
-  billingDay: number | null,
-  from: Date,
-  to: Date,
-): string[] {
-  const toISO = (d: Date) => d.toISOString().split('T')[0]
-  const clamp = (y: number, m: number, day: number) =>
-    new Date(y, m, Math.min(day, new Date(y, m + 1, 0).getDate()))
-
-  const start = new Date(startDate + 'T00:00:00')
-  const dates: string[] = []
-
-  const intervalDays: Record<string, number> = { weekly: 7, biweekly: 14 }
-  const intervalMonths: Record<string, number> = {
-    monthly: 1, quarterly: 3, biannual: 6, yearly: 12,
-  }
-
-  if (intervalDays[frequency]) {
-    const step = intervalDays[frequency]
-    let cur = new Date(start)
-    while (cur <= to) {
-      if (cur >= from) dates.push(toISO(cur))
-      cur = new Date(cur)
-      cur.setDate(cur.getDate() + step)
-    }
-  } else {
-    const step = intervalMonths[frequency] ?? 1
-    let cur = billingDay
-      ? clamp(start.getFullYear(), start.getMonth(), billingDay)
-      : new Date(start)
-
-    // Advance to first date >= start if billing_day moved it back
-    if (cur < start) cur = clamp(cur.getFullYear(), cur.getMonth() + step, billingDay ?? cur.getDate())
-
-    while (cur <= to) {
-      if (cur >= from) dates.push(toISO(cur))
-      const next = new Date(cur)
-      next.setMonth(next.getMonth() + step)
-      if (billingDay) {
-        const nd = clamp(next.getFullYear(), next.getMonth(), billingDay)
-        cur = nd
-      } else {
-        cur = next
-      }
-    }
-  }
-
-  return dates
-}
-
-// ─── Handler ──────────────────────────────────────────────────────────────────
-export async function GET(req: NextRequest) {
-  // Verify Vercel cron secret
-  const auth = req.headers.get('authorization')
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const supabase = adminClient()
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  // Look back up to 14 days to catch any missed runs
-  const lookback = new Date(today)
-  lookback.setDate(lookback.getDate() - 14)
-
-  // Load all active contracts
-  const { data: contracts, error: contractsErr } = await supabase
-    .from('contracts')
-    .select('*')
-    .eq('is_active', true)
-
-  if (contractsErr) {
-    return NextResponse.json({ error: contractsErr.message }, { status: 500 })
-  }
-
-  const contractResults = await Promise.all(
-    (contracts ?? []).map(async (contract) => {
-      if (!contract.account_id) return { booked: 0, skipped: 1 }
-      // In eine eigene Konstante gebunden statt weiter `contract.account_id`
-      // zu lesen: TS verliert die obige Narrowing-Prüfung, sobald sie über die
-      // Grenze der `datesToBook.map(async ...)`-Closure unten hinweg gelesen
-      // wird (dort gilt wieder der volle Property-Typ `string | null`) — eine
-      // separate `const` mit dem hier bereits engeren Typ bleibt dagegen non-null.
-      const accountId = contract.account_id
-
-      // Determine the "from" date: max(lookback, contract created_at)
-      const createdAt = new Date(contract.created_at)
-      createdAt.setHours(0, 0, 0, 0)
-      const from = createdAt > lookback ? createdAt : lookback
-
-      const dates = billingDatesInRange(
-        contract.start_date,
-        contract.frequency,
-        contract.billing_day,
-        from,
-        today,
-      )
-
-      if (dates.length === 0) return { booked: 0, skipped: 0 }
-
-      // Load existing transactions for this contract in the date range
-      const { data: existing } = await supabase
-        .from('transactions')
-        .select('date')
-        .eq('contract_id', contract.id)
-        .gte('date', dates[0])
-        .lte('date', dates[dates.length - 1])
-
-      const existingDates = new Set((existing ?? []).map(t => t.date))
-      const isTransfer = TRANSFER_TYPES.has(contract.type)
-      const datesToBook = dates.filter(date => !existingDates.has(date))
-
-      // Each date is a distinct, independent transaction for this contract.
-      await Promise.all(datesToBook.map(async (date) => {
-        const base = {
-          user_id:     contract.user_id,
-          account_id:  accountId,
-          amount:      contract.amount,
-          currency:    contract.currency,
-          date,
-          description: contract.name,
-          contract_id: contract.id,
-          category_id: contract.category_id,
-          is_recurring: true,
-          fx_rate:     1,
-          tags:        [] as string[],
-        }
-
-        if (isTransfer) {
-          await supabase.from('transactions').insert({
-            ...base,
-            type:        'transfer',
-            transfer_to: (contract as typeof contract & { to_account_id?: string | null }).to_account_id ?? null,
-          })
-        } else {
-          await supabase.from('transactions').insert({ ...base, type: 'expense' })
-        }
-      }))
-
-      return { booked: datesToBook.length, skipped: 0 }
-    })
-  )
-
-  const booked  = contractResults.reduce((sum, r) => sum + r.booked, 0)
-  const skipped = contractResults.reduce((sum, r) => sum + r.skipped, 0)
-
-  return NextResponse.json({ ok: true, booked, skipped })
 }

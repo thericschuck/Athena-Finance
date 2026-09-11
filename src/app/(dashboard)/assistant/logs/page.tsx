@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { cn } from '@/lib/utils'
 import { estimateCostUsd, formatUsd, type UsageLike } from '@/lib/assistant/cost'
 import { ClearLogsButton } from '@/components/assistant/ClearLogsButton'
@@ -56,10 +56,7 @@ export default async function AthenaLogsPage({
 }: {
   searchParams: Promise<{ level?: string }>
 }) {
-  const [{ level = 'all' }, supabase] = await Promise.all([searchParams, createClient()])
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const [{ level = 'all' }, { supabase, user }] = await Promise.all([searchParams, getAuthUser()])
   if (!user) return null
 
   let query = supabase

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { Database } from '@/types/database'
 import { TestsFilters } from '@/components/strategy/tests-filters'
@@ -25,8 +25,7 @@ export default async function TestsPage({
   const minPf  = params.min_pf  ? parseFloat(params.min_pf)  : null
   const minWr  = params.min_wr  ? parseFloat(params.min_wr)  : null
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
 
   const settings = await getSettings(user!.id)
   const defaultAssetClass = (settings.default_asset_class as string) ?? 'major'

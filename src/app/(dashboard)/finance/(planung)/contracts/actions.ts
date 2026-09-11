@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 export type ContractActionState = { error: string } | { success: true } | null
@@ -59,8 +59,7 @@ export async function createContract(
   _prev: ContractActionState,
   formData: FormData
 ): Promise<ContractActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const payload = buildPayload(formData, user.id)
@@ -78,8 +77,7 @@ export async function updateContract(
   _prev: ContractActionState,
   formData: FormData
 ): Promise<ContractActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const id = formData.get('id') as string
@@ -102,8 +100,7 @@ export async function updateContract(
 }
 
 export async function deleteContract(id: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { error } = await supabase

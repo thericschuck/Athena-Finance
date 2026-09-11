@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 export type IndicatorActionState = { error: string } | { success: true } | null
@@ -13,8 +13,7 @@ export async function createIndicator(
   _prev: IndicatorActionState,
   formData: FormData
 ): Promise<IndicatorActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const name   = (formData.get('name') as string)?.trim()
@@ -48,8 +47,7 @@ export async function updateIndicator(
   _prev: IndicatorActionState,
   formData: FormData
 ): Promise<IndicatorActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const id     = formData.get('id') as string
@@ -86,8 +84,7 @@ export async function updateIndicator(
 }
 
 export async function deleteIndicator(id: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { error } = await supabase
@@ -118,8 +115,7 @@ export async function createPerformance(
   _prev: PerfActionState,
   formData: FormData
 ): Promise<PerfActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const indicator_id = formData.get('indicator_id') as string
@@ -162,8 +158,7 @@ export async function updatePerformance(
   _prev: PerfActionState,
   formData: FormData
 ): Promise<PerfActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const id          = formData.get('id') as string
@@ -205,8 +200,7 @@ export async function updatePerformance(
 }
 
 export async function deletePerformance(id: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { error } = await supabase

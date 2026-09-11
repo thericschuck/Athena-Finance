@@ -47,11 +47,23 @@ export function SessionList({
         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Sessions
         </span>
-        <Button asChild size="icon-xs" variant="ghost" aria-label="Neue Session">
-          {/* Ohne `?s=` mountet die Seite einen frischen Chat mit neuer ID. */}
-          <Link href="/assistant">
-            <Plus className="size-3.5" />
-          </Link>
+        <Button
+          size="icon-xs"
+          variant="ghost"
+          aria-label="Neue Session"
+          onClick={() =>
+            // Die ID wird HIER erzeugt, nicht erst client-seitig in
+            // `erzeugeChat` — sonst bleibt `?s=` bei einem frischen Chat leer
+            // und ein zweiter Klick auf „+" navigiert auf dieselbe URL wie
+            // der erste. Next.js überspringt eine Navigation zu einer
+            // identischen URL, also passierte beim zweiten Klick gar nichts.
+            // Mit einer neuen UUID pro Klick ist jede „+"-Navigation ein Ziel,
+            // das es vorher nicht gab — und `key={activeId}` in page.tsx
+            // erzwingt zuverlässig einen frischen Chat.
+            router.push(`/assistant?s=${crypto.randomUUID()}`)
+          }
+        >
+          <Plus className="size-3.5" />
         </Button>
       </div>
 

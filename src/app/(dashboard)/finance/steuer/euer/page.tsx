@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { ladeSteuerdaten } from '@/lib/tax/laden'
 import { berechneEuer, type EuerZeileErgebnis } from '@/lib/tax/euer'
 import { AlertTriangle, Download } from 'lucide-react'
@@ -74,8 +74,7 @@ export default async function EuerPage({
 }: {
   searchParams: Promise<{ jahr?: string }>
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) redirect('/login')
 
   const { jahr: jahrParam } = await searchParams

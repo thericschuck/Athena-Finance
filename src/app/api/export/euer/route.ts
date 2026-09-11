@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { ladeSteuerdaten } from '@/lib/tax/laden'
 import { berechneEuer } from '@/lib/tax/euer'
 import { berechneSteuerposition } from '@/lib/tax/position'
@@ -27,8 +27,7 @@ function zeile(...felder: (string | number | null)[]): string {
 }
 
 export async function GET(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return new Response('Unauthorized', { status: 401 })
 
   const roh = Number(req.nextUrl.searchParams.get('jahr'))

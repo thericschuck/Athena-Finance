@@ -1,11 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { getStrategySignals, getPortfolioAllocations, getLastRebalancing } from '@/app/(dashboard)/crypto/actions'
 import { RebalancingCalculator } from '@/components/crypto/rebalancing-calculator'
 import type { AssetWithPrice } from '@/components/crypto/portfolio-overview'
 
 export default async function RebalancingPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   const userId = user!.id
 
   // Load assets + latest valuations

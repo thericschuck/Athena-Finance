@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { Database } from '@/types/database'
 import { EditContractDialog, DeleteContractButton } from '@/components/finance/contract-form'
 import { CONTRACT_TYPES, FREQUENCIES, TRANSFER_TYPES } from '@/lib/finance/contract-constants'
@@ -24,8 +24,7 @@ const FREQ_LABEL   = Object.fromEntries(FREQUENCIES.map(f => [f.value, f.label])
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default async function ContractDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const [{ id }, supabase] = await Promise.all([params, createClient()])
-  const { data: { user } } = await supabase.auth.getUser()
+  const [{ id }, { supabase, user }] = await Promise.all([params, getAuthUser()])
 
   const [
     { data: contract },

@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 export type TransactionActionState = { error: string } | { success: true } | null
@@ -9,10 +9,7 @@ export async function createTransaction(
   _prev: TransactionActionState,
   formData: FormData
 ): Promise<TransactionActionState> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
 
   if (!user) return { error: 'Nicht eingeloggt' }
 
@@ -55,8 +52,7 @@ export async function updateTransaction(
   _prev: TransactionActionState,
   formData: FormData
 ): Promise<TransactionActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const id        = formData.get('id') as string
@@ -109,8 +105,7 @@ export async function updateTransactionCategory(
   categoryId: string | null,
   source: 'manual' | 'bank_sync',
 ): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const table = source === 'bank_sync' ? 'bank_transactions' : 'transactions'
@@ -131,8 +126,7 @@ export async function updateTransactionCategory(
 }
 
 export async function deleteTransaction(id: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { error } = await supabase

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency, fmtNumber, fmtDate as fmtDateLib } from '@/lib/format'
 
@@ -351,8 +351,7 @@ export default async function HistoryPage({
   const from = page * PAGE_SIZE
   const to   = from + PAGE_SIZE - 1
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   const uid = user!.id
 
   const settings = await getSettings(uid)

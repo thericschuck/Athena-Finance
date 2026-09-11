@@ -1,13 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { MemoryManager, type MemoryRow } from '@/components/assistant/MemoryManager'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AthenaMemoryPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return null
 
   const { data } = await supabase

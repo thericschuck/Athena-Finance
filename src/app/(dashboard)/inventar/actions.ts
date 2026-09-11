@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { parseCsvAmount } from '@/lib/csv'
 import { vergisseBildUrl } from '@/lib/inventar/bildurls'
@@ -68,8 +68,7 @@ export async function createValuable(
   _prev: ValuableActionState,
   formData: FormData,
 ): Promise<ValuableActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const f = felder(formData)
@@ -126,8 +125,7 @@ export async function updateValuable(
   _prev: ValuableActionState,
   formData: FormData,
 ): Promise<ValuableActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const id = formData.get('id') as string
@@ -194,8 +192,7 @@ export async function addValuation(
   bewertetAm: string,
   notiz?: string,
 ): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { error } = await supabase.from('valuable_valuations').upsert(
@@ -233,8 +230,7 @@ export async function registerValuableImage(
   pfad: string,
   art: 'foto' | 'artwork' = 'foto',
 ): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
   if (!pfad.startsWith(`${user.id}/`)) return { error: 'Ungültiger Pfad' }
 
@@ -261,8 +257,7 @@ export async function registerValuableImage(
 
 /** Legt fest, welches Bild die Vitrine zeigt. */
 export async function setHauptbild(bildId: string, valuableId: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   // Erst alle zurücksetzen, dann eins setzen. Andersherum verletzt es den partiellen
@@ -287,8 +282,7 @@ export async function setHauptbild(bildId: string, valuableId: string): Promise<
 
 /** Entfernt ein einzelnes Bild samt Datei. */
 export async function deleteValuableImage(bildId: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { data: row } = await supabase
@@ -338,8 +332,7 @@ export async function deleteValuableImage(bildId: string): Promise<{ error?: str
 
 // ── Löschen ───────────────────────────────────────────────────────────────────
 export async function deleteValuable(id: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   // Dateien mitentfernen, sonst bleiben verwaiste Bilder im Bucket liegen. Die ZEILEN in

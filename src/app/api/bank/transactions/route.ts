@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 
 /**
  * GET /api/bank/transactions?iban=...&limit=100&offset=0&category=...&q=...
@@ -7,8 +7,7 @@ import { createClient } from '@/lib/supabase/server'
  * Returns stored bank transactions for the authenticated user.
  */
 export async function GET(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
   const { searchParams } = new URL(request.url)

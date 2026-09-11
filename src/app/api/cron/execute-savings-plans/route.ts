@@ -1,89 +1,31 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { NextResponse } from 'next/server'
 
-function adminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+// STILLGELEGT (2026-09-09).
+//
+// Diese Route war der erste von zwei Schreibern für Sparplan-Ausführungen: sie kam aus dem
+// "Auto Booking"-Commit vom 2026-03-09 und wurde nie in vercel.json eingetragen (dort steht
+// seit Aufräumarbeiten nur noch bank-sync/kraken-sync/monthly-report). Die produktive Version
+// ist die Supabase Edge Function `execute-savings-plans` (pg_cron Job 26, täglich 9 Uhr), die
+// dieselbe Tabelle (`depot_transactions`) schreibt.
+//
+// Beide Implementierungen trugen bis 2026-09-09 denselben Bug: sie schrieben `shares` explizit
+// mit, obwohl die Spalte inzwischen `GENERATED ALWAYS AS (amount_eur / price_per_share)` ist —
+// jeder Insert scheiterte seither an "cannot insert a non-DEFAULT value into column shares".
+// Der Fehler wurde nur in der Edge Function behoben, da diese die einzige noch laufende Kette ist.
+//
+// Die Route bleibt als sprechender 410 stehen statt gelöscht zu werden, für den Fall, dass im
+// Vercel-Dashboard noch ein eigener Cron auf sie zeigt (wie es beim alten `daily-snapshot` der
+// Fall war) — ein 404 wäre dort nicht von einem Deploy-Fehler zu unterscheiden.
+export async function GET() {
+  return NextResponse.json(
+    {
+      ok: false,
+      deprecated: true,
+      message:
+        'Diese Route ist stillgelegt. Sparplan-Ausführungen laufen über Supabase: ' +
+        'pg_cron "execute-savings-plans" (Job 26) → Edge Function execute-savings-plans. ' +
+        'Falls im Vercel-Dashboard noch ein Cron auf diese Route zeigt, bitte löschen.',
+    },
+    { status: 410 },
   )
-}
-
-export async function GET(req: NextRequest) {
-  const auth = req.headers.get('authorization')
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const supabase = adminClient()
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const todayStr    = today.toISOString().split('T')[0]
-  const todayDay    = today.getDate()
-  const monthPrefix = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
-
-  const { data: plans, error } = await supabase
-    .from('savings_plans')
-    .select('id, user_id, isin, fund_name, monthly_amount, execution_day, start_date')
-    .eq('is_active', true)
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  let executed = 0
-  let skipped  = 0
-  const log: string[] = []
-
-  for (const plan of plans ?? []) {
-    if (plan.start_date > todayStr)         { skipped++; continue }
-    if (plan.execution_day > todayDay)      { skipped++; continue }
-
-    // Bereits diesen Monat ausgeführt?
-    const { data: existing } = await supabase
-      .from('depot_transactions')
-      .select('id')
-      .eq('user_id', plan.user_id)
-      .eq('isin', plan.isin)
-      .eq('transaction_type', 'savings_plan')
-      .gte('transaction_date', `${monthPrefix}-01`)
-      .lt('transaction_date', `${monthPrefix}-32`)
-      .maybeSingle()
-
-    if (existing) { skipped++; continue }
-
-    // Preis aus Cache
-    const { data: cache } = await supabase
-      .from('fund_price_cache')
-      .select('price')
-      .eq('isin', plan.isin)
-      .maybeSingle()
-
-    if (!cache?.price) {
-      log.push(`${plan.fund_name}: kein Preis im Cache`)
-      skipped++
-      continue
-    }
-
-    const pricePerShare = Number(cache.price)
-    const shares        = plan.monthly_amount / pricePerShare
-
-    const { error: txErr } = await supabase.from('depot_transactions').insert({
-      user_id:          plan.user_id,
-      isin:             plan.isin,
-      fund_name:        plan.fund_name,
-      transaction_date: todayStr,
-      amount_eur:       plan.monthly_amount,
-      price_per_share:  pricePerShare,
-      shares,
-      transaction_type: 'savings_plan',
-      notes:            'Automatische Sparplan-Ausführung',
-    })
-
-    if (txErr) {
-      log.push(`${plan.fund_name}: ${txErr.message}`)
-    } else {
-      log.push(`${plan.fund_name}: €${plan.monthly_amount} @ €${pricePerShare} = ${shares.toFixed(4)} Anteile`)
-      executed++
-    }
-  }
-
-  return NextResponse.json({ ok: true, date: todayStr, executed, skipped, log })
 }

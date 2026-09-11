@@ -66,7 +66,7 @@ Deno.serve(async () => {
     const pricePerShare = Number(cache.price)
     const shares = plan.monthly_amount / pricePerShare
 
-    // Depot-Transaktion buchen
+    // Depot-Transaktion buchen (shares ist eine generierte Spalte, nicht mitschreiben)
     const { error: txErr } = await supabase.from('depot_transactions').insert({
       user_id: plan.user_id,
       isin: plan.isin,
@@ -74,7 +74,6 @@ Deno.serve(async () => {
       transaction_date: todayStr,
       amount_eur: plan.monthly_amount,
       price_per_share: pricePerShare,
-      shares,
       transaction_type: 'savings_plan',
       notes: 'Automatische Sparplan-Ausführung',
     })

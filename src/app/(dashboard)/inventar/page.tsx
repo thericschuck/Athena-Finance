@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency } from '@/lib/format'
 import { InventoryClient } from '@/components/inventar/InventoryClient'
@@ -18,8 +18,7 @@ import { signierteBildUrls } from '@/lib/inventar/bildurls'
 export const metadata = { title: 'Inventar' }
 
 export default async function InventarPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return null
 
   const [{ data: rows }, { data: bildRows }, settings] = await Promise.all([

@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 export type CategoryActionState = { error: string } | { success: true } | null
@@ -35,10 +35,7 @@ export async function createCategory(
   _prev: CategoryActionState,
   formData: FormData
 ): Promise<CategoryActionState> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const name = (formData.get('name') as string)?.trim()
@@ -69,10 +66,7 @@ export async function updateCategory(
   _prev: CategoryActionState,
   formData: FormData
 ): Promise<CategoryActionState> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const id = formData.get('id') as string
@@ -105,10 +99,7 @@ export async function updateCategory(
 }
 
 export async function deleteCategory(id: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   // Guard: block deletion if category has children

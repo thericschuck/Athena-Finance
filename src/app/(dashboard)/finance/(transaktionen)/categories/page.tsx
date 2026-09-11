@@ -1,5 +1,5 @@
 import React from 'react'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { Database } from '@/types/database'
 import {
   AddCategoryDialog,
@@ -51,10 +51,7 @@ const TYPE_CONFIG: Record<string, { label: string; classes: string }> = {
 }
 
 export default async function CategoriesPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
 
   const [{ data: categories }, settings, { data: euerRows }] = await Promise.all([
     supabase

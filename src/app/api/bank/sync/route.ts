@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import {
   getFinTSErrorDetails, startSync, upsertBankTransactions, upsertDepotHoldings,
   upsertBankBalances,
   isCloudRuntime, triggerCloudBankSync, scaFreeStartDate, stateFromError,
+  applyLearnedCategoriesToBacklog,
 } from '@/lib/fints'
 import { loadBankClientState, saveBankClientState } from '@/lib/fints/state'
 import { buildLearnedCategoryMap } from '@/lib/fints/categorize'
@@ -29,8 +30,7 @@ export const maxDuration = 300
  * by the user rather than the default it used to be.
  */
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
   // On Vercel there is no local Python venv to spawn — delegate to the sibling Vercel
@@ -112,8 +112,10 @@ export async function POST(request: Request) {
     // into account_balances for today, so this is what makes the freshly synced figure the
     // one the accounts page and the charts show.
     const { synced: balancesSynced } = await upsertBankBalances(supabase, user.id, result.balances)
+    const { applied: backlogCategorized } = await applyLearnedCategoriesToBacklog(supabase, user.id)
     return NextResponse.json({
-      imported, skipped, holdingsSynced, balancesSynced, warnings: result.warnings,
+      imported, skipped, holdingsSynced, balancesSynced,
+      categorized: backlogCategorized, warnings: result.warnings,
     })
 
   } catch (err) {

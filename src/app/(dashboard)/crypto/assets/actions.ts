@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import type { CoinEntry } from '@/lib/crypto/coin-registry'
 import type { Json } from '@/types/database'
 
@@ -8,8 +8,7 @@ const CATALOG_KEY = 'coin_catalog'
 
 // ─── Fetch user's custom coin catalog ─────────────────────────────────────────
 export async function getCoinCatalog(): Promise<CoinEntry[]> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return []
 
   const { data } = await supabase
@@ -25,8 +24,7 @@ export async function getCoinCatalog(): Promise<CoinEntry[]> {
 
 // ─── Add a coin to the catalog ────────────────────────────────────────────────
 export async function addCoinToCatalog(entry: CoinEntry): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const existing = await getCoinCatalog()
@@ -46,8 +44,7 @@ export async function addCoinToCatalog(entry: CoinEntry): Promise<{ error?: stri
 
 // ─── Remove a coin from the catalog ──────────────────────────────────────────
 export async function removeCoinFromCatalog(symbol: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const existing = await getCoinCatalog()

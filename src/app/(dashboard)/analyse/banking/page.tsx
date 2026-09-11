@@ -374,6 +374,7 @@ function BankAnalyse() {
         hasLoaded={loaded.transactions}
         onFilter={handleFilter}
         onUpdateCategory={updateCategory}
+        isInternalTransfer={isInternalTransfer}
       />
     </div>
   )

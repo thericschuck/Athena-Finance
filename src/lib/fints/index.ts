@@ -16,7 +16,7 @@
  * to a few minutes. There is no separate "enter TAN" step for decoupled methods.
  */
 
-import { suggestCategory, type LearnedCategoryMap } from './categorize'
+import { suggestCategory, buildLearnedCategoryMap, normalizeCounterpart, type LearnedCategoryMap } from './categorize'
 import {
   runSidecar,
   type SidecarAccount, type SidecarTransaction, type SidecarHolding, type SidecarBalance,
@@ -523,6 +523,57 @@ export async function upsertBankTransactions(
   const imported = (data as { id: string }[] | null)?.length ?? 0
   const skipped  = rows.length - imported + reconciled + deduped
   return { imported, skipped }
+}
+
+/**
+ * Sweeps existing bank_transactions with no category and fills in ONLY the ones where the
+ * counterparty is unambiguously learned from the user's own categorization history — never a
+ * keyword-rule guess. A learned match re-applies a choice the user already made for this exact
+ * counterparty, so it writes directly; a keyword-only suggestion still needs a human decision
+ * in the review panel (getSuggestCategories), because it is a guess, not a repetition.
+ *
+ * Called after every sync so the backlog shrinks on its own instead of piling up in the
+ * suggestions panel — see docs/athenas-takt.html.
+ */
+export async function applyLearnedCategoriesToBacklog(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  userId: string,
+): Promise<{ applied: number }> {
+  const { data: categorized } = await supabase
+    .from('bank_transactions')
+    .select('counterpart_name, category_id')
+    .eq('user_id', userId)
+    .not('category_id', 'is', null)
+
+  const learnedMap = buildLearnedCategoryMap(categorized ?? [])
+  if (learnedMap.size === 0) return { applied: 0 }
+
+  const { data: uncategorized } = await supabase
+    .from('bank_transactions')
+    .select('id, counterpart_name')
+    .eq('user_id', userId)
+    .is('category_id', null)
+    .not('counterpart_name', 'is', null)
+
+  const idsByCategory = new Map<string, string[]>()
+  for (const tx of (uncategorized ?? []) as { id: string; counterpart_name: string }[]) {
+    const categoryId = learnedMap.get(normalizeCounterpart(tx.counterpart_name))
+    if (!categoryId) continue
+    const ids = idsByCategory.get(categoryId) ?? []
+    ids.push(tx.id)
+    idsByCategory.set(categoryId, ids)
+  }
+
+  let applied = 0
+  for (const [categoryId, ids] of idsByCategory) {
+    const { error } = await supabase
+      .from('bank_transactions')
+      .update({ category_id: categoryId })
+      .in('id', ids)
+    if (!error) applied += ids.length
+  }
+  return { applied }
 }
 
 /**

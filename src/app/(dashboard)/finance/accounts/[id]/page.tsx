@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency, fmtDate } from '@/lib/format'
 import { notFound } from 'next/navigation'
@@ -91,13 +91,12 @@ interface PageProps {
 }
 
 export default async function AccountDetailPage({ params, searchParams }: PageProps) {
-  const [{ id }, sp, supabase] = await Promise.all([
-    params, searchParams, createClient(),
+  const [{ id }, sp, { supabase, user }] = await Promise.all([
+    params, searchParams, getAuthUser(),
   ])
   const { period: rawPeriod, q, cat, txtype, sort, month } = sp
   const period: Period = parsePeriod(rawPeriod)
   const cutoff = periodCutoff(period)
-  const { data: { user } } = await supabase.auth.getUser()
 
   const [{ data: account }, { data: accounts }, { data: categories }, { data: transactions }, balanceHistory, settings] = await Promise.all([
     supabase
@@ -466,8 +465,10 @@ function Metric({ label, value, className }: { label: string; value: string; cla
 
 function TransactionRow({ tx, accounts, categories, locale, dateFormat }: { tx: UnifiedRow; accounts: Account[]; categories: Category[]; locale: string; dateFormat: string }) {
   const { sign, display, net } = formatAmount(tx.amount, tx.currency, tx.type, locale)
+  const isTransfer = tx.type === 'transfer'
   const amountColor =
-    net > 0 ? 'text-success'
+    isTransfer ? 'text-muted-foreground'
+    : net > 0 ? 'text-success'
     : net < 0 ? 'text-danger'
     : 'text-foreground'
 
@@ -481,8 +482,15 @@ function TransactionRow({ tx, accounts, categories, locale, dateFormat }: { tx: 
         />
       </td>
       <td className="px-4 py-3 max-w-xs">
-        <span className="truncate block text-foreground">
-          {tx.merchant || tx.description || <span className="text-muted-foreground">—</span>}
+        <span className="flex items-center gap-1.5">
+          <span className="truncate text-foreground">
+            {tx.merchant || tx.description || <span className="text-muted-foreground">—</span>}
+          </span>
+          {isTransfer && (
+            <span className="inline-flex shrink-0 rounded-full px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+              Umbuchung
+            </span>
+          )}
         </span>
         {tx.merchant && tx.description && (
           <span className="text-xs text-muted-foreground truncate block">{tx.description}</span>

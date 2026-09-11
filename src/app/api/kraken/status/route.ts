@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 
 // GET /api/kraken/status?exchange=kraken|kraken_futures
 // Used by the Settings → Integrationen page to show whether a key is stored for the given
@@ -10,8 +10,7 @@ import { createClient } from '@/lib/supabase/server'
 // button; this endpoint used to duplicate that work just to answer "connected?" on every
 // settings-page mount, burning private-API rate limit for nothing.
 export async function GET(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
 
   if (!user) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })

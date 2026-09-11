@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { getBankScaStatus } from '@/lib/fints/state'
 
 /**
@@ -13,8 +13,7 @@ import { getBankScaStatus } from '@/lib/fints/state'
  * deshalb geht die Abfrage über diese Route und nicht direkt aus dem Client.
  */
 export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user } = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
   const banks = await getBankScaStatus(user.id)

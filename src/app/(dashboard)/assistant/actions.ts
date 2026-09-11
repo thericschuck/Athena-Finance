@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { runWriteAction, isWriteActionName } from '@/lib/assistant/actions'
 import {
   ATHENA_PERSONAS,
@@ -31,10 +31,7 @@ export type ActionState =
   | null
 
 async function requireUser() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return null
   return { supabase, user }
 }

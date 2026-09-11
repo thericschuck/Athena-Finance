@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 export type GoalActionState = { error: string } | { success: true } | null
@@ -10,8 +10,7 @@ export async function createGoal(
   _prev: GoalActionState,
   formData: FormData
 ): Promise<GoalActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const description = (formData.get('description') as string)?.trim()
@@ -48,8 +47,7 @@ export async function updateGoal(
   _prev: GoalActionState,
   formData: FormData
 ): Promise<GoalActionState> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const id = formData.get('id') as string
@@ -88,8 +86,7 @@ export async function updateGoal(
 
 // ─── Toggle status (bound action — called via form action bind) ───────────────
 export async function setGoalStatus(id: string, newStatus: string): Promise<void> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return
 
   await supabase
@@ -106,8 +103,7 @@ export async function addGoalPayment(
   goalId: string,
   amount: number
 ): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { data: goal, error: fetchErr } = await supabase
@@ -135,8 +131,7 @@ export async function addGoalPayment(
 
 // ─── Delete ───────────────────────────────────────────────────────────────────
 export async function deleteGoal(id: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const { error } = await supabase

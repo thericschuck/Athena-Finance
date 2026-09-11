@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Athenas Takt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,600&family=Libre+Franklin:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+  /* ── Tokens ── selbe Palette wie docs/athenas-augen.html, damit beide
+     Architektur-Notizen als ein Paar lesbar sind. Volle Hell-Palette auf
+     blankem :root, Dunkel nur als Token-Ueberschreibung. */
+  :root {
+    --ground:      #F6F5F1;
+    --surface:     #FFFFFF;
+    --surface-alt: #EFEEE7;
+    --ink:         #1B1D19;
+    --ink-soft:    #4A4D45;
+    --ink-mute:    #74776C;
+    --rule:        #E0DED5;
+    --rule-strong: #C9C6B9;
+    --gold:        #8A6A2F;
+    --gold-soft:   #B88F51;
+    --gold-wash:   #F1EADC;
+    --olive:       #55684A;
+    --olive-wash:  #E7ECE1;
+    --rust:        #9B4127;
+    --rust-wash:   #F6E7E1;
+    --amber:       #7A5A1E;
+    --amber-wash:  #F4EBD6;
+    --measure: 65ch;
+    --wide: 1000px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #14150F;
+      --surface:     #1B1D15;
+      --surface-alt: #22241B;
+      --ink:         #EDEBE0;
+      --ink-soft:    #C2C0B3;
+      --ink-mute:    #919384;
+      --rule:        #2C2E23;
+      --rule-strong: #414435;
+      --gold:        #CDA664;
+      --gold-soft:   #B88F51;
+      --gold-wash:   #241F13;
+      --olive:       #8CA277;
+      --olive-wash:  #1D2318;
+      --rust:        #D5836A;
+      --rust-wash:   #2A1A14;
+      --amber:       #D2B274;
+      --amber-wash:  #262014;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:      #14150F;
+    --surface:     #1B1D15;
+    --surface-alt: #22241B;
+    --ink:         #EDEBE0;
+    --ink-soft:    #C2C0B3;
+    --ink-mute:    #919384;
+    --rule:        #2C2E23;
+    --rule-strong: #414435;
+    --gold:        #CDA664;
+    --gold-soft:   #B88F51;
+    --gold-wash:   #241F13;
+    --olive:       #8CA277;
+    --olive-wash:  #1D2318;
+    --rust:        #D5836A;
+    --rust-wash:   #2A1A14;
+    --amber:       #D2B274;
+    --amber-wash:  #262014;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Libre Franklin", "Helvetica Neue", Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    padding: 0 24px 120px;
+  }
+
+  .page { max-width: var(--wide); margin: 0 auto; }
+
+  header.masthead {
+    padding: 96px 0 56px;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+  .eyebrow {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  h1 {
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-size: clamp(44px, 8vw, 78px);
+    line-height: 1.02;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    margin: 0;
+  }
+  .standfirst {
+    font-size: 20px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    max-width: 60ch;
+  }
+  .standfirst strong { color: var(--ink); font-weight: 600; }
+
+  .figures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-top: 8px;
+  }
+  .figure { background: var(--surface); padding: 18px 20px; }
+  .figure b {
+    display: block;
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-size: 34px;
+    font-weight: 400;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 8px;
+  }
+  .figure span { font-size: 13px; line-height: 1.4; color: var(--ink-mute); display: block; }
+  .figure.is-gap b  { color: var(--rust); }
+  .figure.is-live b { color: var(--olive); }
+
+  section { padding: 72px 0 0; }
+  .sec-head { display: flex; align-items: baseline; gap: 18px; margin-bottom: 8px; }
+  .numeral {
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-size: 15px;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    flex: 0 0 auto;
+    padding-top: 2px;
+  }
+  h2 {
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-weight: 400;
+    font-size: clamp(28px, 4vw, 40px);
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0;
+  }
+  .sec-sub { color: var(--ink-mute); font-size: 15px; margin: 0 0 32px 33px; max-width: 58ch; }
+  h3 {
+    font-family: "Libre Franklin", sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    margin: 40px 0 10px;
+  }
+  h3 .h3-mark {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    color: var(--gold);
+    margin-right: 10px;
+    font-weight: 400;
+  }
+  p { margin: 0 0 18px; max-width: var(--measure); }
+  p.wide { max-width: 78ch; }
+  a { color: var(--gold); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+  strong { font-weight: 600; }
+  code {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.86em;
+    background: var(--surface-alt);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 1px 5px;
+    white-space: nowrap;
+  }
+
+  ul.plain { margin: 0 0 20px; padding-left: 20px; max-width: var(--measure); }
+  ul.plain li { margin-bottom: 9px; }
+  ul.plain li::marker { color: var(--gold-soft); }
+
+  .scroller { overflow-x: auto; margin: 0 0 24px; border: 1px solid var(--rule); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 14.5px; }
+  thead th {
+    text-align: left;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    font-weight: 400;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rule-strong);
+    background: var(--surface-alt);
+    white-space: nowrap;
+  }
+  tbody td { padding: 13px 16px; border-bottom: 1px solid var(--rule); vertical-align: top; line-height: 1.45; }
+  tbody tr:last-child td { border-bottom: none; }
+  td.area { font-weight: 500; white-space: nowrap; }
+  td.area em {
+    display: block;
+    font-family: "JetBrains Mono", monospace;
+    font-style: normal;
+    font-size: 11.5px;
+    color: var(--ink-mute);
+    margin-top: 3px;
+  }
+  td.wide { color: var(--ink-soft); min-width: 260px; }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 4px 9px 4px 8px; border-radius: 2px; white-space: nowrap;
+  }
+  .chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+  .chip.live  { color: var(--olive); background: var(--olive-wash); }
+  .chip.live::before  { background: var(--olive); }
+  .chip.entscheidung { color: var(--amber); background: var(--amber-wash); }
+  .chip.entscheidung::before { background: var(--amber); border-radius: 50% 50% 0 0; transform: rotate(-45deg); }
+  .chip.fehlt { color: var(--rust); background: var(--rust-wash); }
+  .chip.fehlt::before { background: transparent; border: 1.5px solid var(--rust); }
+
+  .layers { display: grid; gap: 14px; margin: 8px 0 28px; max-width: 900px; }
+  .layer { display: grid; grid-template-columns: 108px 1fr; border: 1px solid var(--rule-strong); background: var(--surface); }
+  .layer-tag {
+    background: var(--surface-alt);
+    border-right: 1px solid var(--rule-strong);
+    padding: 16px 14px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-mute);
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .layer-tag b {
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-size: 22px; font-weight: 400; letter-spacing: 0;
+    color: var(--gold); line-height: 1.1;
+  }
+  .layer-body { padding: 16px 18px; }
+  .layer-body h4 { margin: 0 0 6px; font-size: 16px; font-weight: 600; }
+  .layer-body p { margin: 0; font-size: 14.5px; color: var(--ink-soft); max-width: 64ch; }
+  .layer-body .cost { margin-top: 10px; font-family: "JetBrains Mono", monospace; font-size: 11.5px; color: var(--gold); }
+  .layer.is-built { border-color: var(--olive); }
+  .layer.is-built .layer-tag { background: var(--olive-wash); border-right-color: var(--olive); }
+  .layer.is-built .layer-tag b { color: var(--olive); }
+  .layer.is-missing { border-color: var(--rust); border-style: dashed; }
+  .layer.is-missing .layer-tag { background: var(--rust-wash); border-right-color: var(--rust); }
+  .layer.is-missing .layer-tag b { color: var(--rust); }
+
+  .rule-box { border-left: 2px solid var(--gold); padding: 4px 0 4px 22px; margin: 28px 0; max-width: 62ch; }
+  .rule-box p { font-family: "Bodoni Moda", Georgia, serif; font-size: 22px; line-height: 1.4; margin: 0; }
+  .rule-box cite {
+    display: block; margin-top: 10px;
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-style: normal;
+  }
+
+  .aside {
+    background: var(--surface-alt);
+    border: 1px solid var(--rule);
+    padding: 16px 20px;
+    margin: 0 0 26px;
+    max-width: 780px;
+    font-size: 14.5px;
+    color: var(--ink-soft);
+  }
+  .aside .aside-label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-mute); margin-bottom: 8px;
+  }
+  .aside p { margin: 0 0 8px; font-size: 14.5px; }
+  .aside p:last-child { margin-bottom: 0; }
+
+  .duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin: 0 0 12px; }
+  .card { border: 1px solid var(--rule); background: var(--surface); padding: 22px; }
+  .card h4 { margin: 0 0 10px; font-size: 15.5px; font-weight: 600; display: flex; align-items: center; gap: 9px; }
+  .card h4 .dot { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; }
+  .card.a h4 .dot { background: var(--gold); }
+  .card.b h4 .dot { background: var(--olive); }
+  .card p { font-size: 14.5px; margin: 0 0 10px; color: var(--ink-soft); max-width: none; }
+  .card ul { margin: 0; padding-left: 18px; font-size: 14.5px; color: var(--ink-soft); }
+  .card ul li { margin-bottom: 7px; }
+  .card .verdict {
+    margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--rule);
+    font-size: 13px; font-family: "JetBrains Mono", monospace; color: var(--ink-mute);
+  }
+
+  .steps { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); max-width: 900px; }
+  .step { background: var(--surface); display: grid; grid-template-columns: 56px 1fr auto; gap: 18px; padding: 18px 20px; align-items: start; }
+  .step-n {
+    font-family: "Bodoni Moda", Georgia, serif; font-size: 26px; line-height: 1;
+    color: var(--gold); font-variant-numeric: tabular-nums;
+  }
+  .step-body h4 { margin: 0 0 5px; font-size: 15.5px; font-weight: 600; }
+  .step-body p { margin: 0; font-size: 14.5px; color: var(--ink-soft); max-width: 62ch; }
+  .step-meta {
+    font-family: "JetBrains Mono", monospace; font-size: 10.5px;
+    letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-mute);
+    text-align: right; white-space: nowrap; padding-top: 4px;
+  }
+
+  footer {
+    margin-top: 88px; padding-top: 28px; border-top: 1px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-mute); max-width: 66ch;
+  }
+  footer a { color: var(--ink-mute); }
+
+  @media (max-width: 620px) {
+    body { padding: 0 18px 80px; font-size: 16px; }
+    header.masthead { padding: 60px 0 40px; }
+    .step { grid-template-columns: 40px 1fr; }
+    .step-meta { grid-column: 2; text-align: left; padding-top: 8px; }
+    .layer { grid-template-columns: 1fr; }
+    .layer-tag { border-right: none; border-bottom: 1px solid var(--rule-strong); flex-direction: row; align-items: center; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <div class="eyebrow">athena-finance · Architektur-Notiz · 9. September 2026</div>
+    <h1>Athenas Takt</h1>
+    <p class="standfirst">
+      Athena antwortet nur, wenn sie gefragt wird. Drei Automations-Muster laufen in der
+      App schon <strong>ohne sie</strong> — die Schicht, die fehlt, ist die, die urteilt statt
+      nur rechnet: der Lauf, den niemand anstößt.
+    </p>
+    <div class="figures">
+      <div class="figure is-live"><b>4</b><span>pg_cron-Jobs, die direkt eine Edge Function anstoßen</span></div>
+      <div class="figure is-live"><b>2</b><span>Vercel-Crons, die eine Next.js-Route mit App-Code anstoßen</span></div>
+      <div class="figure is-gap"><b>0</b><span>Läufe des LLM-Agenten ohne Chat-Nachricht</span></div>
+      <div class="figure"><b>3</b><span>Roadmap-Punkte, die genau diese vierte Schicht brauchen</span></div>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-head"><span class="numeral">I</span><h2>Was heute schon läuft</h2></div>
+    <p class="sec-sub">Drei Automations-Muster, alle im Betrieb — nur eines davon kann urteilen statt rechnen.</p>
+
+    <div class="layers">
+      <div class="layer is-built">
+        <div class="layer-tag"><b>DB</b>pg_cron</div>
+        <div class="layer-body">
+          <h4>pg_cron → Edge Function → SQL-Funktion</h4>
+          <p>Läuft komplett in Postgres, kein App-Code, keine Anthropic-API. Job&nbsp;1287
+            (<code>59 23 * * *</code>) ruft <code>daily-snapshot</code> → <code>fn_take_snapshot</code>.
+            Jobs&nbsp;24–26 rufen <code>fetch-fund-price</code>, <code>execute-contracts</code>,
+            <code>execute-savings-plans</code>. Ein fünfter Job und ein doppelter Fondspreis-Job
+            wurden am 6.9. entfernt (<code>20260906160000_cron_aufraeumen_und_rls.sql</code>).</p>
+          <div class="cost">güstigste Schicht — läuft, auch wenn Vercel/Next.js down ist</div>
+        </div>
+      </div>
+      <div class="layer is-built">
+        <div class="layer-tag"><b>App</b>Vercel Cron</div>
+        <div class="layer-body">
+          <h4>Vercel Cron → Next.js-Route (<code>CRON_SECRET</code>) → Admin-Client</h4>
+          <p>Braucht TypeScript-Geschäftslogik, die es nur im Next.js-Code gibt — Kraken-Sync
+            (<code>/api/cron/kraken-sync</code>, alle 6&nbsp;h) und Bank-Sync
+            (<code>/api/bank-sync</code>, Python-Sidecar, alle 6&nbsp;h). Beides deterministisch,
+            kein LLM, <code>maxDuration</code> 120–300&nbsp;s.</p>
+          <div class="cost">gleicher App-Code wie der manuelle Button, kein Duplikat</div>
+        </div>
+      </div>
+      <div class="layer is-built">
+        <div class="layer-tag"><b>Chat</b>Athena</div>
+        <div class="layer-body">
+          <h4>Chat-Nachricht → <code>/api/assistant/route.ts</code> → Athena (LLM-Agent)</h4>
+          <p>Die einzige Schicht, die <strong>urteilt</strong>: <code>atlas.ts</code> (Karte),
+            <code>tools.ts</code> (Lesewerkzeuge), <code>actions.ts</code> (Schreibvorschläge),
+            <code>prompts.ts</code> (Persona). Läuft ausschließlich, wenn Eric eine Nachricht schickt —
+            Opus&nbsp;5, Effort „hoch", bis zu 24 Werkzeugschritte.</p>
+          <div class="cost">nichts davon läuft je ohne ein Klick vorher</div>
+        </div>
+      </div>
+      <div class="layer is-missing">
+        <div class="layer-tag"><b>?</b>fehlt</div>
+        <div class="layer-body">
+          <h4>Vercel Cron → Next.js-Route → derselbe Agent-Kern, fester Systemauftrag statt Chat</h4>
+          <p>Kein neues Framework — dieselbe Route-Familie wie Kraken- und Bank-Sync, derselbe
+            <code>CRON_SECRET</code>, derselbe Agent-Kern aus Schicht „Chat". Der einzige Unterschied:
+            der Auftrag steht fest im Code statt in Erics Nachricht.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="aside">
+      <div class="aside-label">Randnotiz — vermutlich toter Code</div>
+      <p><code>/api/cron/execute-savings-plans</code> und <code>/api/cron/book-contracts</code>
+        existieren im Next.js-Code, stehen aber in keinem <code>crons</code>-Eintrag der
+        <code>vercel.json</code> — beide Aufgaben laufen inzwischen über die pg_cron-Jobs&nbsp;25/26
+        gegen die gleichnamigen Edge Functions. Vermutlich dieselbe Ablösung wie bei
+        <code>/api/cron/daily-snapshot</code> (heute 410), nur noch nicht stillgelegt. Vor dem
+        Löschen kurz prüfen, ob eine der beiden Routen doch noch manuell aufgerufen wird.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="numeral">II</span><h2>Warum kein make.com</h2></div>
+    <p class="sec-sub">Die Frage war Teil der Ausgangslage — kurz beantwortet, weil sie die restliche Notiz rahmt.</p>
+
+    <div class="duo">
+      <div class="card b">
+        <h4><span class="dot"></span>Eigenbau auf Schicht DB/App</h4>
+        <ul>
+          <li>Bleibt im Supabase-Sicherheitsmodell (RLS) — Bankdaten verlassen nie eure eigene Infra</li>
+          <li>Nutzt denselben Werkzeuggürtel und dieselbe Bestätigungspflicht wie der Chat, keine zweite Regel-Welt</li>
+          <li>Kostenlos, kein weiterer Vendor-Account, kein zweites Auth-Modell zu pflegen</li>
+        </ul>
+      </div>
+      <div class="card a">
+        <h4><span class="dot"></span>make.com</h4>
+        <ul>
+          <li>Kein visuelles Dashboard/Retry-UI in der App — Logging existiert bereits (<code>assistant/logger.ts</code>, <code>cost.ts</code>)</li>
+          <li>Vorgefertigte Konnektoren bringen nichts: Supabase, Kraken und FinTS sind schon in TypeScript angebunden</li>
+          <li>Eine dritte Stelle, an der Finanzdaten durchlaufen — zusätzliche Angriffsfläche ohne Gegenwert</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:4px">Kurz: make.com wäre sinnvoll, wenn Konnektoren oder ein No-Code-Editor fehlten. Beides ist hier nicht der Fall — die vierte Schicht ist eine neue Route, keine neue Plattform.</p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="numeral">III</span><h2>Die Entscheidung, die nur Eric treffen kann</h2></div>
+    <p class="sec-sub">Bestätigungspflicht bei autonomen Vorschlägen — der einzige Punkt, an dem Sicherheit gegen Autonomie steht.</p>
+
+    <p><code>createInsight</code> ist heute ein <strong>WRITE_ACTION</strong> wie <code>createContract</code>:
+      jeder Vorschlag landet in <code>ai_pending_actions</code> und wird erst durch einen Klick wirksam.
+      Läuft Athena künftig nachts von selbst, stellt sich dieselbe Frage neu — für einen Vorgang,
+      der kein Geld bewegt und jederzeit über <code>dismissInsight</code> (kein DELETE, nur
+      <code>dismissed_at</code>) wieder verschwindet.</p>
+
+    <div class="duo">
+      <div class="card a">
+        <h4><span class="dot"></span>A — bestätigungspflichtig bleiben</h4>
+        <p>Der automatische Lauf schlägt vor wie der Chat auch — der Hinweis landet erst nach
+          einem Klick auf dem Dashboard.</p>
+        <ul>
+          <li>Keine neue Ausnahme von der Regel aus dem Write-Confirmation-Entscheid vom 30.8.</li>
+          <li>Dieselbe Verteidigung gegen Prompt-Injection aus einem Bank-Freitextfeld greift auch hier — ein Lauf, der stündlich Bankdaten liest, ist eher Ziel als ein manuell gestarteter Chat</li>
+        </ul>
+        <div class="verdict">„die App bereitet vor" statt „die App arbeitet für dich"</div>
+      </div>
+      <div class="card b">
+        <h4><span class="dot"></span>B — dritte Ausnahme neben ai_memories/ai_knowledge</h4>
+        <p><code>createInsight</code> schreibt bei automatischen Läufen direkt, wie Athenas eigene
+          Notizen es heute schon tun.</p>
+        <ul>
+          <li>Ein Insight bewegt kein Geld und legt keinen Vertrag an — die Begründung der Bestätigungspflicht („echte Finanzdaten") trifft nicht direkt zu</li>
+          <li>Morgens steht wirklich etwas Neues da, statt zehn Vorschläge, die erst noch weggeklickt werden müssen</li>
+        </ul>
+        <div class="verdict">Titel/Text bleiben ungefiltert sichtbar, nur <code>untrust()</code>-markiert — kein Blick vorher</div>
+      </div>
+    </div>
+
+    <div class="rule-box">
+      <p>Tendenz: B, aber eng geschnitten — nur <code>createInsight</code>, nicht die anderen
+        WRITE_ACTIONS, und nur für automatisierte Läufe, nie für den Chat.</p>
+      <cite>Vorschlag, keine Festlegung</cite>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="numeral">IV</span><h2>Kleinere Fragen, gleiche Reihenfolge</h2></div>
+    <p class="sec-sub">Jede hat eine Tendenz, keine ist mit den anderen im Paket verhandelt.</p>
+
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Frage</th><th>Tendenz</th><th>Warum</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="area">Kadenz je Feature</td>
+            <td>An Ereignisse hängen, nicht an feste Uhrzeiten</td>
+            <td class="wide">Insights direkt nach dem nächtlichen Snapshot (23:59&nbsp;UTC — ohnehin
+              schon Trigger-Punkt); Auto-Erkennung wiederkehrender Zahlungen direkt nach jedem
+              Bank-Sync, am selben Hebel wie <code>trg_snapshot_after_bank_sync</code>; der
+              Steuerreport braucht keinen täglichen Lauf, eher on-demand oder monatlich.</td>
+          </tr>
+          <tr>
+            <td class="area">Modell/Kosten für geplante Läufe</td>
+            <td>Eigener, niedrigerer Effort als der Chat-Default</td>
+            <td class="wide"><code>DEFAULT_ATHENA_SETTINGS</code> ist auf Opus&nbsp;5 / „hoch" / 24
+              Schritte für interaktive Analyse eingestellt — dieselbe Tiefe jede Nacht ungefragt
+              zu fahren, ist ein anderes Kostenprofil als ein Klick am Abend.</td>
+          </tr>
+          <tr>
+            <td class="area">Wo Reports landen</td>
+            <td>Eigene Tabelle, keine neue Storage-Pipeline</td>
+            <td class="wide">Solange ein Report aus Zahlen besteht, die schon in der DB liegen
+              (<code>steuer_engine</code>, <code>euer_und_belege</code>), reicht strukturierte
+              Ablage wie bei <code>insights</code> — ein PDF ist ein Rendering-Schritt obendrauf,
+              keine Voraussetzung.</td>
+          </tr>
+          <tr>
+            <td class="area">Idempotenz</td>
+            <td>Existenz-Check vor Insert, wie bereits gelöst</td>
+            <td class="wide"><code>book-contracts</code> und <code>execute-savings-plans</code>
+              prüfen schon vor jedem Schreiben, ob der Tag bereits gebucht ist — dasselbe Muster
+              verhindert doppelte Hinweise bei zwei sich überlappenden Läufen.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="numeral">V</span><h2>Vorgeschlagene Reihenfolge</h2></div>
+    <p class="sec-sub">Erst die Schicht, die alle drei Features teilen — dann das Feature mit der kleinsten Fläche zuerst.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">01</div>
+        <div class="step-body">
+          <h4>Headless-Runner bauen</h4>
+          <p>Eine Route wie <code>/api/cron/athena-review</code>, gleiche Absicherung wie
+            Kraken-/Bank-Sync, ruft denselben Agent-Kern mit festem Systemauftrag statt
+            Chat-Nachricht auf. Trägt allein noch keinen fachlichen Wert — aber jedes der
+            drei Features unten baut darauf.</p>
+        </div>
+        <div class="step-meta">Fundament</div>
+      </div>
+      <div class="step">
+        <div class="step-n">02</div>
+        <div class="step-body">
+          <h4>Roadmap #7 — Reminder-Feed statt Insight-Friedhof</h4>
+          <p>Kleinste Fläche, testet die Entscheidung aus Abschnitt III direkt: alte Insights
+            archivieren, neue nur vorschlagen, wo <code>getInsights</code> vorher noch nichts
+            Vergleichbares zeigt.</p>
+        </div>
+        <div class="step-meta">nutzt 01</div>
+      </div>
+      <div class="step">
+        <div class="step-n">03</div>
+        <div class="step-body">
+          <h4>Roadmap #4 — automatische Vertrags-Erkennung</h4>
+          <p>Trigger direkt an den Bank-Sync hängen statt an einen eigenen Zeitplan. Dedupe
+            gegen bestehende Verträge nutzt denselben Vorher-Check, den Athena im Chat schon
+            für <code>createContract</code> macht.</p>
+        </div>
+        <div class="step-meta">nutzt 01</div>
+      </div>
+      <div class="step">
+        <div class="step-n">04</div>
+        <div class="step-body">
+          <h4>Roadmap #1 — Jahres-/Steuerreport-Generator</h4>
+          <p>Nutzt dieselbe Runner-Infrastruktur, aber eher on-demand (Button) mit optionalem
+            monatlichem Cron als täglicher Lauf — ein Report muss nicht jeden Tag neu entstehen.</p>
+        </div>
+        <div class="step-meta">nutzt 01</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Bezug: <a href="https://claude.ai/code/artifact/ca9d86c2-52f6-467b-a4d1-f0e7f7ab5a8c">Athenas Augen</a>
+    (Werkzeuggürtel &amp; Karte) und die Roadmap-Liste vom 2.9.2026 (Punkte 1, 4, 7). Die
+    Bestätigungspflicht selbst geht auf den Ausbau-Entscheid vom 30.8.2026 zurück. Lokal liegt
+    diese Notiz unter <code>docs/athenas-takt.html</code>.
+  </footer>
+
+</div>
+</body>
+</html>
