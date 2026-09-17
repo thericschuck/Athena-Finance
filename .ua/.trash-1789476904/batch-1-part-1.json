@@ -1,0 +1,1752 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/app/(dashboard)/inventar/actions.ts",
+   "type": "file",
+   "name": "actions.ts",
+   "filePath": "src/app/(dashboard)/inventar/actions.ts",
+   "summary": "Server actions for the Inventar (physical valuables) feature: create/update/delete valuables, record valuations, and manage uploaded images (register, promote to main image, delete) via Supabase.",
+   "tags": [
+    "server-action",
+    "crud",
+    "inventar",
+    "supabase",
+    "media"
+   ],
+   "complexity": "complex",
+   "languageNotes": "Next.js Server Actions (\"use server\") with small FormData-parsing helpers (text/zahl/schalter) shared across create and update."
+  },
+  {
+   "id": "function:src/app/(dashboard)/inventar/actions.ts:felder",
+   "type": "function",
+   "name": "felder",
+   "filePath": "src/app/(dashboard)/inventar/actions.ts",
+   "lineRange": [
+    42,
+    64
+   ],
+   "summary": "Parses and validates raw FormData for a valuable into a typed field object shared by createValuable and updateValuable.",
+   "tags": [
+    "utility",
+    "validation",
+    "form-parsing"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/inventar/actions.ts:createValuable",
+   "type": "function",
+   "name": "createValuable",
+   "filePath": "src/app/(dashboard)/inventar/actions.ts",
+   "lineRange": [
+    67,
+    121
+   ],
+   "summary": "Server action that creates a new valuable and its initial purchase valuation in Supabase for the authenticated user.",
+   "tags": [
+    "server-action",
+    "crud",
+    "create"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/inventar/actions.ts:updateValuable",
+   "type": "function",
+   "name": "updateValuable",
+   "filePath": "src/app/(dashboard)/inventar/actions.ts",
+   "lineRange": [
+    124,
+    186
+   ],
+   "summary": "Server action that updates a valuable's fields, recalculates the active valuation, and revalidates the inventory page.",
+   "tags": [
+    "server-action",
+    "crud",
+    "update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/inventar/actions.ts:addValuation",
+   "type": "function",
+   "name": "addValuation",
+   "filePath": "src/app/(dashboard)/inventar/actions.ts",
+   "lineRange": [
+    189,
+    213
+   ],
+   "summary": "Server action that records a new worth estimate (valuation) for an existing valuable.",
+   "tags": [
+    "server-action",
+    "valuation"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/inventar/actions.ts:registerValuableImage",
+   "type": "function",
+   "name": "registerValuableImage",
+   "filePath": "src/app/(dashboard)/inventar/actions.ts",
+   "lineRange": [
+    228,
+    256
+   ],
+   "summary": "Server action that registers an uploaded image (photo, receipt, or generated artwork) for a valuable, enforcing a per-item image limit.",
+   "tags": [
+    "server-action",
+    "media",
+    "upload"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/inventar/actions.ts:setHauptbild",
+   "type": "function",
+   "name": "setHauptbild",
+   "filePath": "src/app/(dashboard)/inventar/actions.ts",
+   "lineRange": [
+    259,
+    281
+   ],
+   "summary": "Server action that marks one image as the main display image for a valuable.",
+   "tags": [
+    "server-action",
+    "media"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/inventar/actions.ts:deleteValuableImage",
+   "type": "function",
+   "name": "deleteValuableImage",
+   "filePath": "src/app/(dashboard)/inventar/actions.ts",
+   "lineRange": [
+    284,
+    331
+   ],
+   "summary": "Server action that deletes an image from storage and the database, promoting another image to main if the deleted one was primary.",
+   "tags": [
+    "server-action",
+    "media",
+    "delete"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/inventar/actions.ts:deleteValuable",
+   "type": "function",
+   "name": "deleteValuable",
+   "filePath": "src/app/(dashboard)/inventar/actions.ts",
+   "lineRange": [
+    334,
+    364
+   ],
+   "summary": "Server action that deletes a valuable together with all of its stored image files.",
+   "tags": [
+    "server-action",
+    "delete",
+    "cascade"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/app/(dashboard)/inventar/page.tsx",
+   "type": "file",
+   "name": "page.tsx",
+   "filePath": "src/app/(dashboard)/inventar/page.tsx",
+   "summary": "Server Component for the Inventar (physical assets) dashboard page: loads the user's valuables and images, signs image URLs, computes portfolio totals/returns, and renders the inventory client view.",
+   "tags": [
+    "page",
+    "server-component",
+    "inventar",
+    "supabase"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/inventar/page.tsx:InventarPage",
+   "type": "function",
+   "name": "InventarPage",
+   "filePath": "src/app/(dashboard)/inventar/page.tsx",
+   "lineRange": [
+    20,
+    160
+   ],
+   "summary": "Default-exported page component that fetches valuables and images for the current user, signs image URLs, computes total value and return metrics, and passes everything to InventoryClient.",
+   "tags": [
+    "entry-point",
+    "data-fetching",
+    "server-component"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/app/(dashboard)/inventar/page.tsx:Kennzahl",
+   "type": "function",
+   "name": "Kennzahl",
+   "filePath": "src/app/(dashboard)/inventar/page.tsx",
+   "lineRange": [
+    162,
+    177
+   ],
+   "summary": "Small presentational component rendering a labeled key metric (value + optional hint) in the page header.",
+   "tags": [
+    "component",
+    "presentational"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/app/(dashboard)/strategy/indicators/actions.ts",
+   "type": "file",
+   "name": "actions.ts",
+   "filePath": "src/app/(dashboard)/strategy/indicators/actions.ts",
+   "summary": "Server actions for the trading Strategy/Indicators feature: CRUD for indicators and their backtest performance records in Supabase.",
+   "tags": [
+    "server-action",
+    "crud",
+    "strategy",
+    "supabase"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/app/(dashboard)/strategy/indicators/actions.ts:createIndicator",
+   "type": "function",
+   "name": "createIndicator",
+   "filePath": "src/app/(dashboard)/strategy/indicators/actions.ts",
+   "lineRange": [
+    12,
+    44
+   ],
+   "summary": "Server action that creates a new trading indicator record for the authenticated user.",
+   "tags": [
+    "server-action",
+    "crud",
+    "create"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/strategy/indicators/actions.ts:updateIndicator",
+   "type": "function",
+   "name": "updateIndicator",
+   "filePath": "src/app/(dashboard)/strategy/indicators/actions.ts",
+   "lineRange": [
+    46,
+    84
+   ],
+   "summary": "Server action that updates an existing indicator (name, author, type, forbidden status, notes, code).",
+   "tags": [
+    "server-action",
+    "crud",
+    "update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/strategy/indicators/actions.ts:deleteIndicator",
+   "type": "function",
+   "name": "deleteIndicator",
+   "filePath": "src/app/(dashboard)/strategy/indicators/actions.ts",
+   "lineRange": [
+    86,
+    99
+   ],
+   "summary": "Server action that deletes an indicator owned by the current user.",
+   "tags": [
+    "server-action",
+    "delete"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/strategy/indicators/actions.ts:parseOptFloat",
+   "type": "function",
+   "name": "parseOptFloat",
+   "filePath": "src/app/(dashboard)/strategy/indicators/actions.ts",
+   "lineRange": [
+    102,
+    107
+   ],
+   "summary": "Parses an optional numeric field from FormData, returning null on empty/invalid input.",
+   "tags": [
+    "utility",
+    "form-parsing"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/strategy/indicators/actions.ts:parseOptDate",
+   "type": "function",
+   "name": "parseOptDate",
+   "filePath": "src/app/(dashboard)/strategy/indicators/actions.ts",
+   "lineRange": [
+    109,
+    112
+   ],
+   "summary": "Parses an optional date field from FormData, returning null when blank.",
+   "tags": [
+    "utility",
+    "form-parsing"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/strategy/indicators/actions.ts:createPerformance",
+   "type": "function",
+   "name": "createPerformance",
+   "filePath": "src/app/(dashboard)/strategy/indicators/actions.ts",
+   "lineRange": [
+    114,
+    155
+   ],
+   "summary": "Server action that creates a backtest performance record (win rate, Sharpe/Sortino, drawdown, etc.) for an indicator.",
+   "tags": [
+    "server-action",
+    "crud",
+    "create"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/strategy/indicators/actions.ts:updatePerformance",
+   "type": "function",
+   "name": "updatePerformance",
+   "filePath": "src/app/(dashboard)/strategy/indicators/actions.ts",
+   "lineRange": [
+    157,
+    200
+   ],
+   "summary": "Server action that updates an existing backtest performance record.",
+   "tags": [
+    "server-action",
+    "crud",
+    "update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/strategy/indicators/actions.ts:deletePerformance",
+   "type": "function",
+   "name": "deletePerformance",
+   "filePath": "src/app/(dashboard)/strategy/indicators/actions.ts",
+   "lineRange": [
+    202,
+    214
+   ],
+   "summary": "Server action that deletes a backtest performance record.",
+   "tags": [
+    "server-action",
+    "delete"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/components/assistant/AthenaSettingsForm.tsx",
+   "type": "file",
+   "name": "AthenaSettingsForm.tsx",
+   "filePath": "src/components/assistant/AthenaSettingsForm.tsx",
+   "summary": "Client form for configuring the Athena AI assistant's persona, model, reasoning effort, and custom persona text/toggles, saved via a server action.",
+   "tags": [
+    "component",
+    "form",
+    "assistant",
+    "settings"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/assistant/AthenaSettingsForm.tsx:ToggleField",
+   "type": "function",
+   "name": "ToggleField",
+   "filePath": "src/components/assistant/AthenaSettingsForm.tsx",
+   "lineRange": [
+    32,
+    62
+   ],
+   "summary": "Reusable labeled toggle/checkbox field with its own local checked state, used for Athena behavior switches.",
+   "tags": [
+    "component",
+    "form-field"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/assistant/AthenaSettingsForm.tsx:AthenaSettingsForm",
+   "type": "function",
+   "name": "AthenaSettingsForm",
+   "filePath": "src/components/assistant/AthenaSettingsForm.tsx",
+   "lineRange": [
+    64,
+    345
+   ],
+   "summary": "Exported client component rendering the full Athena settings form (persona picker, model/effort selects, persona text editor, toggles) and submitting changes via saveAthenaSettings.",
+   "tags": [
+    "component",
+    "form",
+    "assistant"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/components/assistant/KnowledgeManager.tsx",
+   "type": "file",
+   "name": "KnowledgeManager.tsx",
+   "filePath": "src/components/assistant/KnowledgeManager.tsx",
+   "summary": "Client component for managing Athena's knowledge base entries: create/edit/pin/delete entries with tag support, calling the assistant server actions.",
+   "tags": [
+    "component",
+    "assistant",
+    "knowledge-base",
+    "crud"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/assistant/KnowledgeManager.tsx:KnowledgeManager",
+   "type": "function",
+   "name": "KnowledgeManager",
+   "filePath": "src/components/assistant/KnowledgeManager.tsx",
+   "lineRange": [
+    28,
+    228
+   ],
+   "summary": "Exported client component listing knowledge entries and providing create/edit/pin/delete flows via server actions, with tag display and expandable entries.",
+   "tags": [
+    "component",
+    "crud",
+    "assistant"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/components/assistant/MemoryManager.tsx",
+   "type": "file",
+   "name": "MemoryManager.tsx",
+   "filePath": "src/components/assistant/MemoryManager.tsx",
+   "summary": "Client component for managing Athena's persistent memory entries grouped by category, supporting create/edit/delete via server actions.",
+   "tags": [
+    "component",
+    "assistant",
+    "memory",
+    "crud"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/assistant/MemoryManager.tsx:MemoryManager",
+   "type": "function",
+   "name": "MemoryManager",
+   "filePath": "src/components/assistant/MemoryManager.tsx",
+   "lineRange": [
+    35,
+    208
+   ],
+   "summary": "Exported client component listing memory entries by category and providing create/edit/delete flows via upsertMemory/deleteMemory server actions.",
+   "tags": [
+    "component",
+    "crud",
+    "assistant"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/components/crypto/asset-form.tsx",
+   "type": "file",
+   "name": "asset-form.tsx",
+   "filePath": "src/components/crypto/asset-form.tsx",
+   "summary": "Client form components for creating, editing, and deleting crypto portfolio assets (coin, amount, portfolio) via server actions.",
+   "tags": [
+    "component",
+    "form",
+    "crypto",
+    "crud"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/crypto/asset-form.tsx:AssetFields",
+   "type": "function",
+   "name": "AssetFields",
+   "filePath": "src/components/crypto/asset-form.tsx",
+   "lineRange": [
+    28,
+    190
+   ],
+   "summary": "Shared form fields for a crypto asset (coin combobox, amount, portfolio) reused by create and edit dialogs.",
+   "tags": [
+    "component",
+    "form-field"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/crypto/asset-form.tsx:AssetDialog",
+   "type": "function",
+   "name": "AssetDialog",
+   "filePath": "src/components/crypto/asset-form.tsx",
+   "lineRange": [
+    193,
+    265
+   ],
+   "summary": "Shared dialog wrapper handling open state and form submission for creating or editing a crypto asset.",
+   "tags": [
+    "component",
+    "dialog"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/crypto/asset-form.tsx:AssetFormDialog",
+   "type": "function",
+   "name": "AssetFormDialog",
+   "filePath": "src/components/crypto/asset-form.tsx",
+   "lineRange": [
+    270,
+    290
+   ],
+   "summary": "Exported dialog for adding a new crypto asset to a portfolio.",
+   "tags": [
+    "component",
+    "dialog",
+    "create"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/crypto/asset-form.tsx:DeleteAssetButton",
+   "type": "function",
+   "name": "DeleteAssetButton",
+   "filePath": "src/components/crypto/asset-form.tsx",
+   "lineRange": [
+    301,
+    341
+   ],
+   "summary": "Exported button + confirmation dialog that deletes a crypto asset via the deleteAsset server action.",
+   "tags": [
+    "component",
+    "delete"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/finance/account-form.tsx",
+   "type": "file",
+   "name": "account-form.tsx",
+   "filePath": "src/components/finance/account-form.tsx",
+   "summary": "Client form components for creating, editing, and deleting finance accounts (type, currency, balance) via server actions.",
+   "tags": [
+    "component",
+    "form",
+    "finance",
+    "crud"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/finance/account-form.tsx:AccountFields",
+   "type": "function",
+   "name": "AccountFields",
+   "filePath": "src/components/finance/account-form.tsx",
+   "lineRange": [
+    51,
+    144
+   ],
+   "summary": "Shared form fields for an account (name, type, currency, opening balance) reused by add and edit dialogs.",
+   "tags": [
+    "component",
+    "form-field"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/finance/account-form.tsx:AccountDialog",
+   "type": "function",
+   "name": "AccountDialog",
+   "filePath": "src/components/finance/account-form.tsx",
+   "lineRange": [
+    147,
+    206
+   ],
+   "summary": "Shared dialog wrapper handling create/edit submission for an account via server actions.",
+   "tags": [
+    "component",
+    "dialog"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/finance/account-form.tsx:DeleteAccountButton",
+   "type": "function",
+   "name": "DeleteAccountButton",
+   "filePath": "src/components/finance/account-form.tsx",
+   "lineRange": [
+    233,
+    274
+   ],
+   "summary": "Exported button + confirmation dialog that deletes an account via the deleteAccount server action.",
+   "tags": [
+    "component",
+    "delete"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/finance/category-form.tsx",
+   "type": "file",
+   "name": "category-form.tsx",
+   "filePath": "src/components/finance/category-form.tsx",
+   "summary": "Client form dialogs for creating, editing, and deleting transaction categories, including parent category, tax role, and EÜR line assignment.",
+   "tags": [
+    "component",
+    "form",
+    "finance",
+    "crud",
+    "tax"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/finance/category-form.tsx:CategoryFormFields",
+   "type": "function",
+   "name": "CategoryFormFields",
+   "filePath": "src/components/finance/category-form.tsx",
+   "lineRange": [
+    71,
+    248
+   ],
+   "summary": "Shared form fields for a category (type, parent category, tax role, EÜR line) reused by add and edit dialogs.",
+   "tags": [
+    "component",
+    "form-field",
+    "tax"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/finance/category-form.tsx:AddCategoryDialog",
+   "type": "function",
+   "name": "AddCategoryDialog",
+   "filePath": "src/components/finance/category-form.tsx",
+   "lineRange": [
+    253,
+    336
+   ],
+   "summary": "Exported dialog for creating a new transaction category via the createCategory server action.",
+   "tags": [
+    "component",
+    "dialog",
+    "create"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/finance/category-form.tsx:EditCategoryDialog",
+   "type": "function",
+   "name": "EditCategoryDialog",
+   "filePath": "src/components/finance/category-form.tsx",
+   "lineRange": [
+    341,
+    427
+   ],
+   "summary": "Exported dialog for editing an existing category via the updateCategory server action.",
+   "tags": [
+    "component",
+    "dialog",
+    "update"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/finance/category-form.tsx:DeleteCategoryButton",
+   "type": "function",
+   "name": "DeleteCategoryButton",
+   "filePath": "src/components/finance/category-form.tsx",
+   "lineRange": [
+    432,
+    477
+   ],
+   "summary": "Exported button + confirmation dialog that deletes a category via the deleteCategory server action.",
+   "tags": [
+    "component",
+    "delete"
+   ],
+   "complexity": "moderate"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/app/(dashboard)/inventar/actions.ts",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:felder",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/actions.ts",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:createValuable",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/actions.ts",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:updateValuable",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/actions.ts",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:addValuation",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/actions.ts",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:registerValuableImage",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/actions.ts",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:setHauptbild",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/actions.ts",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:deleteValuableImage",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/actions.ts",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:deleteValuable",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/actions.ts",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:createValuable",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/actions.ts",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:updateValuable",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/actions.ts",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:addValuation",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/actions.ts",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:registerValuableImage",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/actions.ts",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:setHauptbild",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/actions.ts",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:deleteValuableImage",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/actions.ts",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:deleteValuable",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/inventar/actions.ts:createValuable",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:felder",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/inventar/actions.ts:updateValuable",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:felder",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/inventar/actions.ts:deleteValuableImage",
+   "target": "function:src/lib/inventar/bildurls.ts:vergisseBildUrl",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/inventar/actions.ts:createValuable",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/app/(dashboard)/inventar/actions.ts:updateValuable",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/app/(dashboard)/inventar/actions.ts:addValuation",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/app/(dashboard)/inventar/actions.ts:registerValuableImage",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/app/(dashboard)/inventar/actions.ts:setHauptbild",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/app/(dashboard)/inventar/actions.ts:deleteValuableImage",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/app/(dashboard)/inventar/actions.ts:deleteValuable",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/actions.ts",
+   "target": "file:src/lib/csv.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/actions.ts",
+   "target": "file:src/lib/inventar/bildurls.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/actions.ts",
+   "target": "file:src/lib/supabase/server.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/page.tsx",
+   "target": "function:src/app/(dashboard)/inventar/page.tsx:InventarPage",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/page.tsx",
+   "target": "function:src/app/(dashboard)/inventar/page.tsx:Kennzahl",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/page.tsx",
+   "target": "function:src/app/(dashboard)/inventar/page.tsx:InventarPage",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/inventar/page.tsx:InventarPage",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/app/(dashboard)/inventar/page.tsx:InventarPage",
+   "target": "function:src/lib/settings.ts:getSettings",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/app/(dashboard)/inventar/page.tsx:InventarPage",
+   "target": "function:src/lib/inventar/bildurls.ts:signierteBildUrls",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/inventar/page.tsx:InventarPage",
+   "target": "function:src/lib/valuables.ts:gesamtwert",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/inventar/page.tsx:InventarPage",
+   "target": "function:src/lib/format.ts:fmtCurrency",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/page.tsx",
+   "target": "file:src/components/inventar/InventoryClient.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/page.tsx",
+   "target": "file:src/lib/format.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/page.tsx",
+   "target": "file:src/lib/inventar/bildurls.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/page.tsx",
+   "target": "file:src/lib/settings.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/page.tsx",
+   "target": "file:src/lib/supabase/server.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/inventar/page.tsx",
+   "target": "file:src/lib/valuables.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/strategy/indicators/actions.ts",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:createIndicator",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/app/(dashboard)/strategy/indicators/actions.ts",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:updateIndicator",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/app/(dashboard)/strategy/indicators/actions.ts",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:deleteIndicator",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/app/(dashboard)/strategy/indicators/actions.ts",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:parseOptFloat",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/app/(dashboard)/strategy/indicators/actions.ts",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:parseOptDate",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/app/(dashboard)/strategy/indicators/actions.ts",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:createPerformance",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/app/(dashboard)/strategy/indicators/actions.ts",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:updatePerformance",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/app/(dashboard)/strategy/indicators/actions.ts",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:deletePerformance",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/app/(dashboard)/strategy/indicators/actions.ts",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:createIndicator",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/strategy/indicators/actions.ts",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:updateIndicator",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/strategy/indicators/actions.ts",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:deleteIndicator",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/strategy/indicators/actions.ts",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:createPerformance",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/strategy/indicators/actions.ts",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:updatePerformance",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/strategy/indicators/actions.ts",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:deletePerformance",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/strategy/indicators/actions.ts:createIndicator",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/app/(dashboard)/strategy/indicators/actions.ts:updateIndicator",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/app/(dashboard)/strategy/indicators/actions.ts:deleteIndicator",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/app/(dashboard)/strategy/indicators/actions.ts:createPerformance",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/app/(dashboard)/strategy/indicators/actions.ts:updatePerformance",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/app/(dashboard)/strategy/indicators/actions.ts:deletePerformance",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/app/(dashboard)/strategy/indicators/actions.ts:createPerformance",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:parseOptFloat",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/app/(dashboard)/strategy/indicators/actions.ts:createPerformance",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:parseOptDate",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/app/(dashboard)/strategy/indicators/actions.ts:updatePerformance",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:parseOptFloat",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/app/(dashboard)/strategy/indicators/actions.ts:updatePerformance",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:parseOptDate",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/strategy/indicators/actions.ts",
+   "target": "file:src/lib/supabase/server.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+   "target": "function:src/components/assistant/AthenaSettingsForm.tsx:ToggleField",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+   "target": "function:src/components/assistant/AthenaSettingsForm.tsx:AthenaSettingsForm",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+   "target": "function:src/components/assistant/AthenaSettingsForm.tsx:AthenaSettingsForm",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/assistant/AthenaSettingsForm.tsx:AthenaSettingsForm",
+   "target": "function:src/app/(dashboard)/assistant/actions.ts:saveAthenaSettings",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+   "target": "file:src/app/(dashboard)/assistant/actions.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+   "target": "file:src/components/ui/button.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+   "target": "file:src/components/ui/checkbox.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+   "target": "file:src/components/ui/input.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+   "target": "file:src/components/ui/label.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+   "target": "file:src/components/ui/textarea.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+   "target": "file:src/lib/assistant/settings.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+   "target": "file:src/lib/utils.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/assistant/KnowledgeManager.tsx",
+   "target": "function:src/components/assistant/KnowledgeManager.tsx:KnowledgeManager",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/assistant/KnowledgeManager.tsx",
+   "target": "function:src/components/assistant/KnowledgeManager.tsx:KnowledgeManager",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/assistant/KnowledgeManager.tsx:KnowledgeManager",
+   "target": "function:src/app/(dashboard)/assistant/actions.ts:saveKnowledgeEntry",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/assistant/KnowledgeManager.tsx:KnowledgeManager",
+   "target": "function:src/app/(dashboard)/assistant/actions.ts:deleteKnowledgeEntry",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/assistant/KnowledgeManager.tsx:KnowledgeManager",
+   "target": "function:src/app/(dashboard)/assistant/actions.ts:toggleKnowledgePin",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/assistant/KnowledgeManager.tsx",
+   "target": "file:src/app/(dashboard)/assistant/actions.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/assistant/KnowledgeManager.tsx",
+   "target": "file:src/components/ui/button.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/assistant/KnowledgeManager.tsx",
+   "target": "file:src/components/ui/confirm-dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/assistant/KnowledgeManager.tsx",
+   "target": "file:src/components/ui/input.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/assistant/KnowledgeManager.tsx",
+   "target": "file:src/components/ui/label.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/assistant/KnowledgeManager.tsx",
+   "target": "file:src/components/ui/textarea.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/assistant/MemoryManager.tsx",
+   "target": "function:src/components/assistant/MemoryManager.tsx:MemoryManager",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/assistant/MemoryManager.tsx",
+   "target": "function:src/components/assistant/MemoryManager.tsx:MemoryManager",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/assistant/MemoryManager.tsx:MemoryManager",
+   "target": "function:src/app/(dashboard)/assistant/actions.ts:upsertMemory",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/assistant/MemoryManager.tsx:MemoryManager",
+   "target": "function:src/app/(dashboard)/assistant/actions.ts:deleteMemory",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/assistant/MemoryManager.tsx",
+   "target": "file:src/app/(dashboard)/assistant/actions.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/assistant/MemoryManager.tsx",
+   "target": "file:src/components/ui/button.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/assistant/MemoryManager.tsx",
+   "target": "file:src/components/ui/input.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/assistant/MemoryManager.tsx",
+   "target": "file:src/components/ui/label.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/assistant/MemoryManager.tsx",
+   "target": "file:src/components/ui/textarea.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/assistant/MemoryManager.tsx",
+   "target": "file:src/lib/utils.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/crypto/asset-form.tsx",
+   "target": "function:src/components/crypto/asset-form.tsx:AssetFields",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/crypto/asset-form.tsx",
+   "target": "function:src/components/crypto/asset-form.tsx:AssetDialog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/crypto/asset-form.tsx",
+   "target": "function:src/components/crypto/asset-form.tsx:AssetFormDialog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/crypto/asset-form.tsx",
+   "target": "function:src/components/crypto/asset-form.tsx:DeleteAssetButton",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/crypto/asset-form.tsx",
+   "target": "function:src/components/crypto/asset-form.tsx:AssetFormDialog",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/crypto/asset-form.tsx",
+   "target": "function:src/components/crypto/asset-form.tsx:DeleteAssetButton",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/crypto/asset-form.tsx:AssetDialog",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:createAsset",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/components/crypto/asset-form.tsx:AssetDialog",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:updateAsset",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/components/crypto/asset-form.tsx:DeleteAssetButton",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:deleteAsset",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/crypto/asset-form.tsx",
+   "target": "file:src/app/(dashboard)/crypto/actions.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/crypto/asset-form.tsx",
+   "target": "file:src/components/crypto/coin-combobox.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/crypto/asset-form.tsx",
+   "target": "file:src/components/ui/alert-dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/crypto/asset-form.tsx",
+   "target": "file:src/components/ui/button.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/crypto/asset-form.tsx",
+   "target": "file:src/components/ui/dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/crypto/asset-form.tsx",
+   "target": "file:src/components/ui/input.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/crypto/asset-form.tsx",
+   "target": "file:src/components/ui/label.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/crypto/asset-form.tsx",
+   "target": "file:src/lib/crypto/coin-registry.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/crypto/asset-form.tsx",
+   "target": "file:src/lib/crypto/coingecko.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/crypto/asset-form.tsx",
+   "target": "file:src/types/database.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/account-form.tsx",
+   "target": "function:src/components/finance/account-form.tsx:AccountFields",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/account-form.tsx",
+   "target": "function:src/components/finance/account-form.tsx:AccountDialog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/account-form.tsx",
+   "target": "function:src/components/finance/account-form.tsx:DeleteAccountButton",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/account-form.tsx",
+   "target": "function:src/components/finance/account-form.tsx:DeleteAccountButton",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/finance/account-form.tsx:AccountDialog",
+   "target": "function:src/app/(dashboard)/finance/accounts/actions.ts:createAccount",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/components/finance/account-form.tsx:AccountDialog",
+   "target": "function:src/app/(dashboard)/finance/accounts/actions.ts:updateAccount",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/components/finance/account-form.tsx:DeleteAccountButton",
+   "target": "function:src/app/(dashboard)/finance/accounts/actions.ts:deleteAccount",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/finance/account-form.tsx",
+   "target": "file:src/app/(dashboard)/finance/accounts/actions.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/account-form.tsx",
+   "target": "file:src/components/ui/alert-dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/account-form.tsx",
+   "target": "file:src/components/ui/button.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/account-form.tsx",
+   "target": "file:src/components/ui/dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/account-form.tsx",
+   "target": "file:src/components/ui/input.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/account-form.tsx",
+   "target": "file:src/components/ui/label.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/account-form.tsx",
+   "target": "file:src/components/ui/select.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/account-form.tsx",
+   "target": "file:src/types/database.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/category-form.tsx",
+   "target": "function:src/components/finance/category-form.tsx:CategoryFormFields",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/category-form.tsx",
+   "target": "function:src/components/finance/category-form.tsx:AddCategoryDialog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/category-form.tsx",
+   "target": "function:src/components/finance/category-form.tsx:EditCategoryDialog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/category-form.tsx",
+   "target": "function:src/components/finance/category-form.tsx:DeleteCategoryButton",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/category-form.tsx",
+   "target": "function:src/components/finance/category-form.tsx:AddCategoryDialog",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/finance/category-form.tsx",
+   "target": "function:src/components/finance/category-form.tsx:EditCategoryDialog",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/finance/category-form.tsx",
+   "target": "function:src/components/finance/category-form.tsx:DeleteCategoryButton",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/finance/category-form.tsx:AddCategoryDialog",
+   "target": "function:src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts:createCategory",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/finance/category-form.tsx:EditCategoryDialog",
+   "target": "function:src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts:updateCategory",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/finance/category-form.tsx:DeleteCategoryButton",
+   "target": "function:src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts:deleteCategory",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/finance/category-form.tsx",
+   "target": "file:src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/category-form.tsx",
+   "target": "file:src/components/ui/alert-dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/category-form.tsx",
+   "target": "file:src/components/ui/button.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/category-form.tsx",
+   "target": "file:src/components/ui/dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/category-form.tsx",
+   "target": "file:src/components/ui/input.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/category-form.tsx",
+   "target": "file:src/components/ui/label.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/category-form.tsx",
+   "target": "file:src/components/ui/select.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/category-form.tsx",
+   "target": "file:src/types/database.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/app/(dashboard)/inventar/actions.ts:felder",
+   "target": "function:src/lib/csv.ts:parseCsvAmount",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.6
+  }
+ ]
+}

@@ -19,6 +19,7 @@ import { Logo } from '@/components/ui/logo'
 import { signOut } from '@/app/login/actions'
 import { useSettings } from '@/components/providers/settings-context'
 import { MeanderFrieze } from '@/components/landing/olive-vines'
+import { PrivacyToggle } from '@/components/layout/privacy-toggle'
 
 type NavChild = {
   href:   string
@@ -141,6 +142,7 @@ export function Sidebar({ email, displayName, avatarUrl, mobileOpen = false, onM
           <Logo size={24} priority />
           <span className="text-sm font-semibold text-sidebar-foreground tracking-tight truncate">Athena Finance</span>
         </div>
+        <PrivacyToggle />
         <button
           className="md:hidden rounded-md p-1.5 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
           onClick={onMobileClose}

@@ -1,0 +1,1789 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/components/finance/contract-form.tsx",
+   "type": "file",
+   "name": "contract-form.tsx",
+   "filePath": "src/components/finance/contract-form.tsx",
+   "summary": "Client form dialogs for creating, editing, and deleting recurring contracts (subscriptions, transfers) with frequency, account, and category selection.",
+   "tags": [
+    "component",
+    "form",
+    "finance",
+    "crud",
+    "contracts"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/finance/contract-form.tsx:ContractFields",
+   "type": "function",
+   "name": "ContractFields",
+   "filePath": "src/components/finance/contract-form.tsx",
+   "lineRange": [
+    31,
+    202
+   ],
+   "summary": "Shared form fields for a contract (type, frequency, currency, source/target account, category) reused by add and edit dialogs.",
+   "tags": [
+    "component",
+    "form-field"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/finance/contract-form.tsx:ContractDialog",
+   "type": "function",
+   "name": "ContractDialog",
+   "filePath": "src/components/finance/contract-form.tsx",
+   "lineRange": [
+    205,
+    288
+   ],
+   "summary": "Shared dialog wrapper handling create/edit submission for a contract via server actions.",
+   "tags": [
+    "component",
+    "dialog"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/finance/contract-form.tsx:DeleteContractButton",
+   "type": "function",
+   "name": "DeleteContractButton",
+   "filePath": "src/components/finance/contract-form.tsx",
+   "lineRange": [
+    309,
+    349
+   ],
+   "summary": "Exported button + confirmation dialog that deletes a contract via the deleteContract server action.",
+   "tags": [
+    "component",
+    "delete"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/finance/debt-payment-form.tsx",
+   "type": "file",
+   "name": "debt-payment-form.tsx",
+   "filePath": "src/components/finance/debt-payment-form.tsx",
+   "summary": "Client form dialogs for managing debts: create/edit/delete a debt, record a payment against it, and settle it fully.",
+   "tags": [
+    "component",
+    "form",
+    "finance",
+    "crud",
+    "debt"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/finance/debt-payment-form.tsx:AddDebtDialog",
+   "type": "function",
+   "name": "AddDebtDialog",
+   "filePath": "src/components/finance/debt-payment-form.tsx",
+   "lineRange": [
+    53,
+    230
+   ],
+   "summary": "Exported dialog for creating a new debt (creditor, amount, interest, schedule) via the createDebt server action.",
+   "tags": [
+    "component",
+    "dialog",
+    "create"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/finance/debt-payment-form.tsx:EditDebtDialog",
+   "type": "function",
+   "name": "EditDebtDialog",
+   "filePath": "src/components/finance/debt-payment-form.tsx",
+   "lineRange": [
+    235,
+    341
+   ],
+   "summary": "Exported dialog for editing an existing debt via the updateDebt server action.",
+   "tags": [
+    "component",
+    "dialog",
+    "update"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/finance/debt-payment-form.tsx:DeleteDebtButton",
+   "type": "function",
+   "name": "DeleteDebtButton",
+   "filePath": "src/components/finance/debt-payment-form.tsx",
+   "lineRange": [
+    346,
+    383
+   ],
+   "summary": "Exported button + confirmation dialog that deletes a debt via the deleteDebt server action.",
+   "tags": [
+    "component",
+    "delete"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/finance/debt-payment-form.tsx:DebtPaymentDialog",
+   "type": "function",
+   "name": "DebtPaymentDialog",
+   "filePath": "src/components/finance/debt-payment-form.tsx",
+   "lineRange": [
+    388,
+    486
+   ],
+   "summary": "Exported dialog for recording a payment against a debt via the recordPayment server action.",
+   "tags": [
+    "component",
+    "dialog",
+    "payment"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/finance/debt-payment-form.tsx:SettleDebtButton",
+   "type": "function",
+   "name": "SettleDebtButton",
+   "filePath": "src/components/finance/debt-payment-form.tsx",
+   "lineRange": [
+    492,
+    538
+   ],
+   "summary": "Exported button + confirmation dialog that fully settles a debt in one payment.",
+   "tags": [
+    "component",
+    "payment"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/finance/goal-form.tsx",
+   "type": "file",
+   "name": "goal-form.tsx",
+   "filePath": "src/components/finance/goal-form.tsx",
+   "summary": "Client form dialogs for savings goals: create/edit/delete a goal and record a payment toward it.",
+   "tags": [
+    "component",
+    "form",
+    "finance",
+    "crud",
+    "goals"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/finance/goal-form.tsx:GoalFields",
+   "type": "function",
+   "name": "GoalFields",
+   "filePath": "src/components/finance/goal-form.tsx",
+   "lineRange": [
+    35,
+    134
+   ],
+   "summary": "Shared form fields for a savings goal (name, target amount, priority, deadline) reused by add and edit dialogs.",
+   "tags": [
+    "component",
+    "form-field"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/finance/goal-form.tsx:GoalDialog",
+   "type": "function",
+   "name": "GoalDialog",
+   "filePath": "src/components/finance/goal-form.tsx",
+   "lineRange": [
+    137,
+    192
+   ],
+   "summary": "Shared dialog wrapper handling create/edit submission for a savings goal.",
+   "tags": [
+    "component",
+    "dialog"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/finance/goal-form.tsx:GoalPaymentDialog",
+   "type": "function",
+   "name": "GoalPaymentDialog",
+   "filePath": "src/components/finance/goal-form.tsx",
+   "lineRange": [
+    213,
+    279
+   ],
+   "summary": "Exported dialog for recording a payment toward a savings goal via the addGoalPayment server action.",
+   "tags": [
+    "component",
+    "dialog",
+    "payment"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/finance/goal-form.tsx:DeleteGoalButton",
+   "type": "function",
+   "name": "DeleteGoalButton",
+   "filePath": "src/components/finance/goal-form.tsx",
+   "lineRange": [
+    281,
+    321
+   ],
+   "summary": "Exported button + confirmation dialog that deletes a savings goal via the deleteGoal server action.",
+   "tags": [
+    "component",
+    "delete"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/finance/transaction-csv.tsx",
+   "type": "file",
+   "name": "transaction-csv.tsx",
+   "filePath": "src/components/finance/transaction-csv.tsx",
+   "summary": "Client components and parsers for importing/exporting bank transactions as CSV: detects bank export formats (Sparkasse etc.), parses rows, and drives an export/import dialog flow.",
+   "tags": [
+    "component",
+    "csv",
+    "import-export",
+    "finance"
+   ],
+   "complexity": "complex",
+   "languageNotes": "Implements a small hand-rolled CSV parser and per-bank column mapping instead of a library, plus German decimal-format amount parsing."
+  },
+  {
+   "id": "function:src/components/finance/transaction-csv.tsx:decodeCsv",
+   "type": "function",
+   "name": "decodeCsv",
+   "filePath": "src/components/finance/transaction-csv.tsx",
+   "lineRange": [
+    28,
+    43
+   ],
+   "summary": "Decodes a raw CSV file buffer into text, handling byte-order-mark and encoding detection.",
+   "tags": [
+    "utility",
+    "csv",
+    "encoding"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/finance/transaction-csv.tsx:parseCSV",
+   "type": "function",
+   "name": "parseCSV",
+   "filePath": "src/components/finance/transaction-csv.tsx",
+   "lineRange": [
+    47,
+    78
+   ],
+   "summary": "Splits raw CSV text into header and row arrays, handling quoted fields and delimiters.",
+   "tags": [
+    "utility",
+    "csv-parsing"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/finance/transaction-csv.tsx:detectFormat",
+   "type": "function",
+   "name": "detectFormat",
+   "filePath": "src/components/finance/transaction-csv.tsx",
+   "lineRange": [
+    109,
+    119
+   ],
+   "summary": "Detects which bank/export format a CSV file matches based on its header columns.",
+   "tags": [
+    "utility",
+    "csv",
+    "format-detection"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/finance/transaction-csv.tsx:formatLabel",
+   "type": "function",
+   "name": "formatLabel",
+   "filePath": "src/components/finance/transaction-csv.tsx",
+   "lineRange": [
+    121,
+    131
+   ],
+   "summary": "Returns a human-readable label for a detected CSV bank format.",
+   "tags": [
+    "utility",
+    "formatting"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/finance/transaction-csv.tsx:mapRows",
+   "type": "function",
+   "name": "mapRows",
+   "filePath": "src/components/finance/transaction-csv.tsx",
+   "lineRange": [
+    133,
+    208
+   ],
+   "summary": "Maps raw CSV rows into transaction objects according to the detected bank format, converting amounts and dates.",
+   "tags": [
+    "utility",
+    "csv-parsing",
+    "mapping"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/finance/transaction-csv.tsx:ExportTransactionsButton",
+   "type": "function",
+   "name": "ExportTransactionsButton",
+   "filePath": "src/components/finance/transaction-csv.tsx",
+   "lineRange": [
+    224,
+    242
+   ],
+   "summary": "Exported button that triggers a CSV export of transactions for an account.",
+   "tags": [
+    "component",
+    "export"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/finance/transaction-csv.tsx:ImportTransactionsDialog",
+   "type": "function",
+   "name": "ImportTransactionsDialog",
+   "filePath": "src/components/finance/transaction-csv.tsx",
+   "lineRange": [
+    252,
+    524
+   ],
+   "summary": "Exported dialog that lets the user upload a bank CSV file, preview detected/mapped transactions, and import them.",
+   "tags": [
+    "component",
+    "dialog",
+    "import"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/components/finance/transaction-form.tsx",
+   "type": "file",
+   "name": "transaction-form.tsx",
+   "filePath": "src/components/finance/transaction-form.tsx",
+   "summary": "Client form dialogs for creating, editing, categorizing, and deleting individual financial transactions.",
+   "tags": [
+    "component",
+    "form",
+    "finance",
+    "crud",
+    "transactions"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/finance/transaction-form.tsx:txFormReducer",
+   "type": "function",
+   "name": "txFormReducer",
+   "filePath": "src/components/finance/transaction-form.tsx",
+   "lineRange": [
+    85,
+    96
+   ],
+   "summary": "Reducer managing local transaction-form state (type, amounts, accounts, category) as fields change.",
+   "tags": [
+    "reducer",
+    "state-management"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/finance/transaction-form.tsx:AddTransactionDialog",
+   "type": "function",
+   "name": "AddTransactionDialog",
+   "filePath": "src/components/finance/transaction-form.tsx",
+   "lineRange": [
+    103,
+    309
+   ],
+   "summary": "Exported dialog for creating a new transaction via the createTransaction server action.",
+   "tags": [
+    "component",
+    "dialog",
+    "create"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/finance/transaction-form.tsx:EditTransactionDialog",
+   "type": "function",
+   "name": "EditTransactionDialog",
+   "filePath": "src/components/finance/transaction-form.tsx",
+   "lineRange": [
+    311,
+    502
+   ],
+   "summary": "Exported dialog for editing an existing transaction via the updateTransaction server action.",
+   "tags": [
+    "component",
+    "dialog",
+    "update"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/finance/transaction-form.tsx:TransactionCategorySelect",
+   "type": "function",
+   "name": "TransactionCategorySelect",
+   "filePath": "src/components/finance/transaction-form.tsx",
+   "lineRange": [
+    510,
+    562
+   ],
+   "summary": "Exported inline category selector for a transaction row that updates the category via updateTransactionCategory.",
+   "tags": [
+    "component",
+    "inline-edit"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/finance/transaction-form.tsx:DeleteTransactionButton",
+   "type": "function",
+   "name": "DeleteTransactionButton",
+   "filePath": "src/components/finance/transaction-form.tsx",
+   "lineRange": [
+    564,
+    605
+   ],
+   "summary": "Exported button + confirmation dialog that deletes a transaction via the deleteTransaction server action.",
+   "tags": [
+    "component",
+    "delete"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/inventar/InventoryClient.tsx",
+   "type": "file",
+   "name": "InventoryClient.tsx",
+   "filePath": "src/components/inventar/InventoryClient.tsx",
+   "summary": "Client component rendering the Inventar showcase grid: item cards with images, filtering chips, a detail sheet, and an empty state.",
+   "tags": [
+    "component",
+    "inventar",
+    "gallery",
+    "client-component"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/inventar/InventoryClient.tsx:InventoryClient",
+   "type": "function",
+   "name": "InventoryClient",
+   "filePath": "src/components/inventar/InventoryClient.tsx",
+   "lineRange": [
+    25,
+    106
+   ],
+   "summary": "Exported root client component managing the filtered/selected state for the inventory grid and opening the detail sheet.",
+   "tags": [
+    "component",
+    "entry-point"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/inventar/InventoryClient.tsx:Karte",
+   "type": "function",
+   "name": "Karte",
+   "filePath": "src/components/inventar/InventoryClient.tsx",
+   "lineRange": [
+    122,
+    314
+   ],
+   "summary": "Renders a single valuable as a showcase card with image, value badges, and quick actions.",
+   "tags": [
+    "component",
+    "card"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/inventar/InventoryClient.tsx:Detail",
+   "type": "function",
+   "name": "Detail",
+   "filePath": "src/components/inventar/InventoryClient.tsx",
+   "lineRange": [
+    318,
+    416
+   ],
+   "summary": "Renders the detailed view of a valuable inside the slide-over sheet (media, fields, valuation history).",
+   "tags": [
+    "component",
+    "detail-view"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/inventar/InventoryClient.tsx:Zeile",
+   "type": "function",
+   "name": "Zeile",
+   "filePath": "src/components/inventar/InventoryClient.tsx",
+   "lineRange": [
+    420,
+    441
+   ],
+   "summary": "Small labeled key/value row used inside the detail view.",
+   "tags": [
+    "component",
+    "presentational"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/inventar/InventoryClient.tsx:Marke",
+   "type": "function",
+   "name": "Marke",
+   "filePath": "src/components/inventar/InventoryClient.tsx",
+   "lineRange": [
+    443,
+    457
+   ],
+   "summary": "Small badge/marker component showing an on/off icon indicator with a label.",
+   "tags": [
+    "component",
+    "presentational"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/inventar/InventoryClient.tsx:Chip",
+   "type": "function",
+   "name": "Chip",
+   "filePath": "src/components/inventar/InventoryClient.tsx",
+   "lineRange": [
+    459,
+    480
+   ],
+   "summary": "Toggleable filter chip button used in the category filter bar.",
+   "tags": [
+    "component",
+    "filter"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/inventar/InventoryClient.tsx:LeereVitrine",
+   "type": "function",
+   "name": "LeereVitrine",
+   "filePath": "src/components/inventar/InventoryClient.tsx",
+   "lineRange": [
+    482,
+    496
+   ],
+   "summary": "Empty-state component shown when the inventory has no items (or none match the filter).",
+   "tags": [
+    "component",
+    "empty-state"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/components/inventar/ValuableActions.tsx",
+   "type": "file",
+   "name": "ValuableActions.tsx",
+   "filePath": "src/components/inventar/ValuableActions.tsx",
+   "summary": "Small client component exposing edit and delete actions (with confirmation) for a single valuable item.",
+   "tags": [
+    "component",
+    "inventar",
+    "actions"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/inventar/ValuableActions.tsx:ValuableActions",
+   "type": "function",
+   "name": "ValuableActions",
+   "filePath": "src/components/inventar/ValuableActions.tsx",
+   "lineRange": [
+    20,
+    76
+   ],
+   "summary": "Exported component rendering an edit button (opening ValuableForm) and a delete button with confirmation that calls deleteValuable.",
+   "tags": [
+    "component",
+    "crud"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/inventar/ValuableForm.tsx",
+   "type": "file",
+   "name": "ValuableForm.tsx",
+   "filePath": "src/components/inventar/ValuableForm.tsx",
+   "summary": "Client form dialog for creating or editing a valuable item (name, category, condition, purchase/value data) in the Inventar feature.",
+   "tags": [
+    "component",
+    "form",
+    "inventar",
+    "crud"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/inventar/ValuableForm.tsx:ValuableForm",
+   "type": "function",
+   "name": "ValuableForm",
+   "filePath": "src/components/inventar/ValuableForm.tsx",
+   "lineRange": [
+    27,
+    225
+   ],
+   "summary": "Exported dialog form for creating/editing a valuable, submitting via createValuable/updateValuable server actions.",
+   "tags": [
+    "component",
+    "dialog",
+    "crud"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/inventar/ValuableForm.tsx:Feld",
+   "type": "function",
+   "name": "Feld",
+   "filePath": "src/components/inventar/ValuableForm.tsx",
+   "lineRange": [
+    229,
+    251
+   ],
+   "summary": "Reusable labeled text/number input field used throughout the valuable form.",
+   "tags": [
+    "component",
+    "form-field"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/inventar/ValuableForm.tsx:Haken",
+   "type": "function",
+   "name": "Haken",
+   "filePath": "src/components/inventar/ValuableForm.tsx",
+   "lineRange": [
+    253,
+    266
+   ],
+   "summary": "Reusable labeled checkbox field used in the valuable form.",
+   "tags": [
+    "component",
+    "form-field"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/components/inventar/ValuableIcon.tsx",
+   "type": "file",
+   "name": "ValuableIcon.tsx",
+   "filePath": "src/components/inventar/ValuableIcon.tsx",
+   "summary": "Maps a valuable category to a representative icon inside a styled frame, for use in cards and lists.",
+   "tags": [
+    "component",
+    "inventar",
+    "icon"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/inventar/ValuableIcon.tsx:Frame",
+   "type": "function",
+   "name": "Frame",
+   "filePath": "src/components/inventar/ValuableIcon.tsx",
+   "lineRange": [
+    27,
+    42
+   ],
+   "summary": "Styled square frame wrapper used to present the category icon consistently.",
+   "tags": [
+    "component",
+    "presentational"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/inventar/ValuableIcon.tsx:ValuableIcon",
+   "type": "function",
+   "name": "ValuableIcon",
+   "filePath": "src/components/inventar/ValuableIcon.tsx",
+   "lineRange": [
+    147,
+    152
+   ],
+   "summary": "Exported component that looks up and renders the icon for a given valuable category.",
+   "tags": [
+    "component",
+    "icon",
+    "lookup"
+   ],
+   "complexity": "simple"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/components/finance/contract-form.tsx",
+   "target": "function:src/components/finance/contract-form.tsx:ContractFields",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/contract-form.tsx",
+   "target": "function:src/components/finance/contract-form.tsx:ContractDialog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/contract-form.tsx",
+   "target": "function:src/components/finance/contract-form.tsx:DeleteContractButton",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/contract-form.tsx",
+   "target": "function:src/components/finance/contract-form.tsx:DeleteContractButton",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/finance/contract-form.tsx:ContractDialog",
+   "target": "function:src/app/(dashboard)/finance/(planung)/contracts/actions.ts:createContract",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/components/finance/contract-form.tsx:ContractDialog",
+   "target": "function:src/app/(dashboard)/finance/(planung)/contracts/actions.ts:updateContract",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/components/finance/contract-form.tsx:DeleteContractButton",
+   "target": "function:src/app/(dashboard)/finance/(planung)/contracts/actions.ts:deleteContract",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/finance/contract-form.tsx",
+   "target": "file:src/app/(dashboard)/finance/(planung)/contracts/actions.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/contract-form.tsx",
+   "target": "file:src/components/ui/alert-dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/contract-form.tsx",
+   "target": "file:src/components/ui/button.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/contract-form.tsx",
+   "target": "file:src/components/ui/dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/contract-form.tsx",
+   "target": "file:src/components/ui/input.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/contract-form.tsx",
+   "target": "file:src/components/ui/label.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/contract-form.tsx",
+   "target": "file:src/components/ui/select.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/contract-form.tsx",
+   "target": "file:src/lib/finance/contract-constants.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/contract-form.tsx",
+   "target": "file:src/types/database.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/debt-payment-form.tsx",
+   "target": "function:src/components/finance/debt-payment-form.tsx:AddDebtDialog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/debt-payment-form.tsx",
+   "target": "function:src/components/finance/debt-payment-form.tsx:AddDebtDialog",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/finance/debt-payment-form.tsx",
+   "target": "function:src/components/finance/debt-payment-form.tsx:EditDebtDialog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/debt-payment-form.tsx",
+   "target": "function:src/components/finance/debt-payment-form.tsx:EditDebtDialog",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/finance/debt-payment-form.tsx",
+   "target": "function:src/components/finance/debt-payment-form.tsx:DeleteDebtButton",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/debt-payment-form.tsx",
+   "target": "function:src/components/finance/debt-payment-form.tsx:DeleteDebtButton",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/finance/debt-payment-form.tsx",
+   "target": "function:src/components/finance/debt-payment-form.tsx:DebtPaymentDialog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/debt-payment-form.tsx",
+   "target": "function:src/components/finance/debt-payment-form.tsx:DebtPaymentDialog",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/finance/debt-payment-form.tsx",
+   "target": "function:src/components/finance/debt-payment-form.tsx:SettleDebtButton",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/debt-payment-form.tsx",
+   "target": "function:src/components/finance/debt-payment-form.tsx:SettleDebtButton",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/finance/debt-payment-form.tsx:AddDebtDialog",
+   "target": "function:src/app/(dashboard)/finance/(planung)/debts/actions.ts:createDebt",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/finance/debt-payment-form.tsx:EditDebtDialog",
+   "target": "function:src/app/(dashboard)/finance/(planung)/debts/actions.ts:updateDebt",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/finance/debt-payment-form.tsx:DeleteDebtButton",
+   "target": "function:src/app/(dashboard)/finance/(planung)/debts/actions.ts:deleteDebt",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/finance/debt-payment-form.tsx:DebtPaymentDialog",
+   "target": "function:src/app/(dashboard)/finance/(planung)/debts/actions.ts:recordPayment",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/finance/debt-payment-form.tsx:SettleDebtButton",
+   "target": "function:src/app/(dashboard)/finance/(planung)/debts/actions.ts:recordPayment",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/finance/debt-payment-form.tsx",
+   "target": "file:src/app/(dashboard)/finance/(planung)/debts/actions.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/debt-payment-form.tsx",
+   "target": "file:src/components/providers/settings-context.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/debt-payment-form.tsx",
+   "target": "file:src/components/ui/alert-dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/debt-payment-form.tsx",
+   "target": "file:src/components/ui/button.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/debt-payment-form.tsx",
+   "target": "file:src/components/ui/dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/debt-payment-form.tsx",
+   "target": "file:src/components/ui/input.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/debt-payment-form.tsx",
+   "target": "file:src/components/ui/label.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/debt-payment-form.tsx",
+   "target": "file:src/components/ui/select.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/debt-payment-form.tsx",
+   "target": "file:src/lib/format.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/debt-payment-form.tsx",
+   "target": "file:src/types/database.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/goal-form.tsx",
+   "target": "function:src/components/finance/goal-form.tsx:GoalFields",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/goal-form.tsx",
+   "target": "function:src/components/finance/goal-form.tsx:GoalDialog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/goal-form.tsx",
+   "target": "function:src/components/finance/goal-form.tsx:GoalPaymentDialog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/goal-form.tsx",
+   "target": "function:src/components/finance/goal-form.tsx:DeleteGoalButton",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/goal-form.tsx",
+   "target": "function:src/components/finance/goal-form.tsx:GoalPaymentDialog",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/finance/goal-form.tsx",
+   "target": "function:src/components/finance/goal-form.tsx:DeleteGoalButton",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/finance/goal-form.tsx:GoalDialog",
+   "target": "function:src/app/(dashboard)/finance/(planung)/goals/actions.ts:createGoal",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/components/finance/goal-form.tsx:GoalDialog",
+   "target": "function:src/app/(dashboard)/finance/(planung)/goals/actions.ts:updateGoal",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/components/finance/goal-form.tsx:GoalPaymentDialog",
+   "target": "function:src/app/(dashboard)/finance/(planung)/goals/actions.ts:addGoalPayment",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/finance/goal-form.tsx:DeleteGoalButton",
+   "target": "function:src/app/(dashboard)/finance/(planung)/goals/actions.ts:deleteGoal",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/finance/goal-form.tsx",
+   "target": "file:src/app/(dashboard)/finance/(planung)/goals/actions.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/goal-form.tsx",
+   "target": "file:src/components/ui/alert-dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/goal-form.tsx",
+   "target": "file:src/components/ui/button.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/goal-form.tsx",
+   "target": "file:src/components/ui/dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/goal-form.tsx",
+   "target": "file:src/components/ui/input.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/goal-form.tsx",
+   "target": "file:src/components/ui/label.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/goal-form.tsx",
+   "target": "file:src/components/ui/select.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/goal-form.tsx",
+   "target": "file:src/types/database.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/transaction-csv.tsx",
+   "target": "function:src/components/finance/transaction-csv.tsx:decodeCsv",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/transaction-csv.tsx",
+   "target": "function:src/components/finance/transaction-csv.tsx:parseCSV",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/transaction-csv.tsx",
+   "target": "function:src/components/finance/transaction-csv.tsx:detectFormat",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/transaction-csv.tsx",
+   "target": "function:src/components/finance/transaction-csv.tsx:formatLabel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/transaction-csv.tsx",
+   "target": "function:src/components/finance/transaction-csv.tsx:mapRows",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/transaction-csv.tsx",
+   "target": "function:src/components/finance/transaction-csv.tsx:ExportTransactionsButton",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/transaction-csv.tsx",
+   "target": "function:src/components/finance/transaction-csv.tsx:ImportTransactionsDialog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/transaction-csv.tsx",
+   "target": "function:src/components/finance/transaction-csv.tsx:ExportTransactionsButton",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/finance/transaction-csv.tsx",
+   "target": "function:src/components/finance/transaction-csv.tsx:ImportTransactionsDialog",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/finance/transaction-csv.tsx:ImportTransactionsDialog",
+   "target": "function:src/components/finance/transaction-csv.tsx:decodeCsv",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/components/finance/transaction-csv.tsx:ImportTransactionsDialog",
+   "target": "function:src/components/finance/transaction-csv.tsx:parseCSV",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/components/finance/transaction-csv.tsx:ImportTransactionsDialog",
+   "target": "function:src/components/finance/transaction-csv.tsx:detectFormat",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/components/finance/transaction-csv.tsx:ImportTransactionsDialog",
+   "target": "function:src/components/finance/transaction-csv.tsx:mapRows",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/transaction-csv.tsx",
+   "target": "file:src/components/ui/button.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/transaction-csv.tsx",
+   "target": "file:src/components/ui/dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/transaction-csv.tsx",
+   "target": "file:src/lib/csv.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/transaction-form.tsx",
+   "target": "function:src/components/finance/transaction-form.tsx:txFormReducer",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/transaction-form.tsx",
+   "target": "function:src/components/finance/transaction-form.tsx:AddTransactionDialog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/transaction-form.tsx",
+   "target": "function:src/components/finance/transaction-form.tsx:EditTransactionDialog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/transaction-form.tsx",
+   "target": "function:src/components/finance/transaction-form.tsx:TransactionCategorySelect",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/transaction-form.tsx",
+   "target": "function:src/components/finance/transaction-form.tsx:DeleteTransactionButton",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/finance/transaction-form.tsx",
+   "target": "function:src/components/finance/transaction-form.tsx:AddTransactionDialog",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/finance/transaction-form.tsx",
+   "target": "function:src/components/finance/transaction-form.tsx:EditTransactionDialog",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/finance/transaction-form.tsx",
+   "target": "function:src/components/finance/transaction-form.tsx:TransactionCategorySelect",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/finance/transaction-form.tsx",
+   "target": "function:src/components/finance/transaction-form.tsx:DeleteTransactionButton",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/finance/transaction-form.tsx:AddTransactionDialog",
+   "target": "function:src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts:createTransaction",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/finance/transaction-form.tsx:EditTransactionDialog",
+   "target": "function:src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts:updateTransaction",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/finance/transaction-form.tsx:TransactionCategorySelect",
+   "target": "function:src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts:updateTransactionCategory",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/finance/transaction-form.tsx:DeleteTransactionButton",
+   "target": "function:src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts:deleteTransaction",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/finance/transaction-form.tsx",
+   "target": "file:src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/transaction-form.tsx",
+   "target": "file:src/components/ui/alert-dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/transaction-form.tsx",
+   "target": "file:src/components/ui/button.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/transaction-form.tsx",
+   "target": "file:src/components/ui/dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/transaction-form.tsx",
+   "target": "file:src/components/ui/input.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/transaction-form.tsx",
+   "target": "file:src/components/ui/label.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/transaction-form.tsx",
+   "target": "file:src/components/ui/select.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/finance/transaction-form.tsx",
+   "target": "file:src/types/database.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/InventoryClient.tsx",
+   "target": "function:src/components/inventar/InventoryClient.tsx:InventoryClient",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/inventar/InventoryClient.tsx",
+   "target": "function:src/components/inventar/InventoryClient.tsx:Karte",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/inventar/InventoryClient.tsx",
+   "target": "function:src/components/inventar/InventoryClient.tsx:Detail",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/inventar/InventoryClient.tsx",
+   "target": "function:src/components/inventar/InventoryClient.tsx:Zeile",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/inventar/InventoryClient.tsx",
+   "target": "function:src/components/inventar/InventoryClient.tsx:Marke",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/inventar/InventoryClient.tsx",
+   "target": "function:src/components/inventar/InventoryClient.tsx:Chip",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/inventar/InventoryClient.tsx",
+   "target": "function:src/components/inventar/InventoryClient.tsx:LeereVitrine",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/inventar/InventoryClient.tsx",
+   "target": "function:src/components/inventar/InventoryClient.tsx:InventoryClient",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/inventar/InventoryClient.tsx:InventoryClient",
+   "target": "function:src/components/inventar/InventoryClient.tsx:Karte",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/components/inventar/InventoryClient.tsx:InventoryClient",
+   "target": "function:src/components/inventar/InventoryClient.tsx:Detail",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/components/inventar/InventoryClient.tsx:InventoryClient",
+   "target": "function:src/components/inventar/InventoryClient.tsx:LeereVitrine",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/components/inventar/InventoryClient.tsx:InventoryClient",
+   "target": "function:src/components/inventar/InventoryClient.tsx:Chip",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/components/inventar/InventoryClient.tsx:Detail",
+   "target": "function:src/components/inventar/InventoryClient.tsx:Zeile",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/components/inventar/InventoryClient.tsx:Karte",
+   "target": "function:src/components/inventar/InventoryClient.tsx:Marke",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/inventar/InventoryClient.tsx",
+   "target": "file:src/components/inventar/ValuableActions.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/InventoryClient.tsx",
+   "target": "file:src/components/inventar/ValuableForm.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/InventoryClient.tsx",
+   "target": "file:src/components/inventar/ValuableIcon.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/InventoryClient.tsx",
+   "target": "file:src/components/inventar/ValuableMedia.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/InventoryClient.tsx",
+   "target": "file:src/components/inventar/ValuablePlinth.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/InventoryClient.tsx",
+   "target": "file:src/components/ui/button.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/InventoryClient.tsx",
+   "target": "file:src/components/ui/sheet.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/InventoryClient.tsx",
+   "target": "file:src/lib/format.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/InventoryClient.tsx",
+   "target": "file:src/lib/valuables.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/ValuableActions.tsx",
+   "target": "function:src/components/inventar/ValuableActions.tsx:ValuableActions",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/inventar/ValuableActions.tsx",
+   "target": "function:src/components/inventar/ValuableActions.tsx:ValuableActions",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/inventar/ValuableActions.tsx:ValuableActions",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:deleteValuable",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/inventar/ValuableActions.tsx:ValuableActions",
+   "target": "function:src/components/inventar/ValuableForm.tsx:ValuableForm",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/inventar/ValuableActions.tsx",
+   "target": "file:src/app/(dashboard)/inventar/actions.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/ValuableActions.tsx",
+   "target": "file:src/components/inventar/ValuableForm.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/ValuableActions.tsx",
+   "target": "file:src/components/ui/alert-dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/ValuableActions.tsx",
+   "target": "file:src/components/ui/button.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/ValuableActions.tsx",
+   "target": "file:src/lib/valuables.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/ValuableForm.tsx",
+   "target": "function:src/components/inventar/ValuableForm.tsx:ValuableForm",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/inventar/ValuableForm.tsx",
+   "target": "function:src/components/inventar/ValuableForm.tsx:Feld",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/inventar/ValuableForm.tsx",
+   "target": "function:src/components/inventar/ValuableForm.tsx:Haken",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/inventar/ValuableForm.tsx",
+   "target": "function:src/components/inventar/ValuableForm.tsx:ValuableForm",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/inventar/ValuableForm.tsx:ValuableForm",
+   "target": "function:src/components/inventar/ValuableForm.tsx:Feld",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/components/inventar/ValuableForm.tsx:ValuableForm",
+   "target": "function:src/components/inventar/ValuableForm.tsx:Haken",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/components/inventar/ValuableForm.tsx:ValuableForm",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:createValuable",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/inventar/ValuableForm.tsx:ValuableForm",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:updateValuable",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/inventar/ValuableForm.tsx",
+   "target": "file:src/app/(dashboard)/inventar/actions.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/ValuableForm.tsx",
+   "target": "file:src/components/ui/button.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/ValuableForm.tsx",
+   "target": "file:src/components/ui/checkbox.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/ValuableForm.tsx",
+   "target": "file:src/components/ui/dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/ValuableForm.tsx",
+   "target": "file:src/components/ui/input.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/ValuableForm.tsx",
+   "target": "file:src/components/ui/label.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/ValuableForm.tsx",
+   "target": "file:src/components/ui/select.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/ValuableForm.tsx",
+   "target": "file:src/components/ui/textarea.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/ValuableForm.tsx",
+   "target": "file:src/lib/valuables.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/ValuableIcon.tsx",
+   "target": "function:src/components/inventar/ValuableIcon.tsx:Frame",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/inventar/ValuableIcon.tsx",
+   "target": "function:src/components/inventar/ValuableIcon.tsx:ValuableIcon",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/inventar/ValuableIcon.tsx",
+   "target": "function:src/components/inventar/ValuableIcon.tsx:ValuableIcon",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/inventar/ValuableIcon.tsx:ValuableIcon",
+   "target": "function:src/components/inventar/ValuableIcon.tsx:Frame",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/inventar/ValuableIcon.tsx",
+   "target": "file:src/lib/valuables.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  }
+ ]
+}

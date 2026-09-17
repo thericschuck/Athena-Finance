@@ -345,13 +345,13 @@ function DepotCard({ depot, locale }: { depot: DepotWithSummary; locale: string 
             <p className="text-xs text-muted-foreground font-mono">{depot.isin}</p>
           </div>
           <div className="ml-auto text-right shrink-0">
-            <p className="font-medium text-foreground">
+            <p className="font-medium text-foreground tabular-nums">
               {depot.depotValue !== null
                 ? fmtCurrency(depot.depotValue, 'EUR', locale, { fractionDigits: 2 })
                 : '–'}
             </p>
             {depot.returnPct !== null && (
-              <p className="text-xs" style={{ color: depot.returnPct >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+              <p className="text-xs tabular-nums" style={{ color: depot.returnPct >= 0 ? 'var(--success)' : 'var(--danger)' }}>
                 {depot.returnPct >= 0 ? '+' : ''}{depot.returnPct.toFixed(2)} %
               </p>
             )}

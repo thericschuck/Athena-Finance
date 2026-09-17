@@ -1,0 +1,27 @@
+{
+  "projectRoot": "C:/Users/eschu/OneDrive/Desktop/Unternehmensstruktur/06-Projekte/athena-finance",
+  "batchFiles": [
+    {"path": "src/components/landing/vines.css", "language": "css", "sizeLines": 85, "fileCategory": "markup"},
+    {"path": "src/components/waitlist/waitlist.css", "language": "css", "sizeLines": 166, "fileCategory": "markup"},
+    {"path": "src/proxy.ts", "language": "typescript", "sizeLines": 70, "fileCategory": "code"},
+    {"path": "supabase/config.toml", "language": "toml", "sizeLines": 388, "fileCategory": "config"},
+    {"path": "supabase/functions/daily-snapshot/index.ts", "language": "typescript", "sizeLines": 201, "fileCategory": "code"},
+    {"path": "supabase/functions/execute-contracts/index.ts", "language": "typescript", "sizeLines": 131, "fileCategory": "code"},
+    {"path": "supabase/functions/execute-savings-plans/index.ts", "language": "typescript", "sizeLines": 91, "fileCategory": "code"},
+    {"path": "supabase/functions/fetch-fund-price/deno.json", "language": "json", "sizeLines": 5, "fileCategory": "config"},
+    {"path": "supabase/functions/fetch-fund-price/index.ts", "language": "typescript", "sizeLines": 109, "fileCategory": "code"},
+    {"path": "supabase/functions/tsconfig.json", "language": "json", "sizeLines": 12, "fileCategory": "config"}
+  ],
+  "batchImportData": {
+    "src/components/landing/vines.css": [],
+    "src/components/waitlist/waitlist.css": [],
+    "src/proxy.ts": [],
+    "supabase/config.toml": [],
+    "supabase/functions/daily-snapshot/index.ts": [],
+    "supabase/functions/execute-contracts/index.ts": [],
+    "supabase/functions/execute-savings-plans/index.ts": [],
+    "supabase/functions/fetch-fund-price/deno.json": [],
+    "supabase/functions/fetch-fund-price/index.ts": [],
+    "supabase/functions/tsconfig.json": []
+  }
+}

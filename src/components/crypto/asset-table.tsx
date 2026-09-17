@@ -101,11 +101,11 @@ function GroupSection({ group, rebalancingRows, fmt, readonly }: { group: Group;
         </h2>
         <div className="flex items-center gap-3">
           {groupPnL != null && (
-            <span className={`text-xs font-medium ${groupPnL >= 0 ? 'text-success' : 'text-danger'}`}>
+            <span className={`text-xs font-medium tabular-nums ${groupPnL >= 0 ? 'text-success' : 'text-danger'}`}>
               {groupPnL >= 0 ? '+' : ''}{fmt.eur(groupPnL)}
             </span>
           )}
-          <span className="text-sm font-medium">{fmt.eur(groupValue)}</span>
+          <span className="text-sm font-medium tabular-nums">{fmt.eur(groupValue)}</span>
         </div>
       </div>
 
@@ -150,7 +150,7 @@ function GroupSection({ group, rebalancingRows, fmt, readonly }: { group: Group;
               <tr className="border-b border-border text-xs text-muted-foreground">
                 <td className="px-4 py-2" colSpan={7 + (hasReb ? 3 : 0) + (readonly ? 0 : 1)}>
                   +{dustAssets.length} Position{dustAssets.length > 1 ? 'en' : ''} unter {fmt.eur(DUST_THRESHOLD_EUR)} ausgeblendet
-                  {' '}(Σ {fmt.eur(dustValue)}) — {dustAssets.map(a => a.name).join(', ')}
+                  {' '}(Σ <span className="tabular-nums">{fmt.eur(dustValue)}</span>) — {dustAssets.map(a => a.name).join(', ')}
                 </td>
               </tr>
             )}
@@ -216,12 +216,12 @@ function AssetRow({
       </td>
 
       {/* Ø Kaufpreis */}
-      <td className="px-4 py-3 text-right text-muted-foreground">
+      <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">
         {asset.avg_buy_price != null ? fmt.eur(asset.avg_buy_price) : '—'}
       </td>
 
       {/* Akt. Preis */}
-      <td className="px-4 py-3 text-right">
+      <td className="px-4 py-3 text-right tabular-nums">
         {currentPrice != null ? (
           <div>
             <p>{fmt.eur(currentPrice)}</p>
@@ -233,17 +233,17 @@ function AssetRow({
       </td>
 
       {/* Wert */}
-      <td className="px-4 py-3 text-right font-medium">
+      <td className="px-4 py-3 text-right font-medium tabular-nums">
         {currentValue != null ? fmt.eur(currentValue) : '—'}
       </td>
 
       {/* P&L € */}
-      <td className={`px-4 py-3 text-right font-medium ${pnlAbs != null ? pnlClass : ''}`}>
+      <td className={`px-4 py-3 text-right font-medium tabular-nums ${pnlAbs != null ? pnlClass : ''}`}>
         {pnlAbs != null ? `${isPositive ? '+' : ''}${fmt.eur(pnlAbs)}` : '—'}
       </td>
 
       {/* P&L % */}
-      <td className={`px-4 py-3 text-right text-sm ${pnlPct != null ? pnlClass : ''}`}>
+      <td className={`px-4 py-3 text-right text-sm tabular-nums ${pnlPct != null ? pnlClass : ''}`}>
         {pnlPct != null ? fmt.pct(pnlPct) : '—'}
       </td>
 
@@ -298,11 +298,11 @@ function SumRow({ assets, groupRebRows, hasReb, fmt, readonly }: { assets: Asset
   return (
     <tr className="border-t border-border bg-muted/20 font-semibold text-sm">
       <td className="px-4 py-2.5 text-muted-foreground" colSpan={4}>Gesamt</td>
-      <td className="px-4 py-2.5 text-right">{fmt.eur(totalValue)}</td>
-      <td className={`px-4 py-2.5 text-right ${totalPnL != null ? pnlClass : ''}`}>
+      <td className="px-4 py-2.5 text-right tabular-nums">{fmt.eur(totalValue)}</td>
+      <td className={`px-4 py-2.5 text-right tabular-nums ${totalPnL != null ? pnlClass : ''}`}>
         {totalPnL != null ? `${isPositive ? '+' : ''}${fmt.eur(totalPnL)}` : '—'}
       </td>
-      <td className={`px-4 py-2.5 text-right ${totalPnLPct != null ? pnlClass : ''}`}>
+      <td className={`px-4 py-2.5 text-right tabular-nums ${totalPnLPct != null ? pnlClass : ''}`}>
         {totalPnLPct != null ? fmt.pct(totalPnLPct) : '—'}
       </td>
       {hasReb && <>

@@ -1,0 +1,4357 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 22,
+  "filesSkipped": [],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 22,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 22,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "src/app/api/bank/transactions/suggest-categories/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 76,
+      "nonEmptyLines": 66,
+      "functions": [
+        {
+          "name": "GET",
+          "startLine": 15,
+          "endLine": 76,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "line": 15,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "GET",
+          "callee": "getAuthUser",
+          "lineNumber": 16
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 17
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('categories')\r\n    .select('id, name, type, color, icon, parent_id')\r\n    .eq",
+          "lineNumber": 19
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('categories')\r\n    .select",
+          "lineNumber": 19
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 19
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 24
+        },
+        {
+          "caller": "GET",
+          "callee": "(categories ?? []).map",
+          "lineNumber": 26
+        },
+        {
+          "caller": "GET",
+          "callee": "(supabase as any)\r\n    .from('bank_transactions')\r\n    .select('id, description, counterpart_name, counterpart_iban, category_id, amount, value_date')\r\n    .eq('user_id', user.id)\r\n    .order('value_date', { ascending: false })\r\n    .limit",
+          "lineNumber": 29
+        },
+        {
+          "caller": "GET",
+          "callee": "(supabase as any)\r\n    .from('bank_transactions')\r\n    .select('id, description, counterpart_name, counterpart_iban, category_id, amount, value_date')\r\n    .eq('user_id', user.id)\r\n    .order",
+          "lineNumber": 29
+        },
+        {
+          "caller": "GET",
+          "callee": "(supabase as any)\r\n    .from('bank_transactions')\r\n    .select('id, description, counterpart_name, counterpart_iban, category_id, amount, value_date')\r\n    .eq",
+          "lineNumber": 29
+        },
+        {
+          "caller": "GET",
+          "callee": "(supabase as any)\r\n    .from('bank_transactions')\r\n    .select",
+          "lineNumber": 29
+        },
+        {
+          "caller": "GET",
+          "callee": "(supabase as any)\r\n    .from",
+          "lineNumber": 29
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 36
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('accounts')\r\n    .select('bank_iban')\r\n    .eq('user_id', user.id)\r\n    .not",
+          "lineNumber": 42
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('accounts')\r\n    .select('bank_iban')\r\n    .eq",
+          "lineNumber": 42
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('accounts')\r\n    .select",
+          "lineNumber": 42
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 42
+        },
+        {
+          "caller": "normIban",
+          "callee": "iban.replace(/\\s+/g, '').toUpperCase",
+          "lineNumber": 47
+        },
+        {
+          "caller": "normIban",
+          "callee": "iban.replace",
+          "lineNumber": 47
+        },
+        {
+          "caller": "GET",
+          "callee": "(ownAccounts ?? []).map",
+          "lineNumber": 48
+        },
+        {
+          "caller": "GET",
+          "callee": "normIban",
+          "lineNumber": 48
+        },
+        {
+          "caller": "GET",
+          "callee": "buildLearnedCategoryMap",
+          "lineNumber": 53
+        },
+        {
+          "caller": "GET",
+          "callee": "(data ?? []).filter",
+          "lineNumber": 54
+        },
+        {
+          "caller": "GET",
+          "callee": "(data ?? [])\r\n    .filter((tx: { counterpart_iban: string | null }) => !tx.counterpart_iban || !ownIbans.has(normIban(tx.counterpart_iban)))\r\n    .map((tx: { id: string; description: string | null; counterpart_name: string | null; category_id: string | null; amount: number; value_date: string }) => {\r\n      const suggested = suggestCategory(tx.counterpart_name, tx.description, categories ?? [], learnedMap)\r\n      return suggested && suggested.id !== tx.category_id\r\n        ? {\r\n            id: tx.id,\r\n            description: tx.description,\r\n            counterpart_name: tx.counterpart_name,\r\n            amount: tx.amount,\r\n            value_date: tx.value_date,\r\n            current_category: tx.category_id ? categoriesById.get(tx.category_id) ?? null : null,\r\n            suggested_category: suggested,\r\n          }\r\n        : null\r\n    })\r\n    .filter",
+          "lineNumber": 57
+        },
+        {
+          "caller": "GET",
+          "callee": "(data ?? [])\r\n    .filter((tx: { counterpart_iban: string | null }) => !tx.counterpart_iban || !ownIbans.has(normIban(tx.counterpart_iban)))\r\n    .map",
+          "lineNumber": 57
+        },
+        {
+          "caller": "GET",
+          "callee": "(data ?? [])\r\n    .filter",
+          "lineNumber": 57
+        },
+        {
+          "caller": "GET",
+          "callee": "ownIbans.has",
+          "lineNumber": 58
+        },
+        {
+          "caller": "GET",
+          "callee": "normIban",
+          "lineNumber": 58
+        },
+        {
+          "caller": "GET",
+          "callee": "suggestCategory",
+          "lineNumber": 60
+        },
+        {
+          "caller": "GET",
+          "callee": "categoriesById.get",
+          "lineNumber": 68
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 75
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/cron/bank-sync/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 121,
+      "nonEmptyLines": 107,
+      "functions": [
+        {
+          "name": "adminClient",
+          "startLine": 15,
+          "endLine": 20,
+          "params": []
+        },
+        {
+          "name": "GET",
+          "startLine": 43,
+          "endLine": 121,
+          "params": [
+            "req"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "maxDuration",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "GET",
+          "line": 43,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "adminClient",
+          "callee": "createClient",
+          "lineNumber": 16
+        },
+        {
+          "caller": "GET",
+          "callee": "req.headers.get",
+          "lineNumber": 44
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 46
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 51
+        },
+        {
+          "caller": "GET",
+          "callee": "startDate.setDate",
+          "lineNumber": 55
+        },
+        {
+          "caller": "GET",
+          "callee": "startDate.getDate",
+          "lineNumber": 55
+        },
+        {
+          "caller": "GET",
+          "callee": "adminClient",
+          "lineNumber": 58
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n      .from('categories')\r\n      .select('id, name, type, color, icon, parent_id')\r\n      .eq",
+          "lineNumber": 59
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n      .from('categories')\r\n      .select",
+          "lineNumber": 59
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n      .from",
+          "lineNumber": 59
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n      .from('bank_transactions')\r\n      .select('counterpart_name, category_id')\r\n      .eq('user_id', userId)\r\n      .not",
+          "lineNumber": 64
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n      .from('bank_transactions')\r\n      .select('counterpart_name, category_id')\r\n      .eq",
+          "lineNumber": 64
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n      .from('bank_transactions')\r\n      .select",
+          "lineNumber": 64
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n      .from",
+          "lineNumber": 64
+        },
+        {
+          "caller": "GET",
+          "callee": "buildLearnedCategoryMap",
+          "lineNumber": 69
+        },
+        {
+          "caller": "GET",
+          "callee": "loadBankClientState",
+          "lineNumber": 71
+        },
+        {
+          "caller": "GET",
+          "callee": "startSync",
+          "lineNumber": 73
+        },
+        {
+          "caller": "GET",
+          "callee": "saveBankClientState",
+          "lineNumber": 77
+        },
+        {
+          "caller": "GET",
+          "callee": "markScaRequired",
+          "lineNumber": 81
+        },
+        {
+          "caller": "GET",
+          "callee": "upsertBankTransactions",
+          "lineNumber": 83
+        },
+        {
+          "caller": "GET",
+          "callee": "upsertDepotHoldings",
+          "lineNumber": 84
+        },
+        {
+          "caller": "GET",
+          "callee": "upsertBankBalances",
+          "lineNumber": 85
+        },
+        {
+          "caller": "GET",
+          "callee": "applyLearnedCategoriesToBacklog",
+          "lineNumber": 86
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 87
+        },
+        {
+          "caller": "GET",
+          "callee": "saveBankClientState",
+          "lineNumber": 95
+        },
+        {
+          "caller": "GET",
+          "callee": "stateFromError",
+          "lineNumber": 95
+        },
+        {
+          "caller": "GET",
+          "callee": "isScaRequiredError",
+          "lineNumber": 100
+        },
+        {
+          "caller": "GET",
+          "callee": "markScaRequired",
+          "lineNumber": 101
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 102
+        },
+        {
+          "caller": "GET",
+          "callee": "getFinTSErrorDetails",
+          "lineNumber": 113
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 114
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/depot/holdings/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 22,
+      "nonEmptyLines": 19,
+      "functions": [
+        {
+          "name": "GET",
+          "startLine": 10,
+          "endLine": 22,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "line": 10,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "GET",
+          "callee": "getAuthUser",
+          "lineNumber": 11
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 12
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('depot_holdings')\r\n    .select('*')\r\n    .eq('user_id', user.id)\r\n    .order",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('depot_holdings')\r\n    .select('*')\r\n    .eq",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('depot_holdings')\r\n    .select",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 20
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 21
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/depot/live-price/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 31,
+      "nonEmptyLines": 24,
+      "functions": [
+        {
+          "name": "GET",
+          "startLine": 8,
+          "endLine": 31,
+          "params": [
+            "req"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "line": 8,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "GET",
+          "callee": "req.nextUrl.searchParams.get",
+          "lineNumber": 9
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 10
+        },
+        {
+          "caller": "GET",
+          "callee": "createClient",
+          "lineNumber": 12
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('fund_price_cache')\r\n    .select('price, fetched_at')\r\n    .eq('isin', isin)\r\n    .maybeSingle",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('fund_price_cache')\r\n    .select('price, fetched_at')\r\n    .eq",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('fund_price_cache')\r\n    .select",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 21
+        },
+        {
+          "caller": "GET",
+          "callee": "Date.now",
+          "lineNumber": 24
+        },
+        {
+          "caller": "GET",
+          "callee": "new Date(cache.fetched_at).getTime",
+          "lineNumber": 24
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 26
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/export/indicators/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 49,
+      "nonEmptyLines": 40,
+      "functions": [
+        {
+          "name": "GET",
+          "startLine": 4,
+          "endLine": 49,
+          "params": [
+            "req"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "line": 4,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "GET",
+          "callee": "getAuthUser",
+          "lineNumber": 5
+        },
+        {
+          "caller": "GET",
+          "callee": "searchParams.get",
+          "lineNumber": 12
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('indicators')\r\n    .select('*')\r\n    .eq('user_id', user.id)\r\n    .order",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('indicators')\r\n    .select('*')\r\n    .eq",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('indicators')\r\n    .select",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "(indicators ?? []).map",
+          "lineNumber": 29
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n        .from('indicator_performance')\r\n        .select('*')\r\n        .in('indicator_id', indicatorIds)\r\n        .order",
+          "lineNumber": 31
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n        .from('indicator_performance')\r\n        .select('*')\r\n        .in",
+          "lineNumber": 31
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n        .from('indicator_performance')\r\n        .select",
+          "lineNumber": 31
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n        .from",
+          "lineNumber": 31
+        },
+        {
+          "caller": "GET",
+          "callee": "JSON.stringify",
+          "lineNumber": 43
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/export/transactions/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 85,
+      "nonEmptyLines": 70,
+      "functions": [
+        {
+          "name": "GET",
+          "startLine": 23,
+          "endLine": 85,
+          "params": [
+            "req"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "line": 23,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "GET",
+          "callee": "getAuthUser",
+          "lineNumber": 24
+        },
+        {
+          "caller": "GET",
+          "callee": "searchParams.get",
+          "lineNumber": 31
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('unified_transactions')\r\n    .select('date, amount, type, description, merchant, currency, account_name, category_name')\r\n    .eq('user_id', user.id)\r\n    .order",
+          "lineNumber": 35
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('unified_transactions')\r\n    .select('date, amount, type, description, merchant, currency, account_name, category_name')\r\n    .eq",
+          "lineNumber": 35
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('unified_transactions')\r\n    .select",
+          "lineNumber": 35
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 35
+        },
+        {
+          "caller": "GET",
+          "callee": "query.eq",
+          "lineNumber": 42
+        },
+        {
+          "caller": "GET",
+          "callee": "CSV_HEADERS.join",
+          "lineNumber": 51
+        },
+        {
+          "caller": "GET",
+          "callee": "Math.abs",
+          "lineNumber": 58
+        },
+        {
+          "caller": "GET",
+          "callee": "Math.abs",
+          "lineNumber": 60
+        },
+        {
+          "caller": "GET",
+          "callee": "escapeCsvValue",
+          "lineNumber": 66
+        },
+        {
+          "caller": "GET",
+          "callee": "formatCsvAmount",
+          "lineNumber": 67
+        },
+        {
+          "caller": "GET",
+          "callee": "escapeCsvValue",
+          "lineNumber": 68
+        },
+        {
+          "caller": "GET",
+          "callee": "escapeCsvValue",
+          "lineNumber": 69
+        },
+        {
+          "caller": "GET",
+          "callee": "escapeCsvValue",
+          "lineNumber": 70
+        },
+        {
+          "caller": "GET",
+          "callee": "escapeCsvValue",
+          "lineNumber": 71
+        },
+        {
+          "caller": "GET",
+          "callee": "escapeCsvValue",
+          "lineNumber": 72
+        },
+        {
+          "caller": "GET",
+          "callee": "lines.push",
+          "lineNumber": 74
+        },
+        {
+          "caller": "GET",
+          "callee": "row.join",
+          "lineNumber": 74
+        },
+        {
+          "caller": "GET",
+          "callee": "lines.join",
+          "lineNumber": 77
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/finance/categories/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 26,
+      "nonEmptyLines": 22,
+      "functions": [
+        {
+          "name": "GET",
+          "startLine": 11,
+          "endLine": 26,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "line": 11,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "GET",
+          "callee": "getAuthUser",
+          "lineNumber": 12
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 13
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('categories')\r\n    .select('id, name, type, color, icon, parent_id')\r\n    .eq('user_id', user.id)\r\n    .order('type')\r\n    .order('sort_order')\r\n    .order",
+          "lineNumber": 15
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('categories')\r\n    .select('id, name, type, color, icon, parent_id')\r\n    .eq('user_id', user.id)\r\n    .order('type')\r\n    .order",
+          "lineNumber": 15
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('categories')\r\n    .select('id, name, type, color, icon, parent_id')\r\n    .eq('user_id', user.id)\r\n    .order",
+          "lineNumber": 15
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('categories')\r\n    .select('id, name, type, color, icon, parent_id')\r\n    .eq",
+          "lineNumber": 15
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('categories')\r\n    .select",
+          "lineNumber": 15
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 15
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 23
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 25
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/import/indicators/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 86,
+      "nonEmptyLines": 72,
+      "functions": [
+        {
+          "name": "POST",
+          "startLine": 4,
+          "endLine": 86,
+          "params": [
+            "req"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "POST",
+          "line": 4,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "POST",
+          "callee": "getAuthUser",
+          "lineNumber": 5
+        },
+        {
+          "caller": "POST",
+          "callee": "Response.json",
+          "lineNumber": 8
+        },
+        {
+          "caller": "POST",
+          "callee": "req.json",
+          "lineNumber": 13
+        },
+        {
+          "caller": "POST",
+          "callee": "Response.json",
+          "lineNumber": 15
+        },
+        {
+          "caller": "POST",
+          "callee": "Array.isArray",
+          "lineNumber": 20
+        },
+        {
+          "caller": "POST",
+          "callee": "Response.json",
+          "lineNumber": 21
+        },
+        {
+          "caller": "POST",
+          "callee": "Promise.all",
+          "lineNumber": 31
+        },
+        {
+          "caller": "POST",
+          "callee": "indicators.map",
+          "lineNumber": 32
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n        .from('indicators')\r\n        // eslint-disable-next-line @typescript-eslint/no-explicit-any\r\n        .insert(toInsert as any)\r\n        .select('id')\r\n        .single",
+          "lineNumber": 39
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n        .from('indicators')\r\n        // eslint-disable-next-line @typescript-eslint/no-explicit-any\r\n        .insert(toInsert as any)\r\n        .select",
+          "lineNumber": 39
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n        .from('indicators')\r\n        // eslint-disable-next-line @typescript-eslint/no-explicit-any\r\n        .insert",
+          "lineNumber": 39
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n        .from",
+          "lineNumber": 39
+        },
+        {
+          "caller": "POST",
+          "callee": "idMap.set",
+          "lineNumber": 55
+        },
+        {
+          "caller": "POST",
+          "callee": "Array.isArray",
+          "lineNumber": 59
+        },
+        {
+          "caller": "POST",
+          "callee": "backtests\r\n      .map((bt) => {\r\n        const oldIndicatorId = bt.indicator_id as string | undefined\r\n        if (!oldIndicatorId) return null\r\n        const newIndicatorId = idMap.get(oldIndicatorId)\r\n        if (!newIndicatorId) return null\r\n        // eslint-disable-next-line @typescript-eslint/no-unused-vars\r\n        const { id: _id, ...rest } = bt\r\n        return { ...rest, indicator_id: newIndicatorId, user_id: user.id }\r\n      })\r\n      .filter",
+          "lineNumber": 60
+        },
+        {
+          "caller": "POST",
+          "callee": "backtests\r\n      .map",
+          "lineNumber": 60
+        },
+        {
+          "caller": "POST",
+          "callee": "idMap.get",
+          "lineNumber": 64
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n        .from('indicator_performance')\r\n        // eslint-disable-next-line @typescript-eslint/no-explicit-any\r\n        .insert(backtestRows as any)\r\n        .select",
+          "lineNumber": 73
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n        .from('indicator_performance')\r\n        // eslint-disable-next-line @typescript-eslint/no-explicit-any\r\n        .insert",
+          "lineNumber": 73
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n        .from",
+          "lineNumber": 73
+        },
+        {
+          "caller": "POST",
+          "callee": "Response.json",
+          "lineNumber": 85
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/import/transactions/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 97,
+      "nonEmptyLines": 80,
+      "functions": [
+        {
+          "name": "POST",
+          "startLine": 12,
+          "endLine": 97,
+          "params": [
+            "req"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "POST",
+          "line": 12,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "POST",
+          "callee": "getAuthUser",
+          "lineNumber": 13
+        },
+        {
+          "caller": "POST",
+          "callee": "Response.json",
+          "lineNumber": 16
+        },
+        {
+          "caller": "POST",
+          "callee": "req.json",
+          "lineNumber": 21
+        },
+        {
+          "caller": "POST",
+          "callee": "Response.json",
+          "lineNumber": 23
+        },
+        {
+          "caller": "POST",
+          "callee": "Array.isArray",
+          "lineNumber": 27
+        },
+        {
+          "caller": "POST",
+          "callee": "Response.json",
+          "lineNumber": 28
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n    .from('categories')\r\n    .select('id, name')\r\n    .eq",
+          "lineNumber": 32
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n    .from('categories')\r\n    .select",
+          "lineNumber": 32
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 32
+        },
+        {
+          "caller": "POST",
+          "callee": "categoryMap.set",
+          "lineNumber": 39
+        },
+        {
+          "caller": "POST",
+          "callee": "cat.name.toLowerCase",
+          "lineNumber": 39
+        },
+        {
+          "caller": "POST",
+          "callee": "errors.push",
+          "lineNumber": 59
+        },
+        {
+          "caller": "POST",
+          "callee": "Math.abs",
+          "lineNumber": 64
+        },
+        {
+          "caller": "POST",
+          "callee": "categoryMap.get",
+          "lineNumber": 67
+        },
+        {
+          "caller": "POST",
+          "callee": "row.category_name.toLowerCase",
+          "lineNumber": 67
+        },
+        {
+          "caller": "POST",
+          "callee": "insertRows.push",
+          "lineNumber": 70
+        },
+        {
+          "caller": "POST",
+          "callee": "Response.json",
+          "lineNumber": 84
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase.from('transactions').insert",
+          "lineNumber": 87
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase.from",
+          "lineNumber": 87
+        },
+        {
+          "caller": "POST",
+          "callee": "Response.json",
+          "lineNumber": 90
+        },
+        {
+          "caller": "POST",
+          "callee": "Response.json",
+          "lineNumber": 96
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/inventar/artwork/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 68,
+      "nonEmptyLines": 61,
+      "functions": [
+        {
+          "name": "POST",
+          "startLine": 39,
+          "endLine": 68,
+          "params": [
+            "request"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "maxDuration",
+          "line": 28,
+          "isDefault": false
+        },
+        {
+          "name": "POST",
+          "line": 39,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "POST",
+          "callee": "getAuthUser",
+          "lineNumber": 40
+        },
+        {
+          "caller": "POST",
+          "callee": "NextResponse.json",
+          "lineNumber": 41
+        },
+        {
+          "caller": "POST",
+          "callee": "request.json().catch",
+          "lineNumber": 43
+        },
+        {
+          "caller": "POST",
+          "callee": "request.json",
+          "lineNumber": 43
+        },
+        {
+          "caller": "POST",
+          "callee": "NextResponse.json",
+          "lineNumber": 44
+        },
+        {
+          "caller": "POST",
+          "callee": "(body.basisBildIds ?? (body.basisBildId ? [body.basisBildId] : [])).slice",
+          "lineNumber": 46
+        },
+        {
+          "caller": "POST",
+          "callee": "erzeugeArtwork",
+          "lineNumber": 52
+        },
+        {
+          "caller": "POST",
+          "callee": "NextResponse.json",
+          "lineNumber": 58
+        },
+        {
+          "caller": "POST",
+          "callee": "NextResponse.json",
+          "lineNumber": 61
+        },
+        {
+          "caller": "POST",
+          "callee": "NextResponse.json",
+          "lineNumber": 63
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/kraken/status/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 33,
+      "nonEmptyLines": 27,
+      "functions": [
+        {
+          "name": "GET",
+          "startLine": 12,
+          "endLine": 33,
+          "params": [
+            "req"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "line": 12,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "GET",
+          "callee": "getAuthUser",
+          "lineNumber": 13
+        },
+        {
+          "caller": "GET",
+          "callee": "Response.json",
+          "lineNumber": 16
+        },
+        {
+          "caller": "GET",
+          "callee": "req.nextUrl.searchParams.get",
+          "lineNumber": 19
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('exchange_keys')\r\n    .select('id')\r\n    .eq('user_id', user.id)\r\n    .eq('exchange', exchange)\r\n    .maybeSingle",
+          "lineNumber": 21
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('exchange_keys')\r\n    .select('id')\r\n    .eq('user_id', user.id)\r\n    .eq",
+          "lineNumber": 21
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('exchange_keys')\r\n    .select('id')\r\n    .eq",
+          "lineNumber": 21
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('exchange_keys')\r\n    .select",
+          "lineNumber": 21
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 21
+        },
+        {
+          "caller": "GET",
+          "callee": "Response.json",
+          "lineNumber": 29
+        },
+        {
+          "caller": "GET",
+          "callee": "Response.json",
+          "lineNumber": 32
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/auth/callback/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 25,
+      "nonEmptyLines": 21,
+      "functions": [
+        {
+          "name": "safeNextPath",
+          "startLine": 6,
+          "endLine": 9,
+          "params": [
+            "next"
+          ]
+        },
+        {
+          "name": "GET",
+          "startLine": 11,
+          "endLine": 25,
+          "params": [
+            "request"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "line": 11,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "safeNextPath",
+          "callee": "next.startsWith",
+          "lineNumber": 7
+        },
+        {
+          "caller": "safeNextPath",
+          "callee": "next.startsWith",
+          "lineNumber": 7
+        },
+        {
+          "caller": "GET",
+          "callee": "searchParams.get",
+          "lineNumber": 13
+        },
+        {
+          "caller": "GET",
+          "callee": "safeNextPath",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "searchParams.get",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "createClient",
+          "lineNumber": 17
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase.auth.exchangeCodeForSession",
+          "lineNumber": 18
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.redirect",
+          "lineNumber": 20
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.redirect",
+          "lineNumber": 24
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/dashboard/athena-insights.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 91,
+      "nonEmptyLines": 84,
+      "functions": [
+        {
+          "name": "AthenaInsights",
+          "startLine": 32,
+          "endLine": 91,
+          "params": [
+            "{ insights }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "AthenaInsights",
+          "line": 32,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "AthenaInsights",
+          "callee": "useRouter",
+          "lineNumber": 33
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "useState",
+          "lineNumber": 34
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "useTransition",
+          "lineNumber": 35
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "insights.filter",
+          "lineNumber": 37
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "hidden.has",
+          "lineNumber": 37
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "visible.map",
+          "lineNumber": 57
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "cn",
+          "lineNumber": 61
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "setHidden",
+          "lineNumber": 76
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "new Set(prev).add",
+          "lineNumber": 76
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "startTransition",
+          "lineNumber": 77
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "dismissInsight",
+          "lineNumber": 78
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "router.refresh",
+          "lineNumber": 79
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/strategy/checklist-panel.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 81,
+      "nonEmptyLines": 73,
+      "functions": [
+        {
+          "name": "ChecklistPanel",
+          "startLine": 29,
+          "endLine": 81,
+          "params": [
+            "{\r\n  strategyId,\r\n  initial,\r\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "ChecklistPanel",
+          "line": 29,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "ChecklistPanel",
+          "callee": "useState",
+          "lineNumber": 36
+        },
+        {
+          "caller": "ChecklistPanel",
+          "callee": "useState",
+          "lineNumber": 37
+        },
+        {
+          "caller": "toggle",
+          "callee": "setState",
+          "lineNumber": 41
+        },
+        {
+          "caller": "toggle",
+          "callee": "setPending",
+          "lineNumber": 42
+        },
+        {
+          "caller": "toggle",
+          "callee": "toggleChecklistItem",
+          "lineNumber": 43
+        },
+        {
+          "caller": "toggle",
+          "callee": "setPending",
+          "lineNumber": 44
+        },
+        {
+          "caller": "ChecklistPanel",
+          "callee": "ITEMS.filter",
+          "lineNumber": 47
+        },
+        {
+          "caller": "ChecklistPanel",
+          "callee": "ITEMS.map",
+          "lineNumber": 54
+        },
+        {
+          "caller": "ChecklistPanel",
+          "callee": "toggle",
+          "lineNumber": 61
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/strategy/combo-form.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 379,
+      "nonEmptyLines": 341,
+      "functions": [
+        {
+          "name": "nextKey",
+          "startLine": 49,
+          "endLine": 49,
+          "params": []
+        },
+        {
+          "name": "toRows",
+          "startLine": 51,
+          "endLine": 53,
+          "params": [
+            "ci"
+          ]
+        },
+        {
+          "name": "IndicatorList",
+          "startLine": 56,
+          "endLine": 158,
+          "params": [
+            "{\r\n  rows,\r\n  options,\r\n  onChange,\r\n}"
+          ]
+        },
+        {
+          "name": "ComboFormBody",
+          "startLine": 161,
+          "endLine": 245,
+          "params": [
+            "{\r\n  defaults,\r\n  rows,\r\n  onRowsChange,\r\n  indicatorOptions,\r\n  state,\r\n  pending,\r\n  onCancel,\r\n  submitLabel,\r\n}"
+          ]
+        },
+        {
+          "name": "AddComboDialog",
+          "startLine": 248,
+          "endLine": 289,
+          "params": [
+            "{ indicatorOptions }"
+          ]
+        },
+        {
+          "name": "EditComboDialog",
+          "startLine": 292,
+          "endLine": 343,
+          "params": [
+            "{\r\n  combo,\r\n  indicatorOptions,\r\n}"
+          ]
+        },
+        {
+          "name": "DeleteComboButton",
+          "startLine": 346,
+          "endLine": 379,
+          "params": [
+            "{ id }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "AddComboDialog",
+          "line": 248,
+          "isDefault": false
+        },
+        {
+          "name": "EditComboDialog",
+          "line": 292,
+          "isDefault": false
+        },
+        {
+          "name": "DeleteComboButton",
+          "line": 346,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "toRows",
+          "callee": "ci.map",
+          "lineNumber": 52
+        },
+        {
+          "caller": "toRows",
+          "callee": "nextKey",
+          "lineNumber": 52
+        },
+        {
+          "caller": "addRow",
+          "callee": "onChange",
+          "lineNumber": 67
+        },
+        {
+          "caller": "addRow",
+          "callee": "nextKey",
+          "lineNumber": 69
+        },
+        {
+          "caller": "removeRow",
+          "callee": "onChange",
+          "lineNumber": 74
+        },
+        {
+          "caller": "removeRow",
+          "callee": "rows.filter(r => r._key !== key).map",
+          "lineNumber": 75
+        },
+        {
+          "caller": "removeRow",
+          "callee": "rows.filter",
+          "lineNumber": 75
+        },
+        {
+          "caller": "setField",
+          "callee": "onChange",
+          "lineNumber": 80
+        },
+        {
+          "caller": "setField",
+          "callee": "rows.map",
+          "lineNumber": 80
+        },
+        {
+          "caller": "IndicatorList",
+          "callee": "JSON.stringify",
+          "lineNumber": 84
+        },
+        {
+          "caller": "IndicatorList",
+          "callee": "rows.map",
+          "lineNumber": 85
+        },
+        {
+          "caller": "IndicatorList",
+          "callee": "rows.map",
+          "lineNumber": 106
+        },
+        {
+          "caller": "IndicatorList",
+          "callee": "setField",
+          "lineNumber": 114
+        },
+        {
+          "caller": "IndicatorList",
+          "callee": "options.map",
+          "lineNumber": 118
+        },
+        {
+          "caller": "IndicatorList",
+          "callee": "removeRow",
+          "lineNumber": 128
+        },
+        {
+          "caller": "IndicatorList",
+          "callee": "setField",
+          "lineNumber": 140
+        },
+        {
+          "caller": "IndicatorList",
+          "callee": "ROLES.map",
+          "lineNumber": 142
+        },
+        {
+          "caller": "IndicatorList",
+          "callee": "setField",
+          "lineNumber": 150
+        },
+        {
+          "caller": "ComboFormBody",
+          "callee": "STATUSES.map",
+          "lineNumber": 193
+        },
+        {
+          "caller": "ComboFormBody",
+          "callee": "ASSET_CLASSES.map",
+          "lineNumber": 207
+        },
+        {
+          "caller": "AddComboDialog",
+          "callee": "useState",
+          "lineNumber": 249
+        },
+        {
+          "caller": "AddComboDialog",
+          "callee": "useState",
+          "lineNumber": 250
+        },
+        {
+          "caller": "AddComboDialog",
+          "callee": "useActionState",
+          "lineNumber": 251
+        },
+        {
+          "caller": "AddComboDialog",
+          "callee": "useEffect",
+          "lineNumber": 253
+        },
+        {
+          "caller": "AddComboDialog",
+          "callee": "setOpen",
+          "lineNumber": 255
+        },
+        {
+          "caller": "AddComboDialog",
+          "callee": "setRows",
+          "lineNumber": 256
+        },
+        {
+          "caller": "AddComboDialog",
+          "callee": "setOpen",
+          "lineNumber": 262
+        },
+        {
+          "caller": "AddComboDialog",
+          "callee": "setOpen",
+          "lineNumber": 273
+        },
+        {
+          "caller": "AddComboDialog",
+          "callee": "setOpen",
+          "lineNumber": 282
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "useState",
+          "lineNumber": 299
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "useState",
+          "lineNumber": 300
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "toRows",
+          "lineNumber": 300
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "useActionState",
+          "lineNumber": 301
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "useEffect",
+          "lineNumber": 303
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "setOpen",
+          "lineNumber": 304
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "useEffect",
+          "lineNumber": 308
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "setRows",
+          "lineNumber": 309
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "toRows",
+          "lineNumber": 309
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "setOpen",
+          "lineNumber": 315
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "setOpen",
+          "lineNumber": 326
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "setOpen",
+          "lineNumber": 336
+        },
+        {
+          "caller": "DeleteComboButton",
+          "callee": "useState",
+          "lineNumber": 347
+        },
+        {
+          "caller": "DeleteComboButton",
+          "callee": "useState",
+          "lineNumber": 348
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "setPending",
+          "lineNumber": 351
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "deleteCombo",
+          "lineNumber": 353
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "setPending",
+          "lineNumber": 355
+        },
+        {
+          "caller": "DeleteComboButton",
+          "callee": "setConfirm",
+          "lineNumber": 365
+        },
+        {
+          "caller": "DeleteComboButton",
+          "callee": "setConfirm",
+          "lineNumber": 376
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 3,
+        "functionCount": 7,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/strategy/strategy-form.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 337,
+      "nonEmptyLines": 308,
+      "functions": [
+        {
+          "name": "StrategyFormBody",
+          "startLine": 44,
+          "endLine": 207,
+          "params": [
+            "{\r\n  defaults,\r\n  comboOptions,\r\n  state,\r\n  pending,\r\n  onCancel,\r\n  submitLabel,\r\n}"
+          ]
+        },
+        {
+          "name": "AddStrategyDialog",
+          "startLine": 210,
+          "endLine": 254,
+          "params": [
+            "{\r\n  comboOptions,\r\n  defaultAssetClass,\r\n  defaultTimeframe,\r\n}"
+          ]
+        },
+        {
+          "name": "EditStrategyDialog",
+          "startLine": 257,
+          "endLine": 299,
+          "params": [
+            "{\r\n  strategy,\r\n  comboOptions,\r\n}"
+          ]
+        },
+        {
+          "name": "DeleteStrategyButton",
+          "startLine": 302,
+          "endLine": 337,
+          "params": [
+            "{ id, redirectAfter }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "AddStrategyDialog",
+          "line": 210,
+          "isDefault": false
+        },
+        {
+          "name": "EditStrategyDialog",
+          "line": 257,
+          "isDefault": false
+        },
+        {
+          "name": "DeleteStrategyButton",
+          "line": 302,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "StrategyFormBody",
+          "callee": "ASSET_CLASSES.map",
+          "lineNumber": 85
+        },
+        {
+          "caller": "StrategyFormBody",
+          "callee": "STATUSES.map",
+          "lineNumber": 99
+        },
+        {
+          "caller": "StrategyFormBody",
+          "callee": "comboOptions.map",
+          "lineNumber": 109
+        },
+        {
+          "caller": "StrategyFormBody",
+          "callee": "defaults?.submission_date?.slice",
+          "lineNumber": 184
+        },
+        {
+          "caller": "AddStrategyDialog",
+          "callee": "useState",
+          "lineNumber": 219
+        },
+        {
+          "caller": "AddStrategyDialog",
+          "callee": "useActionState",
+          "lineNumber": 220
+        },
+        {
+          "caller": "AddStrategyDialog",
+          "callee": "useEffect",
+          "lineNumber": 222
+        },
+        {
+          "caller": "AddStrategyDialog",
+          "callee": "setOpen",
+          "lineNumber": 223
+        },
+        {
+          "caller": "AddStrategyDialog",
+          "callee": "setOpen",
+          "lineNumber": 228
+        },
+        {
+          "caller": "AddStrategyDialog",
+          "callee": "setOpen",
+          "lineNumber": 239
+        },
+        {
+          "caller": "AddStrategyDialog",
+          "callee": "setOpen",
+          "lineNumber": 247
+        },
+        {
+          "caller": "EditStrategyDialog",
+          "callee": "useState",
+          "lineNumber": 264
+        },
+        {
+          "caller": "EditStrategyDialog",
+          "callee": "useActionState",
+          "lineNumber": 265
+        },
+        {
+          "caller": "EditStrategyDialog",
+          "callee": "useEffect",
+          "lineNumber": 267
+        },
+        {
+          "caller": "EditStrategyDialog",
+          "callee": "setOpen",
+          "lineNumber": 268
+        },
+        {
+          "caller": "EditStrategyDialog",
+          "callee": "setOpen",
+          "lineNumber": 273
+        },
+        {
+          "caller": "EditStrategyDialog",
+          "callee": "setOpen",
+          "lineNumber": 284
+        },
+        {
+          "caller": "EditStrategyDialog",
+          "callee": "setOpen",
+          "lineNumber": 292
+        },
+        {
+          "caller": "DeleteStrategyButton",
+          "callee": "useRouter",
+          "lineNumber": 303
+        },
+        {
+          "caller": "DeleteStrategyButton",
+          "callee": "useState",
+          "lineNumber": 304
+        },
+        {
+          "caller": "DeleteStrategyButton",
+          "callee": "useState",
+          "lineNumber": 305
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "setPending",
+          "lineNumber": 308
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "deleteStrategy",
+          "lineNumber": 310
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "router.push",
+          "lineNumber": 311
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "setPending",
+          "lineNumber": 313
+        },
+        {
+          "caller": "DeleteStrategyButton",
+          "callee": "setConfirm",
+          "lineNumber": 323
+        },
+        {
+          "caller": "DeleteStrategyButton",
+          "callee": "setConfirm",
+          "lineNumber": 334
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 3,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/fints/categorize.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 223,
+      "nonEmptyLines": 213,
+      "functions": [
+        {
+          "name": "pickCategoryByName",
+          "startLine": 147,
+          "endLine": 151,
+          "params": [
+            "name",
+            "categories"
+          ]
+        },
+        {
+          "name": "normalizeCounterpart",
+          "startLine": 154,
+          "endLine": 156,
+          "params": [
+            "name"
+          ]
+        },
+        {
+          "name": "buildLearnedCategoryMap",
+          "startLine": 167,
+          "endLine": 190,
+          "params": [
+            "rows"
+          ]
+        },
+        {
+          "name": "suggestCategory",
+          "startLine": 198,
+          "endLine": 223,
+          "params": [
+            "counterpartName",
+            "description",
+            "categories",
+            "learnedMap"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "normalizeCounterpart",
+          "line": 154,
+          "isDefault": false
+        },
+        {
+          "name": "buildLearnedCategoryMap",
+          "line": 167,
+          "isDefault": false
+        },
+        {
+          "name": "suggestCategory",
+          "line": 198,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "pickCategoryByName",
+          "callee": "categories.filter",
+          "lineNumber": 148
+        },
+        {
+          "caller": "pickCategoryByName",
+          "callee": "c.name.toLowerCase",
+          "lineNumber": 148
+        },
+        {
+          "caller": "pickCategoryByName",
+          "callee": "name.toLowerCase",
+          "lineNumber": 148
+        },
+        {
+          "caller": "pickCategoryByName",
+          "callee": "matches.find",
+          "lineNumber": 150
+        },
+        {
+          "caller": "normalizeCounterpart",
+          "callee": "name.trim().toLowerCase().replace",
+          "lineNumber": 155
+        },
+        {
+          "caller": "normalizeCounterpart",
+          "callee": "name.trim().toLowerCase",
+          "lineNumber": 155
+        },
+        {
+          "caller": "normalizeCounterpart",
+          "callee": "name.trim",
+          "lineNumber": 155
+        },
+        {
+          "caller": "buildLearnedCategoryMap",
+          "callee": "normalizeCounterpart",
+          "lineNumber": 173
+        },
+        {
+          "caller": "buildLearnedCategoryMap",
+          "callee": "counts.get",
+          "lineNumber": 175
+        },
+        {
+          "caller": "buildLearnedCategoryMap",
+          "callee": "perCategory.set",
+          "lineNumber": 176
+        },
+        {
+          "caller": "buildLearnedCategoryMap",
+          "callee": "perCategory.get",
+          "lineNumber": 176
+        },
+        {
+          "caller": "buildLearnedCategoryMap",
+          "callee": "counts.set",
+          "lineNumber": 177
+        },
+        {
+          "caller": "buildLearnedCategoryMap",
+          "callee": "learned.set",
+          "lineNumber": 187
+        },
+        {
+          "caller": "suggestCategory",
+          "callee": "learnedMap.get",
+          "lineNumber": 205
+        },
+        {
+          "caller": "suggestCategory",
+          "callee": "normalizeCounterpart",
+          "lineNumber": 205
+        },
+        {
+          "caller": "suggestCategory",
+          "callee": "categories.find",
+          "lineNumber": 207
+        },
+        {
+          "caller": "suggestCategory",
+          "callee": "`${counterpartName ?? ''} ${description ?? ''}`.toLowerCase",
+          "lineNumber": 212
+        },
+        {
+          "caller": "suggestCategory",
+          "callee": "text.trim",
+          "lineNumber": 213
+        },
+        {
+          "caller": "suggestCategory",
+          "callee": "rule.patterns.some",
+          "lineNumber": 216
+        },
+        {
+          "caller": "suggestCategory",
+          "callee": "p.test",
+          "lineNumber": 216
+        },
+        {
+          "caller": "suggestCategory",
+          "callee": "pickCategoryByName",
+          "lineNumber": 218
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 3,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/fints/index.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 676,
+      "nonEmptyLines": 609,
+      "functions": [
+        {
+          "name": "getFinTSErrorDetails",
+          "startLine": 35,
+          "endLine": 38,
+          "params": [
+            "err"
+          ]
+        },
+        {
+          "name": "scaFreeStartDate",
+          "startLine": 142,
+          "endLine": 146,
+          "params": []
+        },
+        {
+          "name": "buildExternalId",
+          "startLine": 156,
+          "endLine": 163,
+          "params": [
+            "iban",
+            "bankReference",
+            "valueDate",
+            "amount",
+            "description"
+          ]
+        },
+        {
+          "name": "mapAccount",
+          "startLine": 165,
+          "endLine": 174,
+          "params": [
+            "acc"
+          ]
+        },
+        {
+          "name": "buildHoldingExternalId",
+          "startLine": 176,
+          "endLine": 178,
+          "params": [
+            "accountNumber",
+            "isin"
+          ]
+        },
+        {
+          "name": "mapHolding",
+          "startLine": 180,
+          "endLine": 198,
+          "params": [
+            "h"
+          ]
+        },
+        {
+          "name": "mapTransaction",
+          "startLine": 205,
+          "endLine": 234,
+          "params": [
+            "tx",
+            "categories",
+            "learnedMap"
+          ]
+        },
+        {
+          "name": "fetchBalances",
+          "startLine": 242,
+          "endLine": 258,
+          "params": []
+        },
+        {
+          "name": "startSync",
+          "startLine": 265,
+          "endLine": 299,
+          "params": [
+            "startDate",
+            "endDate",
+            "categories",
+            "learnedMap",
+            "options"
+          ]
+        },
+        {
+          "name": "mapBalances",
+          "startLine": 308,
+          "endLine": 323,
+          "params": [
+            "balances",
+            "accounts"
+          ]
+        },
+        {
+          "name": "upsertBankBalances",
+          "startLine": 330,
+          "endLine": 356,
+          "params": [
+            "supabase",
+            "userId",
+            "balances"
+          ]
+        },
+        {
+          "name": "isScaRequiredError",
+          "startLine": 362,
+          "endLine": 364,
+          "params": [
+            "err"
+          ]
+        },
+        {
+          "name": "stateFromError",
+          "startLine": 367,
+          "endLine": 370,
+          "params": [
+            "err"
+          ]
+        },
+        {
+          "name": "upsertBankTransactions",
+          "startLine": 377,
+          "endLine": 526,
+          "params": [
+            "supabase",
+            "userId",
+            "transactions"
+          ]
+        },
+        {
+          "name": "applyLearnedCategoriesToBacklog",
+          "startLine": 538,
+          "endLine": 577,
+          "params": [
+            "supabase",
+            "userId"
+          ]
+        },
+        {
+          "name": "upsertDepotHoldings",
+          "startLine": 586,
+          "endLine": 617,
+          "params": [
+            "supabase",
+            "userId",
+            "holdings"
+          ]
+        },
+        {
+          "name": "isCloudRuntime",
+          "startLine": 637,
+          "endLine": 639,
+          "params": []
+        },
+        {
+          "name": "triggerCloudBankSync",
+          "startLine": 651,
+          "endLine": 676,
+          "params": [
+            "origin",
+            "opts"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "getFinTSErrorDetails",
+          "line": 35,
+          "isDefault": false
+        },
+        {
+          "name": "SCA_FREE_LOOKBACK_DAYS",
+          "line": 139,
+          "isDefault": false
+        },
+        {
+          "name": "scaFreeStartDate",
+          "line": 142,
+          "isDefault": false
+        },
+        {
+          "name": "fetchBalances",
+          "line": 242,
+          "isDefault": false
+        },
+        {
+          "name": "startSync",
+          "line": 265,
+          "isDefault": false
+        },
+        {
+          "name": "upsertBankBalances",
+          "line": 330,
+          "isDefault": false
+        },
+        {
+          "name": "isScaRequiredError",
+          "line": 362,
+          "isDefault": false
+        },
+        {
+          "name": "stateFromError",
+          "line": 367,
+          "isDefault": false
+        },
+        {
+          "name": "upsertBankTransactions",
+          "line": 377,
+          "isDefault": false
+        },
+        {
+          "name": "applyLearnedCategoriesToBacklog",
+          "line": 538,
+          "isDefault": false
+        },
+        {
+          "name": "upsertDepotHoldings",
+          "line": 586,
+          "isDefault": false
+        },
+        {
+          "name": "isCloudRuntime",
+          "line": 637,
+          "isDefault": false
+        },
+        {
+          "name": "triggerCloudBankSync",
+          "line": 651,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getFinTSErrorDetails",
+          "callee": "String",
+          "lineNumber": 36
+        },
+        {
+          "caller": "scaFreeStartDate",
+          "callee": "d.setDate",
+          "lineNumber": 144
+        },
+        {
+          "caller": "scaFreeStartDate",
+          "callee": "d.getDate",
+          "lineNumber": 144
+        },
+        {
+          "caller": "buildExternalId",
+          "callee": "description.substring",
+          "lineNumber": 161
+        },
+        {
+          "caller": "buildExternalId",
+          "callee": "Buffer.from(raw).toString",
+          "lineNumber": 162
+        },
+        {
+          "caller": "buildExternalId",
+          "callee": "Buffer.from",
+          "lineNumber": 162
+        },
+        {
+          "caller": "buildHoldingExternalId",
+          "callee": "Buffer.from(`${accountNumber}|${isin}`).toString",
+          "lineNumber": 177
+        },
+        {
+          "caller": "buildHoldingExternalId",
+          "callee": "Buffer.from",
+          "lineNumber": 177
+        },
+        {
+          "caller": "mapHolding",
+          "callee": "buildHoldingExternalId",
+          "lineNumber": 196
+        },
+        {
+          "caller": "mapTransaction",
+          "callee": "suggestCategory",
+          "lineNumber": 229
+        },
+        {
+          "caller": "mapTransaction",
+          "callee": "buildExternalId",
+          "lineNumber": 232
+        },
+        {
+          "caller": "fetchBalances",
+          "callee": "runSidecar",
+          "lineNumber": 243
+        },
+        {
+          "caller": "fetchBalances",
+          "callee": "result.balances\r\n    .filter(b => b.iban)\r\n    .map",
+          "lineNumber": 244
+        },
+        {
+          "caller": "fetchBalances",
+          "callee": "result.balances\r\n    .filter",
+          "lineNumber": 244
+        },
+        {
+          "caller": "fetchBalances",
+          "callee": "result.accounts.find",
+          "lineNumber": 247
+        },
+        {
+          "caller": "startSync",
+          "callee": "runSidecar",
+          "lineNumber": 275
+        },
+        {
+          "caller": "startSync",
+          "callee": "result.transactions\r\n    .map(tx => mapTransaction(tx, categories, learnedMap))\r\n    .filter",
+          "lineNumber": 282
+        },
+        {
+          "caller": "startSync",
+          "callee": "result.transactions\r\n    .map",
+          "lineNumber": 282
+        },
+        {
+          "caller": "startSync",
+          "callee": "mapTransaction",
+          "lineNumber": 283
+        },
+        {
+          "caller": "startSync",
+          "callee": "console.warn",
+          "lineNumber": 287
+        },
+        {
+          "caller": "startSync",
+          "callee": "result.accounts.map",
+          "lineNumber": 291
+        },
+        {
+          "caller": "startSync",
+          "callee": "result.holdings.map(mapHolding).filter",
+          "lineNumber": 293
+        },
+        {
+          "caller": "startSync",
+          "callee": "result.holdings.map",
+          "lineNumber": 293
+        },
+        {
+          "caller": "startSync",
+          "callee": "mapBalances",
+          "lineNumber": 294
+        },
+        {
+          "caller": "mapBalances",
+          "callee": "balances\r\n    .filter(b => b.iban && b.bookedBalance != null)\r\n    .map",
+          "lineNumber": 309
+        },
+        {
+          "caller": "mapBalances",
+          "callee": "balances\r\n    .filter",
+          "lineNumber": 309
+        },
+        {
+          "caller": "mapBalances",
+          "callee": "accounts.find",
+          "lineNumber": 312
+        },
+        {
+          "caller": "upsertBankBalances",
+          "callee": "balances.map",
+          "lineNumber": 338
+        },
+        {
+          "caller": "upsertBankBalances",
+          "callee": "new Date().toISOString",
+          "lineNumber": 347
+        },
+        {
+          "caller": "upsertBankBalances",
+          "callee": "supabase\r\n    .from('bank_balance')\r\n    .upsert",
+          "lineNumber": 350
+        },
+        {
+          "caller": "upsertBankBalances",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 350
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .select('id, account_iban, value_date, amount, external_id, bank_reference, description, raw_description')\r\n    .eq",
+          "lineNumber": 401
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .select",
+          "lineNumber": 401
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 401
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "existing.map(r => r.external_id).filter",
+          "lineNumber": 419
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "existing.map",
+          "lineNumber": 419
+        },
+        {
+          "caller": "descKey",
+          "callee": "(text ?? '').toLowerCase().replace(/\\s+/g, ' ').trim().slice",
+          "lineNumber": 427
+        },
+        {
+          "caller": "descKey",
+          "callee": "(text ?? '').toLowerCase().replace(/\\s+/g, ' ').trim",
+          "lineNumber": 427
+        },
+        {
+          "caller": "descKey",
+          "callee": "(text ?? '').toLowerCase().replace",
+          "lineNumber": 427
+        },
+        {
+          "caller": "descKey",
+          "callee": "(text ?? '').toLowerCase",
+          "lineNumber": 427
+        },
+        {
+          "caller": "push",
+          "callee": "map.get",
+          "lineNumber": 434
+        },
+        {
+          "caller": "push",
+          "callee": "ids.push",
+          "lineNumber": 435
+        },
+        {
+          "caller": "push",
+          "callee": "map.set",
+          "lineNumber": 436
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "coarseKey",
+          "lineNumber": 440
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "push",
+          "lineNumber": 441
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "push",
+          "lineNumber": 442
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "descKey",
+          "lineNumber": 442
+        },
+        {
+          "caller": "available",
+          "callee": "(ids ?? []).filter",
+          "lineNumber": 446
+        },
+        {
+          "caller": "available",
+          "callee": "consumed.has",
+          "lineNumber": 446
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "toInsert.push",
+          "lineNumber": 453
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "coarseKey",
+          "lineNumber": 455
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "descKey",
+          "lineNumber": 456
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "available",
+          "lineNumber": 459
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "legacyByFine.get",
+          "lineNumber": 459
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "available",
+          "lineNumber": 460
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "legacyByCoarse.get",
+          "lineNumber": 460
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "toInsert.push",
+          "lineNumber": 462
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "consumed.add",
+          "lineNumber": 464
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "takenExternalIds.has",
+          "lineNumber": 466
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n        .from('bank_transactions')\r\n        .delete()\r\n        .eq",
+          "lineNumber": 471
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n        .from('bank_transactions')\r\n        .delete",
+          "lineNumber": 471
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n        .from",
+          "lineNumber": 471
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n        .from('bank_transactions')\r\n        .update({\r\n          bank_reference:  tx.bankReference,\r\n          external_id:     tx.externalId,\r\n          description:     tx.description,\r\n          raw_description: tx.rawDescription,\r\n          entry_date:      tx.entryDate,\r\n          bank_label:      tx.bankLabel,\r\n        })\r\n        .eq",
+          "lineNumber": 478
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n        .from('bank_transactions')\r\n        .update",
+          "lineNumber": 478
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n        .from",
+          "lineNumber": 478
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "takenExternalIds.add",
+          "lineNumber": 490
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "toInsert.map",
+          "lineNumber": 497
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .upsert(rows, { onConflict: 'user_id,external_id', ignoreDuplicates: true })\r\n    .select",
+          "lineNumber": 516
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .upsert",
+          "lineNumber": 516
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 516
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .select('counterpart_name, category_id')\r\n    .eq('user_id', userId)\r\n    .not",
+          "lineNumber": 543
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .select('counterpart_name, category_id')\r\n    .eq",
+          "lineNumber": 543
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .select",
+          "lineNumber": 543
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 543
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "buildLearnedCategoryMap",
+          "lineNumber": 549
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .select('id, counterpart_name')\r\n    .eq('user_id', userId)\r\n    .is('category_id', null)\r\n    .not",
+          "lineNumber": 552
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .select('id, counterpart_name')\r\n    .eq('user_id', userId)\r\n    .is",
+          "lineNumber": 552
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .select('id, counterpart_name')\r\n    .eq",
+          "lineNumber": 552
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .select",
+          "lineNumber": 552
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 552
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "learnedMap.get",
+          "lineNumber": 561
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "normalizeCounterpart",
+          "lineNumber": 561
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "idsByCategory.get",
+          "lineNumber": 563
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "ids.push",
+          "lineNumber": 564
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "idsByCategory.set",
+          "lineNumber": 565
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n      .from('bank_transactions')\r\n      .update({ category_id: categoryId })\r\n      .in",
+          "lineNumber": 570
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n      .from('bank_transactions')\r\n      .update",
+          "lineNumber": 570
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n      .from",
+          "lineNumber": 570
+        },
+        {
+          "caller": "upsertDepotHoldings",
+          "callee": "holdings.map",
+          "lineNumber": 594
+        },
+        {
+          "caller": "upsertDepotHoldings",
+          "callee": "new Date().toISOString",
+          "lineNumber": 608
+        },
+        {
+          "caller": "upsertDepotHoldings",
+          "callee": "supabase\r\n    .from('depot_holdings')\r\n    .upsert",
+          "lineNumber": 611
+        },
+        {
+          "caller": "upsertDepotHoldings",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 611
+        },
+        {
+          "caller": "triggerCloudBankSync",
+          "callee": "url.searchParams.set",
+          "lineNumber": 656
+        },
+        {
+          "caller": "triggerCloudBankSync",
+          "callee": "url.searchParams.set",
+          "lineNumber": 657
+        },
+        {
+          "caller": "triggerCloudBankSync",
+          "callee": "fetch",
+          "lineNumber": 659
+        },
+        {
+          "caller": "triggerCloudBankSync",
+          "callee": "url.toString",
+          "lineNumber": 659
+        },
+        {
+          "caller": "triggerCloudBankSync",
+          "callee": "res.json().catch",
+          "lineNumber": 662
+        },
+        {
+          "caller": "triggerCloudBankSync",
+          "callee": "res.json",
+          "lineNumber": 662
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 13,
+        "functionCount": 18,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/fints/sidecar.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 279,
+      "nonEmptyLines": 250,
+      "functions": [
+        {
+          "name": "resolvePythonExecutable",
+          "startLine": 132,
+          "endLine": 142,
+          "params": []
+        },
+        {
+          "name": "scriptPath",
+          "startLine": 144,
+          "endLine": 146,
+          "params": []
+        },
+        {
+          "name": "runSidecar",
+          "startLine": 151,
+          "endLine": 261,
+          "params": [
+            "opts"
+          ]
+        },
+        {
+          "name": "parsePayload",
+          "startLine": 267,
+          "endLine": 279,
+          "params": [
+            "stdout"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "runSidecar",
+          "line": 151,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "resolvePythonExecutable",
+          "callee": "process.env.FINTS_PYTHON?.trim",
+          "lineNumber": 133
+        },
+        {
+          "caller": "resolvePythonExecutable",
+          "callee": "process.env.FINTS_PYTHON.trim",
+          "lineNumber": 133
+        },
+        {
+          "caller": "resolvePythonExecutable",
+          "callee": "path.join",
+          "lineNumber": 135
+        },
+        {
+          "caller": "resolvePythonExecutable",
+          "callee": "path.join",
+          "lineNumber": 136
+        },
+        {
+          "caller": "resolvePythonExecutable",
+          "callee": "fs.existsSync",
+          "lineNumber": 137
+        },
+        {
+          "caller": "resolvePythonExecutable",
+          "callee": "fs.existsSync",
+          "lineNumber": 138
+        },
+        {
+          "caller": "scriptPath",
+          "callee": "path.join",
+          "lineNumber": 145
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "resolvePythonExecutable",
+          "lineNumber": 152
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "scriptPath",
+          "lineNumber": 153
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "fs.existsSync",
+          "lineNumber": 155
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "path.join",
+          "lineNumber": 162
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "fs.mkdtempSync",
+          "lineNumber": 163
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "path.join",
+          "lineNumber": 163
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "os.tmpdir",
+          "lineNumber": 163
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "fs.writeFileSync",
+          "lineNumber": 167
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "JSON.stringify",
+          "lineNumber": 167
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "console.warn",
+          "lineNumber": 170
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "args.push",
+          "lineNumber": 174
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "opts.startDate.toISOString",
+          "lineNumber": 174
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "args.push",
+          "lineNumber": 175
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "opts.endDate.toISOString",
+          "lineNumber": 175
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "args.push",
+          "lineNumber": 176
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "args.push",
+          "lineNumber": 177
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "args.push",
+          "lineNumber": 178
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "args.push",
+          "lineNumber": 179
+        },
+        {
+          "caller": "readAndCleanupState",
+          "callee": "fs.readFileSync",
+          "lineNumber": 185
+        },
+        {
+          "caller": "readAndCleanupState",
+          "callee": "JSON.parse",
+          "lineNumber": 186
+        },
+        {
+          "caller": "readAndCleanupState",
+          "callee": "fs.rmSync",
+          "lineNumber": 192
+        },
+        {
+          "caller": "readAndCleanupState",
+          "callee": "path.dirname",
+          "lineNumber": 192
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "spawn",
+          "lineNumber": 198
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "setTimeout",
+          "lineNumber": 208
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "child.kill",
+          "lineNumber": 211
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "readAndCleanupState",
+          "lineNumber": 212
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "reject",
+          "lineNumber": 213
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "child.stdout.on",
+          "lineNumber": 216
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "chunk.toString",
+          "lineNumber": 216
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "child.stderr.on",
+          "lineNumber": 217
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "chunk.toString",
+          "lineNumber": 218
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "process.stderr.write",
+          "lineNumber": 221
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "child.on",
+          "lineNumber": 224
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "clearTimeout",
+          "lineNumber": 227
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "readAndCleanupState",
+          "lineNumber": 228
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "reject",
+          "lineNumber": 229
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "child.on",
+          "lineNumber": 232
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "clearTimeout",
+          "lineNumber": 235
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "readAndCleanupState",
+          "lineNumber": 239
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "parsePayload",
+          "lineNumber": 240
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "reject",
+          "lineNumber": 242
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "stderr.trim().split('\\n').slice(-3).join",
+          "lineNumber": 244
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "stderr.trim().split('\\n').slice",
+          "lineNumber": 244
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "stderr.trim().split",
+          "lineNumber": 244
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "stderr.trim",
+          "lineNumber": 244
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "reject",
+          "lineNumber": 255
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "resolve",
+          "lineNumber": 258
+        },
+        {
+          "caller": "parsePayload",
+          "callee": "stdout.split(/\\r?\\n/).map(l => l.trim()).filter",
+          "lineNumber": 268
+        },
+        {
+          "caller": "parsePayload",
+          "callee": "stdout.split(/\\r?\\n/).map",
+          "lineNumber": 268
+        },
+        {
+          "caller": "parsePayload",
+          "callee": "stdout.split",
+          "lineNumber": 268
+        },
+        {
+          "caller": "parsePayload",
+          "callee": "l.trim",
+          "lineNumber": 268
+        },
+        {
+          "caller": "parsePayload",
+          "callee": "line.startsWith",
+          "lineNumber": 271
+        },
+        {
+          "caller": "parsePayload",
+          "callee": "JSON.parse",
+          "lineNumber": 273
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/fints/state.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 156,
+      "nonEmptyLines": 140,
+      "functions": [
+        {
+          "name": "adminClient",
+          "startLine": 27,
+          "endLine": 32,
+          "params": []
+        },
+        {
+          "name": "loadBankClientState",
+          "startLine": 49,
+          "endLine": 65,
+          "params": [
+            "userId"
+          ]
+        },
+        {
+          "name": "saveBankClientState",
+          "startLine": 74,
+          "endLine": 103,
+          "params": [
+            "userId",
+            "state"
+          ]
+        },
+        {
+          "name": "markScaRequired",
+          "startLine": 111,
+          "endLine": 119,
+          "params": [
+            "userId"
+          ]
+        },
+        {
+          "name": "getBankScaStatus",
+          "startLine": 134,
+          "endLine": 156,
+          "params": [
+            "userId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "SCA_EXEMPTION_DAYS",
+          "line": 35,
+          "isDefault": false
+        },
+        {
+          "name": "loadBankClientState",
+          "line": 49,
+          "isDefault": false
+        },
+        {
+          "name": "saveBankClientState",
+          "line": 74,
+          "isDefault": false
+        },
+        {
+          "name": "markScaRequired",
+          "line": 111,
+          "isDefault": false
+        },
+        {
+          "name": "getBankScaStatus",
+          "line": 134,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "adminClient",
+          "callee": "createClient",
+          "lineNumber": 28
+        },
+        {
+          "caller": "loadBankClientState",
+          "callee": "adminClient()\r\n    .from('fints_client_state')\r\n    .select('bank_key, bank_label, state_blob')\r\n    .eq",
+          "lineNumber": 50
+        },
+        {
+          "caller": "loadBankClientState",
+          "callee": "adminClient()\r\n    .from('fints_client_state')\r\n    .select",
+          "lineNumber": 50
+        },
+        {
+          "caller": "loadBankClientState",
+          "callee": "adminClient()\r\n    .from",
+          "lineNumber": 50
+        },
+        {
+          "caller": "loadBankClientState",
+          "callee": "adminClient",
+          "lineNumber": 50
+        },
+        {
+          "caller": "loadBankClientState",
+          "callee": "console.warn",
+          "lineNumber": 56
+        },
+        {
+          "caller": "saveBankClientState",
+          "callee": "Object.entries(state).filter",
+          "lineNumber": 79
+        },
+        {
+          "caller": "saveBankClientState",
+          "callee": "Object.entries",
+          "lineNumber": 79
+        },
+        {
+          "caller": "saveBankClientState",
+          "callee": "new Date().toISOString",
+          "lineNumber": 82
+        },
+        {
+          "caller": "saveBankClientState",
+          "callee": "entries.map",
+          "lineNumber": 83
+        },
+        {
+          "caller": "saveBankClientState",
+          "callee": "adminClient()\r\n    .from('fints_client_state')\r\n    .upsert",
+          "lineNumber": 94
+        },
+        {
+          "caller": "saveBankClientState",
+          "callee": "adminClient()\r\n    .from",
+          "lineNumber": 94
+        },
+        {
+          "caller": "saveBankClientState",
+          "callee": "adminClient",
+          "lineNumber": 94
+        },
+        {
+          "caller": "saveBankClientState",
+          "callee": "console.warn",
+          "lineNumber": 101
+        },
+        {
+          "caller": "markScaRequired",
+          "callee": "adminClient()\r\n    .from('fints_client_state')\r\n    .update({ sca_required_since: new Date().toISOString() })\r\n    .eq('user_id', userId)\r\n    .is",
+          "lineNumber": 112
+        },
+        {
+          "caller": "markScaRequired",
+          "callee": "adminClient()\r\n    .from('fints_client_state')\r\n    .update({ sca_required_since: new Date().toISOString() })\r\n    .eq",
+          "lineNumber": 112
+        },
+        {
+          "caller": "markScaRequired",
+          "callee": "adminClient()\r\n    .from('fints_client_state')\r\n    .update",
+          "lineNumber": 112
+        },
+        {
+          "caller": "markScaRequired",
+          "callee": "adminClient()\r\n    .from",
+          "lineNumber": 112
+        },
+        {
+          "caller": "markScaRequired",
+          "callee": "adminClient",
+          "lineNumber": 112
+        },
+        {
+          "caller": "markScaRequired",
+          "callee": "new Date().toISOString",
+          "lineNumber": 114
+        },
+        {
+          "caller": "markScaRequired",
+          "callee": "console.warn",
+          "lineNumber": 118
+        },
+        {
+          "caller": "getBankScaStatus",
+          "callee": "adminClient()\r\n    .from('fints_client_state')\r\n    .select('bank_key, bank_label, last_sca_at, sca_required_since')\r\n    .eq",
+          "lineNumber": 135
+        },
+        {
+          "caller": "getBankScaStatus",
+          "callee": "adminClient()\r\n    .from('fints_client_state')\r\n    .select",
+          "lineNumber": 135
+        },
+        {
+          "caller": "getBankScaStatus",
+          "callee": "adminClient()\r\n    .from",
+          "lineNumber": 135
+        },
+        {
+          "caller": "getBankScaStatus",
+          "callee": "adminClient",
+          "lineNumber": 135
+        },
+        {
+          "caller": "getBankScaStatus",
+          "callee": "(data as BankStateRow[]).map",
+          "lineNumber": 142
+        },
+        {
+          "caller": "getBankScaStatus",
+          "callee": "d.setDate",
+          "lineNumber": 146
+        },
+        {
+          "caller": "getBankScaStatus",
+          "callee": "d.getDate",
+          "lineNumber": 146
+        },
+        {
+          "caller": "getBankScaStatus",
+          "callee": "d.toISOString",
+          "lineNumber": 147
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 5,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/inventar/artwork.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 615,
+      "nonEmptyLines": 559,
+      "functions": [
+        {
+          "name": "meckertUeberOptionales",
+          "startLine": 52,
+          "endLine": 54,
+          "params": [
+            "text"
+          ]
+        },
+        {
+          "name": "artworkVerfuegbar",
+          "startLine": 251,
+          "endLine": 253,
+          "params": []
+        },
+        {
+          "name": "beschreibung",
+          "startLine": 263,
+          "endLine": 283,
+          "params": [
+            "item"
+          ]
+        },
+        {
+          "name": "baueArtworkPrompt",
+          "startLine": 292,
+          "endLine": 330,
+          "params": [
+            "item",
+            "vorlagen",
+            "hinweis"
+          ]
+        },
+        {
+          "name": "kurz",
+          "startLine": 333,
+          "endLine": 336,
+          "params": [
+            "text",
+            "max"
+          ]
+        },
+        {
+          "name": "erzeugeArtwork",
+          "startLine": 366,
+          "endLine": 440,
+          "params": [
+            "supabase",
+            "userId",
+            "auftrag"
+          ]
+        },
+        {
+          "name": "ladeVorlagen",
+          "startLine": 449,
+          "endLine": 482,
+          "params": [
+            "supabase",
+            "userId",
+            "valuableId",
+            "ids"
+          ]
+        },
+        {
+          "name": "rendern",
+          "startLine": 485,
+          "endLine": 519,
+          "params": [
+            "supabase",
+            "apiKey",
+            "prompt",
+            "vorlagen",
+            "qualitaet"
+          ]
+        },
+        {
+          "name": "erzeugen",
+          "startLine": 521,
+          "endLine": 545,
+          "params": [
+            "apiKey",
+            "prompt",
+            "qualitaet"
+          ]
+        },
+        {
+          "name": "bearbeiten",
+          "startLine": 547,
+          "endLine": 615,
+          "params": [
+            "supabase",
+            "apiKey",
+            "prompt",
+            "vorlagen",
+            "qualitaet"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "ArtworkFehler",
+          "startLine": 236,
+          "endLine": 244,
+          "methods": [
+            "constructor"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "MAX_VORLAGEN",
+          "line": 7,
+          "isDefault": false
+        },
+        {
+          "name": "HINWEIS_MAX",
+          "line": 7,
+          "isDefault": false
+        },
+        {
+          "name": "ArtworkFehler",
+          "line": 236,
+          "isDefault": false
+        },
+        {
+          "name": "OHNE_SCHLUESSEL",
+          "line": 247,
+          "isDefault": false
+        },
+        {
+          "name": "artworkVerfuegbar",
+          "line": 251,
+          "isDefault": false
+        },
+        {
+          "name": "beschreibung",
+          "line": 263,
+          "isDefault": false
+        },
+        {
+          "name": "baueArtworkPrompt",
+          "line": 292,
+          "isDefault": false
+        },
+        {
+          "name": "erzeugeArtwork",
+          "line": 366,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "meckertUeberOptionales",
+          "callee": "OPTIONALE_PARAMETER.some",
+          "lineNumber": 53
+        },
+        {
+          "caller": "meckertUeberOptionales",
+          "callee": "text.includes",
+          "lineNumber": 53
+        },
+        {
+          "caller": "constructor",
+          "callee": "super",
+          "lineNumber": 241
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "kategorieEn",
+          "lineNumber": 264
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "[item.marke, item.modell].filter(Boolean).join",
+          "lineNumber": 266
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "[item.marke, item.modell].filter",
+          "lineNumber": 266
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "teile.push",
+          "lineNumber": 267
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "teile.push",
+          "lineNumber": 270
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "zustandEn",
+          "lineNumber": 272
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "teile.push",
+          "lineNumber": 273
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "teile.push",
+          "lineNumber": 275
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "item.notizen.replace(/\\s+/g, ' ').trim().slice",
+          "lineNumber": 278
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "item.notizen.replace(/\\s+/g, ' ').trim",
+          "lineNumber": 278
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "item.notizen.replace",
+          "lineNumber": 278
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "teile.push",
+          "lineNumber": 279
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "teile.join",
+          "lineNumber": 282
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "teile.push",
+          "lineNumber": 306
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "vorlagen.some",
+          "lineNumber": 306
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "teile.push",
+          "lineNumber": 307
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "teile.push",
+          "lineNumber": 308
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "beschreibung",
+          "lineNumber": 308
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "teile.push",
+          "lineNumber": 311
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "beschreibung",
+          "lineNumber": 311
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "teile.push",
+          "lineNumber": 312
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "teile.push",
+          "lineNumber": 313
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "teile.push",
+          "lineNumber": 318
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "kurz",
+          "lineNumber": 320
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "teile.push",
+          "lineNumber": 322
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "teile.join",
+          "lineNumber": 329
+        },
+        {
+          "caller": "kurz",
+          "callee": "(text ?? '').replace(/\\s+/g, ' ').trim().slice",
+          "lineNumber": 334
+        },
+        {
+          "caller": "kurz",
+          "callee": "(text ?? '').replace(/\\s+/g, ' ').trim",
+          "lineNumber": 334
+        },
+        {
+          "caller": "kurz",
+          "callee": "(text ?? '').replace",
+          "lineNumber": 334
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from('valuables')\r\n    .select('id, name, kategorie, marke, modell, referenz, zustand, notizen')\r\n    .eq('id', auftrag.valuableId)\r\n    .eq('user_id', userId)\r\n    .maybeSingle",
+          "lineNumber": 374
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from('valuables')\r\n    .select('id, name, kategorie, marke, modell, referenz, zustand, notizen')\r\n    .eq('id', auftrag.valuableId)\r\n    .eq",
+          "lineNumber": 374
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from('valuables')\r\n    .select('id, name, kategorie, marke, modell, referenz, zustand, notizen')\r\n    .eq",
+          "lineNumber": 374
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from('valuables')\r\n    .select",
+          "lineNumber": 374
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 374
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "ladeVorlagen",
+          "lineNumber": 385
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "kurz",
+          "lineNumber": 386
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "baueArtworkPrompt",
+          "lineNumber": 387
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "rendern",
+          "lineNumber": 389
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "Date.now",
+          "lineNumber": 394
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase.storage\r\n    .from('valuables')\r\n    .upload",
+          "lineNumber": 395
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase.storage\r\n    .from",
+          "lineNumber": 395
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from('valuable_images')\r\n    .update({ ist_hauptbild: false } as never)\r\n    .eq('valuable_id', item.id)\r\n    .eq",
+          "lineNumber": 403
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from('valuable_images')\r\n    .update({ ist_hauptbild: false } as never)\r\n    .eq",
+          "lineNumber": 403
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from('valuable_images')\r\n    .update",
+          "lineNumber": 403
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 403
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from('valuable_images')\r\n    .insert({\r\n      valuable_id: item.id,\r\n      user_id: userId,\r\n      pfad,\r\n      art: 'artwork',\r\n      ist_hauptbild: true,\r\n      prompt,\r\n      hinweis,\r\n      // Bei mehreren Vorlagen die erste: die Kette soll zeigen, worauf aufgebaut wurde,\r\n      // und dafür ist die Hauptvorlage die interessante.\r\n      basis_bild_id: vorlagen[0]?.id ?? null,\r\n    } as never)\r\n    .select('id')\r\n    .single",
+          "lineNumber": 409
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from('valuable_images')\r\n    .insert({\r\n      valuable_id: item.id,\r\n      user_id: userId,\r\n      pfad,\r\n      art: 'artwork',\r\n      ist_hauptbild: true,\r\n      prompt,\r\n      hinweis,\r\n      // Bei mehreren Vorlagen die erste: die Kette soll zeigen, worauf aufgebaut wurde,\r\n      // und dafür ist die Hauptvorlage die interessante.\r\n      basis_bild_id: vorlagen[0]?.id ?? null,\r\n    } as never)\r\n    .select",
+          "lineNumber": 409
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from('valuable_images')\r\n    .insert",
+          "lineNumber": 409
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 409
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase.storage.from('valuables').remove",
+          "lineNumber": 427
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase.storage.from",
+          "lineNumber": 427
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "vorlagen.some",
+          "lineNumber": 437
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "[...new Set(ids)].slice",
+          "lineNumber": 455
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "supabase\r\n    .from('valuable_images')\r\n    .select('id, pfad, art')\r\n    .in('id', gewuenscht)\r\n    .eq('valuable_id', valuableId)\r\n    .eq",
+          "lineNumber": 458
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "supabase\r\n    .from('valuable_images')\r\n    .select('id, pfad, art')\r\n    .in('id', gewuenscht)\r\n    .eq",
+          "lineNumber": 458
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "supabase\r\n    .from('valuable_images')\r\n    .select('id, pfad, art')\r\n    .in",
+          "lineNumber": 458
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "supabase\r\n    .from('valuable_images')\r\n    .select",
+          "lineNumber": 458
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 458
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "((data ?? []) as { id: string; pfad: string; art: string }[]).map",
+          "lineNumber": 466
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "gewuenscht.filter",
+          "lineNumber": 476
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "gefunden.has",
+          "lineNumber": 476
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "fehlend.join",
+          "lineNumber": 478
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "gewuenscht.map",
+          "lineNumber": 481
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "gefunden.get",
+          "lineNumber": 481
+        },
+        {
+          "caller": "rendern",
+          "callee": "bearbeiten",
+          "lineNumber": 496
+        },
+        {
+          "caller": "rendern",
+          "callee": "erzeugen",
+          "lineNumber": 497
+        },
+        {
+          "caller": "rendern",
+          "callee": "res.text",
+          "lineNumber": 504
+        },
+        {
+          "caller": "rendern",
+          "callee": "detail.slice",
+          "lineNumber": 507
+        },
+        {
+          "caller": "rendern",
+          "callee": "res.json",
+          "lineNumber": 510
+        },
+        {
+          "caller": "rendern",
+          "callee": "fetch",
+          "lineNumber": 515
+        },
+        {
+          "caller": "rendern",
+          "callee": "Buffer.from(await bild.arrayBuffer()).toString",
+          "lineNumber": 516
+        },
+        {
+          "caller": "rendern",
+          "callee": "Buffer.from",
+          "lineNumber": 516
+        },
+        {
+          "caller": "rendern",
+          "callee": "bild.arrayBuffer",
+          "lineNumber": 516
+        },
+        {
+          "caller": "rendern",
+          "callee": "Buffer.from",
+          "lineNumber": 518
+        },
+        {
+          "caller": "senden",
+          "callee": "fetch",
+          "lineNumber": 523
+        },
+        {
+          "caller": "senden",
+          "callee": "JSON.stringify",
+          "lineNumber": 526
+        },
+        {
+          "caller": "erzeugen",
+          "callee": "senden",
+          "lineNumber": 538
+        },
+        {
+          "caller": "erzeugen",
+          "callee": "res.clone().text",
+          "lineNumber": 541
+        },
+        {
+          "caller": "erzeugen",
+          "callee": "res.clone",
+          "lineNumber": 541
+        },
+        {
+          "caller": "erzeugen",
+          "callee": "meckertUeberOptionales",
+          "lineNumber": 542
+        },
+        {
+          "caller": "erzeugen",
+          "callee": "senden",
+          "lineNumber": 542
+        },
+        {
+          "caller": "bearbeiten",
+          "callee": "supabase.storage.from('valuables').download",
+          "lineNumber": 558
+        },
+        {
+          "caller": "bearbeiten",
+          "callee": "supabase.storage.from",
+          "lineNumber": 558
+        },
+        {
+          "caller": "bearbeiten",
+          "callee": "dateien.push",
+          "lineNumber": 564
+        },
+        {
+          "caller": "bauen",
+          "callee": "fd.set",
+          "lineNumber": 571
+        },
+        {
+          "caller": "bauen",
+          "callee": "fd.set",
+          "lineNumber": 572
+        },
+        {
+          "caller": "bauen",
+          "callee": "fd.set",
+          "lineNumber": 580
+        },
+        {
+          "caller": "bauen",
+          "callee": "fd.set",
+          "lineNumber": 581
+        },
+        {
+          "caller": "bauen",
+          "callee": "fd.set",
+          "lineNumber": 583
+        },
+        {
+          "caller": "bauen",
+          "callee": "fd.set",
+          "lineNumber": 584
+        },
+        {
+          "caller": "bauen",
+          "callee": "String",
+          "lineNumber": 584
+        },
+        {
+          "caller": "bauen",
+          "callee": "fd.set",
+          "lineNumber": 586
+        },
+        {
+          "caller": "nenn",
+          "callee": "(d.type || 'image/png').includes",
+          "lineNumber": 592
+        },
+        {
+          "caller": "nenn",
+          "callee": "(d.type || '').includes",
+          "lineNumber": 592
+        },
+        {
+          "caller": "bauen",
+          "callee": "fd.set",
+          "lineNumber": 593
+        },
+        {
+          "caller": "bauen",
+          "callee": "nenn",
+          "lineNumber": 593
+        },
+        {
+          "caller": "bauen",
+          "callee": "dateien.forEach",
+          "lineNumber": 594
+        },
+        {
+          "caller": "bauen",
+          "callee": "fd.append",
+          "lineNumber": 594
+        },
+        {
+          "caller": "bauen",
+          "callee": "nenn",
+          "lineNumber": 594
+        },
+        {
+          "caller": "bauen",
+          "callee": "fd.set",
+          "lineNumber": 597
+        },
+        {
+          "caller": "senden",
+          "callee": "fetch",
+          "lineNumber": 602
+        },
+        {
+          "caller": "bearbeiten",
+          "callee": "senden",
+          "lineNumber": 608
+        },
+        {
+          "caller": "bearbeiten",
+          "callee": "bauen",
+          "lineNumber": 608
+        },
+        {
+          "caller": "bearbeiten",
+          "callee": "res.clone().text",
+          "lineNumber": 611
+        },
+        {
+          "caller": "bearbeiten",
+          "callee": "res.clone",
+          "lineNumber": 611
+        },
+        {
+          "caller": "bearbeiten",
+          "callee": "meckertUeberOptionales",
+          "lineNumber": 612
+        },
+        {
+          "caller": "bearbeiten",
+          "callee": "senden",
+          "lineNumber": 612
+        },
+        {
+          "caller": "bearbeiten",
+          "callee": "bauen",
+          "lineNumber": 612
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 8,
+        "functionCount": 10,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "src/lib/supabase/server.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 39,
+      "nonEmptyLines": 36,
+      "functions": [
+        {
+          "name": "createClient",
+          "startLine": 6,
+          "endLine": 25,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "createClient",
+          "line": 6,
+          "isDefault": false
+        },
+        {
+          "name": "getAuthUser",
+          "line": 35,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "createClient",
+          "callee": "cookies",
+          "lineNumber": 7
+        },
+        {
+          "caller": "createClient",
+          "callee": "createServerClient",
+          "lineNumber": 9
+        },
+        {
+          "caller": "getAll",
+          "callee": "cookieStore.getAll",
+          "lineNumber": 14
+        },
+        {
+          "caller": "setAll",
+          "callee": "cookiesToSet.forEach",
+          "lineNumber": 17
+        },
+        {
+          "caller": "setAll",
+          "callee": "cookieStore.set",
+          "lineNumber": 18
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    }
+  ]
+}

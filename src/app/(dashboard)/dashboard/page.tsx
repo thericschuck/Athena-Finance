@@ -463,7 +463,7 @@ export default async function DashboardPage() {
                       <>
                         <div className="flex justify-between text-xs text-muted-foreground">
                           <span>Budget</span>
-                          <span className={over ? 'text-danger font-medium' : ''}>
+                          <span className={`tabular-nums ${over ? 'text-danger font-medium' : ''}`}>
                             {fmt(monthExpense)} / {fmt(monthlyBudget)} ({pct}%)
                           </span>
                         </div>
@@ -656,7 +656,7 @@ export default async function DashboardPage() {
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <div className="flex justify-between text-xs text-muted-foreground mt-1 tabular-nums">
                       <span>{fmt(current)} gespart</span>
                       <span>{pct}% von {fmt(g.target_amount)}</span>
                     </div>
@@ -707,7 +707,8 @@ export default async function DashboardPage() {
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">{c.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {c.provider ? `${c.provider} · ` : ''}{fmt(c.amount, c.currency)}/{c.frequency}
+                          {c.provider ? `${c.provider} · ` : ''}
+                          <span className="tabular-nums">{fmt(c.amount, c.currency)}/{c.frequency}</span>
                         </p>
                       </div>
                     </div>

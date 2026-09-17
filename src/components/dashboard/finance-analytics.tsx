@@ -133,7 +133,7 @@ export function IncomeExpenseChart({ summaries, locale, height = 200 }: { summar
             />
             <YAxis
               tickFormatter={abbr}
-              tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
+              tick={{ fontSize: 11, fill: 'var(--muted-foreground)', className: 'tabular-nums' }}
               axisLine={false} tickLine={false}
             />
             <ReTooltip
@@ -221,7 +221,7 @@ function CategoryChart({ summaries, locale }: { summaries: Summary[]; locale: st
             />
             <YAxis
               tickFormatter={abbr}
-              tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
+              tick={{ fontSize: 11, fill: 'var(--muted-foreground)', className: 'tabular-nums' }}
               axisLine={false} tickLine={false}
             />
             <ReTooltip
@@ -260,7 +260,7 @@ function DeviationTable({ summaries, locale }: { summaries: Summary[]; locale: s
     <Card>
       <SectionTitle>
         Monatliche Abweichung
-        {multiMonth && <span className="ml-1 normal-case font-normal">· Ø {fmt(avg)} / Monat</span>}
+        {multiMonth && <span className="ml-1 normal-case font-normal tabular-nums">· Ø {fmt(avg)} / Monat</span>}
       </SectionTitle>
       <div className="space-y-1.5">
         {sorted.map(m => {
@@ -292,7 +292,7 @@ function DeviationTable({ summaries, locale }: { summaries: Summary[]; locale: s
               </span>
 
               {/* Einnahmen / Ausgaben */}
-              <span className="flex-1 text-xs text-muted-foreground hidden sm:block">
+              <span className="flex-1 text-xs text-muted-foreground hidden sm:block tabular-nums">
                 <span className="text-success">{fmt(m.total_income)}</span>
                 {' / '}
                 <span className="text-danger">{fmt(m.total_expenses)}</span>
@@ -320,7 +320,7 @@ function DeviationTable({ summaries, locale }: { summaries: Summary[]; locale: s
       </div>
 
       {multiMonth && extremeThreshold > 0 && (
-        <p className="mt-3 text-xs text-muted-foreground">
+        <p className="mt-3 text-xs text-muted-foreground tabular-nums">
           Extremereignis · Abweichung &gt; {fmt(extremeThreshold)} vom Ø
         </p>
       )}

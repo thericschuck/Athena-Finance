@@ -1,0 +1,187 @@
+{
+    "projectRoot":  "C:\\Users\\eschu\\OneDrive\\Desktop\\Unternehmensstruktur\\06-Projekte\\athena-finance",
+    "batchImportData":  {
+                            "src/components/analyse/MonatsVergleich-impl.tsx":  [
+                                                                                    "src/lib/analyseData.ts"
+                                                                                ],
+                            "src/components/analyse/AusgabenHeatmap.tsx":  [
+                                                                               "src/components/analyse/ModeSwitch.tsx",
+                                                                               "src/lib/analyseData.ts",
+                                                                               "src/lib/hooks/use-clamped-position.ts"
+                                                                           ],
+                            "src/components/analyse/MonatsVerteilung.tsx":  [
+                                                                                "src/components/analyse/ModeSwitch.tsx",
+                                                                                "src/components/providers/settings-context.tsx",
+                                                                                "src/lib/analyseData.ts",
+                                                                                "src/lib/format.ts",
+                                                                                "src/lib/kde.ts"
+                                                                            ],
+                            "src/components/analyse/CashflowKalender.tsx":  [
+                                                                                "src/lib/analyseData.ts",
+                                                                                "src/lib/hooks/use-clamped-position.ts"
+                                                                            ],
+                            "src/components/analyse/ModeSwitch.tsx":  [
+                                                                          "src/lib/analyseData.ts"
+                                                                      ],
+                            "src/lib/analyseData.ts":  [
+
+                                                       ],
+                            "src/components/landing/DashboardMock.tsx":  [
+                                                                             "src/components/analyse/AusgabenHeatmap.tsx",
+                                                                             "src/components/analyse/CashflowKalender.tsx",
+                                                                             "src/components/analyse/GeldflussChart.tsx",
+                                                                             "src/components/analyse/KategorienChart.tsx",
+                                                                             "src/components/analyse/MonatsVergleich.tsx",
+                                                                             "src/components/assistant/AthenaAvatar.tsx",
+                                                                             "src/components/crypto/portfolio-donut-card.tsx",
+                                                                             "src/components/dashboard/finance-analytics.tsx",
+                                                                             "src/components/dashboard/net-worth-chart.tsx",
+                                                                             "src/components/landing/landing-tokens.ts",
+                                                                             "src/components/ui/logo.tsx",
+                                                                             "src/lib/analyseData.ts"
+                                                                         ],
+                            "src/components/analyse/GeldflussChart.tsx":  [
+                                                                              "src/components/ui/skeleton.tsx",
+                                                                              "src/lib/analyseData.ts"
+                                                                          ],
+                            "src/lib/hooks/use-clamped-position.ts":  [
+
+                                                                      ],
+                            "src/components/analyse/GeldflussChart-impl.tsx":  [
+                                                                                   "src/lib/analyseData.ts"
+                                                                               ],
+                            "src/components/analyse/MonatsVergleich.tsx":  [
+                                                                               "src/components/ui/skeleton.tsx",
+                                                                               "src/lib/analyseData.ts"
+                                                                           ],
+                            "src/app/(dashboard)/analyse/page.tsx":  [
+                                                                         "src/components/analyse/AnalyseAccountSelector.tsx",
+                                                                         "src/components/analyse/AnalysePeriodSelector.tsx",
+                                                                         "src/components/analyse/AusgabenHeatmap.tsx",
+                                                                         "src/components/analyse/CashflowKalender.tsx",
+                                                                         "src/components/analyse/GeldflussChart.tsx",
+                                                                         "src/components/analyse/KategorienChart.tsx",
+                                                                         "src/components/analyse/MonatsVergleich.tsx",
+                                                                         "src/components/analyse/MonatsVerteilung.tsx",
+                                                                         "src/components/providers/url-filters.tsx",
+                                                                         "src/lib/analyseData.ts",
+                                                                         "src/lib/period.ts",
+                                                                         "src/lib/settings.ts",
+                                                                         "src/lib/supabase/server.ts"
+                                                                     ],
+                            "src/components/analyse/KategorienChart.tsx":  [
+                                                                               "src/components/analyse/ModeSwitch.tsx",
+                                                                               "src/components/providers/settings-context.tsx",
+                                                                               "src/lib/analyseData.ts",
+                                                                               "src/lib/format.ts"
+                                                                           ],
+                            "src/lib/kde.ts":  [
+
+                                               ],
+                            "src/components/analyse/AnalysePeriodSelector.tsx":  [
+                                                                                     "src/components/providers/url-filters.tsx"
+                                                                                 ],
+                            "src/components/crypto/portfolio-donut-card.tsx":  [
+                                                                                   "src/components/providers/settings-context.tsx",
+                                                                                   "src/lib/format.ts"
+                                                                               ]
+                        },
+    "batchFiles":  [
+                       {
+                           "fileCategory":  "code",
+                           "path":  "src/app/(dashboard)/analyse/page.tsx",
+                           "language":  "typescript",
+                           "sizeLines":  506
+                       },
+                       {
+                           "fileCategory":  "code",
+                           "path":  "src/components/analyse/AnalysePeriodSelector.tsx",
+                           "language":  "typescript",
+                           "sizeLines":  39
+                       },
+                       {
+                           "fileCategory":  "code",
+                           "path":  "src/components/analyse/AusgabenHeatmap.tsx",
+                           "language":  "typescript",
+                           "sizeLines":  222
+                       },
+                       {
+                           "fileCategory":  "code",
+                           "path":  "src/components/analyse/CashflowKalender.tsx",
+                           "language":  "typescript",
+                           "sizeLines":  264
+                       },
+                       {
+                           "fileCategory":  "code",
+                           "path":  "src/components/analyse/GeldflussChart-impl.tsx",
+                           "language":  "typescript",
+                           "sizeLines":  191
+                       },
+                       {
+                           "fileCategory":  "code",
+                           "path":  "src/components/analyse/GeldflussChart.tsx",
+                           "language":  "typescript",
+                           "sizeLines":  19
+                       },
+                       {
+                           "fileCategory":  "code",
+                           "path":  "src/components/analyse/KategorienChart.tsx",
+                           "language":  "typescript",
+                           "sizeLines":  134
+                       },
+                       {
+                           "fileCategory":  "code",
+                           "path":  "src/components/analyse/ModeSwitch.tsx",
+                           "language":  "typescript",
+                           "sizeLines":  41
+                       },
+                       {
+                           "fileCategory":  "code",
+                           "path":  "src/components/analyse/MonatsVergleich-impl.tsx",
+                           "language":  "typescript",
+                           "sizeLines":  228
+                       },
+                       {
+                           "fileCategory":  "code",
+                           "path":  "src/components/analyse/MonatsVergleich.tsx",
+                           "language":  "typescript",
+                           "sizeLines":  19
+                       },
+                       {
+                           "fileCategory":  "code",
+                           "path":  "src/components/analyse/MonatsVerteilung.tsx",
+                           "language":  "typescript",
+                           "sizeLines":  595
+                       },
+                       {
+                           "fileCategory":  "code",
+                           "path":  "src/components/crypto/portfolio-donut-card.tsx",
+                           "language":  "typescript",
+                           "sizeLines":  132
+                       },
+                       {
+                           "fileCategory":  "code",
+                           "path":  "src/components/landing/DashboardMock.tsx",
+                           "language":  "typescript",
+                           "sizeLines":  1766
+                       },
+                       {
+                           "fileCategory":  "code",
+                           "path":  "src/lib/analyseData.ts",
+                           "language":  "typescript",
+                           "sizeLines":  74
+                       },
+                       {
+                           "fileCategory":  "code",
+                           "path":  "src/lib/hooks/use-clamped-position.ts",
+                           "language":  "typescript",
+                           "sizeLines":  86
+                       },
+                       {
+                           "fileCategory":  "code",
+                           "path":  "src/lib/kde.ts",
+                           "language":  "typescript",
+                           "sizeLines":  61
+                       }
+                   ]
+}

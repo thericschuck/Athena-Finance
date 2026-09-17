@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Planungshorizont</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,600&family=Libre+Franklin:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+  /* ── Tokens ── selbe Palette wie docs/athenas-takt.html, docs/athenas-augen.html
+     und docs/strategie-schmiede.html, damit alle vier Architektur-Notizen als eine
+     Familie lesbar sind. */
+  :root {
+    --ground:      #F6F5F1;
+    --surface:     #FFFFFF;
+    --surface-alt: #EFEEE7;
+    --ink:         #1B1D19;
+    --ink-soft:    #4A4D45;
+    --ink-mute:    #74776C;
+    --rule:        #E0DED5;
+    --rule-strong: #C9C6B9;
+    --gold:        #8A6A2F;
+    --gold-soft:   #B88F51;
+    --gold-wash:   #F1EADC;
+    --olive:       #55684A;
+    --olive-wash:  #E7ECE1;
+    --rust:        #9B4127;
+    --rust-wash:   #F6E7E1;
+    --amber:       #7A5A1E;
+    --amber-wash:  #F4EBD6;
+    --measure: 65ch;
+    --wide: 1000px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #14150F;
+      --surface:     #1B1D15;
+      --surface-alt: #22241B;
+      --ink:         #EDEBE0;
+      --ink-soft:    #C2C0B3;
+      --ink-mute:    #919384;
+      --rule:        #2C2E23;
+      --rule-strong: #414435;
+      --gold:        #CDA664;
+      --gold-soft:   #B88F51;
+      --gold-wash:   #241F13;
+      --olive:       #8CA277;
+      --olive-wash:  #1D2318;
+      --rust:        #D5836A;
+      --rust-wash:   #2A1A14;
+      --amber:       #D2B274;
+      --amber-wash:  #262014;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:      #14150F;
+    --surface:     #1B1D15;
+    --surface-alt: #22241B;
+    --ink:         #EDEBE0;
+    --ink-soft:    #C2C0B3;
+    --ink-mute:    #919384;
+    --rule:        #2C2E23;
+    --rule-strong: #414435;
+    --gold:        #CDA664;
+    --gold-soft:   #B88F51;
+    --gold-wash:   #241F13;
+    --olive:       #8CA277;
+    --olive-wash:  #1D2318;
+    --rust:        #D5836A;
+    --rust-wash:   #2A1A14;
+    --amber:       #D2B274;
+    --amber-wash:  #262014;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Libre Franklin", "Helvetica Neue", Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    padding: 0 24px 120px;
+  }
+
+  .page { max-width: var(--wide); margin: 0 auto; }
+
+  header.masthead {
+    padding: 96px 0 56px;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+  .eyebrow {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  h1 {
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-size: clamp(44px, 8vw, 78px);
+    line-height: 1.02;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    margin: 0;
+  }
+  .standfirst {
+    font-size: 20px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    max-width: 60ch;
+  }
+  .standfirst strong { color: var(--ink); font-weight: 600; }
+
+  .figures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-top: 8px;
+  }
+  .figure { background: var(--surface); padding: 18px 20px; }
+  .figure b {
+    display: block;
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-size: 34px;
+    font-weight: 400;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 8px;
+  }
+  .figure span { font-size: 13px; line-height: 1.4; color: var(--ink-mute); display: block; }
+  .figure.is-gap b  { color: var(--rust); }
+  .figure.is-live b { color: var(--olive); }
+
+  section { padding: 72px 0 0; }
+  .sec-head { display: flex; align-items: baseline; gap: 18px; margin-bottom: 8px; }
+  .numeral {
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-size: 15px;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    flex: 0 0 auto;
+    padding-top: 2px;
+  }
+  h2 {
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-weight: 400;
+    font-size: clamp(28px, 4vw, 40px);
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0;
+  }
+  .sec-sub { color: var(--ink-mute); font-size: 15px; margin: 0 0 32px 33px; max-width: 58ch; }
+  h3 {
+    font-family: "Libre Franklin", sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    margin: 40px 0 10px;
+  }
+  p { margin: 0 0 18px; max-width: var(--measure); }
+  p.wide { max-width: 78ch; }
+  a { color: var(--gold); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+  strong { font-weight: 600; }
+  code {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.86em;
+    background: var(--surface-alt);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 1px 5px;
+    white-space: nowrap;
+  }
+
+  ul.plain { margin: 0 0 20px; padding-left: 20px; max-width: var(--measure); }
+  ul.plain li { margin-bottom: 9px; }
+  ul.plain li::marker { color: var(--gold-soft); }
+
+  .scroller { overflow-x: auto; margin: 0 0 24px; border: 1px solid var(--rule); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 14.5px; }
+  thead th {
+    text-align: left;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    font-weight: 400;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rule-strong);
+    background: var(--surface-alt);
+    white-space: nowrap;
+  }
+  tbody td { padding: 13px 16px; border-bottom: 1px solid var(--rule); vertical-align: top; line-height: 1.45; }
+  tbody tr:last-child td { border-bottom: none; }
+  td.area { font-weight: 500; white-space: nowrap; }
+  td.area em {
+    display: block;
+    font-family: "JetBrains Mono", monospace;
+    font-style: normal;
+    font-size: 11.5px;
+    color: var(--ink-mute);
+    margin-top: 3px;
+  }
+  td.wide { color: var(--ink-soft); min-width: 260px; }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 4px 9px 4px 8px; border-radius: 2px; white-space: nowrap;
+  }
+  .chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+  .chip.live  { color: var(--olive); background: var(--olive-wash); }
+  .chip.live::before  { background: var(--olive); }
+  .chip.entscheidung { color: var(--amber); background: var(--amber-wash); }
+  .chip.entscheidung::before { background: var(--amber); border-radius: 50% 50% 0 0; transform: rotate(-45deg); }
+  .chip.fehlt { color: var(--rust); background: var(--rust-wash); }
+  .chip.fehlt::before { background: transparent; border: 1.5px solid var(--rust); }
+
+  .layers { display: grid; gap: 14px; margin: 8px 0 28px; max-width: 900px; }
+  .layer { display: grid; grid-template-columns: 108px 1fr; border: 1px solid var(--rule-strong); background: var(--surface); }
+  .layer-tag {
+    background: var(--surface-alt);
+    border-right: 1px solid var(--rule-strong);
+    padding: 16px 14px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-mute);
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .layer-tag b {
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-size: 22px; font-weight: 400; letter-spacing: 0;
+    color: var(--gold); line-height: 1.1;
+  }
+  .layer-body { padding: 16px 18px; }
+  .layer-body h4 { margin: 0 0 6px; font-size: 16px; font-weight: 600; }
+  .layer-body p { margin: 0; font-size: 14.5px; color: var(--ink-soft); max-width: 64ch; }
+  .layer-body .cost { margin-top: 10px; font-family: "JetBrains Mono", monospace; font-size: 11.5px; color: var(--gold); }
+  .layer.is-built { border-color: var(--olive); }
+  .layer.is-built .layer-tag { background: var(--olive-wash); border-right-color: var(--olive); }
+  .layer.is-built .layer-tag b { color: var(--olive); }
+  .layer.is-missing { border-color: var(--rust); border-style: dashed; }
+  .layer.is-missing .layer-tag { background: var(--rust-wash); border-right-color: var(--rust); }
+  .layer.is-missing .layer-tag b { color: var(--rust); }
+
+  .rule-box { border-left: 2px solid var(--gold); padding: 4px 0 4px 22px; margin: 28px 0; max-width: 62ch; }
+  .rule-box p { font-family: "Bodoni Moda", Georgia, serif; font-size: 22px; line-height: 1.4; margin: 0; }
+  .rule-box cite {
+    display: block; margin-top: 10px;
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-style: normal;
+  }
+
+  .aside {
+    background: var(--surface-alt);
+    border: 1px solid var(--rule);
+    padding: 16px 20px;
+    margin: 0 0 26px;
+    max-width: 780px;
+    font-size: 14.5px;
+    color: var(--ink-soft);
+  }
+  .aside .aside-label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-mute); margin-bottom: 8px;
+  }
+  .aside p { margin: 0 0 8px; font-size: 14.5px; }
+  .aside p:last-child { margin-bottom: 0; }
+
+  .duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin: 0 0 12px; }
+  .card { border: 1px solid var(--rule); background: var(--surface); padding: 22px; }
+  .card h4 { margin: 0 0 10px; font-size: 15.5px; font-weight: 600; display: flex; align-items: center; gap: 9px; }
+  .card h4 .dot { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; }
+  .card.a h4 .dot { background: var(--gold); }
+  .card.b h4 .dot { background: var(--olive); }
+  .card p { font-size: 14.5px; margin: 0 0 10px; color: var(--ink-soft); max-width: none; }
+  .card ul { margin: 0; padding-left: 18px; font-size: 14.5px; color: var(--ink-soft); }
+  .card ul li { margin-bottom: 7px; }
+  .card .verdict {
+    margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--rule);
+    font-size: 13px; font-family: "JetBrains Mono", monospace; color: var(--ink-mute);
+  }
+
+  .steps { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); max-width: 900px; }
+  .step { background: var(--surface); display: grid; grid-template-columns: 56px 1fr auto; gap: 18px; padding: 18px 20px; align-items: start; }
+  .step-n {
+    font-family: "Bodoni Moda", Georgia, serif; font-size: 26px; line-height: 1;
+    color: var(--gold); font-variant-numeric: tabular-nums;
+  }
+  .step-body h4 { margin: 0 0 5px; font-size: 15.5px; font-weight: 600; }
+  .step-body p { margin: 0; font-size: 14.5px; color: var(--ink-soft); max-width: 62ch; }
+  .step-meta {
+    font-family: "JetBrains Mono", monospace; font-size: 10.5px;
+    letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-mute);
+    text-align: right; white-space: nowrap; padding-top: 4px;
+  }
+
+  footer {
+    margin-top: 88px; padding-top: 28px; border-top: 1px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-mute); max-width: 66ch;
+  }
+  footer a { color: var(--ink-mute); }
+
+  @media (max-width: 620px) {
+    body { padding: 0 18px 80px; font-size: 16px; }
+    header.masthead { padding: 60px 0 40px; }
+    .step { grid-template-columns: 40px 1fr; }
+    .step-meta { grid-column: 2; text-align: left; padding-top: 8px; }
+    .layer { grid-template-columns: 1fr; }
+    .layer-tag { border-right: none; border-bottom: 1px solid var(--rule-strong); flex-direction: row; align-items: center; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <div class="eyebrow">athena-finance · Architektur-Notiz · 12. September 2026</div>
+    <h1>Planungshorizont</h1>
+    <p class="standfirst">
+      Steuer-Engine, Reports, Vertrags-Fälligkeiten, Sparziel-Fortschritt — jedes für sich schon
+      gebaut und im Betrieb. Was fehlt, ist nicht ein weiterer Baustein, sondern die
+      <strong>Klammer</strong>: nichts davon rechnet nach vorne, und nichts davon spricht mit dem
+      jeweils anderen.
+    </p>
+    <div class="figures">
+      <div class="figure is-live"><b>5</b><span>fertige Bausteine, die schon einzeln laufen</span></div>
+      <div class="figure is-gap"><b>0</b><span>Stellen, an denen sie zu einer Vorschau verbunden sind</span></div>
+      <div class="figure is-gap"><b>2</b><span>Felder in <code>debts</code>, die aktuell niemand ausliest</span></div>
+      <div class="figure"><b>9</b><span>konkrete Ausbaupunkte in dieser Notiz</span></div>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-head"><span class="numeral">I</span><h2>Ist-Zustand</h2></div>
+    <p class="sec-sub">Deutlich mehr fertig als der erste Eindruck vermuten lässt — vier Bausteine im Betrieb, einer bewusst fehlend.</p>
+
+    <div class="layers">
+      <div class="layer is-built">
+        <div class="layer-tag"><b>§</b>Steuer</div>
+        <div class="layer-body">
+          <h4>Tarif → Position → EUER, alles pure Funktionen mit Tests</h4>
+          <p><code>src/lib/tax/{tarif,position,euer,rollen,profil}.ts</code> — Grenzsteuersatz,
+            Kleinunternehmer-Ampel (grün/gelb/rot gegen zwei Grenzen), Zone-für-Zone-Rechnung nach
+            § 32a EStG, EUER-Zeilen-Zuordnung mit Kategorien-Vererbung, Steuerrücklage
+            (Soll/Ist/Lücke, verknüpft mit einem <code>savings_goals</code>-Eintrag). Jede Funktion
+            ist reine Berechnung ohne DB-Zugriff — deshalb testbar, deshalb nur eine Implementierung
+            statt einer zweiten in SQL.</p>
+          <div class="cost">UI: finance/steuer, finance/steuer/euer · Export: api/export/euer</div>
+        </div>
+      </div>
+      <div class="layer is-built">
+        <div class="layer-tag"><b>Mail</b>Reports</div>
+        <div class="layer-body">
+          <h4>Monatsreport automatisch, Jahresreport per Knopf</h4>
+          <p><code>lib/reports/{build,render-html,render-pdf,store,email}.ts</code>, Tabelle
+            <code>reports</code> seit <code>20260909120000_reports_table_and_storage.sql</code>.
+            Monatsreports laufen am 1. jedes Monats automatisch und gehen per Mail raus. Der
+            Jahresreport ist bewusst nur ein Button — „Eric will vor dem Versand noch etwas prüfen
+            können" (Kommentar in <code>reports/actions.ts</code>). Ein <code>insights</code>-Eintrag
+            vom Typ <code>annual_report_reminder</code> erinnert daran.</p>
+          <div class="cost">buildReportData() liest nur unified_transactions + net_worth_snapshots — keine Steuerzahlen</div>
+        </div>
+      </div>
+      <div class="layer is-built">
+        <div class="layer-tag"><b>Fällig</b>Verträge</div>
+        <div class="layer-body">
+          <h4>Frequenz, Abbuchungstag und Kündigungsfrist sind längst gespeichert</h4>
+          <p><code>contracts</code> hat <code>frequency</code>, <code>billing_day</code>,
+            <code>notice_days</code>, <code>end_date</code>, <code>auto_renews</code>. Das Dashboard
+            (<code>dashboard/page.tsx</code>) berechnet daraus schon heute ein 45-Tage-Fenster bis
+            zur Kündigungsfrist (<code>renewalDate</code> minus <code>notice_days</code>) und zeigt
+            es als Widget. Ausführung läuft über <code>contract_executions</code> und den Cron
+            <code>book-contracts</code>.</p>
+          <div class="cost">die Rechnung existiert schon — sie verlässt nur nie das Dashboard</div>
+        </div>
+      </div>
+      <div class="layer is-built">
+        <div class="layer-tag"><b>Ziel</b>Sparziele</div>
+        <div class="layer-body">
+          <h4>Jedes Sparziel projiziert sich schon selbst</h4>
+          <p><code>finance/(planung)/goals/page.tsx</code>: <code>monthsRemaining()</code> rechnet
+            aus <code>target_amount</code>, <code>current_amount</code> und
+            <code>monthly_savings_rate</code>, wann ein Ziel erreicht ist; <code>expectedSaved()</code>
+            vergleicht das mit dem Plan seit <code>savings_rate_start_date</code>. Beleg-Ablage
+            (<code>belege-actions.ts</code>) ist GoBD-konform: SHA-256 pro Datei, kein Überschreiben,
+            Zeitstempel-Pfad.</p>
+          <div class="cost">jedes Ziel für sich korrekt — nichts davon läuft in eine Gesamtsicht zusammen</div>
+        </div>
+      </div>
+      <div class="layer is-missing">
+        <div class="layer-tag"><b>?</b>fehlt</div>
+        <div class="layer-body">
+          <h4>Alles, was nach vorne rechnet — und alles, was diese vier verbindet</h4>
+          <p>Kein Baustein hier weiß vom anderen: der Jahresreport enthält keine Steuerzahl, die
+            Kündigungsfrist-Warnung verlässt nie das Dashboard, ein Sparziel kennt nicht die
+            fälligen Verträge, die im selben Monat vom selben Konto abgehen. Und
+            <code>debts.interest_rate</code>/<code>debts.monthly_payment</code> — beide seit der
+            ersten Migration vorhanden — werden nirgends gelesen.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="numeral">II</span><h2>Die größte Lücke: eine Projektion, die alles zusammenzieht</h2></div>
+    <p class="sec-sub">Nicht "wir brauchen Cashflow-Vorhersage" — sondern "wir haben vier Vorhersagen, die sich nicht kennen".</p>
+
+    <p class="wide">Heute gibt es bereits drei isolierte Blicke nach vorne: die Kündigungsfrist-Deadline
+      im Dashboard, die Monate-bis-Ziel-Rechnung je Sparziel, und implizit die nächste
+      Vertragsabbuchung über <code>frequency</code>/<code>billing_day</code>. Was fehlt, ist die
+      Zusammenführung zu einer einzigen Kurve: „Kontostand am Ende jedes der nächsten 6 Monate,
+      unter Annahme aller bekannten Verträge, Sparpläne und Sparziel-Raten".</p>
+
+    <div class="duo">
+      <div class="card a">
+        <h4><span class="dot"></span>Datenbasis — komplett vorhanden</h4>
+        <ul>
+          <li><code>contracts</code>: <code>frequency</code> + <code>billing_day</code> + <code>end_date</code> ergibt jede künftige Abbuchung</li>
+          <li><code>savings_goals</code>: <code>monthly_savings_rate</code> + <code>savings_rate_start_date</code> ergibt jede künftige Sparrate</li>
+          <li><code>net_worth_snapshots</code>: liefert den Startwert, von dem aus projiziert wird</li>
+          <li><code>CashflowEvent</code> (<code>analyseData.ts</code>) ist schon der richtige Typ — nur bisher ausschließlich mit Vergangenem befüllt</li>
+        </ul>
+      </div>
+      <div class="card b">
+        <h4><span class="dot"></span>Was neu entsteht</h4>
+        <ul>
+          <li>Ein <code>lib/forecast/</code>-Modul, reine Funktion wie <code>euer.ts</code>: Eingabe Verträge + Sparziele + Startsaldo, Ausgabe Tages- oder Monatsreihe</li>
+          <li><code>CashflowEvent</code> um <code>projected: boolean</code> erweitern — <code>CashflowKalender</code> zeigt beides, optisch unterscheidbar (gestrichelt statt voll)</li>
+          <li>Eine neue Kurve auf dem Dashboard oder unter <code>analyse/verlauf</code>: Ist-Verlauf nahtlos in Projektion übergehend</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:4px">Das ist bewusst kein neues Feature-Feld, sondern eine Verbindungsschicht über
+      Daten, die alle schon da sind — der Aufwand liegt im Zusammenführen, nicht im Neuerheben.</p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="numeral">III</span><h2>Fälligkeiten: aktiv statt nur sichtbar</h2></div>
+    <p class="sec-sub">Die Rechnung steht schon im Code — sie erreicht nur niemanden, der die App gerade nicht offen hat.</p>
+
+    <div class="duo">
+      <div class="card a">
+        <h4><span class="dot"></span>Kündigungsfristen per Mail statt nur Dashboard-Widget</h4>
+        <p><code>getNextRenewal()</code>/<code>daysUntil()</code> aus <code>dashboard/page.tsx</code>
+          eins zu eins wiederverwenden — kein neuer Rechenweg, nur ein neuer Versandkanal.</p>
+        <ul>
+          <li>Braucht den fehlenden „Headless-Runner" aus <code>docs/athenas-takt.html</code>
+            (Vercel-Cron → derselbe Code, fester Auftrag statt Dashboard-Aufruf)</li>
+          <li>Reports-Infrastruktur (<code>lib/reports/email.ts</code>) für den Versand direkt
+            wiederverwendbar</li>
+        </ul>
+        <div class="verdict">kleinste Änderung mit dem größten „warum wusste ich das nicht früher"-Effekt</div>
+      </div>
+      <div class="card b">
+        <h4><span class="dot"></span>Fälligkeits-Optimierer</h4>
+        <p>Sobald Baustein II (Projektion) steht: Tage im Monat markieren, an denen der projizierte
+          Kontostand nahe 0 oder negativ ist, und prüfen, ob ein <code>billing_day</code> das
+          verursacht.</p>
+        <ul>
+          <li>Kein automatisches Verschieben — nur ein Hinweis, ähnlich <code>createInsight</code></li>
+          <li>Baut vollständig auf Baustein II auf, kein eigener Datenbedarf</li>
+        </ul>
+        <div class="verdict">Erweiterung, nicht Grundlage — erst nach der Projektion sinnvoll</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="numeral">IV</span><h2>Steuer: die Engine kennt ihre eigenen Grenzen</h2></div>
+    <p class="sec-sub">Jede der folgenden Lücken ist keine Vermutung — die Engine schreibt sie sich selbst als Warnung.</p>
+
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Was die Engine heute sagt</th><th>Woraus folgt</th><th>Aufwand</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="area">Kleinunternehmer-Status „rot"<em>position.ts:212</em></td>
+            <td class="wide">„Damit wird Umsatzsteuer fällig — die rechnet diese Engine nicht." Ein
+              eigenes <code>umsatzsteuer.ts</code>-Modul (Vorsteuer/Umsatzsteuer-Voranmeldung) wird
+              erst nötig, sobald der Status je das erste Mal auf rot springt.</td>
+            <td class="wide">hoch — eigenes Steuerthema, eigene Formularlogik</td>
+          </tr>
+          <tr>
+            <td class="area">Vorsorgeaufwand pauschal geschätzt<em>position.ts:158</em></td>
+            <td class="wide">„Die echten Beiträge zu Renten-, Kranken- und Pflegeversicherung kennt
+              die App nicht." Ein Eingabefeld fürs echte Profil (statt <code>vorsorgeAnteilPct</code>
+              zu schätzen) macht den Grenzsteuersatz — die zentrale Kennzahl der Seite — spürbar
+              genauer.</td>
+            <td class="wide">gering — ein Profil-Feld, keine neue Rechenlogik</td>
+          </tr>
+          <tr>
+            <td class="area">Bruttolohn älter als ein Jahr<em>position.ts:148</em></td>
+            <td class="wide">Warnung existiert schon, aber passiv (nur auf der Steuerseite sichtbar).
+              Als <code>insight</code> ausspielen statt nur als Textzeile — nutzt das bestehende
+              Insight-Muster, keine neue Kategorie.</td>
+            <td class="wide">gering</td>
+          </tr>
+          <tr>
+            <td class="area">Kein Mehrjahresvergleich in der UI</td>
+            <td class="wide"><code>tarif.jahr</code> ist schon versioniert (<code>tarif.test.ts</code>
+              testet mehrere Jahre) — die Steuerseite zeigt aber nur Jahr für Jahr per Klick, keine
+              Kurve „Grenzsteuersatz/Gewinn über die letzten 5 Jahre".</td>
+            <td class="wide">gering bis mittel — reine Anzeige über vorhandene Daten</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="numeral">V</span><h2>Reports: ein Steuer-Anhang statt eines neuen Systems</h2></div>
+    <p class="sec-sub">Die naheliegende Falle wäre ein zweites Report-System nur für Steuern — die Infrastruktur dafür existiert schon.</p>
+
+    <p class="wide"><code>buildReportData()</code> liest heute ausschließlich
+      <code>unified_transactions</code> und <code>net_worth_snapshots</code> — bewusst
+      deterministisch, „kein LLM, kein Athena-Werkzeugaufruf" (Kommentar im Code, mit Verweis auf die
+      Prompt-Injection-Abwägung aus <code>docs/athenas-takt.html</code>, Abschnitt III). Der
+      naheliegende Ausbau: <code>berechneSteuerposition()</code> und <code>berechneEuer()</code>
+      optional in <code>ReportData</code> aufnehmen, wenn <code>type === 'annual'</code> — derselbe
+      Determinismus-Grundsatz gilt, weil beide Funktionen selbst reine Berechnungen sind. Render-HTML
+      und Render-PDF bekommen einen zusätzlichen Abschnitt, kein neues Rendering-System.</p>
+
+    <div class="aside">
+      <div class="aside-label">Randnotiz — Disclaimer wandert mit</div>
+      <p>Die Steuerseite selbst sagt „Kein Steuerbescheid" und weist geschätzte Werte aus
+        (<code>Quelle: 'geschaetzt'</code>). Landet das im Jahresreport, der auch per Mail verschickt
+        wird, muss dieser Hinweis in den Report-Text — sonst wandert eine Schätzung ungekennzeichnet
+        in ein Dokument, das wie ein Abschluss aussieht.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="numeral">VI</span><h2>Schulden &amp; Sparziele: die Felder sind da, nur ungenutzt</h2></div>
+    <p class="sec-sub">Zwei konkrete Lücken, die auffallen, sobald man das Schema neben die UI legt.</p>
+
+    <div class="duo">
+      <div class="card a">
+        <h4><span class="dot"></span>Tilgungsplan für Schulden</h4>
+        <p><code>debts</code> speichert <code>interest_rate</code> und <code>monthly_payment</code> —
+          beide Felder existieren seit der ersten Migration. <code>finance/debts/page.tsx</code>
+          zeigt aber nur die Summe <code>outstanding</code>, keine Amortisationsrechnung.</p>
+        <ul>
+          <li>Reine Formel (Restlaufzeit, Gesamtzinsen) — keine neue Datenquelle nötig</li>
+          <li>Ergänzt Baustein II direkt: Tilgungsraten sind so vorhersehbar wie Vertragszahlungen</li>
+        </ul>
+        <div class="verdict">niedrigster Aufwand in dieser ganzen Notiz — reine Funktion über vorhandene Spalten</div>
+      </div>
+      <div class="card b">
+        <h4><span class="dot"></span>Sparziele in die Gesamtprojektion einhängen</h4>
+        <p><code>monthsRemaining()</code>/<code>expectedSaved()</code> rechnen heute isoliert je
+          Sparziel. Für Baustein II braucht es nur, dieselben Felder zusätzlich in die
+          Gesamt-Cashflow-Projektion einzuspeisen statt eine zweite Rechnung zu bauen.</p>
+        <ul>
+          <li>Kein neuer Code — Wiederverwendung der Funktionen aus <code>goals/page.tsx</code></li>
+          <li>Macht sichtbar, ob mehrere Sparraten gleichzeitig realistisch bleiben</li>
+        </ul>
+        <div class="verdict">Abfallprodukt von Baustein II, kein Extra-Vorhaben</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="numeral">VII</span><h2>Weitere Ausbaustufen</h2></div>
+    <p class="sec-sub">Kleinere Ideen, die nicht in die Reihenfolge unten gehören, aber irgendwann dran sind.</p>
+
+    <ul class="plain">
+      <li><strong>Beleg-OCR/Auto-Matching</strong> — <code>belege-actions.ts</code> ist heute reiner
+        Upload (SHA-256, kein Überschreiben). Ein Beleg wird nie automatisch einer Buchung
+        zugeordnet; das bleibt manuell.</li>
+      <li><strong>Reminder-Feed statt Insight-Friedhof</strong> — deckt sich mit Punkt 7 der
+        Roadmap vom 2.9.2026 und <code>docs/athenas-takt.html</code>, Abschnitt III: alte Insights
+        archivieren statt anhäufen, sobald automatisierte Läufe mehr Insights erzeugen.</li>
+      <li><strong>Steuerrücklage automatisch vorschlagen</strong> — <code>ruecklage.luecke</code>
+        wird schon berechnet; ein <code>createInsight</code>-Aufruf, sobald die Lücke eine Schwelle
+        überschreitet, braucht nur den Headless-Runner aus Abschnitt III, keine neue Rechnung.</li>
+      <li><strong>Kirchensteuer-/Soli-Randfälle</strong> — <code>position.ts</code> markiert die
+        Soli-Freigrenze bereits als „unsicher", wenn kein Wert fürs Jahr hinterlegt ist. Sauberer:
+        pro Jahr explizit pflegen statt mit 0 anzunähern.</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="numeral">VIII</span><h2>Entscheidungen, die nur Eric treffen kann</h2></div>
+    <p class="sec-sub">Zwei Punkte, an denen "praktisch" gegen "vorsichtig" steht.</p>
+
+    <div class="duo">
+      <div class="card a">
+        <h4><span class="dot"></span>Fälligkeits-Mails: automatisch oder erst nach Prüfung?</h4>
+        <p>Die Reports-Entscheidung von 2026 war bewusst „Jahresreport nur per Knopf, weil Eric
+          vorher prüfen will". Gilt dieselbe Vorsicht für eine reine Fälligkeits-Erinnerung, die kein
+          Geld bewegt und nur eine bereits im Dashboard sichtbare Zahl per Mail wiederholt?</p>
+        <div class="verdict">Tendenz: ja automatisch — bewegt kein Geld, ist reine Wiederholung einer heute schon passiven Anzeige</div>
+      </div>
+      <div class="card b">
+        <h4><span class="dot"></span>Steuerzahlen im Report: Standard oder Opt-in?</h4>
+        <p>Ein Jahresreport mit Steuer-Anhang ist nützlicher, aber auch sensibler — er verlässt das
+          Konto per Mail. Beim Kleinunternehmer-Status auf „rot" oder „gelb" ist der Anhang
+          vermutlich wichtiger als in ruhigen Jahren.</p>
+        <div class="verdict">Tendenz: Opt-in-Checkbox beim Erstellen, Default aus — Vorsicht vor stillschweigend mitverschickten Schätzwerten</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="numeral">IX</span><h2>Vorgeschlagene Reihenfolge</h2></div>
+    <p class="sec-sub">Erst die Verbindungsschicht (Projektion), danach das, was sie mit wenig Zusatzaufwand ausspielt.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">01</div>
+        <div class="step-body">
+          <h4>Schulden-Tilgungsplan</h4>
+          <p>Reine Formel über bereits vorhandene Spalten, keine Abhängigkeit von etwas anderem —
+            kleinster erster Schritt.</p>
+        </div>
+        <div class="step-meta">Abschnitt VI</div>
+      </div>
+      <div class="step">
+        <div class="step-n">02</div>
+        <div class="step-body">
+          <h4><code>lib/forecast/</code> — die Cashflow-Projektion</h4>
+          <p>Verträge + Sparziele + Startsaldo → Monatsreihe. Das Fundament, auf dem III, VI.b und
+            der Fälligkeits-Optimierer aufbauen.</p>
+        </div>
+        <div class="step-meta">Abschnitt II</div>
+      </div>
+      <div class="step">
+        <div class="step-n">03</div>
+        <div class="step-body">
+          <h4>Headless-Runner + Fälligkeits-Mail</h4>
+          <p>Gemeinsame Grundlage mit den Automations-Punkten aus <code>docs/athenas-takt.html</code>
+            — einmal gebaut, trägt sie Kündigungsfrist-Mails, Reminder-Feed und die automatische
+            Rücklage-Warnung gleichermaßen.</p>
+        </div>
+        <div class="step-meta">Abschnitt III</div>
+      </div>
+      <div class="step">
+        <div class="step-n">04</div>
+        <div class="step-body">
+          <h4>Fälligkeits-Optimierer</h4>
+          <p>Nutzt die Projektion aus Schritt 02, um Tiefpunkte zu erkennen und auf einen
+            <code>billing_day</code> zurückzuführen.</p>
+        </div>
+        <div class="step-meta">nutzt 02</div>
+      </div>
+      <div class="step">
+        <div class="step-n">05</div>
+        <div class="step-body">
+          <h4>Steuer-Anhang im Jahresreport</h4>
+          <p>Opt-in-Checkbox, Disclaimer wandert mit — unabhängig von 01–04, kann parallel
+            entstehen.</p>
+        </div>
+        <div class="step-meta">Abschnitt V</div>
+      </div>
+      <div class="step">
+        <div class="step-n">06</div>
+        <div class="step-body">
+          <h4>Kleinere Punkte nach Bedarf</h4>
+          <p>Vorsorgeaufwand-Profilfeld, Mehrjahresvergleich, Beleg-OCR — jedes für sich klein genug,
+            um zwischen den größeren Schritten mitzulaufen.</p>
+        </div>
+        <div class="step-meta">Abschnitt IV, VII</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Entstanden aus dem Planungsgespräch vom 12.9.2026 zu Steuern, Reports, Automation und
+    Planbarkeit. Bezug: <code>src/lib/tax/</code>, <code>src/lib/reports/</code>,
+    <code>src/app/(dashboard)/finance/</code>, <code>src/app/(dashboard)/dashboard/page.tsx</code>,
+    sowie <code>docs/athenas-takt.html</code> für die Automations-Infrastruktur und die Roadmap-Punkte
+    1/4/7 vom 2.9.2026. Gleiche Notiz-Familie wie <code>docs/athenas-takt.html</code>,
+    <code>docs/athenas-augen.html</code> und <code>docs/strategie-schmiede.html</code>. Lokal liegt
+    diese Notiz unter <code>docs/planungshorizont.html</code>.
+  </footer>
+
+</div>
+</body>
+</html>

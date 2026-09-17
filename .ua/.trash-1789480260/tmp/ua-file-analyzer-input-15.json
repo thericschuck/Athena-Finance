@@ -1,0 +1,52 @@
+{
+  "projectRoot": "C:\\Users\\eschu\\OneDrive\\Desktop\\Unternehmensstruktur\\06-Projekte\\athena-finance",
+  "batchFiles": [
+    {
+      "path": "src/app/(dashboard)/crypto/layout.tsx",
+      "language": "typescript",
+      "sizeLines": 16,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/app/(dashboard)/finance/(planung)/layout.tsx",
+      "language": "typescript",
+      "sizeLines": 18,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/app/(dashboard)/finance/(transaktionen)/layout.tsx",
+      "language": "typescript",
+      "sizeLines": 19,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/app/(dashboard)/strategy/layout.tsx",
+      "language": "typescript",
+      "sizeLines": 17,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/layout/section-tabs.tsx",
+      "language": "typescript",
+      "sizeLines": 53,
+      "fileCategory": "code"
+    }
+  ],
+  "batchImportData": {
+    "src/app/(dashboard)/crypto/layout.tsx": [
+      "src/components/layout/section-tabs.tsx"
+    ],
+    "src/app/(dashboard)/finance/(planung)/layout.tsx": [
+      "src/components/layout/section-tabs.tsx"
+    ],
+    "src/app/(dashboard)/finance/(transaktionen)/layout.tsx": [
+      "src/components/layout/section-tabs.tsx"
+    ],
+    "src/app/(dashboard)/strategy/layout.tsx": [
+      "src/components/layout/section-tabs.tsx"
+    ],
+    "src/components/layout/section-tabs.tsx": [
+      "src/lib/utils.ts"
+    ]
+  }
+}

@@ -1,0 +1,2629 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/app/(dashboard)/layout.tsx",
+      "type": "file",
+      "name": "layout.tsx",
+      "filePath": "src/app/(dashboard)/layout.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/layout.tsx:DashboardLayout",
+      "type": "function",
+      "name": "DashboardLayout",
+      "filePath": "src/app/(dashboard)/layout.tsx",
+      "lineRange": [
+        23,
+        55
+      ],
+      "summary": "Function DashboardLayout in layout.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/actions/waitlist.ts",
+      "type": "file",
+      "name": "waitlist.ts",
+      "filePath": "src/app/actions/waitlist.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/actions/waitlist.ts:joinWaitlist",
+      "type": "function",
+      "name": "joinWaitlist",
+      "filePath": "src/app/actions/waitlist.ts",
+      "lineRange": [
+        21,
+        45
+      ],
+      "summary": "Function joinWaitlist in waitlist.ts",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/datenschutz/page.tsx",
+      "type": "file",
+      "name": "page.tsx",
+      "filePath": "src/app/datenschutz/page.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/datenschutz/page.tsx:DatenschutzPage",
+      "type": "function",
+      "name": "DatenschutzPage",
+      "filePath": "src/app/datenschutz/page.tsx",
+      "lineRange": [
+        22,
+        97
+      ],
+      "summary": "Function DatenschutzPage in page.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/app/impressum/page.tsx",
+      "type": "file",
+      "name": "page.tsx",
+      "filePath": "src/app/impressum/page.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/impressum/page.tsx:ImpressumPage",
+      "type": "function",
+      "name": "ImpressumPage",
+      "filePath": "src/app/impressum/page.tsx",
+      "lineRange": [
+        20,
+        70
+      ],
+      "summary": "Function ImpressumPage in page.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/app/interesse/InteresseClient.tsx",
+      "type": "file",
+      "name": "InteresseClient.tsx",
+      "filePath": "src/app/interesse/InteresseClient.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/interesse/InteresseClient.tsx:useScrollReveals",
+      "type": "function",
+      "name": "useScrollReveals",
+      "filePath": "src/app/interesse/InteresseClient.tsx",
+      "lineRange": [
+        29,
+        52
+      ],
+      "summary": "Function useScrollReveals in InteresseClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/interesse/InteresseClient.tsx:InteresseClient",
+      "type": "function",
+      "name": "InteresseClient",
+      "filePath": "src/app/interesse/InteresseClient.tsx",
+      "lineRange": [
+        54,
+        152
+      ],
+      "summary": "Function InteresseClient in InteresseClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/app/interesse/page.tsx",
+      "type": "file",
+      "name": "page.tsx",
+      "filePath": "src/app/interesse/page.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/interesse/page.tsx:InteressePage",
+      "type": "function",
+      "name": "InteressePage",
+      "filePath": "src/app/interesse/page.tsx",
+      "lineRange": [
+        56,
+        63
+      ],
+      "summary": "Function InteressePage in page.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/layout.tsx",
+      "type": "file",
+      "name": "layout.tsx",
+      "filePath": "src/app/layout.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/layout.tsx:RootLayout",
+      "type": "function",
+      "name": "RootLayout",
+      "filePath": "src/app/layout.tsx",
+      "lineRange": [
+        98,
+        113
+      ],
+      "summary": "Function RootLayout in layout.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/loading.tsx",
+      "type": "file",
+      "name": "loading.tsx",
+      "filePath": "src/app/loading.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/loading.tsx:Loading",
+      "type": "function",
+      "name": "Loading",
+      "filePath": "src/app/loading.tsx",
+      "lineRange": [
+        23,
+        63
+      ],
+      "summary": "Function Loading in loading.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/login/PasswordField.tsx",
+      "type": "file",
+      "name": "PasswordField.tsx",
+      "filePath": "src/app/login/PasswordField.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/login/PasswordField.tsx:PasswordField",
+      "type": "function",
+      "name": "PasswordField",
+      "filePath": "src/app/login/PasswordField.tsx",
+      "lineRange": [
+        40,
+        140
+      ],
+      "summary": "Function PasswordField in PasswordField.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/app/login/actions.ts",
+      "type": "file",
+      "name": "actions.ts",
+      "filePath": "src/app/login/actions.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/login/actions.ts:signIn",
+      "type": "function",
+      "name": "signIn",
+      "filePath": "src/app/login/actions.ts",
+      "lineRange": [
+        7,
+        24
+      ],
+      "summary": "Function signIn in actions.ts",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/login/actions.ts:signUp",
+      "type": "function",
+      "name": "signUp",
+      "filePath": "src/app/login/actions.ts",
+      "lineRange": [
+        26,
+        46
+      ],
+      "summary": "Function signUp in actions.ts",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/login/actions.ts:signOut",
+      "type": "function",
+      "name": "signOut",
+      "filePath": "src/app/login/actions.ts",
+      "lineRange": [
+        48,
+        52
+      ],
+      "summary": "Function signOut in actions.ts",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/login/page.tsx",
+      "type": "file",
+      "name": "page.tsx",
+      "filePath": "src/app/login/page.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/login/page.tsx:LoginPage",
+      "type": "function",
+      "name": "LoginPage",
+      "filePath": "src/app/login/page.tsx",
+      "lineRange": [
+        13,
+        167
+      ],
+      "summary": "Function LoginPage in page.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/app/not-found.tsx",
+      "type": "file",
+      "name": "not-found.tsx",
+      "filePath": "src/app/not-found.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/not-found.tsx:NotFound",
+      "type": "function",
+      "name": "NotFound",
+      "filePath": "src/app/not-found.tsx",
+      "lineRange": [
+        44,
+        103
+      ],
+      "summary": "Function NotFound in not-found.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/app/page.tsx",
+      "type": "file",
+      "name": "page.tsx",
+      "filePath": "src/app/page.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/page.tsx:LandingPage",
+      "type": "function",
+      "name": "LandingPage",
+      "filePath": "src/app/page.tsx",
+      "lineRange": [
+        90,
+        99
+      ],
+      "summary": "Function LandingPage in page.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/robots.ts",
+      "type": "file",
+      "name": "robots.ts",
+      "filePath": "src/app/robots.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/robots.ts:robots",
+      "type": "function",
+      "name": "robots",
+      "filePath": "src/app/robots.ts",
+      "lineRange": [
+        13,
+        25
+      ],
+      "summary": "Function robots in robots.ts",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/sitemap.ts",
+      "type": "file",
+      "name": "sitemap.ts",
+      "filePath": "src/app/sitemap.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/sitemap.ts:sitemap",
+      "type": "function",
+      "name": "sitemap",
+      "filePath": "src/app/sitemap.ts",
+      "lineRange": [
+        18,
+        29
+      ],
+      "summary": "Function sitemap in sitemap.ts",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/inventar/ValuablePlinth.tsx",
+      "type": "file",
+      "name": "ValuablePlinth.tsx",
+      "filePath": "src/components/inventar/ValuablePlinth.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/inventar/ValuablePlinth.tsx:ValuablePlinth",
+      "type": "function",
+      "name": "ValuablePlinth",
+      "filePath": "src/components/inventar/ValuablePlinth.tsx",
+      "lineRange": [
+        32,
+        109
+      ],
+      "summary": "Function ValuablePlinth in ValuablePlinth.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/inventar/ValuablePlinth.tsx:ShowcaseCorners",
+      "type": "function",
+      "name": "ShowcaseCorners",
+      "filePath": "src/components/inventar/ValuablePlinth.tsx",
+      "lineRange": [
+        121,
+        137
+      ],
+      "summary": "Function ShowcaseCorners in ValuablePlinth.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/landing/LandingClient.tsx",
+      "type": "file",
+      "name": "LandingClient.tsx",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:CustomCursor",
+      "type": "function",
+      "name": "CustomCursor",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        49,
+        142
+      ],
+      "summary": "Function CustomCursor in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:useScrollDirection",
+      "type": "function",
+      "name": "useScrollDirection",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        158,
+        172
+      ],
+      "summary": "Function useScrollDirection in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:Reveal",
+      "type": "function",
+      "name": "Reveal",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        209,
+        293
+      ],
+      "summary": "Function Reveal in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:Kicker",
+      "type": "function",
+      "name": "Kicker",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        298,
+        337
+      ],
+      "summary": "Function Kicker in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:Lozenge",
+      "type": "function",
+      "name": "Lozenge",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        340,
+        356
+      ],
+      "summary": "Function Lozenge in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:SectionHead",
+      "type": "function",
+      "name": "SectionHead",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        358,
+        433
+      ],
+      "summary": "Function SectionHead in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:SectionProgressBar",
+      "type": "function",
+      "name": "SectionProgressBar",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        488,
+        801
+      ],
+      "summary": "Function SectionProgressBar in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:MiniSparkline",
+      "type": "function",
+      "name": "MiniSparkline",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        819,
+        837
+      ],
+      "summary": "Function MiniSparkline in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:MiniDonut",
+      "type": "function",
+      "name": "MiniDonut",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        859,
+        879
+      ],
+      "summary": "Function MiniDonut in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:MiniStrategy",
+      "type": "function",
+      "name": "MiniStrategy",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        881,
+        899
+      ],
+      "summary": "Function MiniStrategy in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:candleBaselineYNorm",
+      "type": "function",
+      "name": "candleBaselineYNorm",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        929,
+        939
+      ],
+      "summary": "Function candleBaselineYNorm in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:AnalyseCandles",
+      "type": "function",
+      "name": "AnalyseCandles",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        1016,
+        1204
+      ],
+      "summary": "Function AnalyseCandles in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:AnalyseCardShell",
+      "type": "function",
+      "name": "AnalyseCardShell",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        1217,
+        1244
+      ],
+      "summary": "Function AnalyseCardShell in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:CardHeatmap",
+      "type": "function",
+      "name": "CardHeatmap",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        1262,
+        1284
+      ],
+      "summary": "Function CardHeatmap in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:CardSankey",
+      "type": "function",
+      "name": "CardSankey",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        1353,
+        1470
+      ],
+      "summary": "Function CardSankey in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:CardCalendar",
+      "type": "function",
+      "name": "CardCalendar",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        1486,
+        1549
+      ],
+      "summary": "Function CardCalendar in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:CardDiverging",
+      "type": "function",
+      "name": "CardDiverging",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        1572,
+        1615
+      ],
+      "summary": "Function CardDiverging in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:deckGeometry",
+      "type": "function",
+      "name": "deckGeometry",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        1636,
+        1649
+      ],
+      "summary": "Function deckGeometry in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:AnalyseDeck",
+      "type": "function",
+      "name": "AnalyseDeck",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        1651,
+        1712
+      ],
+      "summary": "Function AnalyseDeck in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:AnalyseReveal",
+      "type": "function",
+      "name": "AnalyseReveal",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        1758,
+        2064
+      ],
+      "summary": "Function AnalyseReveal in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:StatsBandFallback",
+      "type": "function",
+      "name": "StatsBandFallback",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        2266,
+        2304
+      ],
+      "summary": "Function StatsBandFallback in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:cylinderTransform",
+      "type": "function",
+      "name": "cylinderTransform",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        2306,
+        2327
+      ],
+      "summary": "Function cylinderTransform in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:clipPathAt",
+      "type": "function",
+      "name": "clipPathAt",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        2346,
+        2355
+      ],
+      "summary": "Function clipPathAt in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:PedimentReveal",
+      "type": "function",
+      "name": "PedimentReveal",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        2357,
+        2813
+      ],
+      "summary": "Function PedimentReveal in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:PillarsReveal",
+      "type": "function",
+      "name": "PillarsReveal",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        3031,
+        3410
+      ],
+      "summary": "Function PillarsReveal in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:ExtrasCarousel",
+      "type": "function",
+      "name": "ExtrasCarousel",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        3462,
+        3635
+      ],
+      "summary": "Function ExtrasCarousel in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:InstrumentariumVines",
+      "type": "function",
+      "name": "InstrumentariumVines",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        3671,
+        3715
+      ],
+      "summary": "Function InstrumentariumVines in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:FooterSections",
+      "type": "function",
+      "name": "FooterSections",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        3723,
+        3744
+      ],
+      "summary": "Function FooterSections in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/landing/LandingClient.tsx:LandingClient",
+      "type": "function",
+      "name": "LandingClient",
+      "filePath": "src/components/landing/LandingClient.tsx",
+      "lineRange": [
+        3748,
+        4586
+      ],
+      "summary": "Function LandingClient in LandingClient.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/landing/SmoothScrollProvider.tsx",
+      "type": "file",
+      "name": "SmoothScrollProvider.tsx",
+      "filePath": "src/components/landing/SmoothScrollProvider.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/landing/SmoothScrollProvider.tsx:SmoothScrollProvider",
+      "type": "function",
+      "name": "SmoothScrollProvider",
+      "filePath": "src/components/landing/SmoothScrollProvider.tsx",
+      "lineRange": [
+        21,
+        165
+      ],
+      "summary": "Function SmoothScrollProvider in SmoothScrollProvider.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/landing/landing-tokens.ts",
+      "type": "file",
+      "name": "landing-tokens.ts",
+      "filePath": "src/components/landing/landing-tokens.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/landing/olive-vines.tsx",
+      "type": "file",
+      "name": "olive-vines.tsx",
+      "filePath": "src/components/landing/olive-vines.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/landing/olive-vines.tsx:pointAt",
+      "type": "function",
+      "name": "pointAt",
+      "filePath": "src/components/landing/olive-vines.tsx",
+      "lineRange": [
+        23,
+        33
+      ],
+      "summary": "Function pointAt in olive-vines.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/olive-vines.tsx:tendrilPath",
+      "type": "function",
+      "name": "tendrilPath",
+      "filePath": "src/components/landing/olive-vines.tsx",
+      "lineRange": [
+        82,
+        92
+      ],
+      "summary": "Function tendrilPath in olive-vines.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/olive-vines.tsx:VineBranch",
+      "type": "function",
+      "name": "VineBranch",
+      "filePath": "src/components/landing/olive-vines.tsx",
+      "lineRange": [
+        150,
+        269
+      ],
+      "summary": "Function VineBranch in olive-vines.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/landing/olive-vines.tsx:OliveVines",
+      "type": "function",
+      "name": "OliveVines",
+      "filePath": "src/components/landing/olive-vines.tsx",
+      "lineRange": [
+        401,
+        473
+      ],
+      "summary": "Function OliveVines in olive-vines.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/landing/olive-vines.tsx:LaurelWreath",
+      "type": "function",
+      "name": "LaurelWreath",
+      "filePath": "src/components/landing/olive-vines.tsx",
+      "lineRange": [
+        490,
+        521
+      ],
+      "summary": "Function LaurelWreath in olive-vines.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/landing/olive-vines.tsx:MeanderFrieze",
+      "type": "function",
+      "name": "MeanderFrieze",
+      "filePath": "src/components/landing/olive-vines.tsx",
+      "lineRange": [
+        532,
+        575
+      ],
+      "summary": "Function MeanderFrieze in olive-vines.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/landing/scroll-control.ts",
+      "type": "file",
+      "name": "scroll-control.ts",
+      "filePath": "src/components/landing/scroll-control.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/landing/scroll-control.ts:setActiveLenis",
+      "type": "function",
+      "name": "setActiveLenis",
+      "filePath": "src/components/landing/scroll-control.ts",
+      "lineRange": [
+        24,
+        26
+      ],
+      "summary": "Function setActiveLenis in scroll-control.ts",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/scroll-control.ts:clearActiveLenis",
+      "type": "function",
+      "name": "clearActiveLenis",
+      "filePath": "src/components/landing/scroll-control.ts",
+      "lineRange": [
+        31,
+        33
+      ],
+      "summary": "Function clearActiveLenis in scroll-control.ts",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/scroll-control.ts:scrollToY",
+      "type": "function",
+      "name": "scrollToY",
+      "filePath": "src/components/landing/scroll-control.ts",
+      "lineRange": [
+        43,
+        46
+      ],
+      "summary": "Function scrollToY in scroll-control.ts",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/scroll-control.ts:jumpToY",
+      "type": "function",
+      "name": "jumpToY",
+      "filePath": "src/components/landing/scroll-control.ts",
+      "lineRange": [
+        56,
+        59
+      ],
+      "summary": "Function jumpToY in scroll-control.ts",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/layout/app-shell.tsx",
+      "type": "file",
+      "name": "app-shell.tsx",
+      "filePath": "src/components/layout/app-shell.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/layout/app-shell.tsx:AppShell",
+      "type": "function",
+      "name": "AppShell",
+      "filePath": "src/components/layout/app-shell.tsx",
+      "lineRange": [
+        42,
+        127
+      ],
+      "summary": "Function AppShell in app-shell.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/layout/page-wrapper.tsx",
+      "type": "file",
+      "name": "page-wrapper.tsx",
+      "filePath": "src/components/layout/page-wrapper.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/layout/page-wrapper.tsx:PageWrapper",
+      "type": "function",
+      "name": "PageWrapper",
+      "filePath": "src/components/layout/page-wrapper.tsx",
+      "lineRange": [
+        14,
+        98
+      ],
+      "summary": "Function PageWrapper in page-wrapper.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/layout/privacy-toggle.tsx",
+      "type": "file",
+      "name": "privacy-toggle.tsx",
+      "filePath": "src/components/layout/privacy-toggle.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/layout/privacy-toggle.tsx:PrivacyToggle",
+      "type": "function",
+      "name": "PrivacyToggle",
+      "filePath": "src/components/layout/privacy-toggle.tsx",
+      "lineRange": [
+        7,
+        28
+      ],
+      "summary": "Function PrivacyToggle in privacy-toggle.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/layout/sidebar.tsx",
+      "type": "file",
+      "name": "sidebar.tsx",
+      "filePath": "src/components/layout/sidebar.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/layout/sidebar.tsx:Sidebar",
+      "type": "function",
+      "name": "Sidebar",
+      "filePath": "src/components/layout/sidebar.tsx",
+      "lineRange": [
+        124,
+        294
+      ],
+      "summary": "Function Sidebar in sidebar.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/providers/privacy-context.tsx",
+      "type": "file",
+      "name": "privacy-context.tsx",
+      "filePath": "src/components/providers/privacy-context.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/providers/privacy-context.tsx:usePrivacy",
+      "type": "function",
+      "name": "usePrivacy",
+      "filePath": "src/components/providers/privacy-context.tsx",
+      "lineRange": [
+        17,
+        19
+      ],
+      "summary": "Function usePrivacy in privacy-context.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/providers/privacy-context.tsx:PrivacyProvider",
+      "type": "function",
+      "name": "PrivacyProvider",
+      "filePath": "src/components/providers/privacy-context.tsx",
+      "lineRange": [
+        28,
+        58
+      ],
+      "summary": "Function PrivacyProvider in privacy-context.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/seo/json-ld.tsx",
+      "type": "file",
+      "name": "json-ld.tsx",
+      "filePath": "src/components/seo/json-ld.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/seo/json-ld.tsx:JsonLd",
+      "type": "function",
+      "name": "JsonLd",
+      "filePath": "src/components/seo/json-ld.tsx",
+      "lineRange": [
+        14,
+        23
+      ],
+      "summary": "Function JsonLd in json-ld.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/ui/logo.tsx",
+      "type": "file",
+      "name": "logo.tsx",
+      "filePath": "src/components/ui/logo.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/logo.tsx:Logo",
+      "type": "function",
+      "name": "Logo",
+      "filePath": "src/components/ui/logo.tsx",
+      "lineRange": [
+        25,
+        47
+      ],
+      "summary": "Function Logo in logo.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/waitlist/WaitlistForm.tsx",
+      "type": "file",
+      "name": "WaitlistForm.tsx",
+      "filePath": "src/components/waitlist/WaitlistForm.tsx",
+      "summary": "",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/waitlist/WaitlistForm.tsx:WaitlistForm",
+      "type": "function",
+      "name": "WaitlistForm",
+      "filePath": "src/components/waitlist/WaitlistForm.tsx",
+      "lineRange": [
+        21,
+        94
+      ],
+      "summary": "Function WaitlistForm in WaitlistForm.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/waitlist/WaitlistForm.tsx:WaitlistPromiseLine",
+      "type": "function",
+      "name": "WaitlistPromiseLine",
+      "filePath": "src/components/waitlist/WaitlistForm.tsx",
+      "lineRange": [
+        119,
+        127
+      ],
+      "summary": "Function WaitlistPromiseLine in WaitlistForm.tsx",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/seo.ts",
+      "type": "file",
+      "name": "seo.ts",
+      "filePath": "src/lib/seo.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/seo.ts:abs",
+      "type": "function",
+      "name": "abs",
+      "filePath": "src/lib/seo.ts",
+      "lineRange": [
+        51,
+        53
+      ],
+      "summary": "Function abs in seo.ts",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/app/(dashboard)/layout.tsx",
+      "target": "function:src/app/(dashboard)/layout.tsx:DashboardLayout",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/layout.tsx",
+      "target": "function:src/app/(dashboard)/layout.tsx:DashboardLayout",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/layout.tsx",
+      "target": "file:src/components/layout/app-shell.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/layout.tsx",
+      "target": "file:src/components/providers/athena-settings-context.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/layout.tsx",
+      "target": "file:src/components/providers/privacy-context.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/layout.tsx",
+      "target": "file:src/components/providers/settings-context.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/layout.tsx",
+      "target": "file:src/lib/assistant/settings.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/layout.tsx",
+      "target": "file:src/lib/settings.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/layout.tsx",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/actions/waitlist.ts",
+      "target": "function:src/app/actions/waitlist.ts:joinWaitlist",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/actions/waitlist.ts",
+      "target": "function:src/app/actions/waitlist.ts:joinWaitlist",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/actions/waitlist.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/datenschutz/page.tsx",
+      "target": "function:src/app/datenschutz/page.tsx:DatenschutzPage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/datenschutz/page.tsx",
+      "target": "function:src/app/datenschutz/page.tsx:DatenschutzPage",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/datenschutz/page.tsx",
+      "target": "file:src/components/landing/landing-tokens.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/impressum/page.tsx",
+      "target": "function:src/app/impressum/page.tsx:ImpressumPage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/impressum/page.tsx",
+      "target": "function:src/app/impressum/page.tsx:ImpressumPage",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/impressum/page.tsx",
+      "target": "file:src/components/landing/landing-tokens.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/interesse/InteresseClient.tsx",
+      "target": "function:src/app/interesse/InteresseClient.tsx:useScrollReveals",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/interesse/InteresseClient.tsx",
+      "target": "function:src/app/interesse/InteresseClient.tsx:InteresseClient",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/interesse/InteresseClient.tsx",
+      "target": "function:src/app/interesse/InteresseClient.tsx:InteresseClient",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/interesse/InteresseClient.tsx",
+      "target": "file:src/app/interesse/interesse.css",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/interesse/InteresseClient.tsx",
+      "target": "file:src/components/landing/SmoothScrollProvider.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/interesse/InteresseClient.tsx",
+      "target": "file:src/components/landing/landing-tokens.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/interesse/InteresseClient.tsx",
+      "target": "file:src/components/landing/olive-vines.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/interesse/InteresseClient.tsx",
+      "target": "file:src/components/ui/logo.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/interesse/InteresseClient.tsx",
+      "target": "file:src/components/waitlist/WaitlistForm.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/interesse/InteresseClient.tsx",
+      "target": "file:src/lib/use-reduced-motion.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/interesse/page.tsx",
+      "target": "function:src/app/interesse/page.tsx:InteressePage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/interesse/page.tsx",
+      "target": "function:src/app/interesse/page.tsx:InteressePage",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/interesse/page.tsx",
+      "target": "file:src/app/interesse/InteresseClient.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/interesse/page.tsx",
+      "target": "file:src/components/seo/json-ld.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/interesse/page.tsx",
+      "target": "file:src/lib/seo.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/layout.tsx",
+      "target": "function:src/app/layout.tsx:RootLayout",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/layout.tsx",
+      "target": "function:src/app/layout.tsx:RootLayout",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/layout.tsx",
+      "target": "file:src/app/globals.css",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/layout.tsx",
+      "target": "file:src/lib/seo.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/loading.tsx",
+      "target": "function:src/app/loading.tsx:Loading",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/loading.tsx",
+      "target": "function:src/app/loading.tsx:Loading",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/loading.tsx",
+      "target": "file:src/components/landing/landing-tokens.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/loading.tsx",
+      "target": "file:src/components/ui/logo.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/login/PasswordField.tsx",
+      "target": "function:src/app/login/PasswordField.tsx:PasswordField",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/login/PasswordField.tsx",
+      "target": "function:src/app/login/PasswordField.tsx:PasswordField",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/login/actions.ts",
+      "target": "function:src/app/login/actions.ts:signIn",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/login/actions.ts",
+      "target": "function:src/app/login/actions.ts:signIn",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/login/actions.ts",
+      "target": "function:src/app/login/actions.ts:signUp",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/login/actions.ts",
+      "target": "function:src/app/login/actions.ts:signUp",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/login/actions.ts",
+      "target": "function:src/app/login/actions.ts:signOut",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/login/actions.ts",
+      "target": "function:src/app/login/actions.ts:signOut",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/login/actions.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/login/page.tsx",
+      "target": "function:src/app/login/page.tsx:LoginPage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/login/page.tsx",
+      "target": "function:src/app/login/page.tsx:LoginPage",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/login/page.tsx",
+      "target": "file:src/app/login/PasswordField.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/login/page.tsx",
+      "target": "file:src/app/login/actions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/login/page.tsx",
+      "target": "file:src/app/login/login.css",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/login/page.tsx",
+      "target": "file:src/components/landing/landing-tokens.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/login/page.tsx",
+      "target": "file:src/components/landing/olive-vines.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/login/page.tsx",
+      "target": "file:src/components/ui/logo.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/not-found.tsx",
+      "target": "function:src/app/not-found.tsx:NotFound",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/not-found.tsx",
+      "target": "function:src/app/not-found.tsx:NotFound",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/not-found.tsx",
+      "target": "file:src/components/landing/olive-vines.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/not-found.tsx",
+      "target": "file:src/components/ui/button.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/not-found.tsx",
+      "target": "file:src/components/ui/logo.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/page.tsx",
+      "target": "function:src/app/page.tsx:LandingPage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/page.tsx",
+      "target": "function:src/app/page.tsx:LandingPage",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/page.tsx",
+      "target": "file:src/components/landing/LandingClient.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/page.tsx",
+      "target": "file:src/components/seo/json-ld.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/page.tsx",
+      "target": "file:src/lib/seo.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/page.tsx",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/robots.ts",
+      "target": "function:src/app/robots.ts:robots",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/robots.ts",
+      "target": "function:src/app/robots.ts:robots",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/robots.ts",
+      "target": "file:src/lib/seo.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/sitemap.ts",
+      "target": "function:src/app/sitemap.ts:sitemap",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/sitemap.ts",
+      "target": "function:src/app/sitemap.ts:sitemap",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/sitemap.ts",
+      "target": "file:src/lib/seo.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/inventar/ValuablePlinth.tsx",
+      "target": "function:src/components/inventar/ValuablePlinth.tsx:ValuablePlinth",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/inventar/ValuablePlinth.tsx",
+      "target": "function:src/components/inventar/ValuablePlinth.tsx:ValuablePlinth",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/inventar/ValuablePlinth.tsx",
+      "target": "function:src/components/inventar/ValuablePlinth.tsx:ShowcaseCorners",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/inventar/ValuablePlinth.tsx",
+      "target": "function:src/components/inventar/ValuablePlinth.tsx:ShowcaseCorners",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/inventar/ValuablePlinth.tsx",
+      "target": "file:src/components/landing/olive-vines.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/inventar/ValuablePlinth.tsx",
+      "target": "file:src/components/providers/settings-context.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/inventar/ValuablePlinth.tsx",
+      "target": "file:src/lib/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:CustomCursor",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:useScrollDirection",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:Reveal",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:Kicker",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:Lozenge",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:SectionHead",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:SectionProgressBar",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:MiniSparkline",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:MiniDonut",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:MiniStrategy",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:candleBaselineYNorm",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:AnalyseCandles",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:AnalyseCardShell",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:CardHeatmap",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:CardSankey",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:CardCalendar",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:CardDiverging",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:deckGeometry",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:AnalyseDeck",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:AnalyseReveal",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:StatsBandFallback",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:cylinderTransform",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:clipPathAt",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:PedimentReveal",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:PillarsReveal",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:ExtrasCarousel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:InstrumentariumVines",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:FooterSections",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:LandingClient",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "function:src/components/landing/LandingClient.tsx:LandingClient",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "file:src/components/landing/DashboardMock.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "file:src/components/landing/SmoothScrollProvider.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "file:src/components/landing/landing-tokens.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "file:src/components/landing/landing.css",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "file:src/components/landing/olive-vines.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "file:src/components/landing/scroll-control.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "file:src/components/ui/logo.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "file:src/components/waitlist/WaitlistForm.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/LandingClient.tsx",
+      "target": "file:src/lib/use-reduced-motion.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/SmoothScrollProvider.tsx",
+      "target": "function:src/components/landing/SmoothScrollProvider.tsx:SmoothScrollProvider",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/SmoothScrollProvider.tsx",
+      "target": "function:src/components/landing/SmoothScrollProvider.tsx:SmoothScrollProvider",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/landing/SmoothScrollProvider.tsx",
+      "target": "file:src/components/landing/scroll-control.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/olive-vines.tsx",
+      "target": "function:src/components/landing/olive-vines.tsx:pointAt",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/olive-vines.tsx",
+      "target": "function:src/components/landing/olive-vines.tsx:tendrilPath",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/olive-vines.tsx",
+      "target": "function:src/components/landing/olive-vines.tsx:VineBranch",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/olive-vines.tsx",
+      "target": "function:src/components/landing/olive-vines.tsx:OliveVines",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/olive-vines.tsx",
+      "target": "function:src/components/landing/olive-vines.tsx:OliveVines",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/landing/olive-vines.tsx",
+      "target": "function:src/components/landing/olive-vines.tsx:LaurelWreath",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/olive-vines.tsx",
+      "target": "function:src/components/landing/olive-vines.tsx:LaurelWreath",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/landing/olive-vines.tsx",
+      "target": "function:src/components/landing/olive-vines.tsx:MeanderFrieze",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/olive-vines.tsx",
+      "target": "function:src/components/landing/olive-vines.tsx:MeanderFrieze",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/landing/olive-vines.tsx",
+      "target": "file:src/components/landing/landing-tokens.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/olive-vines.tsx",
+      "target": "file:src/components/landing/vines.css",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/scroll-control.ts",
+      "target": "function:src/components/landing/scroll-control.ts:setActiveLenis",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/scroll-control.ts",
+      "target": "function:src/components/landing/scroll-control.ts:setActiveLenis",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/landing/scroll-control.ts",
+      "target": "function:src/components/landing/scroll-control.ts:clearActiveLenis",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/scroll-control.ts",
+      "target": "function:src/components/landing/scroll-control.ts:clearActiveLenis",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/landing/scroll-control.ts",
+      "target": "function:src/components/landing/scroll-control.ts:scrollToY",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/scroll-control.ts",
+      "target": "function:src/components/landing/scroll-control.ts:scrollToY",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/landing/scroll-control.ts",
+      "target": "function:src/components/landing/scroll-control.ts:jumpToY",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/scroll-control.ts",
+      "target": "function:src/components/landing/scroll-control.ts:jumpToY",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/layout/app-shell.tsx",
+      "target": "function:src/components/layout/app-shell.tsx:AppShell",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/layout/app-shell.tsx",
+      "target": "function:src/components/layout/app-shell.tsx:AppShell",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/layout/app-shell.tsx",
+      "target": "file:src/components/assistant/AssistantSheet.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/layout/app-shell.tsx",
+      "target": "file:src/components/landing/olive-vines.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/layout/app-shell.tsx",
+      "target": "file:src/components/layout/page-wrapper.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/layout/app-shell.tsx",
+      "target": "file:src/components/layout/privacy-toggle.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/layout/app-shell.tsx",
+      "target": "file:src/components/layout/sidebar.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/layout/app-shell.tsx",
+      "target": "file:src/components/providers/settings-context.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/layout/page-wrapper.tsx",
+      "target": "function:src/components/layout/page-wrapper.tsx:PageWrapper",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/layout/page-wrapper.tsx",
+      "target": "function:src/components/layout/page-wrapper.tsx:PageWrapper",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/layout/privacy-toggle.tsx",
+      "target": "function:src/components/layout/privacy-toggle.tsx:PrivacyToggle",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/layout/privacy-toggle.tsx",
+      "target": "function:src/components/layout/privacy-toggle.tsx:PrivacyToggle",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/layout/privacy-toggle.tsx",
+      "target": "file:src/components/providers/privacy-context.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/layout/privacy-toggle.tsx",
+      "target": "file:src/lib/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/layout/sidebar.tsx",
+      "target": "function:src/components/layout/sidebar.tsx:Sidebar",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/layout/sidebar.tsx",
+      "target": "function:src/components/layout/sidebar.tsx:Sidebar",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/layout/sidebar.tsx",
+      "target": "file:src/app/login/actions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/layout/sidebar.tsx",
+      "target": "file:src/components/landing/olive-vines.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/layout/sidebar.tsx",
+      "target": "file:src/components/layout/privacy-toggle.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/layout/sidebar.tsx",
+      "target": "file:src/components/providers/settings-context.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/layout/sidebar.tsx",
+      "target": "file:src/components/ui/button.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/layout/sidebar.tsx",
+      "target": "file:src/components/ui/logo.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/layout/sidebar.tsx",
+      "target": "file:src/lib/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/providers/privacy-context.tsx",
+      "target": "function:src/components/providers/privacy-context.tsx:usePrivacy",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/providers/privacy-context.tsx",
+      "target": "function:src/components/providers/privacy-context.tsx:usePrivacy",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/providers/privacy-context.tsx",
+      "target": "function:src/components/providers/privacy-context.tsx:PrivacyProvider",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/providers/privacy-context.tsx",
+      "target": "function:src/components/providers/privacy-context.tsx:PrivacyProvider",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/seo/json-ld.tsx",
+      "target": "function:src/components/seo/json-ld.tsx:JsonLd",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/seo/json-ld.tsx",
+      "target": "function:src/components/seo/json-ld.tsx:JsonLd",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/logo.tsx",
+      "target": "function:src/components/ui/logo.tsx:Logo",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/ui/logo.tsx",
+      "target": "function:src/components/ui/logo.tsx:Logo",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/logo.tsx",
+      "target": "file:src/lib/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/waitlist/WaitlistForm.tsx",
+      "target": "function:src/components/waitlist/WaitlistForm.tsx:WaitlistForm",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/waitlist/WaitlistForm.tsx",
+      "target": "function:src/components/waitlist/WaitlistForm.tsx:WaitlistForm",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/waitlist/WaitlistForm.tsx",
+      "target": "function:src/components/waitlist/WaitlistForm.tsx:WaitlistPromiseLine",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/waitlist/WaitlistForm.tsx",
+      "target": "function:src/components/waitlist/WaitlistForm.tsx:WaitlistPromiseLine",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/waitlist/WaitlistForm.tsx",
+      "target": "file:src/app/actions/waitlist.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/waitlist/WaitlistForm.tsx",
+      "target": "file:src/components/landing/landing-tokens.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/waitlist/WaitlistForm.tsx",
+      "target": "file:src/components/waitlist/waitlist.css",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/seo.ts",
+      "target": "function:src/lib/seo.ts:abs",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/seo.ts",
+      "target": "function:src/lib/seo.ts:abs",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    }
+  ]
+}

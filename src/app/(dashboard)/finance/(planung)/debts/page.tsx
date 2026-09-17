@@ -226,7 +226,7 @@ function DebtCard({ debt, accentColor, locale, dateFormat }: { debt: Debt; accen
         </div>
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>{progress}% bezahlt</span>
-          <span>{fmt(paid, debt.currency, locale)} / {fmt(debt.original_amount, debt.currency, locale)}</span>
+          <span className="tabular-nums">{fmt(paid, debt.currency, locale)} / {fmt(debt.original_amount, debt.currency, locale)}</span>
         </div>
       </div>
 

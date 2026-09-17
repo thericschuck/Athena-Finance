@@ -1,0 +1,1335 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 6,
+  "filesSkipped": [],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 6,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 6,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "src/app/(dashboard)/finance/budget/actions.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 196,
+      "nonEmptyLines": 158,
+      "functions": [
+        {
+          "name": "createCategory",
+          "startLine": 11,
+          "endLine": 29,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        },
+        {
+          "name": "updateCategory",
+          "startLine": 31,
+          "endLine": 54,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        },
+        {
+          "name": "deleteCategory",
+          "startLine": 56,
+          "endLine": 64,
+          "params": [
+            "id"
+          ]
+        },
+        {
+          "name": "createItem",
+          "startLine": 68,
+          "endLine": 96,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        },
+        {
+          "name": "updateItem",
+          "startLine": 98,
+          "endLine": 124,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        },
+        {
+          "name": "deleteItem",
+          "startLine": 126,
+          "endLine": 134,
+          "params": [
+            "id"
+          ]
+        },
+        {
+          "name": "upsertIncomeTarget",
+          "startLine": 138,
+          "endLine": 157,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        },
+        {
+          "name": "seedIfEmpty",
+          "startLine": 161,
+          "endLine": 196,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "createCategory",
+          "line": 11,
+          "isDefault": false
+        },
+        {
+          "name": "updateCategory",
+          "line": 31,
+          "isDefault": false
+        },
+        {
+          "name": "deleteCategory",
+          "line": 56,
+          "isDefault": false
+        },
+        {
+          "name": "createItem",
+          "line": 68,
+          "isDefault": false
+        },
+        {
+          "name": "updateItem",
+          "line": 98,
+          "isDefault": false
+        },
+        {
+          "name": "deleteItem",
+          "line": 126,
+          "isDefault": false
+        },
+        {
+          "name": "upsertIncomeTarget",
+          "line": 138,
+          "isDefault": false
+        },
+        {
+          "name": "seedIfEmpty",
+          "line": 161,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "createCategory",
+          "callee": "getAuthUser",
+          "lineNumber": 12
+        },
+        {
+          "caller": "createCategory",
+          "callee": "(formData.get('name') as string)?.trim",
+          "lineNumber": 15
+        },
+        {
+          "caller": "createCategory",
+          "callee": "formData.get",
+          "lineNumber": 15
+        },
+        {
+          "caller": "createCategory",
+          "callee": "supabase.from('budget_categories').insert",
+          "lineNumber": 18
+        },
+        {
+          "caller": "createCategory",
+          "callee": "supabase.from",
+          "lineNumber": 18
+        },
+        {
+          "caller": "createCategory",
+          "callee": "formData.get",
+          "lineNumber": 21
+        },
+        {
+          "caller": "createCategory",
+          "callee": "formData.get",
+          "lineNumber": 22
+        },
+        {
+          "caller": "createCategory",
+          "callee": "Number",
+          "lineNumber": 22
+        },
+        {
+          "caller": "createCategory",
+          "callee": "formData.get",
+          "lineNumber": 22
+        },
+        {
+          "caller": "createCategory",
+          "callee": "Number",
+          "lineNumber": 23
+        },
+        {
+          "caller": "createCategory",
+          "callee": "formData.get",
+          "lineNumber": 23
+        },
+        {
+          "caller": "createCategory",
+          "callee": "revalidatePath",
+          "lineNumber": 27
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "getAuthUser",
+          "lineNumber": 32
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "formData.get",
+          "lineNumber": 35
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "(formData.get('name') as string)?.trim",
+          "lineNumber": 36
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "formData.get",
+          "lineNumber": 36
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "supabase.from('budget_categories').update({\r\n    name,\r\n    icon:           (formData.get('icon') as string) || null,\r\n    monthly_budget: formData.get('monthly_budget') ? Number(formData.get('monthly_budget')) : null,\r\n    sort_order:     Number(formData.get('sort_order') || 0),\r\n  }).eq('id', id).eq",
+          "lineNumber": 44
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "supabase.from('budget_categories').update({\r\n    name,\r\n    icon:           (formData.get('icon') as string) || null,\r\n    monthly_budget: formData.get('monthly_budget') ? Number(formData.get('monthly_budget')) : null,\r\n    sort_order:     Number(formData.get('sort_order') || 0),\r\n  }).eq",
+          "lineNumber": 44
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "supabase.from('budget_categories').update",
+          "lineNumber": 44
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "supabase.from",
+          "lineNumber": 44
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "formData.get",
+          "lineNumber": 46
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "formData.get",
+          "lineNumber": 47
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "Number",
+          "lineNumber": 47
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "formData.get",
+          "lineNumber": 47
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "Number",
+          "lineNumber": 48
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "formData.get",
+          "lineNumber": 48
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "revalidatePath",
+          "lineNumber": 52
+        },
+        {
+          "caller": "deleteCategory",
+          "callee": "getAuthUser",
+          "lineNumber": 57
+        },
+        {
+          "caller": "deleteCategory",
+          "callee": "supabase.from('budget_categories').delete().eq('id', id).eq",
+          "lineNumber": 60
+        },
+        {
+          "caller": "deleteCategory",
+          "callee": "supabase.from('budget_categories').delete().eq",
+          "lineNumber": 60
+        },
+        {
+          "caller": "deleteCategory",
+          "callee": "supabase.from('budget_categories').delete",
+          "lineNumber": 60
+        },
+        {
+          "caller": "deleteCategory",
+          "callee": "supabase.from",
+          "lineNumber": 60
+        },
+        {
+          "caller": "deleteCategory",
+          "callee": "revalidatePath",
+          "lineNumber": 62
+        },
+        {
+          "caller": "createItem",
+          "callee": "getAuthUser",
+          "lineNumber": 69
+        },
+        {
+          "caller": "createItem",
+          "callee": "(formData.get('name') as string)?.trim",
+          "lineNumber": 72
+        },
+        {
+          "caller": "createItem",
+          "callee": "formData.get",
+          "lineNumber": 72
+        },
+        {
+          "caller": "createItem",
+          "callee": "formData.get",
+          "lineNumber": 73
+        },
+        {
+          "caller": "createItem",
+          "callee": "Number",
+          "lineNumber": 74
+        },
+        {
+          "caller": "createItem",
+          "callee": "formData.get",
+          "lineNumber": 74
+        },
+        {
+          "caller": "createItem",
+          "callee": "Number",
+          "lineNumber": 75
+        },
+        {
+          "caller": "createItem",
+          "callee": "formData.get",
+          "lineNumber": 75
+        },
+        {
+          "caller": "createItem",
+          "callee": "Number",
+          "lineNumber": 76
+        },
+        {
+          "caller": "createItem",
+          "callee": "formData.get",
+          "lineNumber": 76
+        },
+        {
+          "caller": "createItem",
+          "callee": "isNaN",
+          "lineNumber": 80
+        },
+        {
+          "caller": "createItem",
+          "callee": "supabase.from('budget_items').insert",
+          "lineNumber": 83
+        },
+        {
+          "caller": "createItem",
+          "callee": "supabase.from",
+          "lineNumber": 83
+        },
+        {
+          "caller": "createItem",
+          "callee": "formData.get",
+          "lineNumber": 90
+        },
+        {
+          "caller": "createItem",
+          "callee": "revalidatePath",
+          "lineNumber": 94
+        },
+        {
+          "caller": "updateItem",
+          "callee": "getAuthUser",
+          "lineNumber": 99
+        },
+        {
+          "caller": "updateItem",
+          "callee": "formData.get",
+          "lineNumber": 102
+        },
+        {
+          "caller": "updateItem",
+          "callee": "(formData.get('name') as string)?.trim",
+          "lineNumber": 103
+        },
+        {
+          "caller": "updateItem",
+          "callee": "formData.get",
+          "lineNumber": 103
+        },
+        {
+          "caller": "updateItem",
+          "callee": "Number",
+          "lineNumber": 104
+        },
+        {
+          "caller": "updateItem",
+          "callee": "formData.get",
+          "lineNumber": 104
+        },
+        {
+          "caller": "updateItem",
+          "callee": "Number",
+          "lineNumber": 105
+        },
+        {
+          "caller": "updateItem",
+          "callee": "formData.get",
+          "lineNumber": 105
+        },
+        {
+          "caller": "updateItem",
+          "callee": "Number",
+          "lineNumber": 106
+        },
+        {
+          "caller": "updateItem",
+          "callee": "formData.get",
+          "lineNumber": 106
+        },
+        {
+          "caller": "updateItem",
+          "callee": "isNaN",
+          "lineNumber": 110
+        },
+        {
+          "caller": "updateItem",
+          "callee": "supabase.from('budget_items').update({\r\n    name,\r\n    unit_price,\r\n    quantity,\r\n    interval_days,\r\n    notes: (formData.get('notes') as string) || null,\r\n  }).eq('id', id).eq",
+          "lineNumber": 113
+        },
+        {
+          "caller": "updateItem",
+          "callee": "supabase.from('budget_items').update({\r\n    name,\r\n    unit_price,\r\n    quantity,\r\n    interval_days,\r\n    notes: (formData.get('notes') as string) || null,\r\n  }).eq",
+          "lineNumber": 113
+        },
+        {
+          "caller": "updateItem",
+          "callee": "supabase.from('budget_items').update",
+          "lineNumber": 113
+        },
+        {
+          "caller": "updateItem",
+          "callee": "supabase.from",
+          "lineNumber": 113
+        },
+        {
+          "caller": "updateItem",
+          "callee": "formData.get",
+          "lineNumber": 118
+        },
+        {
+          "caller": "updateItem",
+          "callee": "revalidatePath",
+          "lineNumber": 122
+        },
+        {
+          "caller": "deleteItem",
+          "callee": "getAuthUser",
+          "lineNumber": 127
+        },
+        {
+          "caller": "deleteItem",
+          "callee": "supabase.from('budget_items').delete().eq('id', id).eq",
+          "lineNumber": 130
+        },
+        {
+          "caller": "deleteItem",
+          "callee": "supabase.from('budget_items').delete().eq",
+          "lineNumber": 130
+        },
+        {
+          "caller": "deleteItem",
+          "callee": "supabase.from('budget_items').delete",
+          "lineNumber": 130
+        },
+        {
+          "caller": "deleteItem",
+          "callee": "supabase.from",
+          "lineNumber": 130
+        },
+        {
+          "caller": "deleteItem",
+          "callee": "revalidatePath",
+          "lineNumber": 132
+        },
+        {
+          "caller": "upsertIncomeTarget",
+          "callee": "getAuthUser",
+          "lineNumber": 139
+        },
+        {
+          "caller": "upsertIncomeTarget",
+          "callee": "formData.get",
+          "lineNumber": 142
+        },
+        {
+          "caller": "upsertIncomeTarget",
+          "callee": "(formData.get('label') as string)?.trim",
+          "lineNumber": 143
+        },
+        {
+          "caller": "upsertIncomeTarget",
+          "callee": "formData.get",
+          "lineNumber": 143
+        },
+        {
+          "caller": "upsertIncomeTarget",
+          "callee": "Number",
+          "lineNumber": 144
+        },
+        {
+          "caller": "upsertIncomeTarget",
+          "callee": "formData.get",
+          "lineNumber": 144
+        },
+        {
+          "caller": "upsertIncomeTarget",
+          "callee": "Number",
+          "lineNumber": 145
+        },
+        {
+          "caller": "upsertIncomeTarget",
+          "callee": "formData.get",
+          "lineNumber": 145
+        },
+        {
+          "caller": "upsertIncomeTarget",
+          "callee": "Number",
+          "lineNumber": 146
+        },
+        {
+          "caller": "upsertIncomeTarget",
+          "callee": "formData.get",
+          "lineNumber": 146
+        },
+        {
+          "caller": "upsertIncomeTarget",
+          "callee": "supabase.from('income_targets').update(payload).eq('id', id).eq",
+          "lineNumber": 151
+        },
+        {
+          "caller": "upsertIncomeTarget",
+          "callee": "supabase.from('income_targets').update(payload).eq",
+          "lineNumber": 151
+        },
+        {
+          "caller": "upsertIncomeTarget",
+          "callee": "supabase.from('income_targets').update",
+          "lineNumber": 151
+        },
+        {
+          "caller": "upsertIncomeTarget",
+          "callee": "supabase.from",
+          "lineNumber": 151
+        },
+        {
+          "caller": "upsertIncomeTarget",
+          "callee": "supabase.from('income_targets').insert",
+          "lineNumber": 152
+        },
+        {
+          "caller": "upsertIncomeTarget",
+          "callee": "supabase.from",
+          "lineNumber": 152
+        },
+        {
+          "caller": "upsertIncomeTarget",
+          "callee": "revalidatePath",
+          "lineNumber": 155
+        },
+        {
+          "caller": "seedIfEmpty",
+          "callee": "getAuthUser",
+          "lineNumber": 166
+        },
+        {
+          "caller": "seedIfEmpty",
+          "callee": "supabase\r\n    .from('budget_categories')\r\n    .select('*', { count: 'exact', head: true })\r\n    .eq",
+          "lineNumber": 169
+        },
+        {
+          "caller": "seedIfEmpty",
+          "callee": "supabase\r\n    .from('budget_categories')\r\n    .select",
+          "lineNumber": 169
+        },
+        {
+          "caller": "seedIfEmpty",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 169
+        },
+        {
+          "caller": "seedIfEmpty",
+          "callee": "[\r\n      { name: 'Lebensmittel', icon: '🛒', monthly_budget: 400, sort_order: 0 },\r\n      { name: 'Körperpflege', icon: '🧴', monthly_budget: 50,  sort_order: 1 },\r\n      { name: 'Haushalt',     icon: '🏠', monthly_budget: 80,  sort_order: 2 },\r\n      { name: 'Transport',    icon: '🚗', monthly_budget: 150, sort_order: 3 },\r\n      { name: 'Freizeit',     icon: '🎯', monthly_budget: 100, sort_order: 4 },\r\n    ].map",
+          "lineNumber": 175
+        },
+        {
+          "caller": "seedIfEmpty",
+          "callee": "supabase.from('budget_categories').insert",
+          "lineNumber": 182
+        },
+        {
+          "caller": "seedIfEmpty",
+          "callee": "supabase.from",
+          "lineNumber": 182
+        },
+        {
+          "caller": "seedIfEmpty",
+          "callee": "supabase\r\n    .from('income_targets')\r\n    .select('*', { count: 'exact', head: true })\r\n    .eq",
+          "lineNumber": 185
+        },
+        {
+          "caller": "seedIfEmpty",
+          "callee": "supabase\r\n    .from('income_targets')\r\n    .select",
+          "lineNumber": 185
+        },
+        {
+          "caller": "seedIfEmpty",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 185
+        },
+        {
+          "caller": "seedIfEmpty",
+          "callee": "supabase.from('income_targets').insert",
+          "lineNumber": 191
+        },
+        {
+          "caller": "seedIfEmpty",
+          "callee": "supabase.from",
+          "lineNumber": 191
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 8,
+        "functionCount": 8,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/(dashboard)/finance/budget/page.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 60,
+      "nonEmptyLines": 53,
+      "functions": [
+        {
+          "name": "LebenshaltungskostenPage",
+          "startLine": 32,
+          "endLine": 60,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "LebenshaltungskostenPage",
+          "line": 32,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "LebenshaltungskostenPage",
+          "callee": "seedIfEmpty",
+          "lineNumber": 33
+        },
+        {
+          "caller": "LebenshaltungskostenPage",
+          "callee": "getAuthUser",
+          "lineNumber": 38
+        },
+        {
+          "caller": "LebenshaltungskostenPage",
+          "callee": "redirect",
+          "lineNumber": 39
+        },
+        {
+          "caller": "LebenshaltungskostenPage",
+          "callee": "Promise.all",
+          "lineNumber": 47
+        },
+        {
+          "caller": "LebenshaltungskostenPage",
+          "callee": "supabase.from('budget_categories').select('*').eq('user_id', user.id).order('sort_order').order",
+          "lineNumber": 48
+        },
+        {
+          "caller": "LebenshaltungskostenPage",
+          "callee": "supabase.from('budget_categories').select('*').eq('user_id', user.id).order",
+          "lineNumber": 48
+        },
+        {
+          "caller": "LebenshaltungskostenPage",
+          "callee": "supabase.from('budget_categories').select('*').eq",
+          "lineNumber": 48
+        },
+        {
+          "caller": "LebenshaltungskostenPage",
+          "callee": "supabase.from('budget_categories').select",
+          "lineNumber": 48
+        },
+        {
+          "caller": "LebenshaltungskostenPage",
+          "callee": "supabase.from",
+          "lineNumber": 48
+        },
+        {
+          "caller": "LebenshaltungskostenPage",
+          "callee": "supabase.from('budget_items').select('*').eq('user_id', user.id).order",
+          "lineNumber": 49
+        },
+        {
+          "caller": "LebenshaltungskostenPage",
+          "callee": "supabase.from('budget_items').select('*').eq",
+          "lineNumber": 49
+        },
+        {
+          "caller": "LebenshaltungskostenPage",
+          "callee": "supabase.from('budget_items').select",
+          "lineNumber": 49
+        },
+        {
+          "caller": "LebenshaltungskostenPage",
+          "callee": "supabase.from",
+          "lineNumber": 49
+        },
+        {
+          "caller": "LebenshaltungskostenPage",
+          "callee": "supabase.from('income_targets').select('*').eq('user_id', user.id).order('created_at').limit",
+          "lineNumber": 50
+        },
+        {
+          "caller": "LebenshaltungskostenPage",
+          "callee": "supabase.from('income_targets').select('*').eq('user_id', user.id).order",
+          "lineNumber": 50
+        },
+        {
+          "caller": "LebenshaltungskostenPage",
+          "callee": "supabase.from('income_targets').select('*').eq",
+          "lineNumber": 50
+        },
+        {
+          "caller": "LebenshaltungskostenPage",
+          "callee": "supabase.from('income_targets').select",
+          "lineNumber": 50
+        },
+        {
+          "caller": "LebenshaltungskostenPage",
+          "callee": "supabase.from",
+          "lineNumber": 50
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/lebenshaltungskosten/EinstellungenTab.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 111,
+      "nonEmptyLines": 101,
+      "functions": [
+        {
+          "name": "EinstellungenTab",
+          "startLine": 11,
+          "endLine": 111,
+          "params": [
+            "{ target }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "EinstellungenTab",
+          "line": 11,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "EinstellungenTab",
+          "callee": "useActionState",
+          "lineNumber": 12
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/lebenshaltungskosten/KategorienTab.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 358,
+      "nonEmptyLines": 336,
+      "functions": [
+        {
+          "name": "monthlyItem",
+          "startLine": 12,
+          "endLine": 14,
+          "params": [
+            "item"
+          ]
+        },
+        {
+          "name": "fmt",
+          "startLine": 16,
+          "endLine": 18,
+          "params": [
+            "n"
+          ]
+        },
+        {
+          "name": "Inp",
+          "startLine": 21,
+          "endLine": 38,
+          "params": [
+            "{ name, placeholder, defaultValue, step, required, className }"
+          ]
+        },
+        {
+          "name": "ItemForm",
+          "startLine": 41,
+          "endLine": 84,
+          "params": [
+            "{\r\n  categoryId,\r\n  item,\r\n  onDone,\r\n}"
+          ]
+        },
+        {
+          "name": "ItemRow",
+          "startLine": 87,
+          "endLine": 128,
+          "params": [
+            "{ item, onEdit }"
+          ]
+        },
+        {
+          "name": "CategoryCard",
+          "startLine": 131,
+          "endLine": 297,
+          "params": [
+            "{\r\n  category,\r\n  items,\r\n}"
+          ]
+        },
+        {
+          "name": "AddCategoryForm",
+          "startLine": 300,
+          "endLine": 329,
+          "params": [
+            "{ onDone }"
+          ]
+        },
+        {
+          "name": "KategorienTab",
+          "startLine": 332,
+          "endLine": 358,
+          "params": [
+            "{ categories, items }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "KategorienTab",
+          "line": 332,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fmt",
+          "callee": "n.toLocaleString",
+          "lineNumber": 17
+        },
+        {
+          "caller": "Inp",
+          "callee": "cn",
+          "lineNumber": 32
+        },
+        {
+          "caller": "ItemForm",
+          "callee": "useActionState",
+          "lineNumber": 51
+        },
+        {
+          "caller": "ItemForm",
+          "callee": "dispatch",
+          "lineNumber": 56
+        },
+        {
+          "caller": "ItemForm",
+          "callee": "onDone",
+          "lineNumber": 57
+        },
+        {
+          "caller": "ItemRow",
+          "callee": "useState",
+          "lineNumber": 88
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "setDeleting",
+          "lineNumber": 91
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "deleteItem",
+          "lineNumber": 93
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "setDeleting",
+          "lineNumber": 95
+        },
+        {
+          "caller": "ItemRow",
+          "callee": "fmt",
+          "lineNumber": 102
+        },
+        {
+          "caller": "ItemRow",
+          "callee": "fmt",
+          "lineNumber": 105
+        },
+        {
+          "caller": "ItemRow",
+          "callee": "monthlyItem",
+          "lineNumber": 105
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "useState",
+          "lineNumber": 138
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "useState",
+          "lineNumber": 139
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "useState",
+          "lineNumber": 140
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "useState",
+          "lineNumber": 141
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "useState",
+          "lineNumber": 142
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "useActionState",
+          "lineNumber": 144
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "items.reduce",
+          "lineNumber": 146
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "monthlyItem",
+          "lineNumber": 146
+        },
+        {
+          "caller": "handleDeleteCat",
+          "callee": "confirm",
+          "lineNumber": 151
+        },
+        {
+          "caller": "handleDeleteCat",
+          "callee": "setDeletingCat",
+          "lineNumber": 152
+        },
+        {
+          "caller": "handleDeleteCat",
+          "callee": "deleteCategory",
+          "lineNumber": 153
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "catDispatch",
+          "lineNumber": 162
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "setEditingCat",
+          "lineNumber": 163
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "setEditingCat",
+          "lineNumber": 178
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "setOpen",
+          "lineNumber": 187
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "e.preventDefault",
+          "lineNumber": 190
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "setOpen",
+          "lineNumber": 191
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "fmt",
+          "lineNumber": 200
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "fmt",
+          "lineNumber": 206
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "fmt",
+          "lineNumber": 206
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "e.stopPropagation",
+          "lineNumber": 212
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "setEditingCat",
+          "lineNumber": 215
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "items.map",
+          "lineNumber": 252
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "setEditingItem",
+          "lineNumber": 259
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "setEditingItem",
+          "lineNumber": 267
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "setAddingItem",
+          "lineNumber": 281
+        },
+        {
+          "caller": "CategoryCard",
+          "callee": "setAddingItem",
+          "lineNumber": 285
+        },
+        {
+          "caller": "AddCategoryForm",
+          "callee": "useActionState",
+          "lineNumber": 301
+        },
+        {
+          "caller": "AddCategoryForm",
+          "callee": "dispatch",
+          "lineNumber": 306
+        },
+        {
+          "caller": "AddCategoryForm",
+          "callee": "onDone",
+          "lineNumber": 307
+        },
+        {
+          "caller": "KategorienTab",
+          "callee": "useState",
+          "lineNumber": 333
+        },
+        {
+          "caller": "itemsByCategory",
+          "callee": "items.filter",
+          "lineNumber": 335
+        },
+        {
+          "caller": "KategorienTab",
+          "callee": "categories.map",
+          "lineNumber": 339
+        },
+        {
+          "caller": "KategorienTab",
+          "callee": "itemsByCategory",
+          "lineNumber": 341
+        },
+        {
+          "caller": "KategorienTab",
+          "callee": "setAddingCat",
+          "lineNumber": 346
+        },
+        {
+          "caller": "KategorienTab",
+          "callee": "setAddingCat",
+          "lineNumber": 349
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 8,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/lebenshaltungskosten/LebenshaltungskostenClient.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 60,
+      "nonEmptyLines": 52,
+      "functions": [
+        {
+          "name": "LebenshaltungskostenClient",
+          "startLine": 24,
+          "endLine": 60,
+          "params": [
+            "{ categories, items, target }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "LebenshaltungskostenClient",
+          "line": 24,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "LebenshaltungskostenClient",
+          "callee": "useState",
+          "lineNumber": 25
+        },
+        {
+          "caller": "LebenshaltungskostenClient",
+          "callee": "TABS.map",
+          "lineNumber": 38
+        },
+        {
+          "caller": "LebenshaltungskostenClient",
+          "callee": "setTab",
+          "lineNumber": 41
+        },
+        {
+          "caller": "LebenshaltungskostenClient",
+          "callee": "cn",
+          "lineNumber": 42
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/lebenshaltungskosten/OverviewTab.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 179,
+      "nonEmptyLines": 166,
+      "functions": [
+        {
+          "name": "monthlyItem",
+          "startLine": 6,
+          "endLine": 8,
+          "params": [
+            "item"
+          ]
+        },
+        {
+          "name": "fmt",
+          "startLine": 10,
+          "endLine": 12,
+          "params": [
+            "n"
+          ]
+        },
+        {
+          "name": "OverviewTab",
+          "startLine": 20,
+          "endLine": 179,
+          "params": [
+            "{ categories, items, target }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "OverviewTab",
+          "line": 20,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fmt",
+          "callee": "n.toLocaleString",
+          "lineNumber": 11
+        },
+        {
+          "caller": "categoryMonthly",
+          "callee": "items.filter(i => i.category_id === catId).reduce",
+          "lineNumber": 22
+        },
+        {
+          "caller": "categoryMonthly",
+          "callee": "items.filter",
+          "lineNumber": 22
+        },
+        {
+          "caller": "categoryMonthly",
+          "callee": "monthlyItem",
+          "lineNumber": 22
+        },
+        {
+          "caller": "OverviewTab",
+          "callee": "items.reduce",
+          "lineNumber": 24
+        },
+        {
+          "caller": "OverviewTab",
+          "callee": "monthlyItem",
+          "lineNumber": 24
+        },
+        {
+          "caller": "OverviewTab",
+          "callee": "categories\r\n    .map(cat => {\r\n      const actual = categoryMonthly(cat.id)\r\n      const budget = cat.monthly_budget\r\n      const delta  = budget != null ? actual - budget : null\r\n      const pct    = budget != null && budget > 0 ? Math.min(actual / budget, 1) * 100 : null\r\n      const over   = delta != null && delta > 0\r\n      return { cat, actual, budget, delta, pct, over }\r\n    })\r\n    .sort",
+          "lineNumber": 45
+        },
+        {
+          "caller": "OverviewTab",
+          "callee": "categories\r\n    .map",
+          "lineNumber": 45
+        },
+        {
+          "caller": "OverviewTab",
+          "callee": "categoryMonthly",
+          "lineNumber": 47
+        },
+        {
+          "caller": "OverviewTab",
+          "callee": "Math.min",
+          "lineNumber": 50
+        },
+        {
+          "caller": "OverviewTab",
+          "callee": "fmt",
+          "lineNumber": 70
+        },
+        {
+          "caller": "OverviewTab",
+          "callee": "fmt",
+          "lineNumber": 80
+        },
+        {
+          "caller": "OverviewTab",
+          "callee": "fmt",
+          "lineNumber": 90
+        },
+        {
+          "caller": "OverviewTab",
+          "callee": "composition.map",
+          "lineNumber": 101
+        },
+        {
+          "caller": "OverviewTab",
+          "callee": "composition.map",
+          "lineNumber": 110
+        },
+        {
+          "caller": "OverviewTab",
+          "callee": "fmt",
+          "lineNumber": 113
+        },
+        {
+          "caller": "OverviewTab",
+          "callee": "rows.map",
+          "lineNumber": 127
+        },
+        {
+          "caller": "OverviewTab",
+          "callee": "fmt",
+          "lineNumber": 138
+        },
+        {
+          "caller": "OverviewTab",
+          "callee": "fmt",
+          "lineNumber": 152
+        },
+        {
+          "caller": "OverviewTab",
+          "callee": "fmt",
+          "lineNumber": 158
+        },
+        {
+          "caller": "OverviewTab",
+          "callee": "fmt",
+          "lineNumber": 172
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    }
+  ]
+}

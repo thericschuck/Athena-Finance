@@ -1,0 +1,588 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/app/api/bank/transactions/suggest-categories/route.ts",
+      "type": "file",
+      "name": "route.ts",
+      "filePath": "src/app/api/bank/transactions/suggest-categories/route.ts",
+      "summary": "API endpoint handler for src/app/bank/transactions/suggest-categories operations with request validation and response formatting",
+      "tags": [
+        "api-handler",
+        "core-logic"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/api/bank/transactions/suggest-categories/route.ts:GET",
+      "type": "function",
+      "name": "GET",
+      "filePath": "src/app/api/bank/transactions/suggest-categories/route.ts",
+      "lineRange": [
+        15,
+        76
+      ],
+      "summary": "GET performs core operational logic",
+      "tags": [
+        "route-handler",
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/api/cron/bank-sync/route.ts",
+      "type": "file",
+      "name": "route.ts",
+      "filePath": "src/app/api/cron/bank-sync/route.ts",
+      "summary": "API endpoint handler for src/app/cron/bank-sync operations with request validation and response formatting",
+      "tags": [
+        "api-handler",
+        "core-logic"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/api/cron/bank-sync/route.ts:GET",
+      "type": "function",
+      "name": "GET",
+      "filePath": "src/app/api/cron/bank-sync/route.ts",
+      "lineRange": [
+        43,
+        121
+      ],
+      "summary": "GET performs core operational logic",
+      "tags": [
+        "route-handler",
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/api/depot/holdings/route.ts",
+      "type": "file",
+      "name": "route.ts",
+      "filePath": "src/app/api/depot/holdings/route.ts",
+      "summary": "API endpoint handler for src/app/depot/holdings operations with request validation and response formatting",
+      "tags": [
+        "api-handler",
+        "core-logic"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/api/depot/holdings/route.ts:GET",
+      "type": "function",
+      "name": "GET",
+      "filePath": "src/app/api/depot/holdings/route.ts",
+      "lineRange": [
+        10,
+        22
+      ],
+      "summary": "GET performs core operational logic",
+      "tags": [
+        "route-handler",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/api/depot/live-price/route.ts",
+      "type": "file",
+      "name": "route.ts",
+      "filePath": "src/app/api/depot/live-price/route.ts",
+      "summary": "API endpoint handler for src/app/depot/live-price operations with request validation and response formatting",
+      "tags": [
+        "api-handler",
+        "core-logic"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/api/depot/live-price/route.ts:GET",
+      "type": "function",
+      "name": "GET",
+      "filePath": "src/app/api/depot/live-price/route.ts",
+      "lineRange": [
+        8,
+        31
+      ],
+      "summary": "GET performs core operational logic",
+      "tags": [
+        "route-handler",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/api/export/indicators/route.ts",
+      "type": "file",
+      "name": "route.ts",
+      "filePath": "src/app/api/export/indicators/route.ts",
+      "summary": "API endpoint handler for src/app/export/indicators operations with request validation and response formatting",
+      "tags": [
+        "api-handler",
+        "core-logic"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/api/export/indicators/route.ts:GET",
+      "type": "function",
+      "name": "GET",
+      "filePath": "src/app/api/export/indicators/route.ts",
+      "lineRange": [
+        4,
+        49
+      ],
+      "summary": "GET performs core operational logic",
+      "tags": [
+        "route-handler",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/api/export/transactions/route.ts",
+      "type": "file",
+      "name": "route.ts",
+      "filePath": "src/app/api/export/transactions/route.ts",
+      "summary": "API endpoint handler for src/app/export/transactions operations with request validation and response formatting",
+      "tags": [
+        "api-handler",
+        "core-logic"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/api/export/transactions/route.ts:GET",
+      "type": "function",
+      "name": "GET",
+      "filePath": "src/app/api/export/transactions/route.ts",
+      "lineRange": [
+        23,
+        85
+      ],
+      "summary": "GET performs core operational logic",
+      "tags": [
+        "route-handler",
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/api/finance/categories/route.ts",
+      "type": "file",
+      "name": "route.ts",
+      "filePath": "src/app/api/finance/categories/route.ts",
+      "summary": "API endpoint handler for src/app/finance/categories operations with request validation and response formatting",
+      "tags": [
+        "api-handler",
+        "core-logic"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/api/finance/categories/route.ts:GET",
+      "type": "function",
+      "name": "GET",
+      "filePath": "src/app/api/finance/categories/route.ts",
+      "lineRange": [
+        11,
+        26
+      ],
+      "summary": "GET performs core operational logic",
+      "tags": [
+        "route-handler",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/api/import/indicators/route.ts",
+      "type": "file",
+      "name": "route.ts",
+      "filePath": "src/app/api/import/indicators/route.ts",
+      "summary": "API endpoint handler for src/app/import/indicators operations with request validation and response formatting",
+      "tags": [
+        "api-handler",
+        "core-logic"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/api/import/indicators/route.ts:POST",
+      "type": "function",
+      "name": "POST",
+      "filePath": "src/app/api/import/indicators/route.ts",
+      "lineRange": [
+        4,
+        86
+      ],
+      "summary": "POST performs core operational logic",
+      "tags": [
+        "route-handler",
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/api/import/transactions/route.ts",
+      "type": "file",
+      "name": "route.ts",
+      "filePath": "src/app/api/import/transactions/route.ts",
+      "summary": "API endpoint handler for src/app/import/transactions operations with request validation and response formatting",
+      "tags": [
+        "api-handler",
+        "core-logic"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/api/import/transactions/route.ts:POST",
+      "type": "function",
+      "name": "POST",
+      "filePath": "src/app/api/import/transactions/route.ts",
+      "lineRange": [
+        12,
+        97
+      ],
+      "summary": "POST performs core operational logic",
+      "tags": [
+        "route-handler",
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/api/inventar/artwork/route.ts",
+      "type": "file",
+      "name": "route.ts",
+      "filePath": "src/app/api/inventar/artwork/route.ts",
+      "summary": "API endpoint handler for src/app/inventar/artwork operations with request validation and response formatting",
+      "tags": [
+        "api-handler",
+        "asset-management",
+        "core-logic"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/api/inventar/artwork/route.ts:POST",
+      "type": "function",
+      "name": "POST",
+      "filePath": "src/app/api/inventar/artwork/route.ts",
+      "lineRange": [
+        39,
+        68
+      ],
+      "summary": "POST performs core operational logic",
+      "tags": [
+        "route-handler",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/api/kraken/status/route.ts",
+      "type": "file",
+      "name": "route.ts",
+      "filePath": "src/app/api/kraken/status/route.ts",
+      "summary": "API endpoint handler for src/app/kraken/status operations with request validation and response formatting",
+      "tags": [
+        "api-handler",
+        "core-logic"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/api/kraken/status/route.ts:GET",
+      "type": "function",
+      "name": "GET",
+      "filePath": "src/app/api/kraken/status/route.ts",
+      "lineRange": [
+        12,
+        33
+      ],
+      "summary": "GET performs core operational logic",
+      "tags": [
+        "route-handler",
+        "utility"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/app/api/bank/transactions/suggest-categories/route.ts",
+      "target": "function:src/app/api/bank/transactions/suggest-categories/route.ts:GET",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/api/bank/transactions/suggest-categories/route.ts",
+      "target": "function:src/app/api/bank/transactions/suggest-categories/route.ts:GET",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/api/cron/bank-sync/route.ts",
+      "target": "function:src/app/api/cron/bank-sync/route.ts:GET",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/api/cron/bank-sync/route.ts",
+      "target": "function:src/app/api/cron/bank-sync/route.ts:GET",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/api/depot/holdings/route.ts",
+      "target": "function:src/app/api/depot/holdings/route.ts:GET",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/api/depot/holdings/route.ts",
+      "target": "function:src/app/api/depot/holdings/route.ts:GET",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/api/depot/live-price/route.ts",
+      "target": "function:src/app/api/depot/live-price/route.ts:GET",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/api/depot/live-price/route.ts",
+      "target": "function:src/app/api/depot/live-price/route.ts:GET",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/api/export/indicators/route.ts",
+      "target": "function:src/app/api/export/indicators/route.ts:GET",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/api/export/indicators/route.ts",
+      "target": "function:src/app/api/export/indicators/route.ts:GET",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/api/export/transactions/route.ts",
+      "target": "function:src/app/api/export/transactions/route.ts:GET",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/api/export/transactions/route.ts",
+      "target": "function:src/app/api/export/transactions/route.ts:GET",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/api/finance/categories/route.ts",
+      "target": "function:src/app/api/finance/categories/route.ts:GET",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/api/finance/categories/route.ts",
+      "target": "function:src/app/api/finance/categories/route.ts:GET",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/api/import/indicators/route.ts",
+      "target": "function:src/app/api/import/indicators/route.ts:POST",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/api/import/indicators/route.ts",
+      "target": "function:src/app/api/import/indicators/route.ts:POST",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/api/import/transactions/route.ts",
+      "target": "function:src/app/api/import/transactions/route.ts:POST",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/api/import/transactions/route.ts",
+      "target": "function:src/app/api/import/transactions/route.ts:POST",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/api/inventar/artwork/route.ts",
+      "target": "function:src/app/api/inventar/artwork/route.ts:POST",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/api/inventar/artwork/route.ts",
+      "target": "function:src/app/api/inventar/artwork/route.ts:POST",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/api/kraken/status/route.ts",
+      "target": "function:src/app/api/kraken/status/route.ts:GET",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/api/kraken/status/route.ts",
+      "target": "function:src/app/api/kraken/status/route.ts:GET",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/api/bank/transactions/suggest-categories/route.ts",
+      "target": "file:src/lib/fints/categorize.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/bank/transactions/suggest-categories/route.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/bank/transactions/suggest-categories/route.ts",
+      "target": "file:src/types/bank.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/cron/bank-sync/route.ts",
+      "target": "file:src/lib/fints/categorize.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/cron/bank-sync/route.ts",
+      "target": "file:src/lib/fints/index.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/cron/bank-sync/route.ts",
+      "target": "file:src/lib/fints/state.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/depot/holdings/route.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/depot/live-price/route.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/export/indicators/route.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/export/transactions/route.ts",
+      "target": "file:src/lib/csv.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/export/transactions/route.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/finance/categories/route.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/import/indicators/route.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/import/transactions/route.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/inventar/artwork/route.ts",
+      "target": "file:src/lib/inventar/artwork.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/inventar/artwork/route.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/kraken/status/route.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}

@@ -1,0 +1,6706 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 33,
+  "filesSkipped": [],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 33,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 33,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "src/app/(dashboard)/assistant/knowledge/page.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 22,
+      "nonEmptyLines": 18,
+      "functions": [
+        {
+          "name": "AthenaKnowledgePage",
+          "startLine": 6,
+          "endLine": 22,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "dynamic",
+          "line": 4,
+          "isDefault": false
+        },
+        {
+          "name": "AthenaKnowledgePage",
+          "line": 6,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "AthenaKnowledgePage",
+          "callee": "getAuthUser",
+          "lineNumber": 7
+        },
+        {
+          "caller": "AthenaKnowledgePage",
+          "callee": "supabase\r\n    .from('ai_knowledge')\r\n    .select('id, title, content, tags, source_url, source, pinned, updated_at')\r\n    .eq('user_id', user.id)\r\n    .order('pinned', { ascending: false })\r\n    .order",
+          "lineNumber": 10
+        },
+        {
+          "caller": "AthenaKnowledgePage",
+          "callee": "supabase\r\n    .from('ai_knowledge')\r\n    .select('id, title, content, tags, source_url, source, pinned, updated_at')\r\n    .eq('user_id', user.id)\r\n    .order",
+          "lineNumber": 10
+        },
+        {
+          "caller": "AthenaKnowledgePage",
+          "callee": "supabase\r\n    .from('ai_knowledge')\r\n    .select('id, title, content, tags, source_url, source, pinned, updated_at')\r\n    .eq",
+          "lineNumber": 10
+        },
+        {
+          "caller": "AthenaKnowledgePage",
+          "callee": "supabase\r\n    .from('ai_knowledge')\r\n    .select",
+          "lineNumber": 10
+        },
+        {
+          "caller": "AthenaKnowledgePage",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 10
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/(dashboard)/assistant/memory/page.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 21,
+      "nonEmptyLines": 17,
+      "functions": [
+        {
+          "name": "AthenaMemoryPage",
+          "startLine": 6,
+          "endLine": 21,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "dynamic",
+          "line": 4,
+          "isDefault": false
+        },
+        {
+          "name": "AthenaMemoryPage",
+          "line": 6,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "AthenaMemoryPage",
+          "callee": "getAuthUser",
+          "lineNumber": 7
+        },
+        {
+          "caller": "AthenaMemoryPage",
+          "callee": "supabase\r\n    .from('ai_memories')\r\n    .select('id, key, content, category, source, updated_at')\r\n    .eq('user_id', user.id)\r\n    .order",
+          "lineNumber": 10
+        },
+        {
+          "caller": "AthenaMemoryPage",
+          "callee": "supabase\r\n    .from('ai_memories')\r\n    .select('id, key, content, category, source, updated_at')\r\n    .eq",
+          "lineNumber": 10
+        },
+        {
+          "caller": "AthenaMemoryPage",
+          "callee": "supabase\r\n    .from('ai_memories')\r\n    .select",
+          "lineNumber": 10
+        },
+        {
+          "caller": "AthenaMemoryPage",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 10
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/(dashboard)/dashboard/insight-actions.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 25,
+      "nonEmptyLines": 21,
+      "functions": [
+        {
+          "name": "dismissInsight",
+          "startLine": 12,
+          "endLine": 25,
+          "params": [
+            "id"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "dismissInsight",
+          "line": 12,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "dismissInsight",
+          "callee": "getAuthUser",
+          "lineNumber": 13
+        },
+        {
+          "caller": "dismissInsight",
+          "callee": "supabase\r\n    .from('insights')\r\n    .update({ dismissed_at: new Date().toISOString() })\r\n    .eq('id', id)\r\n    .eq",
+          "lineNumber": 16
+        },
+        {
+          "caller": "dismissInsight",
+          "callee": "supabase\r\n    .from('insights')\r\n    .update({ dismissed_at: new Date().toISOString() })\r\n    .eq",
+          "lineNumber": 16
+        },
+        {
+          "caller": "dismissInsight",
+          "callee": "supabase\r\n    .from('insights')\r\n    .update",
+          "lineNumber": 16
+        },
+        {
+          "caller": "dismissInsight",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 16
+        },
+        {
+          "caller": "dismissInsight",
+          "callee": "new Date().toISOString",
+          "lineNumber": 18
+        },
+        {
+          "caller": "dismissInsight",
+          "callee": "revalidatePath",
+          "lineNumber": 23
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/(dashboard)/finance/(planung)/contracts/actions.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 116,
+      "nonEmptyLines": 95,
+      "functions": [
+        {
+          "name": "parseOptionalFloat",
+          "startLine": 8,
+          "endLine": 12,
+          "params": [
+            "val"
+          ]
+        },
+        {
+          "name": "parseOptionalInt",
+          "startLine": 14,
+          "endLine": 18,
+          "params": [
+            "val"
+          ]
+        },
+        {
+          "name": "buildPayload",
+          "startLine": 20,
+          "endLine": 46,
+          "params": [
+            "formData",
+            "userId"
+          ]
+        },
+        {
+          "name": "validate",
+          "startLine": 48,
+          "endLine": 56,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "createContract",
+          "startLine": 58,
+          "endLine": 74,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        },
+        {
+          "name": "updateContract",
+          "startLine": 76,
+          "endLine": 100,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        },
+        {
+          "name": "deleteContract",
+          "startLine": 102,
+          "endLine": 116,
+          "params": [
+            "id"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "createContract",
+          "line": 58,
+          "isDefault": false
+        },
+        {
+          "name": "updateContract",
+          "line": 76,
+          "isDefault": false
+        },
+        {
+          "name": "deleteContract",
+          "line": 102,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "parseOptionalFloat",
+          "callee": "parseFloat",
+          "lineNumber": 10
+        },
+        {
+          "caller": "parseOptionalFloat",
+          "callee": "isNaN",
+          "lineNumber": 11
+        },
+        {
+          "caller": "parseOptionalInt",
+          "callee": "parseInt",
+          "lineNumber": 16
+        },
+        {
+          "caller": "parseOptionalInt",
+          "callee": "isNaN",
+          "lineNumber": 17
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "(formData.get('name') as string)?.trim",
+          "lineNumber": 21
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "formData.get",
+          "lineNumber": 21
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "formData.get",
+          "lineNumber": 22
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "formData.get",
+          "lineNumber": 23
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "formData.get",
+          "lineNumber": 24
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "parseFloat",
+          "lineNumber": 25
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "formData.get",
+          "lineNumber": 25
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "formData.get",
+          "lineNumber": 26
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "formData.get",
+          "lineNumber": 35
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "formData.get",
+          "lineNumber": 36
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "parseOptionalInt",
+          "lineNumber": 37
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "formData.get",
+          "lineNumber": 37
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "parseOptionalInt",
+          "lineNumber": 38
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "formData.get",
+          "lineNumber": 38
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "formData.get",
+          "lineNumber": 39
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "formData.get",
+          "lineNumber": 40
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "formData.get",
+          "lineNumber": 41
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "formData.get",
+          "lineNumber": 42
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "formData.get",
+          "lineNumber": 43
+        },
+        {
+          "caller": "validate",
+          "callee": "isNaN",
+          "lineNumber": 53
+        },
+        {
+          "caller": "createContract",
+          "callee": "getAuthUser",
+          "lineNumber": 62
+        },
+        {
+          "caller": "createContract",
+          "callee": "buildPayload",
+          "lineNumber": 65
+        },
+        {
+          "caller": "createContract",
+          "callee": "validate",
+          "lineNumber": 66
+        },
+        {
+          "caller": "createContract",
+          "callee": "supabase.from('contracts').insert",
+          "lineNumber": 69
+        },
+        {
+          "caller": "createContract",
+          "callee": "supabase.from",
+          "lineNumber": 69
+        },
+        {
+          "caller": "createContract",
+          "callee": "revalidatePath",
+          "lineNumber": 72
+        },
+        {
+          "caller": "updateContract",
+          "callee": "getAuthUser",
+          "lineNumber": 80
+        },
+        {
+          "caller": "updateContract",
+          "callee": "formData.get",
+          "lineNumber": 83
+        },
+        {
+          "caller": "updateContract",
+          "callee": "buildPayload",
+          "lineNumber": 86
+        },
+        {
+          "caller": "updateContract",
+          "callee": "validate",
+          "lineNumber": 87
+        },
+        {
+          "caller": "updateContract",
+          "callee": "supabase\r\n    .from('contracts')\r\n    .update({ ...updates, updated_at: new Date().toISOString() })\r\n    .eq('id', id)\r\n    .eq",
+          "lineNumber": 90
+        },
+        {
+          "caller": "updateContract",
+          "callee": "supabase\r\n    .from('contracts')\r\n    .update({ ...updates, updated_at: new Date().toISOString() })\r\n    .eq",
+          "lineNumber": 90
+        },
+        {
+          "caller": "updateContract",
+          "callee": "supabase\r\n    .from('contracts')\r\n    .update",
+          "lineNumber": 90
+        },
+        {
+          "caller": "updateContract",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 90
+        },
+        {
+          "caller": "updateContract",
+          "callee": "new Date().toISOString",
+          "lineNumber": 92
+        },
+        {
+          "caller": "updateContract",
+          "callee": "revalidatePath",
+          "lineNumber": 98
+        },
+        {
+          "caller": "deleteContract",
+          "callee": "getAuthUser",
+          "lineNumber": 103
+        },
+        {
+          "caller": "deleteContract",
+          "callee": "supabase\r\n    .from('contracts')\r\n    .delete()\r\n    .eq('id', id)\r\n    .eq",
+          "lineNumber": 106
+        },
+        {
+          "caller": "deleteContract",
+          "callee": "supabase\r\n    .from('contracts')\r\n    .delete()\r\n    .eq",
+          "lineNumber": 106
+        },
+        {
+          "caller": "deleteContract",
+          "callee": "supabase\r\n    .from('contracts')\r\n    .delete",
+          "lineNumber": 106
+        },
+        {
+          "caller": "deleteContract",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 106
+        },
+        {
+          "caller": "deleteContract",
+          "callee": "revalidatePath",
+          "lineNumber": 114
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 3,
+        "functionCount": 7,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/(dashboard)/finance/(planung)/debts/actions.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 179,
+      "nonEmptyLines": 151,
+      "functions": [
+        {
+          "name": "createDebt",
+          "startLine": 9,
+          "endLine": 55,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        },
+        {
+          "name": "updateDebt",
+          "startLine": 58,
+          "endLine": 103,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        },
+        {
+          "name": "deleteDebt",
+          "startLine": 106,
+          "endLine": 119,
+          "params": [
+            "id"
+          ]
+        },
+        {
+          "name": "recordPayment",
+          "startLine": 122,
+          "endLine": 179,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "createDebt",
+          "line": 9,
+          "isDefault": false
+        },
+        {
+          "name": "updateDebt",
+          "line": 58,
+          "isDefault": false
+        },
+        {
+          "name": "deleteDebt",
+          "line": 106,
+          "isDefault": false
+        },
+        {
+          "name": "recordPayment",
+          "line": 122,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "createDebt",
+          "callee": "getAuthUser",
+          "lineNumber": 13
+        },
+        {
+          "caller": "createDebt",
+          "callee": "(formData.get('name') as string)?.trim",
+          "lineNumber": 16
+        },
+        {
+          "caller": "createDebt",
+          "callee": "formData.get",
+          "lineNumber": 16
+        },
+        {
+          "caller": "createDebt",
+          "callee": "formData.get",
+          "lineNumber": 17
+        },
+        {
+          "caller": "createDebt",
+          "callee": "parseFloat",
+          "lineNumber": 18
+        },
+        {
+          "caller": "createDebt",
+          "callee": "formData.get",
+          "lineNumber": 18
+        },
+        {
+          "caller": "createDebt",
+          "callee": "formData.get",
+          "lineNumber": 19
+        },
+        {
+          "caller": "createDebt",
+          "callee": "isNaN",
+          "lineNumber": 23
+        },
+        {
+          "caller": "createDebt",
+          "callee": "formData.get",
+          "lineNumber": 28
+        },
+        {
+          "caller": "createDebt",
+          "callee": "isNaN",
+          "lineNumber": 30
+        },
+        {
+          "caller": "createDebt",
+          "callee": "parseFloat",
+          "lineNumber": 30
+        },
+        {
+          "caller": "createDebt",
+          "callee": "parseFloat",
+          "lineNumber": 31
+        },
+        {
+          "caller": "createDebt",
+          "callee": "supabase.from('debts').insert",
+          "lineNumber": 34
+        },
+        {
+          "caller": "createDebt",
+          "callee": "supabase.from",
+          "lineNumber": 34
+        },
+        {
+          "caller": "createDebt",
+          "callee": "formData.get",
+          "lineNumber": 40
+        },
+        {
+          "caller": "createDebt",
+          "callee": "formData.get",
+          "lineNumber": 41
+        },
+        {
+          "caller": "createDebt",
+          "callee": "parseFloat",
+          "lineNumber": 42
+        },
+        {
+          "caller": "createDebt",
+          "callee": "formData.get",
+          "lineNumber": 42
+        },
+        {
+          "caller": "createDebt",
+          "callee": "formData.get",
+          "lineNumber": 44
+        },
+        {
+          "caller": "createDebt",
+          "callee": "parseFloat",
+          "lineNumber": 45
+        },
+        {
+          "caller": "createDebt",
+          "callee": "formData.get",
+          "lineNumber": 45
+        },
+        {
+          "caller": "createDebt",
+          "callee": "formData.get",
+          "lineNumber": 47
+        },
+        {
+          "caller": "createDebt",
+          "callee": "formData.get",
+          "lineNumber": 48
+        },
+        {
+          "caller": "createDebt",
+          "callee": "revalidatePath",
+          "lineNumber": 53
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "getAuthUser",
+          "lineNumber": 62
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "formData.get",
+          "lineNumber": 65
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "(formData.get('name') as string)?.trim",
+          "lineNumber": 66
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "formData.get",
+          "lineNumber": 66
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "parseFloat",
+          "lineNumber": 67
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "formData.get",
+          "lineNumber": 67
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "formData.get",
+          "lineNumber": 68
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "isNaN",
+          "lineNumber": 72
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "formData.get",
+          "lineNumber": 75
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "isNaN",
+          "lineNumber": 76
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "parseFloat",
+          "lineNumber": 76
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "parseFloat",
+          "lineNumber": 77
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "formData.get",
+          "lineNumber": 80
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "supabase\r\n    .from('debts')\r\n    .update({\r\n      name,\r\n      type,\r\n      original_amount: originalAmount,\r\n      outstanding,\r\n      currency,\r\n      creditor:        (formData.get('creditor') as string) || null,\r\n      interest_rate:   formData.get('interest_rate') ? parseFloat(formData.get('interest_rate') as string) : null,\r\n      monthly_payment: formData.get('monthly_payment') ? parseFloat(formData.get('monthly_payment') as string) : null,\r\n      due_date:        (formData.get('due_date') as string) || null,\r\n      notes:           (formData.get('notes') as string) || null,\r\n      updated_at:      new Date().toISOString(),\r\n    })\r\n    .eq('id', id)\r\n    .eq",
+          "lineNumber": 82
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "supabase\r\n    .from('debts')\r\n    .update({\r\n      name,\r\n      type,\r\n      original_amount: originalAmount,\r\n      outstanding,\r\n      currency,\r\n      creditor:        (formData.get('creditor') as string) || null,\r\n      interest_rate:   formData.get('interest_rate') ? parseFloat(formData.get('interest_rate') as string) : null,\r\n      monthly_payment: formData.get('monthly_payment') ? parseFloat(formData.get('monthly_payment') as string) : null,\r\n      due_date:        (formData.get('due_date') as string) || null,\r\n      notes:           (formData.get('notes') as string) || null,\r\n      updated_at:      new Date().toISOString(),\r\n    })\r\n    .eq",
+          "lineNumber": 82
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "supabase\r\n    .from('debts')\r\n    .update",
+          "lineNumber": 82
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 82
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "formData.get",
+          "lineNumber": 90
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "formData.get",
+          "lineNumber": 91
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "parseFloat",
+          "lineNumber": 91
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "formData.get",
+          "lineNumber": 91
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "formData.get",
+          "lineNumber": 92
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "parseFloat",
+          "lineNumber": 92
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "formData.get",
+          "lineNumber": 92
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "formData.get",
+          "lineNumber": 93
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "formData.get",
+          "lineNumber": 94
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "new Date().toISOString",
+          "lineNumber": 95
+        },
+        {
+          "caller": "updateDebt",
+          "callee": "revalidatePath",
+          "lineNumber": 101
+        },
+        {
+          "caller": "deleteDebt",
+          "callee": "getAuthUser",
+          "lineNumber": 107
+        },
+        {
+          "caller": "deleteDebt",
+          "callee": "supabase\r\n    .from('debts')\r\n    .delete()\r\n    .eq('id', id)\r\n    .eq",
+          "lineNumber": 110
+        },
+        {
+          "caller": "deleteDebt",
+          "callee": "supabase\r\n    .from('debts')\r\n    .delete()\r\n    .eq",
+          "lineNumber": 110
+        },
+        {
+          "caller": "deleteDebt",
+          "callee": "supabase\r\n    .from('debts')\r\n    .delete",
+          "lineNumber": 110
+        },
+        {
+          "caller": "deleteDebt",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 110
+        },
+        {
+          "caller": "deleteDebt",
+          "callee": "revalidatePath",
+          "lineNumber": 117
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "getAuthUser",
+          "lineNumber": 126
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "formData.get",
+          "lineNumber": 129
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "formData.get",
+          "lineNumber": 130
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "parseFloat",
+          "lineNumber": 131
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "formData.get",
+          "lineNumber": 131
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "isNaN",
+          "lineNumber": 135
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "supabase\r\n    .from('debts')\r\n    .select('outstanding')\r\n    .eq('id', debtId)\r\n    .eq('user_id', user.id)\r\n    .single",
+          "lineNumber": 138
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "supabase\r\n    .from('debts')\r\n    .select('outstanding')\r\n    .eq('id', debtId)\r\n    .eq",
+          "lineNumber": 138
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "supabase\r\n    .from('debts')\r\n    .select('outstanding')\r\n    .eq",
+          "lineNumber": 138
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "supabase\r\n    .from('debts')\r\n    .select",
+          "lineNumber": 138
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 138
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "Math.max",
+          "lineNumber": 147
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "supabase.from('debt_payments').insert",
+          "lineNumber": 150
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "supabase.from",
+          "lineNumber": 150
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "formData.get",
+          "lineNumber": 154
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "parseFloat",
+          "lineNumber": 155
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "formData.get",
+          "lineNumber": 155
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "formData.get",
+          "lineNumber": 157
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "parseFloat",
+          "lineNumber": 158
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "formData.get",
+          "lineNumber": 158
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "formData.get",
+          "lineNumber": 160
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "supabase\r\n    .from('debts')\r\n    .update({\r\n      outstanding: newOutstanding,\r\n      is_active: newOutstanding > 0,\r\n      updated_at: new Date().toISOString(),\r\n    })\r\n    .eq('id', debtId)\r\n    .eq",
+          "lineNumber": 165
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "supabase\r\n    .from('debts')\r\n    .update({\r\n      outstanding: newOutstanding,\r\n      is_active: newOutstanding > 0,\r\n      updated_at: new Date().toISOString(),\r\n    })\r\n    .eq",
+          "lineNumber": 165
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "supabase\r\n    .from('debts')\r\n    .update",
+          "lineNumber": 165
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 165
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "new Date().toISOString",
+          "lineNumber": 170
+        },
+        {
+          "caller": "recordPayment",
+          "callee": "revalidatePath",
+          "lineNumber": 177
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 4,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/(dashboard)/finance/(planung)/goals/actions.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 146,
+      "nonEmptyLines": 120,
+      "functions": [
+        {
+          "name": "createGoal",
+          "startLine": 9,
+          "endLine": 43,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        },
+        {
+          "name": "updateGoal",
+          "startLine": 46,
+          "endLine": 85,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        },
+        {
+          "name": "setGoalStatus",
+          "startLine": 88,
+          "endLine": 99,
+          "params": [
+            "id",
+            "newStatus"
+          ]
+        },
+        {
+          "name": "addGoalPayment",
+          "startLine": 102,
+          "endLine": 130,
+          "params": [
+            "goalId",
+            "amount"
+          ]
+        },
+        {
+          "name": "deleteGoal",
+          "startLine": 133,
+          "endLine": 146,
+          "params": [
+            "id"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "createGoal",
+          "line": 9,
+          "isDefault": false
+        },
+        {
+          "name": "updateGoal",
+          "line": 46,
+          "isDefault": false
+        },
+        {
+          "name": "setGoalStatus",
+          "line": 88,
+          "isDefault": false
+        },
+        {
+          "name": "addGoalPayment",
+          "line": 102,
+          "isDefault": false
+        },
+        {
+          "name": "deleteGoal",
+          "line": 133,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "createGoal",
+          "callee": "getAuthUser",
+          "lineNumber": 13
+        },
+        {
+          "caller": "createGoal",
+          "callee": "(formData.get('description') as string)?.trim",
+          "lineNumber": 16
+        },
+        {
+          "caller": "createGoal",
+          "callee": "formData.get",
+          "lineNumber": 16
+        },
+        {
+          "caller": "createGoal",
+          "callee": "parseFloat",
+          "lineNumber": 17
+        },
+        {
+          "caller": "createGoal",
+          "callee": "formData.get",
+          "lineNumber": 17
+        },
+        {
+          "caller": "createGoal",
+          "callee": "isNaN",
+          "lineNumber": 20
+        },
+        {
+          "caller": "createGoal",
+          "callee": "formData.get",
+          "lineNumber": 22
+        },
+        {
+          "caller": "createGoal",
+          "callee": "parseFloat",
+          "lineNumber": 23
+        },
+        {
+          "caller": "createGoal",
+          "callee": "supabase.from('savings_goals').insert",
+          "lineNumber": 26
+        },
+        {
+          "caller": "createGoal",
+          "callee": "supabase.from",
+          "lineNumber": 26
+        },
+        {
+          "caller": "createGoal",
+          "callee": "formData.get",
+          "lineNumber": 31
+        },
+        {
+          "caller": "createGoal",
+          "callee": "formData.get",
+          "lineNumber": 34
+        },
+        {
+          "caller": "createGoal",
+          "callee": "new Date().toISOString().split",
+          "lineNumber": 34
+        },
+        {
+          "caller": "createGoal",
+          "callee": "new Date().toISOString",
+          "lineNumber": 34
+        },
+        {
+          "caller": "createGoal",
+          "callee": "formData.get",
+          "lineNumber": 36
+        },
+        {
+          "caller": "createGoal",
+          "callee": "formData.get",
+          "lineNumber": 37
+        },
+        {
+          "caller": "createGoal",
+          "callee": "revalidatePath",
+          "lineNumber": 41
+        },
+        {
+          "caller": "updateGoal",
+          "callee": "getAuthUser",
+          "lineNumber": 50
+        },
+        {
+          "caller": "updateGoal",
+          "callee": "formData.get",
+          "lineNumber": 53
+        },
+        {
+          "caller": "updateGoal",
+          "callee": "(formData.get('description') as string)?.trim",
+          "lineNumber": 54
+        },
+        {
+          "caller": "updateGoal",
+          "callee": "formData.get",
+          "lineNumber": 54
+        },
+        {
+          "caller": "updateGoal",
+          "callee": "parseFloat",
+          "lineNumber": 55
+        },
+        {
+          "caller": "updateGoal",
+          "callee": "formData.get",
+          "lineNumber": 55
+        },
+        {
+          "caller": "updateGoal",
+          "callee": "isNaN",
+          "lineNumber": 59
+        },
+        {
+          "caller": "updateGoal",
+          "callee": "formData.get",
+          "lineNumber": 61
+        },
+        {
+          "caller": "updateGoal",
+          "callee": "parseFloat",
+          "lineNumber": 62
+        },
+        {
+          "caller": "updateGoal",
+          "callee": "supabase\r\n    .from('savings_goals')\r\n    .update({\r\n      description,\r\n      target_amount,\r\n      priority: (formData.get('priority') as string) || null,\r\n      monthly_savings_rate: hasRate ? rate : null,\r\n      savings_rate_start_date: hasRate\r\n        ? (formData.get('savings_rate_start_date') as string) || new Date().toISOString().split('T')[0]\r\n        : null,\r\n      target_date: (formData.get('target_date') as string) || null,\r\n      notes: (formData.get('notes') as string) || null,\r\n      updated_at: new Date().toISOString(),\r\n    } as never)\r\n    .eq('id', id)\r\n    .eq",
+          "lineNumber": 65
+        },
+        {
+          "caller": "updateGoal",
+          "callee": "supabase\r\n    .from('savings_goals')\r\n    .update({\r\n      description,\r\n      target_amount,\r\n      priority: (formData.get('priority') as string) || null,\r\n      monthly_savings_rate: hasRate ? rate : null,\r\n      savings_rate_start_date: hasRate\r\n        ? (formData.get('savings_rate_start_date') as string) || new Date().toISOString().split('T')[0]\r\n        : null,\r\n      target_date: (formData.get('target_date') as string) || null,\r\n      notes: (formData.get('notes') as string) || null,\r\n      updated_at: new Date().toISOString(),\r\n    } as never)\r\n    .eq",
+          "lineNumber": 65
+        },
+        {
+          "caller": "updateGoal",
+          "callee": "supabase\r\n    .from('savings_goals')\r\n    .update",
+          "lineNumber": 65
+        },
+        {
+          "caller": "updateGoal",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 65
+        },
+        {
+          "caller": "updateGoal",
+          "callee": "formData.get",
+          "lineNumber": 70
+        },
+        {
+          "caller": "updateGoal",
+          "callee": "formData.get",
+          "lineNumber": 73
+        },
+        {
+          "caller": "updateGoal",
+          "callee": "new Date().toISOString().split",
+          "lineNumber": 73
+        },
+        {
+          "caller": "updateGoal",
+          "callee": "new Date().toISOString",
+          "lineNumber": 73
+        },
+        {
+          "caller": "updateGoal",
+          "callee": "formData.get",
+          "lineNumber": 75
+        },
+        {
+          "caller": "updateGoal",
+          "callee": "formData.get",
+          "lineNumber": 76
+        },
+        {
+          "caller": "updateGoal",
+          "callee": "new Date().toISOString",
+          "lineNumber": 77
+        },
+        {
+          "caller": "updateGoal",
+          "callee": "revalidatePath",
+          "lineNumber": 83
+        },
+        {
+          "caller": "setGoalStatus",
+          "callee": "getAuthUser",
+          "lineNumber": 89
+        },
+        {
+          "caller": "setGoalStatus",
+          "callee": "supabase\r\n    .from('savings_goals')\r\n    .update({ status: newStatus, updated_at: new Date().toISOString() })\r\n    .eq('id', id)\r\n    .eq",
+          "lineNumber": 92
+        },
+        {
+          "caller": "setGoalStatus",
+          "callee": "supabase\r\n    .from('savings_goals')\r\n    .update({ status: newStatus, updated_at: new Date().toISOString() })\r\n    .eq",
+          "lineNumber": 92
+        },
+        {
+          "caller": "setGoalStatus",
+          "callee": "supabase\r\n    .from('savings_goals')\r\n    .update",
+          "lineNumber": 92
+        },
+        {
+          "caller": "setGoalStatus",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 92
+        },
+        {
+          "caller": "setGoalStatus",
+          "callee": "new Date().toISOString",
+          "lineNumber": 94
+        },
+        {
+          "caller": "setGoalStatus",
+          "callee": "revalidatePath",
+          "lineNumber": 98
+        },
+        {
+          "caller": "addGoalPayment",
+          "callee": "getAuthUser",
+          "lineNumber": 106
+        },
+        {
+          "caller": "addGoalPayment",
+          "callee": "supabase\r\n    .from('savings_goals')\r\n    .select('*')\r\n    .eq('id', goalId)\r\n    .eq('user_id', user.id)\r\n    .single",
+          "lineNumber": 109
+        },
+        {
+          "caller": "addGoalPayment",
+          "callee": "supabase\r\n    .from('savings_goals')\r\n    .select('*')\r\n    .eq('id', goalId)\r\n    .eq",
+          "lineNumber": 109
+        },
+        {
+          "caller": "addGoalPayment",
+          "callee": "supabase\r\n    .from('savings_goals')\r\n    .select('*')\r\n    .eq",
+          "lineNumber": 109
+        },
+        {
+          "caller": "addGoalPayment",
+          "callee": "supabase\r\n    .from('savings_goals')\r\n    .select",
+          "lineNumber": 109
+        },
+        {
+          "caller": "addGoalPayment",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 109
+        },
+        {
+          "caller": "addGoalPayment",
+          "callee": "Math.min",
+          "lineNumber": 119
+        },
+        {
+          "caller": "addGoalPayment",
+          "callee": "supabase\r\n    .from('savings_goals')\r\n    .update({ current_amount: newAmount, updated_at: new Date().toISOString() })\r\n    .eq('id', goalId)\r\n    .eq",
+          "lineNumber": 121
+        },
+        {
+          "caller": "addGoalPayment",
+          "callee": "supabase\r\n    .from('savings_goals')\r\n    .update({ current_amount: newAmount, updated_at: new Date().toISOString() })\r\n    .eq",
+          "lineNumber": 121
+        },
+        {
+          "caller": "addGoalPayment",
+          "callee": "supabase\r\n    .from('savings_goals')\r\n    .update",
+          "lineNumber": 121
+        },
+        {
+          "caller": "addGoalPayment",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 121
+        },
+        {
+          "caller": "addGoalPayment",
+          "callee": "new Date().toISOString",
+          "lineNumber": 123
+        },
+        {
+          "caller": "addGoalPayment",
+          "callee": "revalidatePath",
+          "lineNumber": 128
+        },
+        {
+          "caller": "deleteGoal",
+          "callee": "getAuthUser",
+          "lineNumber": 134
+        },
+        {
+          "caller": "deleteGoal",
+          "callee": "supabase\r\n    .from('savings_goals')\r\n    .delete()\r\n    .eq('id', id)\r\n    .eq",
+          "lineNumber": 137
+        },
+        {
+          "caller": "deleteGoal",
+          "callee": "supabase\r\n    .from('savings_goals')\r\n    .delete()\r\n    .eq",
+          "lineNumber": 137
+        },
+        {
+          "caller": "deleteGoal",
+          "callee": "supabase\r\n    .from('savings_goals')\r\n    .delete",
+          "lineNumber": 137
+        },
+        {
+          "caller": "deleteGoal",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 137
+        },
+        {
+          "caller": "deleteGoal",
+          "callee": "revalidatePath",
+          "lineNumber": 144
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 5,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/(dashboard)/finance/(planung)/goals/page.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 291,
+      "nonEmptyLines": 255,
+      "functions": [
+        {
+          "name": "progressPct",
+          "startLine": 14,
+          "endLine": 17,
+          "params": [
+            "goal"
+          ]
+        },
+        {
+          "name": "monthsRemaining",
+          "startLine": 20,
+          "endLine": 25,
+          "params": [
+            "goal"
+          ]
+        },
+        {
+          "name": "monthsElapsed",
+          "startLine": 31,
+          "endLine": 37,
+          "params": [
+            "startDate"
+          ]
+        },
+        {
+          "name": "expectedSaved",
+          "startLine": 40,
+          "endLine": 44,
+          "params": [
+            "goal"
+          ]
+        },
+        {
+          "name": "savingsGap",
+          "startLine": 47,
+          "endLine": 51,
+          "params": [
+            "goal"
+          ]
+        },
+        {
+          "name": "formatDuration",
+          "startLine": 53,
+          "endLine": 59,
+          "params": [
+            "months"
+          ]
+        },
+        {
+          "name": "formatDate",
+          "startLine": 61,
+          "endLine": 63,
+          "params": [
+            "dateStr",
+            "dateFormat"
+          ]
+        },
+        {
+          "name": "fmt",
+          "startLine": 65,
+          "endLine": 66,
+          "params": [
+            "n",
+            "locale"
+          ]
+        },
+        {
+          "name": "sortGoals",
+          "startLine": 71,
+          "endLine": 78,
+          "params": [
+            "goals"
+          ]
+        },
+        {
+          "name": "GoalsPage",
+          "startLine": 93,
+          "endLine": 154,
+          "params": []
+        },
+        {
+          "name": "GoalCard",
+          "startLine": 157,
+          "endLine": 253,
+          "params": [
+            "{ goal, locale, dateFormat }"
+          ]
+        },
+        {
+          "name": "SavingsPlanBadge",
+          "startLine": 256,
+          "endLine": 280,
+          "params": [
+            "{ gap, locale }"
+          ]
+        },
+        {
+          "name": "EmptyState",
+          "startLine": 282,
+          "endLine": 291,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "GoalsPage",
+          "line": 93,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "progressPct",
+          "callee": "Math.min",
+          "lineNumber": 16
+        },
+        {
+          "caller": "progressPct",
+          "callee": "Math.round",
+          "lineNumber": 16
+        },
+        {
+          "caller": "monthsRemaining",
+          "callee": "Math.ceil",
+          "lineNumber": 24
+        },
+        {
+          "caller": "monthsElapsed",
+          "callee": "now.getFullYear",
+          "lineNumber": 34
+        },
+        {
+          "caller": "monthsElapsed",
+          "callee": "start.getFullYear",
+          "lineNumber": 34
+        },
+        {
+          "caller": "monthsElapsed",
+          "callee": "now.getMonth",
+          "lineNumber": 34
+        },
+        {
+          "caller": "monthsElapsed",
+          "callee": "start.getMonth",
+          "lineNumber": 34
+        },
+        {
+          "caller": "monthsElapsed",
+          "callee": "now.getDate",
+          "lineNumber": 36
+        },
+        {
+          "caller": "monthsElapsed",
+          "callee": "start.getDate",
+          "lineNumber": 36
+        },
+        {
+          "caller": "monthsElapsed",
+          "callee": "Math.max",
+          "lineNumber": 36
+        },
+        {
+          "caller": "expectedSaved",
+          "callee": "monthsElapsed",
+          "lineNumber": 42
+        },
+        {
+          "caller": "savingsGap",
+          "callee": "expectedSaved",
+          "lineNumber": 48
+        },
+        {
+          "caller": "formatDuration",
+          "callee": "Math.floor",
+          "lineNumber": 56
+        },
+        {
+          "caller": "formatDate",
+          "callee": "fmtDate",
+          "lineNumber": 62
+        },
+        {
+          "caller": "fmt",
+          "callee": "fmtCurrency",
+          "lineNumber": 66
+        },
+        {
+          "caller": "sortGoals",
+          "callee": "[...goals].sort",
+          "lineNumber": 72
+        },
+        {
+          "caller": "sortGoals",
+          "callee": "progressPct",
+          "lineNumber": 76
+        },
+        {
+          "caller": "sortGoals",
+          "callee": "progressPct",
+          "lineNumber": 76
+        },
+        {
+          "caller": "GoalsPage",
+          "callee": "getAuthUser",
+          "lineNumber": 94
+        },
+        {
+          "caller": "GoalsPage",
+          "callee": "Promise.all",
+          "lineNumber": 96
+        },
+        {
+          "caller": "GoalsPage",
+          "callee": "supabase\r\n      .from('savings_goals')\r\n      .select('*')\r\n      .eq('user_id', user!.id)\r\n      .order",
+          "lineNumber": 97
+        },
+        {
+          "caller": "GoalsPage",
+          "callee": "supabase\r\n      .from('savings_goals')\r\n      .select('*')\r\n      .eq",
+          "lineNumber": 97
+        },
+        {
+          "caller": "GoalsPage",
+          "callee": "supabase\r\n      .from('savings_goals')\r\n      .select",
+          "lineNumber": 97
+        },
+        {
+          "caller": "GoalsPage",
+          "callee": "supabase\r\n      .from",
+          "lineNumber": 97
+        },
+        {
+          "caller": "GoalsPage",
+          "callee": "getSettings",
+          "lineNumber": 102
+        },
+        {
+          "caller": "GoalsPage",
+          "callee": "sortGoals",
+          "lineNumber": 109
+        },
+        {
+          "caller": "GoalsPage",
+          "callee": "all.filter",
+          "lineNumber": 109
+        },
+        {
+          "caller": "GoalsPage",
+          "callee": "all.filter",
+          "lineNumber": 110
+        },
+        {
+          "caller": "GoalsPage",
+          "callee": "active.reduce",
+          "lineNumber": 112
+        },
+        {
+          "caller": "GoalsPage",
+          "callee": "active.reduce",
+          "lineNumber": 113
+        },
+        {
+          "caller": "GoalsPage",
+          "callee": "fmt",
+          "lineNumber": 122
+        },
+        {
+          "caller": "GoalsPage",
+          "callee": "fmt",
+          "lineNumber": 122
+        },
+        {
+          "caller": "GoalsPage",
+          "callee": "active.map",
+          "lineNumber": 133
+        },
+        {
+          "caller": "GoalsPage",
+          "callee": "closed.map",
+          "lineNumber": 146
+        },
+        {
+          "caller": "GoalCard",
+          "callee": "progressPct",
+          "lineNumber": 158
+        },
+        {
+          "caller": "GoalCard",
+          "callee": "monthsRemaining",
+          "lineNumber": 160
+        },
+        {
+          "caller": "GoalCard",
+          "callee": "savingsGap",
+          "lineNumber": 161
+        },
+        {
+          "caller": "GoalCard",
+          "callee": "setGoalStatus.bind",
+          "lineNumber": 167
+        },
+        {
+          "caller": "GoalCard",
+          "callee": "fmt",
+          "lineNumber": 200
+        },
+        {
+          "caller": "GoalCard",
+          "callee": "fmt",
+          "lineNumber": 200
+        },
+        {
+          "caller": "GoalCard",
+          "callee": "fmt",
+          "lineNumber": 214
+        },
+        {
+          "caller": "GoalCard",
+          "callee": "formatDuration",
+          "lineNumber": 220
+        },
+        {
+          "caller": "GoalCard",
+          "callee": "formatDate",
+          "lineNumber": 226
+        },
+        {
+          "caller": "GoalCard",
+          "callee": "formatDate",
+          "lineNumber": 232
+        },
+        {
+          "caller": "fmt",
+          "callee": "fmtCurrency",
+          "lineNumber": 258
+        },
+        {
+          "caller": "fmt",
+          "callee": "Math.abs",
+          "lineNumber": 258
+        },
+        {
+          "caller": "SavingsPlanBadge",
+          "callee": "fmt",
+          "lineNumber": 267
+        },
+        {
+          "caller": "SavingsPlanBadge",
+          "callee": "fmt",
+          "lineNumber": 277
+        }
+      ],
+      "metrics": {
+        "importCount": 7,
+        "exportCount": 1,
+        "functionCount": 13,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 124,
+      "nonEmptyLines": 106,
+      "functions": [
+        {
+          "name": "leseEuerZeile",
+          "startLine": 21,
+          "endLine": 26,
+          "params": [
+            "formData"
+          ]
+        },
+        {
+          "name": "leseTaxRole",
+          "startLine": 28,
+          "endLine": 32,
+          "params": [
+            "formData"
+          ]
+        },
+        {
+          "name": "createCategory",
+          "startLine": 34,
+          "endLine": 63,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        },
+        {
+          "name": "updateCategory",
+          "startLine": 65,
+          "endLine": 99,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        },
+        {
+          "name": "deleteCategory",
+          "startLine": 101,
+          "endLine": 124,
+          "params": [
+            "id"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "createCategory",
+          "line": 34,
+          "isDefault": false
+        },
+        {
+          "name": "updateCategory",
+          "line": 65,
+          "isDefault": false
+        },
+        {
+          "name": "deleteCategory",
+          "line": 101,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "leseEuerZeile",
+          "callee": "(formData.get('euer_zeile') as string | null)?.trim",
+          "lineNumber": 22
+        },
+        {
+          "caller": "leseEuerZeile",
+          "callee": "formData.get",
+          "lineNumber": 22
+        },
+        {
+          "caller": "leseEuerZeile",
+          "callee": "Number",
+          "lineNumber": 24
+        },
+        {
+          "caller": "leseEuerZeile",
+          "callee": "Number.isInteger",
+          "lineNumber": 25
+        },
+        {
+          "caller": "leseTaxRole",
+          "callee": "(formData.get('tax_role') as string | null)?.trim",
+          "lineNumber": 29
+        },
+        {
+          "caller": "leseTaxRole",
+          "callee": "formData.get",
+          "lineNumber": 29
+        },
+        {
+          "caller": "leseTaxRole",
+          "callee": "(TAX_ROLES as readonly string[]).includes",
+          "lineNumber": 31
+        },
+        {
+          "caller": "createCategory",
+          "callee": "getAuthUser",
+          "lineNumber": 38
+        },
+        {
+          "caller": "createCategory",
+          "callee": "(formData.get('name') as string)?.trim",
+          "lineNumber": 41
+        },
+        {
+          "caller": "createCategory",
+          "callee": "formData.get",
+          "lineNumber": 41
+        },
+        {
+          "caller": "createCategory",
+          "callee": "formData.get",
+          "lineNumber": 42
+        },
+        {
+          "caller": "createCategory",
+          "callee": "supabase.from('categories').insert",
+          "lineNumber": 46
+        },
+        {
+          "caller": "createCategory",
+          "callee": "supabase.from",
+          "lineNumber": 46
+        },
+        {
+          "caller": "createCategory",
+          "callee": "formData.get",
+          "lineNumber": 50
+        },
+        {
+          "caller": "createCategory",
+          "callee": "formData.get",
+          "lineNumber": 51
+        },
+        {
+          "caller": "createCategory",
+          "callee": "formData.get",
+          "lineNumber": 52
+        },
+        {
+          "caller": "createCategory",
+          "callee": "formData.get",
+          "lineNumber": 53
+        },
+        {
+          "caller": "createCategory",
+          "callee": "Number",
+          "lineNumber": 54
+        },
+        {
+          "caller": "createCategory",
+          "callee": "formData.get",
+          "lineNumber": 54
+        },
+        {
+          "caller": "createCategory",
+          "callee": "leseTaxRole",
+          "lineNumber": 56
+        },
+        {
+          "caller": "createCategory",
+          "callee": "leseEuerZeile",
+          "lineNumber": 57
+        },
+        {
+          "caller": "createCategory",
+          "callee": "revalidatePath",
+          "lineNumber": 61
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "getAuthUser",
+          "lineNumber": 69
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "formData.get",
+          "lineNumber": 72
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "(formData.get('name') as string)?.trim",
+          "lineNumber": 73
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "formData.get",
+          "lineNumber": 73
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "formData.get",
+          "lineNumber": 74
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "supabase\r\n    .from('categories')\r\n    .update({\r\n      name,\r\n      type,\r\n      parent_id: (formData.get('parent_id') as string) || null,\r\n      color: (formData.get('color') as string) || null,\r\n      icon: (formData.get('icon') as string) || null,\r\n      budget_monthly: formData.get('budget_monthly')\r\n        ? Number(formData.get('budget_monthly'))\r\n        : null,\r\n      tax_role: leseTaxRole(formData),\r\n      euer_zeile: leseEuerZeile(formData),\r\n    })\r\n    .eq('id', id)\r\n    .eq",
+          "lineNumber": 79
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "supabase\r\n    .from('categories')\r\n    .update({\r\n      name,\r\n      type,\r\n      parent_id: (formData.get('parent_id') as string) || null,\r\n      color: (formData.get('color') as string) || null,\r\n      icon: (formData.get('icon') as string) || null,\r\n      budget_monthly: formData.get('budget_monthly')\r\n        ? Number(formData.get('budget_monthly'))\r\n        : null,\r\n      tax_role: leseTaxRole(formData),\r\n      euer_zeile: leseEuerZeile(formData),\r\n    })\r\n    .eq",
+          "lineNumber": 79
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "supabase\r\n    .from('categories')\r\n    .update",
+          "lineNumber": 79
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 79
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "formData.get",
+          "lineNumber": 84
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "formData.get",
+          "lineNumber": 85
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "formData.get",
+          "lineNumber": 86
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "formData.get",
+          "lineNumber": 87
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "Number",
+          "lineNumber": 88
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "formData.get",
+          "lineNumber": 88
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "leseTaxRole",
+          "lineNumber": 90
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "leseEuerZeile",
+          "lineNumber": 91
+        },
+        {
+          "caller": "updateCategory",
+          "callee": "revalidatePath",
+          "lineNumber": 97
+        },
+        {
+          "caller": "deleteCategory",
+          "callee": "getAuthUser",
+          "lineNumber": 102
+        },
+        {
+          "caller": "deleteCategory",
+          "callee": "supabase\r\n    .from('categories')\r\n    .select('id', { count: 'exact', head: true })\r\n    .eq('parent_id', id)\r\n    .eq",
+          "lineNumber": 106
+        },
+        {
+          "caller": "deleteCategory",
+          "callee": "supabase\r\n    .from('categories')\r\n    .select('id', { count: 'exact', head: true })\r\n    .eq",
+          "lineNumber": 106
+        },
+        {
+          "caller": "deleteCategory",
+          "callee": "supabase\r\n    .from('categories')\r\n    .select",
+          "lineNumber": 106
+        },
+        {
+          "caller": "deleteCategory",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 106
+        },
+        {
+          "caller": "deleteCategory",
+          "callee": "supabase\r\n    .from('categories')\r\n    .delete()\r\n    .eq('id', id)\r\n    .eq",
+          "lineNumber": 115
+        },
+        {
+          "caller": "deleteCategory",
+          "callee": "supabase\r\n    .from('categories')\r\n    .delete()\r\n    .eq",
+          "lineNumber": 115
+        },
+        {
+          "caller": "deleteCategory",
+          "callee": "supabase\r\n    .from('categories')\r\n    .delete",
+          "lineNumber": 115
+        },
+        {
+          "caller": "deleteCategory",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 115
+        },
+        {
+          "caller": "deleteCategory",
+          "callee": "revalidatePath",
+          "lineNumber": 122
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 3,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 141,
+      "nonEmptyLines": 118,
+      "functions": [
+        {
+          "name": "createTransaction",
+          "startLine": 8,
+          "endLine": 49,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        },
+        {
+          "name": "updateTransaction",
+          "startLine": 51,
+          "endLine": 95,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        },
+        {
+          "name": "updateTransactionCategory",
+          "startLine": 103,
+          "endLine": 126,
+          "params": [
+            "id",
+            "categoryId",
+            "source"
+          ]
+        },
+        {
+          "name": "deleteTransaction",
+          "startLine": 128,
+          "endLine": 141,
+          "params": [
+            "id"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "createTransaction",
+          "line": 8,
+          "isDefault": false
+        },
+        {
+          "name": "updateTransaction",
+          "line": 51,
+          "isDefault": false
+        },
+        {
+          "name": "updateTransactionCategory",
+          "line": 103,
+          "isDefault": false
+        },
+        {
+          "name": "deleteTransaction",
+          "line": 128,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "createTransaction",
+          "callee": "getAuthUser",
+          "lineNumber": 12
+        },
+        {
+          "caller": "createTransaction",
+          "callee": "formData.get",
+          "lineNumber": 16
+        },
+        {
+          "caller": "createTransaction",
+          "callee": "formData.get",
+          "lineNumber": 17
+        },
+        {
+          "caller": "createTransaction",
+          "callee": "formData.get",
+          "lineNumber": 18
+        },
+        {
+          "caller": "createTransaction",
+          "callee": "formData.get",
+          "lineNumber": 19
+        },
+        {
+          "caller": "createTransaction",
+          "callee": "formData.get",
+          "lineNumber": 20
+        },
+        {
+          "caller": "createTransaction",
+          "callee": "formData.get",
+          "lineNumber": 21
+        },
+        {
+          "caller": "createTransaction",
+          "callee": "isNaN",
+          "lineNumber": 25
+        },
+        {
+          "caller": "createTransaction",
+          "callee": "Number",
+          "lineNumber": 25
+        },
+        {
+          "caller": "createTransaction",
+          "callee": "parseFloat",
+          "lineNumber": 28
+        },
+        {
+          "caller": "createTransaction",
+          "callee": "Math.abs",
+          "lineNumber": 29
+        },
+        {
+          "caller": "createTransaction",
+          "callee": "parseFloat",
+          "lineNumber": 29
+        },
+        {
+          "caller": "createTransaction",
+          "callee": "supabase.from('transactions').insert",
+          "lineNumber": 31
+        },
+        {
+          "caller": "createTransaction",
+          "callee": "supabase.from",
+          "lineNumber": 31
+        },
+        {
+          "caller": "createTransaction",
+          "callee": "formData.get",
+          "lineNumber": 38
+        },
+        {
+          "caller": "createTransaction",
+          "callee": "formData.get",
+          "lineNumber": 39
+        },
+        {
+          "caller": "createTransaction",
+          "callee": "formData.get",
+          "lineNumber": 40
+        },
+        {
+          "caller": "createTransaction",
+          "callee": "revalidatePath",
+          "lineNumber": 47
+        },
+        {
+          "caller": "updateTransaction",
+          "callee": "getAuthUser",
+          "lineNumber": 55
+        },
+        {
+          "caller": "updateTransaction",
+          "callee": "formData.get",
+          "lineNumber": 58
+        },
+        {
+          "caller": "updateTransaction",
+          "callee": "formData.get",
+          "lineNumber": 59
+        },
+        {
+          "caller": "updateTransaction",
+          "callee": "formData.get",
+          "lineNumber": 60
+        },
+        {
+          "caller": "updateTransaction",
+          "callee": "formData.get",
+          "lineNumber": 61
+        },
+        {
+          "caller": "updateTransaction",
+          "callee": "formData.get",
+          "lineNumber": 62
+        },
+        {
+          "caller": "updateTransaction",
+          "callee": "formData.get",
+          "lineNumber": 63
+        },
+        {
+          "caller": "updateTransaction",
+          "callee": "formData.get",
+          "lineNumber": 64
+        },
+        {
+          "caller": "updateTransaction",
+          "callee": "isNaN",
+          "lineNumber": 69
+        },
+        {
+          "caller": "updateTransaction",
+          "callee": "Number",
+          "lineNumber": 69
+        },
+        {
+          "caller": "updateTransaction",
+          "callee": "parseFloat",
+          "lineNumber": 72
+        },
+        {
+          "caller": "updateTransaction",
+          "callee": "Math.abs",
+          "lineNumber": 73
+        },
+        {
+          "caller": "updateTransaction",
+          "callee": "parseFloat",
+          "lineNumber": 73
+        },
+        {
+          "caller": "updateTransaction",
+          "callee": "supabase\r\n    .from('transactions')\r\n    .update({\r\n      date,\r\n      type,\r\n      account_id,\r\n      currency,\r\n      amount,\r\n      transfer_to: isTransfer ? transferTo : null,\r\n      category_id: (formData.get('category_id') as string) || null,\r\n      description: (formData.get('description') as string) || null,\r\n      merchant:    (formData.get('merchant') as string) || null,\r\n    })\r\n    .eq('id', id)\r\n    .eq",
+          "lineNumber": 75
+        },
+        {
+          "caller": "updateTransaction",
+          "callee": "supabase\r\n    .from('transactions')\r\n    .update({\r\n      date,\r\n      type,\r\n      account_id,\r\n      currency,\r\n      amount,\r\n      transfer_to: isTransfer ? transferTo : null,\r\n      category_id: (formData.get('category_id') as string) || null,\r\n      description: (formData.get('description') as string) || null,\r\n      merchant:    (formData.get('merchant') as string) || null,\r\n    })\r\n    .eq",
+          "lineNumber": 75
+        },
+        {
+          "caller": "updateTransaction",
+          "callee": "supabase\r\n    .from('transactions')\r\n    .update",
+          "lineNumber": 75
+        },
+        {
+          "caller": "updateTransaction",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 75
+        },
+        {
+          "caller": "updateTransaction",
+          "callee": "formData.get",
+          "lineNumber": 84
+        },
+        {
+          "caller": "updateTransaction",
+          "callee": "formData.get",
+          "lineNumber": 85
+        },
+        {
+          "caller": "updateTransaction",
+          "callee": "formData.get",
+          "lineNumber": 86
+        },
+        {
+          "caller": "updateTransaction",
+          "callee": "revalidatePath",
+          "lineNumber": 93
+        },
+        {
+          "caller": "updateTransactionCategory",
+          "callee": "getAuthUser",
+          "lineNumber": 108
+        },
+        {
+          "caller": "updateTransactionCategory",
+          "callee": "supabase\r\n    .from(table)\r\n    .update({ category_id: categoryId })\r\n    .eq('id', id)\r\n    .eq",
+          "lineNumber": 112
+        },
+        {
+          "caller": "updateTransactionCategory",
+          "callee": "supabase\r\n    .from(table)\r\n    .update({ category_id: categoryId })\r\n    .eq",
+          "lineNumber": 112
+        },
+        {
+          "caller": "updateTransactionCategory",
+          "callee": "supabase\r\n    .from(table)\r\n    .update",
+          "lineNumber": 112
+        },
+        {
+          "caller": "updateTransactionCategory",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 112
+        },
+        {
+          "caller": "updateTransactionCategory",
+          "callee": "revalidatePath",
+          "lineNumber": 123
+        },
+        {
+          "caller": "updateTransactionCategory",
+          "callee": "revalidatePath",
+          "lineNumber": 124
+        },
+        {
+          "caller": "deleteTransaction",
+          "callee": "getAuthUser",
+          "lineNumber": 129
+        },
+        {
+          "caller": "deleteTransaction",
+          "callee": "supabase\r\n    .from('transactions')\r\n    .delete()\r\n    .eq('id', id)\r\n    .eq",
+          "lineNumber": 132
+        },
+        {
+          "caller": "deleteTransaction",
+          "callee": "supabase\r\n    .from('transactions')\r\n    .delete()\r\n    .eq",
+          "lineNumber": 132
+        },
+        {
+          "caller": "deleteTransaction",
+          "callee": "supabase\r\n    .from('transactions')\r\n    .delete",
+          "lineNumber": 132
+        },
+        {
+          "caller": "deleteTransaction",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 132
+        },
+        {
+          "caller": "deleteTransaction",
+          "callee": "revalidatePath",
+          "lineNumber": 139
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 4,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/(dashboard)/finance/accounts/actions.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 90,
+      "nonEmptyLines": 73,
+      "functions": [
+        {
+          "name": "createAccount",
+          "startLine": 8,
+          "endLine": 38,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        },
+        {
+          "name": "updateAccount",
+          "startLine": 40,
+          "endLine": 75,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        },
+        {
+          "name": "deleteAccount",
+          "startLine": 77,
+          "endLine": 90,
+          "params": [
+            "id"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "createAccount",
+          "line": 8,
+          "isDefault": false
+        },
+        {
+          "name": "updateAccount",
+          "line": 40,
+          "isDefault": false
+        },
+        {
+          "name": "deleteAccount",
+          "line": 77,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "createAccount",
+          "callee": "getAuthUser",
+          "lineNumber": 12
+        },
+        {
+          "caller": "createAccount",
+          "callee": "formData.get",
+          "lineNumber": 16
+        },
+        {
+          "caller": "createAccount",
+          "callee": "formData.get",
+          "lineNumber": 17
+        },
+        {
+          "caller": "createAccount",
+          "callee": "formData.get",
+          "lineNumber": 18
+        },
+        {
+          "caller": "createAccount",
+          "callee": "name?.trim",
+          "lineNumber": 20
+        },
+        {
+          "caller": "createAccount",
+          "callee": "supabase.from('accounts').insert",
+          "lineNumber": 24
+        },
+        {
+          "caller": "createAccount",
+          "callee": "supabase.from",
+          "lineNumber": 24
+        },
+        {
+          "caller": "createAccount",
+          "callee": "name.trim",
+          "lineNumber": 25
+        },
+        {
+          "caller": "createAccount",
+          "callee": "formData.get",
+          "lineNumber": 28
+        },
+        {
+          "caller": "createAccount",
+          "callee": "formData.get",
+          "lineNumber": 29
+        },
+        {
+          "caller": "createAccount",
+          "callee": "formData.get",
+          "lineNumber": 30
+        },
+        {
+          "caller": "createAccount",
+          "callee": "revalidatePath",
+          "lineNumber": 36
+        },
+        {
+          "caller": "updateAccount",
+          "callee": "getAuthUser",
+          "lineNumber": 44
+        },
+        {
+          "caller": "updateAccount",
+          "callee": "formData.get",
+          "lineNumber": 47
+        },
+        {
+          "caller": "updateAccount",
+          "callee": "formData.get",
+          "lineNumber": 48
+        },
+        {
+          "caller": "updateAccount",
+          "callee": "formData.get",
+          "lineNumber": 49
+        },
+        {
+          "caller": "updateAccount",
+          "callee": "formData.get",
+          "lineNumber": 50
+        },
+        {
+          "caller": "updateAccount",
+          "callee": "name?.trim",
+          "lineNumber": 53
+        },
+        {
+          "caller": "updateAccount",
+          "callee": "supabase\r\n    .from('accounts')\r\n    .update({\r\n      name:        name.trim(),\r\n      type,\r\n      currency,\r\n      institution: (formData.get('institution') as string) || null,\r\n      color:       (formData.get('color') as string) || null,\r\n      iban:        (formData.get('iban') as string) || null,\r\n      is_active:   formData.get('is_active') === 'true',\r\n      updated_at:  new Date().toISOString(),\r\n    })\r\n    .eq('id', id)\r\n    .eq",
+          "lineNumber": 57
+        },
+        {
+          "caller": "updateAccount",
+          "callee": "supabase\r\n    .from('accounts')\r\n    .update({\r\n      name:        name.trim(),\r\n      type,\r\n      currency,\r\n      institution: (formData.get('institution') as string) || null,\r\n      color:       (formData.get('color') as string) || null,\r\n      iban:        (formData.get('iban') as string) || null,\r\n      is_active:   formData.get('is_active') === 'true',\r\n      updated_at:  new Date().toISOString(),\r\n    })\r\n    .eq",
+          "lineNumber": 57
+        },
+        {
+          "caller": "updateAccount",
+          "callee": "supabase\r\n    .from('accounts')\r\n    .update",
+          "lineNumber": 57
+        },
+        {
+          "caller": "updateAccount",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 57
+        },
+        {
+          "caller": "updateAccount",
+          "callee": "name.trim",
+          "lineNumber": 60
+        },
+        {
+          "caller": "updateAccount",
+          "callee": "formData.get",
+          "lineNumber": 63
+        },
+        {
+          "caller": "updateAccount",
+          "callee": "formData.get",
+          "lineNumber": 64
+        },
+        {
+          "caller": "updateAccount",
+          "callee": "formData.get",
+          "lineNumber": 65
+        },
+        {
+          "caller": "updateAccount",
+          "callee": "formData.get",
+          "lineNumber": 66
+        },
+        {
+          "caller": "updateAccount",
+          "callee": "new Date().toISOString",
+          "lineNumber": 67
+        },
+        {
+          "caller": "updateAccount",
+          "callee": "revalidatePath",
+          "lineNumber": 73
+        },
+        {
+          "caller": "deleteAccount",
+          "callee": "getAuthUser",
+          "lineNumber": 78
+        },
+        {
+          "caller": "deleteAccount",
+          "callee": "supabase\r\n    .from('accounts')\r\n    .delete()\r\n    .eq('id', id)\r\n    .eq",
+          "lineNumber": 81
+        },
+        {
+          "caller": "deleteAccount",
+          "callee": "supabase\r\n    .from('accounts')\r\n    .delete()\r\n    .eq",
+          "lineNumber": 81
+        },
+        {
+          "caller": "deleteAccount",
+          "callee": "supabase\r\n    .from('accounts')\r\n    .delete",
+          "lineNumber": 81
+        },
+        {
+          "caller": "deleteAccount",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 81
+        },
+        {
+          "caller": "deleteAccount",
+          "callee": "revalidatePath",
+          "lineNumber": 88
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 3,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/(dashboard)/strategy/combos/actions.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 168,
+      "nonEmptyLines": 141,
+      "functions": [
+        {
+          "name": "REVALIDATE",
+          "startLine": 8,
+          "endLine": 8,
+          "params": []
+        },
+        {
+          "name": "parseIndicators",
+          "startLine": 17,
+          "endLine": 25,
+          "params": [
+            "formData"
+          ]
+        },
+        {
+          "name": "createCombo",
+          "startLine": 28,
+          "endLine": 76,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        },
+        {
+          "name": "updateCombo",
+          "startLine": 79,
+          "endLine": 128,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        },
+        {
+          "name": "deleteCombo",
+          "startLine": 131,
+          "endLine": 144,
+          "params": [
+            "id"
+          ]
+        },
+        {
+          "name": "updateGuardStatus",
+          "startLine": 147,
+          "endLine": 168,
+          "params": [
+            "id",
+            "passes",
+            "failures"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "createCombo",
+          "line": 28,
+          "isDefault": false
+        },
+        {
+          "name": "updateCombo",
+          "line": 79,
+          "isDefault": false
+        },
+        {
+          "name": "deleteCombo",
+          "line": 131,
+          "isDefault": false
+        },
+        {
+          "name": "updateGuardStatus",
+          "line": 147,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "REVALIDATE",
+          "callee": "revalidatePath",
+          "lineNumber": 8
+        },
+        {
+          "caller": "parseIndicators",
+          "callee": "formData.get",
+          "lineNumber": 18
+        },
+        {
+          "caller": "parseIndicators",
+          "callee": "JSON.parse",
+          "lineNumber": 21
+        },
+        {
+          "caller": "createCombo",
+          "callee": "getAuthUser",
+          "lineNumber": 32
+        },
+        {
+          "caller": "createCombo",
+          "callee": "(formData.get('name') as string)?.trim",
+          "lineNumber": 35
+        },
+        {
+          "caller": "createCombo",
+          "callee": "formData.get",
+          "lineNumber": 35
+        },
+        {
+          "caller": "createCombo",
+          "callee": "(formData.get('asset') as string)?.trim",
+          "lineNumber": 36
+        },
+        {
+          "caller": "createCombo",
+          "callee": "formData.get",
+          "lineNumber": 36
+        },
+        {
+          "caller": "createCombo",
+          "callee": "(formData.get('asset_class') as string)?.trim",
+          "lineNumber": 37
+        },
+        {
+          "caller": "createCombo",
+          "callee": "formData.get",
+          "lineNumber": 37
+        },
+        {
+          "caller": "createCombo",
+          "callee": "parseIndicators",
+          "lineNumber": 43
+        },
+        {
+          "caller": "createCombo",
+          "callee": "supabase\r\n    .from('combos')\r\n    .insert({\r\n      name,\r\n      asset,\r\n      asset_class,\r\n      status:          (formData.get('status') as string) || 'draft',\r\n      long_condition:  (formData.get('long_condition') as string) || null,\r\n      short_condition: (formData.get('short_condition') as string) || null,\r\n      notes:           (formData.get('notes') as string) || null,\r\n      indicator_count: indicators.length || null,\r\n      user_id:         user.id,\r\n      passes_guard:    null,\r\n      guard_failures:  null,\r\n    })\r\n    .select('id')\r\n    .single",
+          "lineNumber": 46
+        },
+        {
+          "caller": "createCombo",
+          "callee": "supabase\r\n    .from('combos')\r\n    .insert({\r\n      name,\r\n      asset,\r\n      asset_class,\r\n      status:          (formData.get('status') as string) || 'draft',\r\n      long_condition:  (formData.get('long_condition') as string) || null,\r\n      short_condition: (formData.get('short_condition') as string) || null,\r\n      notes:           (formData.get('notes') as string) || null,\r\n      indicator_count: indicators.length || null,\r\n      user_id:         user.id,\r\n      passes_guard:    null,\r\n      guard_failures:  null,\r\n    })\r\n    .select",
+          "lineNumber": 46
+        },
+        {
+          "caller": "createCombo",
+          "callee": "supabase\r\n    .from('combos')\r\n    .insert",
+          "lineNumber": 46
+        },
+        {
+          "caller": "createCombo",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 46
+        },
+        {
+          "caller": "createCombo",
+          "callee": "formData.get",
+          "lineNumber": 52
+        },
+        {
+          "caller": "createCombo",
+          "callee": "formData.get",
+          "lineNumber": 53
+        },
+        {
+          "caller": "createCombo",
+          "callee": "formData.get",
+          "lineNumber": 54
+        },
+        {
+          "caller": "createCombo",
+          "callee": "formData.get",
+          "lineNumber": 55
+        },
+        {
+          "caller": "createCombo",
+          "callee": "supabase\r\n      .from('combo_indicators')\r\n      .insert",
+          "lineNumber": 68
+        },
+        {
+          "caller": "createCombo",
+          "callee": "supabase\r\n      .from",
+          "lineNumber": 68
+        },
+        {
+          "caller": "createCombo",
+          "callee": "indicators.map",
+          "lineNumber": 70
+        },
+        {
+          "caller": "createCombo",
+          "callee": "REVALIDATE",
+          "lineNumber": 74
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "getAuthUser",
+          "lineNumber": 83
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "formData.get",
+          "lineNumber": 86
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "(formData.get('name') as string)?.trim",
+          "lineNumber": 87
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "formData.get",
+          "lineNumber": 87
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "(formData.get('asset') as string)?.trim",
+          "lineNumber": 88
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "formData.get",
+          "lineNumber": 88
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "(formData.get('asset_class') as string)?.trim",
+          "lineNumber": 89
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "formData.get",
+          "lineNumber": 89
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "parseIndicators",
+          "lineNumber": 96
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "supabase\r\n    .from('combos')\r\n    .update({\r\n      name,\r\n      asset,\r\n      asset_class,\r\n      status:          (formData.get('status') as string) || 'draft',\r\n      long_condition:  (formData.get('long_condition') as string) || null,\r\n      short_condition: (formData.get('short_condition') as string) || null,\r\n      notes:           (formData.get('notes') as string) || null,\r\n      indicator_count: indicators.length || null,\r\n      updated_at:      new Date().toISOString(),\r\n    })\r\n    .eq('id', id)\r\n    .eq",
+          "lineNumber": 99
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "supabase\r\n    .from('combos')\r\n    .update({\r\n      name,\r\n      asset,\r\n      asset_class,\r\n      status:          (formData.get('status') as string) || 'draft',\r\n      long_condition:  (formData.get('long_condition') as string) || null,\r\n      short_condition: (formData.get('short_condition') as string) || null,\r\n      notes:           (formData.get('notes') as string) || null,\r\n      indicator_count: indicators.length || null,\r\n      updated_at:      new Date().toISOString(),\r\n    })\r\n    .eq",
+          "lineNumber": 99
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "supabase\r\n    .from('combos')\r\n    .update",
+          "lineNumber": 99
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 99
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "formData.get",
+          "lineNumber": 105
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "formData.get",
+          "lineNumber": 106
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "formData.get",
+          "lineNumber": 107
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "formData.get",
+          "lineNumber": 108
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "new Date().toISOString",
+          "lineNumber": 110
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "supabase.from('combo_indicators').delete().eq",
+          "lineNumber": 118
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "supabase.from('combo_indicators').delete",
+          "lineNumber": 118
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "supabase.from",
+          "lineNumber": 118
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "supabase\r\n      .from('combo_indicators')\r\n      .insert",
+          "lineNumber": 120
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "supabase\r\n      .from",
+          "lineNumber": 120
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "indicators.map",
+          "lineNumber": 122
+        },
+        {
+          "caller": "updateCombo",
+          "callee": "REVALIDATE",
+          "lineNumber": 126
+        },
+        {
+          "caller": "deleteCombo",
+          "callee": "getAuthUser",
+          "lineNumber": 132
+        },
+        {
+          "caller": "deleteCombo",
+          "callee": "supabase\r\n    .from('combos')\r\n    .delete()\r\n    .eq('id', id)\r\n    .eq",
+          "lineNumber": 135
+        },
+        {
+          "caller": "deleteCombo",
+          "callee": "supabase\r\n    .from('combos')\r\n    .delete()\r\n    .eq",
+          "lineNumber": 135
+        },
+        {
+          "caller": "deleteCombo",
+          "callee": "supabase\r\n    .from('combos')\r\n    .delete",
+          "lineNumber": 135
+        },
+        {
+          "caller": "deleteCombo",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 135
+        },
+        {
+          "caller": "deleteCombo",
+          "callee": "REVALIDATE",
+          "lineNumber": 142
+        },
+        {
+          "caller": "updateGuardStatus",
+          "callee": "getAuthUser",
+          "lineNumber": 152
+        },
+        {
+          "caller": "updateGuardStatus",
+          "callee": "supabase\r\n    .from('combos')\r\n    .update({\r\n      passes_guard:   passes,\r\n      guard_failures: failures.length ? failures : null,\r\n      updated_at:     new Date().toISOString(),\r\n    })\r\n    .eq('id', id)\r\n    .eq",
+          "lineNumber": 155
+        },
+        {
+          "caller": "updateGuardStatus",
+          "callee": "supabase\r\n    .from('combos')\r\n    .update({\r\n      passes_guard:   passes,\r\n      guard_failures: failures.length ? failures : null,\r\n      updated_at:     new Date().toISOString(),\r\n    })\r\n    .eq",
+          "lineNumber": 155
+        },
+        {
+          "caller": "updateGuardStatus",
+          "callee": "supabase\r\n    .from('combos')\r\n    .update",
+          "lineNumber": 155
+        },
+        {
+          "caller": "updateGuardStatus",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 155
+        },
+        {
+          "caller": "updateGuardStatus",
+          "callee": "new Date().toISOString",
+          "lineNumber": 160
+        },
+        {
+          "caller": "updateGuardStatus",
+          "callee": "REVALIDATE",
+          "lineNumber": 166
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 4,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/(dashboard)/strategy/combos/page.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 200,
+      "nonEmptyLines": 181,
+      "functions": [
+        {
+          "name": "StatusBadge",
+          "startLine": 37,
+          "endLine": 43,
+          "params": [
+            "{ status }"
+          ]
+        },
+        {
+          "name": "AssetClassBadge",
+          "startLine": 45,
+          "endLine": 52,
+          "params": [
+            "{ cls }"
+          ]
+        },
+        {
+          "name": "GuardIcon",
+          "startLine": 54,
+          "endLine": 58,
+          "params": [
+            "{ passes }"
+          ]
+        },
+        {
+          "name": "CombosPage",
+          "startLine": 61,
+          "endLine": 200,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "CombosPage",
+          "line": 61,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "CombosPage",
+          "callee": "getAuthUser",
+          "lineNumber": 62
+        },
+        {
+          "caller": "CombosPage",
+          "callee": "supabase\r\n    .from('indicators')\r\n    .select('id, name, author')\r\n    .eq('user_id', user!.id)\r\n    .order",
+          "lineNumber": 65
+        },
+        {
+          "caller": "CombosPage",
+          "callee": "supabase\r\n    .from('indicators')\r\n    .select('id, name, author')\r\n    .eq",
+          "lineNumber": 65
+        },
+        {
+          "caller": "CombosPage",
+          "callee": "supabase\r\n    .from('indicators')\r\n    .select",
+          "lineNumber": 65
+        },
+        {
+          "caller": "CombosPage",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 65
+        },
+        {
+          "caller": "CombosPage",
+          "callee": "supabase\r\n    .from('combos')\r\n    .select('*, combo_indicators(indicator_id, role, settings_override, sort_order)')\r\n    .eq('user_id', user!.id)\r\n    .order",
+          "lineNumber": 74
+        },
+        {
+          "caller": "CombosPage",
+          "callee": "supabase\r\n    .from('combos')\r\n    .select('*, combo_indicators(indicator_id, role, settings_override, sort_order)')\r\n    .eq",
+          "lineNumber": 74
+        },
+        {
+          "caller": "CombosPage",
+          "callee": "supabase\r\n    .from('combos')\r\n    .select",
+          "lineNumber": 74
+        },
+        {
+          "caller": "CombosPage",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 74
+        },
+        {
+          "caller": "CombosPage",
+          "callee": "(combosRaw ?? []).map",
+          "lineNumber": 80
+        },
+        {
+          "caller": "CombosPage",
+          "callee": "((c.combo_indicators as ComboIndicatorRow[]) ?? [])\r\n      .sort",
+          "lineNumber": 82
+        },
+        {
+          "caller": "CombosPage",
+          "callee": "indicatorOptions.map",
+          "lineNumber": 87
+        },
+        {
+          "caller": "CombosPage",
+          "callee": "combos.map",
+          "lineNumber": 110
+        },
+        {
+          "caller": "CombosPage",
+          "callee": "combo.combo_indicators.map",
+          "lineNumber": 131
+        },
+        {
+          "caller": "CombosPage",
+          "callee": "combo.guard_failures.map",
+          "lineNumber": 145
+        },
+        {
+          "caller": "CombosPage",
+          "callee": "combo.combo_indicators.map",
+          "lineNumber": 158
+        },
+        {
+          "caller": "CombosPage",
+          "callee": "indicatorMap.get",
+          "lineNumber": 161
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/(dashboard)/strategy/strategies/[id]/page.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 202,
+      "nonEmptyLines": 183,
+      "functions": [
+        {
+          "name": "StatusBadge",
+          "startLine": 19,
+          "endLine": 25,
+          "params": [
+            "{ status }"
+          ]
+        },
+        {
+          "name": "TestRow",
+          "startLine": 28,
+          "endLine": 45,
+          "params": [
+            "{ label, result }"
+          ]
+        },
+        {
+          "name": "StrategyDetailPage",
+          "startLine": 48,
+          "endLine": 202,
+          "params": [
+            "{\r\n  params,\r\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "StrategyDetailPage",
+          "line": 48,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "TestRow",
+          "callee": "result?.toLowerCase",
+          "lineNumber": 29
+        },
+        {
+          "caller": "TestRow",
+          "callee": "result?.toLowerCase",
+          "lineNumber": 30
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "getAuthUser",
+          "lineNumber": 55
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "Promise.all",
+          "lineNumber": 64
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "supabase.from('strategies').select('*').eq('id', id).eq('user_id', user!.id).single",
+          "lineNumber": 65
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "supabase.from('strategies').select('*').eq('id', id).eq",
+          "lineNumber": 65
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "supabase.from('strategies').select('*').eq",
+          "lineNumber": 65
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "supabase.from('strategies').select",
+          "lineNumber": 65
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "supabase.from",
+          "lineNumber": 65
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "supabase.from('submission_checklist').select('*').eq('strategy_id', id).maybeSingle",
+          "lineNumber": 66
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "supabase.from('submission_checklist').select('*').eq",
+          "lineNumber": 66
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "supabase.from('submission_checklist').select",
+          "lineNumber": 66
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "supabase.from",
+          "lineNumber": 66
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "supabase.from('robustness_status').select('*').eq('strategy_id', id).maybeSingle",
+          "lineNumber": 67
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "supabase.from('robustness_status').select('*').eq",
+          "lineNumber": 67
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "supabase.from('robustness_status').select",
+          "lineNumber": 67
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "supabase.from",
+          "lineNumber": 67
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "supabase.from('combos').select('id, name').eq('user_id', user!.id).order",
+          "lineNumber": 68
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "supabase.from('combos').select('id, name').eq",
+          "lineNumber": 68
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "supabase.from('combos').select",
+          "lineNumber": 68
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "supabase.from",
+          "lineNumber": 68
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "getSettings",
+          "lineNumber": 69
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "notFound",
+          "lineNumber": 75
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "comboOptions.find",
+          "lineNumber": 78
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "Object.values(checklistState).filter",
+          "lineNumber": 91
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "Object.values",
+          "lineNumber": 91
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "strategy.initial_capital.toLocaleString",
+          "lineNumber": 123
+        },
+        {
+          "caller": "StrategyDetailPage",
+          "callee": "new Date(strategy.submission_date).toLocaleDateString",
+          "lineNumber": 135
+        }
+      ],
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 1,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/(dashboard)/strategy/strategies/actions.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 129,
+      "nonEmptyLines": 110,
+      "functions": [
+        {
+          "name": "REVALIDATE_LIST",
+          "startLine": 8,
+          "endLine": 8,
+          "params": []
+        },
+        {
+          "name": "REVALIDATE_DETAIL",
+          "startLine": 9,
+          "endLine": 9,
+          "params": [
+            "id"
+          ]
+        },
+        {
+          "name": "createStrategy",
+          "startLine": 12,
+          "endLine": 47,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        },
+        {
+          "name": "updateStrategy",
+          "startLine": 50,
+          "endLine": 92,
+          "params": [
+            "_prev",
+            "formData"
+          ]
+        },
+        {
+          "name": "deleteStrategy",
+          "startLine": 95,
+          "endLine": 108,
+          "params": [
+            "id"
+          ]
+        },
+        {
+          "name": "toggleChecklistItem",
+          "startLine": 111,
+          "endLine": 129,
+          "params": [
+            "strategyId",
+            "field",
+            "value"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "createStrategy",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "updateStrategy",
+          "line": 50,
+          "isDefault": false
+        },
+        {
+          "name": "deleteStrategy",
+          "line": 95,
+          "isDefault": false
+        },
+        {
+          "name": "toggleChecklistItem",
+          "line": 111,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "REVALIDATE_LIST",
+          "callee": "revalidatePath",
+          "lineNumber": 8
+        },
+        {
+          "caller": "REVALIDATE_DETAIL",
+          "callee": "revalidatePath",
+          "lineNumber": 9
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "getAuthUser",
+          "lineNumber": 16
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "(formData.get('name') as string)?.trim",
+          "lineNumber": 19
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "formData.get",
+          "lineNumber": 19
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "(formData.get('asset') as string)?.trim",
+          "lineNumber": 20
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "formData.get",
+          "lineNumber": 20
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "(formData.get('timeframe') as string)?.trim",
+          "lineNumber": 21
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "formData.get",
+          "lineNumber": 21
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "supabase.from('strategies').insert",
+          "lineNumber": 27
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "supabase.from",
+          "lineNumber": 27
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "formData.get",
+          "lineNumber": 30
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "formData.get",
+          "lineNumber": 31
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "parseInt",
+          "lineNumber": 33
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "formData.get",
+          "lineNumber": 33
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "parseInt",
+          "lineNumber": 34
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "formData.get",
+          "lineNumber": 34
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "parseFloat",
+          "lineNumber": 35
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "formData.get",
+          "lineNumber": 35
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "formData.get",
+          "lineNumber": 36
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "formData.get",
+          "lineNumber": 37
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "formData.get",
+          "lineNumber": 38
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "formData.get",
+          "lineNumber": 39
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "formData.get",
+          "lineNumber": 40
+        },
+        {
+          "caller": "createStrategy",
+          "callee": "REVALIDATE_LIST",
+          "lineNumber": 45
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "getAuthUser",
+          "lineNumber": 54
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "formData.get",
+          "lineNumber": 57
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "(formData.get('name') as string)?.trim",
+          "lineNumber": 58
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "formData.get",
+          "lineNumber": 58
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "(formData.get('asset') as string)?.trim",
+          "lineNumber": 59
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "formData.get",
+          "lineNumber": 59
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "(formData.get('timeframe') as string)?.trim",
+          "lineNumber": 60
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "formData.get",
+          "lineNumber": 60
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "supabase\r\n    .from('strategies')\r\n    .update({\r\n      name,\r\n      asset,\r\n      asset_class:      (formData.get('asset_class') as string)  || 'major',\r\n      status:           (formData.get('status') as string)        || 'development',\r\n      timeframe,\r\n      pine_version:     parseInt(formData.get('pine_version') as string)     || 5,\r\n      version:          parseInt(formData.get('version') as string)           || 1,\r\n      initial_capital:  parseFloat(formData.get('initial_capital') as string) || 10000,\r\n      process_on_close: formData.get('process_on_close') === 'true',\r\n      combo_id:         (formData.get('combo_id') as string)      || null,\r\n      tv_script_url:    (formData.get('tv_script_url') as string) || null,\r\n      submission_date:  (formData.get('submission_date') as string) || null,\r\n      notes:            (formData.get('notes') as string)          || null,\r\n      updated_at:       new Date().toISOString(),\r\n    })\r\n    .eq('id', id)\r\n    .eq",
+          "lineNumber": 67
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "supabase\r\n    .from('strategies')\r\n    .update({\r\n      name,\r\n      asset,\r\n      asset_class:      (formData.get('asset_class') as string)  || 'major',\r\n      status:           (formData.get('status') as string)        || 'development',\r\n      timeframe,\r\n      pine_version:     parseInt(formData.get('pine_version') as string)     || 5,\r\n      version:          parseInt(formData.get('version') as string)           || 1,\r\n      initial_capital:  parseFloat(formData.get('initial_capital') as string) || 10000,\r\n      process_on_close: formData.get('process_on_close') === 'true',\r\n      combo_id:         (formData.get('combo_id') as string)      || null,\r\n      tv_script_url:    (formData.get('tv_script_url') as string) || null,\r\n      submission_date:  (formData.get('submission_date') as string) || null,\r\n      notes:            (formData.get('notes') as string)          || null,\r\n      updated_at:       new Date().toISOString(),\r\n    })\r\n    .eq",
+          "lineNumber": 67
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "supabase\r\n    .from('strategies')\r\n    .update",
+          "lineNumber": 67
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 67
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "formData.get",
+          "lineNumber": 72
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "formData.get",
+          "lineNumber": 73
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "parseInt",
+          "lineNumber": 75
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "formData.get",
+          "lineNumber": 75
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "parseInt",
+          "lineNumber": 76
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "formData.get",
+          "lineNumber": 76
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "parseFloat",
+          "lineNumber": 77
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "formData.get",
+          "lineNumber": 77
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "formData.get",
+          "lineNumber": 78
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "formData.get",
+          "lineNumber": 79
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "formData.get",
+          "lineNumber": 80
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "formData.get",
+          "lineNumber": 81
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "formData.get",
+          "lineNumber": 82
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "new Date().toISOString",
+          "lineNumber": 83
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "REVALIDATE_LIST",
+          "lineNumber": 89
+        },
+        {
+          "caller": "updateStrategy",
+          "callee": "REVALIDATE_DETAIL",
+          "lineNumber": 90
+        },
+        {
+          "caller": "deleteStrategy",
+          "callee": "getAuthUser",
+          "lineNumber": 96
+        },
+        {
+          "caller": "deleteStrategy",
+          "callee": "supabase\r\n    .from('strategies')\r\n    .delete()\r\n    .eq('id', id)\r\n    .eq",
+          "lineNumber": 99
+        },
+        {
+          "caller": "deleteStrategy",
+          "callee": "supabase\r\n    .from('strategies')\r\n    .delete()\r\n    .eq",
+          "lineNumber": 99
+        },
+        {
+          "caller": "deleteStrategy",
+          "callee": "supabase\r\n    .from('strategies')\r\n    .delete",
+          "lineNumber": 99
+        },
+        {
+          "caller": "deleteStrategy",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 99
+        },
+        {
+          "caller": "deleteStrategy",
+          "callee": "REVALIDATE_LIST",
+          "lineNumber": 106
+        },
+        {
+          "caller": "toggleChecklistItem",
+          "callee": "getAuthUser",
+          "lineNumber": 116
+        },
+        {
+          "caller": "toggleChecklistItem",
+          "callee": "supabase\r\n    .from('submission_checklist')\r\n    .upsert",
+          "lineNumber": 119
+        },
+        {
+          "caller": "toggleChecklistItem",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 119
+        },
+        {
+          "caller": "toggleChecklistItem",
+          "callee": "new Date().toISOString",
+          "lineNumber": 122
+        },
+        {
+          "caller": "toggleChecklistItem",
+          "callee": "REVALIDATE_DETAIL",
+          "lineNumber": 127
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 4,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/(dashboard)/strategy/strategies/page.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 182,
+      "nonEmptyLines": 166,
+      "functions": [
+        {
+          "name": "StatusBadge",
+          "startLine": 18,
+          "endLine": 24,
+          "params": [
+            "{ status }"
+          ]
+        },
+        {
+          "name": "StrategiesPage",
+          "startLine": 27,
+          "endLine": 182,
+          "params": [
+            "{\r\n  searchParams,\r\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "StrategiesPage",
+          "line": 27,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "StrategiesPage",
+          "callee": "getAuthUser",
+          "lineNumber": 35
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "getSettings",
+          "lineNumber": 37
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "supabase\r\n    .from('combos')\r\n    .select('id, name')\r\n    .eq('user_id', user!.id)\r\n    .order",
+          "lineNumber": 44
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "supabase\r\n    .from('combos')\r\n    .select('id, name')\r\n    .eq",
+          "lineNumber": 44
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "supabase\r\n    .from('combos')\r\n    .select",
+          "lineNumber": 44
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 44
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "supabase\r\n    .from('strategies')\r\n    .select('*')\r\n    .eq('user_id', user!.id)\r\n    .order",
+          "lineNumber": 52
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "supabase\r\n    .from('strategies')\r\n    .select('*')\r\n    .eq",
+          "lineNumber": 52
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "supabase\r\n    .from('strategies')\r\n    .select",
+          "lineNumber": 52
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 52
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "supabase\r\n    .from('submission_ready')\r\n    .select",
+          "lineNumber": 60
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 60
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "(readyRaw ?? []).map(r => r.id).filter",
+          "lineNumber": 63
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "(readyRaw ?? []).map",
+          "lineNumber": 63
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "allStrategies.filter",
+          "lineNumber": 66
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "readyIdSet.has",
+          "lineNumber": 66
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "comboOptions.map",
+          "lineNumber": 69
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "strategies.map",
+          "lineNumber": 115
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "readyIdSet.has",
+          "lineNumber": 127
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "s.initial_capital.toLocaleString",
+          "lineNumber": 143
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "comboMap.has",
+          "lineNumber": 145
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "comboMap.get",
+          "lineNumber": 146
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "e.stopPropagation",
+          "lineNumber": 164
+        },
+        {
+          "caller": "StrategiesPage",
+          "callee": "new Date(s.submission_date).toLocaleDateString",
+          "lineNumber": 171
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/bank/transactions/[id]/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 35,
+      "nonEmptyLines": 29,
+      "functions": [
+        {
+          "name": "PATCH",
+          "startLine": 10,
+          "endLine": 35,
+          "params": [
+            "request",
+            "{ params }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "PATCH",
+          "line": 10,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "PATCH",
+          "callee": "getAuthUser",
+          "lineNumber": 11
+        },
+        {
+          "caller": "PATCH",
+          "callee": "NextResponse.json",
+          "lineNumber": 12
+        },
+        {
+          "caller": "PATCH",
+          "callee": "request.json().catch",
+          "lineNumber": 15
+        },
+        {
+          "caller": "PATCH",
+          "callee": "request.json",
+          "lineNumber": 15
+        },
+        {
+          "caller": "PATCH",
+          "callee": "NextResponse.json",
+          "lineNumber": 17
+        },
+        {
+          "caller": "PATCH",
+          "callee": "body.category_id?.trim",
+          "lineNumber": 20
+        },
+        {
+          "caller": "PATCH",
+          "callee": "(supabase as any)\r\n    .from('bank_transactions')\r\n    .update({ category_id: categoryId })\r\n    .eq('id', id)\r\n    .eq('user_id', user.id)\r\n    .select('id, category_id')\r\n    .maybeSingle",
+          "lineNumber": 23
+        },
+        {
+          "caller": "PATCH",
+          "callee": "(supabase as any)\r\n    .from('bank_transactions')\r\n    .update({ category_id: categoryId })\r\n    .eq('id', id)\r\n    .eq('user_id', user.id)\r\n    .select",
+          "lineNumber": 23
+        },
+        {
+          "caller": "PATCH",
+          "callee": "(supabase as any)\r\n    .from('bank_transactions')\r\n    .update({ category_id: categoryId })\r\n    .eq('id', id)\r\n    .eq",
+          "lineNumber": 23
+        },
+        {
+          "caller": "PATCH",
+          "callee": "(supabase as any)\r\n    .from('bank_transactions')\r\n    .update({ category_id: categoryId })\r\n    .eq",
+          "lineNumber": 23
+        },
+        {
+          "caller": "PATCH",
+          "callee": "(supabase as any)\r\n    .from('bank_transactions')\r\n    .update",
+          "lineNumber": 23
+        },
+        {
+          "caller": "PATCH",
+          "callee": "(supabase as any)\r\n    .from",
+          "lineNumber": 23
+        },
+        {
+          "caller": "PATCH",
+          "callee": "NextResponse.json",
+          "lineNumber": 31
+        },
+        {
+          "caller": "PATCH",
+          "callee": "NextResponse.json",
+          "lineNumber": 32
+        },
+        {
+          "caller": "PATCH",
+          "callee": "NextResponse.json",
+          "lineNumber": 34
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/bank/transactions/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 47,
+      "nonEmptyLines": 41,
+      "functions": [
+        {
+          "name": "GET",
+          "startLine": 9,
+          "endLine": 47,
+          "params": [
+            "request"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "line": 9,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "GET",
+          "callee": "getAuthUser",
+          "lineNumber": 10
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 11
+        },
+        {
+          "caller": "GET",
+          "callee": "searchParams.get",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "Math.min",
+          "lineNumber": 18
+        },
+        {
+          "caller": "GET",
+          "callee": "parseInt",
+          "lineNumber": 18
+        },
+        {
+          "caller": "GET",
+          "callee": "searchParams.get",
+          "lineNumber": 18
+        },
+        {
+          "caller": "GET",
+          "callee": "parseInt",
+          "lineNumber": 19
+        },
+        {
+          "caller": "GET",
+          "callee": "searchParams.get",
+          "lineNumber": 19
+        },
+        {
+          "caller": "GET",
+          "callee": "searchParams.get",
+          "lineNumber": 20
+        },
+        {
+          "caller": "GET",
+          "callee": "searchParams.get",
+          "lineNumber": 21
+        },
+        {
+          "caller": "GET",
+          "callee": "(supabase as any)\r\n    .from('bank_transactions')\r\n    .select(\r\n      'id, user_id, bank_label, account_iban, account_bic, amount, currency, value_date, ' +\r\n      'entry_date, description, counterpart_name, counterpart_iban, counterpart_bic, ' +\r\n      'category_id, raw_description, bank_reference, created_at',\r\n    )\r\n    .eq('user_id', user.id)\r\n    .order('value_date', { ascending: false })\r\n    .order('created_at', { ascending: false })\r\n    .range",
+          "lineNumber": 27
+        },
+        {
+          "caller": "GET",
+          "callee": "(supabase as any)\r\n    .from('bank_transactions')\r\n    .select(\r\n      'id, user_id, bank_label, account_iban, account_bic, amount, currency, value_date, ' +\r\n      'entry_date, description, counterpart_name, counterpart_iban, counterpart_bic, ' +\r\n      'category_id, raw_description, bank_reference, created_at',\r\n    )\r\n    .eq('user_id', user.id)\r\n    .order('value_date', { ascending: false })\r\n    .order",
+          "lineNumber": 27
+        },
+        {
+          "caller": "GET",
+          "callee": "(supabase as any)\r\n    .from('bank_transactions')\r\n    .select(\r\n      'id, user_id, bank_label, account_iban, account_bic, amount, currency, value_date, ' +\r\n      'entry_date, description, counterpart_name, counterpart_iban, counterpart_bic, ' +\r\n      'category_id, raw_description, bank_reference, created_at',\r\n    )\r\n    .eq('user_id', user.id)\r\n    .order",
+          "lineNumber": 27
+        },
+        {
+          "caller": "GET",
+          "callee": "(supabase as any)\r\n    .from('bank_transactions')\r\n    .select(\r\n      'id, user_id, bank_label, account_iban, account_bic, amount, currency, value_date, ' +\r\n      'entry_date, description, counterpart_name, counterpart_iban, counterpart_bic, ' +\r\n      'category_id, raw_description, bank_reference, created_at',\r\n    )\r\n    .eq",
+          "lineNumber": 27
+        },
+        {
+          "caller": "GET",
+          "callee": "(supabase as any)\r\n    .from('bank_transactions')\r\n    .select",
+          "lineNumber": 27
+        },
+        {
+          "caller": "GET",
+          "callee": "(supabase as any)\r\n    .from",
+          "lineNumber": 27
+        },
+        {
+          "caller": "GET",
+          "callee": "query.eq",
+          "lineNumber": 39
+        },
+        {
+          "caller": "GET",
+          "callee": "query.eq",
+          "lineNumber": 40
+        },
+        {
+          "caller": "GET",
+          "callee": "query.ilike",
+          "lineNumber": 41
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 44
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 46
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/depot/holdings/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 22,
+      "nonEmptyLines": 19,
+      "functions": [
+        {
+          "name": "GET",
+          "startLine": 10,
+          "endLine": 22,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "line": 10,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "GET",
+          "callee": "getAuthUser",
+          "lineNumber": 11
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 12
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('depot_holdings')\r\n    .select('*')\r\n    .eq('user_id', user.id)\r\n    .order",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('depot_holdings')\r\n    .select('*')\r\n    .eq",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('depot_holdings')\r\n    .select",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 20
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 21
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/depot/live-price/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 31,
+      "nonEmptyLines": 24,
+      "functions": [
+        {
+          "name": "GET",
+          "startLine": 8,
+          "endLine": 31,
+          "params": [
+            "req"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "line": 8,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "GET",
+          "callee": "req.nextUrl.searchParams.get",
+          "lineNumber": 9
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 10
+        },
+        {
+          "caller": "GET",
+          "callee": "createClient",
+          "lineNumber": 12
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('fund_price_cache')\r\n    .select('price, fetched_at')\r\n    .eq('isin', isin)\r\n    .maybeSingle",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('fund_price_cache')\r\n    .select('price, fetched_at')\r\n    .eq",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('fund_price_cache')\r\n    .select",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 21
+        },
+        {
+          "caller": "GET",
+          "callee": "Date.now",
+          "lineNumber": 24
+        },
+        {
+          "caller": "GET",
+          "callee": "new Date(cache.fetched_at).getTime",
+          "lineNumber": 24
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 26
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/export/indicators/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 49,
+      "nonEmptyLines": 40,
+      "functions": [
+        {
+          "name": "GET",
+          "startLine": 4,
+          "endLine": 49,
+          "params": [
+            "req"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "line": 4,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "GET",
+          "callee": "getAuthUser",
+          "lineNumber": 5
+        },
+        {
+          "caller": "GET",
+          "callee": "searchParams.get",
+          "lineNumber": 12
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('indicators')\r\n    .select('*')\r\n    .eq('user_id', user.id)\r\n    .order",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('indicators')\r\n    .select('*')\r\n    .eq",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('indicators')\r\n    .select",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "(indicators ?? []).map",
+          "lineNumber": 29
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n        .from('indicator_performance')\r\n        .select('*')\r\n        .in('indicator_id', indicatorIds)\r\n        .order",
+          "lineNumber": 31
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n        .from('indicator_performance')\r\n        .select('*')\r\n        .in",
+          "lineNumber": 31
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n        .from('indicator_performance')\r\n        .select",
+          "lineNumber": 31
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n        .from",
+          "lineNumber": 31
+        },
+        {
+          "caller": "GET",
+          "callee": "JSON.stringify",
+          "lineNumber": 43
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/export/transactions/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 85,
+      "nonEmptyLines": 70,
+      "functions": [
+        {
+          "name": "GET",
+          "startLine": 23,
+          "endLine": 85,
+          "params": [
+            "req"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "line": 23,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "GET",
+          "callee": "getAuthUser",
+          "lineNumber": 24
+        },
+        {
+          "caller": "GET",
+          "callee": "searchParams.get",
+          "lineNumber": 31
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('unified_transactions')\r\n    .select('date, amount, type, description, merchant, currency, account_name, category_name')\r\n    .eq('user_id', user.id)\r\n    .order",
+          "lineNumber": 35
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('unified_transactions')\r\n    .select('date, amount, type, description, merchant, currency, account_name, category_name')\r\n    .eq",
+          "lineNumber": 35
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('unified_transactions')\r\n    .select",
+          "lineNumber": 35
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 35
+        },
+        {
+          "caller": "GET",
+          "callee": "query.eq",
+          "lineNumber": 42
+        },
+        {
+          "caller": "GET",
+          "callee": "CSV_HEADERS.join",
+          "lineNumber": 51
+        },
+        {
+          "caller": "GET",
+          "callee": "Math.abs",
+          "lineNumber": 58
+        },
+        {
+          "caller": "GET",
+          "callee": "Math.abs",
+          "lineNumber": 60
+        },
+        {
+          "caller": "GET",
+          "callee": "escapeCsvValue",
+          "lineNumber": 66
+        },
+        {
+          "caller": "GET",
+          "callee": "formatCsvAmount",
+          "lineNumber": 67
+        },
+        {
+          "caller": "GET",
+          "callee": "escapeCsvValue",
+          "lineNumber": 68
+        },
+        {
+          "caller": "GET",
+          "callee": "escapeCsvValue",
+          "lineNumber": 69
+        },
+        {
+          "caller": "GET",
+          "callee": "escapeCsvValue",
+          "lineNumber": 70
+        },
+        {
+          "caller": "GET",
+          "callee": "escapeCsvValue",
+          "lineNumber": 71
+        },
+        {
+          "caller": "GET",
+          "callee": "escapeCsvValue",
+          "lineNumber": 72
+        },
+        {
+          "caller": "GET",
+          "callee": "lines.push",
+          "lineNumber": 74
+        },
+        {
+          "caller": "GET",
+          "callee": "row.join",
+          "lineNumber": 74
+        },
+        {
+          "caller": "GET",
+          "callee": "lines.join",
+          "lineNumber": 77
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/finance/categories/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 26,
+      "nonEmptyLines": 22,
+      "functions": [
+        {
+          "name": "GET",
+          "startLine": 11,
+          "endLine": 26,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "line": 11,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "GET",
+          "callee": "getAuthUser",
+          "lineNumber": 12
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 13
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('categories')\r\n    .select('id, name, type, color, icon, parent_id')\r\n    .eq('user_id', user.id)\r\n    .order('type')\r\n    .order('sort_order')\r\n    .order",
+          "lineNumber": 15
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('categories')\r\n    .select('id, name, type, color, icon, parent_id')\r\n    .eq('user_id', user.id)\r\n    .order('type')\r\n    .order",
+          "lineNumber": 15
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('categories')\r\n    .select('id, name, type, color, icon, parent_id')\r\n    .eq('user_id', user.id)\r\n    .order",
+          "lineNumber": 15
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('categories')\r\n    .select('id, name, type, color, icon, parent_id')\r\n    .eq",
+          "lineNumber": 15
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('categories')\r\n    .select",
+          "lineNumber": 15
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 15
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 23
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 25
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/import/indicators/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 86,
+      "nonEmptyLines": 72,
+      "functions": [
+        {
+          "name": "POST",
+          "startLine": 4,
+          "endLine": 86,
+          "params": [
+            "req"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "POST",
+          "line": 4,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "POST",
+          "callee": "getAuthUser",
+          "lineNumber": 5
+        },
+        {
+          "caller": "POST",
+          "callee": "Response.json",
+          "lineNumber": 8
+        },
+        {
+          "caller": "POST",
+          "callee": "req.json",
+          "lineNumber": 13
+        },
+        {
+          "caller": "POST",
+          "callee": "Response.json",
+          "lineNumber": 15
+        },
+        {
+          "caller": "POST",
+          "callee": "Array.isArray",
+          "lineNumber": 20
+        },
+        {
+          "caller": "POST",
+          "callee": "Response.json",
+          "lineNumber": 21
+        },
+        {
+          "caller": "POST",
+          "callee": "Promise.all",
+          "lineNumber": 31
+        },
+        {
+          "caller": "POST",
+          "callee": "indicators.map",
+          "lineNumber": 32
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n        .from('indicators')\r\n        // eslint-disable-next-line @typescript-eslint/no-explicit-any\r\n        .insert(toInsert as any)\r\n        .select('id')\r\n        .single",
+          "lineNumber": 39
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n        .from('indicators')\r\n        // eslint-disable-next-line @typescript-eslint/no-explicit-any\r\n        .insert(toInsert as any)\r\n        .select",
+          "lineNumber": 39
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n        .from('indicators')\r\n        // eslint-disable-next-line @typescript-eslint/no-explicit-any\r\n        .insert",
+          "lineNumber": 39
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n        .from",
+          "lineNumber": 39
+        },
+        {
+          "caller": "POST",
+          "callee": "idMap.set",
+          "lineNumber": 55
+        },
+        {
+          "caller": "POST",
+          "callee": "Array.isArray",
+          "lineNumber": 59
+        },
+        {
+          "caller": "POST",
+          "callee": "backtests\r\n      .map((bt) => {\r\n        const oldIndicatorId = bt.indicator_id as string | undefined\r\n        if (!oldIndicatorId) return null\r\n        const newIndicatorId = idMap.get(oldIndicatorId)\r\n        if (!newIndicatorId) return null\r\n        // eslint-disable-next-line @typescript-eslint/no-unused-vars\r\n        const { id: _id, ...rest } = bt\r\n        return { ...rest, indicator_id: newIndicatorId, user_id: user.id }\r\n      })\r\n      .filter",
+          "lineNumber": 60
+        },
+        {
+          "caller": "POST",
+          "callee": "backtests\r\n      .map",
+          "lineNumber": 60
+        },
+        {
+          "caller": "POST",
+          "callee": "idMap.get",
+          "lineNumber": 64
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n        .from('indicator_performance')\r\n        // eslint-disable-next-line @typescript-eslint/no-explicit-any\r\n        .insert(backtestRows as any)\r\n        .select",
+          "lineNumber": 73
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n        .from('indicator_performance')\r\n        // eslint-disable-next-line @typescript-eslint/no-explicit-any\r\n        .insert",
+          "lineNumber": 73
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n        .from",
+          "lineNumber": 73
+        },
+        {
+          "caller": "POST",
+          "callee": "Response.json",
+          "lineNumber": 85
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/import/transactions/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 97,
+      "nonEmptyLines": 80,
+      "functions": [
+        {
+          "name": "POST",
+          "startLine": 12,
+          "endLine": 97,
+          "params": [
+            "req"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "POST",
+          "line": 12,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "POST",
+          "callee": "getAuthUser",
+          "lineNumber": 13
+        },
+        {
+          "caller": "POST",
+          "callee": "Response.json",
+          "lineNumber": 16
+        },
+        {
+          "caller": "POST",
+          "callee": "req.json",
+          "lineNumber": 21
+        },
+        {
+          "caller": "POST",
+          "callee": "Response.json",
+          "lineNumber": 23
+        },
+        {
+          "caller": "POST",
+          "callee": "Array.isArray",
+          "lineNumber": 27
+        },
+        {
+          "caller": "POST",
+          "callee": "Response.json",
+          "lineNumber": 28
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n    .from('categories')\r\n    .select('id, name')\r\n    .eq",
+          "lineNumber": 32
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n    .from('categories')\r\n    .select",
+          "lineNumber": 32
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 32
+        },
+        {
+          "caller": "POST",
+          "callee": "categoryMap.set",
+          "lineNumber": 39
+        },
+        {
+          "caller": "POST",
+          "callee": "cat.name.toLowerCase",
+          "lineNumber": 39
+        },
+        {
+          "caller": "POST",
+          "callee": "errors.push",
+          "lineNumber": 59
+        },
+        {
+          "caller": "POST",
+          "callee": "Math.abs",
+          "lineNumber": 64
+        },
+        {
+          "caller": "POST",
+          "callee": "categoryMap.get",
+          "lineNumber": 67
+        },
+        {
+          "caller": "POST",
+          "callee": "row.category_name.toLowerCase",
+          "lineNumber": 67
+        },
+        {
+          "caller": "POST",
+          "callee": "insertRows.push",
+          "lineNumber": 70
+        },
+        {
+          "caller": "POST",
+          "callee": "Response.json",
+          "lineNumber": 84
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase.from('transactions').insert",
+          "lineNumber": 87
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase.from",
+          "lineNumber": 87
+        },
+        {
+          "caller": "POST",
+          "callee": "Response.json",
+          "lineNumber": 90
+        },
+        {
+          "caller": "POST",
+          "callee": "Response.json",
+          "lineNumber": 96
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/inventar/artwork/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 68,
+      "nonEmptyLines": 61,
+      "functions": [
+        {
+          "name": "POST",
+          "startLine": 39,
+          "endLine": 68,
+          "params": [
+            "request"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "maxDuration",
+          "line": 28,
+          "isDefault": false
+        },
+        {
+          "name": "POST",
+          "line": 39,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "POST",
+          "callee": "getAuthUser",
+          "lineNumber": 40
+        },
+        {
+          "caller": "POST",
+          "callee": "NextResponse.json",
+          "lineNumber": 41
+        },
+        {
+          "caller": "POST",
+          "callee": "request.json().catch",
+          "lineNumber": 43
+        },
+        {
+          "caller": "POST",
+          "callee": "request.json",
+          "lineNumber": 43
+        },
+        {
+          "caller": "POST",
+          "callee": "NextResponse.json",
+          "lineNumber": 44
+        },
+        {
+          "caller": "POST",
+          "callee": "(body.basisBildIds ?? (body.basisBildId ? [body.basisBildId] : [])).slice",
+          "lineNumber": 46
+        },
+        {
+          "caller": "POST",
+          "callee": "erzeugeArtwork",
+          "lineNumber": 52
+        },
+        {
+          "caller": "POST",
+          "callee": "NextResponse.json",
+          "lineNumber": 58
+        },
+        {
+          "caller": "POST",
+          "callee": "NextResponse.json",
+          "lineNumber": 61
+        },
+        {
+          "caller": "POST",
+          "callee": "NextResponse.json",
+          "lineNumber": 63
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/kraken/status/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 33,
+      "nonEmptyLines": 27,
+      "functions": [
+        {
+          "name": "GET",
+          "startLine": 12,
+          "endLine": 33,
+          "params": [
+            "req"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "line": 12,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "GET",
+          "callee": "getAuthUser",
+          "lineNumber": 13
+        },
+        {
+          "caller": "GET",
+          "callee": "Response.json",
+          "lineNumber": 16
+        },
+        {
+          "caller": "GET",
+          "callee": "req.nextUrl.searchParams.get",
+          "lineNumber": 19
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('exchange_keys')\r\n    .select('id')\r\n    .eq('user_id', user.id)\r\n    .eq('exchange', exchange)\r\n    .maybeSingle",
+          "lineNumber": 21
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('exchange_keys')\r\n    .select('id')\r\n    .eq('user_id', user.id)\r\n    .eq",
+          "lineNumber": 21
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('exchange_keys')\r\n    .select('id')\r\n    .eq",
+          "lineNumber": 21
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('exchange_keys')\r\n    .select",
+          "lineNumber": 21
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 21
+        },
+        {
+          "caller": "GET",
+          "callee": "Response.json",
+          "lineNumber": 29
+        },
+        {
+          "caller": "GET",
+          "callee": "Response.json",
+          "lineNumber": 32
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/auth/callback/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 25,
+      "nonEmptyLines": 21,
+      "functions": [
+        {
+          "name": "safeNextPath",
+          "startLine": 6,
+          "endLine": 9,
+          "params": [
+            "next"
+          ]
+        },
+        {
+          "name": "GET",
+          "startLine": 11,
+          "endLine": 25,
+          "params": [
+            "request"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "line": 11,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "safeNextPath",
+          "callee": "next.startsWith",
+          "lineNumber": 7
+        },
+        {
+          "caller": "safeNextPath",
+          "callee": "next.startsWith",
+          "lineNumber": 7
+        },
+        {
+          "caller": "GET",
+          "callee": "searchParams.get",
+          "lineNumber": 13
+        },
+        {
+          "caller": "GET",
+          "callee": "safeNextPath",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "searchParams.get",
+          "lineNumber": 14
+        },
+        {
+          "caller": "GET",
+          "callee": "createClient",
+          "lineNumber": 17
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase.auth.exchangeCodeForSession",
+          "lineNumber": 18
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.redirect",
+          "lineNumber": 20
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.redirect",
+          "lineNumber": 24
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/dashboard/athena-insights.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 91,
+      "nonEmptyLines": 84,
+      "functions": [
+        {
+          "name": "AthenaInsights",
+          "startLine": 32,
+          "endLine": 91,
+          "params": [
+            "{ insights }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "AthenaInsights",
+          "line": 32,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "AthenaInsights",
+          "callee": "useRouter",
+          "lineNumber": 33
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "useState",
+          "lineNumber": 34
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "useTransition",
+          "lineNumber": 35
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "insights.filter",
+          "lineNumber": 37
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "hidden.has",
+          "lineNumber": 37
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "visible.map",
+          "lineNumber": 57
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "cn",
+          "lineNumber": 61
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "setHidden",
+          "lineNumber": 76
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "new Set(prev).add",
+          "lineNumber": 76
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "startTransition",
+          "lineNumber": 77
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "dismissInsight",
+          "lineNumber": 78
+        },
+        {
+          "caller": "AthenaInsights",
+          "callee": "router.refresh",
+          "lineNumber": 79
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/strategy/checklist-panel.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 81,
+      "nonEmptyLines": 73,
+      "functions": [
+        {
+          "name": "ChecklistPanel",
+          "startLine": 29,
+          "endLine": 81,
+          "params": [
+            "{\r\n  strategyId,\r\n  initial,\r\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "ChecklistPanel",
+          "line": 29,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "ChecklistPanel",
+          "callee": "useState",
+          "lineNumber": 36
+        },
+        {
+          "caller": "ChecklistPanel",
+          "callee": "useState",
+          "lineNumber": 37
+        },
+        {
+          "caller": "toggle",
+          "callee": "setState",
+          "lineNumber": 41
+        },
+        {
+          "caller": "toggle",
+          "callee": "setPending",
+          "lineNumber": 42
+        },
+        {
+          "caller": "toggle",
+          "callee": "toggleChecklistItem",
+          "lineNumber": 43
+        },
+        {
+          "caller": "toggle",
+          "callee": "setPending",
+          "lineNumber": 44
+        },
+        {
+          "caller": "ChecklistPanel",
+          "callee": "ITEMS.filter",
+          "lineNumber": 47
+        },
+        {
+          "caller": "ChecklistPanel",
+          "callee": "ITEMS.map",
+          "lineNumber": 54
+        },
+        {
+          "caller": "ChecklistPanel",
+          "callee": "toggle",
+          "lineNumber": 61
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/strategy/combo-form.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 379,
+      "nonEmptyLines": 341,
+      "functions": [
+        {
+          "name": "nextKey",
+          "startLine": 49,
+          "endLine": 49,
+          "params": []
+        },
+        {
+          "name": "toRows",
+          "startLine": 51,
+          "endLine": 53,
+          "params": [
+            "ci"
+          ]
+        },
+        {
+          "name": "IndicatorList",
+          "startLine": 56,
+          "endLine": 158,
+          "params": [
+            "{\r\n  rows,\r\n  options,\r\n  onChange,\r\n}"
+          ]
+        },
+        {
+          "name": "ComboFormBody",
+          "startLine": 161,
+          "endLine": 245,
+          "params": [
+            "{\r\n  defaults,\r\n  rows,\r\n  onRowsChange,\r\n  indicatorOptions,\r\n  state,\r\n  pending,\r\n  onCancel,\r\n  submitLabel,\r\n}"
+          ]
+        },
+        {
+          "name": "AddComboDialog",
+          "startLine": 248,
+          "endLine": 289,
+          "params": [
+            "{ indicatorOptions }"
+          ]
+        },
+        {
+          "name": "EditComboDialog",
+          "startLine": 292,
+          "endLine": 343,
+          "params": [
+            "{\r\n  combo,\r\n  indicatorOptions,\r\n}"
+          ]
+        },
+        {
+          "name": "DeleteComboButton",
+          "startLine": 346,
+          "endLine": 379,
+          "params": [
+            "{ id }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "AddComboDialog",
+          "line": 248,
+          "isDefault": false
+        },
+        {
+          "name": "EditComboDialog",
+          "line": 292,
+          "isDefault": false
+        },
+        {
+          "name": "DeleteComboButton",
+          "line": 346,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "toRows",
+          "callee": "ci.map",
+          "lineNumber": 52
+        },
+        {
+          "caller": "toRows",
+          "callee": "nextKey",
+          "lineNumber": 52
+        },
+        {
+          "caller": "addRow",
+          "callee": "onChange",
+          "lineNumber": 67
+        },
+        {
+          "caller": "addRow",
+          "callee": "nextKey",
+          "lineNumber": 69
+        },
+        {
+          "caller": "removeRow",
+          "callee": "onChange",
+          "lineNumber": 74
+        },
+        {
+          "caller": "removeRow",
+          "callee": "rows.filter(r => r._key !== key).map",
+          "lineNumber": 75
+        },
+        {
+          "caller": "removeRow",
+          "callee": "rows.filter",
+          "lineNumber": 75
+        },
+        {
+          "caller": "setField",
+          "callee": "onChange",
+          "lineNumber": 80
+        },
+        {
+          "caller": "setField",
+          "callee": "rows.map",
+          "lineNumber": 80
+        },
+        {
+          "caller": "IndicatorList",
+          "callee": "JSON.stringify",
+          "lineNumber": 84
+        },
+        {
+          "caller": "IndicatorList",
+          "callee": "rows.map",
+          "lineNumber": 85
+        },
+        {
+          "caller": "IndicatorList",
+          "callee": "rows.map",
+          "lineNumber": 106
+        },
+        {
+          "caller": "IndicatorList",
+          "callee": "setField",
+          "lineNumber": 114
+        },
+        {
+          "caller": "IndicatorList",
+          "callee": "options.map",
+          "lineNumber": 118
+        },
+        {
+          "caller": "IndicatorList",
+          "callee": "removeRow",
+          "lineNumber": 128
+        },
+        {
+          "caller": "IndicatorList",
+          "callee": "setField",
+          "lineNumber": 140
+        },
+        {
+          "caller": "IndicatorList",
+          "callee": "ROLES.map",
+          "lineNumber": 142
+        },
+        {
+          "caller": "IndicatorList",
+          "callee": "setField",
+          "lineNumber": 150
+        },
+        {
+          "caller": "ComboFormBody",
+          "callee": "STATUSES.map",
+          "lineNumber": 193
+        },
+        {
+          "caller": "ComboFormBody",
+          "callee": "ASSET_CLASSES.map",
+          "lineNumber": 207
+        },
+        {
+          "caller": "AddComboDialog",
+          "callee": "useState",
+          "lineNumber": 249
+        },
+        {
+          "caller": "AddComboDialog",
+          "callee": "useState",
+          "lineNumber": 250
+        },
+        {
+          "caller": "AddComboDialog",
+          "callee": "useActionState",
+          "lineNumber": 251
+        },
+        {
+          "caller": "AddComboDialog",
+          "callee": "useEffect",
+          "lineNumber": 253
+        },
+        {
+          "caller": "AddComboDialog",
+          "callee": "setOpen",
+          "lineNumber": 255
+        },
+        {
+          "caller": "AddComboDialog",
+          "callee": "setRows",
+          "lineNumber": 256
+        },
+        {
+          "caller": "AddComboDialog",
+          "callee": "setOpen",
+          "lineNumber": 262
+        },
+        {
+          "caller": "AddComboDialog",
+          "callee": "setOpen",
+          "lineNumber": 273
+        },
+        {
+          "caller": "AddComboDialog",
+          "callee": "setOpen",
+          "lineNumber": 282
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "useState",
+          "lineNumber": 299
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "useState",
+          "lineNumber": 300
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "toRows",
+          "lineNumber": 300
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "useActionState",
+          "lineNumber": 301
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "useEffect",
+          "lineNumber": 303
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "setOpen",
+          "lineNumber": 304
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "useEffect",
+          "lineNumber": 308
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "setRows",
+          "lineNumber": 309
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "toRows",
+          "lineNumber": 309
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "setOpen",
+          "lineNumber": 315
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "setOpen",
+          "lineNumber": 326
+        },
+        {
+          "caller": "EditComboDialog",
+          "callee": "setOpen",
+          "lineNumber": 336
+        },
+        {
+          "caller": "DeleteComboButton",
+          "callee": "useState",
+          "lineNumber": 347
+        },
+        {
+          "caller": "DeleteComboButton",
+          "callee": "useState",
+          "lineNumber": 348
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "setPending",
+          "lineNumber": 351
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "deleteCombo",
+          "lineNumber": 353
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "setPending",
+          "lineNumber": 355
+        },
+        {
+          "caller": "DeleteComboButton",
+          "callee": "setConfirm",
+          "lineNumber": 365
+        },
+        {
+          "caller": "DeleteComboButton",
+          "callee": "setConfirm",
+          "lineNumber": 376
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 3,
+        "functionCount": 7,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/strategy/strategy-form.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 337,
+      "nonEmptyLines": 308,
+      "functions": [
+        {
+          "name": "StrategyFormBody",
+          "startLine": 44,
+          "endLine": 207,
+          "params": [
+            "{\r\n  defaults,\r\n  comboOptions,\r\n  state,\r\n  pending,\r\n  onCancel,\r\n  submitLabel,\r\n}"
+          ]
+        },
+        {
+          "name": "AddStrategyDialog",
+          "startLine": 210,
+          "endLine": 254,
+          "params": [
+            "{\r\n  comboOptions,\r\n  defaultAssetClass,\r\n  defaultTimeframe,\r\n}"
+          ]
+        },
+        {
+          "name": "EditStrategyDialog",
+          "startLine": 257,
+          "endLine": 299,
+          "params": [
+            "{\r\n  strategy,\r\n  comboOptions,\r\n}"
+          ]
+        },
+        {
+          "name": "DeleteStrategyButton",
+          "startLine": 302,
+          "endLine": 337,
+          "params": [
+            "{ id, redirectAfter }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "AddStrategyDialog",
+          "line": 210,
+          "isDefault": false
+        },
+        {
+          "name": "EditStrategyDialog",
+          "line": 257,
+          "isDefault": false
+        },
+        {
+          "name": "DeleteStrategyButton",
+          "line": 302,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "StrategyFormBody",
+          "callee": "ASSET_CLASSES.map",
+          "lineNumber": 85
+        },
+        {
+          "caller": "StrategyFormBody",
+          "callee": "STATUSES.map",
+          "lineNumber": 99
+        },
+        {
+          "caller": "StrategyFormBody",
+          "callee": "comboOptions.map",
+          "lineNumber": 109
+        },
+        {
+          "caller": "StrategyFormBody",
+          "callee": "defaults?.submission_date?.slice",
+          "lineNumber": 184
+        },
+        {
+          "caller": "AddStrategyDialog",
+          "callee": "useState",
+          "lineNumber": 219
+        },
+        {
+          "caller": "AddStrategyDialog",
+          "callee": "useActionState",
+          "lineNumber": 220
+        },
+        {
+          "caller": "AddStrategyDialog",
+          "callee": "useEffect",
+          "lineNumber": 222
+        },
+        {
+          "caller": "AddStrategyDialog",
+          "callee": "setOpen",
+          "lineNumber": 223
+        },
+        {
+          "caller": "AddStrategyDialog",
+          "callee": "setOpen",
+          "lineNumber": 228
+        },
+        {
+          "caller": "AddStrategyDialog",
+          "callee": "setOpen",
+          "lineNumber": 239
+        },
+        {
+          "caller": "AddStrategyDialog",
+          "callee": "setOpen",
+          "lineNumber": 247
+        },
+        {
+          "caller": "EditStrategyDialog",
+          "callee": "useState",
+          "lineNumber": 264
+        },
+        {
+          "caller": "EditStrategyDialog",
+          "callee": "useActionState",
+          "lineNumber": 265
+        },
+        {
+          "caller": "EditStrategyDialog",
+          "callee": "useEffect",
+          "lineNumber": 267
+        },
+        {
+          "caller": "EditStrategyDialog",
+          "callee": "setOpen",
+          "lineNumber": 268
+        },
+        {
+          "caller": "EditStrategyDialog",
+          "callee": "setOpen",
+          "lineNumber": 273
+        },
+        {
+          "caller": "EditStrategyDialog",
+          "callee": "setOpen",
+          "lineNumber": 284
+        },
+        {
+          "caller": "EditStrategyDialog",
+          "callee": "setOpen",
+          "lineNumber": 292
+        },
+        {
+          "caller": "DeleteStrategyButton",
+          "callee": "useRouter",
+          "lineNumber": 303
+        },
+        {
+          "caller": "DeleteStrategyButton",
+          "callee": "useState",
+          "lineNumber": 304
+        },
+        {
+          "caller": "DeleteStrategyButton",
+          "callee": "useState",
+          "lineNumber": 305
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "setPending",
+          "lineNumber": 308
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "deleteStrategy",
+          "lineNumber": 310
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "router.push",
+          "lineNumber": 311
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "setPending",
+          "lineNumber": 313
+        },
+        {
+          "caller": "DeleteStrategyButton",
+          "callee": "setConfirm",
+          "lineNumber": 323
+        },
+        {
+          "caller": "DeleteStrategyButton",
+          "callee": "setConfirm",
+          "lineNumber": 334
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 3,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/inventar/artwork.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 615,
+      "nonEmptyLines": 559,
+      "functions": [
+        {
+          "name": "meckertUeberOptionales",
+          "startLine": 52,
+          "endLine": 54,
+          "params": [
+            "text"
+          ]
+        },
+        {
+          "name": "artworkVerfuegbar",
+          "startLine": 251,
+          "endLine": 253,
+          "params": []
+        },
+        {
+          "name": "beschreibung",
+          "startLine": 263,
+          "endLine": 283,
+          "params": [
+            "item"
+          ]
+        },
+        {
+          "name": "baueArtworkPrompt",
+          "startLine": 292,
+          "endLine": 330,
+          "params": [
+            "item",
+            "vorlagen",
+            "hinweis"
+          ]
+        },
+        {
+          "name": "kurz",
+          "startLine": 333,
+          "endLine": 336,
+          "params": [
+            "text",
+            "max"
+          ]
+        },
+        {
+          "name": "erzeugeArtwork",
+          "startLine": 366,
+          "endLine": 440,
+          "params": [
+            "supabase",
+            "userId",
+            "auftrag"
+          ]
+        },
+        {
+          "name": "ladeVorlagen",
+          "startLine": 449,
+          "endLine": 482,
+          "params": [
+            "supabase",
+            "userId",
+            "valuableId",
+            "ids"
+          ]
+        },
+        {
+          "name": "rendern",
+          "startLine": 485,
+          "endLine": 519,
+          "params": [
+            "supabase",
+            "apiKey",
+            "prompt",
+            "vorlagen",
+            "qualitaet"
+          ]
+        },
+        {
+          "name": "erzeugen",
+          "startLine": 521,
+          "endLine": 545,
+          "params": [
+            "apiKey",
+            "prompt",
+            "qualitaet"
+          ]
+        },
+        {
+          "name": "bearbeiten",
+          "startLine": 547,
+          "endLine": 615,
+          "params": [
+            "supabase",
+            "apiKey",
+            "prompt",
+            "vorlagen",
+            "qualitaet"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "ArtworkFehler",
+          "startLine": 236,
+          "endLine": 244,
+          "methods": [
+            "constructor"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "MAX_VORLAGEN",
+          "line": 7,
+          "isDefault": false
+        },
+        {
+          "name": "HINWEIS_MAX",
+          "line": 7,
+          "isDefault": false
+        },
+        {
+          "name": "ArtworkFehler",
+          "line": 236,
+          "isDefault": false
+        },
+        {
+          "name": "OHNE_SCHLUESSEL",
+          "line": 247,
+          "isDefault": false
+        },
+        {
+          "name": "artworkVerfuegbar",
+          "line": 251,
+          "isDefault": false
+        },
+        {
+          "name": "beschreibung",
+          "line": 263,
+          "isDefault": false
+        },
+        {
+          "name": "baueArtworkPrompt",
+          "line": 292,
+          "isDefault": false
+        },
+        {
+          "name": "erzeugeArtwork",
+          "line": 366,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "meckertUeberOptionales",
+          "callee": "OPTIONALE_PARAMETER.some",
+          "lineNumber": 53
+        },
+        {
+          "caller": "meckertUeberOptionales",
+          "callee": "text.includes",
+          "lineNumber": 53
+        },
+        {
+          "caller": "constructor",
+          "callee": "super",
+          "lineNumber": 241
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "kategorieEn",
+          "lineNumber": 264
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "[item.marke, item.modell].filter(Boolean).join",
+          "lineNumber": 266
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "[item.marke, item.modell].filter",
+          "lineNumber": 266
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "teile.push",
+          "lineNumber": 267
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "teile.push",
+          "lineNumber": 270
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "zustandEn",
+          "lineNumber": 272
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "teile.push",
+          "lineNumber": 273
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "teile.push",
+          "lineNumber": 275
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "item.notizen.replace(/\\s+/g, ' ').trim().slice",
+          "lineNumber": 278
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "item.notizen.replace(/\\s+/g, ' ').trim",
+          "lineNumber": 278
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "item.notizen.replace",
+          "lineNumber": 278
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "teile.push",
+          "lineNumber": 279
+        },
+        {
+          "caller": "beschreibung",
+          "callee": "teile.join",
+          "lineNumber": 282
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "teile.push",
+          "lineNumber": 306
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "vorlagen.some",
+          "lineNumber": 306
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "teile.push",
+          "lineNumber": 307
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "teile.push",
+          "lineNumber": 308
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "beschreibung",
+          "lineNumber": 308
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "teile.push",
+          "lineNumber": 311
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "beschreibung",
+          "lineNumber": 311
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "teile.push",
+          "lineNumber": 312
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "teile.push",
+          "lineNumber": 313
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "teile.push",
+          "lineNumber": 318
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "kurz",
+          "lineNumber": 320
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "teile.push",
+          "lineNumber": 322
+        },
+        {
+          "caller": "baueArtworkPrompt",
+          "callee": "teile.join",
+          "lineNumber": 329
+        },
+        {
+          "caller": "kurz",
+          "callee": "(text ?? '').replace(/\\s+/g, ' ').trim().slice",
+          "lineNumber": 334
+        },
+        {
+          "caller": "kurz",
+          "callee": "(text ?? '').replace(/\\s+/g, ' ').trim",
+          "lineNumber": 334
+        },
+        {
+          "caller": "kurz",
+          "callee": "(text ?? '').replace",
+          "lineNumber": 334
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from('valuables')\r\n    .select('id, name, kategorie, marke, modell, referenz, zustand, notizen')\r\n    .eq('id', auftrag.valuableId)\r\n    .eq('user_id', userId)\r\n    .maybeSingle",
+          "lineNumber": 374
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from('valuables')\r\n    .select('id, name, kategorie, marke, modell, referenz, zustand, notizen')\r\n    .eq('id', auftrag.valuableId)\r\n    .eq",
+          "lineNumber": 374
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from('valuables')\r\n    .select('id, name, kategorie, marke, modell, referenz, zustand, notizen')\r\n    .eq",
+          "lineNumber": 374
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from('valuables')\r\n    .select",
+          "lineNumber": 374
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 374
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "ladeVorlagen",
+          "lineNumber": 385
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "kurz",
+          "lineNumber": 386
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "baueArtworkPrompt",
+          "lineNumber": 387
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "rendern",
+          "lineNumber": 389
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "Date.now",
+          "lineNumber": 394
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase.storage\r\n    .from('valuables')\r\n    .upload",
+          "lineNumber": 395
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase.storage\r\n    .from",
+          "lineNumber": 395
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from('valuable_images')\r\n    .update({ ist_hauptbild: false } as never)\r\n    .eq('valuable_id', item.id)\r\n    .eq",
+          "lineNumber": 403
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from('valuable_images')\r\n    .update({ ist_hauptbild: false } as never)\r\n    .eq",
+          "lineNumber": 403
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from('valuable_images')\r\n    .update",
+          "lineNumber": 403
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 403
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from('valuable_images')\r\n    .insert({\r\n      valuable_id: item.id,\r\n      user_id: userId,\r\n      pfad,\r\n      art: 'artwork',\r\n      ist_hauptbild: true,\r\n      prompt,\r\n      hinweis,\r\n      // Bei mehreren Vorlagen die erste: die Kette soll zeigen, worauf aufgebaut wurde,\r\n      // und dafür ist die Hauptvorlage die interessante.\r\n      basis_bild_id: vorlagen[0]?.id ?? null,\r\n    } as never)\r\n    .select('id')\r\n    .single",
+          "lineNumber": 409
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from('valuable_images')\r\n    .insert({\r\n      valuable_id: item.id,\r\n      user_id: userId,\r\n      pfad,\r\n      art: 'artwork',\r\n      ist_hauptbild: true,\r\n      prompt,\r\n      hinweis,\r\n      // Bei mehreren Vorlagen die erste: die Kette soll zeigen, worauf aufgebaut wurde,\r\n      // und dafür ist die Hauptvorlage die interessante.\r\n      basis_bild_id: vorlagen[0]?.id ?? null,\r\n    } as never)\r\n    .select",
+          "lineNumber": 409
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from('valuable_images')\r\n    .insert",
+          "lineNumber": 409
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 409
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase.storage.from('valuables').remove",
+          "lineNumber": 427
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "supabase.storage.from",
+          "lineNumber": 427
+        },
+        {
+          "caller": "erzeugeArtwork",
+          "callee": "vorlagen.some",
+          "lineNumber": 437
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "[...new Set(ids)].slice",
+          "lineNumber": 455
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "supabase\r\n    .from('valuable_images')\r\n    .select('id, pfad, art')\r\n    .in('id', gewuenscht)\r\n    .eq('valuable_id', valuableId)\r\n    .eq",
+          "lineNumber": 458
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "supabase\r\n    .from('valuable_images')\r\n    .select('id, pfad, art')\r\n    .in('id', gewuenscht)\r\n    .eq",
+          "lineNumber": 458
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "supabase\r\n    .from('valuable_images')\r\n    .select('id, pfad, art')\r\n    .in",
+          "lineNumber": 458
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "supabase\r\n    .from('valuable_images')\r\n    .select",
+          "lineNumber": 458
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 458
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "((data ?? []) as { id: string; pfad: string; art: string }[]).map",
+          "lineNumber": 466
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "gewuenscht.filter",
+          "lineNumber": 476
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "gefunden.has",
+          "lineNumber": 476
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "fehlend.join",
+          "lineNumber": 478
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "gewuenscht.map",
+          "lineNumber": 481
+        },
+        {
+          "caller": "ladeVorlagen",
+          "callee": "gefunden.get",
+          "lineNumber": 481
+        },
+        {
+          "caller": "rendern",
+          "callee": "bearbeiten",
+          "lineNumber": 496
+        },
+        {
+          "caller": "rendern",
+          "callee": "erzeugen",
+          "lineNumber": 497
+        },
+        {
+          "caller": "rendern",
+          "callee": "res.text",
+          "lineNumber": 504
+        },
+        {
+          "caller": "rendern",
+          "callee": "detail.slice",
+          "lineNumber": 507
+        },
+        {
+          "caller": "rendern",
+          "callee": "res.json",
+          "lineNumber": 510
+        },
+        {
+          "caller": "rendern",
+          "callee": "fetch",
+          "lineNumber": 515
+        },
+        {
+          "caller": "rendern",
+          "callee": "Buffer.from(await bild.arrayBuffer()).toString",
+          "lineNumber": 516
+        },
+        {
+          "caller": "rendern",
+          "callee": "Buffer.from",
+          "lineNumber": 516
+        },
+        {
+          "caller": "rendern",
+          "callee": "bild.arrayBuffer",
+          "lineNumber": 516
+        },
+        {
+          "caller": "rendern",
+          "callee": "Buffer.from",
+          "lineNumber": 518
+        },
+        {
+          "caller": "senden",
+          "callee": "fetch",
+          "lineNumber": 523
+        },
+        {
+          "caller": "senden",
+          "callee": "JSON.stringify",
+          "lineNumber": 526
+        },
+        {
+          "caller": "erzeugen",
+          "callee": "senden",
+          "lineNumber": 538
+        },
+        {
+          "caller": "erzeugen",
+          "callee": "res.clone().text",
+          "lineNumber": 541
+        },
+        {
+          "caller": "erzeugen",
+          "callee": "res.clone",
+          "lineNumber": 541
+        },
+        {
+          "caller": "erzeugen",
+          "callee": "meckertUeberOptionales",
+          "lineNumber": 542
+        },
+        {
+          "caller": "erzeugen",
+          "callee": "senden",
+          "lineNumber": 542
+        },
+        {
+          "caller": "bearbeiten",
+          "callee": "supabase.storage.from('valuables').download",
+          "lineNumber": 558
+        },
+        {
+          "caller": "bearbeiten",
+          "callee": "supabase.storage.from",
+          "lineNumber": 558
+        },
+        {
+          "caller": "bearbeiten",
+          "callee": "dateien.push",
+          "lineNumber": 564
+        },
+        {
+          "caller": "bauen",
+          "callee": "fd.set",
+          "lineNumber": 571
+        },
+        {
+          "caller": "bauen",
+          "callee": "fd.set",
+          "lineNumber": 572
+        },
+        {
+          "caller": "bauen",
+          "callee": "fd.set",
+          "lineNumber": 580
+        },
+        {
+          "caller": "bauen",
+          "callee": "fd.set",
+          "lineNumber": 581
+        },
+        {
+          "caller": "bauen",
+          "callee": "fd.set",
+          "lineNumber": 583
+        },
+        {
+          "caller": "bauen",
+          "callee": "fd.set",
+          "lineNumber": 584
+        },
+        {
+          "caller": "bauen",
+          "callee": "String",
+          "lineNumber": 584
+        },
+        {
+          "caller": "bauen",
+          "callee": "fd.set",
+          "lineNumber": 586
+        },
+        {
+          "caller": "nenn",
+          "callee": "(d.type || 'image/png').includes",
+          "lineNumber": 592
+        },
+        {
+          "caller": "nenn",
+          "callee": "(d.type || '').includes",
+          "lineNumber": 592
+        },
+        {
+          "caller": "bauen",
+          "callee": "fd.set",
+          "lineNumber": 593
+        },
+        {
+          "caller": "bauen",
+          "callee": "nenn",
+          "lineNumber": 593
+        },
+        {
+          "caller": "bauen",
+          "callee": "dateien.forEach",
+          "lineNumber": 594
+        },
+        {
+          "caller": "bauen",
+          "callee": "fd.append",
+          "lineNumber": 594
+        },
+        {
+          "caller": "bauen",
+          "callee": "nenn",
+          "lineNumber": 594
+        },
+        {
+          "caller": "bauen",
+          "callee": "fd.set",
+          "lineNumber": 597
+        },
+        {
+          "caller": "senden",
+          "callee": "fetch",
+          "lineNumber": 602
+        },
+        {
+          "caller": "bearbeiten",
+          "callee": "senden",
+          "lineNumber": 608
+        },
+        {
+          "caller": "bearbeiten",
+          "callee": "bauen",
+          "lineNumber": 608
+        },
+        {
+          "caller": "bearbeiten",
+          "callee": "res.clone().text",
+          "lineNumber": 611
+        },
+        {
+          "caller": "bearbeiten",
+          "callee": "res.clone",
+          "lineNumber": 611
+        },
+        {
+          "caller": "bearbeiten",
+          "callee": "meckertUeberOptionales",
+          "lineNumber": 612
+        },
+        {
+          "caller": "bearbeiten",
+          "callee": "senden",
+          "lineNumber": 612
+        },
+        {
+          "caller": "bearbeiten",
+          "callee": "bauen",
+          "lineNumber": 612
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 8,
+        "functionCount": 10,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "src/lib/supabase/server.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 39,
+      "nonEmptyLines": 36,
+      "functions": [
+        {
+          "name": "createClient",
+          "startLine": 6,
+          "endLine": 25,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "createClient",
+          "line": 6,
+          "isDefault": false
+        },
+        {
+          "name": "getAuthUser",
+          "line": 35,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "createClient",
+          "callee": "cookies",
+          "lineNumber": 7
+        },
+        {
+          "caller": "createClient",
+          "callee": "createServerClient",
+          "lineNumber": 9
+        },
+        {
+          "caller": "getAll",
+          "callee": "cookieStore.getAll",
+          "lineNumber": 14
+        },
+        {
+          "caller": "setAll",
+          "callee": "cookiesToSet.forEach",
+          "lineNumber": 17
+        },
+        {
+          "caller": "setAll",
+          "callee": "cookieStore.set",
+          "lineNumber": 18
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    }
+  ]
+}

@@ -201,17 +201,17 @@ export function AusgabenHeatmap({ data, initialMode = 'ausgaben' }: Props) {
             })}
           </p>
           {(mode === 'ausgaben' || mode === 'guv') && tip.amount > 0 && (
-            <p className="font-semibold text-(--chart-expense)">
+            <p className="font-semibold text-(--chart-expense) tabular-nums">
               Ausgaben: {tip.amount.toLocaleString('de-DE')} €
             </p>
           )}
           {(mode === 'einnahmen' || mode === 'guv') && tip.income > 0 && (
-            <p className="font-semibold text-(--chart-income)">
+            <p className="font-semibold text-(--chart-income) tabular-nums">
               Einnahmen: {tip.income.toLocaleString('de-DE')} €
             </p>
           )}
           {mode === 'guv' && (tip.income > 0 || tip.amount > 0) && (
-            <p className={`font-bold mt-0.5 ${tip.income - tip.amount >= 0 ? 'text-(--chart-income)' : 'text-(--chart-expense)'}`}>
+            <p className={`font-bold mt-0.5 tabular-nums ${tip.income - tip.amount >= 0 ? 'text-(--chart-income)' : 'text-(--chart-expense)'}`}>
               Netto: {tip.income - tip.amount >= 0 ? '+' : ''}{(tip.income - tip.amount).toLocaleString('de-DE')} €
             </p>
           )}

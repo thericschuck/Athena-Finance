@@ -244,10 +244,10 @@ function BankAnalyse() {
                     <CreditCard className="size-4 shrink-0" />
                     <span className="text-xs font-medium truncate">{b.account_name ?? b.account_iban}</span>
                   </div>
-                  <p className="font-mono text-xl font-semibold">{fmtEur(b.booked_balance)}</p>
+                  <p className="font-mono text-xl font-semibold tabular-nums">{fmtEur(b.booked_balance)}</p>
                   {b.available_balance !== b.booked_balance && (
                     <p className="text-xs text-muted-foreground">
-                      Verfügbar: {fmtEur(b.available_balance)}
+                      Verfügbar: <span className="tabular-nums">{fmtEur(b.available_balance)}</span>
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground font-mono">{b.account_iban}</p>

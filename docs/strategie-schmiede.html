@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Strategie-Schmiede</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,600&family=Libre+Franklin:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+  /* ── Tokens ── selbe Palette wie docs/athenas-takt.html und docs/athenas-augen.html,
+     damit alle drei Architektur-Notizen als eine Familie lesbar sind. */
+  :root {
+    --ground:      #F6F5F1;
+    --surface:     #FFFFFF;
+    --surface-alt: #EFEEE7;
+    --ink:         #1B1D19;
+    --ink-soft:    #4A4D45;
+    --ink-mute:    #74776C;
+    --rule:        #E0DED5;
+    --rule-strong: #C9C6B9;
+    --gold:        #8A6A2F;
+    --gold-soft:   #B88F51;
+    --gold-wash:   #F1EADC;
+    --olive:       #55684A;
+    --olive-wash:  #E7ECE1;
+    --rust:        #9B4127;
+    --rust-wash:   #F6E7E1;
+    --amber:       #7A5A1E;
+    --amber-wash:  #F4EBD6;
+    --measure: 65ch;
+    --wide: 1000px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #14150F;
+      --surface:     #1B1D15;
+      --surface-alt: #22241B;
+      --ink:         #EDEBE0;
+      --ink-soft:    #C2C0B3;
+      --ink-mute:    #919384;
+      --rule:        #2C2E23;
+      --rule-strong: #414435;
+      --gold:        #CDA664;
+      --gold-soft:   #B88F51;
+      --gold-wash:   #241F13;
+      --olive:       #8CA277;
+      --olive-wash:  #1D2318;
+      --rust:        #D5836A;
+      --rust-wash:   #2A1A14;
+      --amber:       #D2B274;
+      --amber-wash:  #262014;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:      #14150F;
+    --surface:     #1B1D15;
+    --surface-alt: #22241B;
+    --ink:         #EDEBE0;
+    --ink-soft:    #C2C0B3;
+    --ink-mute:    #919384;
+    --rule:        #2C2E23;
+    --rule-strong: #414435;
+    --gold:        #CDA664;
+    --gold-soft:   #B88F51;
+    --gold-wash:   #241F13;
+    --olive:       #8CA277;
+    --olive-wash:  #1D2318;
+    --rust:        #D5836A;
+    --rust-wash:   #2A1A14;
+    --amber:       #D2B274;
+    --amber-wash:  #262014;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Libre Franklin", "Helvetica Neue", Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    padding: 0 24px 120px;
+  }
+
+  .page { max-width: var(--wide); margin: 0 auto; }
+
+  header.masthead {
+    padding: 96px 0 56px;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+  .eyebrow {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  h1 {
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-size: clamp(44px, 8vw, 78px);
+    line-height: 1.02;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    margin: 0;
+  }
+  .standfirst {
+    font-size: 20px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    max-width: 60ch;
+  }
+  .standfirst strong { color: var(--ink); font-weight: 600; }
+
+  .figures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-top: 8px;
+  }
+  .figure { background: var(--surface); padding: 18px 20px; }
+  .figure b {
+    display: block;
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-size: 34px;
+    font-weight: 400;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 8px;
+  }
+  .figure span { font-size: 13px; line-height: 1.4; color: var(--ink-mute); display: block; }
+  .figure.is-gap b  { color: var(--rust); }
+  .figure.is-live b { color: var(--olive); }
+
+  section { padding: 72px 0 0; }
+  .sec-head { display: flex; align-items: baseline; gap: 18px; margin-bottom: 8px; }
+  .numeral {
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-size: 15px;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    flex: 0 0 auto;
+    padding-top: 2px;
+  }
+  h2 {
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-weight: 400;
+    font-size: clamp(28px, 4vw, 40px);
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0;
+  }
+  .sec-sub { color: var(--ink-mute); font-size: 15px; margin: 0 0 32px 33px; max-width: 58ch; }
+  h3 {
+    font-family: "Libre Franklin", sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    margin: 40px 0 10px;
+  }
+  p { margin: 0 0 18px; max-width: var(--measure); }
+  p.wide { max-width: 78ch; }
+  a { color: var(--gold); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+  strong { font-weight: 600; }
+  code {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.86em;
+    background: var(--surface-alt);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 1px 5px;
+    white-space: nowrap;
+  }
+
+  ul.plain { margin: 0 0 20px; padding-left: 20px; max-width: var(--measure); }
+  ul.plain li { margin-bottom: 9px; }
+  ul.plain li::marker { color: var(--gold-soft); }
+
+  .scroller { overflow-x: auto; margin: 0 0 24px; border: 1px solid var(--rule); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 14.5px; }
+  thead th {
+    text-align: left;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    font-weight: 400;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rule-strong);
+    background: var(--surface-alt);
+    white-space: nowrap;
+  }
+  tbody td { padding: 13px 16px; border-bottom: 1px solid var(--rule); vertical-align: top; line-height: 1.45; }
+  tbody tr:last-child td { border-bottom: none; }
+  td.area { font-weight: 500; white-space: nowrap; }
+  td.area em {
+    display: block;
+    font-family: "JetBrains Mono", monospace;
+    font-style: normal;
+    font-size: 11.5px;
+    color: var(--ink-mute);
+    margin-top: 3px;
+  }
+  td.wide { color: var(--ink-soft); min-width: 260px; }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 4px 9px 4px 8px; border-radius: 2px; white-space: nowrap;
+  }
+  .chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+  .chip.live  { color: var(--olive); background: var(--olive-wash); }
+  .chip.live::before  { background: var(--olive); }
+  .chip.entscheidung { color: var(--amber); background: var(--amber-wash); }
+  .chip.entscheidung::before { background: var(--amber); border-radius: 50% 50% 0 0; transform: rotate(-45deg); }
+  .chip.fehlt { color: var(--rust); background: var(--rust-wash); }
+  .chip.fehlt::before { background: transparent; border: 1.5px solid var(--rust); }
+
+  .layers { display: grid; gap: 14px; margin: 8px 0 28px; max-width: 900px; }
+  .layer { display: grid; grid-template-columns: 108px 1fr; border: 1px solid var(--rule-strong); background: var(--surface); }
+  .layer-tag {
+    background: var(--surface-alt);
+    border-right: 1px solid var(--rule-strong);
+    padding: 16px 14px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-mute);
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .layer-tag b {
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-size: 22px; font-weight: 400; letter-spacing: 0;
+    color: var(--gold); line-height: 1.1;
+  }
+  .layer-body { padding: 16px 18px; }
+  .layer-body h4 { margin: 0 0 6px; font-size: 16px; font-weight: 600; }
+  .layer-body p { margin: 0; font-size: 14.5px; color: var(--ink-soft); max-width: 64ch; }
+  .layer-body .cost { margin-top: 10px; font-family: "JetBrains Mono", monospace; font-size: 11.5px; color: var(--gold); }
+  .layer.is-built { border-color: var(--olive); }
+  .layer.is-built .layer-tag { background: var(--olive-wash); border-right-color: var(--olive); }
+  .layer.is-built .layer-tag b { color: var(--olive); }
+  .layer.is-missing { border-color: var(--rust); border-style: dashed; }
+  .layer.is-missing .layer-tag { background: var(--rust-wash); border-right-color: var(--rust); }
+  .layer.is-missing .layer-tag b { color: var(--rust); }
+  .layer.is-planned { border-color: var(--amber); }
+  .layer.is-planned .layer-tag { background: var(--amber-wash); border-right-color: var(--amber); }
+  .layer.is-planned .layer-tag b { color: var(--amber); }
+
+  .rule-box { border-left: 2px solid var(--gold); padding: 4px 0 4px 22px; margin: 28px 0; max-width: 62ch; }
+  .rule-box p { font-family: "Bodoni Moda", Georgia, serif; font-size: 22px; line-height: 1.4; margin: 0; }
+  .rule-box cite {
+    display: block; margin-top: 10px;
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-style: normal;
+  }
+
+  .aside {
+    background: var(--surface-alt);
+    border: 1px solid var(--rule);
+    padding: 16px 20px;
+    margin: 0 0 26px;
+    max-width: 780px;
+    font-size: 14.5px;
+    color: var(--ink-soft);
+  }
+  .aside .aside-label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-mute); margin-bottom: 8px;
+  }
+  .aside p { margin: 0 0 8px; font-size: 14.5px; }
+  .aside p:last-child { margin-bottom: 0; }
+
+  .duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin: 0 0 12px; }
+  .card { border: 1px solid var(--rule); background: var(--surface); padding: 22px; }
+  .card h4 { margin: 0 0 10px; font-size: 15.5px; font-weight: 600; display: flex; align-items: center; gap: 9px; }
+  .card h4 .dot { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; }
+  .card.a h4 .dot { background: var(--gold); }
+  .card.b h4 .dot { background: var(--olive); }
+  .card p { font-size: 14.5px; margin: 0 0 10px; color: var(--ink-soft); max-width: none; }
+  .card ul { margin: 0; padding-left: 18px; font-size: 14.5px; color: var(--ink-soft); }
+  .card ul li { margin-bottom: 7px; }
+  .card .verdict {
+    margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--rule);
+    font-size: 13px; font-family: "JetBrains Mono", monospace; color: var(--ink-mute);
+  }
+
+  .steps { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); max-width: 900px; }
+  .step { background: var(--surface); display: grid; grid-template-columns: 56px 1fr auto; gap: 18px; padding: 18px 20px; align-items: start; }
+  .step-n {
+    font-family: "Bodoni Moda", Georgia, serif; font-size: 26px; line-height: 1;
+    color: var(--gold); font-variant-numeric: tabular-nums;
+  }
+  .step-body h4 { margin: 0 0 5px; font-size: 15.5px; font-weight: 600; }
+  .step-body p { margin: 0; font-size: 14.5px; color: var(--ink-soft); max-width: 62ch; }
+  .step-meta {
+    font-family: "JetBrains Mono", monospace; font-size: 10.5px;
+    letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-mute);
+    text-align: right; white-space: nowrap; padding-top: 4px;
+  }
+
+  footer {
+    margin-top: 88px; padding-top: 28px; border-top: 1px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-mute); max-width: 66ch;
+  }
+  footer a { color: var(--ink-mute); }
+
+  @media (max-width: 620px) {
+    body { padding: 0 18px 80px; font-size: 16px; }
+    header.masthead { padding: 60px 0 40px; }
+    .step { grid-template-columns: 40px 1fr; }
+    .step-meta { grid-column: 2; text-align: left; padding-top: 8px; }
+    .layer { grid-template-columns: 1fr; }
+    .layer-tag { border-right: none; border-bottom: 1px solid var(--rule-strong); flex-direction: row; align-items: center; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <div class="eyebrow">athena-finance · Architektur-Notiz · 12. September 2026</div>
+    <h1>Strategie-Schmiede</h1>
+    <p class="standfirst">
+      Der Krypto-Teil hat schon ein sauberes Datenmodell für systematisches Trading —
+      <code>indicators</code>, <code>combos</code>, <code>strategies</code>, Backtest- und
+      Robustheits-Kennzahlen. Was fehlt, ist nicht die Struktur, sondern der Schlauch: Jede
+      Zahl kommt heute von Hand aus TradingView, <strong>nichts</strong> fließt automatisch.
+    </p>
+    <div class="figures">
+      <div class="figure is-live"><b>8</b><span>Tabellen im bestehenden Strategie-Datenmodell</span></div>
+      <div class="figure is-gap"><b>0</b><span>automatisierte Schreibpfade dorthin (Webhook, Import, API)</span></div>
+      <div class="figure"><b>3</b><span>Bausteine, die mit heutigem Datenmodell sofort machbar sind</span></div>
+      <div class="figure"><b>7</b><span>größere Ausbaustufen zur Auswahl, keine davon festgelegt</span></div>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-head"><span class="numeral">I</span><h2>Ist-Zustand</h2></div>
+    <p class="sec-sub">Die Struktur ist da und wird auch genutzt — nur eben ausschließlich mit der Tastatur befüllt.</p>
+
+    <div class="layers">
+      <div class="layer is-built">
+        <div class="layer-tag"><b>DB</b>Modell</div>
+        <div class="layer-body">
+          <h4>Indikatoren → Combos → Strategien → Kennzahlen</h4>
+          <p><code>indicators</code>/<code>combos</code>/<code>combo_indicators</code> bilden Pine-Indikatoren
+            und ihre Kombinationen ab. Eine <code>strategies</code>-Zeile ist Asset&nbsp;+&nbsp;Timeframe&nbsp;+
+            Combo&nbsp;+&nbsp;Status (<code>development</code> → <code>testing</code> → <code>slapper</code> →
+            <code>submitted</code> → <code>live</code> → <code>archived</code>). <code>indicator_performance</code>
+            trägt <code>cobra_green</code>/<code>cobra_red</code>/<code>profit_factor</code>/<code>win_rate</code> —
+            exakt die Kennzahlen aus dem TradingView Strategy Tester. <code>robustness_tests</code> und
+            <code>submission_checklist</code> (inkl. <code>tv_script_url</code>) bilden den Cobra-Method-Workflow
+            bis zur Einreichungsreife ab.</p>
+          <div class="cost">UI: strategy/indicators, strategy/combos, strategy/strategies/[id]</div>
+        </div>
+      </div>
+      <div class="layer is-built">
+        <div class="layer-tag"><b>Live</b>Tracking</div>
+        <div class="layer-body">
+          <h4>Positionen, Equity-Kurve, Signal → Allokation</h4>
+          <p><code>positions</code> (mit <code>strategy_id</code>) und <code>strategy_equity_snapshots</code>
+            tracken laufende Strategien. <code>strategy-signals.tsx</code> übersetzt ein manuell gesetztes
+            Signal (<code>long_btc</code>/<code>long_eth</code>/<code>cash</code>) über
+            <code>rebalancing.ts</code> in eine Ziel-Allokation fürs Krypto-Depot.</p>
+          <div class="cost">alles funktionsfähig — nur jede Eingabe ein Klick von Hand</div>
+        </div>
+      </div>
+      <div class="layer is-missing">
+        <div class="layer-tag"><b>?</b>fehlt</div>
+        <div class="layer-body">
+          <h4>Jeder automatisierte Schreibpfad</h4>
+          <p>Geprüft im Code: kein Webhook-Endpunkt, keine TradingView-Anbindung, kein externer
+            Backtest-Lauf — <code>tv_script_url</code> und ähnliche Treffer sind reine Textfelder in
+            Formularen, keine Integration. Jede Zahl in <code>indicator_performance</code>,
+            <code>robustness_tests</code> und jedes Signal in <code>strategy-signals.tsx</code> kommt
+            manuell aus TradingView.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="aside">
+      <div class="aside-label">Randnotiz — warum das keine Neubau-Aufgabe ist</div>
+      <p>Pine Script läuft ausschließlich in TradingView — es gibt keine offizielle API, um Pine-Code
+        extern auszuführen oder zu parsen. „Anbindung" heißt deshalb praktisch: TradingView-<strong>Alerts</strong>
+        für Live-Signale nutzen, und für unabhängiges Backtesting die validierte Logik einmal in Python
+        nachbauen. Das Datenmodell dafür existiert bereits vollständig — es fehlt nur die Befüllung.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="numeral">II</span><h2>Was wir sofort umsetzen können</h2></div>
+    <p class="sec-sub">Drei Bausteine, jeder für sich nutzbar, jeder baut auf existierenden Mustern im Code auf.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">01</div>
+        <div class="step-body">
+          <h4>Bulk-Import für Backtest-Stats</h4>
+          <p>CSV/JSON-Export aus dem TradingView Strategy Tester hochladen → füllt
+            <code>indicator_performance</code>/<code>robustness_tests</code> automatisch. Gleiches
+            UX-Muster wie der bestehende Transaction-CSV-Import (<code>detectFormat</code>/<code>parseCSV</code>/
+            <code>mapRows</code>/<code>handleImport</code>), nur neu verdrahtet auf <code>strategy/tests</code>.</p>
+        </div>
+        <div class="step-meta">kleinster Aufwand</div>
+      </div>
+      <div class="step">
+        <div class="step-n">02</div>
+        <div class="step-body">
+          <h4>TradingView-Webhook für Live-Signale</h4>
+          <p>Pine <code>alert()</code> sendet JSON an <code>/api/crypto/webhooks/tradingview</code>. Neue Spalte
+            <code>webhook_token</code> pro Strategie statt globalem Secret (TradingView-Webhooks können keine
+            Custom-Header senden, nur den Body). Signale landen zuerst in einer neuen Rohdaten-Tabelle
+            <code>strategy_signal_events</code>, bevor sie <code>strategy-signals.tsx</code> ablösen — siehe
+            Entscheidung in Abschnitt&nbsp;IV.</p>
+        </div>
+        <div class="step-meta">macht strategy-signals.tsx überflüssig</div>
+      </div>
+      <div class="step">
+        <div class="step-n">03</div>
+        <div class="step-body">
+          <h4>Python-Backtest-Service</h4>
+          <p>Eigener kleiner Dienst (FastAPI&nbsp;+&nbsp;vectorbt/backtesting.py) auf <strong>Fly.io oder
+            Railway</strong> — bewusst getrennt von Vercel, weil Node für vektorisiertes Backtesting die
+            falsche Umgebung ist. Holt OHLCV über Kraken/Binance-REST (Kraken-Keys inkl. Verschlüsselung
+            existieren schon: <code>encrypt</code>/<code>decrypt</code>/<code>getMasterKey</code>), rechnet
+            Strategien, schreibt Ergebnis über eine dünne Server-Action in dieselben Tabellen wie Baustein&nbsp;01.</p>
+        </div>
+        <div class="step-meta">größte Einzelinvestition</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="numeral">III</span><h2>Größere Ausbaustufen</h2></div>
+    <p class="sec-sub">Alles, was wir zusätzlich machen könnten — keine davon vorentschieden, keine im Paket verhandelt.</p>
+
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Idee</th><th>Nutzen</th><th>Aufwand / Voraussetzung</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="area">On-Chain-Daten als Indikator<em>Masterclass 16_OnChain.md</em></td>
+            <td class="wide">MVRV, Exchange-Flows &amp; Co. als zusätzliche Combo-Bausteine neben
+              Pine-Indikatoren — eigene <code>indicators.type</code> statt nur TradingView-Quelle.</td>
+            <td class="wide">mittel — braucht externe API (z.B. Glassnode/CryptoQuant), neues
+              Abo/Kosten einplanen.</td>
+          </tr>
+          <tr>
+            <td class="area">GRID-Regime-Tagging<em>Masterclass 15_42Macro_GRID.md</em></td>
+            <td class="wide">Strategien automatisch nach 42Macro-GRID-Regime aktivieren/deaktivieren
+              statt manuell zu prüfen.</td>
+            <td class="wide">hoch — GRID-Daten sind nicht offen per API verfügbar, vermutlich bleibt
+              das vorerst manuell.</td>
+          </tr>
+          <tr>
+            <td class="area">Walk-Forward &amp; Monte-Carlo automatisch</td>
+            <td class="wide"><code>robustness_tests</code> direkt vom Python-Service befüllen statt
+              Pass/Fail von Hand aus einem Sheet abzutippen.</td>
+            <td class="wide">mittel — baut auf Baustein&nbsp;03 auf, keine neue Infrastruktur.</td>
+          </tr>
+          <tr>
+            <td class="area">Paper-Trading / Schatten-Ausführung</td>
+            <td class="wide">Webhook-Signale erst simulieren (kein echtes Geld), bevor eine Strategie
+              von <code>testing</code> auf <code>live</code> wechselt.</td>
+            <td class="wide">gering, sobald Baustein&nbsp;02 (Webhook) steht — reine Zusatzlogik,
+              keine neue Datenquelle.</td>
+          </tr>
+          <tr>
+            <td class="area">Portfolio-Ebene: Korrelation &amp; Risiko</td>
+            <td class="wide">Gemeinsamer Drawdown/Korrelation über alle laufenden Strategien statt
+              jede einzeln zu betrachten.</td>
+            <td class="wide">mittel — braucht gemeinsamen Zeitindex über
+              <code>strategy_equity_snapshots</code> aller Strategien.</td>
+          </tr>
+          <tr>
+            <td class="area">Echte Order-Ausführung (Kraken)</td>
+            <td class="wide">Ein freigegebenes Signal löst eine echte Order aus statt nur Tracking —
+              Kraken-Anbindung für Balances existiert bereits.</td>
+            <td class="wide">hoch, größtes Risiko — braucht eigene Freigabe-Schwelle, siehe
+              Abschnitt&nbsp;IV.</td>
+          </tr>
+          <tr>
+            <td class="area">Strategie-Versionierung</td>
+            <td class="wide">Pine-Code-Änderung an einer Strategie erkennbar machen, damit ein alter
+              Robustheits-Pass nicht stillschweigend für neue Logik weitergilt.</td>
+            <td class="wide">gering bis mittel — ein Versionsfeld plus Hinweis reicht fürs Erste,
+              kein vollständiger Diff nötig.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="numeral">IV</span><h2>Entscheidungen, die nur Eric treffen kann</h2></div>
+    <p class="sec-sub">Zwei Punkte, an denen Automatisierung gegen Kontrolle steht — der Rest ist Umsetzungsdetail.</p>
+
+    <div class="duo">
+      <div class="card a">
+        <h4><span class="dot"></span>Webhook-Signale: direkt schreiben oder erst Freigabe?</h4>
+        <p>Ein Pine-Alert kann repainten oder falsch konfiguriert sein — die Frage ist, wie viel
+          Vertrauen ein einzelner Webhook-Call sofort bekommt.</p>
+        <ul>
+          <li><strong>Pending-Queue:</strong> Signal landet in <code>strategy_signal_events</code>,
+            wird erst nach Klick (oder Auto-Freigabe nach X&nbsp;Min.) in <code>positions</code>
+            übernommen.</li>
+          <li><strong>Direkt live:</strong> Webhook schreibt sofort — schneller, aber ein
+            Fehlkonfigurations-Fehler wirkt sich sofort auf die Live-Tracking-Daten aus.</li>
+        </ul>
+        <div class="verdict">Tendenz: Pending-Queue zuerst, Auto-Freigabe als spätere Option pro Strategie</div>
+      </div>
+      <div class="card b">
+        <h4><span class="dot"></span>Wie weit geht die Automatisierung?</h4>
+        <p>Tracking und Backtesting sind risikoarm. Echte Order-Ausführung ist eine andere
+          Kategorie — dort bewegt ein Bug echtes Geld.</p>
+        <ul>
+          <li><strong>Nur Tracking/Backtesting:</strong> Bausteine&nbsp;01–03 plus die meisten
+            Ausbaustufen aus Abschnitt&nbsp;III berühren nie echtes Kapital.</li>
+          <li><strong>Bis zur Order-Ausführung:</strong> größter Nutzen, aber eigene
+            Freigabe-Schwelle nötig (analog zur Bestätigungspflicht bei <code>createContract</code>
+            im Chat-Agenten) — kein Punkt, den man nebenbei mitentscheidet.</li>
+        </ul>
+        <div class="verdict">bereits entschieden: Python-Service läuft als separater Mini-Dienst auf Fly.io/Railway</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="numeral">V</span><h2>Vorgeschlagene Reihenfolge</h2></div>
+    <p class="sec-sub">Kleinste Fläche zuerst, größte Risikoentscheidung zuletzt und separat.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">01</div>
+        <div class="step-body">
+          <h4>Bulk-Import für Backtest-Stats</h4>
+          <p>Sofort spürbare Entlastung, kein neues Risiko, nutzt ein Muster, das im Code schon existiert.</p>
+        </div>
+        <div class="step-meta">Baustein II.01</div>
+      </div>
+      <div class="step">
+        <div class="step-n">02</div>
+        <div class="step-body">
+          <h4>Migration: <code>webhook_token</code> + <code>strategy_signal_events</code></h4>
+          <p>Schema für den Webhook vorbereiten, inklusive Pending-Queue-Status aus Abschnitt&nbsp;IV.</p>
+        </div>
+        <div class="step-meta">Vorbereitung für II.02</div>
+      </div>
+      <div class="step">
+        <div class="step-n">03</div>
+        <div class="step-body">
+          <h4>TradingView-Webhook + Freigabe-UI</h4>
+          <p>Ersetzt die manuelle Eingabe in <code>strategy-signals.tsx</code> — größter „fühlt sich
+            lebendig an"-Effekt im Krypto-Teil.</p>
+        </div>
+        <div class="step-meta">Baustein II.02</div>
+      </div>
+      <div class="step">
+        <div class="step-n">04</div>
+        <div class="step-body">
+          <h4>Python-Backtest-Service aufsetzen</h4>
+          <p>Fly.io/Railway-Deployment, erst mit generischem regelbasiertem Engine für einfache Combos,
+            danach optional Walk-Forward/Monte-Carlo-Automatisierung (Abschnitt&nbsp;III).</p>
+        </div>
+        <div class="step-meta">Baustein II.03</div>
+      </div>
+      <div class="step">
+        <div class="step-n">05</div>
+        <div class="step-body">
+          <h4>Paper-Trading als Zwischenschritt</h4>
+          <p>Vor jeder Order-Diskussion: Signale simulieren, um Live-Verhalten ohne Kapitalrisiko zu prüfen.</p>
+        </div>
+        <div class="step-meta">nutzt 03</div>
+      </div>
+      <div class="step">
+        <div class="step-n">06</div>
+        <div class="step-body">
+          <h4>Order-Ausführung — eigene Entscheidung, eigener Zeitpunkt</h4>
+          <p>Erst angehen, wenn 01–05 eine Weile stabil laufen und die Freigabe-Schwelle aus
+            Abschnitt&nbsp;IV separat entschieden ist.</p>
+        </div>
+        <div class="step-meta">nicht Teil dieser Roadmap</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Entstanden aus dem Planungsgespräch vom 12.9.2026 zum Krypto-Strategie-/Backtesting-Ausbau.
+    Bezug: bestehendes Datenmodell in <code>supabase/</code>, UI unter
+    <code>src/app/(dashboard)/strategy/</code> und <code>src/components/crypto/</code>, Masterclass-Framework
+    unter <code>Masterclass/05_Investing/</code>. Gleiche Notiz-Familie wie
+    <code>docs/athenas-takt.html</code> und <code>docs/athenas-augen.html</code>. Lokal liegt diese Notiz
+    unter <code>docs/strategie-schmiede.html</code>.
+  </footer>
+
+</div>
+</body>
+</html>

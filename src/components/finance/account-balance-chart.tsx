@@ -103,7 +103,7 @@ export function AccountBalanceChart({
           />
           <YAxis
             tickFormatter={v => fmtShort(v as number)}
-            tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
+            tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5, className: 'tabular-nums' }}
             axisLine={false} tickLine={false} width={48}
           />
           <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'currentColor', strokeOpacity: 0.2, strokeWidth: 1 }} />

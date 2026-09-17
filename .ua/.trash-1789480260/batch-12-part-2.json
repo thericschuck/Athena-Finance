@@ -1,0 +1,1160 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/components/analyse/MonatsVergleich-impl.tsx",
+      "type": "file",
+      "name": "MonatsVergleich-impl.tsx",
+      "filePath": "src/components/analyse/MonatsVergleich-impl.tsx",
+      "summary": "Implementation of multi-month spending comparison chart with custom tooltips and sparklines.",
+      "tags": [
+        "component",
+        "chart",
+        "comparison",
+        "monthly",
+        "implementation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/analyse/MonatsVergleich-impl.tsx:CustomTooltip",
+      "type": "function",
+      "name": "CustomTooltip",
+      "filePath": "src/components/analyse/MonatsVergleich-impl.tsx",
+      "lineRange": [
+        21,
+        64
+      ],
+      "summary": "React component that renders CustomTooltip.",
+      "tags": [
+        "component",
+        "ui-helper",
+        "complex"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/analyse/MonatsVergleich-impl.tsx:MonatsVergleich",
+      "type": "function",
+      "name": "MonatsVergleich",
+      "filePath": "src/components/analyse/MonatsVergleich-impl.tsx",
+      "lineRange": [
+        110,
+        228
+      ],
+      "summary": "React component that renders MonatsVergleich.",
+      "tags": [
+        "component",
+        "complex"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/analyse/MonatsVergleich.tsx",
+      "type": "file",
+      "name": "MonatsVergleich.tsx",
+      "filePath": "src/components/analyse/MonatsVergleich.tsx",
+      "summary": "Lazy-loaded wrapper for monthly spending comparison chart with loading state.",
+      "tags": [
+        "component",
+        "wrapper",
+        "lazy-load",
+        "monthly",
+        "performance"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/analyse/MonatsVerteilung.tsx",
+      "type": "file",
+      "name": "MonatsVerteilung.tsx",
+      "filePath": "src/components/analyse/MonatsVerteilung.tsx",
+      "summary": "Distribution analysis component showing spending patterns across months with KDE estimation and custom formatting.",
+      "tags": [
+        "component",
+        "chart",
+        "distribution",
+        "kde",
+        "statistical"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/analyse/MonatsVerteilung.tsx:niceTicks",
+      "type": "function",
+      "name": "niceTicks",
+      "filePath": "src/components/analyse/MonatsVerteilung.tsx",
+      "lineRange": [
+        145,
+        157
+      ],
+      "summary": "Helper function niceTicks.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/analyse/MonatsVerteilung.tsx:buildVerteilung",
+      "type": "function",
+      "name": "buildVerteilung",
+      "filePath": "src/components/analyse/MonatsVerteilung.tsx",
+      "lineRange": [
+        167,
+        218
+      ],
+      "summary": "Helper function buildVerteilung.",
+      "tags": [
+        "complex"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/analyse/MonatsVerteilung.tsx:BinTooltip",
+      "type": "function",
+      "name": "BinTooltip",
+      "filePath": "src/components/analyse/MonatsVerteilung.tsx",
+      "lineRange": [
+        226,
+        253
+      ],
+      "summary": "React component that renders BinTooltip.",
+      "tags": [
+        "component",
+        "ui-helper"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/analyse/MonatsVerteilung.tsx:CurrentMonthDot",
+      "type": "function",
+      "name": "CurrentMonthDot",
+      "filePath": "src/components/analyse/MonatsVerteilung.tsx",
+      "lineRange": [
+        265,
+        314
+      ],
+      "summary": "React component that renders CurrentMonthDot.",
+      "tags": [
+        "component",
+        "complex"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/analyse/MonatsVerteilung.tsx:MonatsVerteilung",
+      "type": "function",
+      "name": "MonatsVerteilung",
+      "filePath": "src/components/analyse/MonatsVerteilung.tsx",
+      "lineRange": [
+        316,
+        595
+      ],
+      "summary": "React component that renders MonatsVerteilung.",
+      "tags": [
+        "component",
+        "complex"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/crypto/portfolio-donut-card.tsx",
+      "type": "file",
+      "name": "portfolio-donut-card.tsx",
+      "filePath": "src/components/crypto/portfolio-donut-card.tsx",
+      "summary": "Donut chart component displaying cryptocurrency portfolio allocation with tooltips and settings integration.",
+      "tags": [
+        "component",
+        "crypto",
+        "portfolio",
+        "donut-chart",
+        "visualization"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/crypto/portfolio-donut-card.tsx:CustomTooltip",
+      "type": "function",
+      "name": "CustomTooltip",
+      "filePath": "src/components/crypto/portfolio-donut-card.tsx",
+      "lineRange": [
+        52,
+        62
+      ],
+      "summary": "React component that renders CustomTooltip.",
+      "tags": [
+        "component",
+        "ui-helper"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/crypto/portfolio-donut-card.tsx:DonutCard",
+      "type": "function",
+      "name": "DonutCard",
+      "filePath": "src/components/crypto/portfolio-donut-card.tsx",
+      "lineRange": [
+        65,
+        132
+      ],
+      "summary": "React component that renders DonutCard.",
+      "tags": [
+        "component",
+        "complex"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/landing/DashboardMock.tsx",
+      "type": "file",
+      "name": "DashboardMock.tsx",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "summary": "Large mock dashboard component showcasing the analytics interface for landing page and marketing purposes.",
+      "tags": [
+        "component",
+        "mock",
+        "dashboard",
+        "landing",
+        "demonstration"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:buildMockSnapshots",
+      "type": "function",
+      "name": "buildMockSnapshots",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        287,
+        312
+      ],
+      "summary": "Helper function buildMockSnapshots.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:buildMockHeatmapData",
+      "type": "function",
+      "name": "buildMockHeatmapData",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        425,
+        449
+      ],
+      "summary": "Helper function buildMockHeatmapData.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:buildMockCashflowEvents",
+      "type": "function",
+      "name": "buildMockCashflowEvents",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        477,
+        496
+      ],
+      "summary": "Helper function buildMockCashflowEvents.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:useCountUp",
+      "type": "function",
+      "name": "useCountUp",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        546,
+        570
+      ],
+      "summary": "Custom React hook providing countup functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:useLiveTicker",
+      "type": "function",
+      "name": "useLiveTicker",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        586,
+        601
+      ],
+      "summary": "Custom React hook providing liveticker functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:useVisible",
+      "type": "function",
+      "name": "useVisible",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        608,
+        618
+      ],
+      "summary": "Custom React hook providing visible functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:usePulseDirection",
+      "type": "function",
+      "name": "usePulseDirection",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        622,
+        643
+      ],
+      "summary": "Custom React hook providing pulsedirection functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:useTilt",
+      "type": "function",
+      "name": "useTilt",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        659,
+        671
+      ],
+      "summary": "Custom React hook providing tilt functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:TiltCard",
+      "type": "function",
+      "name": "TiltCard",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        682,
+        703
+      ],
+      "summary": "React component that renders TiltCard.",
+      "tags": [
+        "component"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:DeltaChip",
+      "type": "function",
+      "name": "DeltaChip",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        716,
+        734
+      ],
+      "summary": "React component that renders DeltaChip.",
+      "tags": [
+        "component"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:StatTile",
+      "type": "function",
+      "name": "StatTile",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        741,
+        751
+      ],
+      "summary": "React component that renders StatTile.",
+      "tags": [
+        "component"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:StatTilesRow",
+      "type": "function",
+      "name": "StatTilesRow",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        753,
+        772
+      ],
+      "summary": "React component that renders StatTilesRow.",
+      "tags": [
+        "component"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:PulseValue",
+      "type": "function",
+      "name": "PulseValue",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        776,
+        799
+      ],
+      "summary": "React component that renders PulseValue.",
+      "tags": [
+        "component"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:AssetsList",
+      "type": "function",
+      "name": "AssetsList",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        814,
+        867
+      ],
+      "summary": "React component that renders AssetsList.",
+      "tags": [
+        "component",
+        "complex"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:BookingsList",
+      "type": "function",
+      "name": "BookingsList",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        869,
+        917
+      ],
+      "summary": "React component that renders BookingsList.",
+      "tags": [
+        "component",
+        "complex"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:TabPills",
+      "type": "function",
+      "name": "TabPills",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        928,
+        958
+      ],
+      "summary": "React component that renders TabPills.",
+      "tags": [
+        "component"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:AthenaInsightsCard",
+      "type": "function",
+      "name": "AthenaInsightsCard",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        975,
+        1017
+      ],
+      "summary": "React component that renders AthenaInsightsCard.",
+      "tags": [
+        "component",
+        "complex"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:MiniStat",
+      "type": "function",
+      "name": "MiniStat",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        1021,
+        1033
+      ],
+      "summary": "React component that renders MiniStat.",
+      "tags": [
+        "component"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:DashboardTopRow",
+      "type": "function",
+      "name": "DashboardTopRow",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        1050,
+        1134
+      ],
+      "summary": "React component that renders DashboardTopRow.",
+      "tags": [
+        "component",
+        "complex"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:DashboardView",
+      "type": "function",
+      "name": "DashboardView",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        1136,
+        1206
+      ],
+      "summary": "React component that renders DashboardView.",
+      "tags": [
+        "component",
+        "complex"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:AnalyseView",
+      "type": "function",
+      "name": "AnalyseView",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        1219,
+        1270
+      ],
+      "summary": "React component that renders AnalyseView.",
+      "tags": [
+        "component",
+        "complex"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:AthenaView",
+      "type": "function",
+      "name": "AthenaView",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        1295,
+        1387
+      ],
+      "summary": "React component that renders AthenaView.",
+      "tags": [
+        "component",
+        "complex"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:CryptoView",
+      "type": "function",
+      "name": "CryptoView",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        1398,
+        1497
+      ],
+      "summary": "React component that renders CryptoView.",
+      "tags": [
+        "component",
+        "complex"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/landing/DashboardMock.tsx:DashboardMock",
+      "type": "function",
+      "name": "DashboardMock",
+      "filePath": "src/components/landing/DashboardMock.tsx",
+      "lineRange": [
+        1499,
+        1766
+      ],
+      "summary": "React component that renders DashboardMock.",
+      "tags": [
+        "component",
+        "complex"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/lib/analyseData.ts",
+      "type": "file",
+      "name": "analyseData.ts",
+      "filePath": "src/lib/analyseData.ts",
+      "summary": "Utility functions for transforming and preparing financial data for analysis visualizations.",
+      "tags": [
+        "utility",
+        "data-transformation",
+        "analysis",
+        "helpers",
+        "shared"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/hooks/use-clamped-position.ts",
+      "type": "file",
+      "name": "use-clamped-position.ts",
+      "filePath": "src/lib/hooks/use-clamped-position.ts",
+      "summary": "Custom React hook managing clamped position state for scroll-based UI element positioning.",
+      "tags": [
+        "hook",
+        "position",
+        "scroll",
+        "state-management",
+        "reusable"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/hooks/use-clamped-position.ts:useClampedPosition",
+      "type": "function",
+      "name": "useClampedPosition",
+      "filePath": "src/lib/hooks/use-clamped-position.ts",
+      "lineRange": [
+        29,
+        86
+      ],
+      "summary": "Custom React hook providing clampedposition functionality.",
+      "tags": [
+        "complex"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/kde.ts",
+      "type": "file",
+      "name": "kde.ts",
+      "filePath": "src/lib/kde.ts",
+      "summary": "Kernel Density Estimation implementation for computing probability distributions from data samples.",
+      "tags": [
+        "utility",
+        "statistical",
+        "math",
+        "density-estimation",
+        "algorithm"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/kde.ts:silvermanBandwidth",
+      "type": "function",
+      "name": "silvermanBandwidth",
+      "filePath": "src/lib/kde.ts",
+      "lineRange": [
+        19,
+        30
+      ],
+      "summary": "Helper function silvermanBandwidth.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/kde.ts:kdeDensityAt",
+      "type": "function",
+      "name": "kdeDensityAt",
+      "filePath": "src/lib/kde.ts",
+      "lineRange": [
+        43,
+        50
+      ],
+      "summary": "Helper function kdeDensityAt.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/kde.ts:computePercentileRank",
+      "type": "function",
+      "name": "computePercentileRank",
+      "filePath": "src/lib/kde.ts",
+      "lineRange": [
+        57,
+        61
+      ],
+      "summary": "Helper function computePercentileRank.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/components/analyse/MonatsVergleich-impl.tsx",
+      "target": "function:src/components/analyse/MonatsVergleich-impl.tsx:CustomTooltip",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/analyse/MonatsVergleich-impl.tsx",
+      "target": "function:src/components/analyse/MonatsVergleich-impl.tsx:MonatsVergleich",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/analyse/MonatsVergleich-impl.tsx",
+      "target": "function:src/components/analyse/MonatsVergleich-impl.tsx:MonatsVergleich",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/analyse/MonatsVerteilung.tsx",
+      "target": "function:src/components/analyse/MonatsVerteilung.tsx:niceTicks",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/analyse/MonatsVerteilung.tsx",
+      "target": "function:src/components/analyse/MonatsVerteilung.tsx:buildVerteilung",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/analyse/MonatsVerteilung.tsx",
+      "target": "function:src/components/analyse/MonatsVerteilung.tsx:BinTooltip",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/analyse/MonatsVerteilung.tsx",
+      "target": "function:src/components/analyse/MonatsVerteilung.tsx:CurrentMonthDot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/analyse/MonatsVerteilung.tsx",
+      "target": "function:src/components/analyse/MonatsVerteilung.tsx:MonatsVerteilung",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/analyse/MonatsVerteilung.tsx",
+      "target": "function:src/components/analyse/MonatsVerteilung.tsx:MonatsVerteilung",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/crypto/portfolio-donut-card.tsx",
+      "target": "function:src/components/crypto/portfolio-donut-card.tsx:CustomTooltip",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/crypto/portfolio-donut-card.tsx",
+      "target": "function:src/components/crypto/portfolio-donut-card.tsx:DonutCard",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/crypto/portfolio-donut-card.tsx",
+      "target": "function:src/components/crypto/portfolio-donut-card.tsx:DonutCard",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:buildMockSnapshots",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:buildMockHeatmapData",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:buildMockCashflowEvents",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:useCountUp",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:useLiveTicker",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:useVisible",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:usePulseDirection",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:useTilt",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:TiltCard",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:DeltaChip",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:StatTile",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:StatTilesRow",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:PulseValue",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:AssetsList",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:BookingsList",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:TabPills",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:AthenaInsightsCard",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:MiniStat",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:DashboardTopRow",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:DashboardView",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:AnalyseView",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:AthenaView",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:CryptoView",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:DashboardMock",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "function:src/components/landing/DashboardMock.tsx:DashboardMock",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/hooks/use-clamped-position.ts",
+      "target": "function:src/lib/hooks/use-clamped-position.ts:useClampedPosition",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/hooks/use-clamped-position.ts",
+      "target": "function:src/lib/hooks/use-clamped-position.ts:useClampedPosition",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/kde.ts",
+      "target": "function:src/lib/kde.ts:silvermanBandwidth",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/kde.ts",
+      "target": "function:src/lib/kde.ts:kdeDensityAt",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/kde.ts",
+      "target": "function:src/lib/kde.ts:kdeDensityAt",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/kde.ts",
+      "target": "function:src/lib/kde.ts:computePercentileRank",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/kde.ts",
+      "target": "function:src/lib/kde.ts:computePercentileRank",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/analyse/MonatsVergleich-impl.tsx",
+      "target": "file:src/lib/analyseData.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/MonatsVerteilung.tsx",
+      "target": "file:src/components/analyse/ModeSwitch.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/MonatsVerteilung.tsx",
+      "target": "file:src/components/providers/settings-context.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/MonatsVerteilung.tsx",
+      "target": "file:src/lib/analyseData.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/MonatsVerteilung.tsx",
+      "target": "file:src/lib/format.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/MonatsVerteilung.tsx",
+      "target": "file:src/lib/kde.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "file:src/components/analyse/AusgabenHeatmap.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "file:src/components/analyse/CashflowKalender.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "file:src/components/analyse/GeldflussChart.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "file:src/components/analyse/KategorienChart.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "file:src/components/analyse/MonatsVergleich.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "file:src/components/assistant/AthenaAvatar.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "file:src/components/crypto/portfolio-donut-card.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "file:src/components/dashboard/finance-analytics.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "file:src/components/dashboard/net-worth-chart.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "file:src/components/landing/landing-tokens.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "file:src/components/ui/logo.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/landing/DashboardMock.tsx",
+      "target": "file:src/lib/analyseData.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/MonatsVergleich.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/MonatsVergleich.tsx",
+      "target": "file:src/lib/analyseData.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/crypto/portfolio-donut-card.tsx",
+      "target": "file:src/components/providers/settings-context.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/crypto/portfolio-donut-card.tsx",
+      "target": "file:src/lib/format.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}

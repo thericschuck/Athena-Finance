@@ -1,0 +1,782 @@
+{
+  "nodes": [
+    {
+      "id": "file:supabase/migrations/20260309000000_depot_module.sql",
+      "type": "schema",
+      "name": "20260309000000_depot_module.sql",
+      "filePath": "supabase/migrations/20260309000000_depot_module.sql",
+      "summary": "Defines 2 table(s): public, public. Creates 3 index(es).",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "investment-tracking"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260309000001_depot_v2.sql",
+      "type": "schema",
+      "name": "20260309000001_depot_v2.sql",
+      "filePath": "supabase/migrations/20260309000001_depot_v2.sql",
+      "summary": "Defines 2 table(s): public, public. Creates 1 index(es).",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "investment-tracking"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260309000002_fund_sources.sql",
+      "type": "schema",
+      "name": "20260309000002_fund_sources.sql",
+      "filePath": "supabase/migrations/20260309000002_fund_sources.sql",
+      "summary": "Defines 1 table(s): public.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260309000003_depots.sql",
+      "type": "schema",
+      "name": "20260309000003_depots.sql",
+      "filePath": "supabase/migrations/20260309000003_depots.sql",
+      "summary": "Defines 1 table(s): public. Creates 1 index(es).",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "investment-tracking"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:supabase/migrations/20260309000004_fund_sources_ticker.sql",
+      "type": "schema",
+      "name": "20260309000004_fund_sources_ticker.sql",
+      "filePath": "supabase/migrations/20260309000004_fund_sources_ticker.sql",
+      "summary": "Database schema migration.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:supabase/migrations/20260309000005_contract_executions.sql",
+      "type": "schema",
+      "name": "20260309000005_contract_executions.sql",
+      "filePath": "supabase/migrations/20260309000005_contract_executions.sql",
+      "summary": "Defines 1 table(s): public.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:supabase/migrations/20260311000000_snapshot_function.sql",
+      "type": "schema",
+      "name": "20260311000000_snapshot_function.sql",
+      "filePath": "supabase/migrations/20260311000000_snapshot_function.sql",
+      "summary": "Defines 1 table(s): crypto_price_cache.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:supabase/migrations/20260323000000_security_fixes.sql",
+      "type": "schema",
+      "name": "20260323000000_security_fixes.sql",
+      "filePath": "supabase/migrations/20260323000000_security_fixes.sql",
+      "summary": "Database security configuration and policies.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "security"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260407000000_exchange_keys.sql",
+      "type": "schema",
+      "name": "20260407000000_exchange_keys.sql",
+      "filePath": "supabase/migrations/20260407000000_exchange_keys.sql",
+      "summary": "Defines 1 table(s): public.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:supabase/migrations/20260411000000_bank_integration.sql",
+      "type": "schema",
+      "name": "20260411000000_bank_integration.sql",
+      "filePath": "supabase/migrations/20260411000000_bank_integration.sql",
+      "summary": "Defines 2 table(s): bank_transactions, bank_balance. Creates 4 index(es).",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "banking-integration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260427000000_lebenshaltungskosten.sql",
+      "type": "schema",
+      "name": "20260427000000_lebenshaltungskosten.sql",
+      "filePath": "supabase/migrations/20260427000000_lebenshaltungskosten.sql",
+      "summary": "Defines 3 table(s): budget_categories, budget_items, income_targets. Creates 1 index(es).",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260427000001_lebenshaltungskosten_rls.sql",
+      "type": "schema",
+      "name": "20260427000001_lebenshaltungskosten_rls.sql",
+      "filePath": "supabase/migrations/20260427000001_lebenshaltungskosten_rls.sql",
+      "summary": "Row-level security (RLS) policy configuration.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "security"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:supabase/migrations/20260708000000_bank_transactions_upsert_fix.sql",
+      "type": "schema",
+      "name": "20260708000000_bank_transactions_upsert_fix.sql",
+      "filePath": "supabase/migrations/20260708000000_bank_transactions_upsert_fix.sql",
+      "summary": "Creates 1 index(es).",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "banking-integration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:supabase/migrations/20260811130000_lebenshaltungskosten_user_id.sql",
+      "type": "schema",
+      "name": "20260811130000_lebenshaltungskosten_user_id.sql",
+      "filePath": "supabase/migrations/20260811130000_lebenshaltungskosten_user_id.sql",
+      "summary": "Creates 3 index(es).",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260811130001_lebenshaltungskosten_rls_owner_scoped.sql",
+      "type": "schema",
+      "name": "20260811130001_lebenshaltungskosten_rls_owner_scoped.sql",
+      "filePath": "supabase/migrations/20260811130001_lebenshaltungskosten_rls_owner_scoped.sql",
+      "summary": "Row-level security (RLS) policy configuration.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "security"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260820000000_depot_holdings_fints.sql",
+      "type": "schema",
+      "name": "20260820000000_depot_holdings_fints.sql",
+      "filePath": "supabase/migrations/20260820000000_depot_holdings_fints.sql",
+      "summary": "Defines 1 table(s): depot_holdings. Creates 2 index(es).",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "investment-tracking"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260820010000_multi_bank_label.sql",
+      "type": "schema",
+      "name": "20260820010000_multi_bank_label.sql",
+      "filePath": "supabase/migrations/20260820010000_multi_bank_label.sql",
+      "summary": "Database schema migration.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "banking-integration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:supabase/migrations/20260820020000_ai_assistant.sql",
+      "type": "schema",
+      "name": "20260820020000_ai_assistant.sql",
+      "filePath": "supabase/migrations/20260820020000_ai_assistant.sql",
+      "summary": "Defines 4 table(s): ai_conversations, ai_messages, ai_tool_calls, insights. Creates 6 index(es).",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "ai-feature"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:supabase/migrations/20260821000000_bank_transactions_category_id.sql",
+      "type": "schema",
+      "name": "20260821000000_bank_transactions_category_id.sql",
+      "filePath": "supabase/migrations/20260821000000_bank_transactions_category_id.sql",
+      "summary": "Creates 1 index(es).",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "banking-integration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:supabase/migrations/20260821010000_unify_finance_banking.sql",
+      "type": "schema",
+      "name": "20260821010000_unify_finance_banking.sql",
+      "filePath": "supabase/migrations/20260821010000_unify_finance_banking.sql",
+      "summary": "Defines 1 view(s): unified_transactions. Creates 1 index(es).",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "banking-integration"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:supabase/migrations/20260821020000_unified_transactions_category_type.sql",
+      "type": "schema",
+      "name": "20260821020000_unified_transactions_category_type.sql",
+      "filePath": "supabase/migrations/20260821020000_unified_transactions_category_type.sql",
+      "summary": "Defines 2 view(s): without, unified_transactions.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "banking-integration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260829000000_fints_client_state.sql",
+      "type": "schema",
+      "name": "20260829000000_fints_client_state.sql",
+      "filePath": "supabase/migrations/20260829000000_fints_client_state.sql",
+      "summary": "Defines 1 table(s): public.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260830000000_unified_transactions_signed_amount.sql",
+      "type": "schema",
+      "name": "20260830000000_unified_transactions_signed_amount.sql",
+      "filePath": "supabase/migrations/20260830000000_unified_transactions_signed_amount.sql",
+      "summary": "Defines 1 view(s): unified_transactions.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "banking-integration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260830010000_unified_transactions_booked_date.sql",
+      "type": "schema",
+      "name": "20260830010000_unified_transactions_booked_date.sql",
+      "filePath": "supabase/migrations/20260830010000_unified_transactions_booked_date.sql",
+      "summary": "Defines 1 view(s): unified_transactions.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "banking-integration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260830100000_athena_agent.sql",
+      "type": "schema",
+      "name": "20260830100000_athena_agent.sql",
+      "filePath": "supabase/migrations/20260830100000_athena_agent.sql",
+      "summary": "Defines 5 table(s): ai_memories, ai_knowledge, ai_logs, ai_pending_actions, ai_settings. Creates 11 index(es).",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "ai-feature"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:supabase/migrations/20260831000000_snapshot_unified_transactions.sql",
+      "type": "schema",
+      "name": "20260831000000_snapshot_unified_transactions.sql",
+      "filePath": "supabase/migrations/20260831000000_snapshot_unified_transactions.sql",
+      "summary": "Snapshot and historical data management.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "banking-integration"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:supabase/migrations/20260831000001_backfill_snapshots.sql",
+      "type": "schema",
+      "name": "20260831000001_backfill_snapshots.sql",
+      "filePath": "supabase/migrations/20260831000001_backfill_snapshots.sql",
+      "summary": "Snapshot and historical data management.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:supabase/migrations/20260831000002_valuables.sql",
+      "type": "schema",
+      "name": "20260831000002_valuables.sql",
+      "filePath": "supabase/migrations/20260831000002_valuables.sql",
+      "summary": "Defines 2 table(s): valuables, valuable_valuations. Defines 1 view(s): valuables_current. Creates 2 index(es).",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "asset-tracking"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:supabase/migrations/20260831000004_valuables_foto.sql",
+      "type": "schema",
+      "name": "20260831000004_valuables_foto.sql",
+      "filePath": "supabase/migrations/20260831000004_valuables_foto.sql",
+      "summary": "Defines 1 view(s): valuables_current.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "asset-tracking"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260831000005_valuable_images.sql",
+      "type": "schema",
+      "name": "20260831000005_valuable_images.sql",
+      "filePath": "supabase/migrations/20260831000005_valuable_images.sql",
+      "summary": "Defines 1 table(s): valuable_images. Defines 1 view(s): valuables_current. Creates 2 index(es).",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "asset-tracking"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260831000006_valuables_zukunftsdatum.sql",
+      "type": "schema",
+      "name": "20260831000006_valuables_zukunftsdatum.sql",
+      "filePath": "supabase/migrations/20260831000006_valuables_zukunftsdatum.sql",
+      "summary": "Defines 1 view(s): valuables_current.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "asset-tracking"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260831120000_crypto_price_resilience.sql",
+      "type": "schema",
+      "name": "20260831120000_crypto_price_resilience.sql",
+      "filePath": "supabase/migrations/20260831120000_crypto_price_resilience.sql",
+      "summary": "Creates 1 index(es).",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "crypto-portfolio"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:supabase/migrations/20260901000000_valuable_images_prompt.sql",
+      "type": "schema",
+      "name": "20260901000000_valuable_images_prompt.sql",
+      "filePath": "supabase/migrations/20260901000000_valuable_images_prompt.sql",
+      "summary": "Creates 1 index(es).",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "asset-tracking"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:supabase/migrations/20260902000000_snapshot_investment_bucket.sql",
+      "type": "schema",
+      "name": "20260902000000_snapshot_investment_bucket.sql",
+      "filePath": "supabase/migrations/20260902000000_snapshot_investment_bucket.sql",
+      "summary": "Defines 1 view(s): current_net_worth.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260902000001_fund_price_history.sql",
+      "type": "schema",
+      "name": "20260902000001_fund_price_history.sql",
+      "filePath": "supabase/migrations/20260902000001_fund_price_history.sql",
+      "summary": "Defines 1 table(s): fund_price_history.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260902000002_snapshot_take_snapshot_v3.sql",
+      "type": "schema",
+      "name": "20260902000002_snapshot_take_snapshot_v3.sql",
+      "filePath": "supabase/migrations/20260902000002_snapshot_take_snapshot_v3.sql",
+      "summary": "Snapshot and historical data management.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:supabase/migrations/20260902000003_snapshot_repair_null_days.sql",
+      "type": "schema",
+      "name": "20260902000003_snapshot_repair_null_days.sql",
+      "filePath": "supabase/migrations/20260902000003_snapshot_repair_null_days.sql",
+      "summary": "Snapshot and historical data management.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "ai-feature"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260902000004_snapshot_refresh_after_bank_sync.sql",
+      "type": "schema",
+      "name": "20260902000004_snapshot_refresh_after_bank_sync.sql",
+      "filePath": "supabase/migrations/20260902000004_snapshot_refresh_after_bank_sync.sql",
+      "summary": "Snapshot and historical data management.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "banking-integration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260902093000_athena_persona.sql",
+      "type": "schema",
+      "name": "20260902093000_athena_persona.sql",
+      "filePath": "supabase/migrations/20260902093000_athena_persona.sql",
+      "summary": "AI persona configuration for Athena assistant.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "ai-feature"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:supabase/migrations/20260902094000_athena_persona_brutal.sql",
+      "type": "schema",
+      "name": "20260902094000_athena_persona_brutal.sql",
+      "filePath": "supabase/migrations/20260902094000_athena_persona_brutal.sql",
+      "summary": "AI persona configuration for Athena assistant.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "ai-feature"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:supabase/migrations/20260902095000_athena_persona_text.sql",
+      "type": "schema",
+      "name": "20260902095000_athena_persona_text.sql",
+      "filePath": "supabase/migrations/20260902095000_athena_persona_text.sql",
+      "summary": "AI persona configuration for Athena assistant.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "ai-feature"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260902100000_unified_transactions_flow_kind.sql",
+      "type": "schema",
+      "name": "20260902100000_unified_transactions_flow_kind.sql",
+      "filePath": "supabase/migrations/20260902100000_unified_transactions_flow_kind.sql",
+      "summary": "Defines 1 view(s): public.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "banking-integration"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:supabase/migrations/20260902100001_monthly_summary_flow_kind.sql",
+      "type": "schema",
+      "name": "20260902100001_monthly_summary_flow_kind.sql",
+      "filePath": "supabase/migrations/20260902100001_monthly_summary_flow_kind.sql",
+      "summary": "Transaction flow kind categorization.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:supabase/migrations/20260906120000_contract_executions_rls_und_index.sql",
+      "type": "schema",
+      "name": "20260906120000_contract_executions_rls_und_index.sql",
+      "filePath": "supabase/migrations/20260906120000_contract_executions_rls_und_index.sql",
+      "summary": "Creates 1 index(es).",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "security"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260906140000_tax_engine.sql",
+      "type": "schema",
+      "name": "20260906140000_tax_engine.sql",
+      "filePath": "supabase/migrations/20260906140000_tax_engine.sql",
+      "summary": "Defines 1 table(s): public.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "tax-reporting"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:supabase/migrations/20260906160000_cron_aufraeumen_und_rls.sql",
+      "type": "schema",
+      "name": "20260906160000_cron_aufraeumen_und_rls.sql",
+      "filePath": "supabase/migrations/20260906160000_cron_aufraeumen_und_rls.sql",
+      "summary": "Row-level security (RLS) policy configuration.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "security"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260906180000_euer_zeilen.sql",
+      "type": "schema",
+      "name": "20260906180000_euer_zeilen.sql",
+      "filePath": "supabase/migrations/20260906180000_euer_zeilen.sql",
+      "summary": "Defines 1 table(s): public. Creates 1 index(es).",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "tax-reporting"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260906200000_belege_und_audit.sql",
+      "type": "schema",
+      "name": "20260906200000_belege_und_audit.sql",
+      "filePath": "supabase/migrations/20260906200000_belege_und_audit.sql",
+      "summary": "Defines 1 table(s): public. Creates 2 index(es).",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:supabase/migrations/20260906210000_audit_log_truncate_entziehen.sql",
+      "type": "schema",
+      "name": "20260906210000_audit_log_truncate_entziehen.sql",
+      "filePath": "supabase/migrations/20260906210000_audit_log_truncate_entziehen.sql",
+      "summary": "Database schema migration.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:supabase/migrations/20260906220000_waitlist_signups.sql",
+      "type": "schema",
+      "name": "20260906220000_waitlist_signups.sql",
+      "filePath": "supabase/migrations/20260906220000_waitlist_signups.sql",
+      "summary": "Defines 1 table(s): waitlist_signups. Creates 1 index(es).",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "ai-feature"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/20260909120000_reports_table_and_storage.sql",
+      "type": "schema",
+      "name": "20260909120000_reports_table_and_storage.sql",
+      "filePath": "supabase/migrations/20260909120000_reports_table_and_storage.sql",
+      "summary": "Defines 1 table(s): public.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/migrations/add_contract_to_account.sql",
+      "type": "schema",
+      "name": "add_contract_to_account.sql",
+      "filePath": "supabase/migrations/add_contract_to_account.sql",
+      "summary": "Database schema migration.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:supabase/migrations/add_goal_current_amount.sql",
+      "type": "schema",
+      "name": "add_goal_current_amount.sql",
+      "filePath": "supabase/migrations/add_goal_current_amount.sql",
+      "summary": "Database schema migration.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:supabase/migrations/add_goal_rate_start_date.sql",
+      "type": "schema",
+      "name": "add_goal_rate_start_date.sql",
+      "filePath": "supabase/migrations/add_goal_rate_start_date.sql",
+      "summary": "Database schema migration.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:supabase/migrations/fix_accounts_type_check.sql",
+      "type": "schema",
+      "name": "fix_accounts_type_check.sql",
+      "filePath": "supabase/migrations/fix_accounts_type_check.sql",
+      "summary": "Bug fix and constraint validation.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:supabase/migrations/fix_assets_type_check.sql",
+      "type": "schema",
+      "name": "fix_assets_type_check.sql",
+      "filePath": "supabase/migrations/fix_assets_type_check.sql",
+      "summary": "Bug fix and constraint validation.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition",
+        "crypto-portfolio"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:supabase/migrations/fix_contracts_type_check.sql",
+      "type": "schema",
+      "name": "fix_contracts_type_check.sql",
+      "filePath": "supabase/migrations/fix_contracts_type_check.sql",
+      "summary": "Bug fix and constraint validation.",
+      "tags": [
+        "database",
+        "migration",
+        "schema-definition"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": []
+}

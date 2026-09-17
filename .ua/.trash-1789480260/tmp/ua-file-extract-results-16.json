@@ -1,0 +1,1863 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 57,
+  "filesSkipped": [],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 57,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 0,
+      "failed": 0,
+      "skipped": 57
+    }
+  },
+  "results": [
+    {
+      "path": "supabase/migrations/20260309000000_depot_module.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 59,
+      "nonEmptyLines": 48,
+      "definitions": [
+        {
+          "name": "public",
+          "kind": "table",
+          "fields": [
+            "id",
+            "isin",
+            "fund_name",
+            "price",
+            "price_date",
+            "currency",
+            "created_at"
+          ],
+          "startLine": 2,
+          "endLine": 11
+        },
+        {
+          "name": "public",
+          "kind": "table",
+          "fields": [
+            "id",
+            "user_id",
+            "isin",
+            "fund_name",
+            "transaction_date",
+            "amount_eur",
+            "price_per_share",
+            "shares",
+            "notes",
+            "created_at"
+          ],
+          "startLine": 35,
+          "endLine": 46
+        },
+        {
+          "name": "idx_fund_prices_isin_date",
+          "kind": "index",
+          "fields": [],
+          "startLine": 31,
+          "endLine": 31
+        },
+        {
+          "name": "idx_depot_transactions_user_date",
+          "kind": "index",
+          "fields": [],
+          "startLine": 55,
+          "endLine": 55
+        },
+        {
+          "name": "idx_depot_transactions_isin",
+          "kind": "index",
+          "fields": [],
+          "startLine": 58,
+          "endLine": 58
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 5
+      }
+    },
+    {
+      "path": "supabase/migrations/20260309000001_depot_v2.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 45,
+      "nonEmptyLines": 37,
+      "definitions": [
+        {
+          "name": "public",
+          "kind": "table",
+          "fields": [
+            "id",
+            "user_id",
+            "isin",
+            "fund_name",
+            "monthly_amount",
+            "execution_day",
+            "start_date",
+            "is_active",
+            "created_at"
+          ],
+          "startLine": 7,
+          "endLine": 17
+        },
+        {
+          "name": "public",
+          "kind": "table",
+          "fields": [
+            "isin",
+            "fund_name",
+            "price",
+            "currency",
+            "fetched_at"
+          ],
+          "startLine": 30,
+          "endLine": 36
+        },
+        {
+          "name": "idx_savings_plans_user",
+          "kind": "index",
+          "fields": [],
+          "startLine": 26,
+          "endLine": 26
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 3
+      }
+    },
+    {
+      "path": "supabase/migrations/20260309000002_fund_sources.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 26,
+      "nonEmptyLines": 22,
+      "definitions": [
+        {
+          "name": "public",
+          "kind": "table",
+          "fields": [
+            "isin",
+            "name",
+            "url",
+            "xpath",
+            "currency",
+            "created_at"
+          ],
+          "startLine": 2,
+          "endLine": 9
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 1
+      }
+    },
+    {
+      "path": "supabase/migrations/20260309000003_depots.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 19,
+      "nonEmptyLines": 16,
+      "definitions": [
+        {
+          "name": "public",
+          "kind": "table",
+          "fields": [
+            "id",
+            "user_id",
+            "name",
+            "isin",
+            "created_at"
+          ],
+          "startLine": 2,
+          "endLine": 9
+        },
+        {
+          "name": "idx_depots_user",
+          "kind": "index",
+          "fields": [],
+          "startLine": 18,
+          "endLine": 18
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 2
+      }
+    },
+    {
+      "path": "supabase/migrations/20260309000004_fund_sources_ticker.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 2,
+      "nonEmptyLines": 2,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    },
+    {
+      "path": "supabase/migrations/20260309000005_contract_executions.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 20,
+      "nonEmptyLines": 18,
+      "definitions": [
+        {
+          "name": "public",
+          "kind": "table",
+          "fields": [
+            "id",
+            "contract_id",
+            "execution_date",
+            "transaction_id"
+          ],
+          "startLine": 2,
+          "endLine": 9
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 1
+      }
+    },
+    {
+      "path": "supabase/migrations/20260311000000_snapshot_function.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 269,
+      "nonEmptyLines": 254,
+      "definitions": [
+        {
+          "name": "crypto_price_cache",
+          "kind": "table",
+          "fields": [
+            "symbol",
+            "price_eur",
+            "updated_at"
+          ],
+          "startLine": 3,
+          "endLine": 7
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 1
+      }
+    },
+    {
+      "path": "supabase/migrations/20260323000000_security_fixes.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 24,
+      "nonEmptyLines": 20,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    },
+    {
+      "path": "supabase/migrations/20260407000000_exchange_keys.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 21,
+      "nonEmptyLines": 18,
+      "definitions": [
+        {
+          "name": "public",
+          "kind": "table",
+          "fields": [
+            "id",
+            "user_id",
+            "exchange",
+            "api_key",
+            "api_secret",
+            "created_at"
+          ],
+          "startLine": 5,
+          "endLine": 13
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 1
+      }
+    },
+    {
+      "path": "supabase/migrations/20260411000000_bank_integration.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 90,
+      "nonEmptyLines": 73,
+      "definitions": [
+        {
+          "name": "bank_transactions",
+          "kind": "table",
+          "fields": [
+            "id",
+            "user_id",
+            "account_iban",
+            "account_bic",
+            "amount",
+            "negative",
+            "value_date",
+            "entry_date",
+            "description",
+            "counterpart_name",
+            "counterpart_iban",
+            "counterpart_bic",
+            "category",
+            "raw_description",
+            "external_id"
+          ],
+          "startLine": 4,
+          "endLine": 21
+        },
+        {
+          "name": "bank_balance",
+          "kind": "table",
+          "fields": [
+            "id",
+            "user_id",
+            "account_iban",
+            "account_bic",
+            "account_name",
+            "booked_balance",
+            "available_balance",
+            "currency",
+            "fetched_at",
+            "created_at"
+          ],
+          "startLine": 56,
+          "endLine": 67
+        },
+        {
+          "name": "bank_transactions_external_id_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 24,
+          "endLine": 24
+        },
+        {
+          "name": "bank_transactions_user_date_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 29,
+          "endLine": 29
+        },
+        {
+          "name": "bank_transactions_user_iban_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 32,
+          "endLine": 32
+        },
+        {
+          "name": "bank_balance_user_iban_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 70,
+          "endLine": 70
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 6
+      }
+    },
+    {
+      "path": "supabase/migrations/20260427000000_lebenshaltungskosten.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 35,
+      "nonEmptyLines": 31,
+      "definitions": [
+        {
+          "name": "budget_categories",
+          "kind": "table",
+          "fields": [
+            "id",
+            "name",
+            "icon",
+            "monthly_budget",
+            "sort_order",
+            "created_at"
+          ],
+          "startLine": 4,
+          "endLine": 11
+        },
+        {
+          "name": "budget_items",
+          "kind": "table",
+          "fields": [
+            "id",
+            "category_id",
+            "name",
+            "unit_price",
+            "quantity",
+            "interval_days",
+            "created_at"
+          ],
+          "startLine": 14,
+          "endLine": 23
+        },
+        {
+          "name": "income_targets",
+          "kind": "table",
+          "fields": [
+            "id",
+            "label",
+            "buffer_pct",
+            "tax_pct",
+            "savings_pct",
+            "created_at"
+          ],
+          "startLine": 28,
+          "endLine": 35
+        },
+        {
+          "name": "budget_items_category_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 25,
+          "endLine": 25
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 4
+      }
+    },
+    {
+      "path": "supabase/migrations/20260427000001_lebenshaltungskosten_rls.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 14,
+      "nonEmptyLines": 10,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    },
+    {
+      "path": "supabase/migrations/20260708000000_bank_transactions_upsert_fix.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 14,
+      "nonEmptyLines": 12,
+      "definitions": [
+        {
+          "name": "bank_transactions_external_id_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 13,
+          "endLine": 13
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 1
+      }
+    },
+    {
+      "path": "supabase/migrations/20260811130000_lebenshaltungskosten_user_id.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 44,
+      "nonEmptyLines": 38,
+      "definitions": [
+        {
+          "name": "budget_categories_user_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 42,
+          "endLine": 42
+        },
+        {
+          "name": "budget_items_user_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 43,
+          "endLine": 43
+        },
+        {
+          "name": "income_targets_user_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 44,
+          "endLine": 44
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 3
+      }
+    },
+    {
+      "path": "supabase/migrations/20260811130001_lebenshaltungskosten_rls_owner_scoped.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 62,
+      "nonEmptyLines": 49,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    },
+    {
+      "path": "supabase/migrations/20260820000000_depot_holdings_fints.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 48,
+      "nonEmptyLines": 40,
+      "definitions": [
+        {
+          "name": "depot_holdings",
+          "kind": "table",
+          "fields": [
+            "id",
+            "user_id",
+            "account_label",
+            "name",
+            "pieces",
+            "valuation_date",
+            "total_value",
+            "as",
+            "if",
+            "created_at"
+          ],
+          "startLine": 7,
+          "endLine": 23
+        },
+        {
+          "name": "depot_holdings_external_id_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 26,
+          "endLine": 26
+        },
+        {
+          "name": "depot_holdings_user_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 29,
+          "endLine": 29
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 3
+      }
+    },
+    {
+      "path": "supabase/migrations/20260820010000_multi_bank_label.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 10,
+      "nonEmptyLines": 9,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    },
+    {
+      "path": "supabase/migrations/20260820020000_ai_assistant.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 165,
+      "nonEmptyLines": 132,
+      "definitions": [
+        {
+          "name": "ai_conversations",
+          "kind": "table",
+          "fields": [
+            "id",
+            "user_id",
+            "title",
+            "created_at"
+          ],
+          "startLine": 11,
+          "endLine": 16
+        },
+        {
+          "name": "ai_messages",
+          "kind": "table",
+          "fields": [
+            "id",
+            "user_id",
+            "conversation_id",
+            "role",
+            "content",
+            "content_text",
+            "content_tsv",
+            "tool_calls",
+            "created_at"
+          ],
+          "startLine": 48,
+          "endLine": 58
+        },
+        {
+          "name": "ai_tool_calls",
+          "kind": "table",
+          "fields": [
+            "id",
+            "user_id",
+            "conversation_id",
+            "message_id",
+            "tool_name",
+            "input",
+            "output_summary",
+            "is_error",
+            "duration_ms",
+            "created_at"
+          ],
+          "startLine": 89,
+          "endLine": 100
+        },
+        {
+          "name": "insights",
+          "kind": "table",
+          "fields": [
+            "id",
+            "user_id",
+            "type",
+            "severity",
+            "title",
+            "body",
+            "payload",
+            "dismissed_at",
+            "created_at"
+          ],
+          "startLine": 133,
+          "endLine": 143
+        },
+        {
+          "name": "ai_conversations_user_created_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 18,
+          "endLine": 18
+        },
+        {
+          "name": "ai_messages_conversation_created_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 60,
+          "endLine": 60
+        },
+        {
+          "name": "ai_messages_content_tsv_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 63,
+          "endLine": 63
+        },
+        {
+          "name": "ai_tool_calls_message_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 102,
+          "endLine": 102
+        },
+        {
+          "name": "ai_tool_calls_conversation_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 105,
+          "endLine": 105
+        },
+        {
+          "name": "insights_user_active_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 145,
+          "endLine": 145
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 10
+      }
+    },
+    {
+      "path": "supabase/migrations/20260821000000_bank_transactions_category_id.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 17,
+      "nonEmptyLines": 15,
+      "definitions": [
+        {
+          "name": "bank_transactions_category_id_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 16,
+          "endLine": 16
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 1
+      }
+    },
+    {
+      "path": "supabase/migrations/20260821010000_unify_finance_banking.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 161,
+      "nonEmptyLines": 147,
+      "definitions": [
+        {
+          "name": "unified_transactions",
+          "kind": "view",
+          "fields": [],
+          "startLine": 101,
+          "endLine": 101
+        },
+        {
+          "name": "accounts_user_bank_iban_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 11,
+          "endLine": 11
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 2
+      }
+    },
+    {
+      "path": "supabase/migrations/20260821020000_unified_transactions_category_type.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 67,
+      "nonEmptyLines": 64,
+      "definitions": [
+        {
+          "name": "without",
+          "kind": "view",
+          "fields": [],
+          "startLine": 4,
+          "endLine": 4
+        },
+        {
+          "name": "unified_transactions",
+          "kind": "view",
+          "fields": [],
+          "startLine": 5,
+          "endLine": 5
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 2
+      }
+    },
+    {
+      "path": "supabase/migrations/20260829000000_fints_client_state.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 46,
+      "nonEmptyLines": 42,
+      "definitions": [
+        {
+          "name": "public",
+          "kind": "table",
+          "fields": [
+            "user_id",
+            "an",
+            "und",
+            "Bank",
+            "state_blob",
+            "sobald",
+            "weil",
+            "dass",
+            "updated_at"
+          ],
+          "startLine": 19,
+          "endLine": 37
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 1
+      }
+    },
+    {
+      "path": "supabase/migrations/20260830000000_unified_transactions_signed_amount.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 95,
+      "nonEmptyLines": 91,
+      "definitions": [
+        {
+          "name": "unified_transactions",
+          "kind": "view",
+          "fields": [],
+          "startLine": 22,
+          "endLine": 22
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 1
+      }
+    },
+    {
+      "path": "supabase/migrations/20260830010000_unified_transactions_booked_date.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 97,
+      "nonEmptyLines": 92,
+      "definitions": [
+        {
+          "name": "unified_transactions",
+          "kind": "view",
+          "fields": [],
+          "startLine": 21,
+          "endLine": 21
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 1
+      }
+    },
+    {
+      "path": "supabase/migrations/20260830100000_athena_agent.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 270,
+      "nonEmptyLines": 236,
+      "definitions": [
+        {
+          "name": "ai_memories",
+          "kind": "table",
+          "fields": [
+            "id",
+            "user_id",
+            "content",
+            "category",
+            "source",
+            "confidence",
+            "last_used_at",
+            "created_at",
+            "updated_at",
+            "content_tsv"
+          ],
+          "startLine": 71,
+          "endLine": 87
+        },
+        {
+          "name": "ai_knowledge",
+          "kind": "table",
+          "fields": [
+            "id",
+            "user_id",
+            "title",
+            "content",
+            "tags",
+            "source_url",
+            "pinned",
+            "created_at",
+            "updated_at",
+            "content_tsv"
+          ],
+          "startLine": 107,
+          "endLine": 124
+        },
+        {
+          "name": "ai_logs",
+          "kind": "table",
+          "fields": [
+            "id",
+            "user_id",
+            "conversation_id",
+            "level",
+            "event",
+            "message",
+            "meta",
+            "duration_ms",
+            "created_at"
+          ],
+          "startLine": 144,
+          "endLine": 154
+        },
+        {
+          "name": "ai_pending_actions",
+          "kind": "table",
+          "fields": [
+            "id",
+            "user_id",
+            "conversation_id",
+            "message_id",
+            "action",
+            "input",
+            "summary",
+            "status",
+            "result",
+            "error",
+            "created_at",
+            "resolved_at"
+          ],
+          "startLine": 177,
+          "endLine": 191
+        },
+        {
+          "name": "ai_settings",
+          "kind": "table",
+          "fields": [
+            "user_id",
+            "model",
+            "effort",
+            "web_research",
+            "memory_enabled",
+            "auto_memory",
+            "daily_message_cap",
+            "max_steps",
+            "custom_instructions",
+            "updated_at"
+          ],
+          "startLine": 211,
+          "endLine": 222
+        },
+        {
+          "name": "ai_conversations_user_updated_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 29,
+          "endLine": 29
+        },
+        {
+          "name": "ai_memories_user_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 89,
+          "endLine": 89
+        },
+        {
+          "name": "ai_memories_tsv_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 90,
+          "endLine": 90
+        },
+        {
+          "name": "ai_knowledge_user_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 126,
+          "endLine": 126
+        },
+        {
+          "name": "ai_knowledge_tsv_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 127,
+          "endLine": 127
+        },
+        {
+          "name": "ai_knowledge_tags_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 128,
+          "endLine": 128
+        },
+        {
+          "name": "ai_logs_user_created_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 156,
+          "endLine": 156
+        },
+        {
+          "name": "ai_logs_level_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 157,
+          "endLine": 157
+        },
+        {
+          "name": "ai_logs_conversation_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 158,
+          "endLine": 158
+        },
+        {
+          "name": "ai_pending_actions_user_status_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 193,
+          "endLine": 193
+        },
+        {
+          "name": "ai_pending_actions_conversation_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 195,
+          "endLine": 195
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 16
+      }
+    },
+    {
+      "path": "supabase/migrations/20260831000000_snapshot_unified_transactions.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 384,
+      "nonEmptyLines": 360,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    },
+    {
+      "path": "supabase/migrations/20260831000001_backfill_snapshots.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 117,
+      "nonEmptyLines": 111,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    },
+    {
+      "path": "supabase/migrations/20260831000002_valuables.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 181,
+      "nonEmptyLines": 155,
+      "definitions": [
+        {
+          "name": "valuables",
+          "kind": "table",
+          "fields": [
+            "id",
+            "user_id",
+            "name",
+            "kategorie",
+            "marke",
+            "modell",
+            "referenz",
+            "seriennummer",
+            "gekauft_am",
+            "kaufpreis",
+            "kaufquelle",
+            "waehrung",
+            "box_vorhanden",
+            "papiere_vorhanden",
+            "lagerort",
+            "versichert",
+            "versicherungsnummer",
+            "oder",
+            "notizen",
+            "abwaehlbar",
+            "dessen",
+            "bleibt",
+            "verkaufspreis",
+            "is_active",
+            "sort_order",
+            "created_at",
+            "updated_at"
+          ],
+          "startLine": 14,
+          "endLine": 58
+        },
+        {
+          "name": "valuable_valuations",
+          "kind": "table",
+          "fields": [
+            "id",
+            "valuable_id",
+            "user_id",
+            "bewertet_am",
+            "wert",
+            "notiz",
+            "created_at"
+          ],
+          "startLine": 71,
+          "endLine": 82
+        },
+        {
+          "name": "valuables_current",
+          "kind": "view",
+          "fields": [],
+          "startLine": 115,
+          "endLine": 115
+        },
+        {
+          "name": "valuables_user_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 60,
+          "endLine": 60
+        },
+        {
+          "name": "valuable_valuations_lookup_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 84,
+          "endLine": 84
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 5
+      }
+    },
+    {
+      "path": "supabase/migrations/20260831000004_valuables_foto.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 40,
+      "nonEmptyLines": 37,
+      "definitions": [
+        {
+          "name": "valuables_current",
+          "kind": "view",
+          "fields": [],
+          "startLine": 20,
+          "endLine": 20
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 1
+      }
+    },
+    {
+      "path": "supabase/migrations/20260831000005_valuable_images.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 98,
+      "nonEmptyLines": 89,
+      "definitions": [
+        {
+          "name": "valuable_images",
+          "kind": "table",
+          "fields": [
+            "id",
+            "valuable_id",
+            "user_id",
+            "pfad",
+            "art",
+            "ist_hauptbild",
+            "sort_order",
+            "created_at"
+          ],
+          "startLine": 16,
+          "endLine": 26
+        },
+        {
+          "name": "valuables_current",
+          "kind": "view",
+          "fields": [],
+          "startLine": 51,
+          "endLine": 51
+        },
+        {
+          "name": "valuable_images_lookup_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 28,
+          "endLine": 28
+        },
+        {
+          "name": "valuable_images_ein_hauptbild_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 31,
+          "endLine": 31
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 4
+      }
+    },
+    {
+      "path": "supabase/migrations/20260831000006_valuables_zukunftsdatum.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 59,
+      "nonEmptyLines": 58,
+      "definitions": [
+        {
+          "name": "valuables_current",
+          "kind": "view",
+          "fields": [],
+          "startLine": 19,
+          "endLine": 19
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 1
+      }
+    },
+    {
+      "path": "supabase/migrations/20260831120000_crypto_price_resilience.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 299,
+      "nonEmptyLines": 274,
+      "definitions": [
+        {
+          "name": "idx_assets_user_source",
+          "kind": "index",
+          "fields": [],
+          "startLine": 40,
+          "endLine": 40
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 1
+      }
+    },
+    {
+      "path": "supabase/migrations/20260901000000_valuable_images_prompt.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 21,
+      "nonEmptyLines": 19,
+      "definitions": [
+        {
+          "name": "valuable_images_basis_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 20,
+          "endLine": 20
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 1
+      }
+    },
+    {
+      "path": "supabase/migrations/20260902000000_snapshot_investment_bucket.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 62,
+      "nonEmptyLines": 56,
+      "definitions": [
+        {
+          "name": "current_net_worth",
+          "kind": "view",
+          "fields": [],
+          "startLine": 30,
+          "endLine": 30
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 1
+      }
+    },
+    {
+      "path": "supabase/migrations/20260902000001_fund_price_history.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 62,
+      "nonEmptyLines": 57,
+      "definitions": [
+        {
+          "name": "fund_price_history",
+          "kind": "table",
+          "fields": [
+            "isin",
+            "price_date",
+            "price",
+            "currency",
+            "created_at"
+          ],
+          "startLine": 8,
+          "endLine": 15
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 1
+      }
+    },
+    {
+      "path": "supabase/migrations/20260902000002_snapshot_take_snapshot_v3.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 264,
+      "nonEmptyLines": 243,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    },
+    {
+      "path": "supabase/migrations/20260902000003_snapshot_repair_null_days.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 60,
+      "nonEmptyLines": 60,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    },
+    {
+      "path": "supabase/migrations/20260902000004_snapshot_refresh_after_bank_sync.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 43,
+      "nonEmptyLines": 42,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    },
+    {
+      "path": "supabase/migrations/20260902093000_athena_persona.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 22,
+      "nonEmptyLines": 19,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    },
+    {
+      "path": "supabase/migrations/20260902094000_athena_persona_brutal.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 13,
+      "nonEmptyLines": 11,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    },
+    {
+      "path": "supabase/migrations/20260902095000_athena_persona_text.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 35,
+      "nonEmptyLines": 30,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    },
+    {
+      "path": "supabase/migrations/20260902100000_unified_transactions_flow_kind.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 138,
+      "nonEmptyLines": 134,
+      "definitions": [
+        {
+          "name": "public",
+          "kind": "view",
+          "fields": [],
+          "startLine": 52,
+          "endLine": 52
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 1
+      }
+    },
+    {
+      "path": "supabase/migrations/20260902100001_monthly_summary_flow_kind.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 112,
+      "nonEmptyLines": 111,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    },
+    {
+      "path": "supabase/migrations/20260906120000_contract_executions_rls_und_index.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 41,
+      "nonEmptyLines": 38,
+      "definitions": [
+        {
+          "name": "debt_payments_debt_id_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 40,
+          "endLine": 40
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 1
+      }
+    },
+    {
+      "path": "supabase/migrations/20260906140000_tax_engine.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 121,
+      "nonEmptyLines": 104,
+      "definitions": [
+        {
+          "name": "public",
+          "kind": "table",
+          "fields": [
+            "jahr",
+            "zone2_faktor",
+            "zone2_konstante",
+            "zone3_faktor",
+            "zone3_konstante",
+            "zone3_sockel",
+            "zone4_satz",
+            "zone4_satz",
+            "zone4_abzug",
+            "zone5_satz",
+            "zone5_abzug",
+            "die",
+            "sonderausgabenpauschale",
+            "ab",
+            "statt",
+            "kleinunternehmer_laufend",
+            "quelle",
+            "geprueft_am"
+          ],
+          "startLine": 9,
+          "endLine": 51
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 1
+      }
+    },
+    {
+      "path": "supabase/migrations/20260906160000_cron_aufraeumen_und_rls.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 89,
+      "nonEmptyLines": 81,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    },
+    {
+      "path": "supabase/migrations/20260906180000_euer_zeilen.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 97,
+      "nonEmptyLines": 83,
+      "definitions": [
+        {
+          "name": "public",
+          "kind": "table",
+          "fields": [
+            "jahr",
+            "zeile",
+            "bezeichnung",
+            "in",
+            "die",
+            "landet",
+            "nie",
+            "quelle",
+            "geprueft_am"
+          ],
+          "startLine": 9,
+          "endLine": 26
+        },
+        {
+          "name": "euer_zeilen_eine_sammelzeile_je_art",
+          "kind": "index",
+          "fields": [],
+          "startLine": 31,
+          "endLine": 31
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 2
+      }
+    },
+    {
+      "path": "supabase/migrations/20260906200000_belege_und_audit.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 187,
+      "nonEmptyLines": 157,
+      "definitions": [
+        {
+          "name": "public",
+          "kind": "table",
+          "fields": [
+            "id",
+            "user_id",
+            "auf",
+            "pfad",
+            "dateiname",
+            "mime",
+            "groesse_bytes",
+            "aendert",
+            "dass",
+            "beleg_datum",
+            "betrag",
+            "aussteller",
+            "notiz",
+            "der",
+            "hochgeladen_am"
+          ],
+          "startLine": 36,
+          "endLine": 66
+        },
+        {
+          "name": "belege_user_transaction_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 68,
+          "endLine": 68
+        },
+        {
+          "name": "belege_user_datum_idx",
+          "kind": "index",
+          "fields": [],
+          "startLine": 70,
+          "endLine": 70
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 3
+      }
+    },
+    {
+      "path": "supabase/migrations/20260906210000_audit_log_truncate_entziehen.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 14,
+      "nonEmptyLines": 12,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    },
+    {
+      "path": "supabase/migrations/20260906220000_waitlist_signups.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 27,
+      "nonEmptyLines": 24,
+      "definitions": [
+        {
+          "name": "waitlist_signups",
+          "kind": "table",
+          "fields": [
+            "id",
+            "email",
+            "created_at"
+          ],
+          "startLine": 9,
+          "endLine": 16
+        },
+        {
+          "name": "waitlist_signups_email_key",
+          "kind": "index",
+          "fields": [],
+          "startLine": 20,
+          "endLine": 20
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 2
+      }
+    },
+    {
+      "path": "supabase/migrations/20260909120000_reports_table_and_storage.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 57,
+      "nonEmptyLines": 49,
+      "definitions": [
+        {
+          "name": "public",
+          "kind": "table",
+          "fields": [
+            "id",
+            "user_id",
+            "type",
+            "period_start",
+            "period_end",
+            "title",
+            "html",
+            "data",
+            "pdf_path",
+            "generated_at",
+            "sent_at",
+            "created_at"
+          ],
+          "startLine": 7,
+          "endLine": 21
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 1
+      }
+    },
+    {
+      "path": "supabase/migrations/add_contract_to_account.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 5,
+      "nonEmptyLines": 4,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    },
+    {
+      "path": "supabase/migrations/add_goal_current_amount.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 2,
+      "nonEmptyLines": 2,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    },
+    {
+      "path": "supabase/migrations/add_goal_rate_start_date.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 2,
+      "nonEmptyLines": 2,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    },
+    {
+      "path": "supabase/migrations/fix_accounts_type_check.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 8,
+      "nonEmptyLines": 6,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    },
+    {
+      "path": "supabase/migrations/fix_assets_type_check.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 8,
+      "nonEmptyLines": 6,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    },
+    {
+      "path": "supabase/migrations/fix_contracts_type_check.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 16,
+      "nonEmptyLines": 16,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 0
+      }
+    }
+  ]
+}

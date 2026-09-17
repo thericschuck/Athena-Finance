@@ -267,6 +267,31 @@ a, button {
   transform: translateY(-1px);
 }
 
+/* ── Präsentations-Modus (Auge-Icon in der Sidebar) ───────────────────────────
+   Blurt Zahlenwerte, ohne sie aus dem DOM zu entfernen — und ohne die Optik zu
+   verändern: Balkenhöhen, Ring-/Heatmap-Farben und Kurvenverläufe bleiben
+   sichtbar (das IST die Optik), nur die exakte Ziffer wird unlesbar. Deshalb
+   NIE einen ganzen Chart-Container blurren, nur:
+   - `.tabular-nums`: markiert im ganzen Projekt praktisch jede Betrags-
+     anzeige (Tailwind-Klasse für Ziffern-Ausrichtung, hier zweckentfremdet),
+     deckt fast alle Text-Beträge ab, ohne dass jede Stelle einzeln
+     angefasst werden musste.
+   - `.recharts-tooltip-wrapper`: Recharts rendert JEDEN Tooltip (auch mit
+     eigener `content`-Komponente) in diesen Wrapper — ein Treffer deckt
+     alle Chart-Hover-Tooltips ab, ohne Balken/Linien/Ringe zu berühren.
+   - `.privacy-blur`: expliziter Haken für Einzelfälle, die weder das eine
+     noch das andere sind (z. B. eine Zahl direkt IM SVG ohne Text-Wrapper). */
+html[data-privacy-hidden] .tabular-nums,
+html[data-privacy-hidden] .recharts-tooltip-wrapper,
+html[data-privacy-hidden] .privacy-blur {
+  filter: blur(6px);
+  user-select: none;
+}
+.tabular-nums,
+.privacy-blur {
+  transition: filter 150ms ease;
+}
+
 /* ── Table row hover ───────────────────────────────────────────────────────── */
 tbody tr {
   transition: background-color 0.12s ease;

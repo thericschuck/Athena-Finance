@@ -60,7 +60,7 @@ export function AccountMonthChart({
         />
         <YAxis
           tickFormatter={v => fmt(Math.abs(v as number), 0)}
-          tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
+          tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5, className: 'tabular-nums' }}
           axisLine={false} tickLine={false} width={56}
         />
         <ReferenceLine y={0} stroke="currentColor" strokeOpacity={0.2} />

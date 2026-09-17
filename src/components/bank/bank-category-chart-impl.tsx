@@ -113,7 +113,7 @@ export function BankCategoryChart({ transactions, categories }: { transactions: 
           <XAxis
             type="number"
             tickFormatter={v => fmtCurrency(v as number, 'EUR', locale, { fractionDigits: 0 })}
-            tick={{ fontSize: 10, fill: 'currentColor', opacity: 0.5 }}
+            tick={{ fontSize: 10, fill: 'currentColor', opacity: 0.5, className: 'tabular-nums' }}
             axisLine={false}
             tickLine={false}
           />

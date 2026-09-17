@@ -1,0 +1,317 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/components/ui/url-pagination.tsx",
+      "type": "file",
+      "name": "url-pagination.tsx",
+      "filePath": "src/components/ui/url-pagination.tsx",
+      "summary": "Reusable pagination control synced to URL params, with configurable page size options and overlap-avoidance positioning so it doesn't collide with other floating UI.",
+      "tags": ["component", "ui-primitive", "pagination"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/ui/url-pagination.tsx:UrlPagination",
+      "type": "function",
+      "name": "UrlPagination",
+      "filePath": "src/components/ui/url-pagination.tsx",
+      "lineRange": [25, 132],
+      "summary": "Renders page-number and page-size controls, computing the total page count and writing the selected page/pageSize to the URL query string.",
+      "tags": ["component", "pagination", "url-state"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/account-history.ts",
+      "type": "file",
+      "name": "account-history.ts",
+      "filePath": "src/lib/account-history.ts",
+      "summary": "Fetches paginated account balance snapshot history from Supabase for a given account and start date, ordered for stable, gap-free pagination.",
+      "tags": ["utility", "data-fetching", "supabase", "finance"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/account-history.ts:fetchBalanceHistory",
+      "type": "function",
+      "name": "fetchBalanceHistory",
+      "filePath": "src/lib/account-history.ts",
+      "lineRange": [35, 72],
+      "summary": "Pages through the account_balances table for one account from a given date, returning a chronologically ordered array of balance snapshots.",
+      "tags": ["data-fetching", "supabase", "pagination"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/assistant/context.ts",
+      "type": "file",
+      "name": "context.ts",
+      "filePath": "src/lib/assistant/context.ts",
+      "summary": "Loads contextual data (pinned memories, knowledge index, accounts and categories) used to ground the Athena AI assistant's responses in the user's own financial data.",
+      "tags": ["utility", "ai-assistant", "data-fetching", "supabase"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/assistant/context.ts:loadMemories",
+      "type": "function",
+      "name": "loadMemories",
+      "filePath": "src/lib/assistant/context.ts",
+      "lineRange": [34, 46],
+      "summary": "Loads the user's saved AI memories, prioritizing manually created entries over inferred ones.",
+      "tags": ["data-fetching", "supabase", "ai-assistant"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/assistant/context.ts:loadKnowledgeIndex",
+      "type": "function",
+      "name": "loadKnowledgeIndex",
+      "filePath": "src/lib/assistant/context.ts",
+      "lineRange": [48, 58],
+      "summary": "Loads a lightweight index of the user's saved knowledge entries (title and tags), pinned entries first.",
+      "tags": ["data-fetching", "supabase", "ai-assistant"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/assistant/context.ts:loadAccountContext",
+      "type": "function",
+      "name": "loadAccountContext",
+      "filePath": "src/lib/assistant/context.ts",
+      "lineRange": [66, 84],
+      "summary": "Loads the user's active accounts and categories in parallel to give the assistant awareness of the user's financial structure.",
+      "tags": ["data-fetching", "supabase", "ai-assistant"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/assistant/context.ts:loadAthenaContext",
+      "type": "function",
+      "name": "loadAthenaContext",
+      "filePath": "src/lib/assistant/context.ts",
+      "lineRange": [93, 104],
+      "summary": "Combines memories, knowledge index, and account context (each independently toggleable) into the full context object passed to the assistant.",
+      "tags": ["ai-assistant", "data-fetching", "orchestration"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/assistant/logger.ts",
+      "type": "file",
+      "name": "logger.ts",
+      "filePath": "src/lib/assistant/logger.ts",
+      "summary": "Writes structured Athena AI assistant log entries to Supabase and exposes a bound logger factory scoped to a user and conversation.",
+      "tags": ["utility", "logging", "ai-assistant", "supabase"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/assistant/logger.ts:logAi",
+      "type": "function",
+      "name": "logAi",
+      "filePath": "src/lib/assistant/logger.ts",
+      "lineRange": [50, 65],
+      "summary": "Inserts a single structured log row (level, event, metadata) for the Athena assistant, swallowing and console-logging any insert failure.",
+      "tags": ["logging", "supabase"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/assistant/logger.ts:createLogger",
+      "type": "function",
+      "name": "createLogger",
+      "filePath": "src/lib/assistant/logger.ts",
+      "lineRange": [68, 71],
+      "summary": "Returns a logger function pre-bound to a user and conversation id, so call sites don't need to repeat those identifiers.",
+      "tags": ["logging", "factory"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/hooks/use-avoid-overlap.ts",
+      "type": "file",
+      "name": "use-avoid-overlap.ts",
+      "filePath": "src/lib/hooks/use-avoid-overlap.ts",
+      "summary": "Custom hook that measures overlap between an element and sibling elements sharing a data attribute, computing a vertical lift offset to keep floating UI (e.g. action buttons) from visually colliding.",
+      "tags": ["hook", "utility", "layout", "dom"],
+      "complexity": "moderate",
+      "languageNotes": "Combines getBoundingClientRect measurements, a MutationObserver, window resize/scroll listeners, and requestAnimationFrame scheduling to recompute the offset reactively."
+    },
+    {
+      "id": "function:src/lib/hooks/use-avoid-overlap.ts:useAvoidOverlap",
+      "type": "function",
+      "name": "useAvoidOverlap",
+      "filePath": "src/lib/hooks/use-avoid-overlap.ts",
+      "lineRange": [31, 94],
+      "summary": "Attaches a ref to an element and returns a lift-offset style, recomputed whenever a matching sibling element (found via a shared data attribute/selector) overlaps it.",
+      "tags": ["hook", "layout", "dom"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/lib/pagination.ts",
+      "type": "file",
+      "name": "pagination.ts",
+      "filePath": "src/lib/pagination.ts",
+      "summary": "Shared pagination constants and parsers for validating page number and page size query params across list pages.",
+      "tags": ["utility", "pagination", "validation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/pagination.ts:parsePage",
+      "type": "function",
+      "name": "parsePage",
+      "filePath": "src/lib/pagination.ts",
+      "lineRange": [28, 32],
+      "summary": "Parses and clamps a raw page query-param value into a valid, bounded page number.",
+      "tags": ["validation", "pagination"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/pagination.ts:parsePageSize",
+      "type": "function",
+      "name": "parsePageSize",
+      "filePath": "src/lib/pagination.ts",
+      "lineRange": [35, 38],
+      "summary": "Parses a raw page-size query-param value, falling back to the default when it isn't one of the allowed options.",
+      "tags": ["validation", "pagination"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/period.ts",
+      "type": "file",
+      "name": "period.ts",
+      "filePath": "src/lib/period.ts",
+      "summary": "Shared period constants and helpers for parsing, validating, and computing date cutoffs and display formats for time-range filters (7d/30d/90d/YTD/all).",
+      "tags": ["utility", "date", "period", "validation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/period.ts:isPeriod",
+      "type": "function",
+      "name": "isPeriod",
+      "filePath": "src/lib/period.ts",
+      "lineRange": [21, 23],
+      "summary": "Type guard checking whether a string is one of the supported period values.",
+      "tags": ["validation", "type-guard"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/period.ts:parsePeriod",
+      "type": "function",
+      "name": "parsePeriod",
+      "filePath": "src/lib/period.ts",
+      "lineRange": [26, 28],
+      "summary": "Parses a raw period query-param value, falling back to a provided default when invalid.",
+      "tags": ["validation", "period"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/period.ts:periodCutoff",
+      "type": "function",
+      "name": "periodCutoff",
+      "filePath": "src/lib/period.ts",
+      "lineRange": [37, 53],
+      "summary": "Computes the start-date cutoff for a given period (e.g. 30 days ago, start of year) relative to a reference date.",
+      "tags": ["date", "period"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/period.ts:inPeriod",
+      "type": "function",
+      "name": "inPeriod",
+      "filePath": "src/lib/period.ts",
+      "lineRange": [56, 59],
+      "summary": "Checks whether a given date falls within the range implied by a period relative to a reference date.",
+      "tags": ["date", "period", "validation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/period.ts:periodDateFormat",
+      "type": "function",
+      "name": "periodDateFormat",
+      "filePath": "src/lib/period.ts",
+      "lineRange": [66, 70],
+      "summary": "Returns the appropriate date display format (e.g. day vs. month granularity) for a given period, used by chart axis labels.",
+      "tags": ["date", "period", "formatting"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/supabase/client.ts",
+      "type": "file",
+      "name": "client.ts",
+      "filePath": "src/lib/supabase/client.ts",
+      "summary": "Creates a Supabase browser client for use in client components, typed against the generated database schema.",
+      "tags": ["utility", "supabase", "client-side", "entry-point"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/supabase/client.ts:createClient",
+      "type": "function",
+      "name": "createClient",
+      "filePath": "src/lib/supabase/client.ts",
+      "lineRange": [17, 22],
+      "summary": "Instantiates a typed Supabase browser client using createBrowserClient with the project's public URL and anon key.",
+      "tags": ["supabase", "client-side", "factory"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/types/database.ts",
+      "type": "file",
+      "name": "database.ts",
+      "filePath": "src/types/database.ts",
+      "summary": "Auto-generated Supabase database type definitions (tables, views, enums, functions) providing the canonical TypeScript schema used throughout the app.",
+      "tags": ["type-definition", "supabase", "generated", "database"],
+      "complexity": "complex",
+      "languageNotes": "Generated via the Supabase CLI (`supabase gen types typescript`); at 3,754 lines it is the largest file in the project and should not be hand-edited."
+    }
+  ],
+  "edges": [
+    { "source": "file:src/components/ui/url-pagination.tsx", "target": "function:src/components/ui/url-pagination.tsx:UrlPagination", "type": "contains", "direction": "forward", "weight": 1.0 },
+    { "source": "file:src/components/ui/url-pagination.tsx", "target": "function:src/components/ui/url-pagination.tsx:UrlPagination", "type": "exports", "direction": "forward", "weight": 0.8 },
+    { "source": "file:src/components/ui/url-pagination.tsx", "target": "file:src/components/providers/url-filters.tsx", "type": "imports", "direction": "forward", "weight": 0.7 },
+    { "source": "file:src/components/ui/url-pagination.tsx", "target": "file:src/components/ui/button.tsx", "type": "imports", "direction": "forward", "weight": 0.7 },
+    { "source": "file:src/components/ui/url-pagination.tsx", "target": "file:src/lib/hooks/use-avoid-overlap.ts", "type": "imports", "direction": "forward", "weight": 0.7 },
+    { "source": "file:src/components/ui/url-pagination.tsx", "target": "file:src/lib/pagination.ts", "type": "imports", "direction": "forward", "weight": 0.7 },
+    { "source": "file:src/components/ui/url-pagination.tsx", "target": "file:src/lib/utils.ts", "type": "imports", "direction": "forward", "weight": 0.7 },
+    { "source": "function:src/components/ui/url-pagination.tsx:UrlPagination", "target": "function:src/components/providers/url-filters.tsx:useUrlFilters", "type": "calls", "direction": "forward", "weight": 0.8 },
+    { "source": "function:src/components/ui/url-pagination.tsx:UrlPagination", "target": "function:src/lib/utils.ts:cn", "type": "calls", "direction": "forward", "weight": 0.8 },
+
+    { "source": "file:src/lib/account-history.ts", "target": "function:src/lib/account-history.ts:fetchBalanceHistory", "type": "contains", "direction": "forward", "weight": 1.0 },
+    { "source": "file:src/lib/account-history.ts", "target": "function:src/lib/account-history.ts:fetchBalanceHistory", "type": "exports", "direction": "forward", "weight": 0.8 },
+    { "source": "file:src/lib/account-history.ts", "target": "file:src/types/database.ts", "type": "imports", "direction": "forward", "weight": 0.7 },
+
+    { "source": "file:src/lib/assistant/context.ts", "target": "function:src/lib/assistant/context.ts:loadMemories", "type": "contains", "direction": "forward", "weight": 1.0 },
+    { "source": "file:src/lib/assistant/context.ts", "target": "function:src/lib/assistant/context.ts:loadKnowledgeIndex", "type": "contains", "direction": "forward", "weight": 1.0 },
+    { "source": "file:src/lib/assistant/context.ts", "target": "function:src/lib/assistant/context.ts:loadAccountContext", "type": "contains", "direction": "forward", "weight": 1.0 },
+    { "source": "file:src/lib/assistant/context.ts", "target": "function:src/lib/assistant/context.ts:loadAthenaContext", "type": "contains", "direction": "forward", "weight": 1.0 },
+    { "source": "file:src/lib/assistant/context.ts", "target": "function:src/lib/assistant/context.ts:loadMemories", "type": "exports", "direction": "forward", "weight": 0.8 },
+    { "source": "file:src/lib/assistant/context.ts", "target": "function:src/lib/assistant/context.ts:loadKnowledgeIndex", "type": "exports", "direction": "forward", "weight": 0.8 },
+    { "source": "file:src/lib/assistant/context.ts", "target": "function:src/lib/assistant/context.ts:loadAccountContext", "type": "exports", "direction": "forward", "weight": 0.8 },
+    { "source": "file:src/lib/assistant/context.ts", "target": "function:src/lib/assistant/context.ts:loadAthenaContext", "type": "exports", "direction": "forward", "weight": 0.8 },
+    { "source": "file:src/lib/assistant/context.ts", "target": "file:src/types/database.ts", "type": "imports", "direction": "forward", "weight": 0.7 },
+    { "source": "function:src/lib/assistant/context.ts:loadAthenaContext", "target": "function:src/lib/assistant/context.ts:loadMemories", "type": "calls", "direction": "forward", "weight": 0.8 },
+    { "source": "function:src/lib/assistant/context.ts:loadAthenaContext", "target": "function:src/lib/assistant/context.ts:loadKnowledgeIndex", "type": "calls", "direction": "forward", "weight": 0.8 },
+    { "source": "function:src/lib/assistant/context.ts:loadAthenaContext", "target": "function:src/lib/assistant/context.ts:loadAccountContext", "type": "calls", "direction": "forward", "weight": 0.8 },
+
+    { "source": "file:src/lib/assistant/logger.ts", "target": "function:src/lib/assistant/logger.ts:logAi", "type": "contains", "direction": "forward", "weight": 1.0 },
+    { "source": "file:src/lib/assistant/logger.ts", "target": "function:src/lib/assistant/logger.ts:createLogger", "type": "contains", "direction": "forward", "weight": 1.0 },
+    { "source": "file:src/lib/assistant/logger.ts", "target": "function:src/lib/assistant/logger.ts:logAi", "type": "exports", "direction": "forward", "weight": 0.8 },
+    { "source": "file:src/lib/assistant/logger.ts", "target": "function:src/lib/assistant/logger.ts:createLogger", "type": "exports", "direction": "forward", "weight": 0.8 },
+    { "source": "file:src/lib/assistant/logger.ts", "target": "file:src/types/database.ts", "type": "imports", "direction": "forward", "weight": 0.7 },
+    { "source": "function:src/lib/assistant/logger.ts:createLogger", "target": "function:src/lib/assistant/logger.ts:logAi", "type": "calls", "direction": "forward", "weight": 0.8 },
+
+    { "source": "file:src/lib/hooks/use-avoid-overlap.ts", "target": "function:src/lib/hooks/use-avoid-overlap.ts:useAvoidOverlap", "type": "contains", "direction": "forward", "weight": 1.0 },
+    { "source": "file:src/lib/hooks/use-avoid-overlap.ts", "target": "function:src/lib/hooks/use-avoid-overlap.ts:useAvoidOverlap", "type": "exports", "direction": "forward", "weight": 0.8 },
+
+    { "source": "file:src/lib/pagination.ts", "target": "function:src/lib/pagination.ts:parsePage", "type": "contains", "direction": "forward", "weight": 1.0 },
+    { "source": "file:src/lib/pagination.ts", "target": "function:src/lib/pagination.ts:parsePageSize", "type": "contains", "direction": "forward", "weight": 1.0 },
+    { "source": "file:src/lib/pagination.ts", "target": "function:src/lib/pagination.ts:parsePage", "type": "exports", "direction": "forward", "weight": 0.8 },
+    { "source": "file:src/lib/pagination.ts", "target": "function:src/lib/pagination.ts:parsePageSize", "type": "exports", "direction": "forward", "weight": 0.8 },
+
+    { "source": "file:src/lib/period.ts", "target": "function:src/lib/period.ts:isPeriod", "type": "contains", "direction": "forward", "weight": 1.0 },
+    { "source": "file:src/lib/period.ts", "target": "function:src/lib/period.ts:parsePeriod", "type": "contains", "direction": "forward", "weight": 1.0 },
+    { "source": "file:src/lib/period.ts", "target": "function:src/lib/period.ts:periodCutoff", "type": "contains", "direction": "forward", "weight": 1.0 },
+    { "source": "file:src/lib/period.ts", "target": "function:src/lib/period.ts:inPeriod", "type": "contains", "direction": "forward", "weight": 1.0 },
+    { "source": "file:src/lib/period.ts", "target": "function:src/lib/period.ts:periodDateFormat", "type": "contains", "direction": "forward", "weight": 1.0 },
+    { "source": "file:src/lib/period.ts", "target": "function:src/lib/period.ts:isPeriod", "type": "exports", "direction": "forward", "weight": 0.8 },
+    { "source": "file:src/lib/period.ts", "target": "function:src/lib/period.ts:parsePeriod", "type": "exports", "direction": "forward", "weight": 0.8 },
+    { "source": "file:src/lib/period.ts", "target": "function:src/lib/period.ts:periodCutoff", "type": "exports", "direction": "forward", "weight": 0.8 },
+    { "source": "file:src/lib/period.ts", "target": "function:src/lib/period.ts:inPeriod", "type": "exports", "direction": "forward", "weight": 0.8 },
+    { "source": "file:src/lib/period.ts", "target": "function:src/lib/period.ts:periodDateFormat", "type": "exports", "direction": "forward", "weight": 0.8 },
+    { "source": "function:src/lib/period.ts:parsePeriod", "target": "function:src/lib/period.ts:isPeriod", "type": "calls", "direction": "forward", "weight": 0.8 },
+    { "source": "function:src/lib/period.ts:inPeriod", "target": "function:src/lib/period.ts:periodCutoff", "type": "calls", "direction": "forward", "weight": 0.8 },
+
+    { "source": "file:src/lib/supabase/client.ts", "target": "function:src/lib/supabase/client.ts:createClient", "type": "contains", "direction": "forward", "weight": 1.0 },
+    { "source": "file:src/lib/supabase/client.ts", "target": "function:src/lib/supabase/client.ts:createClient", "type": "exports", "direction": "forward", "weight": 0.8 },
+    { "source": "file:src/lib/supabase/client.ts", "target": "file:src/types/database.ts", "type": "imports", "direction": "forward", "weight": 0.7 }
+  ]
+}

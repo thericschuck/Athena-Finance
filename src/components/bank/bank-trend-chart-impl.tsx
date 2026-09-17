@@ -137,7 +137,7 @@ export function BankTrendChart({ transactions, selectedMonth, onSelectMonth }: P
           />
           <YAxis
             tickFormatter={v => fmtCurrency(Math.abs(v as number), 'EUR', locale, { fractionDigits: 0 })}
-            tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
+            tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5, className: 'tabular-nums' }}
             axisLine={false} tickLine={false} width={56}
           />
           <ReferenceLine y={0} stroke="currentColor" strokeOpacity={0.2} />

@@ -1,0 +1,500 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/components/ui/input.tsx",
+   "type": "file",
+   "name": "input.tsx",
+   "filePath": "src/components/ui/input.tsx",
+   "summary": "shadcn/ui Input primitive: a styled native <input> element reused across all forms in the app.",
+   "tags": [
+    "ui-component",
+    "shadcn",
+    "design-system",
+    "form-field"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/components/ui/label.tsx",
+   "type": "file",
+   "name": "label.tsx",
+   "filePath": "src/components/ui/label.tsx",
+   "summary": "shadcn/ui Label primitive built on Radix Label, used for form field labels throughout the app.",
+   "tags": [
+    "ui-component",
+    "shadcn",
+    "design-system",
+    "form-field"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/components/ui/select.tsx",
+   "type": "file",
+   "name": "select.tsx",
+   "filePath": "src/components/ui/select.tsx",
+   "summary": "shadcn/ui Select primitive built on Radix Select: trigger, content/viewport, and item parts reused by nearly every dropdown in finance/crypto/strategy forms.",
+   "tags": [
+    "ui-component",
+    "shadcn",
+    "design-system",
+    "form-field"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ui/select.tsx:SelectTrigger",
+   "type": "function",
+   "name": "SelectTrigger",
+   "filePath": "src/components/ui/select.tsx",
+   "lineRange": [
+    27,
+    52
+   ],
+   "summary": "Styled trigger button opening the select dropdown, with a size variant and chevron icon.",
+   "tags": [
+    "component",
+    "ui-primitive"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ui/select.tsx:SelectContent",
+   "type": "function",
+   "name": "SelectContent",
+   "filePath": "src/components/ui/select.tsx",
+   "lineRange": [
+    54,
+    89
+   ],
+   "summary": "Portal-rendered dropdown content with viewport and scroll buttons.",
+   "tags": [
+    "component",
+    "ui-primitive"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ui/select.tsx:SelectItem",
+   "type": "function",
+   "name": "SelectItem",
+   "filePath": "src/components/ui/select.tsx",
+   "lineRange": [
+    104,
+    129
+   ],
+   "summary": "A single selectable option row with a check indicator when selected.",
+   "tags": [
+    "component",
+    "ui-primitive"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/components/ui/textarea.tsx",
+   "type": "file",
+   "name": "textarea.tsx",
+   "filePath": "src/components/ui/textarea.tsx",
+   "summary": "shadcn/ui Textarea primitive: a styled native <textarea> element used for multi-line text fields (notes, persona text, memory content).",
+   "tags": [
+    "ui-component",
+    "shadcn",
+    "design-system",
+    "form-field"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/lib/csv.ts",
+   "type": "file",
+   "name": "csv.ts",
+   "filePath": "src/lib/csv.ts",
+   "summary": "Shared CSV formatting helpers: separator/BOM/EOL constants and amount/value formatting and escaping used by the CSV export API routes and transaction import/export UI.",
+   "tags": [
+    "utility",
+    "csv",
+    "formatting"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/lib/csv.ts:formatCsvAmount",
+   "type": "function",
+   "name": "formatCsvAmount",
+   "filePath": "src/lib/csv.ts",
+   "lineRange": [
+    40,
+    42
+   ],
+   "summary": "Formats a numeric amount into the German decimal-comma CSV representation.",
+   "tags": [
+    "utility",
+    "formatting"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/lib/csv.ts:parseCsvAmount",
+   "type": "function",
+   "name": "parseCsvAmount",
+   "filePath": "src/lib/csv.ts",
+   "lineRange": [
+    54,
+    81
+   ],
+   "summary": "Parses a CSV amount string (German or plain decimal format) into a number.",
+   "tags": [
+    "utility",
+    "parsing"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/lib/csv.ts:escapeCsvValue",
+   "type": "function",
+   "name": "escapeCsvValue",
+   "filePath": "src/lib/csv.ts",
+   "lineRange": [
+    90,
+    102
+   ],
+   "summary": "Escapes a value for safe inclusion as a CSV field (quoting, delimiter/newline handling).",
+   "tags": [
+    "utility",
+    "csv",
+    "escaping"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/lib/inventar/bildurls.ts",
+   "type": "file",
+   "name": "bildurls.ts",
+   "filePath": "src/lib/inventar/bildurls.ts",
+   "summary": "Signs and caches temporary Supabase Storage URLs for valuable images, so the Inventar UI can display private bucket photos without re-signing on every render.",
+   "tags": [
+    "utility",
+    "supabase",
+    "media",
+    "caching"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/lib/inventar/bildurls.ts:signierteBildUrls",
+   "type": "function",
+   "name": "signierteBildUrls",
+   "filePath": "src/lib/inventar/bildurls.ts",
+   "lineRange": [
+    58,
+    91
+   ],
+   "summary": "Batch-signs storage paths into temporary signed URLs, using an in-memory cache to avoid redundant Supabase calls.",
+   "tags": [
+    "utility",
+    "supabase",
+    "caching"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/lib/inventar/bildurls.ts:vergisseBildUrl",
+   "type": "function",
+   "name": "vergisseBildUrl",
+   "filePath": "src/lib/inventar/bildurls.ts",
+   "lineRange": [
+    94,
+    96
+   ],
+   "summary": "Invalidates a cached signed URL for a given storage path (called after an image is deleted).",
+   "tags": [
+    "utility",
+    "cache-invalidation"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/lib/valuables.ts",
+   "type": "file",
+   "name": "valuables.ts",
+   "filePath": "src/lib/valuables.ts",
+   "summary": "Shared constants and formatting helpers for the Inventar feature: category/condition catalogs with German/English labels, value-tier buckets, and holding-duration/total-value calculations.",
+   "tags": [
+    "utility",
+    "constants",
+    "inventar",
+    "formatting"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/lib/valuables.ts:wertstufe",
+   "type": "function",
+   "name": "wertstufe",
+   "filePath": "src/lib/valuables.ts",
+   "lineRange": [
+    219,
+    226
+   ],
+   "summary": "Buckets a monetary value into a value tier (e.g. low/medium/high) used for visual styling.",
+   "tags": [
+    "utility",
+    "classification"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/lib/valuables.ts:haltedauerMonate",
+   "type": "function",
+   "name": "haltedauerMonate",
+   "filePath": "src/lib/valuables.ts",
+   "lineRange": [
+    231,
+    237
+   ],
+   "summary": "Computes the holding duration in months between a purchase date and a reference date.",
+   "tags": [
+    "utility",
+    "date-math"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/lib/valuables.ts:haltedauerLabel",
+   "type": "function",
+   "name": "haltedauerLabel",
+   "filePath": "src/lib/valuables.ts",
+   "lineRange": [
+    239,
+    246
+   ],
+   "summary": "Formats the holding duration of a valuable into a human-readable label (e.g. \"2 years\").",
+   "tags": [
+    "utility",
+    "formatting"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/lib/valuables.ts:gesamtwert",
+   "type": "function",
+   "name": "gesamtwert",
+   "filePath": "src/lib/valuables.ts",
+   "lineRange": [
+    252,
+    256
+   ],
+   "summary": "Sums the current value of a list of valuables, optionally restricted to items still counted as assets.",
+   "tags": [
+    "utility",
+    "aggregation"
+   ],
+   "complexity": "simple"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/components/ui/input.tsx",
+   "target": "file:src/lib/utils.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ui/label.tsx",
+   "target": "file:src/lib/utils.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ui/select.tsx",
+   "target": "function:src/components/ui/select.tsx:SelectTrigger",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ui/select.tsx",
+   "target": "function:src/components/ui/select.tsx:SelectTrigger",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ui/select.tsx",
+   "target": "function:src/components/ui/select.tsx:SelectContent",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ui/select.tsx",
+   "target": "function:src/components/ui/select.tsx:SelectContent",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ui/select.tsx",
+   "target": "function:src/components/ui/select.tsx:SelectItem",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ui/select.tsx",
+   "target": "function:src/components/ui/select.tsx:SelectItem",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ui/select.tsx",
+   "target": "file:src/lib/utils.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ui/textarea.tsx",
+   "target": "file:src/lib/utils.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/lib/csv.ts",
+   "target": "function:src/lib/csv.ts:formatCsvAmount",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/lib/csv.ts",
+   "target": "function:src/lib/csv.ts:formatCsvAmount",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/lib/csv.ts",
+   "target": "function:src/lib/csv.ts:parseCsvAmount",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/lib/csv.ts",
+   "target": "function:src/lib/csv.ts:parseCsvAmount",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/lib/csv.ts",
+   "target": "function:src/lib/csv.ts:escapeCsvValue",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/lib/csv.ts",
+   "target": "function:src/lib/csv.ts:escapeCsvValue",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/lib/inventar/bildurls.ts",
+   "target": "function:src/lib/inventar/bildurls.ts:signierteBildUrls",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/lib/inventar/bildurls.ts",
+   "target": "function:src/lib/inventar/bildurls.ts:signierteBildUrls",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/lib/inventar/bildurls.ts",
+   "target": "function:src/lib/inventar/bildurls.ts:vergisseBildUrl",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/lib/inventar/bildurls.ts",
+   "target": "function:src/lib/inventar/bildurls.ts:vergisseBildUrl",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/lib/valuables.ts",
+   "target": "function:src/lib/valuables.ts:wertstufe",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/lib/valuables.ts",
+   "target": "function:src/lib/valuables.ts:wertstufe",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/lib/valuables.ts",
+   "target": "function:src/lib/valuables.ts:haltedauerMonate",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/lib/valuables.ts",
+   "target": "function:src/lib/valuables.ts:haltedauerMonate",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/lib/valuables.ts",
+   "target": "function:src/lib/valuables.ts:haltedauerLabel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/lib/valuables.ts",
+   "target": "function:src/lib/valuables.ts:haltedauerLabel",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/lib/valuables.ts",
+   "target": "function:src/lib/valuables.ts:gesamtwert",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/lib/valuables.ts",
+   "target": "function:src/lib/valuables.ts:gesamtwert",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/lib/valuables.ts:haltedauerLabel",
+   "target": "function:src/lib/valuables.ts:haltedauerMonate",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  }
+ ]
+}

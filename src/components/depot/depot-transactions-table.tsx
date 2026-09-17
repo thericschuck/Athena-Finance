@@ -49,11 +49,11 @@ export function DepotTransactionsTable({
               <tr key={tx.id} className="group border-b border-border/50 hover:bg-muted/20 transition-colors">
                 <td className="px-5 py-2.5 text-foreground whitespace-nowrap">{fmtDate(tx.transaction_date)}</td>
                 <td className={`px-3 py-2.5 text-xs hidden sm:table-cell whitespace-nowrap ${typeColor}`}>{typeLabel}</td>
-                <td className="px-3 py-2.5 text-right text-foreground whitespace-nowrap">{fmtEur(tx.amount_eur)}</td>
-                <td className="px-3 py-2.5 text-right text-muted-foreground whitespace-nowrap hidden sm:table-cell">
+                <td className="px-3 py-2.5 text-right text-foreground whitespace-nowrap tabular-nums">{fmtEur(tx.amount_eur)}</td>
+                <td className="px-3 py-2.5 text-right text-muted-foreground whitespace-nowrap hidden sm:table-cell tabular-nums">
                   {tx.price_per_share.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} €
                 </td>
-                <td className="px-3 py-2.5 text-right text-primary font-mono whitespace-nowrap">
+                <td className="px-3 py-2.5 text-right text-primary font-mono whitespace-nowrap tabular-nums">
                   {fmtShares(tx.shares)}
                 </td>
                 <td className="px-3 py-2.5 text-muted-foreground hidden md:table-cell max-w-[120px] truncate">
@@ -73,7 +73,7 @@ export function DepotTransactionsTable({
                       <AlertDialogHeader>
                         <AlertDialogTitle className="text-foreground">Transaktion löschen?</AlertDialogTitle>
                         <AlertDialogDescription className="text-muted-foreground">
-                          Transaktion vom {fmtDate(tx.transaction_date)} über {fmtEur(tx.amount_eur)} wird dauerhaft gelöscht.
+                          Transaktion vom {fmtDate(tx.transaction_date)} über <span className="tabular-nums">{fmtEur(tx.amount_eur)}</span> wird dauerhaft gelöscht.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>

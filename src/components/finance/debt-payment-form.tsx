@@ -422,7 +422,7 @@ export function DebtPaymentDialog({ debt }: { debt: Debt }) {
 
         <div className="rounded-md bg-muted/50 px-3 py-2 text-sm mb-2">
           <span className="text-muted-foreground">Ausstehend: </span>
-          <span className="font-semibold">{fmt(debt.outstanding, debt.currency)}</span>
+          <span className="font-semibold tabular-nums">{fmt(debt.outstanding, debt.currency)}</span>
         </div>
 
         <form action={formAction} className="space-y-4">
@@ -521,7 +521,7 @@ export function SettleDebtButton({ debt }: { debt: Debt }) {
         <AlertDialogHeader>
           <AlertDialogTitle>Schuld vollständig begleichen?</AlertDialogTitle>
           <AlertDialogDescription>
-            Bucht eine Zahlung über <strong>{fmt(debt.outstanding, debt.currency)}</strong> für{' '}
+            Bucht eine Zahlung über <strong className="tabular-nums">{fmt(debt.outstanding, debt.currency)}</strong> für{' '}
             <strong>{debt.name}</strong> und markiert die Schuld als abgeschlossen.
           </AlertDialogDescription>
         </AlertDialogHeader>

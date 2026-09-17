@@ -1,0 +1,4186 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 17,
+  "filesSkipped": [],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 17,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 17,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "src/app/(dashboard)/analyse/page.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 506,
+      "nonEmptyLines": 460,
+      "functions": [
+        {
+          "name": "toEur",
+          "startLine": 53,
+          "endLine": 55,
+          "params": [
+            "txn"
+          ]
+        },
+        {
+          "name": "buildHeatmap",
+          "startLine": 59,
+          "endLine": 74,
+          "params": [
+            "txns"
+          ]
+        },
+        {
+          "name": "buildCategories",
+          "startLine": 76,
+          "endLine": 88,
+          "params": [
+            "txns"
+          ]
+        },
+        {
+          "name": "buildSankey",
+          "startLine": 90,
+          "endLine": 156,
+          "params": [
+            "txns"
+          ]
+        },
+        {
+          "name": "buildCashflow",
+          "startLine": 158,
+          "endLine": 167,
+          "params": [
+            "txns"
+          ]
+        },
+        {
+          "name": "buildMonthlyComparisonFromTxns",
+          "startLine": 172,
+          "endLine": 190,
+          "params": [
+            "txns",
+            "currentMonthKey"
+          ]
+        },
+        {
+          "name": "buildMonthSeries",
+          "startLine": 201,
+          "endLine": 211,
+          "params": [
+            "rows",
+            "currentMonthKey"
+          ]
+        },
+        {
+          "name": "buildMonthSeriesFromTxns",
+          "startLine": 222,
+          "endLine": 245,
+          "params": [
+            "txns",
+            "currentMonthKey"
+          ]
+        },
+        {
+          "name": "currentMonthTotals",
+          "startLine": 256,
+          "endLine": 271,
+          "params": [
+            "txns",
+            "currentMonthKey"
+          ]
+        },
+        {
+          "name": "buildMonthlyComparison",
+          "startLine": 279,
+          "endLine": 307,
+          "params": [
+            "rows",
+            "currentMonthKey"
+          ]
+        },
+        {
+          "name": "AnalysePage",
+          "startLine": 311,
+          "endLine": 506,
+          "params": [
+            "{\r\n  searchParams,\r\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "AnalysePage",
+          "line": 311,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "toEur",
+          "callee": "Math.abs",
+          "lineNumber": 54
+        },
+        {
+          "caller": "buildHeatmap",
+          "callee": "t.date.slice",
+          "lineNumber": 62
+        },
+        {
+          "caller": "buildHeatmap",
+          "callee": "toEur",
+          "lineNumber": 63
+        },
+        {
+          "caller": "buildHeatmap",
+          "callee": "map.get",
+          "lineNumber": 64
+        },
+        {
+          "caller": "buildHeatmap",
+          "callee": "map.set",
+          "lineNumber": 65
+        },
+        {
+          "caller": "buildHeatmap",
+          "callee": "[...map.entries()]\r\n    .map(([date, { amount, income }]) => ({\r\n      date, amount: Math.round(amount), income: Math.round(income),\r\n    }))\r\n    .sort",
+          "lineNumber": 69
+        },
+        {
+          "caller": "buildHeatmap",
+          "callee": "[...map.entries()]\r\n    .map",
+          "lineNumber": 69
+        },
+        {
+          "caller": "buildHeatmap",
+          "callee": "map.entries",
+          "lineNumber": 69
+        },
+        {
+          "caller": "buildHeatmap",
+          "callee": "Math.round",
+          "lineNumber": 71
+        },
+        {
+          "caller": "buildHeatmap",
+          "callee": "Math.round",
+          "lineNumber": 71
+        },
+        {
+          "caller": "buildHeatmap",
+          "callee": "a.date.localeCompare",
+          "lineNumber": 73
+        },
+        {
+          "caller": "buildCategories",
+          "callee": "toEur",
+          "lineNumber": 80
+        },
+        {
+          "caller": "buildCategories",
+          "callee": "map.set",
+          "lineNumber": 82
+        },
+        {
+          "caller": "buildCategories",
+          "callee": "map.get",
+          "lineNumber": 82
+        },
+        {
+          "caller": "buildCategories",
+          "callee": "[...map.entries()]\r\n    .map(([name, value]) => ({ name, value: Math.round(value) }))\r\n    .filter(d => d.value !== 0)\r\n    .sort",
+          "lineNumber": 84
+        },
+        {
+          "caller": "buildCategories",
+          "callee": "[...map.entries()]\r\n    .map(([name, value]) => ({ name, value: Math.round(value) }))\r\n    .filter",
+          "lineNumber": 84
+        },
+        {
+          "caller": "buildCategories",
+          "callee": "[...map.entries()]\r\n    .map",
+          "lineNumber": 84
+        },
+        {
+          "caller": "buildCategories",
+          "callee": "map.entries",
+          "lineNumber": 84
+        },
+        {
+          "caller": "buildCategories",
+          "callee": "Math.round",
+          "lineNumber": 85
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "toEur",
+          "lineNumber": 95
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "incMap.set",
+          "lineNumber": 96
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "incMap.get",
+          "lineNumber": 96
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "expMap.set",
+          "lineNumber": 97
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "expMap.get",
+          "lineNumber": 97
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "[...incMap.values()].reduce",
+          "lineNumber": 100
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "incMap.values",
+          "lineNumber": 100
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "[...expMap.values()].reduce",
+          "lineNumber": 101
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "expMap.values",
+          "lineNumber": 101
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "[...incMap.entries()].sort((a, b) => b[1] - a[1]).slice",
+          "lineNumber": 104
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "[...incMap.entries()].sort",
+          "lineNumber": 104
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "incMap.entries",
+          "lineNumber": 104
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "[...expMap.entries()].sort((a, b) => b[1] - a[1]).slice",
+          "lineNumber": 105
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "[...expMap.entries()].sort",
+          "lineNumber": 105
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "expMap.entries",
+          "lineNumber": 105
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "topInc.reduce",
+          "lineNumber": 114
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "topExp.reduce",
+          "lineNumber": 115
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "Math.max",
+          "lineNumber": 117
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "Math.min",
+          "lineNumber": 119
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "topInc.map",
+          "lineNumber": 127
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "topExp.map",
+          "lineNumber": 129
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "topInc.map",
+          "lineNumber": 140
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "Math.max",
+          "lineNumber": 142
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "Math.round",
+          "lineNumber": 142
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "Math.round",
+          "lineNumber": 142
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "topExp.map",
+          "lineNumber": 145
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "Math.max",
+          "lineNumber": 147
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "Math.round",
+          "lineNumber": 147
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "Math.round",
+          "lineNumber": 147
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "Math.round",
+          "lineNumber": 151
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "Math.round",
+          "lineNumber": 151
+        },
+        {
+          "caller": "buildSankey",
+          "callee": "links.filter",
+          "lineNumber": 155
+        },
+        {
+          "caller": "buildCashflow",
+          "callee": "txns\r\n    .filter(t => t.type === 'income' || t.type === 'expense')\r\n    .map",
+          "lineNumber": 159
+        },
+        {
+          "caller": "buildCashflow",
+          "callee": "txns\r\n    .filter",
+          "lineNumber": 159
+        },
+        {
+          "caller": "buildCashflow",
+          "callee": "t.date.slice",
+          "lineNumber": 162
+        },
+        {
+          "caller": "buildCashflow",
+          "callee": "Math.abs",
+          "lineNumber": 165
+        },
+        {
+          "caller": "buildMonthlyComparisonFromTxns",
+          "callee": "t.date.slice",
+          "lineNumber": 179
+        },
+        {
+          "caller": "buildMonthlyComparisonFromTxns",
+          "callee": "map.get",
+          "lineNumber": 180
+        },
+        {
+          "caller": "buildMonthlyComparisonFromTxns",
+          "callee": "toEur",
+          "lineNumber": 181
+        },
+        {
+          "caller": "buildMonthlyComparisonFromTxns",
+          "callee": "map.set",
+          "lineNumber": 184
+        },
+        {
+          "caller": "buildMonthlyComparisonFromTxns",
+          "callee": "[...map.entries()].map",
+          "lineNumber": 186
+        },
+        {
+          "caller": "buildMonthlyComparisonFromTxns",
+          "callee": "map.entries",
+          "lineNumber": 186
+        },
+        {
+          "caller": "buildMonthlyComparisonFromTxns",
+          "callee": "buildMonthlyComparison",
+          "lineNumber": 189
+        },
+        {
+          "caller": "buildMonthSeries",
+          "callee": "rows\r\n    .filter(r => r.month.slice(0, 7) !== currentMonthKey)\r\n    .sort((a, b) => a.month.localeCompare(b.month))\r\n    .slice",
+          "lineNumber": 202
+        },
+        {
+          "caller": "buildMonthSeries",
+          "callee": "rows\r\n    .filter(r => r.month.slice(0, 7) !== currentMonthKey)\r\n    .sort",
+          "lineNumber": 202
+        },
+        {
+          "caller": "buildMonthSeries",
+          "callee": "rows\r\n    .filter",
+          "lineNumber": 202
+        },
+        {
+          "caller": "buildMonthSeries",
+          "callee": "r.month.slice",
+          "lineNumber": 203
+        },
+        {
+          "caller": "buildMonthSeries",
+          "callee": "a.month.localeCompare",
+          "lineNumber": 204
+        },
+        {
+          "caller": "buildMonthSeries",
+          "callee": "months.map",
+          "lineNumber": 207
+        },
+        {
+          "caller": "buildMonthSeries",
+          "callee": "Math.round",
+          "lineNumber": 207
+        },
+        {
+          "caller": "buildMonthSeries",
+          "callee": "months.map",
+          "lineNumber": 208
+        },
+        {
+          "caller": "buildMonthSeries",
+          "callee": "Math.round",
+          "lineNumber": 208
+        },
+        {
+          "caller": "buildMonthSeries",
+          "callee": "months.map",
+          "lineNumber": 209
+        },
+        {
+          "caller": "buildMonthSeries",
+          "callee": "Math.round",
+          "lineNumber": 209
+        },
+        {
+          "caller": "buildMonthSeriesFromTxns",
+          "callee": "t.date.slice",
+          "lineNumber": 229
+        },
+        {
+          "caller": "buildMonthSeriesFromTxns",
+          "callee": "map.get",
+          "lineNumber": 231
+        },
+        {
+          "caller": "buildMonthSeriesFromTxns",
+          "callee": "toEur",
+          "lineNumber": 232
+        },
+        {
+          "caller": "buildMonthSeriesFromTxns",
+          "callee": "toEur",
+          "lineNumber": 233
+        },
+        {
+          "caller": "buildMonthSeriesFromTxns",
+          "callee": "map.set",
+          "lineNumber": 234
+        },
+        {
+          "caller": "buildMonthSeriesFromTxns",
+          "callee": "[...map.entries()]\r\n    .sort(([a], [b]) => a.localeCompare(b))\r\n    .slice(-24)\r\n    .map",
+          "lineNumber": 236
+        },
+        {
+          "caller": "buildMonthSeriesFromTxns",
+          "callee": "[...map.entries()]\r\n    .sort(([a], [b]) => a.localeCompare(b))\r\n    .slice",
+          "lineNumber": 236
+        },
+        {
+          "caller": "buildMonthSeriesFromTxns",
+          "callee": "[...map.entries()]\r\n    .sort",
+          "lineNumber": 236
+        },
+        {
+          "caller": "buildMonthSeriesFromTxns",
+          "callee": "map.entries",
+          "lineNumber": 236
+        },
+        {
+          "caller": "buildMonthSeriesFromTxns",
+          "callee": "a.localeCompare",
+          "lineNumber": 237
+        },
+        {
+          "caller": "buildMonthSeriesFromTxns",
+          "callee": "months.map",
+          "lineNumber": 241
+        },
+        {
+          "caller": "buildMonthSeriesFromTxns",
+          "callee": "Math.round",
+          "lineNumber": 241
+        },
+        {
+          "caller": "buildMonthSeriesFromTxns",
+          "callee": "months.map",
+          "lineNumber": 242
+        },
+        {
+          "caller": "buildMonthSeriesFromTxns",
+          "callee": "Math.round",
+          "lineNumber": 242
+        },
+        {
+          "caller": "buildMonthSeriesFromTxns",
+          "callee": "months.map",
+          "lineNumber": 243
+        },
+        {
+          "caller": "buildMonthSeriesFromTxns",
+          "callee": "Math.round",
+          "lineNumber": 243
+        },
+        {
+          "caller": "currentMonthTotals",
+          "callee": "t.date.slice",
+          "lineNumber": 261
+        },
+        {
+          "caller": "currentMonthTotals",
+          "callee": "toEur",
+          "lineNumber": 262
+        },
+        {
+          "caller": "currentMonthTotals",
+          "callee": "toEur",
+          "lineNumber": 263
+        },
+        {
+          "caller": "currentMonthTotals",
+          "callee": "Math.round",
+          "lineNumber": 267
+        },
+        {
+          "caller": "currentMonthTotals",
+          "callee": "Math.round",
+          "lineNumber": 268
+        },
+        {
+          "caller": "currentMonthTotals",
+          "callee": "Math.round",
+          "lineNumber": 269
+        },
+        {
+          "caller": "buildMonthlyComparison",
+          "callee": "[...rows]\r\n    .filter(r => r.month.slice(0, 7) !== currentMonthKey)\r\n    .sort((a, b) => a.month.localeCompare(b.month))\r\n    .slice(-6)\r\n    .map",
+          "lineNumber": 283
+        },
+        {
+          "caller": "buildMonthlyComparison",
+          "callee": "[...rows]\r\n    .filter(r => r.month.slice(0, 7) !== currentMonthKey)\r\n    .sort((a, b) => a.month.localeCompare(b.month))\r\n    .slice",
+          "lineNumber": 283
+        },
+        {
+          "caller": "buildMonthlyComparison",
+          "callee": "[...rows]\r\n    .filter(r => r.month.slice(0, 7) !== currentMonthKey)\r\n    .sort",
+          "lineNumber": 283
+        },
+        {
+          "caller": "buildMonthlyComparison",
+          "callee": "[...rows]\r\n    .filter",
+          "lineNumber": 283
+        },
+        {
+          "caller": "buildMonthlyComparison",
+          "callee": "r.month.slice",
+          "lineNumber": 284
+        },
+        {
+          "caller": "buildMonthlyComparison",
+          "callee": "a.month.localeCompare",
+          "lineNumber": 285
+        },
+        {
+          "caller": "buildMonthlyComparison",
+          "callee": "r.month.slice",
+          "lineNumber": 288
+        },
+        {
+          "caller": "buildMonthlyComparison",
+          "callee": "new Date(dateStr + 'T12:00:00').toLocaleDateString",
+          "lineNumber": 289
+        },
+        {
+          "caller": "buildMonthlyComparison",
+          "callee": "Math.round",
+          "lineNumber": 298
+        },
+        {
+          "caller": "buildMonthlyComparison",
+          "callee": "Math.round",
+          "lineNumber": 302
+        },
+        {
+          "caller": "buildMonthlyComparison",
+          "callee": "Math.round",
+          "lineNumber": 303
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "Promise.all",
+          "lineNumber": 316
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "getAuthUser",
+          "lineNumber": 316
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "Promise.all",
+          "lineNumber": 319
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n      .from('accounts')\r\n      .select('id, name, type, color')\r\n      .eq('user_id', user.id)\r\n      .eq('is_active', true)\r\n      .order('sort_order', { ascending: true })\r\n      .order",
+          "lineNumber": 320
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n      .from('accounts')\r\n      .select('id, name, type, color')\r\n      .eq('user_id', user.id)\r\n      .eq('is_active', true)\r\n      .order",
+          "lineNumber": 320
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n      .from('accounts')\r\n      .select('id, name, type, color')\r\n      .eq('user_id', user.id)\r\n      .eq",
+          "lineNumber": 320
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n      .from('accounts')\r\n      .select('id, name, type, color')\r\n      .eq",
+          "lineNumber": 320
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n      .from('accounts')\r\n      .select",
+          "lineNumber": 320
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n      .from",
+          "lineNumber": 320
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "getSettings",
+          "lineNumber": 327
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "accounts.map",
+          "lineNumber": 331
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "VALID.includes",
+          "lineNumber": 334
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "VALID.includes",
+          "lineNumber": 337
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "HEATMAP_MODES.includes",
+          "lineNumber": 341
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "periodCutoff",
+          "lineNumber": 351
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split",
+          "lineNumber": 355
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString",
+          "lineNumber": 355
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "now.getFullYear",
+          "lineNumber": 355
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "now.getMonth",
+          "lineNumber": 355
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "new Date(now.getFullYear(), now.getMonth() + 2, 0).toISOString().split",
+          "lineNumber": 356
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "new Date(now.getFullYear(), now.getMonth() + 2, 0).toISOString",
+          "lineNumber": 356
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "now.getFullYear",
+          "lineNumber": 356
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "now.getMonth",
+          "lineNumber": 356
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "new Date(now.getFullYear(), now.getMonth() - 23, 1).toISOString().split",
+          "lineNumber": 361
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "new Date(now.getFullYear(), now.getMonth() - 23, 1).toISOString",
+          "lineNumber": 361
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "now.getFullYear",
+          "lineNumber": 361
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "now.getMonth",
+          "lineNumber": 361
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "now.toISOString().slice",
+          "lineNumber": 362
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "now.toISOString",
+          "lineNumber": 362
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "Array.isArray",
+          "lineNumber": 368
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "(settings.analyse_default_accounts as unknown[]).filter",
+          "lineNumber": 369
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "defaultAccountIds.filter",
+          "lineNumber": 373
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "accountIds.has",
+          "lineNumber": 373
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "rawAccounts\r\n      .split(',')\r\n      .map(s => s.trim())\r\n      .filter",
+          "lineNumber": 377
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "rawAccounts\r\n      .split(',')\r\n      .map",
+          "lineNumber": 377
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "rawAccounts\r\n      .split",
+          "lineNumber": 377
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "s.trim",
+          "lineNumber": 379
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "accountIds.has",
+          "lineNumber": 380
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "Promise.all",
+          "lineNumber": 384
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "(() => {\r\n      let q = supabase\r\n        .from('unified_transactions')\r\n        .select('date, type, amount, amount_base, category_name, description, merchant')\r\n        .eq('user_id', user.id)\r\n        .in('type', ['income', 'expense'])\r\n        // Nur echte Einnahmen/Ausgaben — Umbuchungen, Anlagen (Krypto/Depot/Bausparer),\r\n        // Forderungen und Anfangsbestaende zaehlen hier nicht mit.\r\n        .eq('flow_kind', 'echt')\r\n      if (cutoff) q = q.gte('date', cutoff)\r\n      if (hasAccountFilter) q = q.in('account_id', selectedAccountIds)\r\n      return q.order('date')\r\n    })",
+          "lineNumber": 387
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n        .from('unified_transactions')\r\n        .select('date, type, amount, amount_base, category_name, description, merchant')\r\n        .eq('user_id', user.id)\r\n        .in('type', ['income', 'expense'])\r\n        // Nur echte Einnahmen/Ausgaben — Umbuchungen, Anlagen (Krypto/Depot/Bausparer),\r\n        // Forderungen und Anfangsbestaende zaehlen hier nicht mit.\r\n        .eq",
+          "lineNumber": 388
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n        .from('unified_transactions')\r\n        .select('date, type, amount, amount_base, category_name, description, merchant')\r\n        .eq('user_id', user.id)\r\n        .in",
+          "lineNumber": 388
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n        .from('unified_transactions')\r\n        .select('date, type, amount, amount_base, category_name, description, merchant')\r\n        .eq",
+          "lineNumber": 388
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n        .from('unified_transactions')\r\n        .select",
+          "lineNumber": 388
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n        .from",
+          "lineNumber": 388
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "q.gte",
+          "lineNumber": 396
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "q.in",
+          "lineNumber": 397
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "q.order",
+          "lineNumber": 398
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "(() => {\r\n      let q = supabase\r\n        .from('unified_transactions')\r\n        .select('date, type, amount, category_name, description, merchant')\r\n        .eq('user_id', user.id)\r\n        .gte('date', calStart)\r\n        .lte('date', calEnd)\r\n        .in('type', ['income', 'expense'])\r\n        // Nur echte Einnahmen/Ausgaben — Umbuchungen, Anlagen (Krypto/Depot/Bausparer),\r\n        // Forderungen und Anfangsbestaende zaehlen hier nicht mit.\r\n        .eq('flow_kind', 'echt')\r\n      if (hasAccountFilter) q = q.in('account_id', selectedAccountIds)\r\n      return q.order('date')\r\n    })",
+          "lineNumber": 402
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n        .from('unified_transactions')\r\n        .select('date, type, amount, category_name, description, merchant')\r\n        .eq('user_id', user.id)\r\n        .gte('date', calStart)\r\n        .lte('date', calEnd)\r\n        .in('type', ['income', 'expense'])\r\n        // Nur echte Einnahmen/Ausgaben — Umbuchungen, Anlagen (Krypto/Depot/Bausparer),\r\n        // Forderungen und Anfangsbestaende zaehlen hier nicht mit.\r\n        .eq",
+          "lineNumber": 403
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n        .from('unified_transactions')\r\n        .select('date, type, amount, category_name, description, merchant')\r\n        .eq('user_id', user.id)\r\n        .gte('date', calStart)\r\n        .lte('date', calEnd)\r\n        .in",
+          "lineNumber": 403
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n        .from('unified_transactions')\r\n        .select('date, type, amount, category_name, description, merchant')\r\n        .eq('user_id', user.id)\r\n        .gte('date', calStart)\r\n        .lte",
+          "lineNumber": 403
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n        .from('unified_transactions')\r\n        .select('date, type, amount, category_name, description, merchant')\r\n        .eq('user_id', user.id)\r\n        .gte",
+          "lineNumber": 403
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n        .from('unified_transactions')\r\n        .select('date, type, amount, category_name, description, merchant')\r\n        .eq",
+          "lineNumber": 403
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n        .from('unified_transactions')\r\n        .select",
+          "lineNumber": 403
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n        .from",
+          "lineNumber": 403
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "q.in",
+          "lineNumber": 413
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "q.order",
+          "lineNumber": 414
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "Promise.resolve",
+          "lineNumber": 420
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n          .from('monthly_finance_summary')\r\n          // Explizit auf den User filtern, obwohl RLS das ohnehin tut: fn_take_snapshot\r\n          // schreibt eine Zeile pro auth.user, in der Tabelle stehen also auch fremde\r\n          // Monate. Ohne den Filter haengt die Richtigkeit dieser Seite allein an einer\r\n          // Policy — und `limit(25)` wuerde als Erstes zuschlagen, nicht der Besitz.\r\n          .select('month, total_income, total_expenses')\r\n          .eq('user_id', user.id)\r\n          .order('month', { ascending: false })\r\n          .limit",
+          "lineNumber": 421
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n          .from('monthly_finance_summary')\r\n          // Explizit auf den User filtern, obwohl RLS das ohnehin tut: fn_take_snapshot\r\n          // schreibt eine Zeile pro auth.user, in der Tabelle stehen also auch fremde\r\n          // Monate. Ohne den Filter haengt die Richtigkeit dieser Seite allein an einer\r\n          // Policy — und `limit(25)` wuerde als Erstes zuschlagen, nicht der Besitz.\r\n          .select('month, total_income, total_expenses')\r\n          .eq('user_id', user.id)\r\n          .order",
+          "lineNumber": 421
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n          .from('monthly_finance_summary')\r\n          // Explizit auf den User filtern, obwohl RLS das ohnehin tut: fn_take_snapshot\r\n          // schreibt eine Zeile pro auth.user, in der Tabelle stehen also auch fremde\r\n          // Monate. Ohne den Filter haengt die Richtigkeit dieser Seite allein an einer\r\n          // Policy — und `limit(25)` wuerde als Erstes zuschlagen, nicht der Besitz.\r\n          .select('month, total_income, total_expenses')\r\n          .eq",
+          "lineNumber": 421
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n          .from('monthly_finance_summary')\r\n          // Explizit auf den User filtern, obwohl RLS das ohnehin tut: fn_take_snapshot\r\n          // schreibt eine Zeile pro auth.user, in der Tabelle stehen also auch fremde\r\n          // Monate. Ohne den Filter haengt die Richtigkeit dieser Seite allein an einer\r\n          // Policy — und `limit(25)` wuerde als Erstes zuschlagen, nicht der Besitz.\r\n          .select",
+          "lineNumber": 421
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n          .from",
+          "lineNumber": 421
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n          .from('unified_transactions')\r\n          .select('date, type, amount, amount_base')\r\n          .eq('user_id', user.id)\r\n          .gte('date', monthlyCutoff)\r\n          .in('type', ['income', 'expense'])\r\n          // Nur echte Einnahmen/Ausgaben — siehe unified_transactions.flow_kind.\r\n          .eq('flow_kind', 'echt')\r\n          .in('account_id', selectedAccountIds)\r\n          .order",
+          "lineNumber": 435
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n          .from('unified_transactions')\r\n          .select('date, type, amount, amount_base')\r\n          .eq('user_id', user.id)\r\n          .gte('date', monthlyCutoff)\r\n          .in('type', ['income', 'expense'])\r\n          // Nur echte Einnahmen/Ausgaben — siehe unified_transactions.flow_kind.\r\n          .eq('flow_kind', 'echt')\r\n          .in",
+          "lineNumber": 435
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n          .from('unified_transactions')\r\n          .select('date, type, amount, amount_base')\r\n          .eq('user_id', user.id)\r\n          .gte('date', monthlyCutoff)\r\n          .in('type', ['income', 'expense'])\r\n          // Nur echte Einnahmen/Ausgaben — siehe unified_transactions.flow_kind.\r\n          .eq",
+          "lineNumber": 435
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n          .from('unified_transactions')\r\n          .select('date, type, amount, amount_base')\r\n          .eq('user_id', user.id)\r\n          .gte('date', monthlyCutoff)\r\n          .in",
+          "lineNumber": 435
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n          .from('unified_transactions')\r\n          .select('date, type, amount, amount_base')\r\n          .eq('user_id', user.id)\r\n          .gte",
+          "lineNumber": 435
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n          .from('unified_transactions')\r\n          .select('date, type, amount, amount_base')\r\n          .eq",
+          "lineNumber": 435
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n          .from('unified_transactions')\r\n          .select",
+          "lineNumber": 435
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "supabase\r\n          .from",
+          "lineNumber": 435
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "Promise.resolve",
+          "lineNumber": 445
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "buildHeatmap",
+          "lineNumber": 451
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "buildCategories",
+          "lineNumber": 452
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "buildSankey",
+          "lineNumber": 453
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "buildCashflow",
+          "lineNumber": 454
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "buildMonthlyComparisonFromTxns",
+          "lineNumber": 458
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "buildMonthlyComparison",
+          "lineNumber": 459
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "buildMonthSeriesFromTxns",
+          "lineNumber": 461
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "buildMonthSeries",
+          "lineNumber": 462
+        },
+        {
+          "caller": "AnalysePage",
+          "callee": "currentMonthTotals",
+          "lineNumber": 463
+        }
+      ],
+      "metrics": {
+        "importCount": 13,
+        "exportCount": 1,
+        "functionCount": 11,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/analyse/AnalyseAccountSelector.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 167,
+      "nonEmptyLines": 147,
+      "functions": [
+        {
+          "name": "AnalyseAccountSelector",
+          "startLine": 40,
+          "endLine": 167,
+          "params": [
+            "{ accounts, selected }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "AnalyseAccountSelector",
+          "line": 40,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "AnalyseAccountSelector",
+          "callee": "useUrlFilters",
+          "lineNumber": 41
+        },
+        {
+          "caller": "AnalyseAccountSelector",
+          "callee": "accounts.map",
+          "lineNumber": 45
+        },
+        {
+          "caller": "AnalyseAccountSelector",
+          "callee": "filters.get",
+          "lineNumber": 50
+        },
+        {
+          "caller": "AnalyseAccountSelector",
+          "callee": "raw.split(',').filter",
+          "lineNumber": 55
+        },
+        {
+          "caller": "AnalyseAccountSelector",
+          "callee": "raw.split",
+          "lineNumber": 55
+        },
+        {
+          "caller": "push",
+          "callee": "filters.set",
+          "lineNumber": 64
+        },
+        {
+          "caller": "push",
+          "callee": "ids.join",
+          "lineNumber": 64
+        },
+        {
+          "caller": "toggleAccount",
+          "callee": "next.has",
+          "lineNumber": 69
+        },
+        {
+          "caller": "toggleAccount",
+          "callee": "next.delete",
+          "lineNumber": 69
+        },
+        {
+          "caller": "toggleAccount",
+          "callee": "next.add",
+          "lineNumber": 70
+        },
+        {
+          "caller": "toggleAccount",
+          "callee": "push",
+          "lineNumber": 71
+        },
+        {
+          "caller": "AnalyseAccountSelector",
+          "callee": "groups.get",
+          "lineNumber": 79
+        },
+        {
+          "caller": "AnalyseAccountSelector",
+          "callee": "group.accounts.push",
+          "lineNumber": 80
+        },
+        {
+          "caller": "AnalyseAccountSelector",
+          "callee": "groups.set",
+          "lineNumber": 81
+        },
+        {
+          "caller": "toggleGroup",
+          "callee": "(groups.get(groupKey)?.accounts ?? []).map",
+          "lineNumber": 85
+        },
+        {
+          "caller": "toggleGroup",
+          "callee": "groups.get",
+          "lineNumber": 85
+        },
+        {
+          "caller": "toggleGroup",
+          "callee": "groupIds.every",
+          "lineNumber": 86
+        },
+        {
+          "caller": "toggleGroup",
+          "callee": "selectedSet.has",
+          "lineNumber": 86
+        },
+        {
+          "caller": "toggleGroup",
+          "callee": "groupIds.forEach",
+          "lineNumber": 88
+        },
+        {
+          "caller": "toggleGroup",
+          "callee": "next.delete",
+          "lineNumber": 88
+        },
+        {
+          "caller": "toggleGroup",
+          "callee": "groupIds.forEach",
+          "lineNumber": 89
+        },
+        {
+          "caller": "toggleGroup",
+          "callee": "next.add",
+          "lineNumber": 89
+        },
+        {
+          "caller": "toggleGroup",
+          "callee": "push",
+          "lineNumber": 90
+        },
+        {
+          "caller": "AnalyseAccountSelector",
+          "callee": "accounts.find",
+          "lineNumber": 96
+        },
+        {
+          "caller": "AnalyseAccountSelector",
+          "callee": "push",
+          "lineNumber": 115
+        },
+        {
+          "caller": "AnalyseAccountSelector",
+          "callee": "[...groups.entries()].map",
+          "lineNumber": 127
+        },
+        {
+          "caller": "AnalyseAccountSelector",
+          "callee": "groups.entries",
+          "lineNumber": 127
+        },
+        {
+          "caller": "AnalyseAccountSelector",
+          "callee": "group.accounts.map",
+          "lineNumber": 128
+        },
+        {
+          "caller": "AnalyseAccountSelector",
+          "callee": "groupIds.every",
+          "lineNumber": 129
+        },
+        {
+          "caller": "AnalyseAccountSelector",
+          "callee": "selectedSet.has",
+          "lineNumber": 129
+        },
+        {
+          "caller": "AnalyseAccountSelector",
+          "callee": "groupIds.some",
+          "lineNumber": 130
+        },
+        {
+          "caller": "AnalyseAccountSelector",
+          "callee": "selectedSet.has",
+          "lineNumber": 130
+        },
+        {
+          "caller": "AnalyseAccountSelector",
+          "callee": "toggleGroup",
+          "lineNumber": 137
+        },
+        {
+          "caller": "AnalyseAccountSelector",
+          "callee": "group.accounts.map",
+          "lineNumber": 143
+        },
+        {
+          "caller": "AnalyseAccountSelector",
+          "callee": "selectedSet.has",
+          "lineNumber": 149
+        },
+        {
+          "caller": "AnalyseAccountSelector",
+          "callee": "toggleAccount",
+          "lineNumber": 150
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/analyse/AnalysePeriodSelector.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 39,
+      "nonEmptyLines": 33,
+      "functions": [
+        {
+          "name": "AnalysePeriodSelector",
+          "startLine": 12,
+          "endLine": 39,
+          "params": [
+            "{ current }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "AnalysePeriodSelector",
+          "line": 12,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "AnalysePeriodSelector",
+          "callee": "useUrlFilters",
+          "lineNumber": 15
+        },
+        {
+          "caller": "AnalysePeriodSelector",
+          "callee": "filters.get",
+          "lineNumber": 19
+        },
+        {
+          "caller": "AnalysePeriodSelector",
+          "callee": "PERIODS.map",
+          "lineNumber": 23
+        },
+        {
+          "caller": "AnalysePeriodSelector",
+          "callee": "filters.set",
+          "lineNumber": 26
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/analyse/AusgabenHeatmap.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 222,
+      "nonEmptyLines": 200,
+      "functions": [
+        {
+          "name": "mixScale",
+          "startLine": 22,
+          "endLine": 26,
+          "params": [
+            "color",
+            "steps"
+          ]
+        },
+        {
+          "name": "expLevel",
+          "startLine": 37,
+          "endLine": 40,
+          "params": [
+            "v"
+          ]
+        },
+        {
+          "name": "incLevel",
+          "startLine": 41,
+          "endLine": 44,
+          "params": [
+            "v"
+          ]
+        },
+        {
+          "name": "guvLevel",
+          "startLine": 45,
+          "endLine": 59,
+          "params": [
+            "income",
+            "amount"
+          ]
+        },
+        {
+          "name": "cellBackground",
+          "startLine": 61,
+          "endLine": 66,
+          "params": [
+            "day",
+            "mode"
+          ]
+        },
+        {
+          "name": "AusgabenHeatmap",
+          "startLine": 70,
+          "endLine": 222,
+          "params": [
+            "{ data, initialMode = 'ausgaben' }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "AusgabenHeatmap",
+          "line": 70,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "mixScale",
+          "callee": "Array.from",
+          "lineNumber": 23
+        },
+        {
+          "caller": "mixScale",
+          "callee": "Math.round",
+          "lineNumber": 24
+        },
+        {
+          "caller": "mixScale",
+          "callee": "Math.round",
+          "lineNumber": 24
+        },
+        {
+          "caller": "cellBackground",
+          "callee": "expLevel",
+          "lineNumber": 62
+        },
+        {
+          "caller": "cellBackground",
+          "callee": "incLevel",
+          "lineNumber": 63
+        },
+        {
+          "caller": "cellBackground",
+          "callee": "guvLevel",
+          "lineNumber": 65
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "useState",
+          "lineNumber": 71
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "useState",
+          "lineNumber": 72
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "useClampedPosition",
+          "lineNumber": 73
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "useMemo",
+          "lineNumber": 75
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "data.map",
+          "lineNumber": 76
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "today.setHours",
+          "lineNumber": 79
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "today.getDay",
+          "lineNumber": 80
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "lastMon.setDate",
+          "lineNumber": 82
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "today.getDate",
+          "lineNumber": 82
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "start.setDate",
+          "lineNumber": 85
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "lastMon.getDate",
+          "lineNumber": 85
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "cur.toISOString().split",
+          "lineNumber": 91
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "cur.toISOString",
+          "lineNumber": 91
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "map.get",
+          "lineNumber": 92
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "days.push",
+          "lineNumber": 93
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "cur.setDate",
+          "lineNumber": 94
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "cur.getDate",
+          "lineNumber": 94
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "days.slice",
+          "lineNumber": 99
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "w.push",
+          "lineNumber": 100
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "weeks.push",
+          "lineNumber": 101
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "weeks.forEach",
+          "lineNumber": 105
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "week.forEach",
+          "lineNumber": 106
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "dt.getDate",
+          "lineNumber": 109
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "monthMarkers.set",
+          "lineNumber": 109
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "dt.getMonth",
+          "lineNumber": 109
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "DAY_LABELS.map",
+          "lineNumber": 132
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "weeks.map",
+          "lineNumber": 138
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "monthMarkers.get",
+          "lineNumber": 141
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "week.map",
+          "lineNumber": 143
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "cellBackground",
+          "lineNumber": 147
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "setTip",
+          "lineNumber": 150
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "setTip",
+          "lineNumber": 152
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "EXP_COLORS.map",
+          "lineNumber": 165
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "INC_COLORS.map",
+          "lineNumber": 174
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "GUV_COLORS.map",
+          "lineNumber": 183
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "new Date(tip.date + 'T00:00:00').toLocaleDateString",
+          "lineNumber": 199
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "tip.amount.toLocaleString",
+          "lineNumber": 205
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "tip.income.toLocaleString",
+          "lineNumber": 210
+        },
+        {
+          "caller": "AusgabenHeatmap",
+          "callee": "(tip.income - tip.amount).toLocaleString",
+          "lineNumber": 215
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/analyse/CashflowKalender.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 264,
+      "nonEmptyLines": 242,
+      "functions": [
+        {
+          "name": "daysInMonth",
+          "startLine": 13,
+          "endLine": 13,
+          "params": [
+            "y",
+            "m"
+          ]
+        },
+        {
+          "name": "firstDayOffset",
+          "startLine": 14,
+          "endLine": 17,
+          "params": [
+            "y",
+            "m"
+          ]
+        },
+        {
+          "name": "fmtAmt",
+          "startLine": 18,
+          "endLine": 20,
+          "params": [
+            "n"
+          ]
+        },
+        {
+          "name": "CashflowKalender",
+          "startLine": 25,
+          "endLine": 264,
+          "params": [
+            "{ events }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "CashflowKalender",
+          "line": 25,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "daysInMonth",
+          "callee": "new Date(y, m + 1, 0).getDate",
+          "lineNumber": 13
+        },
+        {
+          "caller": "firstDayOffset",
+          "callee": "new Date(y, m, 1).getDay",
+          "lineNumber": 15
+        },
+        {
+          "caller": "fmtAmt",
+          "callee": "n.toLocaleString",
+          "lineNumber": 19
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "useState",
+          "lineNumber": 27
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "today.getFullYear",
+          "lineNumber": 27
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "useState",
+          "lineNumber": 28
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "today.getMonth",
+          "lineNumber": 28
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "useState",
+          "lineNumber": 29
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "useState",
+          "lineNumber": 30
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "useClampedPosition",
+          "lineNumber": 32
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "useClampedPosition",
+          "lineNumber": 36
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "daysInMonth",
+          "lineNumber": 41
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "firstDayOffset",
+          "lineNumber": 42
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "Math.ceil",
+          "lineNumber": 43
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "d.getFullYear",
+          "lineNumber": 49
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "d.getMonth",
+          "lineNumber": 49
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "d.getDate",
+          "lineNumber": 50
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "byDay.has",
+          "lineNumber": 51
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "byDay.set",
+          "lineNumber": 51
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "byDay.get(day)!.push",
+          "lineNumber": 52
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "byDay.get",
+          "lineNumber": 52
+        },
+        {
+          "caller": "prev",
+          "callee": "setPopup",
+          "lineNumber": 57
+        },
+        {
+          "caller": "prev",
+          "callee": "setYear",
+          "lineNumber": 58
+        },
+        {
+          "caller": "prev",
+          "callee": "setMonth",
+          "lineNumber": 58
+        },
+        {
+          "caller": "prev",
+          "callee": "setMonth",
+          "lineNumber": 58
+        },
+        {
+          "caller": "next",
+          "callee": "setPopup",
+          "lineNumber": 61
+        },
+        {
+          "caller": "next",
+          "callee": "setYear",
+          "lineNumber": 62
+        },
+        {
+          "caller": "next",
+          "callee": "setMonth",
+          "lineNumber": 62
+        },
+        {
+          "caller": "next",
+          "callee": "setMonth",
+          "lineNumber": 62
+        },
+        {
+          "caller": "isToday",
+          "callee": "today.getDate",
+          "lineNumber": 66
+        },
+        {
+          "caller": "isToday",
+          "callee": "today.getMonth",
+          "lineNumber": 66
+        },
+        {
+          "caller": "isToday",
+          "callee": "today.getFullYear",
+          "lineNumber": 66
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "byDay.get",
+          "lineNumber": 68
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "popupEvs.filter(e => e.type === 'income').reduce",
+          "lineNumber": 69
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "popupEvs.filter",
+          "lineNumber": 69
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "popupEvs.filter(e => e.type === 'expense').reduce",
+          "lineNumber": 70
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "popupEvs.filter",
+          "lineNumber": 70
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "byDay.get",
+          "lineNumber": 72
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "tipEvs.filter(e => e.type === 'income').reduce",
+          "lineNumber": 73
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "tipEvs.filter",
+          "lineNumber": 73
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "tipEvs.filter(e => e.type === 'expense').reduce",
+          "lineNumber": 74
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "tipEvs.filter",
+          "lineNumber": 74
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "WEEKDAYS.map",
+          "lineNumber": 91
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "Array.from",
+          "lineNumber": 100
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "byDay.get",
+          "lineNumber": 103
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "evs.filter(e => e.type === 'income').reduce",
+          "lineNumber": 107
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "evs.filter",
+          "lineNumber": 107
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "evs.filter(e => e.type === 'expense').reduce",
+          "lineNumber": 108
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "evs.filter",
+          "lineNumber": 108
+        },
+        {
+          "caller": "activateDay",
+          "callee": "target.getBoundingClientRect",
+          "lineNumber": 112
+        },
+        {
+          "caller": "activateDay",
+          "callee": "setPopup",
+          "lineNumber": 114
+        },
+        {
+          "caller": "activateDay",
+          "callee": "setTip",
+          "lineNumber": 116
+        },
+        {
+          "caller": "activateDay",
+          "callee": "setPopup",
+          "lineNumber": 117
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "activateDay",
+          "lineNumber": 127
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "e.preventDefault",
+          "lineNumber": 130
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "activateDay",
+          "lineNumber": 131
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "e.currentTarget.getBoundingClientRect",
+          "lineNumber": 136
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "setTip",
+          "lineNumber": 137
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "setTip",
+          "lineNumber": 139
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "isToday",
+          "lineNumber": 151
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "inc.toFixed",
+          "lineNumber": 163
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "exp.toFixed",
+          "lineNumber": 171
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "setPopup",
+          "lineNumber": 200
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "popupEvs.map",
+          "lineNumber": 210
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "fmtAmt",
+          "lineNumber": 222
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "fmtAmt",
+          "lineNumber": 232
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "fmtAmt",
+          "lineNumber": 235
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "fmtAmt",
+          "lineNumber": 241
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "Math.abs",
+          "lineNumber": 241
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "fmtAmt",
+          "lineNumber": 257
+        },
+        {
+          "caller": "CashflowKalender",
+          "callee": "fmtAmt",
+          "lineNumber": 258
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/analyse/GeldflussChart-impl.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 191,
+      "nonEmptyLines": 177,
+      "functions": [
+        {
+          "name": "buildNodeColorMap",
+          "startLine": 38,
+          "endLine": 55,
+          "params": [
+            "nodes"
+          ]
+        },
+        {
+          "name": "SankeyNode",
+          "startLine": 58,
+          "endLine": 84,
+          "params": [
+            "props"
+          ]
+        },
+        {
+          "name": "SankeyLink",
+          "startLine": 97,
+          "endLine": 130,
+          "params": [
+            "props"
+          ]
+        },
+        {
+          "name": "SankeyTooltip",
+          "startLine": 133,
+          "endLine": 161,
+          "params": [
+            "{ active, payload }"
+          ]
+        },
+        {
+          "name": "GeldflussChart",
+          "startLine": 163,
+          "endLine": 191,
+          "params": [
+            "{ data }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "GeldflussChart",
+          "line": 163,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "buildNodeColorMap",
+          "callee": "nodes.findIndex",
+          "lineNumber": 40
+        },
+        {
+          "caller": "buildNodeColorMap",
+          "callee": "nodes.forEach",
+          "lineNumber": 43
+        },
+        {
+          "caller": "buildNodeColorMap",
+          "callee": "map.set",
+          "lineNumber": 44
+        },
+        {
+          "caller": "buildNodeColorMap",
+          "callee": "map.set",
+          "lineNumber": 45
+        },
+        {
+          "caller": "buildNodeColorMap",
+          "callee": "map.set",
+          "lineNumber": 47
+        },
+        {
+          "caller": "buildNodeColorMap",
+          "callee": "map.set",
+          "lineNumber": 50
+        },
+        {
+          "caller": "SankeyNode",
+          "callee": "colorMap?.get",
+          "lineNumber": 62
+        },
+        {
+          "caller": "SankeyNode",
+          "callee": "Math.max",
+          "lineNumber": 66
+        },
+        {
+          "caller": "SankeyLink",
+          "callee": "colorMap?.get",
+          "lineNumber": 102
+        },
+        {
+          "caller": "SankeyLink",
+          "callee": "sourceName.replace",
+          "lineNumber": 103
+        },
+        {
+          "caller": "SankeyLink",
+          "callee": "targetName.replace",
+          "lineNumber": 103
+        },
+        {
+          "caller": "SankeyTooltip",
+          "callee": "Math.round(betrag).toLocaleString",
+          "lineNumber": 148
+        },
+        {
+          "caller": "SankeyTooltip",
+          "callee": "Math.round",
+          "lineNumber": 148
+        },
+        {
+          "caller": "SankeyTooltip",
+          "callee": "Math.round(item.value as number).toLocaleString",
+          "lineNumber": 157
+        },
+        {
+          "caller": "SankeyTooltip",
+          "callee": "Math.round",
+          "lineNumber": 157
+        },
+        {
+          "caller": "GeldflussChart",
+          "callee": "useMemo",
+          "lineNumber": 164
+        },
+        {
+          "caller": "GeldflussChart",
+          "callee": "buildNodeColorMap",
+          "lineNumber": 164
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/analyse/GeldflussChart.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 19,
+      "nonEmptyLines": 16,
+      "exports": [
+        {
+          "name": "GeldflussChart",
+          "line": 13,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/analyse/KategorienChart.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 134,
+      "nonEmptyLines": 116,
+      "functions": [
+        {
+          "name": "KategorienChart",
+          "startLine": 35,
+          "endLine": 134,
+          "params": [
+            "{ data }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "KategorienChart",
+          "line": 35,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "KategorienChart",
+          "callee": "useSettings",
+          "lineNumber": 36
+        },
+        {
+          "caller": "fmt",
+          "callee": "fmtCurrency",
+          "lineNumber": 37
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "useState",
+          "lineNumber": 39
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "useState",
+          "lineNumber": 40
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "useMemo",
+          "lineNumber": 44
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "data\r\n      .filter(d => (side === 'ausgaben' ? d.value < 0 : d.value > 0))\r\n      .map(d => ({ name: d.name, amount: Math.abs(d.value) }))\r\n      .sort",
+          "lineNumber": 46
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "data\r\n      .filter(d => (side === 'ausgaben' ? d.value < 0 : d.value > 0))\r\n      .map",
+          "lineNumber": 46
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "data\r\n      .filter",
+          "lineNumber": 46
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "Math.abs",
+          "lineNumber": 48
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "raw.reduce",
+          "lineNumber": 51
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "raw.map",
+          "lineNumber": 53
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "Math.max",
+          "lineNumber": 58
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "useMemo",
+          "lineNumber": 62
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "rows.slice",
+          "lineNumber": 64
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "rows.slice",
+          "lineNumber": 65
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "rest.reduce",
+          "lineNumber": 66
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "Math.max",
+          "lineNumber": 79
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "visible.map",
+          "lineNumber": 79
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "setSide",
+          "lineNumber": 87
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "setExpanded",
+          "lineNumber": 87
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "fmt",
+          "lineNumber": 91
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "visible.map",
+          "lineNumber": 100
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "fmt",
+          "lineNumber": 113
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "r.share.toFixed",
+          "lineNumber": 115
+        },
+        {
+          "caller": "KategorienChart",
+          "callee": "setExpanded",
+          "lineNumber": 126
+        }
+      ],
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/analyse/ModeSwitch.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 41,
+      "nonEmptyLines": 38,
+      "functions": [
+        {
+          "name": "ModeSwitch",
+          "startLine": 17,
+          "endLine": 41,
+          "params": [
+            "{ value, options, onChange }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "ANALYSE_MODE_OPTIONS",
+          "line": 5,
+          "isDefault": false
+        },
+        {
+          "name": "ModeSwitch",
+          "line": 17,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "ModeSwitch",
+          "callee": "options.map",
+          "lineNumber": 24
+        },
+        {
+          "caller": "ModeSwitch",
+          "callee": "onChange",
+          "lineNumber": 29
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/analyse/MonatsVergleich-impl.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 228,
+      "nonEmptyLines": 217,
+      "functions": [
+        {
+          "name": "CustomTooltip",
+          "startLine": 21,
+          "endLine": 64,
+          "params": [
+            "{ active, payload, label }"
+          ]
+        },
+        {
+          "name": "toRows",
+          "startLine": 91,
+          "endLine": 96,
+          "params": [
+            "data",
+            "[lo, hi]"
+          ]
+        },
+        {
+          "name": "SparquoteDot",
+          "startLine": 103,
+          "endLine": 108,
+          "params": [
+            "{ cx, cy, payload }"
+          ]
+        },
+        {
+          "name": "MonatsVergleich",
+          "startLine": 110,
+          "endLine": 228,
+          "params": [
+            "{ data }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "MonatsVergleich",
+          "line": 110,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "CustomTooltip",
+          "callee": "row.einnahmen.toLocaleString",
+          "lineNumber": 36
+        },
+        {
+          "caller": "CustomTooltip",
+          "callee": "row.ausgaben.toLocaleString",
+          "lineNumber": 42
+        },
+        {
+          "caller": "toRows",
+          "callee": "data.map",
+          "lineNumber": 92
+        },
+        {
+          "caller": "toRows",
+          "callee": "Math.min",
+          "lineNumber": 93
+        },
+        {
+          "caller": "toRows",
+          "callee": "Math.max",
+          "lineNumber": 93
+        },
+        {
+          "caller": "MonatsVergleich",
+          "callee": "toRows",
+          "lineNumber": 111
+        },
+        {
+          "caller": "MonatsVergleich",
+          "callee": "((v as number) / 1000).toFixed",
+          "lineNumber": 152
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/analyse/MonatsVergleich.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 19,
+      "nonEmptyLines": 16,
+      "exports": [
+        {
+          "name": "MonatsVergleich",
+          "line": 13,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/analyse/MonatsVerteilung.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 595,
+      "nonEmptyLines": 557,
+      "functions": [
+        {
+          "name": "compact",
+          "startLine": 85,
+          "endLine": 91,
+          "params": [
+            "v"
+          ]
+        },
+        {
+          "name": "quantile",
+          "startLine": 93,
+          "endLine": 98,
+          "params": [
+            "sorted",
+            "p"
+          ]
+        },
+        {
+          "name": "median",
+          "startLine": 100,
+          "endLine": 103,
+          "params": [
+            "values"
+          ]
+        },
+        {
+          "name": "binCountFor",
+          "startLine": 114,
+          "endLine": 120,
+          "params": [
+            "values"
+          ]
+        },
+        {
+          "name": "displayBinCountFor",
+          "startLine": 132,
+          "endLine": 134,
+          "params": [
+            "values"
+          ]
+        },
+        {
+          "name": "niceTicks",
+          "startLine": 145,
+          "endLine": 157,
+          "params": [
+            "min",
+            "max",
+            "target"
+          ]
+        },
+        {
+          "name": "buildVerteilung",
+          "startLine": 167,
+          "endLine": 218,
+          "params": [
+            "values",
+            "binCount",
+            "currentValue"
+          ]
+        },
+        {
+          "name": "BinTooltip",
+          "startLine": 226,
+          "endLine": 253,
+          "params": [
+            "{ active, payload, fmt }"
+          ]
+        },
+        {
+          "name": "CurrentMonthDot",
+          "startLine": 265,
+          "endLine": 314,
+          "params": [
+            "{ cx, cy, color, fmt, value, align }"
+          ]
+        },
+        {
+          "name": "MonatsVerteilung",
+          "startLine": 316,
+          "endLine": 595,
+          "params": [
+            "{ history, current }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "MonatsVerteilung",
+          "line": 316,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "compact",
+          "callee": "Math.abs",
+          "lineNumber": 86
+        },
+        {
+          "caller": "compact",
+          "callee": "v.toLocaleString",
+          "lineNumber": 88
+        },
+        {
+          "caller": "compact",
+          "callee": "(v / 1000).toLocaleString",
+          "lineNumber": 89
+        },
+        {
+          "caller": "compact",
+          "callee": "s.replace",
+          "lineNumber": 90
+        },
+        {
+          "caller": "quantile",
+          "callee": "Math.floor",
+          "lineNumber": 95
+        },
+        {
+          "caller": "quantile",
+          "callee": "Math.ceil",
+          "lineNumber": 96
+        },
+        {
+          "caller": "median",
+          "callee": "[...values].sort",
+          "lineNumber": 101
+        },
+        {
+          "caller": "median",
+          "callee": "quantile",
+          "lineNumber": 102
+        },
+        {
+          "caller": "binCountFor",
+          "callee": "[...values].sort",
+          "lineNumber": 115
+        },
+        {
+          "caller": "binCountFor",
+          "callee": "quantile",
+          "lineNumber": 116
+        },
+        {
+          "caller": "binCountFor",
+          "callee": "quantile",
+          "lineNumber": 116
+        },
+        {
+          "caller": "binCountFor",
+          "callee": "Math.min",
+          "lineNumber": 119
+        },
+        {
+          "caller": "binCountFor",
+          "callee": "Math.max",
+          "lineNumber": 119
+        },
+        {
+          "caller": "binCountFor",
+          "callee": "Math.round",
+          "lineNumber": 119
+        },
+        {
+          "caller": "binCountFor",
+          "callee": "Math.cbrt",
+          "lineNumber": 119
+        },
+        {
+          "caller": "displayBinCountFor",
+          "callee": "Math.max",
+          "lineNumber": 133
+        },
+        {
+          "caller": "niceTicks",
+          "callee": "Math.pow",
+          "lineNumber": 149
+        },
+        {
+          "caller": "niceTicks",
+          "callee": "Math.floor",
+          "lineNumber": 149
+        },
+        {
+          "caller": "niceTicks",
+          "callee": "Math.log10",
+          "lineNumber": 149
+        },
+        {
+          "caller": "niceTicks",
+          "callee": "[1, 2, 2.5, 5, 10].map(m => m * mag).find",
+          "lineNumber": 150
+        },
+        {
+          "caller": "niceTicks",
+          "callee": "[1, 2, 2.5, 5, 10].map",
+          "lineNumber": 150
+        },
+        {
+          "caller": "niceTicks",
+          "callee": "Math.ceil",
+          "lineNumber": 153
+        },
+        {
+          "caller": "niceTicks",
+          "callee": "out.push",
+          "lineNumber": 154
+        },
+        {
+          "caller": "niceTicks",
+          "callee": "Math.round",
+          "lineNumber": 154
+        },
+        {
+          "caller": "buildVerteilung",
+          "callee": "Math.min",
+          "lineNumber": 168
+        },
+        {
+          "caller": "buildVerteilung",
+          "callee": "Math.max",
+          "lineNumber": 169
+        },
+        {
+          "caller": "buildVerteilung",
+          "callee": "Math.abs",
+          "lineNumber": 169
+        },
+        {
+          "caller": "buildVerteilung",
+          "callee": "binCountFor",
+          "lineNumber": 182
+        },
+        {
+          "caller": "buildVerteilung",
+          "callee": "Math.min",
+          "lineNumber": 190
+        },
+        {
+          "caller": "buildVerteilung",
+          "callee": "Math.max",
+          "lineNumber": 190
+        },
+        {
+          "caller": "buildVerteilung",
+          "callee": "Math.floor",
+          "lineNumber": 190
+        },
+        {
+          "caller": "buildVerteilung",
+          "callee": "Array.from",
+          "lineNumber": 192
+        },
+        {
+          "caller": "buildVerteilung",
+          "callee": "compact",
+          "lineNumber": 203
+        },
+        {
+          "caller": "buildVerteilung",
+          "callee": "compact",
+          "lineNumber": 203
+        },
+        {
+          "caller": "buildVerteilung",
+          "callee": "values.filter",
+          "lineNumber": 207
+        },
+        {
+          "caller": "buildVerteilung",
+          "callee": "Array.from",
+          "lineNumber": 212
+        },
+        {
+          "caller": "buildVerteilung",
+          "callee": "kdeDensityAt",
+          "lineNumber": 214
+        },
+        {
+          "caller": "buildVerteilung",
+          "callee": "niceTicks",
+          "lineNumber": 217
+        },
+        {
+          "caller": "BinTooltip",
+          "callee": "payload.find",
+          "lineNumber": 235
+        },
+        {
+          "caller": "BinTooltip",
+          "callee": "fmt",
+          "lineNumber": 243
+        },
+        {
+          "caller": "BinTooltip",
+          "callee": "fmt",
+          "lineNumber": 245
+        },
+        {
+          "caller": "CurrentMonthDot",
+          "callee": "useState",
+          "lineNumber": 275
+        },
+        {
+          "caller": "CurrentMonthDot",
+          "callee": "fmt",
+          "lineNumber": 278
+        },
+        {
+          "caller": "CurrentMonthDot",
+          "callee": "Math.max",
+          "lineNumber": 279
+        },
+        {
+          "caller": "CurrentMonthDot",
+          "callee": "setHover",
+          "lineNumber": 289
+        },
+        {
+          "caller": "CurrentMonthDot",
+          "callee": "setHover",
+          "lineNumber": 290
+        },
+        {
+          "caller": "MonatsVerteilung",
+          "callee": "useSettings",
+          "lineNumber": 317
+        },
+        {
+          "caller": "fmt",
+          "callee": "fmtCurrency",
+          "lineNumber": 318
+        },
+        {
+          "caller": "MonatsVerteilung",
+          "callee": "useState",
+          "lineNumber": 323
+        },
+        {
+          "caller": "MonatsVerteilung",
+          "callee": "useMemo",
+          "lineNumber": 328
+        },
+        {
+          "caller": "MonatsVerteilung",
+          "callee": "displayBinCountFor",
+          "lineNumber": 329
+        },
+        {
+          "caller": "MonatsVerteilung",
+          "callee": "useMemo",
+          "lineNumber": 333
+        },
+        {
+          "caller": "MonatsVerteilung",
+          "callee": "buildVerteilung",
+          "lineNumber": 334
+        },
+        {
+          "caller": "MonatsVerteilung",
+          "callee": "median",
+          "lineNumber": 354
+        },
+        {
+          "caller": "MonatsVerteilung",
+          "callee": "computePercentileRank",
+          "lineNumber": 355
+        },
+        {
+          "caller": "MonatsVerteilung",
+          "callee": "values.filter",
+          "lineNumber": 356
+        },
+        {
+          "caller": "MonatsVerteilung",
+          "callee": "Math.min",
+          "lineNumber": 368
+        },
+        {
+          "caller": "MonatsVerteilung",
+          "callee": "Math.max",
+          "lineNumber": 368
+        },
+        {
+          "caller": "MonatsVerteilung",
+          "callee": "kdeDensityAt",
+          "lineNumber": 369
+        },
+        {
+          "caller": "monthStackShape",
+          "callee": "Math.min",
+          "lineNumber": 389
+        },
+        {
+          "caller": "monthStackShape",
+          "callee": "Math.max",
+          "lineNumber": 390
+        },
+        {
+          "caller": "monthStackShape",
+          "callee": "Array.from",
+          "lineNumber": 394
+        },
+        {
+          "caller": "monthStackShape",
+          "callee": "Math.min",
+          "lineNumber": 403
+        },
+        {
+          "caller": "MonatsVerteilung",
+          "callee": "fmt",
+          "lineNumber": 432
+        },
+        {
+          "caller": "MonatsVerteilung",
+          "callee": "Math.ceil",
+          "lineNumber": 489
+        },
+        {
+          "caller": "MonatsVerteilung",
+          "callee": "fmt",
+          "lineNumber": 579
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 1,
+        "functionCount": 10,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/crypto/portfolio-donut-card.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 132,
+      "nonEmptyLines": 122,
+      "functions": [
+        {
+          "name": "getColor",
+          "startLine": 39,
+          "endLine": 41,
+          "params": [
+            "coingeckoId",
+            "index"
+          ]
+        },
+        {
+          "name": "CustomTooltip",
+          "startLine": 52,
+          "endLine": 62,
+          "params": [
+            "{ active, payload }"
+          ]
+        },
+        {
+          "name": "DonutCard",
+          "startLine": 65,
+          "endLine": 132,
+          "params": [
+            "{\r\n  title, subtitle, data, eurUsdRate, height = 200,\r\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "DonutCard",
+          "line": 65,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "CustomTooltip",
+          "callee": "useSettings",
+          "lineNumber": 53
+        },
+        {
+          "caller": "CustomTooltip",
+          "callee": "d.payload.pct.toFixed",
+          "lineNumber": 59
+        },
+        {
+          "caller": "CustomTooltip",
+          "callee": "fmtCurrency",
+          "lineNumber": 59
+        },
+        {
+          "caller": "DonutCard",
+          "callee": "useSettings",
+          "lineNumber": 74
+        },
+        {
+          "caller": "fmtUsd",
+          "callee": "fmtCurrency",
+          "lineNumber": 75
+        },
+        {
+          "caller": "DonutCard",
+          "callee": "data.map",
+          "lineNumber": 100
+        },
+        {
+          "caller": "DonutCard",
+          "callee": "getColor",
+          "lineNumber": 101
+        },
+        {
+          "caller": "DonutCard",
+          "callee": "data.map",
+          "lineNumber": 111
+        },
+        {
+          "caller": "DonutCard",
+          "callee": "getColor",
+          "lineNumber": 116
+        },
+        {
+          "caller": "DonutCard",
+          "callee": "fmtUsd",
+          "lineNumber": 122
+        },
+        {
+          "caller": "DonutCard",
+          "callee": "fmtCurrency",
+          "lineNumber": 124
+        },
+        {
+          "caller": "DonutCard",
+          "callee": "d.pct.toFixed(1).replace",
+          "lineNumber": 125
+        },
+        {
+          "caller": "DonutCard",
+          "callee": "d.pct.toFixed",
+          "lineNumber": 125
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/landing/DashboardMock.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 1766,
+      "nonEmptyLines": 1684,
+      "functions": [
+        {
+          "name": "buildMockSnapshots",
+          "startLine": 287,
+          "endLine": 312,
+          "params": []
+        },
+        {
+          "name": "cryptoXFormatter",
+          "startLine": 337,
+          "endLine": 337,
+          "params": [
+            "v"
+          ]
+        },
+        {
+          "name": "hashNoise",
+          "startLine": 408,
+          "endLine": 414,
+          "params": [
+            "seed"
+          ]
+        },
+        {
+          "name": "buildMockHeatmapData",
+          "startLine": 425,
+          "endLine": 449,
+          "params": []
+        },
+        {
+          "name": "buildMockCashflowEvents",
+          "startLine": 477,
+          "endLine": 496,
+          "params": []
+        },
+        {
+          "name": "euro",
+          "startLine": 527,
+          "endLine": 528,
+          "params": [
+            "n"
+          ]
+        },
+        {
+          "name": "fmtEurPlain",
+          "startLine": 533,
+          "endLine": 534,
+          "params": [
+            "n"
+          ]
+        },
+        {
+          "name": "fmtPrice",
+          "startLine": 536,
+          "endLine": 537,
+          "params": [
+            "n"
+          ]
+        },
+        {
+          "name": "useCountUp",
+          "startLine": 546,
+          "endLine": 570,
+          "params": [
+            "target",
+            "run",
+            "decimals"
+          ]
+        },
+        {
+          "name": "useLiveTicker",
+          "startLine": 586,
+          "endLine": 601,
+          "params": [
+            "base",
+            "active"
+          ]
+        },
+        {
+          "name": "useVisible",
+          "startLine": 608,
+          "endLine": 618,
+          "params": [
+            "ref"
+          ]
+        },
+        {
+          "name": "usePulseDirection",
+          "startLine": 622,
+          "endLine": 643,
+          "params": [
+            "value"
+          ]
+        },
+        {
+          "name": "noopMouseLeave",
+          "startLine": 657,
+          "endLine": 657,
+          "params": []
+        },
+        {
+          "name": "useTilt",
+          "startLine": 659,
+          "endLine": 671,
+          "params": []
+        },
+        {
+          "name": "TiltCard",
+          "startLine": 682,
+          "endLine": 703,
+          "params": [
+            "{\r\n  children,\r\n  style,\r\n  className,\r\n}"
+          ]
+        },
+        {
+          "name": "CardLabel",
+          "startLine": 705,
+          "endLine": 714,
+          "params": [
+            "{ children }"
+          ]
+        },
+        {
+          "name": "DeltaChip",
+          "startLine": 716,
+          "endLine": 734,
+          "params": [
+            "{ up, delta, big = false }"
+          ]
+        },
+        {
+          "name": "StatTile",
+          "startLine": 741,
+          "endLine": 751,
+          "params": [
+            "{ label, value, sub, valueColor }"
+          ]
+        },
+        {
+          "name": "StatTilesRow",
+          "startLine": 753,
+          "endLine": 772,
+          "params": [
+            "{\r\n  tiles,\r\n  style,\r\n  className,\r\n}"
+          ]
+        },
+        {
+          "name": "PulseValue",
+          "startLine": 776,
+          "endLine": 799,
+          "params": [
+            "{\r\n  value,\r\n  baseColor,\r\n  children,\r\n}"
+          ]
+        },
+        {
+          "name": "AssetsList",
+          "startLine": 814,
+          "endLine": 867,
+          "params": [
+            "{\r\n  title,\r\n  sub,\r\n  rows,\r\n  total,\r\n}"
+          ]
+        },
+        {
+          "name": "BookingsList",
+          "startLine": 869,
+          "endLine": 917,
+          "params": [
+            "{ title, bookings }"
+          ]
+        },
+        {
+          "name": "TabPills",
+          "startLine": 928,
+          "endLine": 958,
+          "params": [
+            "{ options, active, onChange }"
+          ]
+        },
+        {
+          "name": "PeriodTabs",
+          "startLine": 960,
+          "endLine": 963,
+          "params": []
+        },
+        {
+          "name": "AthenaInsightsCard",
+          "startLine": 975,
+          "endLine": 1017,
+          "params": []
+        },
+        {
+          "name": "MiniStat",
+          "startLine": 1021,
+          "endLine": 1033,
+          "params": [
+            "{ label, value, color, icon }"
+          ]
+        },
+        {
+          "name": "DashboardTopRow",
+          "startLine": 1050,
+          "endLine": 1134,
+          "params": [
+            "{ run }"
+          ]
+        },
+        {
+          "name": "DashboardView",
+          "startLine": 1136,
+          "endLine": 1206,
+          "params": [
+            "{ run }"
+          ]
+        },
+        {
+          "name": "AnalyseView",
+          "startLine": 1219,
+          "endLine": 1270,
+          "params": []
+        },
+        {
+          "name": "AthenaView",
+          "startLine": 1295,
+          "endLine": 1387,
+          "params": []
+        },
+        {
+          "name": "CryptoView",
+          "startLine": 1398,
+          "endLine": 1497,
+          "params": [
+            "{ visible }"
+          ]
+        },
+        {
+          "name": "DashboardMock",
+          "startLine": 1499,
+          "endLine": 1766,
+          "params": [
+            "{\r\n  run,\r\n  view = 0,\r\n  /**\r\n   * Hält rechts Platz für die Kennzahlen-Säule frei. Ohne das lägen Beträge,\r\n   * Prozentwerte und Kurse — also genau die rechtsbündigen Zahlen — unter der\r\n   * Säule und wären angeschnitten.\r\n   */\r\n  reserveRight = false,\r\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "DashboardMock",
+          "line": 1499,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "buildMockSnapshots",
+          "callee": "NET_WORTH_MONTHLY.map",
+          "lineNumber": 290
+        },
+        {
+          "caller": "buildMockSnapshots",
+          "callee": "d.setMonth",
+          "lineNumber": 292
+        },
+        {
+          "caller": "buildMockSnapshots",
+          "callee": "d.getMonth",
+          "lineNumber": 292
+        },
+        {
+          "caller": "buildMockSnapshots",
+          "callee": "Math.round",
+          "lineNumber": 294
+        },
+        {
+          "caller": "buildMockSnapshots",
+          "callee": "Math.round",
+          "lineNumber": 295
+        },
+        {
+          "caller": "buildMockSnapshots",
+          "callee": "Math.round",
+          "lineNumber": 296
+        },
+        {
+          "caller": "buildMockSnapshots",
+          "callee": "d.toISOString().slice",
+          "lineNumber": 298
+        },
+        {
+          "caller": "buildMockSnapshots",
+          "callee": "d.toISOString",
+          "lineNumber": 298
+        },
+        {
+          "caller": "cryptoXFormatter",
+          "callee": "Number",
+          "lineNumber": 337
+        },
+        {
+          "caller": "cryptoXFormatter",
+          "callee": "v.slice",
+          "lineNumber": 337
+        },
+        {
+          "caller": "hashNoise",
+          "callee": "Math.imul",
+          "lineNumber": 409
+        },
+        {
+          "caller": "hashNoise",
+          "callee": "Math.imul",
+          "lineNumber": 411
+        },
+        {
+          "caller": "buildMockHeatmapData",
+          "callee": "d.setDate",
+          "lineNumber": 430
+        },
+        {
+          "caller": "buildMockHeatmapData",
+          "callee": "d.getDate",
+          "lineNumber": 430
+        },
+        {
+          "caller": "buildMockHeatmapData",
+          "callee": "d.getDate",
+          "lineNumber": 431
+        },
+        {
+          "caller": "buildMockHeatmapData",
+          "callee": "hashNoise",
+          "lineNumber": 432
+        },
+        {
+          "caller": "buildMockHeatmapData",
+          "callee": "hashNoise",
+          "lineNumber": 433
+        },
+        {
+          "caller": "buildMockHeatmapData",
+          "callee": "Math.round",
+          "lineNumber": 438
+        },
+        {
+          "caller": "buildMockHeatmapData",
+          "callee": "Math.round",
+          "lineNumber": 442
+        },
+        {
+          "caller": "buildMockHeatmapData",
+          "callee": "data.push",
+          "lineNumber": 446
+        },
+        {
+          "caller": "buildMockHeatmapData",
+          "callee": "d.toISOString().split",
+          "lineNumber": 446
+        },
+        {
+          "caller": "buildMockHeatmapData",
+          "callee": "d.toISOString",
+          "lineNumber": 446
+        },
+        {
+          "caller": "buildMockCashflowEvents",
+          "callee": "now.getFullYear",
+          "lineNumber": 479
+        },
+        {
+          "caller": "buildMockCashflowEvents",
+          "callee": "String(now.getMonth() + 1).padStart",
+          "lineNumber": 480
+        },
+        {
+          "caller": "buildMockCashflowEvents",
+          "callee": "String",
+          "lineNumber": 480
+        },
+        {
+          "caller": "buildMockCashflowEvents",
+          "callee": "now.getMonth",
+          "lineNumber": 480
+        },
+        {
+          "caller": "mk",
+          "callee": "String(day).padStart",
+          "lineNumber": 482
+        },
+        {
+          "caller": "mk",
+          "callee": "String",
+          "lineNumber": 482
+        },
+        {
+          "caller": "buildMockCashflowEvents",
+          "callee": "mk",
+          "lineNumber": 485
+        },
+        {
+          "caller": "buildMockCashflowEvents",
+          "callee": "mk",
+          "lineNumber": 486
+        },
+        {
+          "caller": "buildMockCashflowEvents",
+          "callee": "mk",
+          "lineNumber": 487
+        },
+        {
+          "caller": "buildMockCashflowEvents",
+          "callee": "mk",
+          "lineNumber": 488
+        },
+        {
+          "caller": "buildMockCashflowEvents",
+          "callee": "mk",
+          "lineNumber": 489
+        },
+        {
+          "caller": "buildMockCashflowEvents",
+          "callee": "mk",
+          "lineNumber": 490
+        },
+        {
+          "caller": "buildMockCashflowEvents",
+          "callee": "mk",
+          "lineNumber": 491
+        },
+        {
+          "caller": "buildMockCashflowEvents",
+          "callee": "mk",
+          "lineNumber": 492
+        },
+        {
+          "caller": "buildMockCashflowEvents",
+          "callee": "mk",
+          "lineNumber": 493
+        },
+        {
+          "caller": "buildMockCashflowEvents",
+          "callee": "mk",
+          "lineNumber": 494
+        },
+        {
+          "caller": "euro",
+          "callee": "Math.abs(n).toLocaleString",
+          "lineNumber": 528
+        },
+        {
+          "caller": "euro",
+          "callee": "Math.abs",
+          "lineNumber": 528
+        },
+        {
+          "caller": "fmtEurPlain",
+          "callee": "n.toLocaleString",
+          "lineNumber": 534
+        },
+        {
+          "caller": "fmtPrice",
+          "callee": "n.toLocaleString",
+          "lineNumber": 537
+        },
+        {
+          "caller": "useCountUp",
+          "callee": "useState",
+          "lineNumber": 547
+        },
+        {
+          "caller": "useCountUp",
+          "callee": "useRef",
+          "lineNumber": 548
+        },
+        {
+          "caller": "useCountUp",
+          "callee": "useEffect",
+          "lineNumber": 550
+        },
+        {
+          "caller": "tick",
+          "callee": "Math.min",
+          "lineNumber": 557
+        },
+        {
+          "caller": "tick",
+          "callee": "Math.pow",
+          "lineNumber": 559
+        },
+        {
+          "caller": "tick",
+          "callee": "setValue",
+          "lineNumber": 560
+        },
+        {
+          "caller": "tick",
+          "callee": "requestAnimationFrame",
+          "lineNumber": 561
+        },
+        {
+          "caller": "useCountUp",
+          "callee": "requestAnimationFrame",
+          "lineNumber": 563
+        },
+        {
+          "caller": "useCountUp",
+          "callee": "cancelAnimationFrame",
+          "lineNumber": 564
+        },
+        {
+          "caller": "fmt",
+          "callee": "n.toLocaleString",
+          "lineNumber": 568
+        },
+        {
+          "caller": "useCountUp",
+          "callee": "fmt",
+          "lineNumber": 569
+        },
+        {
+          "caller": "useCountUp",
+          "callee": "fmt",
+          "lineNumber": 569
+        },
+        {
+          "caller": "useLiveTicker",
+          "callee": "useState",
+          "lineNumber": 587
+        },
+        {
+          "caller": "useLiveTicker",
+          "callee": "useEffect",
+          "lineNumber": 588
+        },
+        {
+          "caller": "useLiveTicker",
+          "callee": "setInterval",
+          "lineNumber": 590
+        },
+        {
+          "caller": "useLiveTicker",
+          "callee": "setRows",
+          "lineNumber": 591
+        },
+        {
+          "caller": "useLiveTicker",
+          "callee": "prev.map",
+          "lineNumber": 592
+        },
+        {
+          "caller": "useLiveTicker",
+          "callee": "Math.random",
+          "lineNumber": 593
+        },
+        {
+          "caller": "useLiveTicker",
+          "callee": "clearInterval",
+          "lineNumber": 598
+        },
+        {
+          "caller": "useVisible",
+          "callee": "useState",
+          "lineNumber": 609
+        },
+        {
+          "caller": "useVisible",
+          "callee": "useEffect",
+          "lineNumber": 610
+        },
+        {
+          "caller": "useVisible",
+          "callee": "setVisible",
+          "lineNumber": 613
+        },
+        {
+          "caller": "useVisible",
+          "callee": "observer.observe",
+          "lineNumber": 614
+        },
+        {
+          "caller": "useVisible",
+          "callee": "observer.disconnect",
+          "lineNumber": 615
+        },
+        {
+          "caller": "usePulseDirection",
+          "callee": "useState",
+          "lineNumber": 623
+        },
+        {
+          "caller": "usePulseDirection",
+          "callee": "useState",
+          "lineNumber": 630
+        },
+        {
+          "caller": "usePulseDirection",
+          "callee": "setDir",
+          "lineNumber": 632
+        },
+        {
+          "caller": "usePulseDirection",
+          "callee": "setPrevValue",
+          "lineNumber": 633
+        },
+        {
+          "caller": "usePulseDirection",
+          "callee": "useEffect",
+          "lineNumber": 636
+        },
+        {
+          "caller": "usePulseDirection",
+          "callee": "setTimeout",
+          "lineNumber": 638
+        },
+        {
+          "caller": "usePulseDirection",
+          "callee": "setDir",
+          "lineNumber": 638
+        },
+        {
+          "caller": "usePulseDirection",
+          "callee": "clearTimeout",
+          "lineNumber": 639
+        },
+        {
+          "caller": "useTilt",
+          "callee": "useRef",
+          "lineNumber": 660
+        },
+        {
+          "caller": "onMouseMove",
+          "callee": "el.getBoundingClientRect",
+          "lineNumber": 664
+        },
+        {
+          "caller": "onMouseMove",
+          "callee": "el.style.setProperty",
+          "lineNumber": 667
+        },
+        {
+          "caller": "onMouseMove",
+          "callee": "(px * 100).toFixed",
+          "lineNumber": 667
+        },
+        {
+          "caller": "onMouseMove",
+          "callee": "el.style.setProperty",
+          "lineNumber": 668
+        },
+        {
+          "caller": "onMouseMove",
+          "callee": "(py * 100).toFixed",
+          "lineNumber": 668
+        },
+        {
+          "caller": "TiltCard",
+          "callee": "useTilt",
+          "lineNumber": 691
+        },
+        {
+          "caller": "StatTilesRow",
+          "callee": "tiles.map",
+          "lineNumber": 769
+        },
+        {
+          "caller": "PulseValue",
+          "callee": "usePulseDirection",
+          "lineNumber": 785
+        },
+        {
+          "caller": "AssetsList",
+          "callee": "rows.map",
+          "lineNumber": 832
+        },
+        {
+          "caller": "BookingsList",
+          "callee": "useState",
+          "lineNumber": 870
+        },
+        {
+          "caller": "BookingsList",
+          "callee": "bookings.map",
+          "lineNumber": 875
+        },
+        {
+          "caller": "BookingsList",
+          "callee": "setHover",
+          "lineNumber": 878
+        },
+        {
+          "caller": "BookingsList",
+          "callee": "setHover",
+          "lineNumber": 879
+        },
+        {
+          "caller": "BookingsList",
+          "callee": "euro",
+          "lineNumber": 910
+        },
+        {
+          "caller": "TabPills",
+          "callee": "options.map",
+          "lineNumber": 931
+        },
+        {
+          "caller": "TabPills",
+          "callee": "onChange",
+          "lineNumber": 937
+        },
+        {
+          "caller": "PeriodTabs",
+          "callee": "useState",
+          "lineNumber": 961
+        },
+        {
+          "caller": "AthenaInsightsCard",
+          "callee": "ATHENA_INSIGHTS.map",
+          "lineNumber": 994
+        },
+        {
+          "caller": "DashboardTopRow",
+          "callee": "useCountUp",
+          "lineNumber": 1051
+        },
+        {
+          "caller": "DashboardTopRow",
+          "callee": "NET_WORTH_PARTS.map",
+          "lineNumber": 1069
+        },
+        {
+          "caller": "DashboardTopRow",
+          "callee": "CRYPTO_CARD.top.map",
+          "lineNumber": 1123
+        },
+        {
+          "caller": "DashboardView",
+          "callee": "useMemo",
+          "lineNumber": 1139
+        },
+        {
+          "caller": "DashboardView",
+          "callee": "buildMockSnapshots",
+          "lineNumber": 1139
+        },
+        {
+          "caller": "DashboardView",
+          "callee": "BOOKINGS.slice",
+          "lineNumber": 1202
+        },
+        {
+          "caller": "AnalyseView",
+          "callee": "useMemo",
+          "lineNumber": 1220
+        },
+        {
+          "caller": "AnalyseView",
+          "callee": "buildMockHeatmapData",
+          "lineNumber": 1220
+        },
+        {
+          "caller": "AnalyseView",
+          "callee": "useMemo",
+          "lineNumber": 1221
+        },
+        {
+          "caller": "AnalyseView",
+          "callee": "buildMockCashflowEvents",
+          "lineNumber": 1221
+        },
+        {
+          "caller": "AthenaView",
+          "callee": "ATHENA_SESSIONS.map",
+          "lineNumber": 1304
+        },
+        {
+          "caller": "AthenaView",
+          "callee": "ATHENA_ACTION.details.map",
+          "lineNumber": 1349
+        },
+        {
+          "caller": "CryptoView",
+          "callee": "useLiveTicker",
+          "lineNumber": 1399
+        },
+        {
+          "caller": "CryptoView",
+          "callee": "fmtEurPlain",
+          "lineNumber": 1412
+        },
+        {
+          "caller": "CryptoView",
+          "callee": "Math.abs(btc.deltaPct).toFixed(1).replace",
+          "lineNumber": 1420
+        },
+        {
+          "caller": "CryptoView",
+          "callee": "Math.abs(btc.deltaPct).toFixed",
+          "lineNumber": 1420
+        },
+        {
+          "caller": "CryptoView",
+          "callee": "Math.abs",
+          "lineNumber": 1420
+        },
+        {
+          "caller": "CryptoView",
+          "callee": "fmtPrice",
+          "lineNumber": 1431
+        },
+        {
+          "caller": "CryptoView",
+          "callee": "currentAllocationTotal.toLocaleString",
+          "lineNumber": 1475
+        },
+        {
+          "caller": "CryptoView",
+          "callee": "targetAllocationTotal.toLocaleString",
+          "lineNumber": 1483
+        },
+        {
+          "caller": "CryptoView",
+          "callee": "currentAllocationTotal.toLocaleString",
+          "lineNumber": 1492
+        },
+        {
+          "caller": "DashboardMock",
+          "callee": "useState",
+          "lineNumber": 1513
+        },
+        {
+          "caller": "DashboardMock",
+          "callee": "Math.max",
+          "lineNumber": 1517
+        },
+        {
+          "caller": "DashboardMock",
+          "callee": "useRef",
+          "lineNumber": 1531
+        },
+        {
+          "caller": "DashboardMock",
+          "callee": "useVisible",
+          "lineNumber": 1532
+        },
+        {
+          "caller": "DashboardMock",
+          "callee": "NAV.map",
+          "lineNumber": 1612
+        },
+        {
+          "caller": "DashboardMock",
+          "callee": "setHoveredNav",
+          "lineNumber": 1619
+        },
+        {
+          "caller": "DashboardMock",
+          "callee": "setHoveredNav",
+          "lineNumber": 1620
+        },
+        {
+          "caller": "DashboardMock",
+          "callee": "children.map",
+          "lineNumber": 1662
+        },
+        {
+          "caller": "DashboardMock",
+          "callee": "Math.max",
+          "lineNumber": 1755
+        }
+      ],
+      "metrics": {
+        "importCount": 12,
+        "exportCount": 1,
+        "functionCount": 32,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/analyseData.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 74,
+      "nonEmptyLines": 66,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/hooks/use-clamped-position.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 86,
+      "nonEmptyLines": 75,
+      "functions": [
+        {
+          "name": "useClampedPosition",
+          "startLine": 29,
+          "endLine": 86,
+          "params": [
+            "anchor",
+            "opts"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "useClampedPosition",
+          "line": 29,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useClampedPosition",
+          "callee": "useRef",
+          "lineNumber": 36
+        },
+        {
+          "caller": "useClampedPosition",
+          "callee": "useState",
+          "lineNumber": 37
+        },
+        {
+          "caller": "useClampedPosition",
+          "callee": "useLayoutEffect",
+          "lineNumber": 39
+        },
+        {
+          "caller": "useClampedPosition",
+          "callee": "setPos",
+          "lineNumber": 41
+        },
+        {
+          "caller": "useClampedPosition",
+          "callee": "ref.current.getBoundingClientRect",
+          "lineNumber": 44
+        },
+        {
+          "caller": "useClampedPosition",
+          "callee": "Math.max",
+          "lineNumber": 67
+        },
+        {
+          "caller": "useClampedPosition",
+          "callee": "Math.min",
+          "lineNumber": 67
+        },
+        {
+          "caller": "useClampedPosition",
+          "callee": "Math.max",
+          "lineNumber": 68
+        },
+        {
+          "caller": "useClampedPosition",
+          "callee": "Math.min",
+          "lineNumber": 68
+        },
+        {
+          "caller": "useClampedPosition",
+          "callee": "setPos",
+          "lineNumber": 70
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/kde.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 61,
+      "nonEmptyLines": 57,
+      "functions": [
+        {
+          "name": "gaussianKernel",
+          "startLine": 9,
+          "endLine": 11,
+          "params": [
+            "u"
+          ]
+        },
+        {
+          "name": "silvermanBandwidth",
+          "startLine": 19,
+          "endLine": 30,
+          "params": [
+            "data"
+          ]
+        },
+        {
+          "name": "kdeDensityAt",
+          "startLine": 43,
+          "endLine": 50,
+          "params": [
+            "data",
+            "x",
+            "bandwidth"
+          ]
+        },
+        {
+          "name": "computePercentileRank",
+          "startLine": 57,
+          "endLine": 61,
+          "params": [
+            "historicalData",
+            "currentValue"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "kdeDensityAt",
+          "line": 43,
+          "isDefault": false
+        },
+        {
+          "name": "computePercentileRank",
+          "line": 57,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "gaussianKernel",
+          "callee": "Math.exp",
+          "lineNumber": 10
+        },
+        {
+          "caller": "gaussianKernel",
+          "callee": "Math.sqrt",
+          "lineNumber": 10
+        },
+        {
+          "caller": "silvermanBandwidth",
+          "callee": "data.reduce",
+          "lineNumber": 23
+        },
+        {
+          "caller": "silvermanBandwidth",
+          "callee": "data.reduce",
+          "lineNumber": 24
+        },
+        {
+          "caller": "silvermanBandwidth",
+          "callee": "Math.sqrt",
+          "lineNumber": 25
+        },
+        {
+          "caller": "silvermanBandwidth",
+          "callee": "Math.max",
+          "lineNumber": 29
+        },
+        {
+          "caller": "silvermanBandwidth",
+          "callee": "Math.pow",
+          "lineNumber": 29
+        },
+        {
+          "caller": "kdeDensityAt",
+          "callee": "silvermanBandwidth",
+          "lineNumber": 46
+        },
+        {
+          "caller": "kdeDensityAt",
+          "callee": "gaussianKernel",
+          "lineNumber": 48
+        },
+        {
+          "caller": "computePercentileRank",
+          "callee": "historicalData.filter",
+          "lineNumber": 59
+        },
+        {
+          "caller": "computePercentileRank",
+          "callee": "Math.round",
+          "lineNumber": 60
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    }
+  ]
+}

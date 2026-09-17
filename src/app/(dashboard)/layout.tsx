@@ -5,6 +5,7 @@ import { getProfile, getSettings } from '@/lib/settings'
 import { getAthenaSettings } from '@/lib/assistant/settings'
 import { SettingsProvider } from '@/components/providers/settings-context'
 import { AthenaSettingsProvider } from '@/components/providers/athena-settings-context'
+import { PrivacyProvider } from '@/components/providers/privacy-context'
 
 /**
  * Gilt für alle Server Actions, die unter diesem Layout ausgelöst werden — und eine davon
@@ -39,13 +40,15 @@ export default async function DashboardLayout({
   return (
     <SettingsProvider settings={settings} currency={profile?.currency ?? 'EUR'}>
       <AthenaSettingsProvider initial={{ model: athenaSettings.model, effort: athenaSettings.effort }}>
-        <AppShell
-          email={user.email ?? ''}
-          displayName={profile?.display_name ?? null}
-          avatarUrl={profile?.avatar_url ?? null}
-        >
-          {children}
-        </AppShell>
+        <PrivacyProvider>
+          <AppShell
+            email={user.email ?? ''}
+            displayName={profile?.display_name ?? null}
+            avatarUrl={profile?.avatar_url ?? null}
+          >
+            {children}
+          </AppShell>
+        </PrivacyProvider>
       </AthenaSettingsProvider>
     </SettingsProvider>
   )

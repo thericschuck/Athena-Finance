@@ -98,7 +98,7 @@ export function PortfolioAreaChart({
         />
         <YAxis
           tickFormatter={formatY}
-          tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
+          tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5, className: 'tabular-nums' }}
           tickLine={false}
           axisLine={false}
           width={52}

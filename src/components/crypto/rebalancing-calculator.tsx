@@ -233,7 +233,7 @@ export function RebalancingCalculator({
                     <td className={`px-4 py-3 text-right tabular-nums font-medium ${diffClass}`}>
                       {fmtDiffEur(row.diff_eur)}
                     </td>
-                    <td className={`px-4 py-3 text-sm ${diffClass}`}>
+                    <td className={`px-4 py-3 text-sm tabular-nums ${diffClass}`}>
                       {formatDiffQty(row.diff_qty, row.symbol, row.diff_eur)}
                     </td>
                     <td className="px-4 py-3">

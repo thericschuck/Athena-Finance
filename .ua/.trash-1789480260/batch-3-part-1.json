@@ -1,0 +1,1569 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/app/(dashboard)/assistant/actions.ts",
+      "type": "file",
+      "name": "actions.ts",
+      "summary": "Server actions for managing Athena assistant operations including conversations, memory, knowledge, settings, and pending action handling.",
+      "tags": [
+        "server-actions",
+        "api-handler",
+        "entry-point",
+        "multi-function"
+      ],
+      "complexity": "complex",
+      "filePath": "src/app/(dashboard)/assistant/actions.ts"
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/actions.ts:listConversations",
+      "type": "function",
+      "name": "listConversations",
+      "summary": "Retrieves list of conversations from database.",
+      "tags": [
+        "data-loading"
+      ],
+      "complexity": "simple",
+      "filePath": "src/app/(dashboard)/assistant/actions.ts",
+      "lineRange": [
+        51,
+        55
+      ]
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/actions.ts:loadConversation",
+      "type": "function",
+      "name": "loadConversation",
+      "summary": "Loads and returns conversation state.",
+      "tags": [
+        "data-loading"
+      ],
+      "complexity": "simple",
+      "filePath": "src/app/(dashboard)/assistant/actions.ts",
+      "lineRange": [
+        61,
+        65
+      ]
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/actions.ts:renameConversation",
+      "type": "function",
+      "name": "renameConversation",
+      "summary": "Renames conversation and updates database.",
+      "tags": [
+        "data-update"
+      ],
+      "complexity": "moderate",
+      "filePath": "src/app/(dashboard)/assistant/actions.ts",
+      "lineRange": [
+        67,
+        87
+      ]
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/actions.ts:deleteConversation",
+      "type": "function",
+      "name": "deleteConversation",
+      "summary": "Deletes conversation and associated records from database.",
+      "tags": [
+        "data-deletion"
+      ],
+      "complexity": "simple",
+      "filePath": "src/app/(dashboard)/assistant/actions.ts",
+      "lineRange": [
+        89,
+        106
+      ]
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/actions.ts:togglePinConversation",
+      "type": "function",
+      "name": "togglePinConversation",
+      "summary": "Toggles pinconversation state.",
+      "tags": [
+        "state-toggle"
+      ],
+      "complexity": "simple",
+      "filePath": "src/app/(dashboard)/assistant/actions.ts",
+      "lineRange": [
+        108,
+        119
+      ]
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/actions.ts:confirmPendingAction",
+      "type": "function",
+      "name": "confirmPendingAction",
+      "summary": "Confirms and executes pending action.",
+      "tags": [
+        "action-handler"
+      ],
+      "complexity": "complex",
+      "filePath": "src/app/(dashboard)/assistant/actions.ts",
+      "lineRange": [
+        137,
+        191
+      ]
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/actions.ts:signValuableImage",
+      "type": "function",
+      "name": "signValuableImage",
+      "summary": "Generates digital signature for valuableimage.",
+      "tags": [
+        "security"
+      ],
+      "complexity": "moderate",
+      "filePath": "src/app/(dashboard)/assistant/actions.ts",
+      "lineRange": [
+        202,
+        221
+      ]
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/actions.ts:rejectPendingAction",
+      "type": "function",
+      "name": "rejectPendingAction",
+      "summary": "Rejects and handles refused action.",
+      "tags": [
+        "action-handler"
+      ],
+      "complexity": "moderate",
+      "filePath": "src/app/(dashboard)/assistant/actions.ts",
+      "lineRange": [
+        223,
+        246
+      ]
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/actions.ts:upsertMemory",
+      "type": "function",
+      "name": "upsertMemory",
+      "summary": "Creates or updates memory in database.",
+      "tags": [
+        "data-creation",
+        "data-update"
+      ],
+      "complexity": "moderate",
+      "filePath": "src/app/(dashboard)/assistant/actions.ts",
+      "lineRange": [
+        254,
+        288
+      ]
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/actions.ts:deleteMemory",
+      "type": "function",
+      "name": "deleteMemory",
+      "summary": "Deletes memory and associated records from database.",
+      "tags": [
+        "data-deletion"
+      ],
+      "complexity": "simple",
+      "filePath": "src/app/(dashboard)/assistant/actions.ts",
+      "lineRange": [
+        290,
+        307
+      ]
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/actions.ts:saveKnowledgeEntry",
+      "type": "function",
+      "name": "saveKnowledgeEntry",
+      "summary": "Persists knowledgeentry to storage.",
+      "tags": [
+        "persistence"
+      ],
+      "complexity": "moderate",
+      "filePath": "src/app/(dashboard)/assistant/actions.ts",
+      "lineRange": [
+        313,
+        355
+      ]
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/actions.ts:deleteKnowledgeEntry",
+      "type": "function",
+      "name": "deleteKnowledgeEntry",
+      "summary": "Deletes knowledgeentry and associated records from database.",
+      "tags": [
+        "data-deletion"
+      ],
+      "complexity": "simple",
+      "filePath": "src/app/(dashboard)/assistant/actions.ts",
+      "lineRange": [
+        357,
+        374
+      ]
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/actions.ts:toggleKnowledgePin",
+      "type": "function",
+      "name": "toggleKnowledgePin",
+      "summary": "Toggles knowledgepin state.",
+      "tags": [
+        "state-toggle"
+      ],
+      "complexity": "simple",
+      "filePath": "src/app/(dashboard)/assistant/actions.ts",
+      "lineRange": [
+        376,
+        387
+      ]
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/actions.ts:saveAthenaSettings",
+      "type": "function",
+      "name": "saveAthenaSettings",
+      "summary": "Persists athenasettings to storage.",
+      "tags": [
+        "persistence"
+      ],
+      "complexity": "complex",
+      "filePath": "src/app/(dashboard)/assistant/actions.ts",
+      "lineRange": [
+        393,
+        444
+      ]
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/actions.ts:updateAthenaModelEffort",
+      "type": "function",
+      "name": "updateAthenaModelEffort",
+      "summary": "Updates athenamodeleffort in database.",
+      "tags": [
+        "data-update"
+      ],
+      "complexity": "moderate",
+      "filePath": "src/app/(dashboard)/assistant/actions.ts",
+      "lineRange": [
+        454,
+        483
+      ]
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/actions.ts:clearLogs",
+      "type": "function",
+      "name": "clearLogs",
+      "summary": "Clears logs data.",
+      "tags": [
+        "data-cleanup"
+      ],
+      "complexity": "simple",
+      "filePath": "src/app/(dashboard)/assistant/actions.ts",
+      "lineRange": [
+        489,
+        503
+      ]
+    },
+    {
+      "id": "file:src/app/(dashboard)/assistant/layout.tsx",
+      "type": "file",
+      "name": "layout.tsx",
+      "summary": "Layout wrapper component for the assistant dashboard section with header and navigation.",
+      "tags": [
+        "layout",
+        "page-structure",
+        "react"
+      ],
+      "complexity": "simple",
+      "filePath": "src/app/(dashboard)/assistant/layout.tsx"
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/layout.tsx:AthenaLayout",
+      "type": "function",
+      "name": "AthenaLayout",
+      "summary": "Provides AthenaLayout functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "filePath": "src/app/(dashboard)/assistant/layout.tsx",
+      "lineRange": [
+        4,
+        22
+      ]
+    },
+    {
+      "id": "file:src/app/(dashboard)/assistant/logs/page.tsx",
+      "type": "file",
+      "name": "page.tsx",
+      "summary": "Assistant logs page displaying conversation history, cost metrics, and operation logs.",
+      "tags": [
+        "page",
+        "monitoring",
+        "dashboard",
+        "analytics"
+      ],
+      "complexity": "moderate",
+      "filePath": "src/app/(dashboard)/assistant/logs/page.tsx"
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/logs/page.tsx:AthenaLogsPage",
+      "type": "function",
+      "name": "AthenaLogsPage",
+      "summary": "Provides AthenaLogsPage functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "complex",
+      "filePath": "src/app/(dashboard)/assistant/logs/page.tsx",
+      "lineRange": [
+        54,
+        170
+      ]
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/logs/page.tsx:Stat",
+      "type": "function",
+      "name": "Stat",
+      "summary": "Provides Stat functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "filePath": "src/app/(dashboard)/assistant/logs/page.tsx",
+      "lineRange": [
+        172,
+        181
+      ]
+    },
+    {
+      "id": "file:src/app/(dashboard)/assistant/page.tsx",
+      "type": "file",
+      "name": "page.tsx",
+      "summary": "Main assistant interface page with chat UI and session management.",
+      "tags": [
+        "page",
+        "entry-point",
+        "chat-interface"
+      ],
+      "complexity": "simple",
+      "filePath": "src/app/(dashboard)/assistant/page.tsx"
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/page.tsx:AthenaChatPage",
+      "type": "function",
+      "name": "AthenaChatPage",
+      "summary": "Provides AthenaChatPage functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "moderate",
+      "filePath": "src/app/(dashboard)/assistant/page.tsx",
+      "lineRange": [
+        10,
+        45
+      ]
+    },
+    {
+      "id": "file:src/app/(dashboard)/assistant/settings/page.tsx",
+      "type": "file",
+      "name": "page.tsx",
+      "summary": "Assistant settings configuration page for managing model behavior and user preferences.",
+      "tags": [
+        "page",
+        "configuration",
+        "settings"
+      ],
+      "complexity": "simple",
+      "filePath": "src/app/(dashboard)/assistant/settings/page.tsx"
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/settings/page.tsx:AthenaSettingsPage",
+      "type": "function",
+      "name": "AthenaSettingsPage",
+      "summary": "Provides AthenaSettingsPage functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "filePath": "src/app/(dashboard)/assistant/settings/page.tsx",
+      "lineRange": [
+        8,
+        25
+      ]
+    },
+    {
+      "id": "file:src/components/analyse/AnalyseAccountSelector.tsx",
+      "type": "file",
+      "name": "AnalyseAccountSelector.tsx",
+      "summary": "Account selector component with filtering and URL state management for analysis views.",
+      "tags": [
+        "component",
+        "ui",
+        "selector",
+        "react"
+      ],
+      "complexity": "moderate",
+      "filePath": "src/components/analyse/AnalyseAccountSelector.tsx"
+    },
+    {
+      "id": "function:src/components/analyse/AnalyseAccountSelector.tsx:AnalyseAccountSelector",
+      "type": "function",
+      "name": "AnalyseAccountSelector",
+      "summary": "Provides AnalyseAccountSelector functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "complex",
+      "filePath": "src/components/analyse/AnalyseAccountSelector.tsx",
+      "lineRange": [
+        40,
+        167
+      ]
+    },
+    {
+      "id": "file:src/components/assistant/AssistantSheet.tsx",
+      "type": "file",
+      "name": "AssistantSheet.tsx",
+      "summary": "Modal sheet component for displaying assistant interface with session management and quick access.",
+      "tags": [
+        "component",
+        "ui",
+        "assistant",
+        "react"
+      ],
+      "complexity": "moderate",
+      "filePath": "src/components/assistant/AssistantSheet.tsx"
+    },
+    {
+      "id": "function:src/components/assistant/AssistantSheet.tsx:AssistantSheet",
+      "type": "function",
+      "name": "AssistantSheet",
+      "summary": "Provides AssistantSheet functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "complex",
+      "filePath": "src/components/assistant/AssistantSheet.tsx",
+      "lineRange": [
+        48,
+        160
+      ]
+    },
+    {
+      "id": "file:src/components/assistant/AthenaAvatar.tsx",
+      "type": "file",
+      "name": "AthenaAvatar.tsx",
+      "summary": "Avatar display component for the Athena AI assistant with custom styling.",
+      "tags": [
+        "component",
+        "ui",
+        "assistant",
+        "react"
+      ],
+      "complexity": "moderate",
+      "filePath": "src/components/assistant/AthenaAvatar.tsx"
+    },
+    {
+      "id": "function:src/components/assistant/AthenaAvatar.tsx:AthenaAvatar",
+      "type": "function",
+      "name": "AthenaAvatar",
+      "summary": "Provides AthenaAvatar functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "complex",
+      "filePath": "src/components/assistant/AthenaAvatar.tsx",
+      "lineRange": [
+        38,
+        89
+      ]
+    },
+    {
+      "id": "function:src/components/assistant/AthenaAvatar.tsx:AthenaBackdrop",
+      "type": "function",
+      "name": "AthenaBackdrop",
+      "summary": "Provides AthenaBackdrop functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "filePath": "src/components/assistant/AthenaAvatar.tsx",
+      "lineRange": [
+        96,
+        113
+      ]
+    },
+    {
+      "id": "file:src/components/assistant/AthenaChat.tsx",
+      "type": "file",
+      "name": "AthenaChat.tsx",
+      "summary": "Main chat interface component managing conversation UI, message display, AI integration, and user input handling for the Athena assistant.",
+      "tags": [
+        "component",
+        "ui",
+        "chat-interface",
+        "ai-integration",
+        "react"
+      ],
+      "complexity": "complex",
+      "filePath": "src/components/assistant/AthenaChat.tsx"
+    },
+    {
+      "id": "function:src/components/assistant/AthenaChat.tsx:asProposal",
+      "type": "function",
+      "name": "asProposal",
+      "summary": "Provides asProposal functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "filePath": "src/components/assistant/AthenaChat.tsx",
+      "lineRange": [
+        78,
+        91
+      ]
+    },
+    {
+      "id": "function:src/components/assistant/AthenaChat.tsx:asDetails",
+      "type": "function",
+      "name": "asDetails",
+      "summary": "Provides asDetails functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "filePath": "src/components/assistant/AthenaChat.tsx",
+      "lineRange": [
+        109,
+        123
+      ]
+    },
+    {
+      "id": "function:src/components/assistant/AthenaChat.tsx:ToolTrace",
+      "type": "function",
+      "name": "ToolTrace",
+      "summary": "Provides ToolTrace functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "moderate",
+      "filePath": "src/components/assistant/AthenaChat.tsx",
+      "lineRange": [
+        126,
+        169
+      ]
+    },
+    {
+      "id": "function:src/components/assistant/AthenaChat.tsx:ReasoningTrace",
+      "type": "function",
+      "name": "ReasoningTrace",
+      "summary": "Provides ReasoningTrace functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "complex",
+      "filePath": "src/components/assistant/AthenaChat.tsx",
+      "lineRange": [
+        185,
+        252
+      ]
+    },
+    {
+      "id": "function:src/components/assistant/AthenaChat.tsx:Sources",
+      "type": "function",
+      "name": "Sources",
+      "summary": "Provides Sources functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "moderate",
+      "filePath": "src/components/assistant/AthenaChat.tsx",
+      "lineRange": [
+        255,
+        281
+      ]
+    },
+    {
+      "id": "function:src/components/assistant/AthenaChat.tsx:EffortMeter",
+      "type": "function",
+      "name": "EffortMeter",
+      "summary": "Provides EffortMeter functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "filePath": "src/components/assistant/AthenaChat.tsx",
+      "lineRange": [
+        320,
+        335
+      ]
+    },
+    {
+      "id": "function:src/components/assistant/AthenaChat.tsx:ModelEffortPicker",
+      "type": "function",
+      "name": "ModelEffortPicker",
+      "summary": "Provides ModelEffortPicker functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "complex",
+      "filePath": "src/components/assistant/AthenaChat.tsx",
+      "lineRange": [
+        350,
+        460
+      ]
+    },
+    {
+      "id": "function:src/components/assistant/AthenaChat.tsx:erzeugeChat",
+      "type": "function",
+      "name": "erzeugeChat",
+      "summary": "Provides erzeugeChat functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "filePath": "src/components/assistant/AthenaChat.tsx",
+      "lineRange": [
+        580,
+        587
+      ]
+    },
+    {
+      "id": "function:src/components/assistant/AthenaChat.tsx:AthenaChat",
+      "type": "function",
+      "name": "AthenaChat",
+      "summary": "Provides AthenaChat functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "complex",
+      "filePath": "src/components/assistant/AthenaChat.tsx",
+      "lineRange": [
+        589,
+        753
+      ]
+    },
+    {
+      "id": "function:src/components/assistant/AthenaChat.tsx:EmptyState",
+      "type": "function",
+      "name": "EmptyState",
+      "summary": "Provides EmptyState functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "moderate",
+      "filePath": "src/components/assistant/AthenaChat.tsx",
+      "lineRange": [
+        762,
+        792
+      ]
+    },
+    {
+      "id": "file:src/components/assistant/AthenaNav.tsx",
+      "type": "file",
+      "name": "AthenaNav.tsx",
+      "summary": "Assistant UI component: AthenaNav",
+      "tags": [
+        "component",
+        "ui",
+        "assistant",
+        "react"
+      ],
+      "complexity": "simple",
+      "filePath": "src/components/assistant/AthenaNav.tsx"
+    },
+    {
+      "id": "function:src/components/assistant/AthenaNav.tsx:AthenaNav",
+      "type": "function",
+      "name": "AthenaNav",
+      "summary": "Provides AthenaNav functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "moderate",
+      "filePath": "src/components/assistant/AthenaNav.tsx",
+      "lineRange": [
+        16,
+        43
+      ]
+    },
+    {
+      "id": "file:src/components/assistant/AthenaSettingsForm.tsx",
+      "type": "file",
+      "name": "AthenaSettingsForm.tsx",
+      "summary": "Settings form component for configuring assistant behavior, model parameters, and user preferences.",
+      "tags": [
+        "component",
+        "ui",
+        "assistant",
+        "react"
+      ],
+      "complexity": "complex",
+      "filePath": "src/components/assistant/AthenaSettingsForm.tsx"
+    },
+    {
+      "id": "function:src/components/assistant/AthenaSettingsForm.tsx:ToggleField",
+      "type": "function",
+      "name": "ToggleField",
+      "summary": "Provides ToggleField functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "moderate",
+      "filePath": "src/components/assistant/AthenaSettingsForm.tsx",
+      "lineRange": [
+        32,
+        62
+      ]
+    },
+    {
+      "id": "function:src/components/assistant/AthenaSettingsForm.tsx:AthenaSettingsForm",
+      "type": "function",
+      "name": "AthenaSettingsForm",
+      "summary": "Provides AthenaSettingsForm functionality.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "complex",
+      "filePath": "src/components/assistant/AthenaSettingsForm.tsx",
+      "lineRange": [
+        64,
+        345
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:listConversations",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:listConversations",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:loadConversation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:loadConversation",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:renameConversation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:renameConversation",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:deleteConversation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:deleteConversation",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:togglePinConversation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:togglePinConversation",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:confirmPendingAction",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:confirmPendingAction",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:signValuableImage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:signValuableImage",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:rejectPendingAction",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:rejectPendingAction",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:upsertMemory",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:upsertMemory",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:deleteMemory",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:deleteMemory",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:saveKnowledgeEntry",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:saveKnowledgeEntry",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:deleteKnowledgeEntry",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:deleteKnowledgeEntry",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:toggleKnowledgePin",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:toggleKnowledgePin",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:saveAthenaSettings",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:saveAthenaSettings",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:updateAthenaModelEffort",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:updateAthenaModelEffort",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:clearLogs",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "function:src/app/(dashboard)/assistant/actions.ts:clearLogs",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "file:src/lib/assistant/actions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "file:src/lib/assistant/logger.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "file:src/lib/assistant/prompts.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "file:src/lib/assistant/sessions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "file:src/lib/assistant/settings.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/actions.ts",
+      "target": "file:src/types/database.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/layout.tsx",
+      "target": "function:src/app/(dashboard)/assistant/layout.tsx:AthenaLayout",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/layout.tsx",
+      "target": "function:src/app/(dashboard)/assistant/layout.tsx:AthenaLayout",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/layout.tsx",
+      "target": "file:src/components/assistant/AthenaAvatar.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/layout.tsx",
+      "target": "file:src/components/assistant/AthenaNav.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/logs/page.tsx",
+      "target": "function:src/app/(dashboard)/assistant/logs/page.tsx:AthenaLogsPage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/logs/page.tsx",
+      "target": "function:src/app/(dashboard)/assistant/logs/page.tsx:AthenaLogsPage",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/logs/page.tsx",
+      "target": "function:src/app/(dashboard)/assistant/logs/page.tsx:Stat",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/logs/page.tsx",
+      "target": "file:src/components/assistant/ClearLogsButton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/logs/page.tsx",
+      "target": "file:src/lib/assistant/cost.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/logs/page.tsx",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/logs/page.tsx",
+      "target": "file:src/lib/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/page.tsx",
+      "target": "function:src/app/(dashboard)/assistant/page.tsx:AthenaChatPage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/page.tsx",
+      "target": "function:src/app/(dashboard)/assistant/page.tsx:AthenaChatPage",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/page.tsx",
+      "target": "file:src/components/assistant/AthenaChat.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/page.tsx",
+      "target": "file:src/components/assistant/SessionList.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/page.tsx",
+      "target": "file:src/lib/assistant/sessions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/page.tsx",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/settings/page.tsx",
+      "target": "function:src/app/(dashboard)/assistant/settings/page.tsx:AthenaSettingsPage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/settings/page.tsx",
+      "target": "function:src/app/(dashboard)/assistant/settings/page.tsx:AthenaSettingsPage",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/settings/page.tsx",
+      "target": "file:src/components/assistant/AthenaSettingsForm.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/settings/page.tsx",
+      "target": "file:src/lib/assistant/prompts.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/settings/page.tsx",
+      "target": "file:src/lib/assistant/settings.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/settings/page.tsx",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/AnalyseAccountSelector.tsx",
+      "target": "function:src/components/analyse/AnalyseAccountSelector.tsx:AnalyseAccountSelector",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/analyse/AnalyseAccountSelector.tsx",
+      "target": "function:src/components/analyse/AnalyseAccountSelector.tsx:AnalyseAccountSelector",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/analyse/AnalyseAccountSelector.tsx",
+      "target": "file:src/components/providers/url-filters.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/AnalyseAccountSelector.tsx",
+      "target": "file:src/components/ui/checkbox.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/AnalyseAccountSelector.tsx",
+      "target": "file:src/components/ui/popover.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AssistantSheet.tsx",
+      "target": "function:src/components/assistant/AssistantSheet.tsx:AssistantSheet",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/assistant/AssistantSheet.tsx",
+      "target": "function:src/components/assistant/AssistantSheet.tsx:AssistantSheet",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/assistant/AssistantSheet.tsx",
+      "target": "file:src/app/(dashboard)/assistant/actions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AssistantSheet.tsx",
+      "target": "file:src/components/assistant/AthenaAvatar.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AssistantSheet.tsx",
+      "target": "file:src/components/assistant/AthenaChat.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AssistantSheet.tsx",
+      "target": "file:src/components/assistant/PendingActionCard.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AssistantSheet.tsx",
+      "target": "file:src/components/assistant/SessionPicker.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AssistantSheet.tsx",
+      "target": "file:src/components/ui/button.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AssistantSheet.tsx",
+      "target": "file:src/components/ui/sheet.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AssistantSheet.tsx",
+      "target": "file:src/lib/hooks/use-avoid-overlap.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaAvatar.tsx",
+      "target": "function:src/components/assistant/AthenaAvatar.tsx:AthenaAvatar",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/assistant/AthenaAvatar.tsx",
+      "target": "function:src/components/assistant/AthenaAvatar.tsx:AthenaAvatar",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/assistant/AthenaAvatar.tsx",
+      "target": "function:src/components/assistant/AthenaAvatar.tsx:AthenaBackdrop",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/assistant/AthenaAvatar.tsx",
+      "target": "function:src/components/assistant/AthenaAvatar.tsx:AthenaBackdrop",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/assistant/AthenaAvatar.tsx",
+      "target": "file:src/lib/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "function:src/components/assistant/AthenaChat.tsx:asProposal",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "function:src/components/assistant/AthenaChat.tsx:asDetails",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "function:src/components/assistant/AthenaChat.tsx:ToolTrace",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "function:src/components/assistant/AthenaChat.tsx:ReasoningTrace",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "function:src/components/assistant/AthenaChat.tsx:Sources",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "function:src/components/assistant/AthenaChat.tsx:EffortMeter",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "function:src/components/assistant/AthenaChat.tsx:ModelEffortPicker",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "function:src/components/assistant/AthenaChat.tsx:erzeugeChat",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "function:src/components/assistant/AthenaChat.tsx:erzeugeChat",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "function:src/components/assistant/AthenaChat.tsx:AthenaChat",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "function:src/components/assistant/AthenaChat.tsx:AthenaChat",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "function:src/components/assistant/AthenaChat.tsx:EmptyState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "file:src/components/assistant/AthenaAvatar.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "file:src/components/assistant/AthenaChart.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "file:src/components/assistant/PendingActionCard.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "file:src/components/assistant/markdown-lite.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "file:src/components/providers/athena-settings-context.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "file:src/components/ui/button.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "file:src/components/ui/popover.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "file:src/components/ui/scroll-area.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "file:src/components/ui/textarea.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "file:src/lib/assistant/actions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "file:src/lib/assistant/settings.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaChat.tsx",
+      "target": "file:src/lib/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaNav.tsx",
+      "target": "function:src/components/assistant/AthenaNav.tsx:AthenaNav",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/assistant/AthenaNav.tsx",
+      "target": "function:src/components/assistant/AthenaNav.tsx:AthenaNav",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/assistant/AthenaNav.tsx",
+      "target": "file:src/lib/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+      "target": "function:src/components/assistant/AthenaSettingsForm.tsx:ToggleField",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+      "target": "function:src/components/assistant/AthenaSettingsForm.tsx:AthenaSettingsForm",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+      "target": "function:src/components/assistant/AthenaSettingsForm.tsx:AthenaSettingsForm",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+      "target": "file:src/app/(dashboard)/assistant/actions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+      "target": "file:src/components/ui/button.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+      "target": "file:src/components/ui/checkbox.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+      "target": "file:src/components/ui/input.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+      "target": "file:src/components/ui/label.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+      "target": "file:src/components/ui/textarea.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+      "target": "file:src/lib/assistant/settings.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/assistant/AthenaSettingsForm.tsx",
+      "target": "file:src/lib/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}

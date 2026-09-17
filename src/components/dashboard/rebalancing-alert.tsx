@@ -18,7 +18,7 @@ export function RebalancingAlert({ rebalancingVolume, lastRebalancing, locale, d
         <AlertTriangle className="size-5 text-warning shrink-0" />
         <div>
           <p className="text-sm font-medium text-foreground">
-            Rebalancing empfohlen — {fmtCurrency(rebalancingVolume, 'EUR', locale)} Handelsvolumen
+            Rebalancing empfohlen — <span className="tabular-nums">{fmtCurrency(rebalancingVolume, 'EUR', locale)}</span> Handelsvolumen
           </p>
           {lastRebalancing && (
             <p className="text-xs text-warning">

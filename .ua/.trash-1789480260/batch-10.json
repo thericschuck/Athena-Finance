@@ -1,0 +1,1148 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/components/crypto/portfolio-switcher.tsx",
+      "type": "file",
+      "name": "portfolio-switcher.tsx",
+      "filePath": "src/components/crypto/portfolio-switcher.tsx",
+      "summary": "Crypto portfolio switcher component enabling users to create, switch between, sync with Kraken, and delete crypto portfolios with real-time status feedback.",
+      "tags": ["component", "portfolio-management", "state-management", "form-handling"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/crypto/portfolio-switcher.tsx:PortfolioSwitcher",
+      "type": "function",
+      "name": "PortfolioSwitcher",
+      "filePath": "src/components/crypto/portfolio-switcher.tsx",
+      "lineRange": [32, 261],
+      "summary": "Main React component for portfolio switcher with Kraken sync integration, supporting portfolio creation, deletion, and active portfolio switching.",
+      "tags": ["component", "react-component", "portfolio-management"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/crypto/rebalancing-calculator.tsx",
+      "type": "file",
+      "name": "rebalancing-calculator.tsx",
+      "filePath": "src/components/crypto/rebalancing-calculator.tsx",
+      "summary": "Interactive rebalancing calculator component for crypto portfolios, displaying asset reallocation suggestions with threshold filtering and mark-as-done functionality.",
+      "tags": ["component", "portfolio-analytics", "rebalancing", "data-visualization"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/crypto/rebalancing-calculator.tsx:RebalancingCalculator",
+      "type": "function",
+      "name": "RebalancingCalculator",
+      "filePath": "src/components/crypto/rebalancing-calculator.tsx",
+      "lineRange": [81, 284],
+      "summary": "Component rendering rebalancing calculations for crypto assets, with threshold adjustment, signal updates, and persistence to database.",
+      "tags": ["component", "react-component", "portfolio-analytics"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/crypto/strategy-signals.tsx",
+      "type": "file",
+      "name": "strategy-signals.tsx",
+      "filePath": "src/components/crypto/strategy-signals.tsx",
+      "summary": "Strategy signals component for managing crypto portfolio allocation weights and signals, with interactive asset tables and persistence.",
+      "tags": ["component", "portfolio-management", "form-handling", "state-management"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/crypto/strategy-signals.tsx:StrategySignals",
+      "type": "function",
+      "name": "StrategySignals",
+      "filePath": "src/components/crypto/strategy-signals.tsx",
+      "lineRange": [178, 368],
+      "summary": "Component for editing strategy signals and portfolio allocations with asset weight tables and multi-strategy support.",
+      "tags": ["component", "react-component", "portfolio-management"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/dashboard/crypto-widget.tsx",
+      "type": "file",
+      "name": "crypto-widget.tsx",
+      "filePath": "src/components/dashboard/crypto-widget.tsx",
+      "summary": "Dashboard widget displaying crypto portfolio summary including total value, cost basis, profit/loss percentage, and top assets.",
+      "tags": ["component", "widget", "portfolio-summary"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/dashboard/crypto-widget.tsx:CryptoWidget",
+      "type": "function",
+      "name": "CryptoWidget",
+      "filePath": "src/components/dashboard/crypto-widget.tsx",
+      "lineRange": [20, 81],
+      "summary": "React component for displaying crypto holdings summary on dashboard with profit/loss metrics.",
+      "tags": ["component", "react-component", "widget"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/dashboard/finance-analytics.tsx",
+      "type": "file",
+      "name": "finance-analytics.tsx",
+      "filePath": "src/components/dashboard/finance-analytics.tsx",
+      "summary": "Finance analytics component with income/expense charts, category breakdowns, and monthly deviation analysis powered by transaction summaries.",
+      "tags": ["component", "analytics", "charts", "data-visualization"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/dashboard/finance-analytics.tsx:FinanceAnalytics",
+      "type": "function",
+      "name": "FinanceAnalytics",
+      "filePath": "src/components/dashboard/finance-analytics.tsx",
+      "lineRange": [332, 352],
+      "summary": "Container component for finance analytics including income/expense and category charts.",
+      "tags": ["component", "react-component", "analytics"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/dashboard/finance-analytics.tsx:IncomeExpenseChart",
+      "type": "function",
+      "name": "IncomeExpenseChart",
+      "filePath": "src/components/dashboard/finance-analytics.tsx",
+      "lineRange": [108, 164],
+      "summary": "Chart component displaying monthly income and expense trends over last 6 months.",
+      "tags": ["component", "chart", "data-visualization"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/dashboard/net-worth-chart.tsx",
+      "type": "file",
+      "name": "net-worth-chart.tsx",
+      "filePath": "src/components/dashboard/net-worth-chart.tsx",
+      "summary": "Net worth visualization component with multiple view options (accounts, konten, investment, depot, crypto) and filtering by date range.",
+      "tags": ["component", "chart", "data-visualization", "portfolio-summary"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/dashboard/net-worth-chart.tsx:NetWorthChart",
+      "type": "function",
+      "name": "NetWorthChart",
+      "filePath": "src/components/dashboard/net-worth-chart.tsx",
+      "lineRange": [162, 277],
+      "summary": "Interactive net worth chart with view and filter toggles for different portfolio segments and date cutoffs.",
+      "tags": ["component", "react-component", "chart"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/dashboard/portfolio-donut.tsx",
+      "type": "file",
+      "name": "portfolio-donut.tsx",
+      "filePath": "src/components/dashboard/portfolio-donut.tsx",
+      "summary": "Donut chart component showing portfolio composition across four asset classes (Konten, Investment, Depot, Crypto).",
+      "tags": ["component", "chart", "portfolio-overview"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/dashboard/portfolio-donut.tsx:PortfolioDonut",
+      "type": "function",
+      "name": "PortfolioDonut",
+      "filePath": "src/components/dashboard/portfolio-donut.tsx",
+      "lineRange": [32, 117],
+      "summary": "Chart component rendering portfolio allocation breakdown in donut/pie format.",
+      "tags": ["component", "react-component", "chart"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/dashboard/rebalancing-alert.tsx",
+      "type": "file",
+      "name": "rebalancing-alert.tsx",
+      "filePath": "src/components/dashboard/rebalancing-alert.tsx",
+      "summary": "Alert component displaying rebalancing opportunity status including volume and last rebalancing date.",
+      "tags": ["component", "alert", "portfolio-management"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/dashboard/rebalancing-alert.tsx:RebalancingAlert",
+      "type": "function",
+      "name": "RebalancingAlert",
+      "filePath": "src/components/dashboard/rebalancing-alert.tsx",
+      "lineRange": [12, 38],
+      "summary": "Component displaying rebalancing alert with volume and last execution date.",
+      "tags": ["component", "react-component", "alert"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/finance/fixed-costs-widget.tsx",
+      "type": "file",
+      "name": "fixed-costs-widget.tsx",
+      "filePath": "src/components/finance/fixed-costs-widget.tsx",
+      "summary": "Dashboard widget for fixed costs management showing monthly contract costs and account assignments.",
+      "tags": ["component", "widget", "finance-planning"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/finance/fixed-costs-widget.tsx:FixedCostsWidget",
+      "type": "function",
+      "name": "FixedCostsWidget",
+      "filePath": "src/components/finance/fixed-costs-widget.tsx",
+      "lineRange": [24, 91],
+      "summary": "Widget component displaying recurring contract costs and account selections.",
+      "tags": ["component", "react-component", "widget"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/providers/settings-context.tsx",
+      "type": "file",
+      "name": "settings-context.tsx",
+      "filePath": "src/components/providers/settings-context.tsx",
+      "summary": "React context provider for global settings including theme, currency preferences, and other application-wide configurations.",
+      "tags": ["context-provider", "settings-management", "react-context"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/providers/settings-context.tsx:useSettings",
+      "type": "function",
+      "name": "useSettings",
+      "filePath": "src/components/providers/settings-context.tsx",
+      "lineRange": [24, 26],
+      "summary": "Custom hook for accessing global settings context throughout the application.",
+      "tags": ["hook", "react-hook", "context-consumer"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/providers/settings-context.tsx:SettingsProvider",
+      "type": "function",
+      "name": "SettingsProvider",
+      "filePath": "src/components/providers/settings-context.tsx",
+      "lineRange": [31, 85],
+      "summary": "Provider component managing global settings state and theme application.",
+      "tags": ["component", "react-component", "context-provider"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/crypto/coin-registry.ts",
+      "type": "file",
+      "name": "coin-registry.ts",
+      "filePath": "src/lib/crypto/coin-registry.ts",
+      "summary": "Cryptocurrency registry with coin definitions, symbol-based lookup, and EUR pricing reference data.",
+      "tags": ["utility", "data-registry", "crypto-data"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/crypto/coin-registry.ts:findBySymbol",
+      "type": "function",
+      "name": "findBySymbol",
+      "filePath": "src/lib/crypto/coin-registry.ts",
+      "lineRange": [57, 59],
+      "summary": "Utility function to find coin registry entries by symbol (case-insensitive).",
+      "tags": ["utility", "lookup"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/crypto/coingecko.ts",
+      "type": "file",
+      "name": "coingecko.ts",
+      "filePath": "src/lib/crypto/coingecko.ts",
+      "summary": "CoinGecko API integration providing crypto price fetching, EUR/USD exchange rates, and coin information.",
+      "tags": ["api-client", "external-integration", "crypto-data"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/crypto/coingecko.ts:getPrices",
+      "type": "function",
+      "name": "getPrices",
+      "filePath": "src/lib/crypto/coingecko.ts",
+      "lineRange": [11, 51],
+      "summary": "Fetches current crypto prices from CoinGecko API with chunked requests for rate limiting.",
+      "tags": ["api-client", "async", "crypto-data"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/crypto/coingecko.ts:getEurUsdRate",
+      "type": "function",
+      "name": "getEurUsdRate",
+      "filePath": "src/lib/crypto/coingecko.ts",
+      "lineRange": [54, 69],
+      "summary": "Retrieves current EUR/USD exchange rate from CoinGecko API.",
+      "tags": ["api-client", "async", "exchange-rate"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/crypto/coingecko.ts:getCoinInfo",
+      "type": "function",
+      "name": "getCoinInfo",
+      "filePath": "src/lib/crypto/coingecko.ts",
+      "lineRange": [75, 94],
+      "summary": "Fetches detailed coin information including metadata and symbol normalization from CoinGecko.",
+      "tags": ["api-client", "async", "crypto-data"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/crypto/rebalancing-defaults.ts",
+      "type": "file",
+      "name": "rebalancing-defaults.ts",
+      "filePath": "src/lib/crypto/rebalancing-defaults.ts",
+      "summary": "Default strategy signals and portfolio allocation configurations for crypto rebalancing.",
+      "tags": ["constants", "configuration", "portfolio-defaults"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/crypto/rebalancing.ts",
+      "type": "file",
+      "name": "rebalancing.ts",
+      "filePath": "src/lib/crypto/rebalancing.ts",
+      "summary": "Core rebalancing calculation engine for crypto portfolios with multi-portfolio support and threshold filtering.",
+      "tags": ["utility", "portfolio-analytics", "algorithm"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/lib/crypto/rebalancing.ts:calculateRebalancing",
+      "type": "function",
+      "name": "calculateRebalancing",
+      "filePath": "src/lib/crypto/rebalancing.ts",
+      "lineRange": [70, 210],
+      "summary": "Computes rebalancing transactions based on target allocations, current holdings, and portfolio signals.",
+      "tags": ["algorithm", "portfolio-analytics", "calculation"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/lib/crypto/rebalancing.ts:formatDiffQty",
+      "type": "function",
+      "name": "formatDiffQty",
+      "filePath": "src/lib/crypto/rebalancing.ts",
+      "lineRange": [213, 224],
+      "summary": "Formats quantity differences for rebalancing display with proper decimal precision.",
+      "tags": ["utility", "formatting"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/crypto/rebalancing.ts:getPortfolioWeight",
+      "type": "function",
+      "name": "getPortfolioWeight",
+      "filePath": "src/lib/crypto/rebalancing.ts",
+      "lineRange": [226, 233],
+      "summary": "Calculates effective portfolio weight from strategy signals.",
+      "tags": ["utility", "calculation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/crypto/rebalancing.ts:sortRows",
+      "type": "function",
+      "name": "sortRows",
+      "filePath": "src/lib/crypto/rebalancing.ts",
+      "lineRange": [238, 244],
+      "summary": "Sorts rebalancing rows by target weight descending.",
+      "tags": ["utility", "sorting"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/encryption.ts",
+      "type": "file",
+      "name": "encryption.ts",
+      "filePath": "src/lib/encryption.ts",
+      "summary": "Encryption and decryption utilities for sensitive data like API keys using AES-256-GCM.",
+      "tags": ["security", "encryption", "utility"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/encryption.ts:encrypt",
+      "type": "function",
+      "name": "encrypt",
+      "filePath": "src/lib/encryption.ts",
+      "lineRange": [21, 37],
+      "summary": "Encrypts plaintext using AES-256-GCM with random IV and authentication tag.",
+      "tags": ["security", "encryption"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/encryption.ts:decrypt",
+      "type": "function",
+      "name": "decrypt",
+      "filePath": "src/lib/encryption.ts",
+      "lineRange": [39, 56],
+      "summary": "Decrypts AES-256-GCM encrypted text with IV and authentication tag verification.",
+      "tags": ["security", "encryption"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/format.ts",
+      "type": "file",
+      "name": "format.ts",
+      "filePath": "src/lib/format.ts",
+      "summary": "Formatting utilities for currencies, numbers, and dates with locale-aware internationalization.",
+      "tags": ["utility", "formatting", "internationalization"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/format.ts:fmtCurrency",
+      "type": "function",
+      "name": "fmtCurrency",
+      "filePath": "src/lib/format.ts",
+      "lineRange": [7, 21],
+      "summary": "Formats number as currency string with locale and currency support.",
+      "tags": ["utility", "formatting"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/format.ts:fmtNumber",
+      "type": "function",
+      "name": "fmtNumber",
+      "filePath": "src/lib/format.ts",
+      "lineRange": [23, 28],
+      "summary": "Formats number with locale-aware thousands separators and decimal places.",
+      "tags": ["utility", "formatting"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/format.ts:fmtDate",
+      "type": "function",
+      "name": "fmtDate",
+      "filePath": "src/lib/format.ts",
+      "lineRange": [34, 49],
+      "summary": "Formats Date object to ISO or DD.MM.YYYY format.",
+      "tags": ["utility", "formatting"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/format.ts:fmtDateShort",
+      "type": "function",
+      "name": "fmtDateShort",
+      "filePath": "src/lib/format.ts",
+      "lineRange": [52, 66],
+      "summary": "Formats Date object to short DD.MM format.",
+      "tags": ["utility", "formatting"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/kraken/cost-basis.ts",
+      "type": "file",
+      "name": "cost-basis.ts",
+      "filePath": "src/lib/kraken/cost-basis.ts",
+      "summary": "Cost basis calculation for crypto trades from Kraken exchange data using FIFO method.",
+      "tags": ["utility", "portfolio-analytics", "tax-accounting"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/kraken/cost-basis.ts:computeAverageCostBasis",
+      "type": "function",
+      "name": "computeAverageCostBasis",
+      "filePath": "src/lib/kraken/cost-basis.ts",
+      "lineRange": [23, 48],
+      "summary": "Computes average cost basis per asset from sorted trades using FIFO matching.",
+      "tags": ["utility", "calculation", "tax-accounting"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/kraken/futures.ts",
+      "type": "file",
+      "name": "futures.ts",
+      "filePath": "src/lib/kraken/futures.ts",
+      "summary": "Kraken Futures API integration for fetching open positions with request signing.",
+      "tags": ["api-client", "kraken-integration", "futures-trading"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/kraken/futures.ts:fetchKrakenFuturesOpenPositions",
+      "type": "function",
+      "name": "fetchKrakenFuturesOpenPositions",
+      "filePath": "src/lib/kraken/futures.ts",
+      "lineRange": [50, 74],
+      "summary": "Fetches open futures positions from Kraken with authentication and error handling.",
+      "tags": ["api-client", "async", "kraken-integration"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/kraken/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "src/lib/kraken/index.ts",
+      "summary": "Kraken REST API client with functions for balances, asset info, tickers, trades history, and price mapping.",
+      "tags": ["api-client", "kraken-integration", "entry-point"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/lib/kraken/index.ts:fetchKrakenBalances",
+      "type": "function",
+      "name": "fetchKrakenBalances",
+      "filePath": "src/lib/kraken/index.ts",
+      "lineRange": [92, 114],
+      "summary": "Fetches user account balances from Kraken with API key authentication.",
+      "tags": ["api-client", "async", "kraken-integration"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/kraken/index.ts:fetchKrakenAssetInfo",
+      "type": "function",
+      "name": "fetchKrakenAssetInfo",
+      "filePath": "src/lib/kraken/index.ts",
+      "lineRange": [121, 126],
+      "summary": "Retrieves Kraken asset metadata including decimals and altnames.",
+      "tags": ["api-client", "async", "kraken-integration"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/kraken/index.ts:fetchKrakenAssetPairs",
+      "type": "function",
+      "name": "fetchKrakenAssetPairs",
+      "filePath": "src/lib/kraken/index.ts",
+      "lineRange": [133, 138],
+      "summary": "Fetches tradeable asset pairs and their configurations from Kraken.",
+      "tags": ["api-client", "async", "kraken-integration"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/kraken/index.ts:fetchKrakenTickers",
+      "type": "function",
+      "name": "fetchKrakenTickers",
+      "filePath": "src/lib/kraken/index.ts",
+      "lineRange": [142, 154],
+      "summary": "Fetches ticker data for multiple asset pairs including current prices.",
+      "tags": ["api-client", "async", "kraken-integration"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/kraken/index.ts:fetchKrakenTradesHistory",
+      "type": "function",
+      "name": "fetchKrakenTradesHistory",
+      "filePath": "src/lib/kraken/index.ts",
+      "lineRange": [181, 219],
+      "summary": "Fetches complete trade history from Kraken with pagination and rate limiting.",
+      "tags": ["api-client", "async", "kraken-integration"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/kraken/index.ts:fetchKrakenOpenPositions",
+      "type": "function",
+      "name": "fetchKrakenOpenPositions",
+      "filePath": "src/lib/kraken/index.ts",
+      "lineRange": [237, 255],
+      "summary": "Retrieves currently open margin/futures positions from Kraken.",
+      "tags": ["api-client", "async", "kraken-integration"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/kraken/index.ts:buildKrakenPriceMap",
+      "type": "function",
+      "name": "buildKrakenPriceMap",
+      "filePath": "src/lib/kraken/index.ts",
+      "lineRange": [269, 320],
+      "summary": "Constructs EUR/USD price mapping for Kraken assets with fallback to CoinGecko.",
+      "tags": ["utility", "price-aggregation", "kraken-integration"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/kraken/sync.ts",
+      "type": "file",
+      "name": "sync.ts",
+      "filePath": "src/lib/kraken/sync.ts",
+      "summary": "Kraken account sync orchestrator importing exchange trades, calculating cost basis, and updating Supabase asset records.",
+      "tags": ["api-client", "sync-service", "kraken-integration", "data-import"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/lib/kraken/sync.ts:syncKrakenForUser",
+      "type": "function",
+      "name": "syncKrakenForUser",
+      "filePath": "src/lib/kraken/sync.ts",
+      "lineRange": [31, 282],
+      "summary": "Main sync function orchestrating Kraken account import including API calls, cost basis calculation, and Supabase upsert.",
+      "tags": ["service", "async", "kraken-integration", "data-import"],
+      "complexity": "complex"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/components/crypto/portfolio-switcher.tsx",
+      "target": "function:src/components/crypto/portfolio-switcher.tsx:PortfolioSwitcher",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/crypto/portfolio-switcher.tsx",
+      "target": "file:src/app/(dashboard)/crypto/actions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/crypto/portfolio-switcher.tsx",
+      "target": "file:src/lib/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/crypto/rebalancing-calculator.tsx",
+      "target": "function:src/components/crypto/rebalancing-calculator.tsx:RebalancingCalculator",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/crypto/rebalancing-calculator.tsx",
+      "target": "file:src/app/(dashboard)/crypto/actions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/crypto/rebalancing-calculator.tsx",
+      "target": "file:src/components/crypto/portfolio-overview.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/crypto/rebalancing-calculator.tsx",
+      "target": "file:src/components/crypto/strategy-signals.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/crypto/rebalancing-calculator.tsx",
+      "target": "file:src/components/providers/settings-context.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/crypto/rebalancing-calculator.tsx",
+      "target": "file:src/components/ui/button.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/crypto/rebalancing-calculator.tsx",
+      "target": "file:src/components/ui/input.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/crypto/rebalancing-calculator.tsx",
+      "target": "file:src/lib/crypto/rebalancing-defaults.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/crypto/rebalancing-calculator.tsx",
+      "target": "file:src/lib/crypto/rebalancing.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/crypto/rebalancing-calculator.tsx",
+      "target": "file:src/lib/format.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/crypto/strategy-signals.tsx",
+      "target": "function:src/components/crypto/strategy-signals.tsx:StrategySignals",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/crypto/strategy-signals.tsx",
+      "target": "file:src/app/(dashboard)/crypto/actions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/crypto/strategy-signals.tsx",
+      "target": "file:src/components/crypto/coin-combobox.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/crypto/strategy-signals.tsx",
+      "target": "file:src/components/ui/button.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/crypto/strategy-signals.tsx",
+      "target": "file:src/components/ui/input.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/crypto/strategy-signals.tsx",
+      "target": "file:src/components/ui/label.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/crypto/strategy-signals.tsx",
+      "target": "file:src/lib/crypto/rebalancing-defaults.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/crypto/strategy-signals.tsx",
+      "target": "file:src/lib/crypto/rebalancing.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/dashboard/crypto-widget.tsx",
+      "target": "function:src/components/dashboard/crypto-widget.tsx:CryptoWidget",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/dashboard/crypto-widget.tsx",
+      "target": "file:src/lib/format.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/dashboard/finance-analytics.tsx",
+      "target": "function:src/components/dashboard/finance-analytics.tsx:FinanceAnalytics",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/dashboard/finance-analytics.tsx",
+      "target": "function:src/components/dashboard/finance-analytics.tsx:IncomeExpenseChart",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/dashboard/finance-analytics.tsx",
+      "target": "file:src/lib/format.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/dashboard/net-worth-chart.tsx",
+      "target": "function:src/components/dashboard/net-worth-chart.tsx:NetWorthChart",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/dashboard/net-worth-chart.tsx",
+      "target": "file:src/components/providers/settings-context.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/dashboard/net-worth-chart.tsx",
+      "target": "file:src/lib/format.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/dashboard/portfolio-donut.tsx",
+      "target": "function:src/components/dashboard/portfolio-donut.tsx:PortfolioDonut",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/dashboard/portfolio-donut.tsx",
+      "target": "file:src/lib/format.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/dashboard/rebalancing-alert.tsx",
+      "target": "function:src/components/dashboard/rebalancing-alert.tsx:RebalancingAlert",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/dashboard/rebalancing-alert.tsx",
+      "target": "file:src/lib/format.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/finance/fixed-costs-widget.tsx",
+      "target": "function:src/components/finance/fixed-costs-widget.tsx:FixedCostsWidget",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/finance/fixed-costs-widget.tsx",
+      "target": "file:src/components/providers/settings-context.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/finance/fixed-costs-widget.tsx",
+      "target": "file:src/components/ui/select.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/finance/fixed-costs-widget.tsx",
+      "target": "file:src/lib/format.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/providers/settings-context.tsx",
+      "target": "function:src/components/providers/settings-context.tsx:useSettings",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/providers/settings-context.tsx",
+      "target": "function:src/components/providers/settings-context.tsx:SettingsProvider",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/providers/settings-context.tsx",
+      "target": "file:src/lib/settings.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/crypto/coin-registry.ts",
+      "target": "function:src/lib/crypto/coin-registry.ts:findBySymbol",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/crypto/coingecko.ts",
+      "target": "function:src/lib/crypto/coingecko.ts:getPrices",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/crypto/coingecko.ts",
+      "target": "function:src/lib/crypto/coingecko.ts:getEurUsdRate",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/crypto/coingecko.ts",
+      "target": "function:src/lib/crypto/coingecko.ts:getCoinInfo",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/crypto/coingecko.ts",
+      "target": "file:src/lib/crypto/coin-registry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/crypto/rebalancing.ts",
+      "target": "function:src/lib/crypto/rebalancing.ts:calculateRebalancing",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/crypto/rebalancing.ts",
+      "target": "function:src/lib/crypto/rebalancing.ts:formatDiffQty",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/crypto/rebalancing.ts",
+      "target": "function:src/lib/crypto/rebalancing.ts:getPortfolioWeight",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/crypto/rebalancing.ts",
+      "target": "function:src/lib/crypto/rebalancing.ts:sortRows",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/crypto/rebalancing.ts",
+      "target": "file:src/lib/crypto/rebalancing-defaults.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/encryption.ts",
+      "target": "function:src/lib/encryption.ts:encrypt",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/encryption.ts",
+      "target": "function:src/lib/encryption.ts:decrypt",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/format.ts",
+      "target": "function:src/lib/format.ts:fmtCurrency",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/format.ts",
+      "target": "function:src/lib/format.ts:fmtNumber",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/format.ts",
+      "target": "function:src/lib/format.ts:fmtDate",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/format.ts",
+      "target": "function:src/lib/format.ts:fmtDateShort",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/kraken/cost-basis.ts",
+      "target": "function:src/lib/kraken/cost-basis.ts:computeAverageCostBasis",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/kraken/futures.ts",
+      "target": "function:src/lib/kraken/futures.ts:fetchKrakenFuturesOpenPositions",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/kraken/index.ts",
+      "target": "function:src/lib/kraken/index.ts:fetchKrakenBalances",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/kraken/index.ts",
+      "target": "function:src/lib/kraken/index.ts:fetchKrakenAssetInfo",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/kraken/index.ts",
+      "target": "function:src/lib/kraken/index.ts:fetchKrakenAssetPairs",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/kraken/index.ts",
+      "target": "function:src/lib/kraken/index.ts:fetchKrakenTickers",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/kraken/index.ts",
+      "target": "function:src/lib/kraken/index.ts:fetchKrakenTradesHistory",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/kraken/index.ts",
+      "target": "function:src/lib/kraken/index.ts:fetchKrakenOpenPositions",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/kraken/index.ts",
+      "target": "function:src/lib/kraken/index.ts:buildKrakenPriceMap",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/kraken/index.ts",
+      "target": "file:src/lib/crypto/coingecko.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/kraken/sync.ts",
+      "target": "function:src/lib/kraken/sync.ts:syncKrakenForUser",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/kraken/sync.ts",
+      "target": "file:src/lib/crypto/coin-registry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/kraken/sync.ts",
+      "target": "file:src/lib/crypto/coingecko.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/kraken/sync.ts",
+      "target": "file:src/lib/encryption.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/kraken/sync.ts",
+      "target": "file:src/lib/kraken/cost-basis.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/kraken/sync.ts",
+      "target": "file:src/lib/kraken/index.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/kraken/sync.ts",
+      "target": "file:src/types/database.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "function:src/lib/crypto/rebalancing.ts:calculateRebalancing",
+      "target": "function:src/lib/crypto/rebalancing.ts:formatDiffQty",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/components/crypto/rebalancing-calculator.tsx:RebalancingCalculator",
+      "target": "function:src/lib/crypto/rebalancing.ts:calculateRebalancing",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/components/dashboard/net-worth-chart.tsx:NetWorthChart",
+      "target": "function:src/components/providers/settings-context.tsx:useSettings",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/components/finance/fixed-costs-widget.tsx:FixedCostsWidget",
+      "target": "function:src/components/providers/settings-context.tsx:useSettings",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/lib/crypto/coingecko.ts:getPrices",
+      "target": "function:src/lib/crypto/coin-registry.ts:findBySymbol",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/lib/kraken/index.ts:buildKrakenPriceMap",
+      "target": "function:src/lib/crypto/coingecko.ts:getEurUsdRate",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/lib/kraken/sync.ts:syncKrakenForUser",
+      "target": "function:src/lib/kraken/index.ts:fetchKrakenBalances",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/lib/kraken/sync.ts:syncKrakenForUser",
+      "target": "function:src/lib/kraken/index.ts:fetchKrakenAssetInfo",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/lib/kraken/sync.ts:syncKrakenForUser",
+      "target": "function:src/lib/kraken/index.ts:fetchKrakenAssetPairs",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/lib/kraken/sync.ts:syncKrakenForUser",
+      "target": "function:src/lib/kraken/index.ts:fetchKrakenTradesHistory",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/lib/kraken/sync.ts:syncKrakenForUser",
+      "target": "function:src/lib/kraken/index.ts:buildKrakenPriceMap",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/lib/kraken/sync.ts:syncKrakenForUser",
+      "target": "function:src/lib/crypto/coingecko.ts:getPrices",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/lib/kraken/sync.ts:syncKrakenForUser",
+      "target": "function:src/lib/kraken/cost-basis.ts:computeAverageCostBasis",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    }
+  ]
+}

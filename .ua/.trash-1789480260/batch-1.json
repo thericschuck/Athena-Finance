@@ -1,0 +1,2736 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/app/(dashboard)/analyse/banking/loading.tsx",
+      "type": "file",
+      "name": "loading.tsx",
+      "filePath": "src/app/(dashboard)/analyse/banking/loading.tsx",
+      "summary": "Skeleton loading placeholder displaying UI placeholders during async data fetch.",
+      "tags": [
+        "component",
+        "skeleton",
+        "ui",
+        "loader"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/analyse/banking/loading.tsx:Loading",
+      "type": "function",
+      "name": "Loading",
+      "filePath": "src/app/(dashboard)/analyse/banking/loading.tsx",
+      "lineRange": [
+        17,
+        56
+      ],
+      "summary": "Function Loading with 40 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/(dashboard)/analyse/banking/page.tsx",
+      "type": "file",
+      "name": "page.tsx",
+      "filePath": "src/app/(dashboard)/analyse/banking/page.tsx",
+      "summary": "Next.js page component rendering the banking interface with data and controls.",
+      "tags": [
+        "page",
+        "utility"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/app/(dashboard)/analyse/banking/page.tsx:BankAnalysePage",
+      "type": "function",
+      "name": "BankAnalysePage",
+      "filePath": "src/app/(dashboard)/analyse/banking/page.tsx",
+      "lineRange": [
+        49,
+        55
+      ],
+      "summary": "Function BankAnalysePage with 7 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/analyse/banking/page.tsx:BankAnalyse",
+      "type": "function",
+      "name": "BankAnalyse",
+      "filePath": "src/app/(dashboard)/analyse/banking/page.tsx",
+      "lineRange": [
+        57,
+        381
+      ],
+      "summary": "Function BankAnalyse with 325 lines implementing core logic.",
+      "tags": [
+        "helper"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/app/(dashboard)/analyse/loading.tsx",
+      "type": "file",
+      "name": "loading.tsx",
+      "filePath": "src/app/(dashboard)/analyse/loading.tsx",
+      "summary": "Skeleton loading placeholder displaying UI placeholders during async data fetch.",
+      "tags": [
+        "component",
+        "skeleton",
+        "ui",
+        "loader"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/analyse/loading.tsx:HeatmapSkeleton",
+      "type": "function",
+      "name": "HeatmapSkeleton",
+      "filePath": "src/app/(dashboard)/analyse/loading.tsx",
+      "lineRange": [
+        4,
+        26
+      ],
+      "summary": "Function HeatmapSkeleton with 23 lines implementing core logic.",
+      "tags": [
+        "helper"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/analyse/loading.tsx:Loading",
+      "type": "function",
+      "name": "Loading",
+      "filePath": "src/app/(dashboard)/analyse/loading.tsx",
+      "lineRange": [
+        28,
+        58
+      ],
+      "summary": "Function Loading with 31 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/(dashboard)/analyse/verlauf/loading.tsx",
+      "type": "file",
+      "name": "loading.tsx",
+      "filePath": "src/app/(dashboard)/analyse/verlauf/loading.tsx",
+      "summary": "Skeleton loading placeholder displaying UI placeholders during async data fetch.",
+      "tags": [
+        "component",
+        "skeleton",
+        "ui",
+        "loader"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/analyse/verlauf/loading.tsx:Loading",
+      "type": "function",
+      "name": "Loading",
+      "filePath": "src/app/(dashboard)/analyse/verlauf/loading.tsx",
+      "lineRange": [
+        3,
+        25
+      ],
+      "summary": "Function Loading with 23 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/(dashboard)/crypto/loading.tsx",
+      "type": "file",
+      "name": "loading.tsx",
+      "filePath": "src/app/(dashboard)/crypto/loading.tsx",
+      "summary": "Skeleton loading placeholder displaying UI placeholders during async data fetch.",
+      "tags": [
+        "component",
+        "skeleton",
+        "ui",
+        "loader"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/crypto/loading.tsx:Loading",
+      "type": "function",
+      "name": "Loading",
+      "filePath": "src/app/(dashboard)/crypto/loading.tsx",
+      "lineRange": [
+        3,
+        33
+      ],
+      "summary": "Function Loading with 31 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/(dashboard)/dashboard/loading.tsx",
+      "type": "file",
+      "name": "loading.tsx",
+      "filePath": "src/app/(dashboard)/dashboard/loading.tsx",
+      "summary": "Skeleton loading placeholder displaying UI placeholders during async data fetch.",
+      "tags": [
+        "component",
+        "skeleton",
+        "ui",
+        "loader"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/dashboard/loading.tsx:CardSkeleton",
+      "type": "function",
+      "name": "CardSkeleton",
+      "filePath": "src/app/(dashboard)/dashboard/loading.tsx",
+      "lineRange": [
+        3,
+        18
+      ],
+      "summary": "Function CardSkeleton with 16 lines implementing core logic.",
+      "tags": [
+        "helper"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/dashboard/loading.tsx:Loading",
+      "type": "function",
+      "name": "Loading",
+      "filePath": "src/app/(dashboard)/dashboard/loading.tsx",
+      "lineRange": [
+        20,
+        73
+      ],
+      "summary": "Function Loading with 54 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/(dashboard)/depot/loading.tsx",
+      "type": "file",
+      "name": "loading.tsx",
+      "filePath": "src/app/(dashboard)/depot/loading.tsx",
+      "summary": "Skeleton loading placeholder displaying UI placeholders during async data fetch.",
+      "tags": [
+        "component",
+        "skeleton",
+        "ui",
+        "loader"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/depot/loading.tsx:Loading",
+      "type": "function",
+      "name": "Loading",
+      "filePath": "src/app/(dashboard)/depot/loading.tsx",
+      "lineRange": [
+        3,
+        38
+      ],
+      "summary": "Function Loading with 36 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/(dashboard)/depot/page.tsx",
+      "type": "file",
+      "name": "page.tsx",
+      "filePath": "src/app/(dashboard)/depot/page.tsx",
+      "summary": "Next.js page component rendering the depot interface with data and controls.",
+      "tags": [
+        "page",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/depot/page.tsx:DepotPage",
+      "type": "function",
+      "name": "DepotPage",
+      "filePath": "src/app/(dashboard)/depot/page.tsx",
+      "lineRange": [
+        5,
+        13
+      ],
+      "summary": "Function DepotPage with 9 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/(dashboard)/finance/(planung)/contracts/loading.tsx",
+      "type": "file",
+      "name": "loading.tsx",
+      "filePath": "src/app/(dashboard)/finance/(planung)/contracts/loading.tsx",
+      "summary": "Skeleton loading placeholder displaying UI placeholders during async data fetch.",
+      "tags": [
+        "component",
+        "skeleton",
+        "ui",
+        "loader"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(planung)/contracts/loading.tsx:Loading",
+      "type": "function",
+      "name": "Loading",
+      "filePath": "src/app/(dashboard)/finance/(planung)/contracts/loading.tsx",
+      "lineRange": [
+        3,
+        37
+      ],
+      "summary": "Function Loading with 35 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/(dashboard)/finance/(planung)/debts/loading.tsx",
+      "type": "file",
+      "name": "loading.tsx",
+      "filePath": "src/app/(dashboard)/finance/(planung)/debts/loading.tsx",
+      "summary": "Skeleton loading placeholder displaying UI placeholders during async data fetch.",
+      "tags": [
+        "component",
+        "skeleton",
+        "ui",
+        "loader"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(planung)/debts/loading.tsx:Loading",
+      "type": "function",
+      "name": "Loading",
+      "filePath": "src/app/(dashboard)/finance/(planung)/debts/loading.tsx",
+      "lineRange": [
+        3,
+        33
+      ],
+      "summary": "Function Loading with 31 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/(dashboard)/finance/(planung)/goals/loading.tsx",
+      "type": "file",
+      "name": "loading.tsx",
+      "filePath": "src/app/(dashboard)/finance/(planung)/goals/loading.tsx",
+      "summary": "Skeleton loading placeholder displaying UI placeholders during async data fetch.",
+      "tags": [
+        "component",
+        "skeleton",
+        "ui",
+        "loader"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(planung)/goals/loading.tsx:GoalCardSkeleton",
+      "type": "function",
+      "name": "GoalCardSkeleton",
+      "filePath": "src/app/(dashboard)/finance/(planung)/goals/loading.tsx",
+      "lineRange": [
+        3,
+        19
+      ],
+      "summary": "Function GoalCardSkeleton with 17 lines implementing core logic.",
+      "tags": [
+        "helper"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(planung)/goals/loading.tsx:Loading",
+      "type": "function",
+      "name": "Loading",
+      "filePath": "src/app/(dashboard)/finance/(planung)/goals/loading.tsx",
+      "lineRange": [
+        21,
+        39
+      ],
+      "summary": "Function Loading with 19 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/(dashboard)/finance/(transaktionen)/categories/loading.tsx",
+      "type": "file",
+      "name": "loading.tsx",
+      "filePath": "src/app/(dashboard)/finance/(transaktionen)/categories/loading.tsx",
+      "summary": "Skeleton loading placeholder displaying UI placeholders during async data fetch.",
+      "tags": [
+        "component",
+        "skeleton",
+        "ui",
+        "loader"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(transaktionen)/categories/loading.tsx:Loading",
+      "type": "function",
+      "name": "Loading",
+      "filePath": "src/app/(dashboard)/finance/(transaktionen)/categories/loading.tsx",
+      "lineRange": [
+        3,
+        17
+      ],
+      "summary": "Function Loading with 15 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/(dashboard)/finance/(transaktionen)/transactions/loading.tsx",
+      "type": "file",
+      "name": "loading.tsx",
+      "filePath": "src/app/(dashboard)/finance/(transaktionen)/transactions/loading.tsx",
+      "summary": "Skeleton loading placeholder displaying UI placeholders during async data fetch.",
+      "tags": [
+        "component",
+        "skeleton",
+        "ui",
+        "loader"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(transaktionen)/transactions/loading.tsx:Loading",
+      "type": "function",
+      "name": "Loading",
+      "filePath": "src/app/(dashboard)/finance/(transaktionen)/transactions/loading.tsx",
+      "lineRange": [
+        3,
+        27
+      ],
+      "summary": "Function Loading with 25 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/(dashboard)/finance/accounts/loading.tsx",
+      "type": "file",
+      "name": "loading.tsx",
+      "filePath": "src/app/(dashboard)/finance/accounts/loading.tsx",
+      "summary": "Skeleton loading placeholder displaying UI placeholders during async data fetch.",
+      "tags": [
+        "component",
+        "skeleton",
+        "ui",
+        "loader"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/accounts/loading.tsx:Loading",
+      "type": "function",
+      "name": "Loading",
+      "filePath": "src/app/(dashboard)/finance/accounts/loading.tsx",
+      "lineRange": [
+        3,
+        30
+      ],
+      "summary": "Function Loading with 28 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/(dashboard)/finance/budget/loading.tsx",
+      "type": "file",
+      "name": "loading.tsx",
+      "filePath": "src/app/(dashboard)/finance/budget/loading.tsx",
+      "summary": "Skeleton loading placeholder displaying UI placeholders during async data fetch.",
+      "tags": [
+        "component",
+        "skeleton",
+        "ui",
+        "loader"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/budget/loading.tsx:Loading",
+      "type": "function",
+      "name": "Loading",
+      "filePath": "src/app/(dashboard)/finance/budget/loading.tsx",
+      "lineRange": [
+        3,
+        33
+      ],
+      "summary": "Function Loading with 31 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/(dashboard)/inventar/loading.tsx",
+      "type": "file",
+      "name": "loading.tsx",
+      "filePath": "src/app/(dashboard)/inventar/loading.tsx",
+      "summary": "Skeleton loading placeholder displaying UI placeholders during async data fetch.",
+      "tags": [
+        "component",
+        "skeleton",
+        "ui",
+        "loader"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/inventar/loading.tsx:Loading",
+      "type": "function",
+      "name": "Loading",
+      "filePath": "src/app/(dashboard)/inventar/loading.tsx",
+      "lineRange": [
+        7,
+        48
+      ],
+      "summary": "Function Loading with 42 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/(dashboard)/settings/loading.tsx",
+      "type": "file",
+      "name": "loading.tsx",
+      "filePath": "src/app/(dashboard)/settings/loading.tsx",
+      "summary": "Skeleton loading placeholder displaying UI placeholders during async data fetch.",
+      "tags": [
+        "component",
+        "skeleton",
+        "ui",
+        "loader"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/settings/loading.tsx:Loading",
+      "type": "function",
+      "name": "Loading",
+      "filePath": "src/app/(dashboard)/settings/loading.tsx",
+      "lineRange": [
+        3,
+        33
+      ],
+      "summary": "Function Loading with 31 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/(dashboard)/strategy/loading.tsx",
+      "type": "file",
+      "name": "loading.tsx",
+      "filePath": "src/app/(dashboard)/strategy/loading.tsx",
+      "summary": "Skeleton loading placeholder displaying UI placeholders during async data fetch.",
+      "tags": [
+        "component",
+        "skeleton",
+        "ui",
+        "loader"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/strategy/loading.tsx:Loading",
+      "type": "function",
+      "name": "Loading",
+      "filePath": "src/app/(dashboard)/strategy/loading.tsx",
+      "lineRange": [
+        7,
+        27
+      ],
+      "summary": "Function Loading with 21 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/actions/depot.ts",
+      "type": "file",
+      "name": "depot.ts",
+      "filePath": "src/app/actions/depot.ts",
+      "summary": "Server actions for depot (investment portfolio) management including holdings, savings plans, and transactions.",
+      "tags": [
+        "server-action",
+        "data-layer",
+        "utility"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/app/actions/depot.ts:upsertFundPrice",
+      "type": "function",
+      "name": "upsertFundPrice",
+      "filePath": "src/app/actions/depot.ts",
+      "lineRange": [
+        52,
+        63
+      ],
+      "summary": "Function upsertFundPrice with 12 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "mutation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/actions/depot.ts:addInitialHolding",
+      "type": "function",
+      "name": "addInitialHolding",
+      "filePath": "src/app/actions/depot.ts",
+      "lineRange": [
+        67,
+        112
+      ],
+      "summary": "Function addInitialHolding with 46 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/actions/depot.ts:addManualDeposit",
+      "type": "function",
+      "name": "addManualDeposit",
+      "filePath": "src/app/actions/depot.ts",
+      "lineRange": [
+        114,
+        145
+      ],
+      "summary": "Function addManualDeposit with 32 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/actions/depot.ts:getDepotTransactions",
+      "type": "function",
+      "name": "getDepotTransactions",
+      "filePath": "src/app/actions/depot.ts",
+      "lineRange": [
+        147,
+        160
+      ],
+      "summary": "Function getDepotTransactions with 14 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported",
+        "data-fetching"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/actions/depot.ts:getPortfolioHistory",
+      "type": "function",
+      "name": "getPortfolioHistory",
+      "filePath": "src/app/actions/depot.ts",
+      "lineRange": [
+        162,
+        208
+      ],
+      "summary": "Function getPortfolioHistory with 47 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported",
+        "data-fetching"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/actions/depot.ts:deleteDepotTransaction",
+      "type": "function",
+      "name": "deleteDepotTransaction",
+      "filePath": "src/app/actions/depot.ts",
+      "lineRange": [
+        210,
+        225
+      ],
+      "summary": "Function deleteDepotTransaction with 16 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported",
+        "mutation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/actions/depot.ts:createSavingsPlan",
+      "type": "function",
+      "name": "createSavingsPlan",
+      "filePath": "src/app/actions/depot.ts",
+      "lineRange": [
+        229,
+        252
+      ],
+      "summary": "Function createSavingsPlan with 24 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported",
+        "mutation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/actions/depot.ts:getSavingsPlans",
+      "type": "function",
+      "name": "getSavingsPlans",
+      "filePath": "src/app/actions/depot.ts",
+      "lineRange": [
+        254,
+        265
+      ],
+      "summary": "Function getSavingsPlans with 12 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported",
+        "data-fetching"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/actions/depot.ts:toggleSavingsPlan",
+      "type": "function",
+      "name": "toggleSavingsPlan",
+      "filePath": "src/app/actions/depot.ts",
+      "lineRange": [
+        267,
+        282
+      ],
+      "summary": "Function toggleSavingsPlan with 16 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/actions/depot.ts:deleteSavingsPlan",
+      "type": "function",
+      "name": "deleteSavingsPlan",
+      "filePath": "src/app/actions/depot.ts",
+      "lineRange": [
+        284,
+        299
+      ],
+      "summary": "Function deleteSavingsPlan with 16 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported",
+        "mutation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/actions/depot.ts:executeSavingsPlanPayment",
+      "type": "function",
+      "name": "executeSavingsPlanPayment",
+      "filePath": "src/app/actions/depot.ts",
+      "lineRange": [
+        301,
+        338
+      ],
+      "summary": "Function executeSavingsPlanPayment with 38 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/actions/depot.ts:getDepots",
+      "type": "function",
+      "name": "getDepots",
+      "filePath": "src/app/actions/depot.ts",
+      "lineRange": [
+        350,
+        362
+      ],
+      "summary": "Function getDepots with 13 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported",
+        "data-fetching"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/actions/depot.ts:createDepot",
+      "type": "function",
+      "name": "createDepot",
+      "filePath": "src/app/actions/depot.ts",
+      "lineRange": [
+        364,
+        386
+      ],
+      "summary": "Function createDepot with 23 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported",
+        "mutation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/actions/depot.ts:deleteDepot",
+      "type": "function",
+      "name": "deleteDepot",
+      "filePath": "src/app/actions/depot.ts",
+      "lineRange": [
+        388,
+        404
+      ],
+      "summary": "Function deleteDepot with 17 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported",
+        "mutation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/actions/depot.ts:getDepotsSummaries",
+      "type": "function",
+      "name": "getDepotsSummaries",
+      "filePath": "src/app/actions/depot.ts",
+      "lineRange": [
+        410,
+        463
+      ],
+      "summary": "Function getDepotsSummaries with 54 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported",
+        "data-fetching"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/bank/bank-balance-chart.tsx",
+      "type": "file",
+      "name": "bank-balance-chart.tsx",
+      "filePath": "src/components/bank/bank-balance-chart.tsx",
+      "summary": "Chart visualization component displaying bank account balance history over time.",
+      "tags": [
+        "component",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/bank/bank-category-chart.tsx",
+      "type": "file",
+      "name": "bank-category-chart.tsx",
+      "filePath": "src/components/bank/bank-category-chart.tsx",
+      "summary": "Chart component visualizing transaction spending distribution by category.",
+      "tags": [
+        "component",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/bank/bank-sync-button.tsx",
+      "type": "file",
+      "name": "bank-sync-button.tsx",
+      "filePath": "src/components/bank/bank-sync-button.tsx",
+      "summary": "Button component managing bank data synchronization with SCA exemption status display.",
+      "tags": [
+        "component",
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/bank/bank-sync-button.tsx:BankSyncButton",
+      "type": "function",
+      "name": "BankSyncButton",
+      "filePath": "src/components/bank/bank-sync-button.tsx",
+      "lineRange": [
+        22,
+        115
+      ],
+      "summary": "Function BankSyncButton with 94 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/bank/bank-sync-panel.tsx",
+      "type": "file",
+      "name": "bank-sync-panel.tsx",
+      "filePath": "src/components/bank/bank-sync-panel.tsx",
+      "summary": "Panel displaying bank synchronization controls and status information.",
+      "tags": [
+        "component",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/bank/bank-sync-panel.tsx:BankSyncPanel",
+      "type": "function",
+      "name": "BankSyncPanel",
+      "filePath": "src/components/bank/bank-sync-panel.tsx",
+      "lineRange": [
+        21,
+        47
+      ],
+      "summary": "Function BankSyncPanel with 27 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/bank/bank-transactions-view.tsx",
+      "type": "file",
+      "name": "bank-transactions-view.tsx",
+      "filePath": "src/components/bank/bank-transactions-view.tsx",
+      "summary": "Interactive table component for viewing and categorizing bank transactions with filtering.",
+      "tags": [
+        "component",
+        "utility"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/bank/bank-transactions-view.tsx:CategoryCell",
+      "type": "function",
+      "name": "CategoryCell",
+      "filePath": "src/components/bank/bank-transactions-view.tsx",
+      "lineRange": [
+        55,
+        123
+      ],
+      "summary": "Function CategoryCell with 69 lines implementing core logic.",
+      "tags": [
+        "helper"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/bank/bank-transactions-view.tsx:BankTransactionsView",
+      "type": "function",
+      "name": "BankTransactionsView",
+      "filePath": "src/components/bank/bank-transactions-view.tsx",
+      "lineRange": [
+        125,
+        290
+      ],
+      "summary": "Function BankTransactionsView with 166 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/bank/bank-transactions-view.tsx:FilterBar",
+      "type": "function",
+      "name": "FilterBar",
+      "filePath": "src/components/bank/bank-transactions-view.tsx",
+      "lineRange": [
+        293,
+        337
+      ],
+      "summary": "Function FilterBar with 45 lines implementing core logic.",
+      "tags": [
+        "helper"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/bank/bank-trend-chart.tsx",
+      "type": "file",
+      "name": "bank-trend-chart.tsx",
+      "filePath": "src/components/bank/bank-trend-chart.tsx",
+      "summary": "Chart component showing transaction trends and patterns over periods.",
+      "tags": [
+        "component",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/bank/category-suggestions-panel.tsx",
+      "type": "file",
+      "name": "category-suggestions-panel.tsx",
+      "filePath": "src/components/bank/category-suggestions-panel.tsx",
+      "summary": "Panel providing AI-powered category suggestions for uncategorized transactions.",
+      "tags": [
+        "component",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/bank/category-suggestions-panel.tsx:CategorySuggestionsPanel",
+      "type": "function",
+      "name": "CategorySuggestionsPanel",
+      "filePath": "src/components/bank/category-suggestions-panel.tsx",
+      "lineRange": [
+        24,
+        50
+      ],
+      "summary": "Function CategorySuggestionsPanel with 27 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/bank/synced-holdings-card.tsx",
+      "type": "file",
+      "name": "synced-holdings-card.tsx",
+      "filePath": "src/components/bank/synced-holdings-card.tsx",
+      "summary": "Card component displaying synchronized investment holdings from bank accounts.",
+      "tags": [
+        "component",
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/bank/synced-holdings-card.tsx:SyncedHoldingsCard",
+      "type": "function",
+      "name": "SyncedHoldingsCard",
+      "filePath": "src/components/bank/synced-holdings-card.tsx",
+      "lineRange": [
+        18,
+        80
+      ],
+      "summary": "Function SyncedHoldingsCard with 63 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/bank/synced-holdings-section.tsx",
+      "type": "file",
+      "name": "synced-holdings-section.tsx",
+      "filePath": "src/components/bank/synced-holdings-section.tsx",
+      "summary": "Card component displaying synchronized investment holdings from bank accounts.",
+      "tags": [
+        "component",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/bank/synced-holdings-section.tsx:SyncedHoldingsSection",
+      "type": "function",
+      "name": "SyncedHoldingsSection",
+      "filePath": "src/components/bank/synced-holdings-section.tsx",
+      "lineRange": [
+        19,
+        29
+      ],
+      "summary": "Function SyncedHoldingsSection with 11 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/depot/DepotDashboard.tsx",
+      "type": "file",
+      "name": "DepotDashboard.tsx",
+      "filePath": "src/components/depot/DepotDashboard.tsx",
+      "summary": "Comprehensive dashboard for managing investment portfolio with holdings, transactions, and savings plans.",
+      "tags": [
+        "component",
+        "utility"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/depot/DepotDashboard.tsx:StatCard",
+      "type": "function",
+      "name": "StatCard",
+      "filePath": "src/components/depot/DepotDashboard.tsx",
+      "lineRange": [
+        68,
+        86
+      ],
+      "summary": "Function StatCard with 19 lines implementing core logic.",
+      "tags": [
+        "helper"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/depot/DepotDashboard.tsx:DepotDashboard",
+      "type": "function",
+      "name": "DepotDashboard",
+      "filePath": "src/components/depot/DepotDashboard.tsx",
+      "lineRange": [
+        90,
+        827
+      ],
+      "summary": "Function DepotDashboard with 738 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/depot/depot-chart.tsx",
+      "type": "file",
+      "name": "depot-chart.tsx",
+      "filePath": "src/components/depot/depot-chart.tsx",
+      "summary": "Chart component visualizing depot composition and value allocation.",
+      "tags": [
+        "component",
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/depot/depot-chart.tsx:yTickFmt",
+      "type": "function",
+      "name": "yTickFmt",
+      "filePath": "src/components/depot/depot-chart.tsx",
+      "lineRange": [
+        32,
+        42
+      ],
+      "summary": "Function yTickFmt with 11 lines implementing core logic.",
+      "tags": [
+        "helper"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/depot/depot-chart.tsx:ChartTooltip",
+      "type": "function",
+      "name": "ChartTooltip",
+      "filePath": "src/components/depot/depot-chart.tsx",
+      "lineRange": [
+        44,
+        64
+      ],
+      "summary": "Function ChartTooltip with 21 lines implementing core logic.",
+      "tags": [
+        "helper"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/depot/depot-chart.tsx:DepotChart",
+      "type": "function",
+      "name": "DepotChart",
+      "filePath": "src/components/depot/depot-chart.tsx",
+      "lineRange": [
+        71,
+        118
+      ],
+      "summary": "Function DepotChart with 48 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/depot/depot-transactions-table.tsx",
+      "type": "file",
+      "name": "depot-transactions-table.tsx",
+      "filePath": "src/components/depot/depot-transactions-table.tsx",
+      "summary": "Table component for viewing and managing individual portfolio transactions.",
+      "tags": [
+        "component",
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/depot/depot-transactions-table.tsx:DepotTransactionsTable",
+      "type": "function",
+      "name": "DepotTransactionsTable",
+      "filePath": "src/components/depot/depot-transactions-table.tsx",
+      "lineRange": [
+        24,
+        94
+      ],
+      "summary": "Function DepotTransactionsTable with 71 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/ui/skeleton.tsx",
+      "type": "file",
+      "name": "skeleton.tsx",
+      "filePath": "src/components/ui/skeleton.tsx",
+      "summary": "Shadcn/ui skeleton component for displaying animated placeholders during content loading.",
+      "tags": [
+        "component",
+        "skeleton",
+        "utility"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/ui/skeleton.tsx:Skeleton",
+      "type": "function",
+      "name": "Skeleton",
+      "filePath": "src/components/ui/skeleton.tsx",
+      "lineRange": [
+        8,
+        10
+      ],
+      "summary": "Function Skeleton with 3 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/skeleton.tsx:SkeletonText",
+      "type": "function",
+      "name": "SkeletonText",
+      "filePath": "src/components/ui/skeleton.tsx",
+      "lineRange": [
+        13,
+        22
+      ],
+      "summary": "Function SkeletonText with 10 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/skeleton.tsx:SkeletonChart",
+      "type": "function",
+      "name": "SkeletonChart",
+      "filePath": "src/components/ui/skeleton.tsx",
+      "lineRange": [
+        52,
+        75
+      ],
+      "summary": "Function SkeletonChart with 24 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/skeleton.tsx:SkeletonChartBody",
+      "type": "function",
+      "name": "SkeletonChartBody",
+      "filePath": "src/components/ui/skeleton.tsx",
+      "lineRange": [
+        78,
+        143
+      ],
+      "summary": "Function SkeletonChartBody with 66 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/ui/skeleton.tsx:SkeletonStatCards",
+      "type": "function",
+      "name": "SkeletonStatCards",
+      "filePath": "src/components/ui/skeleton.tsx",
+      "lineRange": [
+        148,
+        166
+      ],
+      "summary": "Function SkeletonStatCards with 19 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/skeleton.tsx:SkeletonTable",
+      "type": "function",
+      "name": "SkeletonTable",
+      "filePath": "src/components/ui/skeleton.tsx",
+      "lineRange": [
+        172,
+        208
+      ],
+      "summary": "Function SkeletonTable with 37 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/ui/skeleton.tsx:SkeletonPageHeader",
+      "type": "function",
+      "name": "SkeletonPageHeader",
+      "filePath": "src/components/ui/skeleton.tsx",
+      "lineRange": [
+        211,
+        225
+      ],
+      "summary": "Function SkeletonPageHeader with 15 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/skeleton.tsx:SkeletonCardList",
+      "type": "function",
+      "name": "SkeletonCardList",
+      "filePath": "src/components/ui/skeleton.tsx",
+      "lineRange": [
+        228,
+        243
+      ],
+      "summary": "Function SkeletonCardList with 16 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/skeleton.tsx:SkeletonToolbar",
+      "type": "function",
+      "name": "SkeletonToolbar",
+      "filePath": "src/components/ui/skeleton.tsx",
+      "lineRange": [
+        246,
+        257
+      ],
+      "summary": "Function SkeletonToolbar with 12 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/depot/savingsPlanChecker.ts",
+      "type": "file",
+      "name": "savingsPlanChecker.ts",
+      "filePath": "src/lib/depot/savingsPlanChecker.ts",
+      "summary": "Depot portfolio management component.",
+      "tags": [
+        "utility",
+        "library",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/depot/savingsPlanChecker.ts:checkDueSavingsPlans",
+      "type": "function",
+      "name": "checkDueSavingsPlans",
+      "filePath": "src/lib/depot/savingsPlanChecker.ts",
+      "lineRange": [
+        12,
+        43
+      ],
+      "summary": "Function checkDueSavingsPlans with 32 lines implementing core logic.",
+      "tags": [
+        "helper",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/hooks/use-bank-data.ts",
+      "type": "file",
+      "name": "use-bank-data.ts",
+      "filePath": "src/lib/hooks/use-bank-data.ts",
+      "summary": "Bank module component for handling transaction and account data.",
+      "tags": [
+        "hook",
+        "utility",
+        "utility"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/lib/hooks/use-bank-data.ts:useBankData",
+      "type": "function",
+      "name": "useBankData",
+      "filePath": "src/lib/hooks/use-bank-data.ts",
+      "lineRange": [
+        79,
+        254
+      ],
+      "summary": "Function useBankData with 176 lines implementing core logic.",
+      "tags": [
+        "hook"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/types/bank.ts",
+      "type": "file",
+      "name": "bank.ts",
+      "filePath": "src/types/bank.ts",
+      "summary": "Bank module component for handling transaction and account data.",
+      "tags": [
+        "type-definition",
+        "schema",
+        "utility"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/app/(dashboard)/analyse/banking/loading.tsx",
+      "target": "function:src/app/(dashboard)/analyse/banking/loading.tsx:Loading",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/banking/loading.tsx",
+      "target": "function:src/app/(dashboard)/analyse/banking/loading.tsx:Loading",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/banking/page.tsx",
+      "target": "function:src/app/(dashboard)/analyse/banking/page.tsx:BankAnalysePage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/banking/page.tsx",
+      "target": "function:src/app/(dashboard)/analyse/banking/page.tsx:BankAnalysePage",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/banking/page.tsx",
+      "target": "function:src/app/(dashboard)/analyse/banking/page.tsx:BankAnalyse",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/loading.tsx",
+      "target": "function:src/app/(dashboard)/analyse/loading.tsx:HeatmapSkeleton",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/loading.tsx",
+      "target": "function:src/app/(dashboard)/analyse/loading.tsx:Loading",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/loading.tsx",
+      "target": "function:src/app/(dashboard)/analyse/loading.tsx:Loading",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/verlauf/loading.tsx",
+      "target": "function:src/app/(dashboard)/analyse/verlauf/loading.tsx:Loading",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/verlauf/loading.tsx",
+      "target": "function:src/app/(dashboard)/analyse/verlauf/loading.tsx:Loading",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/crypto/loading.tsx",
+      "target": "function:src/app/(dashboard)/crypto/loading.tsx:Loading",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/crypto/loading.tsx",
+      "target": "function:src/app/(dashboard)/crypto/loading.tsx:Loading",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/dashboard/loading.tsx",
+      "target": "function:src/app/(dashboard)/dashboard/loading.tsx:CardSkeleton",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/dashboard/loading.tsx",
+      "target": "function:src/app/(dashboard)/dashboard/loading.tsx:Loading",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/dashboard/loading.tsx",
+      "target": "function:src/app/(dashboard)/dashboard/loading.tsx:Loading",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/depot/loading.tsx",
+      "target": "function:src/app/(dashboard)/depot/loading.tsx:Loading",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/depot/loading.tsx",
+      "target": "function:src/app/(dashboard)/depot/loading.tsx:Loading",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/depot/page.tsx",
+      "target": "function:src/app/(dashboard)/depot/page.tsx:DepotPage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/depot/page.tsx",
+      "target": "function:src/app/(dashboard)/depot/page.tsx:DepotPage",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/contracts/loading.tsx",
+      "target": "function:src/app/(dashboard)/finance/(planung)/contracts/loading.tsx:Loading",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/contracts/loading.tsx",
+      "target": "function:src/app/(dashboard)/finance/(planung)/contracts/loading.tsx:Loading",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/debts/loading.tsx",
+      "target": "function:src/app/(dashboard)/finance/(planung)/debts/loading.tsx:Loading",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/debts/loading.tsx",
+      "target": "function:src/app/(dashboard)/finance/(planung)/debts/loading.tsx:Loading",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/goals/loading.tsx",
+      "target": "function:src/app/(dashboard)/finance/(planung)/goals/loading.tsx:GoalCardSkeleton",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/goals/loading.tsx",
+      "target": "function:src/app/(dashboard)/finance/(planung)/goals/loading.tsx:Loading",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/goals/loading.tsx",
+      "target": "function:src/app/(dashboard)/finance/(planung)/goals/loading.tsx:Loading",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(transaktionen)/categories/loading.tsx",
+      "target": "function:src/app/(dashboard)/finance/(transaktionen)/categories/loading.tsx:Loading",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(transaktionen)/categories/loading.tsx",
+      "target": "function:src/app/(dashboard)/finance/(transaktionen)/categories/loading.tsx:Loading",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(transaktionen)/transactions/loading.tsx",
+      "target": "function:src/app/(dashboard)/finance/(transaktionen)/transactions/loading.tsx:Loading",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(transaktionen)/transactions/loading.tsx",
+      "target": "function:src/app/(dashboard)/finance/(transaktionen)/transactions/loading.tsx:Loading",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/accounts/loading.tsx",
+      "target": "function:src/app/(dashboard)/finance/accounts/loading.tsx:Loading",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/accounts/loading.tsx",
+      "target": "function:src/app/(dashboard)/finance/accounts/loading.tsx:Loading",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/budget/loading.tsx",
+      "target": "function:src/app/(dashboard)/finance/budget/loading.tsx:Loading",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/budget/loading.tsx",
+      "target": "function:src/app/(dashboard)/finance/budget/loading.tsx:Loading",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/inventar/loading.tsx",
+      "target": "function:src/app/(dashboard)/inventar/loading.tsx:Loading",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/inventar/loading.tsx",
+      "target": "function:src/app/(dashboard)/inventar/loading.tsx:Loading",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/settings/loading.tsx",
+      "target": "function:src/app/(dashboard)/settings/loading.tsx:Loading",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/settings/loading.tsx",
+      "target": "function:src/app/(dashboard)/settings/loading.tsx:Loading",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/loading.tsx",
+      "target": "function:src/app/(dashboard)/strategy/loading.tsx:Loading",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/loading.tsx",
+      "target": "function:src/app/(dashboard)/strategy/loading.tsx:Loading",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:upsertFundPrice",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:addInitialHolding",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:addInitialHolding",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:addManualDeposit",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:addManualDeposit",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:getDepotTransactions",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:getDepotTransactions",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:getPortfolioHistory",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:getPortfolioHistory",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:deleteDepotTransaction",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:deleteDepotTransaction",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:createSavingsPlan",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:createSavingsPlan",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:getSavingsPlans",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:getSavingsPlans",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:toggleSavingsPlan",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:toggleSavingsPlan",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:deleteSavingsPlan",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:deleteSavingsPlan",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:executeSavingsPlanPayment",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:executeSavingsPlanPayment",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:getDepots",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:getDepots",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:createDepot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:createDepot",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:deleteDepot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:deleteDepot",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:getDepotsSummaries",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "function:src/app/actions/depot.ts:getDepotsSummaries",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/bank/bank-sync-button.tsx",
+      "target": "function:src/components/bank/bank-sync-button.tsx:BankSyncButton",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/bank/bank-sync-button.tsx",
+      "target": "function:src/components/bank/bank-sync-button.tsx:BankSyncButton",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/bank/bank-sync-panel.tsx",
+      "target": "function:src/components/bank/bank-sync-panel.tsx:BankSyncPanel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/bank/bank-sync-panel.tsx",
+      "target": "function:src/components/bank/bank-sync-panel.tsx:BankSyncPanel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/bank/bank-transactions-view.tsx",
+      "target": "function:src/components/bank/bank-transactions-view.tsx:CategoryCell",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/bank/bank-transactions-view.tsx",
+      "target": "function:src/components/bank/bank-transactions-view.tsx:BankTransactionsView",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/bank/bank-transactions-view.tsx",
+      "target": "function:src/components/bank/bank-transactions-view.tsx:BankTransactionsView",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/bank/bank-transactions-view.tsx",
+      "target": "function:src/components/bank/bank-transactions-view.tsx:FilterBar",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/bank/category-suggestions-panel.tsx",
+      "target": "function:src/components/bank/category-suggestions-panel.tsx:CategorySuggestionsPanel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/bank/category-suggestions-panel.tsx",
+      "target": "function:src/components/bank/category-suggestions-panel.tsx:CategorySuggestionsPanel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/bank/synced-holdings-card.tsx",
+      "target": "function:src/components/bank/synced-holdings-card.tsx:SyncedHoldingsCard",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/bank/synced-holdings-card.tsx",
+      "target": "function:src/components/bank/synced-holdings-card.tsx:SyncedHoldingsCard",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/bank/synced-holdings-section.tsx",
+      "target": "function:src/components/bank/synced-holdings-section.tsx:SyncedHoldingsSection",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/bank/synced-holdings-section.tsx",
+      "target": "function:src/components/bank/synced-holdings-section.tsx:SyncedHoldingsSection",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/depot/DepotDashboard.tsx",
+      "target": "function:src/components/depot/DepotDashboard.tsx:StatCard",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/depot/DepotDashboard.tsx",
+      "target": "function:src/components/depot/DepotDashboard.tsx:DepotDashboard",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/depot/DepotDashboard.tsx",
+      "target": "function:src/components/depot/DepotDashboard.tsx:DepotDashboard",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/depot/depot-chart.tsx",
+      "target": "function:src/components/depot/depot-chart.tsx:yTickFmt",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/depot/depot-chart.tsx",
+      "target": "function:src/components/depot/depot-chart.tsx:ChartTooltip",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/depot/depot-chart.tsx",
+      "target": "function:src/components/depot/depot-chart.tsx:DepotChart",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/depot/depot-chart.tsx",
+      "target": "function:src/components/depot/depot-chart.tsx:DepotChart",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/depot/depot-transactions-table.tsx",
+      "target": "function:src/components/depot/depot-transactions-table.tsx:DepotTransactionsTable",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/depot/depot-transactions-table.tsx",
+      "target": "function:src/components/depot/depot-transactions-table.tsx:DepotTransactionsTable",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/skeleton.tsx",
+      "target": "function:src/components/ui/skeleton.tsx:Skeleton",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/ui/skeleton.tsx",
+      "target": "function:src/components/ui/skeleton.tsx:Skeleton",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/skeleton.tsx",
+      "target": "function:src/components/ui/skeleton.tsx:SkeletonText",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/ui/skeleton.tsx",
+      "target": "function:src/components/ui/skeleton.tsx:SkeletonText",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/skeleton.tsx",
+      "target": "function:src/components/ui/skeleton.tsx:SkeletonChart",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/ui/skeleton.tsx",
+      "target": "function:src/components/ui/skeleton.tsx:SkeletonChart",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/skeleton.tsx",
+      "target": "function:src/components/ui/skeleton.tsx:SkeletonChartBody",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/ui/skeleton.tsx",
+      "target": "function:src/components/ui/skeleton.tsx:SkeletonChartBody",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/skeleton.tsx",
+      "target": "function:src/components/ui/skeleton.tsx:SkeletonStatCards",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/ui/skeleton.tsx",
+      "target": "function:src/components/ui/skeleton.tsx:SkeletonStatCards",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/skeleton.tsx",
+      "target": "function:src/components/ui/skeleton.tsx:SkeletonTable",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/ui/skeleton.tsx",
+      "target": "function:src/components/ui/skeleton.tsx:SkeletonTable",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/skeleton.tsx",
+      "target": "function:src/components/ui/skeleton.tsx:SkeletonPageHeader",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/ui/skeleton.tsx",
+      "target": "function:src/components/ui/skeleton.tsx:SkeletonPageHeader",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/skeleton.tsx",
+      "target": "function:src/components/ui/skeleton.tsx:SkeletonCardList",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/ui/skeleton.tsx",
+      "target": "function:src/components/ui/skeleton.tsx:SkeletonCardList",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/skeleton.tsx",
+      "target": "function:src/components/ui/skeleton.tsx:SkeletonToolbar",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/ui/skeleton.tsx",
+      "target": "function:src/components/ui/skeleton.tsx:SkeletonToolbar",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/depot/savingsPlanChecker.ts",
+      "target": "function:src/lib/depot/savingsPlanChecker.ts:checkDueSavingsPlans",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/depot/savingsPlanChecker.ts",
+      "target": "function:src/lib/depot/savingsPlanChecker.ts:checkDueSavingsPlans",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/hooks/use-bank-data.ts",
+      "target": "function:src/lib/hooks/use-bank-data.ts:useBankData",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/hooks/use-bank-data.ts",
+      "target": "function:src/lib/hooks/use-bank-data.ts:useBankData",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/banking/loading.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/banking/page.tsx",
+      "target": "file:src/components/bank/bank-balance-chart.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/banking/page.tsx",
+      "target": "file:src/components/bank/bank-category-chart.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/banking/page.tsx",
+      "target": "file:src/components/bank/bank-transactions-view.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/banking/page.tsx",
+      "target": "file:src/components/bank/bank-trend-chart.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/banking/page.tsx",
+      "target": "file:src/components/providers/settings-context.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/banking/page.tsx",
+      "target": "file:src/components/ui/period-selector.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/banking/page.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/banking/page.tsx",
+      "target": "file:src/lib/format.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/banking/page.tsx",
+      "target": "file:src/lib/hooks/use-bank-data.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/banking/page.tsx",
+      "target": "file:src/lib/period.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/banking/page.tsx",
+      "target": "file:src/types/bank.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/loading.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/verlauf/loading.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/crypto/loading.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/dashboard/loading.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/depot/loading.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/depot/page.tsx",
+      "target": "file:src/components/depot/DepotDashboard.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/depot/page.tsx",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/contracts/loading.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/debts/loading.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/goals/loading.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(transaktionen)/categories/loading.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(transaktionen)/transactions/loading.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/accounts/loading.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/budget/loading.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/inventar/loading.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/settings/loading.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/loading.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/actions/depot.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/bank-balance-chart.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/bank-balance-chart.tsx",
+      "target": "file:src/types/bank.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/bank-category-chart.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/bank-category-chart.tsx",
+      "target": "file:src/types/bank.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/bank-sync-button.tsx",
+      "target": "file:src/components/ui/button.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/bank-sync-button.tsx",
+      "target": "file:src/lib/hooks/use-bank-data.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/bank-sync-button.tsx",
+      "target": "file:src/types/bank.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/bank-sync-panel.tsx",
+      "target": "file:src/components/bank/bank-sync-button.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/bank-sync-panel.tsx",
+      "target": "file:src/lib/hooks/use-bank-data.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/bank-transactions-view.tsx",
+      "target": "file:src/components/providers/settings-context.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/bank-transactions-view.tsx",
+      "target": "file:src/components/ui/input.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/bank-transactions-view.tsx",
+      "target": "file:src/components/ui/select.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/bank-transactions-view.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/bank-transactions-view.tsx",
+      "target": "file:src/lib/format.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/bank-transactions-view.tsx",
+      "target": "file:src/types/bank.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/bank-trend-chart.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/bank-trend-chart.tsx",
+      "target": "file:src/types/bank.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/category-suggestions-panel.tsx",
+      "target": "file:src/components/bank/category-suggestions.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/category-suggestions-panel.tsx",
+      "target": "file:src/lib/hooks/use-bank-data.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/synced-holdings-card.tsx",
+      "target": "file:src/components/providers/settings-context.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/synced-holdings-card.tsx",
+      "target": "file:src/lib/format.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/synced-holdings-card.tsx",
+      "target": "file:src/types/bank.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/synced-holdings-section.tsx",
+      "target": "file:src/components/bank/synced-holdings-card.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/bank/synced-holdings-section.tsx",
+      "target": "file:src/lib/hooks/use-bank-data.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/depot/DepotDashboard.tsx",
+      "target": "file:src/app/actions/depot.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/depot/DepotDashboard.tsx",
+      "target": "file:src/components/depot/depot-chart.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/depot/DepotDashboard.tsx",
+      "target": "file:src/components/depot/depot-transactions-table.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/depot/DepotDashboard.tsx",
+      "target": "file:src/components/ui/alert-dialog.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/depot/DepotDashboard.tsx",
+      "target": "file:src/components/ui/button.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/depot/DepotDashboard.tsx",
+      "target": "file:src/components/ui/input.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/depot/DepotDashboard.tsx",
+      "target": "file:src/components/ui/label.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/depot/DepotDashboard.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/depot/DepotDashboard.tsx",
+      "target": "file:src/lib/depot/savingsPlanChecker.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/depot/depot-chart.tsx",
+      "target": "file:src/app/actions/depot.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/depot/depot-transactions-table.tsx",
+      "target": "file:src/app/actions/depot.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/depot/depot-transactions-table.tsx",
+      "target": "file:src/components/ui/alert-dialog.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ui/skeleton.tsx",
+      "target": "file:src/lib/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/depot/savingsPlanChecker.ts",
+      "target": "file:src/app/actions/depot.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/hooks/use-bank-data.ts",
+      "target": "file:src/types/bank.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}

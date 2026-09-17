@@ -199,7 +199,7 @@ export function AthenaChart({ spec }: { spec: ChartSpec }) {
             />
             <YAxis
               tickFormatter={(v: number) => fmtAxis(v, unit)}
-              tick={{ fontSize: 10, fill: 'currentColor', opacity: 0.5 }}
+              tick={{ fontSize: 10, fill: 'currentColor', opacity: 0.5, className: 'tabular-nums' }}
               axisLine={false}
               tickLine={false}
               width={40}
@@ -256,7 +256,7 @@ export function AthenaChart({ spec }: { spec: ChartSpec }) {
             />
             <YAxis
               tickFormatter={(v: number) => fmtAxis(v, unit)}
-              tick={{ fontSize: 10, fill: 'currentColor', opacity: 0.5 }}
+              tick={{ fontSize: 10, fill: 'currentColor', opacity: 0.5, className: 'tabular-nums' }}
               axisLine={false}
               tickLine={false}
               width={40}
@@ -294,7 +294,7 @@ export function AthenaChart({ spec }: { spec: ChartSpec }) {
       {spec.type === 'donut' && (
         <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
           {data.map((p, i) => (
-            <span key={p.x} className="flex items-center gap-1 text-[11px] text-muted-foreground">
+            <span key={p.x} className="flex items-center gap-1 text-[11px] text-muted-foreground tabular-nums">
               <span
                 className="size-2 rounded-full"
                 style={{ background: DONUT_COLORS[i % DONUT_COLORS.length] }}

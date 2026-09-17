@@ -1,0 +1,1166 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/components/inventar/ValuableMedia.tsx",
+   "type": "file",
+   "name": "ValuableMedia.tsx",
+   "filePath": "src/components/inventar/ValuableMedia.tsx",
+   "summary": "Client component for a valuable's media tab: uploading/resizing photos, viewing the image gallery, choosing the main image, and deleting images.",
+   "tags": [
+    "component",
+    "inventar",
+    "media",
+    "upload"
+   ],
+   "complexity": "complex",
+   "languageNotes": "Resizes images client-side via canvas before uploading directly to Supabase Storage from the browser client."
+  },
+  {
+   "id": "function:src/components/inventar/ValuableMedia.tsx:verkleinern",
+   "type": "function",
+   "name": "verkleinern",
+   "filePath": "src/components/inventar/ValuableMedia.tsx",
+   "lineRange": [
+    46,
+    69
+   ],
+   "summary": "Resizes an uploaded image file client-side (canvas-based downscale) before upload to reduce storage size.",
+   "tags": [
+    "utility",
+    "image-processing"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/inventar/ValuableMedia.tsx:ValuableMedia",
+   "type": "function",
+   "name": "ValuableMedia",
+   "filePath": "src/components/inventar/ValuableMedia.tsx",
+   "lineRange": [
+    71,
+    459
+   ],
+   "summary": "Exported component managing image upload, gallery display, main-image selection, and deletion for a valuable.",
+   "tags": [
+    "component",
+    "crud",
+    "media"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/components/strategy/indicator-export-dialog.tsx",
+   "type": "file",
+   "name": "indicator-export-dialog.tsx",
+   "filePath": "src/components/strategy/indicator-export-dialog.tsx",
+   "summary": "Client dialogs for exporting the indicator catalog to CSV and importing indicators from a CSV file.",
+   "tags": [
+    "component",
+    "csv",
+    "import-export",
+    "strategy"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/strategy/indicator-export-dialog.tsx:IndicatorExportDialog",
+   "type": "function",
+   "name": "IndicatorExportDialog",
+   "filePath": "src/components/strategy/indicator-export-dialog.tsx",
+   "lineRange": [
+    14,
+    62
+   ],
+   "summary": "Exported dialog that exports the current list of indicators to a downloadable CSV file.",
+   "tags": [
+    "component",
+    "export"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/strategy/indicator-export-dialog.tsx:parseCSV",
+   "type": "function",
+   "name": "parseCSV",
+   "filePath": "src/components/strategy/indicator-export-dialog.tsx",
+   "lineRange": [
+    79,
+    113
+   ],
+   "summary": "Parses uploaded CSV text into rows for indicator import, handling quoted fields.",
+   "tags": [
+    "utility",
+    "csv-parsing"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/strategy/indicator-export-dialog.tsx:IndicatorImportDialog",
+   "type": "function",
+   "name": "IndicatorImportDialog",
+   "filePath": "src/components/strategy/indicator-export-dialog.tsx",
+   "lineRange": [
+    115,
+    267
+   ],
+   "summary": "Exported dialog that lets the user upload a CSV file and bulk-import indicators from it.",
+   "tags": [
+    "component",
+    "dialog",
+    "import"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/components/strategy/indicator-form.tsx",
+   "type": "file",
+   "name": "indicator-form.tsx",
+   "filePath": "src/components/strategy/indicator-form.tsx",
+   "summary": "Client form dialogs for creating, editing, and deleting trading indicators (name, author, type, repaint/forbidden flags).",
+   "tags": [
+    "component",
+    "form",
+    "strategy",
+    "crud"
+   ],
+   "complexity": "complex",
+   "languageNotes": "The bundled tree-sitter extraction returned zero functions/exports for this file; function data below was supplemented from a direct source read because of a likely parser edge case with its multi-line destructured parameter types."
+  },
+  {
+   "id": "function:src/components/strategy/indicator-form.tsx:IndicatorFields",
+   "type": "function",
+   "name": "IndicatorFields",
+   "filePath": "src/components/strategy/indicator-form.tsx",
+   "lineRange": [
+    31,
+    150
+   ],
+   "summary": "Shared form fields for an indicator (name, author, type, repaint/forbidden toggles, notes/code) reused by add and edit dialogs.",
+   "tags": [
+    "component",
+    "form-field"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/strategy/indicator-form.tsx:IndicatorDialog",
+   "type": "function",
+   "name": "IndicatorDialog",
+   "filePath": "src/components/strategy/indicator-form.tsx",
+   "lineRange": [
+    153,
+    199
+   ],
+   "summary": "Shared dialog wrapper handling create/edit submission for an indicator via createIndicator/updateIndicator.",
+   "tags": [
+    "component",
+    "dialog"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/strategy/indicator-form.tsx:DeleteIndicatorButton",
+   "type": "function",
+   "name": "DeleteIndicatorButton",
+   "filePath": "src/components/strategy/indicator-form.tsx",
+   "lineRange": [
+    220,
+    260
+   ],
+   "summary": "Exported button + confirmation dialog that deletes an indicator via the deleteIndicator server action.",
+   "tags": [
+    "component",
+    "delete"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/strategy/indicators-table.tsx",
+   "type": "file",
+   "name": "indicators-table.tsx",
+   "filePath": "src/components/strategy/indicators-table.tsx",
+   "summary": "Client sortable table of trading indicators with Cobra-score coloring and drill-down into per-indicator backtests.",
+   "tags": [
+    "component",
+    "table",
+    "strategy"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/strategy/indicators-table.tsx:sortRows",
+   "type": "function",
+   "name": "sortRows",
+   "filePath": "src/components/strategy/indicators-table.tsx",
+   "lineRange": [
+    20,
+    36
+   ],
+   "summary": "Sorts indicator rows by a chosen column key in ascending or descending order.",
+   "tags": [
+    "utility",
+    "sorting"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/strategy/indicators-table.tsx:CobraScore",
+   "type": "function",
+   "name": "CobraScore",
+   "filePath": "src/components/strategy/indicators-table.tsx",
+   "lineRange": [
+    38,
+    48
+   ],
+   "summary": "Renders a colored score badge (Cobra green/red style) for a numeric indicator metric.",
+   "tags": [
+    "component",
+    "presentational"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/strategy/indicators-table.tsx:SortTh",
+   "type": "function",
+   "name": "SortTh",
+   "filePath": "src/components/strategy/indicators-table.tsx",
+   "lineRange": [
+    50,
+    76
+   ],
+   "summary": "Clickable sortable column header cell used in the indicators table.",
+   "tags": [
+    "component",
+    "table-header"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/strategy/indicators-table.tsx:IndicatorsTable",
+   "type": "function",
+   "name": "IndicatorsTable",
+   "filePath": "src/components/strategy/indicators-table.tsx",
+   "lineRange": [
+    78,
+    213
+   ],
+   "summary": "Exported sortable table listing indicators with performance metrics, filterable by asset class/timeframe, linking to backtests.",
+   "tags": [
+    "component",
+    "table",
+    "entry-point"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/components/strategy/performance-form.tsx",
+   "type": "file",
+   "name": "performance-form.tsx",
+   "filePath": "src/components/strategy/performance-form.tsx",
+   "summary": "Client form dialogs for managing indicator backtest performance records (win rate, Sharpe/Sortino, drawdown) per asset/timeframe.",
+   "tags": [
+    "component",
+    "form",
+    "strategy",
+    "crud",
+    "backtesting"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/strategy/performance-form.tsx:NumField",
+   "type": "function",
+   "name": "NumField",
+   "filePath": "src/components/strategy/performance-form.tsx",
+   "lineRange": [
+    30,
+    44
+   ],
+   "summary": "Reusable labeled numeric input field used across the performance form.",
+   "tags": [
+    "component",
+    "form-field"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/strategy/performance-form.tsx:PerfFields",
+   "type": "function",
+   "name": "PerfFields",
+   "filePath": "src/components/strategy/performance-form.tsx",
+   "lineRange": [
+    49,
+    149
+   ],
+   "summary": "Shared form fields for a backtest performance record (metrics, dates, settings) reused by add and edit dialogs.",
+   "tags": [
+    "component",
+    "form-field"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/strategy/performance-form.tsx:PerfDialog",
+   "type": "function",
+   "name": "PerfDialog",
+   "filePath": "src/components/strategy/performance-form.tsx",
+   "lineRange": [
+    152,
+    198
+   ],
+   "summary": "Shared dialog wrapper handling create/edit submission for a performance record via createPerformance/updatePerformance.",
+   "tags": [
+    "component",
+    "dialog"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/strategy/performance-form.tsx:BacktestsDialog",
+   "type": "function",
+   "name": "BacktestsDialog",
+   "filePath": "src/components/strategy/performance-form.tsx",
+   "lineRange": [
+    201,
+    338
+   ],
+   "summary": "Exported dialog listing all backtest performance records for an indicator, with add/edit/delete entry points.",
+   "tags": [
+    "component",
+    "dialog",
+    "table"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/strategy/performance-form.tsx:AddBacktestStandaloneDialog",
+   "type": "function",
+   "name": "AddBacktestStandaloneDialog",
+   "filePath": "src/components/strategy/performance-form.tsx",
+   "lineRange": [
+    341,
+    359
+   ],
+   "summary": "Exported standalone dialog for adding a backtest performance record outside the per-indicator table.",
+   "tags": [
+    "component",
+    "dialog",
+    "create"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/components/ui/alert-dialog.tsx",
+   "type": "file",
+   "name": "alert-dialog.tsx",
+   "filePath": "src/components/ui/alert-dialog.tsx",
+   "summary": "shadcn/ui alert-dialog primitive built on Radix AlertDialog: confirmation dialog parts (content, header, footer, action/cancel buttons) shared by delete/confirm flows across the app.",
+   "tags": [
+    "ui-component",
+    "shadcn",
+    "design-system",
+    "dialog"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ui/alert-dialog.tsx:AlertDialogContent",
+   "type": "function",
+   "name": "AlertDialogContent",
+   "filePath": "src/components/ui/alert-dialog.tsx",
+   "lineRange": [
+    47,
+    68
+   ],
+   "summary": "Renders the alert dialog panel with overlay/portal and a size variant (default/lg).",
+   "tags": [
+    "component",
+    "ui-primitive"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ui/alert-dialog.tsx:AlertDialogAction",
+   "type": "function",
+   "name": "AlertDialogAction",
+   "filePath": "src/components/ui/alert-dialog.tsx",
+   "lineRange": [
+    147,
+    163
+   ],
+   "summary": "Primary confirm button for an alert dialog, styled via the shared button variants.",
+   "tags": [
+    "component",
+    "ui-primitive",
+    "button"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ui/alert-dialog.tsx:AlertDialogCancel",
+   "type": "function",
+   "name": "AlertDialogCancel",
+   "filePath": "src/components/ui/alert-dialog.tsx",
+   "lineRange": [
+    165,
+    181
+   ],
+   "summary": "Cancel/dismiss button for an alert dialog, styled via the shared button variants.",
+   "tags": [
+    "component",
+    "ui-primitive",
+    "button"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ui/alert-dialog.tsx:AlertDialogMedia",
+   "type": "function",
+   "name": "AlertDialogMedia",
+   "filePath": "src/components/ui/alert-dialog.tsx",
+   "lineRange": [
+    131,
+    145
+   ],
+   "summary": "Media/illustration slot rendered inside an alert dialog for richer confirmation content.",
+   "tags": [
+    "component",
+    "ui-primitive"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/components/ui/button.tsx",
+   "type": "file",
+   "name": "button.tsx",
+   "filePath": "src/components/ui/button.tsx",
+   "summary": "shadcn/ui Button primitive: a single component with cva-based variant/size styling reused across the entire app for buttons and button-like links.",
+   "tags": [
+    "ui-component",
+    "shadcn",
+    "design-system",
+    "button"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ui/button.tsx:Button",
+   "type": "function",
+   "name": "Button",
+   "filePath": "src/components/ui/button.tsx",
+   "lineRange": [
+    41,
+    62
+   ],
+   "summary": "Exported button component with variant (default/outline/ghost/destructive/...) and size styling via class-variance-authority, optionally rendering as a child element.",
+   "tags": [
+    "component",
+    "ui-primitive",
+    "god-node-candidate"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/ui/checkbox.tsx",
+   "type": "file",
+   "name": "checkbox.tsx",
+   "filePath": "src/components/ui/checkbox.tsx",
+   "summary": "shadcn/ui Checkbox primitive built on Radix Checkbox with a check-icon indicator.",
+   "tags": [
+    "ui-component",
+    "shadcn",
+    "design-system",
+    "form-field"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ui/checkbox.tsx:Checkbox",
+   "type": "function",
+   "name": "Checkbox",
+   "filePath": "src/components/ui/checkbox.tsx",
+   "lineRange": [
+    9,
+    30
+   ],
+   "summary": "Exported styled checkbox wrapping Radix Checkbox.Root/Indicator with a check icon.",
+   "tags": [
+    "component",
+    "ui-primitive"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/components/ui/dialog.tsx",
+   "type": "file",
+   "name": "dialog.tsx",
+   "filePath": "src/components/ui/dialog.tsx",
+   "summary": "shadcn/ui Dialog primitive built on Radix Dialog: modal parts (content, header, footer, title/description) reused by essentially every create/edit form dialog in the app.",
+   "tags": [
+    "ui-component",
+    "shadcn",
+    "design-system",
+    "dialog"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ui/dialog.tsx:DialogContent",
+   "type": "function",
+   "name": "DialogContent",
+   "filePath": "src/components/ui/dialog.tsx",
+   "lineRange": [
+    50,
+    82
+   ],
+   "summary": "Renders the modal panel with overlay/portal and an optional close button.",
+   "tags": [
+    "component",
+    "ui-primitive",
+    "god-node-candidate"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ui/dialog.tsx:DialogFooter",
+   "type": "function",
+   "name": "DialogFooter",
+   "filePath": "src/components/ui/dialog.tsx",
+   "lineRange": [
+    94,
+    119
+   ],
+   "summary": "Footer layout for dialog actions, optionally including a close button.",
+   "tags": [
+    "component",
+    "ui-primitive"
+   ],
+   "complexity": "simple"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/components/inventar/ValuableMedia.tsx",
+   "target": "function:src/components/inventar/ValuableMedia.tsx:verkleinern",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/inventar/ValuableMedia.tsx",
+   "target": "function:src/components/inventar/ValuableMedia.tsx:ValuableMedia",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/inventar/ValuableMedia.tsx",
+   "target": "function:src/components/inventar/ValuableMedia.tsx:ValuableMedia",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/inventar/ValuableMedia.tsx:ValuableMedia",
+   "target": "function:src/components/inventar/ValuableMedia.tsx:verkleinern",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/inventar/ValuableMedia.tsx:ValuableMedia",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:registerValuableImage",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/inventar/ValuableMedia.tsx:ValuableMedia",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:setHauptbild",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/inventar/ValuableMedia.tsx:ValuableMedia",
+   "target": "function:src/app/(dashboard)/inventar/actions.ts:deleteValuableImage",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/inventar/ValuableMedia.tsx:ValuableMedia",
+   "target": "function:src/components/inventar/ValuableIcon.tsx:ValuableIcon",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/inventar/ValuableMedia.tsx",
+   "target": "file:src/app/(dashboard)/inventar/actions.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/ValuableMedia.tsx",
+   "target": "file:src/components/inventar/ValuableIcon.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/ValuableMedia.tsx",
+   "target": "file:src/components/ui/button.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/ValuableMedia.tsx",
+   "target": "file:src/components/ui/input.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/ValuableMedia.tsx",
+   "target": "file:src/components/ui/select.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/ValuableMedia.tsx",
+   "target": "file:src/lib/supabase/client.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/inventar/ValuableMedia.tsx",
+   "target": "file:src/lib/valuables.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/strategy/indicator-export-dialog.tsx",
+   "target": "function:src/components/strategy/indicator-export-dialog.tsx:IndicatorExportDialog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/strategy/indicator-export-dialog.tsx",
+   "target": "function:src/components/strategy/indicator-export-dialog.tsx:parseCSV",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/strategy/indicator-export-dialog.tsx",
+   "target": "function:src/components/strategy/indicator-export-dialog.tsx:IndicatorImportDialog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/strategy/indicator-export-dialog.tsx",
+   "target": "function:src/components/strategy/indicator-export-dialog.tsx:IndicatorExportDialog",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/strategy/indicator-export-dialog.tsx",
+   "target": "function:src/components/strategy/indicator-export-dialog.tsx:IndicatorImportDialog",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/strategy/indicator-export-dialog.tsx:IndicatorImportDialog",
+   "target": "function:src/components/strategy/indicator-export-dialog.tsx:parseCSV",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/strategy/indicator-export-dialog.tsx",
+   "target": "file:src/components/ui/button.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/strategy/indicator-export-dialog.tsx",
+   "target": "file:src/components/ui/dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/strategy/indicator-form.tsx",
+   "target": "function:src/components/strategy/indicator-form.tsx:IndicatorFields",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/strategy/indicator-form.tsx",
+   "target": "function:src/components/strategy/indicator-form.tsx:IndicatorDialog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/strategy/indicator-form.tsx",
+   "target": "function:src/components/strategy/indicator-form.tsx:DeleteIndicatorButton",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/strategy/indicator-form.tsx",
+   "target": "function:src/components/strategy/indicator-form.tsx:DeleteIndicatorButton",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/strategy/indicator-form.tsx:IndicatorDialog",
+   "target": "function:src/components/strategy/indicator-form.tsx:IndicatorFields",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/components/strategy/indicator-form.tsx:IndicatorDialog",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:createIndicator",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/strategy/indicator-form.tsx:IndicatorDialog",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:updateIndicator",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/strategy/indicator-form.tsx:DeleteIndicatorButton",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:deleteIndicator",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/strategy/indicator-form.tsx",
+   "target": "file:src/app/(dashboard)/strategy/indicators/actions.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/strategy/indicator-form.tsx",
+   "target": "file:src/components/ui/alert-dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/strategy/indicator-form.tsx",
+   "target": "file:src/components/ui/button.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/strategy/indicator-form.tsx",
+   "target": "file:src/components/ui/dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/strategy/indicator-form.tsx",
+   "target": "file:src/components/ui/input.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/strategy/indicator-form.tsx",
+   "target": "file:src/components/ui/label.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/strategy/indicator-form.tsx",
+   "target": "file:src/types/database.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/strategy/indicators-table.tsx",
+   "target": "function:src/components/strategy/indicators-table.tsx:sortRows",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/strategy/indicators-table.tsx",
+   "target": "function:src/components/strategy/indicators-table.tsx:CobraScore",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/strategy/indicators-table.tsx",
+   "target": "function:src/components/strategy/indicators-table.tsx:SortTh",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/strategy/indicators-table.tsx",
+   "target": "function:src/components/strategy/indicators-table.tsx:IndicatorsTable",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/strategy/indicators-table.tsx",
+   "target": "function:src/components/strategy/indicators-table.tsx:IndicatorsTable",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/strategy/indicators-table.tsx:IndicatorsTable",
+   "target": "function:src/components/strategy/indicators-table.tsx:sortRows",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/strategy/indicators-table.tsx:IndicatorsTable",
+   "target": "function:src/components/strategy/indicators-table.tsx:CobraScore",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/components/strategy/indicators-table.tsx:IndicatorsTable",
+   "target": "function:src/components/strategy/indicators-table.tsx:SortTh",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/strategy/indicators-table.tsx",
+   "target": "file:src/components/strategy/indicator-form.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/strategy/indicators-table.tsx",
+   "target": "file:src/components/strategy/performance-form.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/strategy/indicators-table.tsx",
+   "target": "file:src/types/database.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/strategy/performance-form.tsx",
+   "target": "function:src/components/strategy/performance-form.tsx:NumField",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/strategy/performance-form.tsx",
+   "target": "function:src/components/strategy/performance-form.tsx:PerfFields",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/strategy/performance-form.tsx",
+   "target": "function:src/components/strategy/performance-form.tsx:PerfDialog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/strategy/performance-form.tsx",
+   "target": "function:src/components/strategy/performance-form.tsx:BacktestsDialog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/strategy/performance-form.tsx",
+   "target": "function:src/components/strategy/performance-form.tsx:AddBacktestStandaloneDialog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/strategy/performance-form.tsx",
+   "target": "function:src/components/strategy/performance-form.tsx:BacktestsDialog",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/strategy/performance-form.tsx",
+   "target": "function:src/components/strategy/performance-form.tsx:AddBacktestStandaloneDialog",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/strategy/performance-form.tsx:PerfDialog",
+   "target": "function:src/components/strategy/performance-form.tsx:PerfFields",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/components/strategy/performance-form.tsx:BacktestsDialog",
+   "target": "function:src/components/strategy/performance-form.tsx:PerfDialog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/components/strategy/performance-form.tsx:PerfDialog",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:createPerformance",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/components/strategy/performance-form.tsx:PerfDialog",
+   "target": "function:src/app/(dashboard)/strategy/indicators/actions.ts:updatePerformance",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/strategy/performance-form.tsx",
+   "target": "file:src/app/(dashboard)/strategy/indicators/actions.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/strategy/performance-form.tsx",
+   "target": "file:src/components/ui/alert-dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/strategy/performance-form.tsx",
+   "target": "file:src/components/ui/button.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/strategy/performance-form.tsx",
+   "target": "file:src/components/ui/dialog.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/strategy/performance-form.tsx",
+   "target": "file:src/components/ui/input.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/strategy/performance-form.tsx",
+   "target": "file:src/components/ui/label.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/strategy/performance-form.tsx",
+   "target": "file:src/types/database.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ui/alert-dialog.tsx",
+   "target": "function:src/components/ui/alert-dialog.tsx:AlertDialogContent",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ui/alert-dialog.tsx",
+   "target": "function:src/components/ui/alert-dialog.tsx:AlertDialogContent",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ui/alert-dialog.tsx",
+   "target": "function:src/components/ui/alert-dialog.tsx:AlertDialogAction",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ui/alert-dialog.tsx",
+   "target": "function:src/components/ui/alert-dialog.tsx:AlertDialogAction",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ui/alert-dialog.tsx",
+   "target": "function:src/components/ui/alert-dialog.tsx:AlertDialogCancel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ui/alert-dialog.tsx",
+   "target": "function:src/components/ui/alert-dialog.tsx:AlertDialogCancel",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ui/alert-dialog.tsx",
+   "target": "function:src/components/ui/alert-dialog.tsx:AlertDialogMedia",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ui/alert-dialog.tsx",
+   "target": "function:src/components/ui/alert-dialog.tsx:AlertDialogMedia",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ui/alert-dialog.tsx",
+   "target": "file:src/components/ui/button.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ui/alert-dialog.tsx",
+   "target": "file:src/lib/utils.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ui/button.tsx",
+   "target": "function:src/components/ui/button.tsx:Button",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ui/button.tsx",
+   "target": "function:src/components/ui/button.tsx:Button",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ui/button.tsx",
+   "target": "file:src/lib/utils.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ui/checkbox.tsx",
+   "target": "function:src/components/ui/checkbox.tsx:Checkbox",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ui/checkbox.tsx",
+   "target": "function:src/components/ui/checkbox.tsx:Checkbox",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ui/checkbox.tsx",
+   "target": "file:src/lib/utils.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ui/dialog.tsx",
+   "target": "function:src/components/ui/dialog.tsx:DialogContent",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ui/dialog.tsx",
+   "target": "function:src/components/ui/dialog.tsx:DialogContent",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ui/dialog.tsx",
+   "target": "function:src/components/ui/dialog.tsx:DialogFooter",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ui/dialog.tsx",
+   "target": "function:src/components/ui/dialog.tsx:DialogFooter",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ui/dialog.tsx",
+   "target": "file:src/components/ui/button.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ui/dialog.tsx",
+   "target": "file:src/lib/utils.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  }
+ ]
+}

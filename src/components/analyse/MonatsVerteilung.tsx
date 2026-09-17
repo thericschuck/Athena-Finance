@@ -475,7 +475,7 @@ export function MonatsVerteilung({ history, current }: Props) {
             allowDataOverflow
             ticks={ticks}
             tickFormatter={compact}
-            tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
+            tick={{ fontSize: 10, fill: 'var(--muted-foreground)', className: 'tabular-nums' }}
             axisLine={false}
             tickLine={false}
           />
@@ -574,7 +574,7 @@ export function MonatsVerteilung({ history, current }: Props) {
           <span className="inline-block w-4 border-t-[2.5px] border-dashed" style={{ borderColor: color }} />
           Dichtekurve
         </span>
-        <span className="flex items-center gap-1.5">
+        <span className="flex items-center gap-1.5 tabular-nums">
           <span className="inline-block w-4 border-t-[2.5px] border-dashed border-muted-foreground" />
           Median {fmt(med)}
         </span>

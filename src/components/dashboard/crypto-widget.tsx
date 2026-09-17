@@ -68,7 +68,7 @@ export function CryptoWidget({ totalValue, totalCost, rebalancingVolume, lastReb
       {/* Rebalancing hint */}
       {rebalancingVolume >= 1 && (
         <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 flex items-center justify-between gap-2">
-          <p className="text-xs text-warning font-medium">
+          <p className="text-xs text-warning font-medium tabular-nums">
             Rebalancing: {fmtEur(rebalancingVolume)}
           </p>
           <Link href="/crypto/rebalancing" className="text-xs text-warning hover:underline shrink-0">

@@ -1,0 +1,4125 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 20,
+  "filesSkipped": [],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 20,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 20,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "src/components/crypto/portfolio-switcher.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 261,
+      "nonEmptyLines": 243,
+      "functions": [
+        {
+          "name": "fmtRelative",
+          "startLine": 24,
+          "endLine": 30,
+          "params": [
+            "iso"
+          ]
+        },
+        {
+          "name": "PortfolioSwitcher",
+          "startLine": 32,
+          "endLine": 261,
+          "params": [
+            "{ portfolios, activePortfolio, krakenConnected, lastSync }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "PortfolioSwitcher",
+          "line": 32,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fmtRelative",
+          "callee": "Math.floor",
+          "lineNumber": 25
+        },
+        {
+          "caller": "fmtRelative",
+          "callee": "Date.now",
+          "lineNumber": 25
+        },
+        {
+          "caller": "fmtRelative",
+          "callee": "new Date(iso).getTime",
+          "lineNumber": 25
+        },
+        {
+          "caller": "fmtRelative",
+          "callee": "Math.floor",
+          "lineNumber": 27
+        },
+        {
+          "caller": "fmtRelative",
+          "callee": "Math.floor",
+          "lineNumber": 28
+        },
+        {
+          "caller": "fmtRelative",
+          "callee": "Math.floor",
+          "lineNumber": 29
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "useRouter",
+          "lineNumber": 33
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "useState",
+          "lineNumber": 34
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "useState",
+          "lineNumber": 35
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "useState",
+          "lineNumber": 36
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "useTransition",
+          "lineNumber": 37
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "useTransition",
+          "lineNumber": 38
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "useTransition",
+          "lineNumber": 39
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "useOptimistic",
+          "lineNumber": 44
+        },
+        {
+          "caller": "switchTo",
+          "callee": "startSwitch",
+          "lineNumber": 48
+        },
+        {
+          "caller": "switchTo",
+          "callee": "setActive",
+          "lineNumber": 49
+        },
+        {
+          "caller": "switchTo",
+          "callee": "router.push",
+          "lineNumber": 50
+        },
+        {
+          "caller": "switchTo",
+          "callee": "encodeURIComponent",
+          "lineNumber": 50
+        },
+        {
+          "caller": "handleCreate",
+          "callee": "newName.trim",
+          "lineNumber": 55
+        },
+        {
+          "caller": "handleCreate",
+          "callee": "setCreating",
+          "lineNumber": 57
+        },
+        {
+          "caller": "handleCreate",
+          "callee": "setNewName",
+          "lineNumber": 58
+        },
+        {
+          "caller": "handleCreate",
+          "callee": "startSwitch",
+          "lineNumber": 59
+        },
+        {
+          "caller": "handleCreate",
+          "callee": "setActive",
+          "lineNumber": 60
+        },
+        {
+          "caller": "handleCreate",
+          "callee": "router.push",
+          "lineNumber": 61
+        },
+        {
+          "caller": "handleCreate",
+          "callee": "encodeURIComponent",
+          "lineNumber": 61
+        },
+        {
+          "caller": "handleSync",
+          "callee": "startSync",
+          "lineNumber": 66
+        },
+        {
+          "caller": "handleSync",
+          "callee": "syncFromKraken",
+          "lineNumber": 67
+        },
+        {
+          "caller": "handleSync",
+          "callee": "toast.error",
+          "lineNumber": 70
+        },
+        {
+          "caller": "handleSync",
+          "callee": "toast.success",
+          "lineNumber": 72
+        },
+        {
+          "caller": "handleSync",
+          "callee": "toast.warning",
+          "lineNumber": 75
+        },
+        {
+          "caller": "handleSync",
+          "callee": "router.refresh",
+          "lineNumber": 76
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "startDelete",
+          "lineNumber": 82
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "deletePortfolio",
+          "lineNumber": 83
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "setConfirmDelete",
+          "lineNumber": 84
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "toast.error",
+          "lineNumber": 86
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "toast.success",
+          "lineNumber": 89
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "portfolios.filter",
+          "lineNumber": 91
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "router.push",
+          "lineNumber": 93
+        },
+        {
+          "caller": "handleDelete",
+          "callee": "encodeURIComponent",
+          "lineNumber": 93
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "cn",
+          "lineNumber": 102
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "portfolios.map",
+          "lineNumber": 106
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "handleDelete",
+          "lineNumber": 119
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "setConfirmDelete",
+          "lineNumber": 126
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "switchTo",
+          "lineNumber": 134
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "cn",
+          "lineNumber": 135
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "cn",
+          "lineNumber": 144
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "e.stopPropagation",
+          "lineNumber": 159
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "setConfirmDelete",
+          "lineNumber": 159
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "e.preventDefault",
+          "lineNumber": 162
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "e.stopPropagation",
+          "lineNumber": 163
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "setConfirmDelete",
+          "lineNumber": 164
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "cn",
+          "lineNumber": 167
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "setNewName",
+          "lineNumber": 189
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "handleCreate",
+          "lineNumber": 191
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "setCreating",
+          "lineNumber": 192
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "setNewName",
+          "lineNumber": 192
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "newName.trim",
+          "lineNumber": 200
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "setCreating",
+          "lineNumber": 206
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "setNewName",
+          "lineNumber": 206
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "setCreating",
+          "lineNumber": 214
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "cn",
+          "lineNumber": 233
+        },
+        {
+          "caller": "PortfolioSwitcher",
+          "callee": "fmtRelative",
+          "lineNumber": 240
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/crypto/rebalancing-calculator.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 284,
+      "nonEmptyLines": 259,
+      "functions": [
+        {
+          "name": "fmtDate",
+          "startLine": 21,
+          "endLine": 24,
+          "params": [
+            "iso"
+          ]
+        },
+        {
+          "name": "SubBadge",
+          "startLine": 33,
+          "endLine": 39,
+          "params": [
+            "{ row }"
+          ]
+        },
+        {
+          "name": "StatusBadge",
+          "startLine": 53,
+          "endLine": 59,
+          "params": [
+            "{ status }"
+          ]
+        },
+        {
+          "name": "StatCard",
+          "startLine": 62,
+          "endLine": 69,
+          "params": [
+            "{ label, value, valueClass }"
+          ]
+        },
+        {
+          "name": "RebalancingCalculator",
+          "startLine": 81,
+          "endLine": 284,
+          "params": [
+            "{\r\n  assets, initialSignals, initialAllocations, totalValue, lastRebalancing: initLast,\r\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "RebalancingCalculator",
+          "line": 81,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fmtDate",
+          "callee": "iso.split('T')[0].split",
+          "lineNumber": 22
+        },
+        {
+          "caller": "fmtDate",
+          "callee": "iso.split",
+          "lineNumber": 22
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "useSettings",
+          "lineNumber": 84
+        },
+        {
+          "caller": "fmtEur",
+          "callee": "fmtCurrency",
+          "lineNumber": 85
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "useMemo",
+          "lineNumber": 86
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "new Intl.NumberFormat(locale).format",
+          "lineNumber": 86
+        },
+        {
+          "caller": "fmtPct",
+          "callee": "n.toFixed(1).replace",
+          "lineNumber": 87
+        },
+        {
+          "caller": "fmtPct",
+          "callee": "n.toFixed",
+          "lineNumber": 87
+        },
+        {
+          "caller": "fmtDiffEur",
+          "callee": "fmtEur",
+          "lineNumber": 88
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "useState",
+          "lineNumber": 90
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "useState",
+          "lineNumber": 91
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "useState",
+          "lineNumber": 92
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "useState",
+          "lineNumber": 93
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "calculateRebalancing",
+          "lineNumber": 94
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "useState",
+          "lineNumber": 96
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "useState",
+          "lineNumber": 97
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "useState",
+          "lineNumber": 98
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "useEffect",
+          "lineNumber": 101
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "setResult",
+          "lineNumber": 102
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "calculateRebalancing",
+          "lineNumber": 102
+        },
+        {
+          "caller": "handleSignalsChange",
+          "callee": "setSignals",
+          "lineNumber": 106
+        },
+        {
+          "caller": "handleSignalsChange",
+          "callee": "setAllocations",
+          "lineNumber": 107
+        },
+        {
+          "caller": "handleMarkDone",
+          "callee": "setIsMarking",
+          "lineNumber": 111
+        },
+        {
+          "caller": "handleMarkDone",
+          "callee": "setMarkMsg",
+          "lineNumber": 112
+        },
+        {
+          "caller": "handleMarkDone",
+          "callee": "markRebalancingDone",
+          "lineNumber": 114
+        },
+        {
+          "caller": "handleMarkDone",
+          "callee": "setLastRebalancing",
+          "lineNumber": 115
+        },
+        {
+          "caller": "handleMarkDone",
+          "callee": "new Date().toISOString",
+          "lineNumber": 115
+        },
+        {
+          "caller": "handleMarkDone",
+          "callee": "setMarkMsg",
+          "lineNumber": 116
+        },
+        {
+          "caller": "handleMarkDone",
+          "callee": "setMarkMsg",
+          "lineNumber": 118
+        },
+        {
+          "caller": "handleMarkDone",
+          "callee": "setIsMarking",
+          "lineNumber": 120
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "sortRows",
+          "lineNumber": 124
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "setThreshold",
+          "lineNumber": 149
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "parseFloat",
+          "lineNumber": 149
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "fmtEur",
+          "lineNumber": 158
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "fmtDate",
+          "lineNumber": 161
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "fmtEur",
+          "lineNumber": 165
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "sortedRows.map",
+          "lineNumber": 206
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "fmtPct",
+          "lineNumber": 225
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "fmtEur",
+          "lineNumber": 228
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "fmtEur",
+          "lineNumber": 231
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "fmtDiffEur",
+          "lineNumber": 234
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "formatDiffQty",
+          "lineNumber": 237
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "fmtEur",
+          "lineNumber": 256
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "fmtEur",
+          "lineNumber": 262
+        },
+        {
+          "caller": "RebalancingCalculator",
+          "callee": "fmtEur",
+          "lineNumber": 268
+        }
+      ],
+      "metrics": {
+        "importCount": 9,
+        "exportCount": 1,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/crypto/strategy-signals.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 368,
+      "nonEmptyLines": 335,
+      "functions": [
+        {
+          "name": "Badge",
+          "startLine": 26,
+          "endLine": 32,
+          "params": [
+            "{ children, color }"
+          ]
+        },
+        {
+          "name": "AssetWeightTable",
+          "startLine": 46,
+          "endLine": 175,
+          "params": [
+            "{\r\n  assets,\r\n  onChange,\r\n}"
+          ]
+        },
+        {
+          "name": "StrategySignals",
+          "startLine": 178,
+          "endLine": 368,
+          "params": [
+            "{ initialSignals, initialAllocations, onChange }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "StrategySignals",
+          "line": 178,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "AssetWeightTable",
+          "callee": "useRef",
+          "lineNumber": 57
+        },
+        {
+          "caller": "AssetWeightTable",
+          "callee": "useState",
+          "lineNumber": 60
+        },
+        {
+          "caller": "AssetWeightTable",
+          "callee": "assets.map",
+          "lineNumber": 60
+        },
+        {
+          "caller": "AssetWeightTable",
+          "callee": "(a.weight * 100).toFixed",
+          "lineNumber": 60
+        },
+        {
+          "caller": "AssetWeightTable",
+          "callee": "useState",
+          "lineNumber": 61
+        },
+        {
+          "caller": "AssetWeightTable",
+          "callee": "useState",
+          "lineNumber": 62
+        },
+        {
+          "caller": "AssetWeightTable",
+          "callee": "useState",
+          "lineNumber": 63
+        },
+        {
+          "caller": "AssetWeightTable",
+          "callee": "useState",
+          "lineNumber": 64
+        },
+        {
+          "caller": "AssetWeightTable",
+          "callee": "rows.reduce",
+          "lineNumber": 66
+        },
+        {
+          "caller": "AssetWeightTable",
+          "callee": "Math.abs",
+          "lineNumber": 67
+        },
+        {
+          "caller": "update",
+          "callee": "setRows",
+          "lineNumber": 70
+        },
+        {
+          "caller": "update",
+          "callee": "Math.abs",
+          "lineNumber": 71
+        },
+        {
+          "caller": "update",
+          "callee": "next.reduce",
+          "lineNumber": 71
+        },
+        {
+          "caller": "update",
+          "callee": "onChange",
+          "lineNumber": 72
+        },
+        {
+          "caller": "update",
+          "callee": "next.map",
+          "lineNumber": 72
+        },
+        {
+          "caller": "updatePct",
+          "callee": "rows.map",
+          "lineNumber": 77
+        },
+        {
+          "caller": "updatePct",
+          "callee": "parseFloat",
+          "lineNumber": 77
+        },
+        {
+          "caller": "updatePct",
+          "callee": "update",
+          "lineNumber": 78
+        },
+        {
+          "caller": "removeRow",
+          "callee": "rows.filter",
+          "lineNumber": 82
+        },
+        {
+          "caller": "removeRow",
+          "callee": "update",
+          "lineNumber": 83
+        },
+        {
+          "caller": "addRow",
+          "callee": "newSymbol.trim().toUpperCase",
+          "lineNumber": 87
+        },
+        {
+          "caller": "addRow",
+          "callee": "newSymbol.trim",
+          "lineNumber": 87
+        },
+        {
+          "caller": "addRow",
+          "callee": "newCoingeckoId.trim().toLowerCase",
+          "lineNumber": 88
+        },
+        {
+          "caller": "addRow",
+          "callee": "newCoingeckoId.trim",
+          "lineNumber": 88
+        },
+        {
+          "caller": "addRow",
+          "callee": "parseFloat",
+          "lineNumber": 89
+        },
+        {
+          "caller": "addRow",
+          "callee": "setNewSymbol",
+          "lineNumber": 92
+        },
+        {
+          "caller": "addRow",
+          "callee": "setNewCoingeckoId",
+          "lineNumber": 92
+        },
+        {
+          "caller": "addRow",
+          "callee": "setNewPct",
+          "lineNumber": 92
+        },
+        {
+          "caller": "addRow",
+          "callee": "setCoinKey",
+          "lineNumber": 93
+        },
+        {
+          "caller": "addRow",
+          "callee": "update",
+          "lineNumber": 94
+        },
+        {
+          "caller": "AssetWeightTable",
+          "callee": "rows.map",
+          "lineNumber": 109
+        },
+        {
+          "caller": "AssetWeightTable",
+          "callee": "updatePct",
+          "lineNumber": 116
+        },
+        {
+          "caller": "AssetWeightTable",
+          "callee": "removeRow",
+          "lineNumber": 122
+        },
+        {
+          "caller": "AssetWeightTable",
+          "callee": "sum.toFixed(1).replace",
+          "lineNumber": 137
+        },
+        {
+          "caller": "AssetWeightTable",
+          "callee": "sum.toFixed",
+          "lineNumber": 137
+        },
+        {
+          "caller": "AssetWeightTable",
+          "callee": "setNewSymbol",
+          "lineNumber": 149
+        },
+        {
+          "caller": "AssetWeightTable",
+          "callee": "coin.symbol.toUpperCase",
+          "lineNumber": 149
+        },
+        {
+          "caller": "AssetWeightTable",
+          "callee": "setNewCoingeckoId",
+          "lineNumber": 150
+        },
+        {
+          "caller": "AssetWeightTable",
+          "callee": "setNewPct",
+          "lineNumber": 159
+        },
+        {
+          "caller": "AssetWeightTable",
+          "callee": "addRow",
+          "lineNumber": 160
+        },
+        {
+          "caller": "AssetWeightTable",
+          "callee": "parseFloat",
+          "lineNumber": 167
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "useState",
+          "lineNumber": 179
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "useState",
+          "lineNumber": 180
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "useState",
+          "lineNumber": 181
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "useState",
+          "lineNumber": 182
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "getPortfolioWeight",
+          "lineNumber": 184
+        },
+        {
+          "caller": "updateSignals",
+          "callee": "setSignals",
+          "lineNumber": 187
+        },
+        {
+          "caller": "updateSignals",
+          "callee": "onChange",
+          "lineNumber": 188
+        },
+        {
+          "caller": "updateAllocations",
+          "callee": "setAllocations",
+          "lineNumber": 192
+        },
+        {
+          "caller": "updateAllocations",
+          "callee": "onChange",
+          "lineNumber": 193
+        },
+        {
+          "caller": "handleSave",
+          "callee": "setIsSaving",
+          "lineNumber": 197
+        },
+        {
+          "caller": "handleSave",
+          "callee": "setSaveMsg",
+          "lineNumber": 198
+        },
+        {
+          "caller": "handleSave",
+          "callee": "saveStrategySignals",
+          "lineNumber": 200
+        },
+        {
+          "caller": "handleSave",
+          "callee": "savePortfolioAllocations",
+          "lineNumber": 201
+        },
+        {
+          "caller": "handleSave",
+          "callee": "setSaveMsg",
+          "lineNumber": 202
+        },
+        {
+          "caller": "handleSave",
+          "callee": "onChange",
+          "lineNumber": 203
+        },
+        {
+          "caller": "handleSave",
+          "callee": "setSaveMsg",
+          "lineNumber": 205
+        },
+        {
+          "caller": "handleSave",
+          "callee": "setIsSaving",
+          "lineNumber": 207
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "(['long_btc', 'long_eth', 'cash'] as StrategySignal[]).map",
+          "lineNumber": 227
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "updateSignals",
+          "lineNumber": 234
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "Math.round",
+          "lineNumber": 251
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "updateSignals",
+          "lineNumber": 252
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "parseFloat",
+          "lineNumber": 253
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "(weights.adam * 100).toFixed(1).replace",
+          "lineNumber": 277
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "(weights.adam * 100).toFixed",
+          "lineNumber": 277
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "Math.round",
+          "lineNumber": 280
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "Math.round",
+          "lineNumber": 280
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "(weights.adam * 100).toFixed(1).replace",
+          "lineNumber": 280
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "(weights.adam * 100).toFixed",
+          "lineNumber": 280
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "updateAllocations",
+          "lineNumber": 287
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "(['long', 'cash'] as const).map",
+          "lineNumber": 304
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "updateSignals",
+          "lineNumber": 307
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "Math.round",
+          "lineNumber": 331
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "updateSignals",
+          "lineNumber": 332
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "parseFloat",
+          "lineNumber": 333
+        },
+        {
+          "caller": "StrategySignals",
+          "callee": "updateAllocations",
+          "lineNumber": 345
+        }
+      ],
+      "metrics": {
+        "importCount": 7,
+        "exportCount": 1,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/dashboard/crypto-widget.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 81,
+      "nonEmptyLines": 74,
+      "functions": [
+        {
+          "name": "CryptoWidget",
+          "startLine": 20,
+          "endLine": 81,
+          "params": [
+            "{ totalValue, totalCost, rebalancingVolume, lastRebalancing, topAssets, locale }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "CryptoWidget",
+          "line": 20,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fmtEur",
+          "callee": "fmtCurrency",
+          "lineNumber": 21
+        },
+        {
+          "caller": "CryptoWidget",
+          "callee": "fmtEur",
+          "lineNumber": 38
+        },
+        {
+          "caller": "CryptoWidget",
+          "callee": "fmtEur",
+          "lineNumber": 46
+        },
+        {
+          "caller": "CryptoWidget",
+          "callee": "pnlPct.toFixed",
+          "lineNumber": 47
+        },
+        {
+          "caller": "CryptoWidget",
+          "callee": "topAssets.map",
+          "lineNumber": 56
+        },
+        {
+          "caller": "CryptoWidget",
+          "callee": "a.pct.toFixed",
+          "lineNumber": 60
+        },
+        {
+          "caller": "CryptoWidget",
+          "callee": "fmtEur",
+          "lineNumber": 61
+        },
+        {
+          "caller": "CryptoWidget",
+          "callee": "fmtEur",
+          "lineNumber": 72
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/dashboard/finance-analytics.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 352,
+      "nonEmptyLines": 318,
+      "functions": [
+        {
+          "name": "monthLabel",
+          "startLine": 32,
+          "endLine": 35,
+          "params": [
+            "month",
+            "locale"
+          ]
+        },
+        {
+          "name": "subscribeNever",
+          "startLine": 41,
+          "endLine": 43,
+          "params": []
+        },
+        {
+          "name": "useMounted",
+          "startLine": 44,
+          "endLine": 46,
+          "params": []
+        },
+        {
+          "name": "netBal",
+          "startLine": 48,
+          "endLine": 50,
+          "params": [
+            "m"
+          ]
+        },
+        {
+          "name": "abbr",
+          "startLine": 52,
+          "endLine": 55,
+          "params": [
+            "n"
+          ]
+        },
+        {
+          "name": "Card",
+          "startLine": 66,
+          "endLine": 72,
+          "params": [
+            "{ children, className = '' }"
+          ]
+        },
+        {
+          "name": "SectionTitle",
+          "startLine": 74,
+          "endLine": 76,
+          "params": [
+            "{ children }"
+          ]
+        },
+        {
+          "name": "ChartTooltip",
+          "startLine": 79,
+          "endLine": 101,
+          "params": [
+            "{ active, payload, label, fmt }"
+          ]
+        },
+        {
+          "name": "IncomeExpenseChart",
+          "startLine": 108,
+          "endLine": 164,
+          "params": [
+            "{ summaries, locale, height = 200 }"
+          ]
+        },
+        {
+          "name": "CategoryChart",
+          "startLine": 170,
+          "endLine": 241,
+          "params": [
+            "{ summaries, locale }"
+          ]
+        },
+        {
+          "name": "DeviationTable",
+          "startLine": 244,
+          "endLine": 329,
+          "params": [
+            "{ summaries, locale }"
+          ]
+        },
+        {
+          "name": "FinanceAnalytics",
+          "startLine": 332,
+          "endLine": 352,
+          "params": [
+            "{ summaries, locale }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "IncomeExpenseChart",
+          "line": 108,
+          "isDefault": false
+        },
+        {
+          "name": "FinanceAnalytics",
+          "line": 332,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "monthLabel",
+          "callee": "month.slice",
+          "lineNumber": 33
+        },
+        {
+          "caller": "monthLabel",
+          "callee": "new Date(dateStr + 'T12:00:00Z').toLocaleDateString",
+          "lineNumber": 34
+        },
+        {
+          "caller": "useMounted",
+          "callee": "useSyncExternalStore",
+          "lineNumber": 45
+        },
+        {
+          "caller": "abbr",
+          "callee": "Math.abs",
+          "lineNumber": 53
+        },
+        {
+          "caller": "abbr",
+          "callee": "(n / 1000).toFixed",
+          "lineNumber": 53
+        },
+        {
+          "caller": "abbr",
+          "callee": "n.toFixed",
+          "lineNumber": 54
+        },
+        {
+          "caller": "ChartTooltip",
+          "callee": "payload.map",
+          "lineNumber": 90
+        },
+        {
+          "caller": "ChartTooltip",
+          "callee": "fmt",
+          "lineNumber": 96
+        },
+        {
+          "caller": "fmt",
+          "callee": "fmtCurrency",
+          "lineNumber": 109
+        },
+        {
+          "caller": "IncomeExpenseChart",
+          "callee": "useMounted",
+          "lineNumber": 110
+        },
+        {
+          "caller": "IncomeExpenseChart",
+          "callee": "[...summaries]\r\n    .sort((a, b) => a.month.localeCompare(b.month))\r\n    .slice(-6)\r\n    .map",
+          "lineNumber": 112
+        },
+        {
+          "caller": "IncomeExpenseChart",
+          "callee": "[...summaries]\r\n    .sort((a, b) => a.month.localeCompare(b.month))\r\n    .slice",
+          "lineNumber": 112
+        },
+        {
+          "caller": "IncomeExpenseChart",
+          "callee": "[...summaries]\r\n    .sort",
+          "lineNumber": 112
+        },
+        {
+          "caller": "IncomeExpenseChart",
+          "callee": "a.month.localeCompare",
+          "lineNumber": 113
+        },
+        {
+          "caller": "IncomeExpenseChart",
+          "callee": "monthLabel",
+          "lineNumber": 116
+        },
+        {
+          "caller": "IncomeExpenseChart",
+          "callee": "netBal",
+          "lineNumber": 119
+        },
+        {
+          "caller": "fmt",
+          "callee": "fmtCurrency",
+          "lineNumber": 171
+        },
+        {
+          "caller": "CategoryChart",
+          "callee": "useState",
+          "lineNumber": 172
+        },
+        {
+          "caller": "CategoryChart",
+          "callee": "useMounted",
+          "lineNumber": 173
+        },
+        {
+          "caller": "toggle",
+          "callee": "setActive",
+          "lineNumber": 176
+        },
+        {
+          "caller": "toggle",
+          "callee": "next.has",
+          "lineNumber": 178
+        },
+        {
+          "caller": "toggle",
+          "callee": "next.delete",
+          "lineNumber": 178
+        },
+        {
+          "caller": "toggle",
+          "callee": "next.add",
+          "lineNumber": 178
+        },
+        {
+          "caller": "CategoryChart",
+          "callee": "[...summaries]\r\n    .sort((a, b) => a.month.localeCompare(b.month))\r\n    .slice(-6)\r\n    .map",
+          "lineNumber": 183
+        },
+        {
+          "caller": "CategoryChart",
+          "callee": "[...summaries]\r\n    .sort((a, b) => a.month.localeCompare(b.month))\r\n    .slice",
+          "lineNumber": 183
+        },
+        {
+          "caller": "CategoryChart",
+          "callee": "[...summaries]\r\n    .sort",
+          "lineNumber": 183
+        },
+        {
+          "caller": "CategoryChart",
+          "callee": "a.month.localeCompare",
+          "lineNumber": 184
+        },
+        {
+          "caller": "CategoryChart",
+          "callee": "monthLabel",
+          "lineNumber": 187
+        },
+        {
+          "caller": "CategoryChart",
+          "callee": "ALL_CATS.map",
+          "lineNumber": 199
+        },
+        {
+          "caller": "CategoryChart",
+          "callee": "toggle",
+          "lineNumber": 202
+        },
+        {
+          "caller": "CategoryChart",
+          "callee": "active.has",
+          "lineNumber": 204
+        },
+        {
+          "caller": "CategoryChart",
+          "callee": "ALL_CATS.filter(cat => active.has(cat)).map",
+          "lineNumber": 231
+        },
+        {
+          "caller": "CategoryChart",
+          "callee": "ALL_CATS.filter",
+          "lineNumber": 231
+        },
+        {
+          "caller": "CategoryChart",
+          "callee": "active.has",
+          "lineNumber": 231
+        },
+        {
+          "caller": "fmt",
+          "callee": "fmtCurrency",
+          "lineNumber": 245
+        },
+        {
+          "caller": "DeviationTable",
+          "callee": "[...summaries].sort",
+          "lineNumber": 247
+        },
+        {
+          "caller": "DeviationTable",
+          "callee": "b.month.localeCompare",
+          "lineNumber": 247
+        },
+        {
+          "caller": "DeviationTable",
+          "callee": "useMemo",
+          "lineNumber": 250
+        },
+        {
+          "caller": "DeviationTable",
+          "callee": "sorted.reduce",
+          "lineNumber": 252
+        },
+        {
+          "caller": "DeviationTable",
+          "callee": "netBal",
+          "lineNumber": 252
+        },
+        {
+          "caller": "DeviationTable",
+          "callee": "Math.sqrt",
+          "lineNumber": 253
+        },
+        {
+          "caller": "DeviationTable",
+          "callee": "sorted.reduce",
+          "lineNumber": 253
+        },
+        {
+          "caller": "DeviationTable",
+          "callee": "netBal",
+          "lineNumber": 253
+        },
+        {
+          "caller": "DeviationTable",
+          "callee": "Math.max",
+          "lineNumber": 257
+        },
+        {
+          "caller": "DeviationTable",
+          "callee": "Math.abs",
+          "lineNumber": 257
+        },
+        {
+          "caller": "DeviationTable",
+          "callee": "fmt",
+          "lineNumber": 263
+        },
+        {
+          "caller": "DeviationTable",
+          "callee": "sorted.map",
+          "lineNumber": 266
+        },
+        {
+          "caller": "DeviationTable",
+          "callee": "netBal",
+          "lineNumber": 267
+        },
+        {
+          "caller": "DeviationTable",
+          "callee": "monthLabel",
+          "lineNumber": 291
+        },
+        {
+          "caller": "DeviationTable",
+          "callee": "fmt",
+          "lineNumber": 296
+        },
+        {
+          "caller": "DeviationTable",
+          "callee": "fmt",
+          "lineNumber": 298
+        },
+        {
+          "caller": "DeviationTable",
+          "callee": "fmt",
+          "lineNumber": 305
+        },
+        {
+          "caller": "DeviationTable",
+          "callee": "fmt",
+          "lineNumber": 314
+        },
+        {
+          "caller": "DeviationTable",
+          "callee": "fmt",
+          "lineNumber": 324
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 12,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/dashboard/net-worth-chart.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 277,
+      "nonEmptyLines": 254,
+      "functions": [
+        {
+          "name": "fmtShort",
+          "startLine": 42,
+          "endLine": 46,
+          "params": [
+            "n"
+          ]
+        },
+        {
+          "name": "cutoff",
+          "startLine": 48,
+          "endLine": 56,
+          "params": [
+            "key"
+          ]
+        },
+        {
+          "name": "subscribeNever",
+          "startLine": 62,
+          "endLine": 64,
+          "params": []
+        },
+        {
+          "name": "useMounted",
+          "startLine": 65,
+          "endLine": 67,
+          "params": []
+        },
+        {
+          "name": "kontenValue",
+          "startLine": 79,
+          "endLine": 86,
+          "params": [
+            "s"
+          ]
+        },
+        {
+          "name": "viewValue",
+          "startLine": 88,
+          "endLine": 98,
+          "params": [
+            "s",
+            "view"
+          ]
+        },
+        {
+          "name": "ChartTooltip",
+          "startLine": 101,
+          "endLine": 159,
+          "params": [
+            "{ active, payload, label, view }"
+          ]
+        },
+        {
+          "name": "NetWorthChart",
+          "startLine": 162,
+          "endLine": 277,
+          "params": [
+            "{ snapshots }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "NetWorthChart",
+          "line": 162,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fmtShort",
+          "callee": "Math.abs",
+          "lineNumber": 43
+        },
+        {
+          "caller": "fmtShort",
+          "callee": "(n / 1_000_000).toFixed",
+          "lineNumber": 43
+        },
+        {
+          "caller": "fmtShort",
+          "callee": "Math.abs",
+          "lineNumber": 44
+        },
+        {
+          "caller": "fmtShort",
+          "callee": "(n / 1_000).toFixed",
+          "lineNumber": 44
+        },
+        {
+          "caller": "fmtShort",
+          "callee": "String",
+          "lineNumber": 45
+        },
+        {
+          "caller": "cutoff",
+          "callee": "d.setDate",
+          "lineNumber": 50
+        },
+        {
+          "caller": "cutoff",
+          "callee": "d.getDate",
+          "lineNumber": 50
+        },
+        {
+          "caller": "cutoff",
+          "callee": "d.setMonth",
+          "lineNumber": 51
+        },
+        {
+          "caller": "cutoff",
+          "callee": "d.getMonth",
+          "lineNumber": 51
+        },
+        {
+          "caller": "cutoff",
+          "callee": "d.setMonth",
+          "lineNumber": 52
+        },
+        {
+          "caller": "cutoff",
+          "callee": "d.getMonth",
+          "lineNumber": 52
+        },
+        {
+          "caller": "cutoff",
+          "callee": "d.setMonth",
+          "lineNumber": 53
+        },
+        {
+          "caller": "cutoff",
+          "callee": "d.getMonth",
+          "lineNumber": 53
+        },
+        {
+          "caller": "cutoff",
+          "callee": "d.setFullYear",
+          "lineNumber": 54
+        },
+        {
+          "caller": "cutoff",
+          "callee": "d.getFullYear",
+          "lineNumber": 54
+        },
+        {
+          "caller": "useMounted",
+          "callee": "useSyncExternalStore",
+          "lineNumber": 66
+        },
+        {
+          "caller": "viewValue",
+          "callee": "kontenValue",
+          "lineNumber": 90
+        },
+        {
+          "caller": "viewValue",
+          "callee": "kontenValue",
+          "lineNumber": 96
+        },
+        {
+          "caller": "ChartTooltip",
+          "callee": "useSettings",
+          "lineNumber": 107
+        },
+        {
+          "caller": "ChartTooltip",
+          "callee": "new Date(label ?? '').toLocaleDateString",
+          "lineNumber": 112
+        },
+        {
+          "caller": "fmt",
+          "callee": "libFmtCurrency",
+          "lineNumber": 137
+        },
+        {
+          "caller": "ChartTooltip",
+          "callee": "fmt",
+          "lineNumber": 143
+        },
+        {
+          "caller": "ChartTooltip",
+          "callee": "detailRows.filter",
+          "lineNumber": 145
+        },
+        {
+          "caller": "ChartTooltip",
+          "callee": "detailRows.filter(([, v]) => v != null && v !== 0).map",
+          "lineNumber": 147
+        },
+        {
+          "caller": "ChartTooltip",
+          "callee": "detailRows.filter",
+          "lineNumber": 147
+        },
+        {
+          "caller": "ChartTooltip",
+          "callee": "fmt",
+          "lineNumber": 151
+        },
+        {
+          "caller": "NetWorthChart",
+          "callee": "useSettings",
+          "lineNumber": 163
+        },
+        {
+          "caller": "NetWorthChart",
+          "callee": "useState",
+          "lineNumber": 164
+        },
+        {
+          "caller": "NetWorthChart",
+          "callee": "useState",
+          "lineNumber": 165
+        },
+        {
+          "caller": "NetWorthChart",
+          "callee": "useMounted",
+          "lineNumber": 166
+        },
+        {
+          "caller": "xFormatter",
+          "callee": "d.toLocaleDateString",
+          "lineNumber": 173
+        },
+        {
+          "caller": "xFormatter",
+          "callee": "d.toLocaleDateString",
+          "lineNumber": 174
+        },
+        {
+          "caller": "NetWorthChart",
+          "callee": "useMemo",
+          "lineNumber": 177
+        },
+        {
+          "caller": "NetWorthChart",
+          "callee": "cutoff",
+          "lineNumber": 178
+        },
+        {
+          "caller": "NetWorthChart",
+          "callee": "snapshots.filter",
+          "lineNumber": 180
+        },
+        {
+          "caller": "NetWorthChart",
+          "callee": "filtered.map",
+          "lineNumber": 182
+        },
+        {
+          "caller": "NetWorthChart",
+          "callee": "viewValue",
+          "lineNumber": 182
+        },
+        {
+          "caller": "NetWorthChart",
+          "callee": "VIEWS.map",
+          "lineNumber": 200
+        },
+        {
+          "caller": "NetWorthChart",
+          "callee": "setView",
+          "lineNumber": 203
+        },
+        {
+          "caller": "NetWorthChart",
+          "callee": "FILTERS.map",
+          "lineNumber": 216
+        },
+        {
+          "caller": "NetWorthChart",
+          "callee": "setFilter",
+          "lineNumber": 219
+        },
+        {
+          "caller": "NetWorthChart",
+          "callee": "fmtShort",
+          "lineNumber": 251
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 8,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/dashboard/portfolio-donut.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 117,
+      "nonEmptyLines": 108,
+      "functions": [
+        {
+          "name": "PortfolioDonut",
+          "startLine": 32,
+          "endLine": 117,
+          "params": [
+            "{\r\n  kontenTotal, investmentTotal, depotTotal, cryptoTotal, locale,\r\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "PortfolioDonut",
+          "line": 32,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fmt",
+          "callee": "fmtCurrency",
+          "lineNumber": 35
+        },
+        {
+          "caller": "PortfolioDonut",
+          "callee": "[\r\n    { ...SLICES[0], value: kontenTotal     },\r\n    { ...SLICES[1], value: investmentTotal },\r\n    { ...SLICES[2], value: depotTotal      },\r\n    { ...SLICES[3], value: cryptoTotal     },\r\n  ].filter",
+          "lineNumber": 37
+        },
+        {
+          "caller": "PortfolioDonut",
+          "callee": "data.reduce",
+          "lineNumber": 47
+        },
+        {
+          "caller": "PortfolioDonut",
+          "callee": "data.map",
+          "lineNumber": 70
+        },
+        {
+          "caller": "PortfolioDonut",
+          "callee": "fmt",
+          "lineNumber": 73
+        },
+        {
+          "caller": "PortfolioDonut",
+          "callee": "(total / 1000).toFixed",
+          "lineNumber": 94
+        },
+        {
+          "caller": "PortfolioDonut",
+          "callee": "fmt(total).replace",
+          "lineNumber": 95
+        },
+        {
+          "caller": "PortfolioDonut",
+          "callee": "fmt",
+          "lineNumber": 95
+        },
+        {
+          "caller": "PortfolioDonut",
+          "callee": "data.map",
+          "lineNumber": 102
+        },
+        {
+          "caller": "PortfolioDonut",
+          "callee": "Math.round",
+          "lineNumber": 103
+        },
+        {
+          "caller": "PortfolioDonut",
+          "callee": "fmt",
+          "lineNumber": 109
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/dashboard/rebalancing-alert.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 38,
+      "nonEmptyLines": 35,
+      "functions": [
+        {
+          "name": "RebalancingAlert",
+          "startLine": 12,
+          "endLine": 38,
+          "params": [
+            "{ rebalancingVolume, lastRebalancing, locale, dateFormat }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "RebalancingAlert",
+          "line": 12,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "RebalancingAlert",
+          "callee": "fmtCurrency",
+          "lineNumber": 21
+        },
+        {
+          "caller": "RebalancingAlert",
+          "callee": "fmtDate",
+          "lineNumber": 25
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/finance/fixed-costs-widget.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 91,
+      "nonEmptyLines": 82,
+      "functions": [
+        {
+          "name": "FixedCostsWidget",
+          "startLine": 24,
+          "endLine": 91,
+          "params": [
+            "{ totalMonthly, contracts, accounts }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "FixedCostsWidget",
+          "line": 24,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "FixedCostsWidget",
+          "callee": "useSettings",
+          "lineNumber": 25
+        },
+        {
+          "caller": "fmtEur",
+          "callee": "fmtCurrency",
+          "lineNumber": 26
+        },
+        {
+          "caller": "FixedCostsWidget",
+          "callee": "useState",
+          "lineNumber": 27
+        },
+        {
+          "caller": "FixedCostsWidget",
+          "callee": "contracts.filter",
+          "lineNumber": 31
+        },
+        {
+          "caller": "FixedCostsWidget",
+          "callee": "filtered.reduce",
+          "lineNumber": 33
+        },
+        {
+          "caller": "FixedCostsWidget",
+          "callee": "fmtEur",
+          "lineNumber": 42
+        },
+        {
+          "caller": "FixedCostsWidget",
+          "callee": "accounts.map",
+          "lineNumber": 53
+        },
+        {
+          "caller": "FixedCostsWidget",
+          "callee": "filtered.slice(0, 6).map",
+          "lineNumber": 64
+        },
+        {
+          "caller": "FixedCostsWidget",
+          "callee": "filtered.slice",
+          "lineNumber": 64
+        },
+        {
+          "caller": "FixedCostsWidget",
+          "callee": "fmtEur",
+          "lineNumber": 72
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/providers/settings-context.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 85,
+      "nonEmptyLines": 74,
+      "functions": [
+        {
+          "name": "useSettings",
+          "startLine": 24,
+          "endLine": 26,
+          "params": []
+        },
+        {
+          "name": "SettingsProvider",
+          "startLine": 31,
+          "endLine": 85,
+          "params": [
+            "{\r\n  settings,\r\n  currency,\r\n  children,\r\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "useSettings",
+          "line": 24,
+          "isDefault": false
+        },
+        {
+          "name": "SettingsProvider",
+          "line": 31,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useSettings",
+          "callee": "useContext",
+          "lineNumber": 25
+        },
+        {
+          "caller": "SettingsProvider",
+          "callee": "useEffect",
+          "lineNumber": 46
+        },
+        {
+          "caller": "SettingsProvider",
+          "callee": "root.setAttribute",
+          "lineNumber": 50
+        },
+        {
+          "caller": "SettingsProvider",
+          "callee": "DARK_PRESETS.has",
+          "lineNumber": 51
+        },
+        {
+          "caller": "SettingsProvider",
+          "callee": "root.classList.add",
+          "lineNumber": 52
+        },
+        {
+          "caller": "SettingsProvider",
+          "callee": "root.classList.remove",
+          "lineNumber": 53
+        },
+        {
+          "caller": "SettingsProvider",
+          "callee": "LIGHT_PRESETS.has",
+          "lineNumber": 54
+        },
+        {
+          "caller": "SettingsProvider",
+          "callee": "root.classList.remove",
+          "lineNumber": 55
+        },
+        {
+          "caller": "SettingsProvider",
+          "callee": "root.classList.add",
+          "lineNumber": 56
+        },
+        {
+          "caller": "SettingsProvider",
+          "callee": "root.style.removeProperty",
+          "lineNumber": 59
+        },
+        {
+          "caller": "SettingsProvider",
+          "callee": "root.style.removeProperty",
+          "lineNumber": 60
+        },
+        {
+          "caller": "SettingsProvider",
+          "callee": "root.style.removeProperty",
+          "lineNumber": 61
+        },
+        {
+          "caller": "SettingsProvider",
+          "callee": "root.removeAttribute",
+          "lineNumber": 63
+        },
+        {
+          "caller": "SettingsProvider",
+          "callee": "root.style.setProperty",
+          "lineNumber": 65
+        },
+        {
+          "caller": "SettingsProvider",
+          "callee": "root.style.setProperty",
+          "lineNumber": 66
+        },
+        {
+          "caller": "SettingsProvider",
+          "callee": "root.style.setProperty",
+          "lineNumber": 67
+        },
+        {
+          "caller": "SettingsProvider",
+          "callee": "root.setAttribute",
+          "lineNumber": 71
+        },
+        {
+          "caller": "SettingsProvider",
+          "callee": "root.removeAttribute",
+          "lineNumber": 72
+        },
+        {
+          "caller": "SettingsProvider",
+          "callee": "useMemo",
+          "lineNumber": 75
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/crypto/coin-registry.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 77,
+      "nonEmptyLines": 70,
+      "functions": [
+        {
+          "name": "findBySymbol",
+          "startLine": 57,
+          "endLine": 59,
+          "params": [
+            "symbol"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "COIN_REGISTRY",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "findBySymbol",
+          "line": 57,
+          "isDefault": false
+        },
+        {
+          "name": "FIAT_EUR_PRICES",
+          "line": 66,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "findBySymbol",
+          "callee": "COIN_REGISTRY.find",
+          "lineNumber": 58
+        },
+        {
+          "caller": "findBySymbol",
+          "callee": "c.symbol.toLowerCase",
+          "lineNumber": 58
+        },
+        {
+          "caller": "findBySymbol",
+          "callee": "symbol.toLowerCase",
+          "lineNumber": 58
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 3,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/crypto/coingecko.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 94,
+      "nonEmptyLines": 81,
+      "functions": [
+        {
+          "name": "getPrices",
+          "startLine": 11,
+          "endLine": 51,
+          "params": [
+            "coingeckoIds"
+          ]
+        },
+        {
+          "name": "getEurUsdRate",
+          "startLine": 54,
+          "endLine": 69,
+          "params": []
+        },
+        {
+          "name": "getCoinInfo",
+          "startLine": 75,
+          "endLine": 94,
+          "params": [
+            "coingeckoId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "getPrices",
+          "line": 11,
+          "isDefault": false
+        },
+        {
+          "name": "getEurUsdRate",
+          "line": 54,
+          "isDefault": false
+        },
+        {
+          "name": "getCoinInfo",
+          "line": 75,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getPrices",
+          "callee": "id.toLowerCase",
+          "lineNumber": 21
+        },
+        {
+          "caller": "getPrices",
+          "callee": "cryptoIds.push",
+          "lineNumber": 25
+        },
+        {
+          "caller": "getPrices",
+          "callee": "chunks.push",
+          "lineNumber": 34
+        },
+        {
+          "caller": "getPrices",
+          "callee": "cryptoIds.slice",
+          "lineNumber": 34
+        },
+        {
+          "caller": "getPrices",
+          "callee": "setTimeout",
+          "lineNumber": 38
+        },
+        {
+          "caller": "getPrices",
+          "callee": "fetch",
+          "lineNumber": 39
+        },
+        {
+          "caller": "getPrices",
+          "callee": "chunks[i].join",
+          "lineNumber": 40
+        },
+        {
+          "caller": "getPrices",
+          "callee": "res.json",
+          "lineNumber": 44
+        },
+        {
+          "caller": "getPrices",
+          "callee": "Object.entries",
+          "lineNumber": 45
+        },
+        {
+          "caller": "getEurUsdRate",
+          "callee": "fetch",
+          "lineNumber": 56
+        },
+        {
+          "caller": "getEurUsdRate",
+          "callee": "res.json",
+          "lineNumber": 61
+        },
+        {
+          "caller": "getCoinInfo",
+          "callee": "fetch",
+          "lineNumber": 79
+        },
+        {
+          "caller": "getCoinInfo",
+          "callee": "res.json",
+          "lineNumber": 87
+        },
+        {
+          "caller": "getCoinInfo",
+          "callee": "(data.symbol as string).toUpperCase",
+          "lineNumber": 90
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 3,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/crypto/rebalancing-defaults.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 57,
+      "nonEmptyLines": 52,
+      "exports": [
+        {
+          "name": "DEFAULT_STRATEGY_SIGNALS",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "DEFAULT_PORTFOLIO_ALLOCATIONS",
+          "line": 38,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/crypto/rebalancing.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 244,
+      "nonEmptyLines": 212,
+      "functions": [
+        {
+          "name": "matchesPortfolio",
+          "startLine": 63,
+          "endLine": 67,
+          "params": [
+            "portfolioName",
+            "subKey"
+          ]
+        },
+        {
+          "name": "calculateRebalancing",
+          "startLine": 70,
+          "endLine": 210,
+          "params": [
+            "signals",
+            "allocations",
+            "assets",
+            "totalValue",
+            "threshold"
+          ]
+        },
+        {
+          "name": "formatDiffQty",
+          "startLine": 213,
+          "endLine": 224,
+          "params": [
+            "qty",
+            "symbol",
+            "diffEur"
+          ]
+        },
+        {
+          "name": "getPortfolioWeight",
+          "startLine": 226,
+          "endLine": 233,
+          "params": [
+            "signals"
+          ]
+        },
+        {
+          "name": "sortRows",
+          "startLine": 238,
+          "endLine": 244,
+          "params": [
+            "rows"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "calculateRebalancing",
+          "line": 70,
+          "isDefault": false
+        },
+        {
+          "name": "formatDiffQty",
+          "line": 213,
+          "isDefault": false
+        },
+        {
+          "name": "getPortfolioWeight",
+          "line": 226,
+          "isDefault": false
+        },
+        {
+          "name": "sortRows",
+          "line": 238,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "matchesPortfolio",
+          "callee": "portfolioName.toLowerCase",
+          "lineNumber": 65
+        },
+        {
+          "caller": "matchesPortfolio",
+          "callee": "(PORTFOLIO_NAME_MAP[subKey] ?? []).some",
+          "lineNumber": 66
+        },
+        {
+          "caller": "matchesPortfolio",
+          "callee": "lower.includes",
+          "lineNumber": 66
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "Math.max",
+          "lineNumber": 80
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "priceByCoingeckoId.set",
+          "lineNumber": 91
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "a.symbol.toLowerCase",
+          "lineNumber": 91
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "alloc.coingecko_id.toLowerCase",
+          "lineNumber": 111
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "coinSubPortfolioCount.set",
+          "lineNumber": 112
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "coinSubPortfolioCount.get",
+          "lineNumber": 112
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "a.symbol?.toLowerCase",
+          "lineNumber": 121
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "globalValueMap.set",
+          "lineNumber": 123
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "globalValueMap.get",
+          "lineNumber": 123
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "globalQtyMap.set",
+          "lineNumber": 124
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "globalQtyMap.get",
+          "lineNumber": 124
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "globalPriceMap.has",
+          "lineNumber": 125
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "globalPriceMap.set",
+          "lineNumber": 125
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "alloc.coingecko_id.toLowerCase",
+          "lineNumber": 137
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "assets.filter",
+          "lineNumber": 140
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "a.symbol?.toLowerCase",
+          "lineNumber": 141
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "matchesPortfolio",
+          "lineNumber": 142
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "coinSubPortfolioCount.get",
+          "lineNumber": 147
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "globalValueMap.get",
+          "lineNumber": 150
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "matched.reduce",
+          "lineNumber": 151
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "globalQtyMap.get",
+          "lineNumber": 153
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "matched.reduce",
+          "lineNumber": 154
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "matched.find",
+          "lineNumber": 156
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "globalPriceMap.get",
+          "lineNumber": 157
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "priceByCoingeckoId.get",
+          "lineNumber": 158
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "Math.abs",
+          "lineNumber": 165
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "rows.push",
+          "lineNumber": 177
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "rows.reduce",
+          "lineNumber": 199
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "rows.reduce",
+          "lineNumber": 200
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "Math.abs",
+          "lineNumber": 200
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "rows.reduce",
+          "lineNumber": 204
+        },
+        {
+          "caller": "calculateRebalancing",
+          "callee": "rows.reduce",
+          "lineNumber": 205
+        },
+        {
+          "caller": "formatDiffQty",
+          "callee": "Math.abs",
+          "lineNumber": 214
+        },
+        {
+          "caller": "formatDiffQty",
+          "callee": "Math.abs",
+          "lineNumber": 216
+        },
+        {
+          "caller": "formatDiffQty",
+          "callee": "Math.abs",
+          "lineNumber": 219
+        },
+        {
+          "caller": "formatDiffQty",
+          "callee": "absQty.toFixed(decimals).replace",
+          "lineNumber": 223
+        },
+        {
+          "caller": "formatDiffQty",
+          "callee": "absQty.toFixed",
+          "lineNumber": 223
+        },
+        {
+          "caller": "getPortfolioWeight",
+          "callee": "Math.max",
+          "lineNumber": 231
+        },
+        {
+          "caller": "sortRows",
+          "callee": "[...rows].sort",
+          "lineNumber": 239
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 4,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/encryption.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 56,
+      "nonEmptyLines": 47,
+      "functions": [
+        {
+          "name": "getMasterKey",
+          "startLine": 14,
+          "endLine": 19,
+          "params": []
+        },
+        {
+          "name": "encrypt",
+          "startLine": 21,
+          "endLine": 37,
+          "params": [
+            "plaintext"
+          ]
+        },
+        {
+          "name": "decrypt",
+          "startLine": 39,
+          "endLine": 56,
+          "params": [
+            "ciphertext"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "encrypt",
+          "line": 21,
+          "isDefault": false
+        },
+        {
+          "name": "decrypt",
+          "line": 39,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getMasterKey",
+          "callee": "createHash('sha256').update(raw).digest",
+          "lineNumber": 18
+        },
+        {
+          "caller": "getMasterKey",
+          "callee": "createHash('sha256').update",
+          "lineNumber": 18
+        },
+        {
+          "caller": "getMasterKey",
+          "callee": "createHash",
+          "lineNumber": 18
+        },
+        {
+          "caller": "encrypt",
+          "callee": "randomBytes",
+          "lineNumber": 22
+        },
+        {
+          "caller": "encrypt",
+          "callee": "getMasterKey",
+          "lineNumber": 23
+        },
+        {
+          "caller": "encrypt",
+          "callee": "createCipheriv",
+          "lineNumber": 24
+        },
+        {
+          "caller": "encrypt",
+          "callee": "Buffer.concat",
+          "lineNumber": 26
+        },
+        {
+          "caller": "encrypt",
+          "callee": "cipher.update",
+          "lineNumber": 27
+        },
+        {
+          "caller": "encrypt",
+          "callee": "cipher.final",
+          "lineNumber": 28
+        },
+        {
+          "caller": "encrypt",
+          "callee": "cipher.getAuthTag",
+          "lineNumber": 30
+        },
+        {
+          "caller": "encrypt",
+          "callee": "[\r\n    iv.toString('base64'),\r\n    authTag.toString('base64'),\r\n    encrypted.toString('base64'),\r\n  ].join",
+          "lineNumber": 32
+        },
+        {
+          "caller": "encrypt",
+          "callee": "iv.toString",
+          "lineNumber": 33
+        },
+        {
+          "caller": "encrypt",
+          "callee": "authTag.toString",
+          "lineNumber": 34
+        },
+        {
+          "caller": "encrypt",
+          "callee": "encrypted.toString",
+          "lineNumber": 35
+        },
+        {
+          "caller": "decrypt",
+          "callee": "ciphertext.split",
+          "lineNumber": 40
+        },
+        {
+          "caller": "decrypt",
+          "callee": "Buffer.from",
+          "lineNumber": 44
+        },
+        {
+          "caller": "decrypt",
+          "callee": "Buffer.from",
+          "lineNumber": 45
+        },
+        {
+          "caller": "decrypt",
+          "callee": "Buffer.from",
+          "lineNumber": 46
+        },
+        {
+          "caller": "decrypt",
+          "callee": "getMasterKey",
+          "lineNumber": 47
+        },
+        {
+          "caller": "decrypt",
+          "callee": "createDecipheriv",
+          "lineNumber": 49
+        },
+        {
+          "caller": "decrypt",
+          "callee": "decipher.setAuthTag",
+          "lineNumber": 50
+        },
+        {
+          "caller": "decrypt",
+          "callee": "Buffer.concat([\r\n    decipher.update(encrypted),\r\n    decipher.final(),\r\n  ]).toString",
+          "lineNumber": 52
+        },
+        {
+          "caller": "decrypt",
+          "callee": "Buffer.concat",
+          "lineNumber": 52
+        },
+        {
+          "caller": "decrypt",
+          "callee": "decipher.update",
+          "lineNumber": 53
+        },
+        {
+          "caller": "decrypt",
+          "callee": "decipher.final",
+          "lineNumber": 54
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/format.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 66,
+      "nonEmptyLines": 62,
+      "functions": [
+        {
+          "name": "fmtCurrency",
+          "startLine": 7,
+          "endLine": 21,
+          "params": [
+            "n",
+            "currency",
+            "locale",
+            "opts"
+          ]
+        },
+        {
+          "name": "fmtNumber",
+          "startLine": 23,
+          "endLine": 28,
+          "params": [
+            "n",
+            "locale",
+            "fractionDigits"
+          ]
+        },
+        {
+          "name": "fmtDate",
+          "startLine": 34,
+          "endLine": 49,
+          "params": [
+            "d",
+            "format"
+          ]
+        },
+        {
+          "name": "fmtDateShort",
+          "startLine": 52,
+          "endLine": 66,
+          "params": [
+            "d",
+            "format"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "fmtCurrency",
+          "line": 7,
+          "isDefault": false
+        },
+        {
+          "name": "fmtNumber",
+          "line": 23,
+          "isDefault": false
+        },
+        {
+          "name": "fmtDate",
+          "line": 34,
+          "isDefault": false
+        },
+        {
+          "name": "fmtDateShort",
+          "line": 52,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fmtCurrency",
+          "callee": "new Intl.NumberFormat(locale, {\r\n    style: 'currency',\r\n    currency,\r\n    minimumFractionDigits: minD,\r\n    maximumFractionDigits: maxD,\r\n  }).format",
+          "lineNumber": 15
+        },
+        {
+          "caller": "fmtNumber",
+          "callee": "new Intl.NumberFormat(locale, {\r\n    minimumFractionDigits: fractionDigits,\r\n    maximumFractionDigits: fractionDigits,\r\n  }).format",
+          "lineNumber": 24
+        },
+        {
+          "caller": "fmtDate",
+          "callee": "isNaN",
+          "lineNumber": 40
+        },
+        {
+          "caller": "fmtDate",
+          "callee": "date.getTime",
+          "lineNumber": 40
+        },
+        {
+          "caller": "fmtDate",
+          "callee": "String(date.getDate()).padStart",
+          "lineNumber": 41
+        },
+        {
+          "caller": "fmtDate",
+          "callee": "String",
+          "lineNumber": 41
+        },
+        {
+          "caller": "fmtDate",
+          "callee": "date.getDate",
+          "lineNumber": 41
+        },
+        {
+          "caller": "fmtDate",
+          "callee": "String(date.getMonth() + 1).padStart",
+          "lineNumber": 42
+        },
+        {
+          "caller": "fmtDate",
+          "callee": "String",
+          "lineNumber": 42
+        },
+        {
+          "caller": "fmtDate",
+          "callee": "date.getMonth",
+          "lineNumber": 42
+        },
+        {
+          "caller": "fmtDate",
+          "callee": "String",
+          "lineNumber": 43
+        },
+        {
+          "caller": "fmtDate",
+          "callee": "date.getFullYear",
+          "lineNumber": 43
+        },
+        {
+          "caller": "fmtDateShort",
+          "callee": "isNaN",
+          "lineNumber": 58
+        },
+        {
+          "caller": "fmtDateShort",
+          "callee": "date.getTime",
+          "lineNumber": 58
+        },
+        {
+          "caller": "fmtDateShort",
+          "callee": "String(date.getDate()).padStart",
+          "lineNumber": 59
+        },
+        {
+          "caller": "fmtDateShort",
+          "callee": "String",
+          "lineNumber": 59
+        },
+        {
+          "caller": "fmtDateShort",
+          "callee": "date.getDate",
+          "lineNumber": 59
+        },
+        {
+          "caller": "fmtDateShort",
+          "callee": "String(date.getMonth() + 1).padStart",
+          "lineNumber": 60
+        },
+        {
+          "caller": "fmtDateShort",
+          "callee": "String",
+          "lineNumber": 60
+        },
+        {
+          "caller": "fmtDateShort",
+          "callee": "date.getMonth",
+          "lineNumber": 60
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 4,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/kraken/cost-basis.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 48,
+      "nonEmptyLines": 45,
+      "functions": [
+        {
+          "name": "computeAverageCostBasis",
+          "startLine": 23,
+          "endLine": 48,
+          "params": [
+            "trades"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "computeAverageCostBasis",
+          "line": 23,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "computeAverageCostBasis",
+          "callee": "byCode.get",
+          "lineNumber": 26
+        },
+        {
+          "caller": "computeAverageCostBasis",
+          "callee": "list.push",
+          "lineNumber": 27
+        },
+        {
+          "caller": "computeAverageCostBasis",
+          "callee": "byCode.set",
+          "lineNumber": 28
+        },
+        {
+          "caller": "computeAverageCostBasis",
+          "callee": "[...list].sort",
+          "lineNumber": 33
+        },
+        {
+          "caller": "computeAverageCostBasis",
+          "callee": "Math.max",
+          "lineNumber": 42
+        },
+        {
+          "caller": "computeAverageCostBasis",
+          "callee": "result.set",
+          "lineNumber": 45
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/kraken/futures.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 74,
+      "nonEmptyLines": 67,
+      "functions": [
+        {
+          "name": "signKrakenFuturesRequest",
+          "startLine": 21,
+          "endLine": 24,
+          "params": [
+            "endpointPath",
+            "nonce",
+            "postData",
+            "secret"
+          ]
+        },
+        {
+          "name": "nextNonce",
+          "startLine": 29,
+          "endLine": 33,
+          "params": []
+        },
+        {
+          "name": "fetchKrakenFuturesOpenPositions",
+          "startLine": 50,
+          "endLine": 74,
+          "params": [
+            "apiKey",
+            "apiSecret"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "fetchKrakenFuturesOpenPositions",
+          "line": 50,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "signKrakenFuturesRequest",
+          "callee": "createHash('sha256').update(postData + nonce + endpointPath).digest",
+          "lineNumber": 22
+        },
+        {
+          "caller": "signKrakenFuturesRequest",
+          "callee": "createHash('sha256').update",
+          "lineNumber": 22
+        },
+        {
+          "caller": "signKrakenFuturesRequest",
+          "callee": "createHash",
+          "lineNumber": 22
+        },
+        {
+          "caller": "signKrakenFuturesRequest",
+          "callee": "createHmac('sha512', Buffer.from(secret, 'base64')).update(hash).digest",
+          "lineNumber": 23
+        },
+        {
+          "caller": "signKrakenFuturesRequest",
+          "callee": "createHmac('sha512', Buffer.from(secret, 'base64')).update",
+          "lineNumber": 23
+        },
+        {
+          "caller": "signKrakenFuturesRequest",
+          "callee": "createHmac",
+          "lineNumber": 23
+        },
+        {
+          "caller": "signKrakenFuturesRequest",
+          "callee": "Buffer.from",
+          "lineNumber": 23
+        },
+        {
+          "caller": "nextNonce",
+          "callee": "Date.now",
+          "lineNumber": 30
+        },
+        {
+          "caller": "nextNonce",
+          "callee": "lastNonce.toString",
+          "lineNumber": 32
+        },
+        {
+          "caller": "fetchKrakenFuturesOpenPositions",
+          "callee": "nextNonce",
+          "lineNumber": 55
+        },
+        {
+          "caller": "fetchKrakenFuturesOpenPositions",
+          "callee": "fetch",
+          "lineNumber": 58
+        },
+        {
+          "caller": "fetchKrakenFuturesOpenPositions",
+          "callee": "signKrakenFuturesRequest",
+          "lineNumber": 62
+        },
+        {
+          "caller": "fetchKrakenFuturesOpenPositions",
+          "callee": "res.json",
+          "lineNumber": 67
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/kraken/index.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 320,
+      "nonEmptyLines": 279,
+      "functions": [
+        {
+          "name": "krakenCodeToSymbol",
+          "startLine": 48,
+          "endLine": 55,
+          "params": [
+            "code"
+          ]
+        },
+        {
+          "name": "signKrakenRequest",
+          "startLine": 62,
+          "endLine": 66,
+          "params": [
+            "path",
+            "nonce",
+            "postData",
+            "secret"
+          ]
+        },
+        {
+          "name": "nextNonce",
+          "startLine": 77,
+          "endLine": 81,
+          "params": []
+        },
+        {
+          "name": "fetchKrakenBalances",
+          "startLine": 92,
+          "endLine": 114,
+          "params": [
+            "apiKey",
+            "apiSecret"
+          ]
+        },
+        {
+          "name": "fetchKrakenAssetInfo",
+          "startLine": 121,
+          "endLine": 126,
+          "params": []
+        },
+        {
+          "name": "fetchKrakenAssetPairs",
+          "startLine": 133,
+          "endLine": 138,
+          "params": []
+        },
+        {
+          "name": "fetchKrakenTickers",
+          "startLine": 142,
+          "endLine": 154,
+          "params": [
+            "pairs"
+          ]
+        },
+        {
+          "name": "sleep",
+          "startLine": 177,
+          "endLine": 179,
+          "params": [
+            "ms"
+          ]
+        },
+        {
+          "name": "fetchKrakenTradesHistory",
+          "startLine": 181,
+          "endLine": 219,
+          "params": [
+            "apiKey",
+            "apiSecret"
+          ]
+        },
+        {
+          "name": "fetchKrakenOpenPositions",
+          "startLine": 237,
+          "endLine": 255,
+          "params": [
+            "apiKey",
+            "apiSecret"
+          ]
+        },
+        {
+          "name": "buildKrakenPriceMap",
+          "startLine": 269,
+          "endLine": 320,
+          "params": [
+            "codes",
+            "assetPairs"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "KRAKEN_TO_SYMBOL",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "krakenCodeToSymbol",
+          "line": 48,
+          "isDefault": false
+        },
+        {
+          "name": "signKrakenRequest",
+          "line": 62,
+          "isDefault": false
+        },
+        {
+          "name": "fetchKrakenBalances",
+          "line": 92,
+          "isDefault": false
+        },
+        {
+          "name": "fetchKrakenAssetInfo",
+          "line": 121,
+          "isDefault": false
+        },
+        {
+          "name": "fetchKrakenAssetPairs",
+          "line": 133,
+          "isDefault": false
+        },
+        {
+          "name": "fetchKrakenTickers",
+          "line": 142,
+          "isDefault": false
+        },
+        {
+          "name": "fetchKrakenTradesHistory",
+          "line": 181,
+          "isDefault": false
+        },
+        {
+          "name": "fetchKrakenOpenPositions",
+          "line": 237,
+          "isDefault": false
+        },
+        {
+          "name": "buildKrakenPriceMap",
+          "line": 269,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "krakenCodeToSymbol",
+          "callee": "code.startsWith",
+          "lineNumber": 51
+        },
+        {
+          "caller": "krakenCodeToSymbol",
+          "callee": "code.startsWith",
+          "lineNumber": 51
+        },
+        {
+          "caller": "krakenCodeToSymbol",
+          "callee": "code.slice",
+          "lineNumber": 52
+        },
+        {
+          "caller": "signKrakenRequest",
+          "callee": "createHash('sha256').update(nonce + postData).digest",
+          "lineNumber": 63
+        },
+        {
+          "caller": "signKrakenRequest",
+          "callee": "createHash('sha256').update",
+          "lineNumber": 63
+        },
+        {
+          "caller": "signKrakenRequest",
+          "callee": "createHash",
+          "lineNumber": 63
+        },
+        {
+          "caller": "signKrakenRequest",
+          "callee": "Buffer.concat",
+          "lineNumber": 64
+        },
+        {
+          "caller": "signKrakenRequest",
+          "callee": "Buffer.from",
+          "lineNumber": 64
+        },
+        {
+          "caller": "signKrakenRequest",
+          "callee": "createHmac('sha512', Buffer.from(secret, 'base64')).update(message).digest",
+          "lineNumber": 65
+        },
+        {
+          "caller": "signKrakenRequest",
+          "callee": "createHmac('sha512', Buffer.from(secret, 'base64')).update",
+          "lineNumber": 65
+        },
+        {
+          "caller": "signKrakenRequest",
+          "callee": "createHmac",
+          "lineNumber": 65
+        },
+        {
+          "caller": "signKrakenRequest",
+          "callee": "Buffer.from",
+          "lineNumber": 65
+        },
+        {
+          "caller": "nextNonce",
+          "callee": "Date.now",
+          "lineNumber": 78
+        },
+        {
+          "caller": "nextNonce",
+          "callee": "lastNonce.toString",
+          "lineNumber": 80
+        },
+        {
+          "caller": "fetchKrakenBalances",
+          "callee": "nextNonce",
+          "lineNumber": 94
+        },
+        {
+          "caller": "fetchKrakenBalances",
+          "callee": "fetch",
+          "lineNumber": 97
+        },
+        {
+          "caller": "fetchKrakenBalances",
+          "callee": "signKrakenRequest",
+          "lineNumber": 101
+        },
+        {
+          "caller": "fetchKrakenBalances",
+          "callee": "res.json",
+          "lineNumber": 107
+        },
+        {
+          "caller": "fetchKrakenBalances",
+          "callee": "json.error.join",
+          "lineNumber": 110
+        },
+        {
+          "caller": "fetchKrakenAssetInfo",
+          "callee": "fetch",
+          "lineNumber": 122
+        },
+        {
+          "caller": "fetchKrakenAssetInfo",
+          "callee": "res.json",
+          "lineNumber": 123
+        },
+        {
+          "caller": "fetchKrakenAssetInfo",
+          "callee": "json.error.join",
+          "lineNumber": 124
+        },
+        {
+          "caller": "fetchKrakenAssetPairs",
+          "callee": "fetch",
+          "lineNumber": 134
+        },
+        {
+          "caller": "fetchKrakenAssetPairs",
+          "callee": "res.json",
+          "lineNumber": 135
+        },
+        {
+          "caller": "fetchKrakenAssetPairs",
+          "callee": "json.error.join",
+          "lineNumber": 136
+        },
+        {
+          "caller": "fetchKrakenTickers",
+          "callee": "fetch",
+          "lineNumber": 144
+        },
+        {
+          "caller": "fetchKrakenTickers",
+          "callee": "pairs.join",
+          "lineNumber": 144
+        },
+        {
+          "caller": "fetchKrakenTickers",
+          "callee": "res.json",
+          "lineNumber": 145
+        },
+        {
+          "caller": "fetchKrakenTickers",
+          "callee": "json.error.join",
+          "lineNumber": 146
+        },
+        {
+          "caller": "fetchKrakenTickers",
+          "callee": "Object.entries",
+          "lineNumber": 149
+        },
+        {
+          "caller": "fetchKrakenTickers",
+          "callee": "parseFloat",
+          "lineNumber": 150
+        },
+        {
+          "caller": "fetchKrakenTickers",
+          "callee": "isNaN",
+          "lineNumber": 151
+        },
+        {
+          "caller": "sleep",
+          "callee": "setTimeout",
+          "lineNumber": 178
+        },
+        {
+          "caller": "fetchKrakenTradesHistory",
+          "callee": "sleep",
+          "lineNumber": 186
+        },
+        {
+          "caller": "fetchKrakenTradesHistory",
+          "callee": "nextNonce",
+          "lineNumber": 189
+        },
+        {
+          "caller": "fetchKrakenTradesHistory",
+          "callee": "fetch",
+          "lineNumber": 192
+        },
+        {
+          "caller": "fetchKrakenTradesHistory",
+          "callee": "signKrakenRequest",
+          "lineNumber": 196
+        },
+        {
+          "caller": "fetchKrakenTradesHistory",
+          "callee": "res.json",
+          "lineNumber": 202
+        },
+        {
+          "caller": "fetchKrakenTradesHistory",
+          "callee": "json.error.some",
+          "lineNumber": 207
+        },
+        {
+          "caller": "fetchKrakenTradesHistory",
+          "callee": "e.includes",
+          "lineNumber": 207
+        },
+        {
+          "caller": "fetchKrakenTradesHistory",
+          "callee": "json.error.join",
+          "lineNumber": 208
+        },
+        {
+          "caller": "fetchKrakenTradesHistory",
+          "callee": "Object.values",
+          "lineNumber": 211
+        },
+        {
+          "caller": "fetchKrakenTradesHistory",
+          "callee": "trades.push",
+          "lineNumber": 212
+        },
+        {
+          "caller": "fetchKrakenOpenPositions",
+          "callee": "nextNonce",
+          "lineNumber": 239
+        },
+        {
+          "caller": "fetchKrakenOpenPositions",
+          "callee": "fetch",
+          "lineNumber": 242
+        },
+        {
+          "caller": "fetchKrakenOpenPositions",
+          "callee": "signKrakenRequest",
+          "lineNumber": 246
+        },
+        {
+          "caller": "fetchKrakenOpenPositions",
+          "callee": "res.json",
+          "lineNumber": 252
+        },
+        {
+          "caller": "fetchKrakenOpenPositions",
+          "callee": "json.error.join",
+          "lineNumber": 253
+        },
+        {
+          "caller": "fetchKrakenOpenPositions",
+          "callee": "Object.values",
+          "lineNumber": 254
+        },
+        {
+          "caller": "buildKrakenPriceMap",
+          "callee": "Object.entries",
+          "lineNumber": 278
+        },
+        {
+          "caller": "buildKrakenPriceMap",
+          "callee": "eurPairByCode.has",
+          "lineNumber": 279
+        },
+        {
+          "caller": "buildKrakenPriceMap",
+          "callee": "eurPairByCode.set",
+          "lineNumber": 279
+        },
+        {
+          "caller": "buildKrakenPriceMap",
+          "callee": "usdPairByCode.has",
+          "lineNumber": 280
+        },
+        {
+          "caller": "buildKrakenPriceMap",
+          "callee": "usdPairByCode.set",
+          "lineNumber": 280
+        },
+        {
+          "caller": "buildKrakenPriceMap",
+          "callee": "eurPairByCode.get",
+          "lineNumber": 289
+        },
+        {
+          "caller": "buildKrakenPriceMap",
+          "callee": "usdPairByCode.get",
+          "lineNumber": 289
+        },
+        {
+          "caller": "buildKrakenPriceMap",
+          "callee": "pairsToFetch.add",
+          "lineNumber": 290
+        },
+        {
+          "caller": "buildKrakenPriceMap",
+          "callee": "pairsToFetch.add",
+          "lineNumber": 292
+        },
+        {
+          "caller": "buildKrakenPriceMap",
+          "callee": "fetchKrakenTickers",
+          "lineNumber": 294
+        },
+        {
+          "caller": "buildKrakenPriceMap",
+          "callee": "getEurUsdRate",
+          "lineNumber": 300
+        },
+        {
+          "caller": "buildKrakenPriceMap",
+          "callee": "eurPairByCode.get",
+          "lineNumber": 306
+        },
+        {
+          "caller": "buildKrakenPriceMap",
+          "callee": "usdPairByCode.get",
+          "lineNumber": 311
+        },
+        {
+          "caller": "buildKrakenPriceMap",
+          "callee": "unresolved.push",
+          "lineNumber": 316
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 10,
+        "functionCount": 11,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/kraken/sync.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 282,
+      "nonEmptyLines": 255,
+      "functions": [
+        {
+          "name": "syncKrakenForUser",
+          "startLine": 31,
+          "endLine": 282,
+          "params": [
+            "supabase",
+            "userId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "syncKrakenForUser",
+          "line": 31,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "supabase\r\n    .from('exchange_keys')\r\n    .select('api_key, api_secret')\r\n    .eq('user_id', userId)\r\n    .eq('exchange', 'kraken')\r\n    .maybeSingle",
+          "lineNumber": 36
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "supabase\r\n    .from('exchange_keys')\r\n    .select('api_key, api_secret')\r\n    .eq('user_id', userId)\r\n    .eq",
+          "lineNumber": 36
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "supabase\r\n    .from('exchange_keys')\r\n    .select('api_key, api_secret')\r\n    .eq",
+          "lineNumber": 36
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "supabase\r\n    .from('exchange_keys')\r\n    .select",
+          "lineNumber": 36
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 36
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "decrypt",
+          "lineNumber": 47
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "decrypt",
+          "lineNumber": 48
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "fetchKrakenBalances",
+          "lineNumber": 57
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "Object.entries",
+          "lineNumber": 68
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "parseFloat",
+          "lineNumber": 69
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "code.replace",
+          "lineNumber": 71
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "byBaseCode.set",
+          "lineNumber": 72
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "byBaseCode.get",
+          "lineNumber": 72
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "[...byBaseCode].map",
+          "lineNumber": 74
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "fetchKrakenAssetInfo",
+          "lineNumber": 88
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "held.map",
+          "lineNumber": 97
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "krakenCodeToSymbol",
+          "lineNumber": 98
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "code.startsWith",
+          "lineNumber": 99
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "findBySymbol",
+          "lineNumber": 100
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "fetchKrakenAssetPairs",
+          "lineNumber": 125
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "entries.filter(e => e.code !== 'ZEUR').map",
+          "lineNumber": 130
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "entries.filter",
+          "lineNumber": 130
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "buildKrakenPriceMap(codesToPrice, assetPairs).catch",
+          "lineNumber": 132
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "buildKrakenPriceMap",
+          "lineNumber": 132
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "entries.filter(e => unresolved.includes(e.code) && e.coingeckoId).map",
+          "lineNumber": 137
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "entries.filter",
+          "lineNumber": 137
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "unresolved.includes",
+          "lineNumber": 137
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "getPrices(fallbackIds).catch",
+          "lineNumber": 140
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "getPrices",
+          "lineNumber": 140
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "entries.map",
+          "lineNumber": 143
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "e.symbol.toLowerCase",
+          "lineNumber": 150
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "priced.filter",
+          "lineNumber": 155
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "warnings.push",
+          "lineNumber": 157
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "unpriced.map(e => e.symbol).join",
+          "lineNumber": 157
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "unpriced.map",
+          "lineNumber": 157
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "fetchKrakenTradesHistory",
+          "lineNumber": 164
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "parseFloat",
+          "lineNumber": 170
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "parseFloat",
+          "lineNumber": 170
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "parseFloat",
+          "lineNumber": 170
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "[price, cost, vol].some",
+          "lineNumber": 171
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "normalized.push",
+          "lineNumber": 180
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "warnings.push",
+          "lineNumber": 183
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "computeAverageCostBasis",
+          "lineNumber": 189
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "warnings.push",
+          "lineNumber": 195
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "new Date().toISOString",
+          "lineNumber": 202
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "avgCostByCode.get",
+          "lineNumber": 224
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "withCostBasis.push",
+          "lineNumber": 225
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "baseRow",
+          "lineNumber": 225
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "withoutCostBasis.push",
+          "lineNumber": 226
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "baseRow",
+          "lineNumber": 226
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "supabase.from('assets').upsert",
+          "lineNumber": 230
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "supabase.from",
+          "lineNumber": 230
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "supabase.from('assets').upsert",
+          "lineNumber": 234
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "supabase.from",
+          "lineNumber": 234
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "priced.map",
+          "lineNumber": 239
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "supabase\r\n    .from('assets')\r\n    .select('id, symbol, quantity')\r\n    .eq('user_id', userId)\r\n    .eq('exchange', 'Kraken')\r\n    .eq",
+          "lineNumber": 240
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "supabase\r\n    .from('assets')\r\n    .select('id, symbol, quantity')\r\n    .eq('user_id', userId)\r\n    .eq",
+          "lineNumber": 240
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "supabase\r\n    .from('assets')\r\n    .select('id, symbol, quantity')\r\n    .eq",
+          "lineNumber": 240
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "supabase\r\n    .from('assets')\r\n    .select",
+          "lineNumber": 240
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 240
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "(currentKrakenAssets ?? [])\r\n    .filter(a => !a.symbol || !syncedSymbols.has(a.symbol))\r\n    .map",
+          "lineNumber": 247
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "(currentKrakenAssets ?? [])\r\n    .filter",
+          "lineNumber": 247
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "syncedSymbols.has",
+          "lineNumber": 248
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "supabase.from('assets').delete().in",
+          "lineNumber": 251
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "supabase.from('assets').delete",
+          "lineNumber": 251
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "supabase.from",
+          "lineNumber": 251
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "priced.filter(e => e.priceEur != null).map",
+          "lineNumber": 256
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "priced.filter",
+          "lineNumber": 256
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "nowIso.split",
+          "lineNumber": 257
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "(currentKrakenAssets ?? [])\r\n    .filter(a => a.symbol && !staleIds.includes(a.id) && priceBySymbol.has(a.symbol))\r\n    .map",
+          "lineNumber": 258
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "(currentKrakenAssets ?? [])\r\n    .filter",
+          "lineNumber": 258
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "staleIds.includes",
+          "lineNumber": 259
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "priceBySymbol.has",
+          "lineNumber": 259
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "priceBySymbol.get",
+          "lineNumber": 261
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "supabase.from('asset_valuations').upsert",
+          "lineNumber": 272
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "supabase.from",
+          "lineNumber": 272
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "supabase.from('user_settings').upsert",
+          "lineNumber": 276
+        },
+        {
+          "caller": "syncKrakenForUser",
+          "callee": "supabase.from",
+          "lineNumber": 276
+        }
+      ],
+      "metrics": {
+        "importCount": 6,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    }
+  ]
+}

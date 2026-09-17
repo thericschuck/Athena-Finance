@@ -1,0 +1,1877 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/app/(dashboard)/analyse/verlauf/page.tsx",
+   "path": "src/app/(dashboard)/analyse/verlauf/page.tsx",
+   "name": "page.tsx",
+   "summary": "Server-rendered history/analysis page with tabbed, paginated views (net worth, accounts, portfolio, monthly summary) backed by direct Supabase queries.",
+   "tags": [
+    "dashboard-page",
+    "server-component",
+    "supabase",
+    "pagination",
+    "reporting"
+   ],
+   "complexity": "complex",
+   "type": "file",
+   "filePath": "src/app/(dashboard)/analyse/verlauf/page.tsx"
+  },
+  {
+   "id": "file:src/app/(dashboard)/crypto/actions.ts",
+   "path": "src/app/(dashboard)/crypto/actions.ts",
+   "name": "actions.ts",
+   "summary": "Central server actions module for the crypto module: CRUD for manual assets, price refresh, strategy signal/rebalancing/portfolio-allocation persistence, Kraken exchange-key decryption, and aggregation of Kraken spot/margin/futures open positions.",
+   "tags": [
+    "server-action",
+    "crypto",
+    "supabase",
+    "kraken",
+    "encryption"
+   ],
+   "complexity": "complex",
+   "languageNotes": "Uses Next.js Server Actions (\"use server\") mixing Supabase persistence, third-party price APIs (CoinGecko), and Kraken REST calls with API-key decryption in one large module.",
+   "type": "file",
+   "filePath": "src/app/(dashboard)/crypto/actions.ts"
+  },
+  {
+   "id": "file:src/app/(dashboard)/crypto/assets/actions.ts",
+   "path": "src/app/(dashboard)/crypto/assets/actions.ts",
+   "name": "actions.ts",
+   "summary": "Server actions managing the user's custom coin catalog stored as a JSON blob in user_settings (get/add/remove custom coin entries).",
+   "tags": [
+    "server-action",
+    "crypto",
+    "supabase",
+    "settings"
+   ],
+   "complexity": "simple",
+   "type": "file",
+   "filePath": "src/app/(dashboard)/crypto/assets/actions.ts"
+  },
+  {
+   "id": "file:src/app/(dashboard)/crypto/assets/page.tsx",
+   "path": "src/app/(dashboard)/crypto/assets/page.tsx",
+   "name": "page.tsx",
+   "summary": "Thin server page that loads the user's coin catalog and renders the CoinCatalogManager UI for managing custom coins.",
+   "tags": [
+    "dashboard-page",
+    "server-component",
+    "crypto"
+   ],
+   "complexity": "simple",
+   "type": "file",
+   "filePath": "src/app/(dashboard)/crypto/assets/page.tsx"
+  },
+  {
+   "id": "file:src/app/(dashboard)/crypto/page.tsx",
+   "path": "src/app/(dashboard)/crypto/page.tsx",
+   "name": "page.tsx",
+   "summary": "Main crypto dashboard page: fetches assets, portfolio snapshots, and settings, computes rebalancing rows, and renders the portfolio overview, open positions, and an asset audit log.",
+   "tags": [
+    "dashboard-page",
+    "server-component",
+    "crypto",
+    "portfolio"
+   ],
+   "complexity": "complex",
+   "type": "file",
+   "filePath": "src/app/(dashboard)/crypto/page.tsx"
+  },
+  {
+   "id": "file:src/app/(dashboard)/crypto/rebalancing/page.tsx",
+   "path": "src/app/(dashboard)/crypto/rebalancing/page.tsx",
+   "name": "page.tsx",
+   "summary": "Server page that loads crypto assets, latest valuations, strategy signals, and portfolio allocations, then renders the rebalancing calculator UI.",
+   "tags": [
+    "dashboard-page",
+    "server-component",
+    "crypto",
+    "rebalancing"
+   ],
+   "complexity": "moderate",
+   "type": "file",
+   "filePath": "src/app/(dashboard)/crypto/rebalancing/page.tsx"
+  },
+  {
+   "id": "file:src/app/(dashboard)/dashboard/page.tsx",
+   "path": "src/app/(dashboard)/dashboard/page.tsx",
+   "name": "page.tsx",
+   "summary": "Main application dashboard aggregating net worth, crypto, fixed costs/subscriptions, and finance analytics into a single overview page with rebalancing alerts and Athena insights.",
+   "tags": [
+    "dashboard-page",
+    "server-component",
+    "entry-point",
+    "finance",
+    "aggregation"
+   ],
+   "complexity": "complex",
+   "languageNotes": "One large 700+ line Server Component composing many widgets; contains small date/frequency helpers (daysUntil, toMonthly, addFrequency, getNextRenewal) for computing next subscription renewal dates.",
+   "type": "file",
+   "filePath": "src/app/(dashboard)/dashboard/page.tsx"
+  },
+  {
+   "id": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:Td",
+   "type": "function",
+   "name": "Td",
+   "filePath": "src/app/(dashboard)/analyse/verlauf/page.tsx",
+   "lineRange": [
+    42,
+    57
+   ],
+   "summary": "Table-cell renderer supporting right alignment, monospace numerals, dim/red styling for the history tables.",
+   "tags": [
+    "utility",
+    "component",
+    "table"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:Pagination",
+   "type": "function",
+   "name": "Pagination",
+   "filePath": "src/app/(dashboard)/analyse/verlauf/page.tsx",
+   "lineRange": [
+    60,
+    80
+   ],
+   "summary": "Renders page-count aware previous/next pagination links for a given history tab.",
+   "tags": [
+    "component",
+    "pagination"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:NetworthTab",
+   "type": "function",
+   "name": "NetworthTab",
+   "filePath": "src/app/(dashboard)/analyse/verlauf/page.tsx",
+   "lineRange": [
+    94,
+    149
+   ],
+   "summary": "Fetches and paginates net worth snapshots for a user and renders them as a formatted table.",
+   "tags": [
+    "data-fetching",
+    "supabase",
+    "table"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:AccountsTab",
+   "type": "function",
+   "name": "AccountsTab",
+   "filePath": "src/app/(dashboard)/analyse/verlauf/page.tsx",
+   "lineRange": [
+    152,
+    212
+   ],
+   "summary": "Fetches accounts and their paginated balance history and renders a per-account balance table.",
+   "tags": [
+    "data-fetching",
+    "supabase",
+    "table"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:PortfolioTab",
+   "type": "function",
+   "name": "PortfolioTab",
+   "filePath": "src/app/(dashboard)/analyse/verlauf/page.tsx",
+   "lineRange": [
+    215,
+    273
+   ],
+   "summary": "Fetches assets and paginated portfolio snapshots and renders a historical portfolio value table.",
+   "tags": [
+    "data-fetching",
+    "supabase",
+    "table"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:MonthlyTab",
+   "type": "function",
+   "name": "MonthlyTab",
+   "filePath": "src/app/(dashboard)/analyse/verlauf/page.tsx",
+   "lineRange": [
+    276,
+    340
+   ],
+   "summary": "Fetches paginated monthly finance summaries and renders income/expense/savings rows.",
+   "tags": [
+    "data-fetching",
+    "supabase",
+    "table"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:HistoryPage",
+   "type": "function",
+   "name": "HistoryPage",
+   "filePath": "src/app/(dashboard)/analyse/verlauf/page.tsx",
+   "lineRange": [
+    343,
+    410
+   ],
+   "summary": "Default page component: resolves the active tab and pagination state from search params, loads the user/settings, and dispatches to the corresponding tab renderer.",
+   "tags": [
+    "entry-point",
+    "server-component",
+    "routing"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/actions.ts:createAsset",
+   "type": "function",
+   "name": "createAsset",
+   "filePath": "src/app/(dashboard)/crypto/actions.ts",
+   "lineRange": [
+    29,
+    107
+   ],
+   "summary": "Server action creating a manual crypto/fiat/stable asset for the authenticated user, fetching an initial price snapshot and writing an audit log entry.",
+   "tags": [
+    "server-action",
+    "crypto",
+    "supabase",
+    "audit-log"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/actions.ts:updateAsset",
+   "type": "function",
+   "name": "updateAsset",
+   "filePath": "src/app/(dashboard)/crypto/actions.ts",
+   "lineRange": [
+    110,
+    182
+   ],
+   "summary": "Server action updating an existing asset's fields, diffing changes for the audit log, and revalidating the crypto page.",
+   "tags": [
+    "server-action",
+    "crypto",
+    "supabase",
+    "audit-log"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/actions.ts:deleteAsset",
+   "type": "function",
+   "name": "deleteAsset",
+   "filePath": "src/app/(dashboard)/crypto/actions.ts",
+   "lineRange": [
+    185,
+    223
+   ],
+   "summary": "Server action deleting an asset after verifying ownership, recording the deletion in the audit log.",
+   "tags": [
+    "server-action",
+    "crypto",
+    "supabase",
+    "audit-log"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/actions.ts:updateAssetPrices",
+   "type": "function",
+   "name": "updateAssetPrices",
+   "filePath": "src/app/(dashboard)/crypto/actions.ts",
+   "lineRange": [
+    226,
+    276
+   ],
+   "summary": "Server action refreshing valuations for a specific set of assets by fetching current prices and upserting valuation rows.",
+   "tags": [
+    "server-action",
+    "crypto",
+    "pricing",
+    "supabase"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/actions.ts:refreshPrices",
+   "type": "function",
+   "name": "refreshPrices",
+   "filePath": "src/app/(dashboard)/crypto/actions.ts",
+   "lineRange": [
+    279,
+    322
+   ],
+   "summary": "Server action refreshing prices for all of the user's crypto/stable/fiat assets in one batch and upserting today's valuations.",
+   "tags": [
+    "server-action",
+    "crypto",
+    "pricing",
+    "supabase"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/actions.ts:getStrategySignals",
+   "type": "function",
+   "name": "getStrategySignals",
+   "filePath": "src/app/(dashboard)/crypto/actions.ts",
+   "lineRange": [
+    325,
+    333
+   ],
+   "summary": "Reads the user's saved strategy signal settings, falling back to defaults.",
+   "tags": [
+    "server-action",
+    "settings",
+    "crypto"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/actions.ts:saveStrategySignals",
+   "type": "function",
+   "name": "saveStrategySignals",
+   "filePath": "src/app/(dashboard)/crypto/actions.ts",
+   "lineRange": [
+    335,
+    350
+   ],
+   "summary": "Persists strategy signal settings to user_settings and revalidates the rebalancing page.",
+   "tags": [
+    "server-action",
+    "settings",
+    "crypto"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/actions.ts:getPortfolioAllocations",
+   "type": "function",
+   "name": "getPortfolioAllocations",
+   "filePath": "src/app/(dashboard)/crypto/actions.ts",
+   "lineRange": [
+    353,
+    358
+   ],
+   "summary": "Reads the user's saved target portfolio allocations, falling back to defaults.",
+   "tags": [
+    "server-action",
+    "settings",
+    "crypto"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/actions.ts:savePortfolioAllocations",
+   "type": "function",
+   "name": "savePortfolioAllocations",
+   "filePath": "src/app/(dashboard)/crypto/actions.ts",
+   "lineRange": [
+    360,
+    375
+   ],
+   "summary": "Persists target portfolio allocations to user_settings and revalidates the rebalancing page.",
+   "tags": [
+    "server-action",
+    "settings",
+    "crypto"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/actions.ts:getLastRebalancing",
+   "type": "function",
+   "name": "getLastRebalancing",
+   "filePath": "src/app/(dashboard)/crypto/actions.ts",
+   "lineRange": [
+    378,
+    383
+   ],
+   "summary": "Reads the timestamp of the user's last completed rebalancing action.",
+   "tags": [
+    "server-action",
+    "settings",
+    "crypto"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/actions.ts:saveCryptoSource",
+   "type": "function",
+   "name": "saveCryptoSource",
+   "filePath": "src/app/(dashboard)/crypto/actions.ts",
+   "lineRange": [
+    388,
+    397
+   ],
+   "summary": "Persists which data source (manual vs. Kraken) drives the crypto portfolio.",
+   "tags": [
+    "server-action",
+    "settings",
+    "crypto"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/actions.ts:getCryptoSource",
+   "type": "function",
+   "name": "getCryptoSource",
+   "filePath": "src/app/(dashboard)/crypto/actions.ts",
+   "lineRange": [
+    399,
+    409
+   ],
+   "summary": "Reads the configured crypto data source for a given user id.",
+   "tags": [
+    "server-action",
+    "settings",
+    "crypto"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/actions.ts:syncFromKraken",
+   "type": "function",
+   "name": "syncFromKraken",
+   "filePath": "src/app/(dashboard)/crypto/actions.ts",
+   "lineRange": [
+    417,
+    424
+   ],
+   "summary": "Server action triggering a manual Kraken sync for the current user and revalidating the crypto page.",
+   "tags": [
+    "server-action",
+    "kraken",
+    "sync"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/actions.ts:getDecryptedKey",
+   "type": "function",
+   "name": "getDecryptedKey",
+   "filePath": "src/app/(dashboard)/crypto/actions.ts",
+   "lineRange": [
+    462,
+    475
+   ],
+   "summary": "Fetches and decrypts a stored exchange API key/secret pair for a given user and exchange.",
+   "tags": [
+    "encryption",
+    "kraken",
+    "supabase"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/actions.ts:getSpotMarginPositions",
+   "type": "function",
+   "name": "getSpotMarginPositions",
+   "filePath": "src/app/(dashboard)/crypto/actions.ts",
+   "lineRange": [
+    477,
+    537
+   ],
+   "summary": "Fetches and normalizes the user's open Kraken spot/margin positions into EUR-valued rows, tolerating missing API keys.",
+   "tags": [
+    "kraken",
+    "positions",
+    "pricing"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/actions.ts:getFuturesPositions",
+   "type": "function",
+   "name": "getFuturesPositions",
+   "filePath": "src/app/(dashboard)/crypto/actions.ts",
+   "lineRange": [
+    539,
+    588
+   ],
+   "summary": "Fetches and normalizes the user's open Kraken futures positions into EUR-valued rows using the current EUR/USD rate.",
+   "tags": [
+    "kraken",
+    "positions",
+    "pricing"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/actions.ts:getKrakenOpenPositions",
+   "type": "function",
+   "name": "getKrakenOpenPositions",
+   "filePath": "src/app/(dashboard)/crypto/actions.ts",
+   "lineRange": [
+    590,
+    607
+   ],
+   "summary": "Server action combining spot/margin and futures open positions for the authenticated user into one result with aggregated errors.",
+   "tags": [
+    "server-action",
+    "kraken",
+    "positions"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/actions.ts:deletePortfolio",
+   "type": "function",
+   "name": "deletePortfolio",
+   "filePath": "src/app/(dashboard)/crypto/actions.ts",
+   "lineRange": [
+    612,
+    628
+   ],
+   "summary": "Server action deleting every asset belonging to a named sub-portfolio for the current user.",
+   "tags": [
+    "server-action",
+    "crypto",
+    "supabase"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/actions.ts:markRebalancingDone",
+   "type": "function",
+   "name": "markRebalancingDone",
+   "filePath": "src/app/(dashboard)/crypto/actions.ts",
+   "lineRange": [
+    630,
+    646
+   ],
+   "summary": "Server action recording that the user has completed a rebalancing pass.",
+   "tags": [
+    "server-action",
+    "crypto",
+    "settings"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/assets/actions.ts:getCoinCatalog",
+   "type": "function",
+   "name": "getCoinCatalog",
+   "filePath": "src/app/(dashboard)/crypto/assets/actions.ts",
+   "lineRange": [
+    10,
+    23
+   ],
+   "summary": "Reads the user's custom coin catalog list from user_settings.",
+   "tags": [
+    "server-action",
+    "settings",
+    "crypto"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/assets/actions.ts:addCoinToCatalog",
+   "type": "function",
+   "name": "addCoinToCatalog",
+   "filePath": "src/app/(dashboard)/crypto/assets/actions.ts",
+   "lineRange": [
+    26,
+    43
+   ],
+   "summary": "Adds a new custom coin entry to the catalog, guarding against duplicate symbols.",
+   "tags": [
+    "server-action",
+    "settings",
+    "crypto"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/assets/actions.ts:removeCoinFromCatalog",
+   "type": "function",
+   "name": "removeCoinFromCatalog",
+   "filePath": "src/app/(dashboard)/crypto/assets/actions.ts",
+   "lineRange": [
+    46,
+    60
+   ],
+   "summary": "Removes a custom coin entry (by symbol) from the catalog.",
+   "tags": [
+    "server-action",
+    "settings",
+    "crypto"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/assets/page.tsx:CryptoAssetsPage",
+   "type": "function",
+   "name": "CryptoAssetsPage",
+   "filePath": "src/app/(dashboard)/crypto/assets/page.tsx",
+   "lineRange": [
+    5,
+    20
+   ],
+   "summary": "Default page component loading the custom coin catalog and rendering the CoinCatalogManager.",
+   "tags": [
+    "entry-point",
+    "server-component",
+    "crypto"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/page.tsx:CryptoPage",
+   "type": "function",
+   "name": "CryptoPage",
+   "filePath": "src/app/(dashboard)/crypto/page.tsx",
+   "lineRange": [
+    12,
+    173
+   ],
+   "summary": "Default page component: loads the user's assets, prior-year portfolio snapshots and settings, computes rebalancing rows, and renders the crypto dashboard UI (overview, positions, audit log).",
+   "tags": [
+    "entry-point",
+    "server-component",
+    "crypto",
+    "portfolio"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/page.tsx:AssetAuditLog",
+   "type": "function",
+   "name": "AssetAuditLog",
+   "filePath": "src/app/(dashboard)/crypto/page.tsx",
+   "lineRange": [
+    210,
+    278
+   ],
+   "summary": "Renders a list of recent asset audit log entries (creates/updates/deletes) with formatted values and timestamps.",
+   "tags": [
+    "component",
+    "audit-log",
+    "crypto"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/crypto/rebalancing/page.tsx:RebalancingPage",
+   "type": "function",
+   "name": "RebalancingPage",
+   "filePath": "src/app/(dashboard)/crypto/rebalancing/page.tsx",
+   "lineRange": [
+    6,
+    77
+   ],
+   "summary": "Default page component loading crypto assets, latest valuations, strategy signals, and target allocations, then rendering the rebalancing calculator.",
+   "tags": [
+    "entry-point",
+    "server-component",
+    "crypto",
+    "rebalancing"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/app/(dashboard)/dashboard/page.tsx:getNextRenewal",
+   "type": "function",
+   "name": "getNextRenewal",
+   "filePath": "src/app/(dashboard)/dashboard/page.tsx",
+   "lineRange": [
+    44,
+    53
+   ],
+   "summary": "Computes the next renewal date for a recurring fixed cost given its start date and billing frequency.",
+   "tags": [
+    "utility",
+    "date",
+    "finance"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/dashboard/page.tsx:liveAccountBucket",
+   "type": "function",
+   "name": "liveAccountBucket",
+   "filePath": "src/app/(dashboard)/dashboard/page.tsx",
+   "lineRange": [
+    66,
+    78
+   ],
+   "summary": "Maps an account type string to the bucket used for live/liquid balance aggregation.",
+   "tags": [
+    "utility",
+    "classification",
+    "finance"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/dashboard/page.tsx:SectionHeader",
+   "type": "function",
+   "name": "SectionHeader",
+   "filePath": "src/app/(dashboard)/dashboard/page.tsx",
+   "lineRange": [
+    86,
+    107
+   ],
+   "summary": "Renders a dashboard section heading with an item count and an optional link to the full list view.",
+   "tags": [
+    "component",
+    "layout"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/app/(dashboard)/dashboard/page.tsx:DashboardPage",
+   "type": "function",
+   "name": "DashboardPage",
+   "filePath": "src/app/(dashboard)/dashboard/page.tsx",
+   "lineRange": [
+    109,
+    733
+   ],
+   "summary": "Default page component that loads the authenticated user's accounts, crypto assets, fixed costs, depots, and settings, then composes the full dashboard (net worth, crypto widget, analytics, rebalancing alert, Athena insights).",
+   "tags": [
+    "entry-point",
+    "server-component",
+    "aggregation",
+    "finance"
+   ],
+   "complexity": "complex"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/app/(dashboard)/analyse/verlauf/page.tsx",
+   "target": "file:src/lib/format.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/analyse/verlauf/page.tsx",
+   "target": "file:src/lib/settings.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/analyse/verlauf/page.tsx",
+   "target": "file:src/lib/supabase/server.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "file:src/lib/crypto/coin-registry.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "file:src/lib/crypto/coingecko.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "file:src/lib/crypto/rebalancing-defaults.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "file:src/lib/encryption.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "file:src/lib/kraken/futures.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "file:src/lib/kraken/index.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "file:src/lib/kraken/sync.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "file:src/lib/settings.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "file:src/lib/supabase/server.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "file:src/types/database.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/assets/actions.ts",
+   "target": "file:src/lib/crypto/coin-registry.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/assets/actions.ts",
+   "target": "file:src/lib/supabase/server.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/assets/actions.ts",
+   "target": "file:src/types/database.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/assets/page.tsx",
+   "target": "file:src/app/(dashboard)/crypto/assets/actions.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/assets/page.tsx",
+   "target": "file:src/components/crypto/coin-catalog-manager.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/assets/page.tsx",
+   "target": "file:src/lib/crypto/coin-registry.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/page.tsx",
+   "target": "file:src/app/(dashboard)/crypto/actions.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/page.tsx",
+   "target": "file:src/components/crypto/open-positions-card.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/page.tsx",
+   "target": "file:src/components/crypto/portfolio-overview.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/page.tsx",
+   "target": "file:src/components/crypto/portfolio-switcher.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/page.tsx",
+   "target": "file:src/lib/crypto/coingecko.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/page.tsx",
+   "target": "file:src/lib/crypto/rebalancing.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/page.tsx",
+   "target": "file:src/lib/format.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/page.tsx",
+   "target": "file:src/lib/settings.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/page.tsx",
+   "target": "file:src/lib/supabase/server.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/rebalancing/page.tsx",
+   "target": "file:src/app/(dashboard)/crypto/actions.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/rebalancing/page.tsx",
+   "target": "file:src/components/crypto/portfolio-overview.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/rebalancing/page.tsx",
+   "target": "file:src/components/crypto/rebalancing-calculator.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/rebalancing/page.tsx",
+   "target": "file:src/lib/supabase/server.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/dashboard/page.tsx",
+   "target": "file:src/app/(dashboard)/crypto/actions.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/dashboard/page.tsx",
+   "target": "file:src/app/actions/depot.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/dashboard/page.tsx",
+   "target": "file:src/components/dashboard/athena-insights.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/dashboard/page.tsx",
+   "target": "file:src/components/dashboard/crypto-widget.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/dashboard/page.tsx",
+   "target": "file:src/components/dashboard/finance-analytics.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/dashboard/page.tsx",
+   "target": "file:src/components/dashboard/net-worth-chart.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/dashboard/page.tsx",
+   "target": "file:src/components/dashboard/portfolio-donut.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/dashboard/page.tsx",
+   "target": "file:src/components/dashboard/rebalancing-alert.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/dashboard/page.tsx",
+   "target": "file:src/components/finance/fixed-costs-widget.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/dashboard/page.tsx",
+   "target": "file:src/lib/crypto/rebalancing.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/dashboard/page.tsx",
+   "target": "file:src/lib/format.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/dashboard/page.tsx",
+   "target": "file:src/lib/settings.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/dashboard/page.tsx",
+   "target": "file:src/lib/supabase/server.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/app/(dashboard)/analyse/verlauf/page.tsx",
+   "target": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:Td",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/analyse/verlauf/page.tsx",
+   "target": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:Pagination",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/analyse/verlauf/page.tsx",
+   "target": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:NetworthTab",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/analyse/verlauf/page.tsx",
+   "target": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:AccountsTab",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/analyse/verlauf/page.tsx",
+   "target": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:PortfolioTab",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/analyse/verlauf/page.tsx",
+   "target": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:MonthlyTab",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/analyse/verlauf/page.tsx",
+   "target": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:HistoryPage",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/analyse/verlauf/page.tsx",
+   "target": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:HistoryPage",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:createAsset",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:createAsset",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:updateAsset",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:updateAsset",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:deleteAsset",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:deleteAsset",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:updateAssetPrices",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:updateAssetPrices",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:refreshPrices",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:refreshPrices",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:getStrategySignals",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:getStrategySignals",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:saveStrategySignals",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:saveStrategySignals",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:getPortfolioAllocations",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:getPortfolioAllocations",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:savePortfolioAllocations",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:savePortfolioAllocations",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:getLastRebalancing",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:getLastRebalancing",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:saveCryptoSource",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:saveCryptoSource",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:getCryptoSource",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:getCryptoSource",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:syncFromKraken",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:syncFromKraken",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:getDecryptedKey",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:getSpotMarginPositions",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:getFuturesPositions",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:getKrakenOpenPositions",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:getKrakenOpenPositions",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:deletePortfolio",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:deletePortfolio",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:markRebalancingDone",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:markRebalancingDone",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/assets/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/assets/actions.ts:getCoinCatalog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/assets/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/assets/actions.ts:getCoinCatalog",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/assets/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/assets/actions.ts:addCoinToCatalog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/assets/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/assets/actions.ts:addCoinToCatalog",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/assets/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/assets/actions.ts:removeCoinFromCatalog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/assets/actions.ts",
+   "target": "function:src/app/(dashboard)/crypto/assets/actions.ts:removeCoinFromCatalog",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/assets/page.tsx",
+   "target": "function:src/app/(dashboard)/crypto/assets/page.tsx:CryptoAssetsPage",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/assets/page.tsx",
+   "target": "function:src/app/(dashboard)/crypto/assets/page.tsx:CryptoAssetsPage",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/page.tsx",
+   "target": "function:src/app/(dashboard)/crypto/page.tsx:CryptoPage",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/page.tsx",
+   "target": "function:src/app/(dashboard)/crypto/page.tsx:CryptoPage",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/page.tsx",
+   "target": "function:src/app/(dashboard)/crypto/page.tsx:AssetAuditLog",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/rebalancing/page.tsx",
+   "target": "function:src/app/(dashboard)/crypto/rebalancing/page.tsx:RebalancingPage",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/crypto/rebalancing/page.tsx",
+   "target": "function:src/app/(dashboard)/crypto/rebalancing/page.tsx:RebalancingPage",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/app/(dashboard)/dashboard/page.tsx",
+   "target": "function:src/app/(dashboard)/dashboard/page.tsx:getNextRenewal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/dashboard/page.tsx",
+   "target": "function:src/app/(dashboard)/dashboard/page.tsx:liveAccountBucket",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/dashboard/page.tsx",
+   "target": "function:src/app/(dashboard)/dashboard/page.tsx:SectionHeader",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/dashboard/page.tsx",
+   "target": "function:src/app/(dashboard)/dashboard/page.tsx:DashboardPage",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1.0
+  },
+  {
+   "source": "file:src/app/(dashboard)/dashboard/page.tsx",
+   "target": "function:src/app/(dashboard)/dashboard/page.tsx:DashboardPage",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:HistoryPage",
+   "target": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:NetworthTab",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:HistoryPage",
+   "target": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:AccountsTab",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:HistoryPage",
+   "target": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:PortfolioTab",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:HistoryPage",
+   "target": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:MonthlyTab",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:HistoryPage",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/analyse/verlauf/page.tsx:HistoryPage",
+   "target": "function:src/lib/settings.ts:getSettings",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:createAsset",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:createAsset",
+   "target": "function:src/lib/crypto/coingecko.ts:getPrices",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:updateAsset",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:deleteAsset",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:updateAssetPrices",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:updateAssetPrices",
+   "target": "function:src/lib/crypto/coingecko.ts:getPrices",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:refreshPrices",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:refreshPrices",
+   "target": "function:src/lib/crypto/coingecko.ts:getPrices",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:getStrategySignals",
+   "target": "function:src/lib/settings.ts:getSettings",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:saveStrategySignals",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:getPortfolioAllocations",
+   "target": "function:src/lib/settings.ts:getSettings",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:savePortfolioAllocations",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:getLastRebalancing",
+   "target": "function:src/lib/settings.ts:getSettings",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:saveCryptoSource",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:getCryptoSource",
+   "target": "function:src/lib/supabase/server.ts:createClient",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:syncFromKraken",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:syncFromKraken",
+   "target": "function:src/lib/kraken/sync.ts:syncKrakenForUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:getDecryptedKey",
+   "target": "function:src/lib/encryption.ts:decrypt",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:getSpotMarginPositions",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:getDecryptedKey",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:getSpotMarginPositions",
+   "target": "function:src/lib/kraken/index.ts:fetchKrakenOpenPositions",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:getSpotMarginPositions",
+   "target": "function:src/lib/kraken/index.ts:fetchKrakenAssetPairs",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:getSpotMarginPositions",
+   "target": "function:src/lib/kraken/index.ts:buildKrakenPriceMap",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:getFuturesPositions",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:getDecryptedKey",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:getFuturesPositions",
+   "target": "function:src/lib/kraken/futures.ts:fetchKrakenFuturesOpenPositions",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:getFuturesPositions",
+   "target": "function:src/lib/crypto/coingecko.ts:getEurUsdRate",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:getKrakenOpenPositions",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:getKrakenOpenPositions",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:getSpotMarginPositions",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:getKrakenOpenPositions",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:getFuturesPositions",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:deletePortfolio",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/actions.ts:markRebalancingDone",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/assets/actions.ts:getCoinCatalog",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/assets/actions.ts:addCoinToCatalog",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/assets/actions.ts:addCoinToCatalog",
+   "target": "function:src/app/(dashboard)/crypto/assets/actions.ts:getCoinCatalog",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/assets/actions.ts:removeCoinFromCatalog",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/assets/actions.ts:removeCoinFromCatalog",
+   "target": "function:src/app/(dashboard)/crypto/assets/actions.ts:getCoinCatalog",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/assets/page.tsx:CryptoAssetsPage",
+   "target": "function:src/app/(dashboard)/crypto/assets/actions.ts:getCoinCatalog",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/page.tsx:CryptoPage",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/page.tsx:CryptoPage",
+   "target": "function:src/lib/settings.ts:getSettings",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/page.tsx:CryptoPage",
+   "target": "function:src/lib/crypto/coingecko.ts:getEurUsdRate",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/page.tsx:CryptoPage",
+   "target": "function:src/lib/crypto/rebalancing.ts:calculateRebalancing",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/rebalancing/page.tsx:RebalancingPage",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/rebalancing/page.tsx:RebalancingPage",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:getStrategySignals",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/rebalancing/page.tsx:RebalancingPage",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:getPortfolioAllocations",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/crypto/rebalancing/page.tsx:RebalancingPage",
+   "target": "function:src/app/(dashboard)/crypto/actions.ts:getLastRebalancing",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/dashboard/page.tsx:DashboardPage",
+   "target": "function:src/lib/supabase/server.ts:getAuthUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/dashboard/page.tsx:DashboardPage",
+   "target": "function:src/lib/settings.ts:getSettings",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/dashboard/page.tsx:DashboardPage",
+   "target": "function:src/lib/crypto/rebalancing.ts:calculateRebalancing",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/dashboard/page.tsx:DashboardPage",
+   "target": "function:src/lib/format.ts:fmtCurrency",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/app/(dashboard)/dashboard/page.tsx:DashboardPage",
+   "target": "function:src/lib/format.ts:fmtDateShort",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  }
+ ]
+}

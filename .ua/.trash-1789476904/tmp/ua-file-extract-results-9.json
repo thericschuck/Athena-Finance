@@ -1,0 +1,3843 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 20,
+  "filesSkipped": [],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 20,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 20,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "src/app/api/bank/sync/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 133,
+      "nonEmptyLines": 120,
+      "functions": [
+        {
+          "name": "POST",
+          "startLine": 32,
+          "endLine": 133,
+          "params": [
+            "request"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "maxDuration",
+          "line": 14,
+          "isDefault": false
+        },
+        {
+          "name": "POST",
+          "line": 32,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "POST",
+          "callee": "getAuthUser",
+          "lineNumber": 33
+        },
+        {
+          "caller": "POST",
+          "callee": "NextResponse.json",
+          "lineNumber": 34
+        },
+        {
+          "caller": "POST",
+          "callee": "isCloudRuntime",
+          "lineNumber": 38
+        },
+        {
+          "caller": "POST",
+          "callee": "NextResponse.json",
+          "lineNumber": 40
+        },
+        {
+          "caller": "POST",
+          "callee": "request.clone().json().catch",
+          "lineNumber": 44
+        },
+        {
+          "caller": "POST",
+          "callee": "request.clone().json",
+          "lineNumber": 44
+        },
+        {
+          "caller": "POST",
+          "callee": "request.clone",
+          "lineNumber": 44
+        },
+        {
+          "caller": "POST",
+          "callee": "triggerCloudBankSync",
+          "lineNumber": 47
+        },
+        {
+          "caller": "POST",
+          "callee": "NextResponse.json",
+          "lineNumber": 52
+        },
+        {
+          "caller": "POST",
+          "callee": "NextResponse.json",
+          "lineNumber": 54
+        },
+        {
+          "caller": "POST",
+          "callee": "NextResponse.json",
+          "lineNumber": 56
+        },
+        {
+          "caller": "POST",
+          "callee": "request.json().catch",
+          "lineNumber": 67
+        },
+        {
+          "caller": "POST",
+          "callee": "request.json",
+          "lineNumber": 67
+        },
+        {
+          "caller": "POST",
+          "callee": "scaFreeStartDate",
+          "lineNumber": 82
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n      .from('categories')\r\n      .select('id, name, type, color, icon, parent_id')\r\n      .eq",
+          "lineNumber": 86
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n      .from('categories')\r\n      .select",
+          "lineNumber": 86
+        },
+        {
+          "caller": "POST",
+          "callee": "supabase\r\n      .from",
+          "lineNumber": 86
+        },
+        {
+          "caller": "POST",
+          "callee": "(supabase as any)\r\n      .from('bank_transactions')\r\n      .select('counterpart_name, category_id')\r\n      .eq('user_id', user.id)\r\n      .not",
+          "lineNumber": 92
+        },
+        {
+          "caller": "POST",
+          "callee": "(supabase as any)\r\n      .from('bank_transactions')\r\n      .select('counterpart_name, category_id')\r\n      .eq",
+          "lineNumber": 92
+        },
+        {
+          "caller": "POST",
+          "callee": "(supabase as any)\r\n      .from('bank_transactions')\r\n      .select",
+          "lineNumber": 92
+        },
+        {
+          "caller": "POST",
+          "callee": "(supabase as any)\r\n      .from",
+          "lineNumber": 92
+        },
+        {
+          "caller": "POST",
+          "callee": "buildLearnedCategoryMap",
+          "lineNumber": 97
+        },
+        {
+          "caller": "POST",
+          "callee": "loadBankClientState",
+          "lineNumber": 102
+        },
+        {
+          "caller": "POST",
+          "callee": "startSync",
+          "lineNumber": 104
+        },
+        {
+          "caller": "POST",
+          "callee": "saveBankClientState",
+          "lineNumber": 107
+        },
+        {
+          "caller": "POST",
+          "callee": "upsertBankTransactions",
+          "lineNumber": 109
+        },
+        {
+          "caller": "POST",
+          "callee": "upsertDepotHoldings",
+          "lineNumber": 110
+        },
+        {
+          "caller": "POST",
+          "callee": "upsertBankBalances",
+          "lineNumber": 114
+        },
+        {
+          "caller": "POST",
+          "callee": "applyLearnedCategoriesToBacklog",
+          "lineNumber": 115
+        },
+        {
+          "caller": "POST",
+          "callee": "NextResponse.json",
+          "lineNumber": 116
+        },
+        {
+          "caller": "POST",
+          "callee": "saveBankClientState",
+          "lineNumber": 124
+        },
+        {
+          "caller": "POST",
+          "callee": "stateFromError",
+          "lineNumber": 124
+        },
+        {
+          "caller": "POST",
+          "callee": "getFinTSErrorDetails",
+          "lineNumber": 126
+        },
+        {
+          "caller": "POST",
+          "callee": "NextResponse.json",
+          "lineNumber": 127
+        }
+      ],
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/bank/transactions/suggest-categories/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 76,
+      "nonEmptyLines": 66,
+      "functions": [
+        {
+          "name": "GET",
+          "startLine": 15,
+          "endLine": 76,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "line": 15,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "GET",
+          "callee": "getAuthUser",
+          "lineNumber": 16
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 17
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('categories')\r\n    .select('id, name, type, color, icon, parent_id')\r\n    .eq",
+          "lineNumber": 19
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('categories')\r\n    .select",
+          "lineNumber": 19
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 19
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 24
+        },
+        {
+          "caller": "GET",
+          "callee": "(categories ?? []).map",
+          "lineNumber": 26
+        },
+        {
+          "caller": "GET",
+          "callee": "(supabase as any)\r\n    .from('bank_transactions')\r\n    .select('id, description, counterpart_name, counterpart_iban, category_id, amount, value_date')\r\n    .eq('user_id', user.id)\r\n    .order('value_date', { ascending: false })\r\n    .limit",
+          "lineNumber": 29
+        },
+        {
+          "caller": "GET",
+          "callee": "(supabase as any)\r\n    .from('bank_transactions')\r\n    .select('id, description, counterpart_name, counterpart_iban, category_id, amount, value_date')\r\n    .eq('user_id', user.id)\r\n    .order",
+          "lineNumber": 29
+        },
+        {
+          "caller": "GET",
+          "callee": "(supabase as any)\r\n    .from('bank_transactions')\r\n    .select('id, description, counterpart_name, counterpart_iban, category_id, amount, value_date')\r\n    .eq",
+          "lineNumber": 29
+        },
+        {
+          "caller": "GET",
+          "callee": "(supabase as any)\r\n    .from('bank_transactions')\r\n    .select",
+          "lineNumber": 29
+        },
+        {
+          "caller": "GET",
+          "callee": "(supabase as any)\r\n    .from",
+          "lineNumber": 29
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 36
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('accounts')\r\n    .select('bank_iban')\r\n    .eq('user_id', user.id)\r\n    .not",
+          "lineNumber": 42
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('accounts')\r\n    .select('bank_iban')\r\n    .eq",
+          "lineNumber": 42
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from('accounts')\r\n    .select",
+          "lineNumber": 42
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 42
+        },
+        {
+          "caller": "normIban",
+          "callee": "iban.replace(/\\s+/g, '').toUpperCase",
+          "lineNumber": 47
+        },
+        {
+          "caller": "normIban",
+          "callee": "iban.replace",
+          "lineNumber": 47
+        },
+        {
+          "caller": "GET",
+          "callee": "(ownAccounts ?? []).map",
+          "lineNumber": 48
+        },
+        {
+          "caller": "GET",
+          "callee": "normIban",
+          "lineNumber": 48
+        },
+        {
+          "caller": "GET",
+          "callee": "buildLearnedCategoryMap",
+          "lineNumber": 53
+        },
+        {
+          "caller": "GET",
+          "callee": "(data ?? []).filter",
+          "lineNumber": 54
+        },
+        {
+          "caller": "GET",
+          "callee": "(data ?? [])\r\n    .filter((tx: { counterpart_iban: string | null }) => !tx.counterpart_iban || !ownIbans.has(normIban(tx.counterpart_iban)))\r\n    .map((tx: { id: string; description: string | null; counterpart_name: string | null; category_id: string | null; amount: number; value_date: string }) => {\r\n      const suggested = suggestCategory(tx.counterpart_name, tx.description, categories ?? [], learnedMap)\r\n      return suggested && suggested.id !== tx.category_id\r\n        ? {\r\n            id: tx.id,\r\n            description: tx.description,\r\n            counterpart_name: tx.counterpart_name,\r\n            amount: tx.amount,\r\n            value_date: tx.value_date,\r\n            current_category: tx.category_id ? categoriesById.get(tx.category_id) ?? null : null,\r\n            suggested_category: suggested,\r\n          }\r\n        : null\r\n    })\r\n    .filter",
+          "lineNumber": 57
+        },
+        {
+          "caller": "GET",
+          "callee": "(data ?? [])\r\n    .filter((tx: { counterpart_iban: string | null }) => !tx.counterpart_iban || !ownIbans.has(normIban(tx.counterpart_iban)))\r\n    .map",
+          "lineNumber": 57
+        },
+        {
+          "caller": "GET",
+          "callee": "(data ?? [])\r\n    .filter",
+          "lineNumber": 57
+        },
+        {
+          "caller": "GET",
+          "callee": "ownIbans.has",
+          "lineNumber": 58
+        },
+        {
+          "caller": "GET",
+          "callee": "normIban",
+          "lineNumber": 58
+        },
+        {
+          "caller": "GET",
+          "callee": "suggestCategory",
+          "lineNumber": 60
+        },
+        {
+          "caller": "GET",
+          "callee": "categoriesById.get",
+          "lineNumber": 68
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 75
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/app/api/cron/bank-sync/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 121,
+      "nonEmptyLines": 107,
+      "functions": [
+        {
+          "name": "adminClient",
+          "startLine": 15,
+          "endLine": 20,
+          "params": []
+        },
+        {
+          "name": "GET",
+          "startLine": 43,
+          "endLine": 121,
+          "params": [
+            "req"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "maxDuration",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "GET",
+          "line": 43,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "adminClient",
+          "callee": "createClient",
+          "lineNumber": 16
+        },
+        {
+          "caller": "GET",
+          "callee": "req.headers.get",
+          "lineNumber": 44
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 46
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 51
+        },
+        {
+          "caller": "GET",
+          "callee": "startDate.setDate",
+          "lineNumber": 55
+        },
+        {
+          "caller": "GET",
+          "callee": "startDate.getDate",
+          "lineNumber": 55
+        },
+        {
+          "caller": "GET",
+          "callee": "adminClient",
+          "lineNumber": 58
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n      .from('categories')\r\n      .select('id, name, type, color, icon, parent_id')\r\n      .eq",
+          "lineNumber": 59
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n      .from('categories')\r\n      .select",
+          "lineNumber": 59
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n      .from",
+          "lineNumber": 59
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n      .from('bank_transactions')\r\n      .select('counterpart_name, category_id')\r\n      .eq('user_id', userId)\r\n      .not",
+          "lineNumber": 64
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n      .from('bank_transactions')\r\n      .select('counterpart_name, category_id')\r\n      .eq",
+          "lineNumber": 64
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n      .from('bank_transactions')\r\n      .select",
+          "lineNumber": 64
+        },
+        {
+          "caller": "GET",
+          "callee": "supabase\r\n      .from",
+          "lineNumber": 64
+        },
+        {
+          "caller": "GET",
+          "callee": "buildLearnedCategoryMap",
+          "lineNumber": 69
+        },
+        {
+          "caller": "GET",
+          "callee": "loadBankClientState",
+          "lineNumber": 71
+        },
+        {
+          "caller": "GET",
+          "callee": "startSync",
+          "lineNumber": 73
+        },
+        {
+          "caller": "GET",
+          "callee": "saveBankClientState",
+          "lineNumber": 77
+        },
+        {
+          "caller": "GET",
+          "callee": "markScaRequired",
+          "lineNumber": 81
+        },
+        {
+          "caller": "GET",
+          "callee": "upsertBankTransactions",
+          "lineNumber": 83
+        },
+        {
+          "caller": "GET",
+          "callee": "upsertDepotHoldings",
+          "lineNumber": 84
+        },
+        {
+          "caller": "GET",
+          "callee": "upsertBankBalances",
+          "lineNumber": 85
+        },
+        {
+          "caller": "GET",
+          "callee": "applyLearnedCategoriesToBacklog",
+          "lineNumber": 86
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 87
+        },
+        {
+          "caller": "GET",
+          "callee": "saveBankClientState",
+          "lineNumber": 95
+        },
+        {
+          "caller": "GET",
+          "callee": "stateFromError",
+          "lineNumber": 95
+        },
+        {
+          "caller": "GET",
+          "callee": "isScaRequiredError",
+          "lineNumber": 100
+        },
+        {
+          "caller": "GET",
+          "callee": "markScaRequired",
+          "lineNumber": 101
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 102
+        },
+        {
+          "caller": "GET",
+          "callee": "getFinTSErrorDetails",
+          "lineNumber": 113
+        },
+        {
+          "caller": "GET",
+          "callee": "NextResponse.json",
+          "lineNumber": 114
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/bank/bank-balance-chart.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 23,
+      "nonEmptyLines": 20,
+      "exports": [
+        {
+          "name": "BankBalanceChart",
+          "line": 17,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/bank/bank-category-chart.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 19,
+      "nonEmptyLines": 16,
+      "exports": [
+        {
+          "name": "BankCategoryChart",
+          "line": 13,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/bank/bank-sync-button.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 115,
+      "nonEmptyLines": 106,
+      "functions": [
+        {
+          "name": "daysUntil",
+          "startLine": 18,
+          "endLine": 20,
+          "params": [
+            "iso"
+          ]
+        },
+        {
+          "name": "BankSyncButton",
+          "startLine": 22,
+          "endLine": 115,
+          "params": [
+            "{ syncStatus, onSync, onSyncFull, onReset, scaStatus }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "BankSyncButton",
+          "line": 22,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "daysUntil",
+          "callee": "Math.round",
+          "lineNumber": 19
+        },
+        {
+          "caller": "daysUntil",
+          "callee": "new Date(iso).getTime",
+          "lineNumber": 19
+        },
+        {
+          "caller": "daysUntil",
+          "callee": "Date.now",
+          "lineNumber": 19
+        },
+        {
+          "caller": "BankSyncButton",
+          "callee": "scaStatus.some",
+          "lineNumber": 27
+        },
+        {
+          "caller": "BankSyncButton",
+          "callee": "scaStatus\r\n    .map(b => b.exemptionExpiresAt)\r\n    .filter((d): d is string => d !== null)\r\n    .sort",
+          "lineNumber": 29
+        },
+        {
+          "caller": "BankSyncButton",
+          "callee": "scaStatus\r\n    .map(b => b.exemptionExpiresAt)\r\n    .filter",
+          "lineNumber": 29
+        },
+        {
+          "caller": "BankSyncButton",
+          "callee": "scaStatus\r\n    .map",
+          "lineNumber": 29
+        },
+        {
+          "caller": "BankSyncButton",
+          "callee": "new Date(nextDue).toLocaleDateString",
+          "lineNumber": 98
+        },
+        {
+          "caller": "BankSyncButton",
+          "callee": "daysUntil",
+          "lineNumber": 98
+        },
+        {
+          "caller": "BankSyncButton",
+          "callee": "syncStatus.warnings.map",
+          "lineNumber": 105
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/bank/bank-sync-panel.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 47,
+      "nonEmptyLines": 42,
+      "functions": [
+        {
+          "name": "BankSyncPanel",
+          "startLine": 21,
+          "endLine": 47,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "BankSyncPanel",
+          "line": 21,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "BankSyncPanel",
+          "callee": "useRouter",
+          "lineNumber": 22
+        },
+        {
+          "caller": "BankSyncPanel",
+          "callee": "useBankData",
+          "lineNumber": 23
+        },
+        {
+          "caller": "BankSyncPanel",
+          "callee": "useEffect",
+          "lineNumber": 25
+        },
+        {
+          "caller": "BankSyncPanel",
+          "callee": "loadScaStatus",
+          "lineNumber": 26
+        },
+        {
+          "caller": "BankSyncPanel",
+          "callee": "useEffect",
+          "lineNumber": 33
+        },
+        {
+          "caller": "BankSyncPanel",
+          "callee": "router.refresh",
+          "lineNumber": 34
+        },
+        {
+          "caller": "BankSyncPanel",
+          "callee": "startSync",
+          "lineNumber": 41
+        },
+        {
+          "caller": "BankSyncPanel",
+          "callee": "startSync",
+          "lineNumber": 42
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/bank/bank-transactions-view.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 337,
+      "nonEmptyLines": 314,
+      "functions": [
+        {
+          "name": "categoryLabel",
+          "startLine": 37,
+          "endLine": 39,
+          "params": [
+            "c"
+          ]
+        },
+        {
+          "name": "CategoryCell",
+          "startLine": 55,
+          "endLine": 123,
+          "params": [
+            "{\r\n  tx, current, categories, onUpdateCategory,\r\n}"
+          ]
+        },
+        {
+          "name": "BankTransactionsView",
+          "startLine": 125,
+          "endLine": 290,
+          "params": [
+            "{ transactions, categories, isLoading, hasLoaded, onFilter, onUpdateCategory, isInternalTransfer }"
+          ]
+        },
+        {
+          "name": "FilterBar",
+          "startLine": 293,
+          "endLine": 337,
+          "params": [
+            "{\r\n  search, setSearch,\r\n  categoryId, setCategoryId,\r\n  categories,\r\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "BankTransactionsView",
+          "line": 125,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "CategoryCell",
+          "callee": "useState",
+          "lineNumber": 63
+        },
+        {
+          "caller": "CategoryCell",
+          "callee": "setEditing",
+          "lineNumber": 73
+        },
+        {
+          "caller": "CategoryCell",
+          "callee": "categoryLabel",
+          "lineNumber": 80
+        },
+        {
+          "caller": "CategoryCell",
+          "callee": "onUpdateCategory",
+          "lineNumber": 90
+        },
+        {
+          "caller": "CategoryCell",
+          "callee": "setEditing",
+          "lineNumber": 91
+        },
+        {
+          "caller": "CategoryCell",
+          "callee": "setEditing",
+          "lineNumber": 95
+        },
+        {
+          "caller": "CategoryCell",
+          "callee": "categoryLabel",
+          "lineNumber": 104
+        },
+        {
+          "caller": "CategoryCell",
+          "callee": "categories.map",
+          "lineNumber": 109
+        },
+        {
+          "caller": "CategoryCell",
+          "callee": "categoryLabel",
+          "lineNumber": 116
+        },
+        {
+          "caller": "BankTransactionsView",
+          "callee": "useSettings",
+          "lineNumber": 126
+        },
+        {
+          "caller": "fmtEur",
+          "callee": "fmtCurrency",
+          "lineNumber": 127
+        },
+        {
+          "caller": "BankTransactionsView",
+          "callee": "useState",
+          "lineNumber": 129
+        },
+        {
+          "caller": "BankTransactionsView",
+          "callee": "useState",
+          "lineNumber": 130
+        },
+        {
+          "caller": "BankTransactionsView",
+          "callee": "useState",
+          "lineNumber": 133
+        },
+        {
+          "caller": "BankTransactionsView",
+          "callee": "categories.map",
+          "lineNumber": 135
+        },
+        {
+          "caller": "BankTransactionsView",
+          "callee": "transactions.slice",
+          "lineNumber": 136
+        },
+        {
+          "caller": "BankTransactionsView",
+          "callee": "useEffect",
+          "lineNumber": 140
+        },
+        {
+          "caller": "BankTransactionsView",
+          "callee": "setTimeout",
+          "lineNumber": 141
+        },
+        {
+          "caller": "BankTransactionsView",
+          "callee": "onFilter",
+          "lineNumber": 142
+        },
+        {
+          "caller": "BankTransactionsView",
+          "callee": "clearTimeout",
+          "lineNumber": 144
+        },
+        {
+          "caller": "BankTransactionsView",
+          "callee": "useEffect",
+          "lineNumber": 150
+        },
+        {
+          "caller": "BankTransactionsView",
+          "callee": "setVisible",
+          "lineNumber": 150
+        },
+        {
+          "caller": "BankTransactionsView",
+          "callee": "shown.map",
+          "lineNumber": 205
+        },
+        {
+          "caller": "BankTransactionsView",
+          "callee": "categoriesById.get",
+          "lineNumber": 208
+        },
+        {
+          "caller": "BankTransactionsView",
+          "callee": "isInternalTransfer",
+          "lineNumber": 209
+        },
+        {
+          "caller": "BankTransactionsView",
+          "callee": "fmtDate",
+          "lineNumber": 217
+        },
+        {
+          "caller": "BankTransactionsView",
+          "callee": "fmtEur",
+          "lineNumber": 261
+        },
+        {
+          "caller": "BankTransactionsView",
+          "callee": "setVisible",
+          "lineNumber": 276
+        },
+        {
+          "caller": "BankTransactionsView",
+          "callee": "Math.min",
+          "lineNumber": 279
+        },
+        {
+          "caller": "FilterBar",
+          "callee": "setSearch",
+          "lineNumber": 309
+        },
+        {
+          "caller": "FilterBar",
+          "callee": "setCategoryId",
+          "lineNumber": 315
+        },
+        {
+          "caller": "FilterBar",
+          "callee": "categories.map",
+          "lineNumber": 321
+        },
+        {
+          "caller": "FilterBar",
+          "callee": "categoryLabel",
+          "lineNumber": 328
+        }
+      ],
+      "metrics": {
+        "importCount": 6,
+        "exportCount": 1,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/bank/bank-trend-chart.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 25,
+      "nonEmptyLines": 22,
+      "exports": [
+        {
+          "name": "BankTrendChart",
+          "line": 19,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/bank/category-suggestions-panel.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 50,
+      "nonEmptyLines": 43,
+      "functions": [
+        {
+          "name": "CategorySuggestionsPanel",
+          "startLine": 24,
+          "endLine": 50,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "CategorySuggestionsPanel",
+          "line": 24,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "CategorySuggestionsPanel",
+          "callee": "useRouter",
+          "lineNumber": 25
+        },
+        {
+          "caller": "CategorySuggestionsPanel",
+          "callee": "useBankData",
+          "lineNumber": 26
+        },
+        {
+          "caller": "CategorySuggestionsPanel",
+          "callee": "useRef",
+          "lineNumber": 27
+        },
+        {
+          "caller": "CategorySuggestionsPanel",
+          "callee": "useEffect",
+          "lineNumber": 29
+        },
+        {
+          "caller": "CategorySuggestionsPanel",
+          "callee": "loadCategories",
+          "lineNumber": 30
+        },
+        {
+          "caller": "CategorySuggestionsPanel",
+          "callee": "useEffect",
+          "lineNumber": 36
+        },
+        {
+          "caller": "CategorySuggestionsPanel",
+          "callee": "clearTimeout",
+          "lineNumber": 37
+        },
+        {
+          "caller": "CategorySuggestionsPanel",
+          "callee": "useCallback",
+          "lineNumber": 40
+        },
+        {
+          "caller": "CategorySuggestionsPanel",
+          "callee": "updateCategory",
+          "lineNumber": 42
+        },
+        {
+          "caller": "CategorySuggestionsPanel",
+          "callee": "clearTimeout",
+          "lineNumber": 43
+        },
+        {
+          "caller": "CategorySuggestionsPanel",
+          "callee": "setTimeout",
+          "lineNumber": 44
+        },
+        {
+          "caller": "CategorySuggestionsPanel",
+          "callee": "router.refresh",
+          "lineNumber": 44
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/bank/category-suggestions.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 299,
+      "nonEmptyLines": 275,
+      "functions": [
+        {
+          "name": "categoryLabel",
+          "startLine": 40,
+          "endLine": 42,
+          "params": [
+            "c"
+          ]
+        },
+        {
+          "name": "groupSuggestions",
+          "startLine": 51,
+          "endLine": 61,
+          "params": [
+            "suggestions",
+            "kind"
+          ]
+        },
+        {
+          "name": "buildGroups",
+          "startLine": 76,
+          "endLine": 84,
+          "params": [
+            "list"
+          ]
+        },
+        {
+          "name": "bisherLabels",
+          "startLine": 87,
+          "endLine": 90,
+          "params": [
+            "g"
+          ]
+        },
+        {
+          "name": "CategorySuggestions",
+          "startLine": 92,
+          "endLine": 299,
+          "params": [
+            "{ categories, onAccept }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "CategorySuggestions",
+          "line": 92,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "groupSuggestions",
+          "callee": "normalizeCounterpart",
+          "lineNumber": 54
+        },
+        {
+          "caller": "groupSuggestions",
+          "callee": "groups.get",
+          "lineNumber": 56
+        },
+        {
+          "caller": "groupSuggestions",
+          "callee": "existing.items.push",
+          "lineNumber": 57
+        },
+        {
+          "caller": "groupSuggestions",
+          "callee": "groups.set",
+          "lineNumber": 58
+        },
+        {
+          "caller": "groupSuggestions",
+          "callee": "[...groups.values()].sort",
+          "lineNumber": 60
+        },
+        {
+          "caller": "groupSuggestions",
+          "callee": "groups.values",
+          "lineNumber": 60
+        },
+        {
+          "caller": "buildGroups",
+          "callee": "(s.current_category ? mit : ohne).push",
+          "lineNumber": 79
+        },
+        {
+          "caller": "buildGroups",
+          "callee": "groupSuggestions",
+          "lineNumber": 81
+        },
+        {
+          "caller": "buildGroups",
+          "callee": "groupSuggestions",
+          "lineNumber": 82
+        },
+        {
+          "caller": "bisherLabels",
+          "callee": "g.items.map(i => i.current_category?.name).filter",
+          "lineNumber": 88
+        },
+        {
+          "caller": "bisherLabels",
+          "callee": "g.items.map",
+          "lineNumber": 88
+        },
+        {
+          "caller": "bisherLabels",
+          "callee": "namen.join",
+          "lineNumber": 89
+        },
+        {
+          "caller": "CategorySuggestions",
+          "callee": "useState",
+          "lineNumber": 93
+        },
+        {
+          "caller": "CategorySuggestions",
+          "callee": "useState",
+          "lineNumber": 94
+        },
+        {
+          "caller": "CategorySuggestions",
+          "callee": "useState",
+          "lineNumber": 95
+        },
+        {
+          "caller": "CategorySuggestions",
+          "callee": "useState",
+          "lineNumber": 96
+        },
+        {
+          "caller": "CategorySuggestions",
+          "callee": "useState",
+          "lineNumber": 99
+        },
+        {
+          "caller": "CategorySuggestions",
+          "callee": "useState",
+          "lineNumber": 100
+        },
+        {
+          "caller": "CategorySuggestions",
+          "callee": "useState",
+          "lineNumber": 101
+        },
+        {
+          "caller": "CategorySuggestions",
+          "callee": "useMemo",
+          "lineNumber": 103
+        },
+        {
+          "caller": "CategorySuggestions",
+          "callee": "buildGroups",
+          "lineNumber": 103
+        },
+        {
+          "caller": "CategorySuggestions",
+          "callee": "useMemo",
+          "lineNumber": 104
+        },
+        {
+          "caller": "CategorySuggestions",
+          "callee": "neue.reduce",
+          "lineNumber": 104
+        },
+        {
+          "caller": "loadSuggestions",
+          "callee": "setIsLoading",
+          "lineNumber": 107
+        },
+        {
+          "caller": "loadSuggestions",
+          "callee": "setError",
+          "lineNumber": 108
+        },
+        {
+          "caller": "loadSuggestions",
+          "callee": "fetch",
+          "lineNumber": 110
+        },
+        {
+          "caller": "loadSuggestions",
+          "callee": "res.json",
+          "lineNumber": 111
+        },
+        {
+          "caller": "loadSuggestions",
+          "callee": "setSuggestions",
+          "lineNumber": 114
+        },
+        {
+          "caller": "loadSuggestions",
+          "callee": "buildGroups",
+          "lineNumber": 115
+        },
+        {
+          "caller": "loadSuggestions",
+          "callee": "setChosen",
+          "lineNumber": 116
+        },
+        {
+          "caller": "loadSuggestions",
+          "callee": "Object.fromEntries",
+          "lineNumber": 116
+        },
+        {
+          "caller": "loadSuggestions",
+          "callee": "[...n, ...a].map",
+          "lineNumber": 117
+        },
+        {
+          "caller": "loadSuggestions",
+          "callee": "setError",
+          "lineNumber": 120
+        },
+        {
+          "caller": "loadSuggestions",
+          "callee": "setIsLoading",
+          "lineNumber": 122
+        },
+        {
+          "caller": "handleOpenChange",
+          "callee": "setOpen",
+          "lineNumber": 127
+        },
+        {
+          "caller": "handleOpenChange",
+          "callee": "loadSuggestions",
+          "lineNumber": 128
+        },
+        {
+          "caller": "accept",
+          "callee": "setBusyKey",
+          "lineNumber": 134
+        },
+        {
+          "caller": "accept",
+          "callee": "resolvedCategoryId",
+          "lineNumber": 136
+        },
+        {
+          "caller": "accept",
+          "callee": "Promise.all",
+          "lineNumber": 137
+        },
+        {
+          "caller": "accept",
+          "callee": "g.items.map",
+          "lineNumber": 137
+        },
+        {
+          "caller": "accept",
+          "callee": "onAccept",
+          "lineNumber": 137
+        },
+        {
+          "caller": "accept",
+          "callee": "g.items.map",
+          "lineNumber": 138
+        },
+        {
+          "caller": "accept",
+          "callee": "setSuggestions",
+          "lineNumber": 139
+        },
+        {
+          "caller": "accept",
+          "callee": "prev.filter",
+          "lineNumber": 139
+        },
+        {
+          "caller": "accept",
+          "callee": "ids.has",
+          "lineNumber": 139
+        },
+        {
+          "caller": "accept",
+          "callee": "setBusyKey",
+          "lineNumber": 141
+        },
+        {
+          "caller": "dismiss",
+          "callee": "g.items.map",
+          "lineNumber": 146
+        },
+        {
+          "caller": "dismiss",
+          "callee": "setSuggestions",
+          "lineNumber": 147
+        },
+        {
+          "caller": "dismiss",
+          "callee": "prev.filter",
+          "lineNumber": 147
+        },
+        {
+          "caller": "dismiss",
+          "callee": "ids.has",
+          "lineNumber": 147
+        },
+        {
+          "caller": "acceptAllNew",
+          "callee": "setIsApplyingAll",
+          "lineNumber": 153
+        },
+        {
+          "caller": "acceptAllNew",
+          "callee": "Promise.all",
+          "lineNumber": 155
+        },
+        {
+          "caller": "acceptAllNew",
+          "callee": "neue.flatMap",
+          "lineNumber": 156
+        },
+        {
+          "caller": "acceptAllNew",
+          "callee": "resolvedCategoryId",
+          "lineNumber": 157
+        },
+        {
+          "caller": "acceptAllNew",
+          "callee": "g.items.map",
+          "lineNumber": 158
+        },
+        {
+          "caller": "acceptAllNew",
+          "callee": "onAccept",
+          "lineNumber": 158
+        },
+        {
+          "caller": "acceptAllNew",
+          "callee": "neue.flatMap",
+          "lineNumber": 161
+        },
+        {
+          "caller": "acceptAllNew",
+          "callee": "g.items.map",
+          "lineNumber": 161
+        },
+        {
+          "caller": "acceptAllNew",
+          "callee": "setSuggestions",
+          "lineNumber": 162
+        },
+        {
+          "caller": "acceptAllNew",
+          "callee": "prev.filter",
+          "lineNumber": 162
+        },
+        {
+          "caller": "acceptAllNew",
+          "callee": "ids.has",
+          "lineNumber": 162
+        },
+        {
+          "caller": "acceptAllNew",
+          "callee": "setIsApplyingAll",
+          "lineNumber": 164
+        },
+        {
+          "caller": "CategorySuggestions",
+          "callee": "handleOpenChange",
+          "lineNumber": 170
+        },
+        {
+          "caller": "CategorySuggestions",
+          "callee": "[...neue, ...aenderungen].map",
+          "lineNumber": 209
+        },
+        {
+          "caller": "CategorySuggestions",
+          "callee": "bisherLabels",
+          "lineNumber": 233
+        },
+        {
+          "caller": "CategorySuggestions",
+          "callee": "resolvedCategoryId",
+          "lineNumber": 237
+        },
+        {
+          "caller": "CategorySuggestions",
+          "callee": "setChosen",
+          "lineNumber": 238
+        },
+        {
+          "caller": "CategorySuggestions",
+          "callee": "categories.map",
+          "lineNumber": 244
+        },
+        {
+          "caller": "CategorySuggestions",
+          "callee": "categoryLabel",
+          "lineNumber": 248
+        },
+        {
+          "caller": "CategorySuggestions",
+          "callee": "dismiss",
+          "lineNumber": 259
+        },
+        {
+          "caller": "CategorySuggestions",
+          "callee": "accept",
+          "lineNumber": 269
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 1,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/bank/synced-holdings-card.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 80,
+      "nonEmptyLines": 73,
+      "functions": [
+        {
+          "name": "SyncedHoldingsCard",
+          "startLine": 18,
+          "endLine": 80,
+          "params": [
+            "{ holdings }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "SyncedHoldingsCard",
+          "line": 18,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "SyncedHoldingsCard",
+          "callee": "useSettings",
+          "lineNumber": 19
+        },
+        {
+          "caller": "fmtEur",
+          "callee": "fmtCurrency",
+          "lineNumber": 20
+        },
+        {
+          "caller": "SyncedHoldingsCard",
+          "callee": "holdings.reduce",
+          "lineNumber": 24
+        },
+        {
+          "caller": "SyncedHoldingsCard",
+          "callee": "(acc[key] ??= []).push",
+          "lineNumber": 26
+        },
+        {
+          "caller": "SyncedHoldingsCard",
+          "callee": "Object.entries(byAccount).map",
+          "lineNumber": 37
+        },
+        {
+          "caller": "SyncedHoldingsCard",
+          "callee": "Object.entries",
+          "lineNumber": 37
+        },
+        {
+          "caller": "SyncedHoldingsCard",
+          "callee": "rows.reduce",
+          "lineNumber": 38
+        },
+        {
+          "caller": "SyncedHoldingsCard",
+          "callee": "fmtEur",
+          "lineNumber": 48
+        },
+        {
+          "caller": "SyncedHoldingsCard",
+          "callee": "rows.map",
+          "lineNumber": 51
+        },
+        {
+          "caller": "SyncedHoldingsCard",
+          "callee": "fmtEur",
+          "lineNumber": 61
+        },
+        {
+          "caller": "SyncedHoldingsCard",
+          "callee": "fmtEur",
+          "lineNumber": 64
+        },
+        {
+          "caller": "SyncedHoldingsCard",
+          "callee": "fmtDate",
+          "lineNumber": 72
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/bank/synced-holdings-section.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 29,
+      "nonEmptyLines": 25,
+      "functions": [
+        {
+          "name": "SyncedHoldingsSection",
+          "startLine": 19,
+          "endLine": 29,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "SyncedHoldingsSection",
+          "line": 19,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "SyncedHoldingsSection",
+          "callee": "useBankData",
+          "lineNumber": 20
+        },
+        {
+          "caller": "SyncedHoldingsSection",
+          "callee": "useEffect",
+          "lineNumber": 22
+        },
+        {
+          "caller": "SyncedHoldingsSection",
+          "callee": "loadHoldings",
+          "lineNumber": 23
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/ui/skeleton.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 257,
+      "nonEmptyLines": 239,
+      "functions": [
+        {
+          "name": "Skeleton",
+          "startLine": 8,
+          "endLine": 10,
+          "params": [
+            "{ className, ...props }"
+          ]
+        },
+        {
+          "name": "SkeletonText",
+          "startLine": 13,
+          "endLine": 22,
+          "params": [
+            "{ lines = 3, className }"
+          ]
+        },
+        {
+          "name": "SkeletonChart",
+          "startLine": 52,
+          "endLine": 75,
+          "params": [
+            "{\r\n  variant = 'bars',\r\n  height = 220,\r\n  title = true,\r\n  legend = false,\r\n  className,\r\n}"
+          ]
+        },
+        {
+          "name": "SkeletonChartBody",
+          "startLine": 78,
+          "endLine": 143,
+          "params": [
+            "{\r\n  variant = 'bars',\r\n  height = 220,\r\n}"
+          ]
+        },
+        {
+          "name": "SkeletonStatCards",
+          "startLine": 148,
+          "endLine": 166,
+          "params": [
+            "{\r\n  count = 3,\r\n  className,\r\n}"
+          ]
+        },
+        {
+          "name": "SkeletonTable",
+          "startLine": 172,
+          "endLine": 208,
+          "params": [
+            "{\r\n  rows = 8,\r\n  cols = [64, 96, 128, 80, 64],\r\n  className,\r\n}"
+          ]
+        },
+        {
+          "name": "SkeletonPageHeader",
+          "startLine": 211,
+          "endLine": 225,
+          "params": [
+            "{ actions = 1 }"
+          ]
+        },
+        {
+          "name": "SkeletonCardList",
+          "startLine": 228,
+          "endLine": 243,
+          "params": [
+            "{ rows = 5, className }"
+          ]
+        },
+        {
+          "name": "SkeletonToolbar",
+          "startLine": 246,
+          "endLine": 257,
+          "params": [
+            "{ pills = 4 }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "Skeleton",
+          "line": 8,
+          "isDefault": false
+        },
+        {
+          "name": "SkeletonText",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "SkeletonChart",
+          "line": 52,
+          "isDefault": false
+        },
+        {
+          "name": "SkeletonChartBody",
+          "line": 78,
+          "isDefault": false
+        },
+        {
+          "name": "SkeletonStatCards",
+          "line": 148,
+          "isDefault": false
+        },
+        {
+          "name": "SkeletonTable",
+          "line": 172,
+          "isDefault": false
+        },
+        {
+          "name": "SkeletonPageHeader",
+          "line": 211,
+          "isDefault": false
+        },
+        {
+          "name": "SkeletonCardList",
+          "line": 228,
+          "isDefault": false
+        },
+        {
+          "name": "SkeletonToolbar",
+          "line": 246,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "Skeleton",
+          "callee": "cn",
+          "lineNumber": 9
+        },
+        {
+          "caller": "SkeletonText",
+          "callee": "cn",
+          "lineNumber": 16
+        },
+        {
+          "caller": "SkeletonText",
+          "callee": "Array.from({ length: lines }).map",
+          "lineNumber": 17
+        },
+        {
+          "caller": "SkeletonText",
+          "callee": "Array.from",
+          "lineNumber": 17
+        },
+        {
+          "caller": "SkeletonChart",
+          "callee": "cn",
+          "lineNumber": 60
+        },
+        {
+          "caller": "SkeletonChartBody",
+          "callee": "Math.min",
+          "lineNumber": 86
+        },
+        {
+          "caller": "SkeletonChartBody",
+          "callee": "widths.map",
+          "lineNumber": 102
+        },
+        {
+          "caller": "SkeletonChartBody",
+          "callee": "Array.from({ length: 4 }).map",
+          "lineNumber": 117
+        },
+        {
+          "caller": "SkeletonChartBody",
+          "callee": "Array.from",
+          "lineNumber": 117
+        },
+        {
+          "caller": "SkeletonChartBody",
+          "callee": "Array.from({ length: 4 }).map",
+          "lineNumber": 132
+        },
+        {
+          "caller": "SkeletonChartBody",
+          "callee": "Array.from",
+          "lineNumber": 132
+        },
+        {
+          "caller": "SkeletonChartBody",
+          "callee": "BAR_HEIGHTS.map",
+          "lineNumber": 137
+        },
+        {
+          "caller": "SkeletonStatCards",
+          "callee": "cn",
+          "lineNumber": 156
+        },
+        {
+          "caller": "SkeletonStatCards",
+          "callee": "Array.from({ length: count }).map",
+          "lineNumber": 157
+        },
+        {
+          "caller": "SkeletonStatCards",
+          "callee": "Array.from",
+          "lineNumber": 157
+        },
+        {
+          "caller": "SkeletonTable",
+          "callee": "Math.max",
+          "lineNumber": 181
+        },
+        {
+          "caller": "SkeletonTable",
+          "callee": "cn",
+          "lineNumber": 183
+        },
+        {
+          "caller": "SkeletonTable",
+          "callee": "cols.map",
+          "lineNumber": 185
+        },
+        {
+          "caller": "SkeletonTable",
+          "callee": "cn",
+          "lineNumber": 188
+        },
+        {
+          "caller": "SkeletonTable",
+          "callee": "Array.from({ length: rows }).map",
+          "lineNumber": 194
+        },
+        {
+          "caller": "SkeletonTable",
+          "callee": "Array.from",
+          "lineNumber": 194
+        },
+        {
+          "caller": "SkeletonTable",
+          "callee": "cols.map",
+          "lineNumber": 196
+        },
+        {
+          "caller": "SkeletonTable",
+          "callee": "cn",
+          "lineNumber": 199
+        },
+        {
+          "caller": "SkeletonPageHeader",
+          "callee": "Array.from({ length: actions }).map",
+          "lineNumber": 219
+        },
+        {
+          "caller": "SkeletonPageHeader",
+          "callee": "Array.from",
+          "lineNumber": 219
+        },
+        {
+          "caller": "SkeletonCardList",
+          "callee": "cn",
+          "lineNumber": 230
+        },
+        {
+          "caller": "SkeletonCardList",
+          "callee": "Array.from({ length: rows }).map",
+          "lineNumber": 231
+        },
+        {
+          "caller": "SkeletonCardList",
+          "callee": "Array.from",
+          "lineNumber": 231
+        },
+        {
+          "caller": "SkeletonToolbar",
+          "callee": "Array.from({ length: pills }).map",
+          "lineNumber": 251
+        },
+        {
+          "caller": "SkeletonToolbar",
+          "callee": "Array.from",
+          "lineNumber": 251
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 9,
+        "functionCount": 9,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/fints/categorize.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 223,
+      "nonEmptyLines": 213,
+      "functions": [
+        {
+          "name": "pickCategoryByName",
+          "startLine": 147,
+          "endLine": 151,
+          "params": [
+            "name",
+            "categories"
+          ]
+        },
+        {
+          "name": "normalizeCounterpart",
+          "startLine": 154,
+          "endLine": 156,
+          "params": [
+            "name"
+          ]
+        },
+        {
+          "name": "buildLearnedCategoryMap",
+          "startLine": 167,
+          "endLine": 190,
+          "params": [
+            "rows"
+          ]
+        },
+        {
+          "name": "suggestCategory",
+          "startLine": 198,
+          "endLine": 223,
+          "params": [
+            "counterpartName",
+            "description",
+            "categories",
+            "learnedMap"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "normalizeCounterpart",
+          "line": 154,
+          "isDefault": false
+        },
+        {
+          "name": "buildLearnedCategoryMap",
+          "line": 167,
+          "isDefault": false
+        },
+        {
+          "name": "suggestCategory",
+          "line": 198,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "pickCategoryByName",
+          "callee": "categories.filter",
+          "lineNumber": 148
+        },
+        {
+          "caller": "pickCategoryByName",
+          "callee": "c.name.toLowerCase",
+          "lineNumber": 148
+        },
+        {
+          "caller": "pickCategoryByName",
+          "callee": "name.toLowerCase",
+          "lineNumber": 148
+        },
+        {
+          "caller": "pickCategoryByName",
+          "callee": "matches.find",
+          "lineNumber": 150
+        },
+        {
+          "caller": "normalizeCounterpart",
+          "callee": "name.trim().toLowerCase().replace",
+          "lineNumber": 155
+        },
+        {
+          "caller": "normalizeCounterpart",
+          "callee": "name.trim().toLowerCase",
+          "lineNumber": 155
+        },
+        {
+          "caller": "normalizeCounterpart",
+          "callee": "name.trim",
+          "lineNumber": 155
+        },
+        {
+          "caller": "buildLearnedCategoryMap",
+          "callee": "normalizeCounterpart",
+          "lineNumber": 173
+        },
+        {
+          "caller": "buildLearnedCategoryMap",
+          "callee": "counts.get",
+          "lineNumber": 175
+        },
+        {
+          "caller": "buildLearnedCategoryMap",
+          "callee": "perCategory.set",
+          "lineNumber": 176
+        },
+        {
+          "caller": "buildLearnedCategoryMap",
+          "callee": "perCategory.get",
+          "lineNumber": 176
+        },
+        {
+          "caller": "buildLearnedCategoryMap",
+          "callee": "counts.set",
+          "lineNumber": 177
+        },
+        {
+          "caller": "buildLearnedCategoryMap",
+          "callee": "learned.set",
+          "lineNumber": 187
+        },
+        {
+          "caller": "suggestCategory",
+          "callee": "learnedMap.get",
+          "lineNumber": 205
+        },
+        {
+          "caller": "suggestCategory",
+          "callee": "normalizeCounterpart",
+          "lineNumber": 205
+        },
+        {
+          "caller": "suggestCategory",
+          "callee": "categories.find",
+          "lineNumber": 207
+        },
+        {
+          "caller": "suggestCategory",
+          "callee": "`${counterpartName ?? ''} ${description ?? ''}`.toLowerCase",
+          "lineNumber": 212
+        },
+        {
+          "caller": "suggestCategory",
+          "callee": "text.trim",
+          "lineNumber": 213
+        },
+        {
+          "caller": "suggestCategory",
+          "callee": "rule.patterns.some",
+          "lineNumber": 216
+        },
+        {
+          "caller": "suggestCategory",
+          "callee": "p.test",
+          "lineNumber": 216
+        },
+        {
+          "caller": "suggestCategory",
+          "callee": "pickCategoryByName",
+          "lineNumber": 218
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 3,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/fints/index.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 676,
+      "nonEmptyLines": 609,
+      "functions": [
+        {
+          "name": "getFinTSErrorDetails",
+          "startLine": 35,
+          "endLine": 38,
+          "params": [
+            "err"
+          ]
+        },
+        {
+          "name": "scaFreeStartDate",
+          "startLine": 142,
+          "endLine": 146,
+          "params": []
+        },
+        {
+          "name": "buildExternalId",
+          "startLine": 156,
+          "endLine": 163,
+          "params": [
+            "iban",
+            "bankReference",
+            "valueDate",
+            "amount",
+            "description"
+          ]
+        },
+        {
+          "name": "mapAccount",
+          "startLine": 165,
+          "endLine": 174,
+          "params": [
+            "acc"
+          ]
+        },
+        {
+          "name": "buildHoldingExternalId",
+          "startLine": 176,
+          "endLine": 178,
+          "params": [
+            "accountNumber",
+            "isin"
+          ]
+        },
+        {
+          "name": "mapHolding",
+          "startLine": 180,
+          "endLine": 198,
+          "params": [
+            "h"
+          ]
+        },
+        {
+          "name": "mapTransaction",
+          "startLine": 205,
+          "endLine": 234,
+          "params": [
+            "tx",
+            "categories",
+            "learnedMap"
+          ]
+        },
+        {
+          "name": "fetchBalances",
+          "startLine": 242,
+          "endLine": 258,
+          "params": []
+        },
+        {
+          "name": "startSync",
+          "startLine": 265,
+          "endLine": 299,
+          "params": [
+            "startDate",
+            "endDate",
+            "categories",
+            "learnedMap",
+            "options"
+          ]
+        },
+        {
+          "name": "mapBalances",
+          "startLine": 308,
+          "endLine": 323,
+          "params": [
+            "balances",
+            "accounts"
+          ]
+        },
+        {
+          "name": "upsertBankBalances",
+          "startLine": 330,
+          "endLine": 356,
+          "params": [
+            "supabase",
+            "userId",
+            "balances"
+          ]
+        },
+        {
+          "name": "isScaRequiredError",
+          "startLine": 362,
+          "endLine": 364,
+          "params": [
+            "err"
+          ]
+        },
+        {
+          "name": "stateFromError",
+          "startLine": 367,
+          "endLine": 370,
+          "params": [
+            "err"
+          ]
+        },
+        {
+          "name": "upsertBankTransactions",
+          "startLine": 377,
+          "endLine": 526,
+          "params": [
+            "supabase",
+            "userId",
+            "transactions"
+          ]
+        },
+        {
+          "name": "applyLearnedCategoriesToBacklog",
+          "startLine": 538,
+          "endLine": 577,
+          "params": [
+            "supabase",
+            "userId"
+          ]
+        },
+        {
+          "name": "upsertDepotHoldings",
+          "startLine": 586,
+          "endLine": 617,
+          "params": [
+            "supabase",
+            "userId",
+            "holdings"
+          ]
+        },
+        {
+          "name": "isCloudRuntime",
+          "startLine": 637,
+          "endLine": 639,
+          "params": []
+        },
+        {
+          "name": "triggerCloudBankSync",
+          "startLine": 651,
+          "endLine": 676,
+          "params": [
+            "origin",
+            "opts"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "getFinTSErrorDetails",
+          "line": 35,
+          "isDefault": false
+        },
+        {
+          "name": "SCA_FREE_LOOKBACK_DAYS",
+          "line": 139,
+          "isDefault": false
+        },
+        {
+          "name": "scaFreeStartDate",
+          "line": 142,
+          "isDefault": false
+        },
+        {
+          "name": "fetchBalances",
+          "line": 242,
+          "isDefault": false
+        },
+        {
+          "name": "startSync",
+          "line": 265,
+          "isDefault": false
+        },
+        {
+          "name": "upsertBankBalances",
+          "line": 330,
+          "isDefault": false
+        },
+        {
+          "name": "isScaRequiredError",
+          "line": 362,
+          "isDefault": false
+        },
+        {
+          "name": "stateFromError",
+          "line": 367,
+          "isDefault": false
+        },
+        {
+          "name": "upsertBankTransactions",
+          "line": 377,
+          "isDefault": false
+        },
+        {
+          "name": "applyLearnedCategoriesToBacklog",
+          "line": 538,
+          "isDefault": false
+        },
+        {
+          "name": "upsertDepotHoldings",
+          "line": 586,
+          "isDefault": false
+        },
+        {
+          "name": "isCloudRuntime",
+          "line": 637,
+          "isDefault": false
+        },
+        {
+          "name": "triggerCloudBankSync",
+          "line": 651,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getFinTSErrorDetails",
+          "callee": "String",
+          "lineNumber": 36
+        },
+        {
+          "caller": "scaFreeStartDate",
+          "callee": "d.setDate",
+          "lineNumber": 144
+        },
+        {
+          "caller": "scaFreeStartDate",
+          "callee": "d.getDate",
+          "lineNumber": 144
+        },
+        {
+          "caller": "buildExternalId",
+          "callee": "description.substring",
+          "lineNumber": 161
+        },
+        {
+          "caller": "buildExternalId",
+          "callee": "Buffer.from(raw).toString",
+          "lineNumber": 162
+        },
+        {
+          "caller": "buildExternalId",
+          "callee": "Buffer.from",
+          "lineNumber": 162
+        },
+        {
+          "caller": "buildHoldingExternalId",
+          "callee": "Buffer.from(`${accountNumber}|${isin}`).toString",
+          "lineNumber": 177
+        },
+        {
+          "caller": "buildHoldingExternalId",
+          "callee": "Buffer.from",
+          "lineNumber": 177
+        },
+        {
+          "caller": "mapHolding",
+          "callee": "buildHoldingExternalId",
+          "lineNumber": 196
+        },
+        {
+          "caller": "mapTransaction",
+          "callee": "suggestCategory",
+          "lineNumber": 229
+        },
+        {
+          "caller": "mapTransaction",
+          "callee": "buildExternalId",
+          "lineNumber": 232
+        },
+        {
+          "caller": "fetchBalances",
+          "callee": "runSidecar",
+          "lineNumber": 243
+        },
+        {
+          "caller": "fetchBalances",
+          "callee": "result.balances\r\n    .filter(b => b.iban)\r\n    .map",
+          "lineNumber": 244
+        },
+        {
+          "caller": "fetchBalances",
+          "callee": "result.balances\r\n    .filter",
+          "lineNumber": 244
+        },
+        {
+          "caller": "fetchBalances",
+          "callee": "result.accounts.find",
+          "lineNumber": 247
+        },
+        {
+          "caller": "startSync",
+          "callee": "runSidecar",
+          "lineNumber": 275
+        },
+        {
+          "caller": "startSync",
+          "callee": "result.transactions\r\n    .map(tx => mapTransaction(tx, categories, learnedMap))\r\n    .filter",
+          "lineNumber": 282
+        },
+        {
+          "caller": "startSync",
+          "callee": "result.transactions\r\n    .map",
+          "lineNumber": 282
+        },
+        {
+          "caller": "startSync",
+          "callee": "mapTransaction",
+          "lineNumber": 283
+        },
+        {
+          "caller": "startSync",
+          "callee": "console.warn",
+          "lineNumber": 287
+        },
+        {
+          "caller": "startSync",
+          "callee": "result.accounts.map",
+          "lineNumber": 291
+        },
+        {
+          "caller": "startSync",
+          "callee": "result.holdings.map(mapHolding).filter",
+          "lineNumber": 293
+        },
+        {
+          "caller": "startSync",
+          "callee": "result.holdings.map",
+          "lineNumber": 293
+        },
+        {
+          "caller": "startSync",
+          "callee": "mapBalances",
+          "lineNumber": 294
+        },
+        {
+          "caller": "mapBalances",
+          "callee": "balances\r\n    .filter(b => b.iban && b.bookedBalance != null)\r\n    .map",
+          "lineNumber": 309
+        },
+        {
+          "caller": "mapBalances",
+          "callee": "balances\r\n    .filter",
+          "lineNumber": 309
+        },
+        {
+          "caller": "mapBalances",
+          "callee": "accounts.find",
+          "lineNumber": 312
+        },
+        {
+          "caller": "upsertBankBalances",
+          "callee": "balances.map",
+          "lineNumber": 338
+        },
+        {
+          "caller": "upsertBankBalances",
+          "callee": "new Date().toISOString",
+          "lineNumber": 347
+        },
+        {
+          "caller": "upsertBankBalances",
+          "callee": "supabase\r\n    .from('bank_balance')\r\n    .upsert",
+          "lineNumber": 350
+        },
+        {
+          "caller": "upsertBankBalances",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 350
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .select('id, account_iban, value_date, amount, external_id, bank_reference, description, raw_description')\r\n    .eq",
+          "lineNumber": 401
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .select",
+          "lineNumber": 401
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 401
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "existing.map(r => r.external_id).filter",
+          "lineNumber": 419
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "existing.map",
+          "lineNumber": 419
+        },
+        {
+          "caller": "descKey",
+          "callee": "(text ?? '').toLowerCase().replace(/\\s+/g, ' ').trim().slice",
+          "lineNumber": 427
+        },
+        {
+          "caller": "descKey",
+          "callee": "(text ?? '').toLowerCase().replace(/\\s+/g, ' ').trim",
+          "lineNumber": 427
+        },
+        {
+          "caller": "descKey",
+          "callee": "(text ?? '').toLowerCase().replace",
+          "lineNumber": 427
+        },
+        {
+          "caller": "descKey",
+          "callee": "(text ?? '').toLowerCase",
+          "lineNumber": 427
+        },
+        {
+          "caller": "push",
+          "callee": "map.get",
+          "lineNumber": 434
+        },
+        {
+          "caller": "push",
+          "callee": "ids.push",
+          "lineNumber": 435
+        },
+        {
+          "caller": "push",
+          "callee": "map.set",
+          "lineNumber": 436
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "coarseKey",
+          "lineNumber": 440
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "push",
+          "lineNumber": 441
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "push",
+          "lineNumber": 442
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "descKey",
+          "lineNumber": 442
+        },
+        {
+          "caller": "available",
+          "callee": "(ids ?? []).filter",
+          "lineNumber": 446
+        },
+        {
+          "caller": "available",
+          "callee": "consumed.has",
+          "lineNumber": 446
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "toInsert.push",
+          "lineNumber": 453
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "coarseKey",
+          "lineNumber": 455
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "descKey",
+          "lineNumber": 456
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "available",
+          "lineNumber": 459
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "legacyByFine.get",
+          "lineNumber": 459
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "available",
+          "lineNumber": 460
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "legacyByCoarse.get",
+          "lineNumber": 460
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "toInsert.push",
+          "lineNumber": 462
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "consumed.add",
+          "lineNumber": 464
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "takenExternalIds.has",
+          "lineNumber": 466
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n        .from('bank_transactions')\r\n        .delete()\r\n        .eq",
+          "lineNumber": 471
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n        .from('bank_transactions')\r\n        .delete",
+          "lineNumber": 471
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n        .from",
+          "lineNumber": 471
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n        .from('bank_transactions')\r\n        .update({\r\n          bank_reference:  tx.bankReference,\r\n          external_id:     tx.externalId,\r\n          description:     tx.description,\r\n          raw_description: tx.rawDescription,\r\n          entry_date:      tx.entryDate,\r\n          bank_label:      tx.bankLabel,\r\n        })\r\n        .eq",
+          "lineNumber": 478
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n        .from('bank_transactions')\r\n        .update",
+          "lineNumber": 478
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n        .from",
+          "lineNumber": 478
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "takenExternalIds.add",
+          "lineNumber": 490
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "toInsert.map",
+          "lineNumber": 497
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .upsert(rows, { onConflict: 'user_id,external_id', ignoreDuplicates: true })\r\n    .select",
+          "lineNumber": 516
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .upsert",
+          "lineNumber": 516
+        },
+        {
+          "caller": "upsertBankTransactions",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 516
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .select('counterpart_name, category_id')\r\n    .eq('user_id', userId)\r\n    .not",
+          "lineNumber": 543
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .select('counterpart_name, category_id')\r\n    .eq",
+          "lineNumber": 543
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .select",
+          "lineNumber": 543
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 543
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "buildLearnedCategoryMap",
+          "lineNumber": 549
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .select('id, counterpart_name')\r\n    .eq('user_id', userId)\r\n    .is('category_id', null)\r\n    .not",
+          "lineNumber": 552
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .select('id, counterpart_name')\r\n    .eq('user_id', userId)\r\n    .is",
+          "lineNumber": 552
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .select('id, counterpart_name')\r\n    .eq",
+          "lineNumber": 552
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n    .from('bank_transactions')\r\n    .select",
+          "lineNumber": 552
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 552
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "learnedMap.get",
+          "lineNumber": 561
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "normalizeCounterpart",
+          "lineNumber": 561
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "idsByCategory.get",
+          "lineNumber": 563
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "ids.push",
+          "lineNumber": 564
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "idsByCategory.set",
+          "lineNumber": 565
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n      .from('bank_transactions')\r\n      .update({ category_id: categoryId })\r\n      .in",
+          "lineNumber": 570
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n      .from('bank_transactions')\r\n      .update",
+          "lineNumber": 570
+        },
+        {
+          "caller": "applyLearnedCategoriesToBacklog",
+          "callee": "supabase\r\n      .from",
+          "lineNumber": 570
+        },
+        {
+          "caller": "upsertDepotHoldings",
+          "callee": "holdings.map",
+          "lineNumber": 594
+        },
+        {
+          "caller": "upsertDepotHoldings",
+          "callee": "new Date().toISOString",
+          "lineNumber": 608
+        },
+        {
+          "caller": "upsertDepotHoldings",
+          "callee": "supabase\r\n    .from('depot_holdings')\r\n    .upsert",
+          "lineNumber": 611
+        },
+        {
+          "caller": "upsertDepotHoldings",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 611
+        },
+        {
+          "caller": "triggerCloudBankSync",
+          "callee": "url.searchParams.set",
+          "lineNumber": 656
+        },
+        {
+          "caller": "triggerCloudBankSync",
+          "callee": "url.searchParams.set",
+          "lineNumber": 657
+        },
+        {
+          "caller": "triggerCloudBankSync",
+          "callee": "fetch",
+          "lineNumber": 659
+        },
+        {
+          "caller": "triggerCloudBankSync",
+          "callee": "url.toString",
+          "lineNumber": 659
+        },
+        {
+          "caller": "triggerCloudBankSync",
+          "callee": "res.json().catch",
+          "lineNumber": 662
+        },
+        {
+          "caller": "triggerCloudBankSync",
+          "callee": "res.json",
+          "lineNumber": 662
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 13,
+        "functionCount": 18,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/fints/sidecar.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 279,
+      "nonEmptyLines": 250,
+      "functions": [
+        {
+          "name": "resolvePythonExecutable",
+          "startLine": 132,
+          "endLine": 142,
+          "params": []
+        },
+        {
+          "name": "scriptPath",
+          "startLine": 144,
+          "endLine": 146,
+          "params": []
+        },
+        {
+          "name": "runSidecar",
+          "startLine": 151,
+          "endLine": 261,
+          "params": [
+            "opts"
+          ]
+        },
+        {
+          "name": "parsePayload",
+          "startLine": 267,
+          "endLine": 279,
+          "params": [
+            "stdout"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "runSidecar",
+          "line": 151,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "resolvePythonExecutable",
+          "callee": "process.env.FINTS_PYTHON?.trim",
+          "lineNumber": 133
+        },
+        {
+          "caller": "resolvePythonExecutable",
+          "callee": "process.env.FINTS_PYTHON.trim",
+          "lineNumber": 133
+        },
+        {
+          "caller": "resolvePythonExecutable",
+          "callee": "path.join",
+          "lineNumber": 135
+        },
+        {
+          "caller": "resolvePythonExecutable",
+          "callee": "path.join",
+          "lineNumber": 136
+        },
+        {
+          "caller": "resolvePythonExecutable",
+          "callee": "fs.existsSync",
+          "lineNumber": 137
+        },
+        {
+          "caller": "resolvePythonExecutable",
+          "callee": "fs.existsSync",
+          "lineNumber": 138
+        },
+        {
+          "caller": "scriptPath",
+          "callee": "path.join",
+          "lineNumber": 145
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "resolvePythonExecutable",
+          "lineNumber": 152
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "scriptPath",
+          "lineNumber": 153
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "fs.existsSync",
+          "lineNumber": 155
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "path.join",
+          "lineNumber": 162
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "fs.mkdtempSync",
+          "lineNumber": 163
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "path.join",
+          "lineNumber": 163
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "os.tmpdir",
+          "lineNumber": 163
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "fs.writeFileSync",
+          "lineNumber": 167
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "JSON.stringify",
+          "lineNumber": 167
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "console.warn",
+          "lineNumber": 170
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "args.push",
+          "lineNumber": 174
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "opts.startDate.toISOString",
+          "lineNumber": 174
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "args.push",
+          "lineNumber": 175
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "opts.endDate.toISOString",
+          "lineNumber": 175
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "args.push",
+          "lineNumber": 176
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "args.push",
+          "lineNumber": 177
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "args.push",
+          "lineNumber": 178
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "args.push",
+          "lineNumber": 179
+        },
+        {
+          "caller": "readAndCleanupState",
+          "callee": "fs.readFileSync",
+          "lineNumber": 185
+        },
+        {
+          "caller": "readAndCleanupState",
+          "callee": "JSON.parse",
+          "lineNumber": 186
+        },
+        {
+          "caller": "readAndCleanupState",
+          "callee": "fs.rmSync",
+          "lineNumber": 192
+        },
+        {
+          "caller": "readAndCleanupState",
+          "callee": "path.dirname",
+          "lineNumber": 192
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "spawn",
+          "lineNumber": 198
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "setTimeout",
+          "lineNumber": 208
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "child.kill",
+          "lineNumber": 211
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "readAndCleanupState",
+          "lineNumber": 212
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "reject",
+          "lineNumber": 213
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "child.stdout.on",
+          "lineNumber": 216
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "chunk.toString",
+          "lineNumber": 216
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "child.stderr.on",
+          "lineNumber": 217
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "chunk.toString",
+          "lineNumber": 218
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "process.stderr.write",
+          "lineNumber": 221
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "child.on",
+          "lineNumber": 224
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "clearTimeout",
+          "lineNumber": 227
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "readAndCleanupState",
+          "lineNumber": 228
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "reject",
+          "lineNumber": 229
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "child.on",
+          "lineNumber": 232
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "clearTimeout",
+          "lineNumber": 235
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "readAndCleanupState",
+          "lineNumber": 239
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "parsePayload",
+          "lineNumber": 240
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "reject",
+          "lineNumber": 242
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "stderr.trim().split('\\n').slice(-3).join",
+          "lineNumber": 244
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "stderr.trim().split('\\n').slice",
+          "lineNumber": 244
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "stderr.trim().split",
+          "lineNumber": 244
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "stderr.trim",
+          "lineNumber": 244
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "reject",
+          "lineNumber": 255
+        },
+        {
+          "caller": "runSidecar",
+          "callee": "resolve",
+          "lineNumber": 258
+        },
+        {
+          "caller": "parsePayload",
+          "callee": "stdout.split(/\\r?\\n/).map(l => l.trim()).filter",
+          "lineNumber": 268
+        },
+        {
+          "caller": "parsePayload",
+          "callee": "stdout.split(/\\r?\\n/).map",
+          "lineNumber": 268
+        },
+        {
+          "caller": "parsePayload",
+          "callee": "stdout.split",
+          "lineNumber": 268
+        },
+        {
+          "caller": "parsePayload",
+          "callee": "l.trim",
+          "lineNumber": 268
+        },
+        {
+          "caller": "parsePayload",
+          "callee": "line.startsWith",
+          "lineNumber": 271
+        },
+        {
+          "caller": "parsePayload",
+          "callee": "JSON.parse",
+          "lineNumber": 273
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/fints/state.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 156,
+      "nonEmptyLines": 140,
+      "functions": [
+        {
+          "name": "adminClient",
+          "startLine": 27,
+          "endLine": 32,
+          "params": []
+        },
+        {
+          "name": "loadBankClientState",
+          "startLine": 49,
+          "endLine": 65,
+          "params": [
+            "userId"
+          ]
+        },
+        {
+          "name": "saveBankClientState",
+          "startLine": 74,
+          "endLine": 103,
+          "params": [
+            "userId",
+            "state"
+          ]
+        },
+        {
+          "name": "markScaRequired",
+          "startLine": 111,
+          "endLine": 119,
+          "params": [
+            "userId"
+          ]
+        },
+        {
+          "name": "getBankScaStatus",
+          "startLine": 134,
+          "endLine": 156,
+          "params": [
+            "userId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "SCA_EXEMPTION_DAYS",
+          "line": 35,
+          "isDefault": false
+        },
+        {
+          "name": "loadBankClientState",
+          "line": 49,
+          "isDefault": false
+        },
+        {
+          "name": "saveBankClientState",
+          "line": 74,
+          "isDefault": false
+        },
+        {
+          "name": "markScaRequired",
+          "line": 111,
+          "isDefault": false
+        },
+        {
+          "name": "getBankScaStatus",
+          "line": 134,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "adminClient",
+          "callee": "createClient",
+          "lineNumber": 28
+        },
+        {
+          "caller": "loadBankClientState",
+          "callee": "adminClient()\r\n    .from('fints_client_state')\r\n    .select('bank_key, bank_label, state_blob')\r\n    .eq",
+          "lineNumber": 50
+        },
+        {
+          "caller": "loadBankClientState",
+          "callee": "adminClient()\r\n    .from('fints_client_state')\r\n    .select",
+          "lineNumber": 50
+        },
+        {
+          "caller": "loadBankClientState",
+          "callee": "adminClient()\r\n    .from",
+          "lineNumber": 50
+        },
+        {
+          "caller": "loadBankClientState",
+          "callee": "adminClient",
+          "lineNumber": 50
+        },
+        {
+          "caller": "loadBankClientState",
+          "callee": "console.warn",
+          "lineNumber": 56
+        },
+        {
+          "caller": "saveBankClientState",
+          "callee": "Object.entries(state).filter",
+          "lineNumber": 79
+        },
+        {
+          "caller": "saveBankClientState",
+          "callee": "Object.entries",
+          "lineNumber": 79
+        },
+        {
+          "caller": "saveBankClientState",
+          "callee": "new Date().toISOString",
+          "lineNumber": 82
+        },
+        {
+          "caller": "saveBankClientState",
+          "callee": "entries.map",
+          "lineNumber": 83
+        },
+        {
+          "caller": "saveBankClientState",
+          "callee": "adminClient()\r\n    .from('fints_client_state')\r\n    .upsert",
+          "lineNumber": 94
+        },
+        {
+          "caller": "saveBankClientState",
+          "callee": "adminClient()\r\n    .from",
+          "lineNumber": 94
+        },
+        {
+          "caller": "saveBankClientState",
+          "callee": "adminClient",
+          "lineNumber": 94
+        },
+        {
+          "caller": "saveBankClientState",
+          "callee": "console.warn",
+          "lineNumber": 101
+        },
+        {
+          "caller": "markScaRequired",
+          "callee": "adminClient()\r\n    .from('fints_client_state')\r\n    .update({ sca_required_since: new Date().toISOString() })\r\n    .eq('user_id', userId)\r\n    .is",
+          "lineNumber": 112
+        },
+        {
+          "caller": "markScaRequired",
+          "callee": "adminClient()\r\n    .from('fints_client_state')\r\n    .update({ sca_required_since: new Date().toISOString() })\r\n    .eq",
+          "lineNumber": 112
+        },
+        {
+          "caller": "markScaRequired",
+          "callee": "adminClient()\r\n    .from('fints_client_state')\r\n    .update",
+          "lineNumber": 112
+        },
+        {
+          "caller": "markScaRequired",
+          "callee": "adminClient()\r\n    .from",
+          "lineNumber": 112
+        },
+        {
+          "caller": "markScaRequired",
+          "callee": "adminClient",
+          "lineNumber": 112
+        },
+        {
+          "caller": "markScaRequired",
+          "callee": "new Date().toISOString",
+          "lineNumber": 114
+        },
+        {
+          "caller": "markScaRequired",
+          "callee": "console.warn",
+          "lineNumber": 118
+        },
+        {
+          "caller": "getBankScaStatus",
+          "callee": "adminClient()\r\n    .from('fints_client_state')\r\n    .select('bank_key, bank_label, last_sca_at, sca_required_since')\r\n    .eq",
+          "lineNumber": 135
+        },
+        {
+          "caller": "getBankScaStatus",
+          "callee": "adminClient()\r\n    .from('fints_client_state')\r\n    .select",
+          "lineNumber": 135
+        },
+        {
+          "caller": "getBankScaStatus",
+          "callee": "adminClient()\r\n    .from",
+          "lineNumber": 135
+        },
+        {
+          "caller": "getBankScaStatus",
+          "callee": "adminClient",
+          "lineNumber": 135
+        },
+        {
+          "caller": "getBankScaStatus",
+          "callee": "(data as BankStateRow[]).map",
+          "lineNumber": 142
+        },
+        {
+          "caller": "getBankScaStatus",
+          "callee": "d.setDate",
+          "lineNumber": 146
+        },
+        {
+          "caller": "getBankScaStatus",
+          "callee": "d.getDate",
+          "lineNumber": 146
+        },
+        {
+          "caller": "getBankScaStatus",
+          "callee": "d.toISOString",
+          "lineNumber": 147
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 5,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/lib/hooks/use-bank-data.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 254,
+      "nonEmptyLines": 234,
+      "functions": [
+        {
+          "name": "useBankData",
+          "startLine": 79,
+          "endLine": 254,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "useBankData",
+          "line": 79,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useBankData",
+          "callee": "useState",
+          "lineNumber": 80
+        },
+        {
+          "caller": "useBankData",
+          "callee": "useState",
+          "lineNumber": 81
+        },
+        {
+          "caller": "useBankData",
+          "callee": "useState",
+          "lineNumber": 82
+        },
+        {
+          "caller": "useBankData",
+          "callee": "useState",
+          "lineNumber": 83
+        },
+        {
+          "caller": "useBankData",
+          "callee": "useState",
+          "lineNumber": 84
+        },
+        {
+          "caller": "useBankData",
+          "callee": "useState",
+          "lineNumber": 85
+        },
+        {
+          "caller": "useBankData",
+          "callee": "useState",
+          "lineNumber": 86
+        },
+        {
+          "caller": "useBankData",
+          "callee": "useState",
+          "lineNumber": 87
+        },
+        {
+          "caller": "useBankData",
+          "callee": "useState",
+          "lineNumber": 88
+        },
+        {
+          "caller": "useBankData",
+          "callee": "useCallback",
+          "lineNumber": 92
+        },
+        {
+          "caller": "useBankData",
+          "callee": "setLoaded",
+          "lineNumber": 93
+        },
+        {
+          "caller": "useBankData",
+          "callee": "useCallback",
+          "lineNumber": 97
+        },
+        {
+          "caller": "useBankData",
+          "callee": "fetch",
+          "lineNumber": 99
+        },
+        {
+          "caller": "useBankData",
+          "callee": "res.json",
+          "lineNumber": 101
+        },
+        {
+          "caller": "useBankData",
+          "callee": "setScaStatus",
+          "lineNumber": 102
+        },
+        {
+          "caller": "useBankData",
+          "callee": "useCallback",
+          "lineNumber": 109
+        },
+        {
+          "caller": "useBankData",
+          "callee": "setSyncStatus",
+          "lineNumber": 114
+        },
+        {
+          "caller": "useBankData",
+          "callee": "fetch",
+          "lineNumber": 116
+        },
+        {
+          "caller": "useBankData",
+          "callee": "JSON.stringify",
+          "lineNumber": 119
+        },
+        {
+          "caller": "useBankData",
+          "callee": "startDate?.toISOString",
+          "lineNumber": 120
+        },
+        {
+          "caller": "useBankData",
+          "callee": "endDate?.toISOString",
+          "lineNumber": 121
+        },
+        {
+          "caller": "useBankData",
+          "callee": "res.headers.get('content-type')?.includes",
+          "lineNumber": 125
+        },
+        {
+          "caller": "useBankData",
+          "callee": "res.headers.get",
+          "lineNumber": 125
+        },
+        {
+          "caller": "useBankData",
+          "callee": "res.json",
+          "lineNumber": 128
+        },
+        {
+          "caller": "useBankData",
+          "callee": "setSyncStatus",
+          "lineNumber": 131
+        },
+        {
+          "caller": "useBankData",
+          "callee": "setSyncStatus",
+          "lineNumber": 135
+        },
+        {
+          "caller": "useBankData",
+          "callee": "loadScaStatus",
+          "lineNumber": 142
+        },
+        {
+          "caller": "useBankData",
+          "callee": "setSyncStatus",
+          "lineNumber": 144
+        },
+        {
+          "caller": "useBankData",
+          "callee": "useCallback",
+          "lineNumber": 149
+        },
+        {
+          "caller": "useBankData",
+          "callee": "setIsLoadingTxns",
+          "lineNumber": 152
+        },
+        {
+          "caller": "useBankData",
+          "callee": "url.searchParams.set",
+          "lineNumber": 155
+        },
+        {
+          "caller": "useBankData",
+          "callee": "url.searchParams.set",
+          "lineNumber": 156
+        },
+        {
+          "caller": "useBankData",
+          "callee": "url.searchParams.set",
+          "lineNumber": 157
+        },
+        {
+          "caller": "useBankData",
+          "callee": "url.searchParams.set",
+          "lineNumber": 158
+        },
+        {
+          "caller": "useBankData",
+          "callee": "String",
+          "lineNumber": 158
+        },
+        {
+          "caller": "useBankData",
+          "callee": "fetch",
+          "lineNumber": 160
+        },
+        {
+          "caller": "useBankData",
+          "callee": "url.toString",
+          "lineNumber": 160
+        },
+        {
+          "caller": "useBankData",
+          "callee": "res.json",
+          "lineNumber": 162
+        },
+        {
+          "caller": "useBankData",
+          "callee": "setTransactions",
+          "lineNumber": 163
+        },
+        {
+          "caller": "useBankData",
+          "callee": "markLoaded",
+          "lineNumber": 167
+        },
+        {
+          "caller": "useBankData",
+          "callee": "setIsLoadingTxns",
+          "lineNumber": 168
+        },
+        {
+          "caller": "useBankData",
+          "callee": "useCallback",
+          "lineNumber": 173
+        },
+        {
+          "caller": "useBankData",
+          "callee": "setIsLoadingBal",
+          "lineNumber": 174
+        },
+        {
+          "caller": "useBankData",
+          "callee": "fetch",
+          "lineNumber": 176
+        },
+        {
+          "caller": "useBankData",
+          "callee": "res.json",
+          "lineNumber": 178
+        },
+        {
+          "caller": "useBankData",
+          "callee": "setBalances",
+          "lineNumber": 179
+        },
+        {
+          "caller": "useBankData",
+          "callee": "markLoaded",
+          "lineNumber": 181
+        },
+        {
+          "caller": "useBankData",
+          "callee": "setIsLoadingBal",
+          "lineNumber": 182
+        },
+        {
+          "caller": "useBankData",
+          "callee": "useCallback",
+          "lineNumber": 187
+        },
+        {
+          "caller": "useBankData",
+          "callee": "fetch",
+          "lineNumber": 189
+        },
+        {
+          "caller": "useBankData",
+          "callee": "res.json",
+          "lineNumber": 191
+        },
+        {
+          "caller": "useBankData",
+          "callee": "setHoldings",
+          "lineNumber": 192
+        },
+        {
+          "caller": "useBankData",
+          "callee": "markLoaded",
+          "lineNumber": 196
+        },
+        {
+          "caller": "useBankData",
+          "callee": "useCallback",
+          "lineNumber": 201
+        },
+        {
+          "caller": "useBankData",
+          "callee": "fetch",
+          "lineNumber": 203
+        },
+        {
+          "caller": "useBankData",
+          "callee": "res.json",
+          "lineNumber": 205
+        },
+        {
+          "caller": "useBankData",
+          "callee": "setCategories",
+          "lineNumber": 206
+        },
+        {
+          "caller": "useBankData",
+          "callee": "markLoaded",
+          "lineNumber": 210
+        },
+        {
+          "caller": "useBankData",
+          "callee": "useCallback",
+          "lineNumber": 215
+        },
+        {
+          "caller": "useBankData",
+          "callee": "setTransactions",
+          "lineNumber": 218
+        },
+        {
+          "caller": "useBankData",
+          "callee": "txns.map",
+          "lineNumber": 218
+        },
+        {
+          "caller": "useBankData",
+          "callee": "fetch",
+          "lineNumber": 221
+        },
+        {
+          "caller": "useBankData",
+          "callee": "JSON.stringify",
+          "lineNumber": 224
+        },
+        {
+          "caller": "useBankData",
+          "callee": "setTransactions",
+          "lineNumber": 229
+        },
+        {
+          "caller": "useBankData",
+          "callee": "useCallback",
+          "lineNumber": 233
+        },
+        {
+          "caller": "useBankData",
+          "callee": "setSyncStatus",
+          "lineNumber": 233
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/types/bank.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 131,
+      "nonEmptyLines": 119,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    }
+  ]
+}

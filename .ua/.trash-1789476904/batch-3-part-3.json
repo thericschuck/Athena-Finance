@@ -1,0 +1,376 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/components/ui/popover.tsx",
+      "type": "file",
+      "name": "popover.tsx",
+      "filePath": "src/components/ui/popover.tsx",
+      "summary": "shadcn/ui Popover primitive wrapper built on Radix UI, providing trigger/content/anchor building blocks.",
+      "tags": ["ui-component", "shadcn", "primitive", "popover"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/ui/scroll-area.tsx",
+      "type": "file",
+      "name": "scroll-area.tsx",
+      "filePath": "src/components/ui/scroll-area.tsx",
+      "summary": "shadcn/ui ScrollArea primitive wrapper built on Radix UI providing a styled custom scrollbar.",
+      "tags": ["ui-component", "shadcn", "primitive", "scroll"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/ui/sheet.tsx",
+      "type": "file",
+      "name": "sheet.tsx",
+      "filePath": "src/components/ui/sheet.tsx",
+      "summary": "shadcn/ui Sheet (slide-out panel) primitive wrapper built on Radix Dialog, providing trigger/content/header/footer building blocks.",
+      "tags": ["ui-component", "shadcn", "primitive", "sheet"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/assistant/actions.ts",
+      "type": "file",
+      "name": "actions.ts",
+      "filePath": "src/lib/assistant/actions.ts",
+      "summary": "Defines the registry of AI-callable write actions (WRITE_ACTIONS) for transactions, categories, contracts, and valuables, including validation, execution, and human-readable descriptions used for the pending-action confirmation flow.",
+      "tags": ["business-logic", "assistant", "validation", "registry"],
+      "complexity": "complex",
+      "languageNotes": "Very large (1400+ line) action registry mapping action names to validators/executors, forming the tool-execution backbone for the AI assistant."
+    },
+    {
+      "id": "function:src/lib/assistant/actions.ts:categoryLabel",
+      "type": "function",
+      "name": "categoryLabel",
+      "filePath": "src/lib/assistant/actions.ts",
+      "lineRange": [135, 144],
+      "summary": "Resolves a category id to its display label using the loaded category map.",
+      "tags": ["utility", "category", "assistant"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/assistant/actions.ts:assertCategory",
+      "type": "function",
+      "name": "assertCategory",
+      "filePath": "src/lib/assistant/actions.ts",
+      "lineRange": [148, 157],
+      "summary": "Validates that a category id exists and throws a descriptive error otherwise.",
+      "tags": ["validation", "category", "assistant"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/assistant/actions.ts:categoryLinkCounts",
+      "type": "function",
+      "name": "categoryLinkCounts",
+      "filePath": "src/lib/assistant/actions.ts",
+      "lineRange": [223, 245],
+      "summary": "Counts how many bookings/contracts reference each given category id, for safe-delete checks.",
+      "tags": ["utility", "category", "assistant"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/assistant/actions.ts:nextSortOrder",
+      "type": "function",
+      "name": "nextSortOrder",
+      "filePath": "src/lib/assistant/actions.ts",
+      "lineRange": [249, 258],
+      "summary": "Computes the next sort_order value for a new category.",
+      "tags": ["utility", "category", "assistant"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/assistant/actions.ts:valuableName",
+      "type": "function",
+      "name": "valuableName",
+      "filePath": "src/lib/assistant/actions.ts",
+      "lineRange": [271, 282],
+      "summary": "Resolves a valuable (inventory item) id to a human-readable name for action summaries.",
+      "tags": ["utility", "inventory", "assistant"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/assistant/actions.ts:isWriteActionName",
+      "type": "function",
+      "name": "isWriteActionName",
+      "filePath": "src/lib/assistant/actions.ts",
+      "lineRange": [1357, 1359],
+      "summary": "Type guard checking whether a given action name is one of the registered write actions.",
+      "tags": ["type-guard", "assistant", "validation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/assistant/actions.ts:validateWriteAction",
+      "type": "function",
+      "name": "validateWriteAction",
+      "filePath": "src/lib/assistant/actions.ts",
+      "lineRange": [1373, 1385],
+      "summary": "Looks up and runs a write action's input validator, returning the parsed input.",
+      "tags": ["validation", "assistant"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/assistant/actions.ts:runWriteAction",
+      "type": "function",
+      "name": "runWriteAction",
+      "filePath": "src/lib/assistant/actions.ts",
+      "lineRange": [1393, 1406],
+      "summary": "Validates and executes a named write action against the database, returning its result.",
+      "tags": ["business-logic", "assistant", "execution"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/assistant/actions.ts:describeWriteAction",
+      "type": "function",
+      "name": "describeWriteAction",
+      "filePath": "src/lib/assistant/actions.ts",
+      "lineRange": [1416, 1430],
+      "summary": "Produces a human-readable summary and detail list for a write action, used in the pending-action confirmation UI.",
+      "tags": ["business-logic", "assistant", "formatting"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/assistant/atlas.ts",
+      "type": "file",
+      "name": "atlas.ts",
+      "filePath": "src/lib/assistant/atlas.ts",
+      "summary": "Defines the static 'atlas' of app routes and their descriptions/tools, and renders it into a system-prompt section plus a helper to describe the current route.",
+      "tags": ["assistant", "routing", "prompt-engineering"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/lib/assistant/atlas.ts:renderAtlas",
+      "type": "function",
+      "name": "renderAtlas",
+      "filePath": "src/lib/assistant/atlas.ts",
+      "lineRange": [270, 296],
+      "summary": "Renders the static app-route atlas into a markdown-like text block for inclusion in the system prompt.",
+      "tags": ["prompt-engineering", "assistant", "routing"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/assistant/atlas.ts:describeCurrentRoute",
+      "type": "function",
+      "name": "describeCurrentRoute",
+      "filePath": "src/lib/assistant/atlas.ts",
+      "lineRange": [319, 331],
+      "summary": "Finds the atlas entry matching the current pathname and returns its description.",
+      "tags": ["utility", "routing", "assistant"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/assistant/cost.ts",
+      "type": "file",
+      "name": "cost.ts",
+      "filePath": "src/lib/assistant/cost.ts",
+      "summary": "Estimates USD cost of an Athena AI model call from token usage and formats costs for display.",
+      "tags": ["utility", "cost-estimation", "assistant"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/assistant/cost.ts:estimateCostUsd",
+      "type": "function",
+      "name": "estimateCostUsd",
+      "filePath": "src/lib/assistant/cost.ts",
+      "lineRange": [22, 30],
+      "summary": "Estimates the USD cost of a model call from prompt/completion token usage and per-model pricing.",
+      "tags": ["utility", "cost-estimation", "assistant"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/assistant/cost.ts:formatUsd",
+      "type": "function",
+      "name": "formatUsd",
+      "filePath": "src/lib/assistant/cost.ts",
+      "lineRange": [32, 36],
+      "summary": "Formats a numeric USD value with two-decimal currency formatting.",
+      "tags": ["utility", "formatting"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/assistant/prompts.ts",
+      "type": "file",
+      "name": "prompts.ts",
+      "filePath": "src/lib/assistant/prompts.ts",
+      "summary": "Builds the Athena system prompt by composing persona, account/category structure, knowledge, memories, and custom instructions into the final prompt sent to the LLM.",
+      "tags": ["prompt-engineering", "assistant", "llm"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/lib/assistant/prompts.ts:renderMemories",
+      "type": "function",
+      "name": "renderMemories",
+      "filePath": "src/lib/assistant/prompts.ts",
+      "lineRange": [459, 469],
+      "summary": "Formats the user's stored long-term memories into a text block for the system prompt.",
+      "tags": ["prompt-engineering", "assistant", "memory"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/assistant/prompts.ts:renderKnowledge",
+      "type": "function",
+      "name": "renderKnowledge",
+      "filePath": "src/lib/assistant/prompts.ts",
+      "lineRange": [471, 481],
+      "summary": "Formats the user's pinned knowledge-base entries into a text block for the system prompt.",
+      "tags": ["prompt-engineering", "assistant", "knowledge-base"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/assistant/prompts.ts:renderStructure",
+      "type": "function",
+      "name": "renderStructure",
+      "filePath": "src/lib/assistant/prompts.ts",
+      "lineRange": [483, 502],
+      "summary": "Formats the user's accounts and category tree into a text block describing the financial structure for the system prompt.",
+      "tags": ["prompt-engineering", "assistant", "finance"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/assistant/prompts.ts:buildAthenaSystemPrompt",
+      "type": "function",
+      "name": "buildAthenaSystemPrompt",
+      "filePath": "src/lib/assistant/prompts.ts",
+      "lineRange": [535, 589],
+      "summary": "Assembles the full Athena system prompt from persona, structure, knowledge, memories, custom instructions, and current route context.",
+      "tags": ["prompt-engineering", "assistant", "llm"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/lib/assistant/sessions.ts",
+      "type": "file",
+      "name": "sessions.ts",
+      "filePath": "src/lib/assistant/sessions.ts",
+      "summary": "Loads and formats Athena chat conversation sessions and message history/pending-action state from Supabase for the chat UI.",
+      "tags": ["data-access", "assistant", "chat", "supabase"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/assistant/sessions.ts:relativeDay",
+      "type": "function",
+      "name": "relativeDay",
+      "filePath": "src/lib/assistant/sessions.ts",
+      "lineRange": [42, 52],
+      "summary": "Formats an ISO date as a relative day label (e.g. Today/Yesterday/weekday) for session timestamps.",
+      "tags": ["utility", "date-formatting", "assistant"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/assistant/sessions.ts:listeSessions",
+      "type": "function",
+      "name": "listeSessions",
+      "filePath": "src/lib/assistant/sessions.ts",
+      "lineRange": [61, 78],
+      "summary": "Fetches the user's Athena conversation list ordered by pinned/updated status.",
+      "tags": ["data-access", "assistant", "supabase"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/assistant/sessions.ts:isRestorableMessage",
+      "type": "function",
+      "name": "isRestorableMessage",
+      "filePath": "src/lib/assistant/sessions.ts",
+      "lineRange": [90, 101],
+      "summary": "Type guard verifying a stored chat message row has a restorable content array shape.",
+      "tags": ["type-guard", "assistant"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/assistant/sessions.ts:ladeSessionZustand",
+      "type": "function",
+      "name": "ladeSessionZustand",
+      "filePath": "src/lib/assistant/sessions.ts",
+      "lineRange": [111, 144],
+      "summary": "Loads a conversation's messages and pending-action state in parallel and reconstructs chat UI state for resuming a session.",
+      "tags": ["data-access", "assistant", "supabase"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/lib/assistant/settings.ts",
+      "type": "file",
+      "name": "settings.ts",
+      "filePath": "src/lib/assistant/settings.ts",
+      "summary": "Defines Athena assistant configuration constants (models, personas, effort options) and loads/defaults a user's Athena settings from Supabase.",
+      "tags": ["config", "assistant", "settings", "supabase"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/assistant/settings.ts:getAthenaSettings",
+      "type": "function",
+      "name": "getAthenaSettings",
+      "filePath": "src/lib/assistant/settings.ts",
+      "lineRange": [124, 150],
+      "summary": "Fetches the user's Athena settings row from Supabase, applying defaults and validating the stored persona.",
+      "tags": ["data-access", "assistant", "settings", "supabase"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/utils.ts",
+      "type": "file",
+      "name": "utils.ts",
+      "filePath": "src/lib/utils.ts",
+      "summary": "Tiny className utility (cn) combining clsx and tailwind-merge, used throughout the UI component library.",
+      "tags": ["utility", "styling", "shared", "barrel"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/utils.ts:cn",
+      "type": "function",
+      "name": "cn",
+      "filePath": "src/lib/utils.ts",
+      "lineRange": [4, 6],
+      "summary": "Merges Tailwind class names via clsx and tailwind-merge, resolving conflicting utility classes.",
+      "tags": ["utility", "styling", "shared"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {"source": "file:src/components/ui/popover.tsx", "target": "file:src/lib/utils.ts", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:src/components/ui/scroll-area.tsx", "target": "file:src/lib/utils.ts", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:src/components/ui/sheet.tsx", "target": "file:src/lib/utils.ts", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:src/lib/assistant/actions.ts", "target": "file:src/lib/inventar/artwork.ts", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:src/lib/assistant/actions.ts", "target": "file:src/types/database.ts", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:src/lib/assistant/prompts.ts", "target": "file:src/lib/assistant/atlas.ts", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:src/lib/assistant/prompts.ts", "target": "file:src/lib/assistant/context.ts", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:src/lib/assistant/prompts.ts", "target": "file:src/lib/assistant/settings.ts", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:src/lib/assistant/sessions.ts", "target": "file:src/types/database.ts", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:src/lib/assistant/settings.ts", "target": "file:src/types/database.ts", "type": "imports", "direction": "forward", "weight": 0.7},
+
+    {"source": "file:src/lib/assistant/actions.ts", "target": "function:src/lib/assistant/actions.ts:categoryLabel", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/assistant/actions.ts", "target": "function:src/lib/assistant/actions.ts:assertCategory", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/assistant/actions.ts", "target": "function:src/lib/assistant/actions.ts:categoryLinkCounts", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/assistant/actions.ts", "target": "function:src/lib/assistant/actions.ts:nextSortOrder", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/assistant/actions.ts", "target": "function:src/lib/assistant/actions.ts:valuableName", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/assistant/actions.ts", "target": "function:src/lib/assistant/actions.ts:isWriteActionName", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/assistant/actions.ts", "target": "function:src/lib/assistant/actions.ts:validateWriteAction", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/assistant/actions.ts", "target": "function:src/lib/assistant/actions.ts:runWriteAction", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/assistant/actions.ts", "target": "function:src/lib/assistant/actions.ts:describeWriteAction", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/assistant/atlas.ts", "target": "function:src/lib/assistant/atlas.ts:renderAtlas", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/assistant/atlas.ts", "target": "function:src/lib/assistant/atlas.ts:describeCurrentRoute", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/assistant/cost.ts", "target": "function:src/lib/assistant/cost.ts:estimateCostUsd", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/assistant/cost.ts", "target": "function:src/lib/assistant/cost.ts:formatUsd", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/assistant/prompts.ts", "target": "function:src/lib/assistant/prompts.ts:renderMemories", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/assistant/prompts.ts", "target": "function:src/lib/assistant/prompts.ts:renderKnowledge", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/assistant/prompts.ts", "target": "function:src/lib/assistant/prompts.ts:renderStructure", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/assistant/prompts.ts", "target": "function:src/lib/assistant/prompts.ts:buildAthenaSystemPrompt", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/assistant/sessions.ts", "target": "function:src/lib/assistant/sessions.ts:relativeDay", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/assistant/sessions.ts", "target": "function:src/lib/assistant/sessions.ts:listeSessions", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/assistant/sessions.ts", "target": "function:src/lib/assistant/sessions.ts:isRestorableMessage", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/assistant/sessions.ts", "target": "function:src/lib/assistant/sessions.ts:ladeSessionZustand", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/assistant/settings.ts", "target": "function:src/lib/assistant/settings.ts:getAthenaSettings", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:src/lib/utils.ts", "target": "function:src/lib/utils.ts:cn", "type": "contains", "direction": "forward", "weight": 1.0},
+
+    {"source": "file:src/lib/assistant/actions.ts", "target": "function:src/lib/assistant/actions.ts:isWriteActionName", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:src/lib/assistant/actions.ts", "target": "function:src/lib/assistant/actions.ts:validateWriteAction", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:src/lib/assistant/actions.ts", "target": "function:src/lib/assistant/actions.ts:runWriteAction", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:src/lib/assistant/actions.ts", "target": "function:src/lib/assistant/actions.ts:describeWriteAction", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:src/lib/assistant/atlas.ts", "target": "function:src/lib/assistant/atlas.ts:renderAtlas", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:src/lib/assistant/atlas.ts", "target": "function:src/lib/assistant/atlas.ts:describeCurrentRoute", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:src/lib/assistant/cost.ts", "target": "function:src/lib/assistant/cost.ts:estimateCostUsd", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:src/lib/assistant/cost.ts", "target": "function:src/lib/assistant/cost.ts:formatUsd", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:src/lib/assistant/prompts.ts", "target": "function:src/lib/assistant/prompts.ts:buildAthenaSystemPrompt", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:src/lib/assistant/sessions.ts", "target": "function:src/lib/assistant/sessions.ts:relativeDay", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:src/lib/assistant/sessions.ts", "target": "function:src/lib/assistant/sessions.ts:listeSessions", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:src/lib/assistant/sessions.ts", "target": "function:src/lib/assistant/sessions.ts:ladeSessionZustand", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:src/lib/assistant/settings.ts", "target": "function:src/lib/assistant/settings.ts:getAthenaSettings", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:src/lib/utils.ts", "target": "function:src/lib/utils.ts:cn", "type": "exports", "direction": "forward", "weight": 0.8}
+  ]
+}

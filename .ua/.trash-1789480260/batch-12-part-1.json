@@ -1,0 +1,810 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/app/(dashboard)/analyse/page.tsx",
+      "type": "file",
+      "name": "page.tsx",
+      "filePath": "src/app/(dashboard)/analyse/page.tsx",
+      "summary": "Main analysis page that aggregates multiple financial analysis views including spending heat maps, cash flow calendars, and monthly comparisons.",
+      "tags": [
+        "page",
+        "analysis",
+        "entry-point",
+        "dashboard",
+        "multi-view"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/app/(dashboard)/analyse/page.tsx:buildHeatmap",
+      "type": "function",
+      "name": "buildHeatmap",
+      "filePath": "src/app/(dashboard)/analyse/page.tsx",
+      "lineRange": [
+        59,
+        74
+      ],
+      "summary": "Helper function buildHeatmap.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/analyse/page.tsx:buildCategories",
+      "type": "function",
+      "name": "buildCategories",
+      "filePath": "src/app/(dashboard)/analyse/page.tsx",
+      "lineRange": [
+        76,
+        88
+      ],
+      "summary": "Helper function buildCategories.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/analyse/page.tsx:buildSankey",
+      "type": "function",
+      "name": "buildSankey",
+      "filePath": "src/app/(dashboard)/analyse/page.tsx",
+      "lineRange": [
+        90,
+        156
+      ],
+      "summary": "Helper function buildSankey.",
+      "tags": [
+        "complex"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/app/(dashboard)/analyse/page.tsx:buildMonthlyComparisonFromTxns",
+      "type": "function",
+      "name": "buildMonthlyComparisonFromTxns",
+      "filePath": "src/app/(dashboard)/analyse/page.tsx",
+      "lineRange": [
+        172,
+        190
+      ],
+      "summary": "Helper function buildMonthlyComparisonFromTxns.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/analyse/page.tsx:buildMonthSeries",
+      "type": "function",
+      "name": "buildMonthSeries",
+      "filePath": "src/app/(dashboard)/analyse/page.tsx",
+      "lineRange": [
+        201,
+        211
+      ],
+      "summary": "Helper function buildMonthSeries.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/analyse/page.tsx:buildMonthSeriesFromTxns",
+      "type": "function",
+      "name": "buildMonthSeriesFromTxns",
+      "filePath": "src/app/(dashboard)/analyse/page.tsx",
+      "lineRange": [
+        222,
+        245
+      ],
+      "summary": "Helper function buildMonthSeriesFromTxns.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/analyse/page.tsx:currentMonthTotals",
+      "type": "function",
+      "name": "currentMonthTotals",
+      "filePath": "src/app/(dashboard)/analyse/page.tsx",
+      "lineRange": [
+        256,
+        271
+      ],
+      "summary": "Helper function currentMonthTotals.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/analyse/page.tsx:buildMonthlyComparison",
+      "type": "function",
+      "name": "buildMonthlyComparison",
+      "filePath": "src/app/(dashboard)/analyse/page.tsx",
+      "lineRange": [
+        279,
+        307
+      ],
+      "summary": "Helper function buildMonthlyComparison.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/analyse/page.tsx:AnalysePage",
+      "type": "function",
+      "name": "AnalysePage",
+      "filePath": "src/app/(dashboard)/analyse/page.tsx",
+      "lineRange": [
+        311,
+        506
+      ],
+      "summary": "React component that renders AnalysePage.",
+      "tags": [
+        "component",
+        "complex"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/analyse/AnalysePeriodSelector.tsx",
+      "type": "file",
+      "name": "AnalysePeriodSelector.tsx",
+      "filePath": "src/components/analyse/AnalysePeriodSelector.tsx",
+      "summary": "Period selector control for filtering financial data by time range.",
+      "tags": [
+        "component",
+        "control",
+        "period",
+        "filter",
+        "form"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/analyse/AnalysePeriodSelector.tsx:AnalysePeriodSelector",
+      "type": "function",
+      "name": "AnalysePeriodSelector",
+      "filePath": "src/components/analyse/AnalysePeriodSelector.tsx",
+      "lineRange": [
+        12,
+        39
+      ],
+      "summary": "React component that renders AnalysePeriodSelector.",
+      "tags": [
+        "component"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/analyse/AusgabenHeatmap.tsx",
+      "type": "file",
+      "name": "AusgabenHeatmap.tsx",
+      "filePath": "src/components/analyse/AusgabenHeatmap.tsx",
+      "summary": "Interactive heatmap visualization component for analyzing spending patterns by time period and category.",
+      "tags": [
+        "component",
+        "visualization",
+        "spending-analysis",
+        "heatmap",
+        "interactive"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/analyse/AusgabenHeatmap.tsx:guvLevel",
+      "type": "function",
+      "name": "guvLevel",
+      "filePath": "src/components/analyse/AusgabenHeatmap.tsx",
+      "lineRange": [
+        45,
+        59
+      ],
+      "summary": "Helper function guvLevel.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/analyse/AusgabenHeatmap.tsx:AusgabenHeatmap",
+      "type": "function",
+      "name": "AusgabenHeatmap",
+      "filePath": "src/components/analyse/AusgabenHeatmap.tsx",
+      "lineRange": [
+        70,
+        222
+      ],
+      "summary": "React component that renders AusgabenHeatmap.",
+      "tags": [
+        "component",
+        "complex"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/analyse/CashflowKalender.tsx",
+      "type": "file",
+      "name": "CashflowKalender.tsx",
+      "filePath": "src/components/analyse/CashflowKalender.tsx",
+      "summary": "Calendar-based cash flow visualization showing daily transaction flows and balances.",
+      "tags": [
+        "component",
+        "calendar",
+        "cash-flow",
+        "visualization",
+        "daily"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/analyse/CashflowKalender.tsx:CashflowKalender",
+      "type": "function",
+      "name": "CashflowKalender",
+      "filePath": "src/components/analyse/CashflowKalender.tsx",
+      "lineRange": [
+        25,
+        264
+      ],
+      "summary": "React component that renders CashflowKalender.",
+      "tags": [
+        "component",
+        "complex"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/analyse/GeldflussChart-impl.tsx",
+      "type": "file",
+      "name": "GeldflussChart-impl.tsx",
+      "filePath": "src/components/analyse/GeldflussChart-impl.tsx",
+      "summary": "Implementation of Sankey diagram for visualizing money flows between categories.",
+      "tags": [
+        "component",
+        "sankey",
+        "cash-flow",
+        "graph",
+        "implementation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/analyse/GeldflussChart-impl.tsx:buildNodeColorMap",
+      "type": "function",
+      "name": "buildNodeColorMap",
+      "filePath": "src/components/analyse/GeldflussChart-impl.tsx",
+      "lineRange": [
+        38,
+        55
+      ],
+      "summary": "Helper function buildNodeColorMap.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/analyse/GeldflussChart-impl.tsx:SankeyNode",
+      "type": "function",
+      "name": "SankeyNode",
+      "filePath": "src/components/analyse/GeldflussChart-impl.tsx",
+      "lineRange": [
+        58,
+        84
+      ],
+      "summary": "React component that renders SankeyNode.",
+      "tags": [
+        "component"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/analyse/GeldflussChart-impl.tsx:SankeyLink",
+      "type": "function",
+      "name": "SankeyLink",
+      "filePath": "src/components/analyse/GeldflussChart-impl.tsx",
+      "lineRange": [
+        97,
+        130
+      ],
+      "summary": "React component that renders SankeyLink.",
+      "tags": [
+        "component",
+        "complex"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/analyse/GeldflussChart-impl.tsx:SankeyTooltip",
+      "type": "function",
+      "name": "SankeyTooltip",
+      "filePath": "src/components/analyse/GeldflussChart-impl.tsx",
+      "lineRange": [
+        133,
+        161
+      ],
+      "summary": "React component that renders SankeyTooltip.",
+      "tags": [
+        "component",
+        "ui-helper"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/analyse/GeldflussChart-impl.tsx:GeldflussChart",
+      "type": "function",
+      "name": "GeldflussChart",
+      "filePath": "src/components/analyse/GeldflussChart-impl.tsx",
+      "lineRange": [
+        163,
+        191
+      ],
+      "summary": "React component that renders GeldflussChart.",
+      "tags": [
+        "component"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/analyse/GeldflussChart.tsx",
+      "type": "file",
+      "name": "GeldflussChart.tsx",
+      "filePath": "src/components/analyse/GeldflussChart.tsx",
+      "summary": "Lazy-loaded wrapper for cash flow Sankey diagram with loading skeleton.",
+      "tags": [
+        "component",
+        "wrapper",
+        "lazy-load",
+        "cash-flow",
+        "performance"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/analyse/KategorienChart.tsx",
+      "type": "file",
+      "name": "KategorienChart.tsx",
+      "filePath": "src/components/analyse/KategorienChart.tsx",
+      "summary": "Bar chart component showing spending breakdown by spending categories with mode switching.",
+      "tags": [
+        "component",
+        "chart",
+        "categories",
+        "spending",
+        "bar-chart"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/analyse/KategorienChart.tsx:KategorienChart",
+      "type": "function",
+      "name": "KategorienChart",
+      "filePath": "src/components/analyse/KategorienChart.tsx",
+      "lineRange": [
+        35,
+        134
+      ],
+      "summary": "React component that renders KategorienChart.",
+      "tags": [
+        "component",
+        "complex"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/analyse/ModeSwitch.tsx",
+      "type": "file",
+      "name": "ModeSwitch.tsx",
+      "filePath": "src/components/analyse/ModeSwitch.tsx",
+      "summary": "Toggle component for switching between different analysis modes in spending visualizations.",
+      "tags": [
+        "component",
+        "control",
+        "mode-switch",
+        "ui",
+        "settings"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/analyse/ModeSwitch.tsx:ModeSwitch",
+      "type": "function",
+      "name": "ModeSwitch",
+      "filePath": "src/components/analyse/ModeSwitch.tsx",
+      "lineRange": [
+        17,
+        41
+      ],
+      "summary": "React component that renders ModeSwitch.",
+      "tags": [
+        "component"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "function:src/app/(dashboard)/analyse/page.tsx:buildHeatmap",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "function:src/app/(dashboard)/analyse/page.tsx:buildCategories",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "function:src/app/(dashboard)/analyse/page.tsx:buildSankey",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "function:src/app/(dashboard)/analyse/page.tsx:buildMonthlyComparisonFromTxns",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "function:src/app/(dashboard)/analyse/page.tsx:buildMonthSeries",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "function:src/app/(dashboard)/analyse/page.tsx:buildMonthSeriesFromTxns",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "function:src/app/(dashboard)/analyse/page.tsx:currentMonthTotals",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "function:src/app/(dashboard)/analyse/page.tsx:buildMonthlyComparison",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "function:src/app/(dashboard)/analyse/page.tsx:AnalysePage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "function:src/app/(dashboard)/analyse/page.tsx:AnalysePage",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/analyse/AnalysePeriodSelector.tsx",
+      "target": "function:src/components/analyse/AnalysePeriodSelector.tsx:AnalysePeriodSelector",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/analyse/AnalysePeriodSelector.tsx",
+      "target": "function:src/components/analyse/AnalysePeriodSelector.tsx:AnalysePeriodSelector",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/analyse/AusgabenHeatmap.tsx",
+      "target": "function:src/components/analyse/AusgabenHeatmap.tsx:guvLevel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/analyse/AusgabenHeatmap.tsx",
+      "target": "function:src/components/analyse/AusgabenHeatmap.tsx:AusgabenHeatmap",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/analyse/AusgabenHeatmap.tsx",
+      "target": "function:src/components/analyse/AusgabenHeatmap.tsx:AusgabenHeatmap",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/analyse/CashflowKalender.tsx",
+      "target": "function:src/components/analyse/CashflowKalender.tsx:CashflowKalender",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/analyse/CashflowKalender.tsx",
+      "target": "function:src/components/analyse/CashflowKalender.tsx:CashflowKalender",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/analyse/GeldflussChart-impl.tsx",
+      "target": "function:src/components/analyse/GeldflussChart-impl.tsx:buildNodeColorMap",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/analyse/GeldflussChart-impl.tsx",
+      "target": "function:src/components/analyse/GeldflussChart-impl.tsx:SankeyNode",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/analyse/GeldflussChart-impl.tsx",
+      "target": "function:src/components/analyse/GeldflussChart-impl.tsx:SankeyLink",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/analyse/GeldflussChart-impl.tsx",
+      "target": "function:src/components/analyse/GeldflussChart-impl.tsx:SankeyTooltip",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/analyse/GeldflussChart-impl.tsx",
+      "target": "function:src/components/analyse/GeldflussChart-impl.tsx:GeldflussChart",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/analyse/GeldflussChart-impl.tsx",
+      "target": "function:src/components/analyse/GeldflussChart-impl.tsx:GeldflussChart",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/analyse/KategorienChart.tsx",
+      "target": "function:src/components/analyse/KategorienChart.tsx:KategorienChart",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/analyse/KategorienChart.tsx",
+      "target": "function:src/components/analyse/KategorienChart.tsx:KategorienChart",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/analyse/ModeSwitch.tsx",
+      "target": "function:src/components/analyse/ModeSwitch.tsx:ModeSwitch",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/analyse/ModeSwitch.tsx",
+      "target": "function:src/components/analyse/ModeSwitch.tsx:ModeSwitch",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/analyse/AusgabenHeatmap.tsx",
+      "target": "file:src/components/analyse/ModeSwitch.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/AusgabenHeatmap.tsx",
+      "target": "file:src/lib/analyseData.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/AusgabenHeatmap.tsx",
+      "target": "file:src/lib/hooks/use-clamped-position.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/CashflowKalender.tsx",
+      "target": "file:src/lib/analyseData.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/CashflowKalender.tsx",
+      "target": "file:src/lib/hooks/use-clamped-position.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/ModeSwitch.tsx",
+      "target": "file:src/lib/analyseData.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/GeldflussChart.tsx",
+      "target": "file:src/components/ui/skeleton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/GeldflussChart.tsx",
+      "target": "file:src/lib/analyseData.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/GeldflussChart-impl.tsx",
+      "target": "file:src/lib/analyseData.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "file:src/components/analyse/AnalyseAccountSelector.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "file:src/components/analyse/AnalysePeriodSelector.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "file:src/components/analyse/AusgabenHeatmap.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "file:src/components/analyse/CashflowKalender.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "file:src/components/analyse/GeldflussChart.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "file:src/components/analyse/KategorienChart.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "file:src/components/analyse/MonatsVergleich.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "file:src/components/analyse/MonatsVerteilung.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "file:src/components/providers/url-filters.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "file:src/lib/analyseData.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "file:src/lib/period.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "file:src/lib/settings.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/analyse/page.tsx",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/KategorienChart.tsx",
+      "target": "file:src/components/analyse/ModeSwitch.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/KategorienChart.tsx",
+      "target": "file:src/components/providers/settings-context.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/KategorienChart.tsx",
+      "target": "file:src/lib/analyseData.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/KategorienChart.tsx",
+      "target": "file:src/lib/format.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/analyse/AnalysePeriodSelector.tsx",
+      "target": "file:src/components/providers/url-filters.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}

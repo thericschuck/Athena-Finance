@@ -249,7 +249,7 @@ export function NetWorthChart({ snapshots }: { snapshots: NetWorthSnapshot[] }) 
             />
             <YAxis
               tickFormatter={v => fmtShort(v as number)}
-              tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
+              tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5, className: 'tabular-nums' }}
               axisLine={false}
               tickLine={false}
               width={48}

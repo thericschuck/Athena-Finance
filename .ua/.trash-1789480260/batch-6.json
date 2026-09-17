@@ -1,0 +1,1802 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/app/(dashboard)/assistant/knowledge/page.tsx",
+      "type": "file",
+      "name": "page.tsx",
+      "filePath": "src/app/(dashboard)/assistant/knowledge/page.tsx",
+      "summary": "Server component fetching and displaying knowledge entries from the database with client-side management.",
+      "tags": [
+        "page",
+        "server-component",
+        "ui"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/knowledge/page.tsx:AthenaKnowledgePage",
+      "type": "function",
+      "name": "AthenaKnowledgePage",
+      "filePath": "src/app/(dashboard)/assistant/knowledge/page.tsx",
+      "lineRange": [
+        6,
+        22
+      ],
+      "summary": "Server component fetching knowledge entries and rendering the management interface.",
+      "tags": [
+        "page",
+        "server-component"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/(dashboard)/assistant/memory/page.tsx",
+      "type": "file",
+      "name": "page.tsx",
+      "filePath": "src/app/(dashboard)/assistant/memory/page.tsx",
+      "summary": "Server component fetching and displaying memory entries from the database with client-side management.",
+      "tags": [
+        "page",
+        "server-component",
+        "ui"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/assistant/memory/page.tsx:AthenaMemoryPage",
+      "type": "function",
+      "name": "AthenaMemoryPage",
+      "filePath": "src/app/(dashboard)/assistant/memory/page.tsx",
+      "lineRange": [
+        6,
+        21
+      ],
+      "summary": "Server component fetching AI memory entries and rendering the management interface.",
+      "tags": [
+        "page",
+        "server-component"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/(dashboard)/dashboard/insight-actions.ts",
+      "type": "file",
+      "name": "insight-actions.ts",
+      "filePath": "src/app/(dashboard)/dashboard/insight-actions.ts",
+      "summary": "Server actions for dismissing insights and updating insight states.",
+      "tags": [
+        "server-actions",
+        "database",
+        "supabase"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/dashboard/insight-actions.ts:dismissInsight",
+      "type": "function",
+      "name": "dismissInsight",
+      "filePath": "src/app/(dashboard)/dashboard/insight-actions.ts",
+      "lineRange": [
+        12,
+        25
+      ],
+      "summary": "Server action for marking an insight as dismissed with timestamp.",
+      "tags": [
+        "utility",
+        "helper"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/(dashboard)/finance/(planung)/contracts/actions.ts",
+      "type": "file",
+      "name": "actions.ts",
+      "filePath": "src/app/(dashboard)/finance/(planung)/contracts/actions.ts",
+      "summary": "Server actions for financial contract management including parseOptionalFloat, parseOptionalInt.",
+      "tags": [
+        "server-actions",
+        "database",
+        "supabase"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(planung)/contracts/actions.ts:buildPayload",
+      "type": "function",
+      "name": "buildPayload",
+      "filePath": "src/app/(dashboard)/finance/(planung)/contracts/actions.ts",
+      "lineRange": [
+        20,
+        46
+      ],
+      "summary": "Function buildPayload providing core functionality.",
+      "tags": [
+        "utility",
+        "helper"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(planung)/contracts/actions.ts:createContract",
+      "type": "function",
+      "name": "createContract",
+      "filePath": "src/app/(dashboard)/finance/(planung)/contracts/actions.ts",
+      "lineRange": [
+        58,
+        74
+      ],
+      "summary": "Server action for creating a financial contract with optional payment terms.",
+      "tags": [
+        "server-action",
+        "create",
+        "mutation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(planung)/contracts/actions.ts:updateContract",
+      "type": "function",
+      "name": "updateContract",
+      "filePath": "src/app/(dashboard)/finance/(planung)/contracts/actions.ts",
+      "lineRange": [
+        76,
+        100
+      ],
+      "summary": "Server action for updating contract details and payment terms.",
+      "tags": [
+        "server-action",
+        "update",
+        "mutation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(planung)/contracts/actions.ts:deleteContract",
+      "type": "function",
+      "name": "deleteContract",
+      "filePath": "src/app/(dashboard)/finance/(planung)/contracts/actions.ts",
+      "lineRange": [
+        102,
+        116
+      ],
+      "summary": "Server action deleting a contract record and associated data from the database.",
+      "tags": [
+        "server-action",
+        "delete",
+        "mutation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/(dashboard)/finance/(planung)/debts/actions.ts",
+      "type": "file",
+      "name": "actions.ts",
+      "filePath": "src/app/(dashboard)/finance/(planung)/debts/actions.ts",
+      "summary": "Server actions for debt management including createDebt, updateDebt and payment recording with Supabase database integration.",
+      "tags": [
+        "server-actions",
+        "database",
+        "supabase"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(planung)/debts/actions.ts:createDebt",
+      "type": "function",
+      "name": "createDebt",
+      "filePath": "src/app/(dashboard)/finance/(planung)/debts/actions.ts",
+      "lineRange": [
+        9,
+        55
+      ],
+      "summary": "Server action for creating a new debt record with validation of amount, type, and creditor.",
+      "tags": [
+        "server-action",
+        "create",
+        "mutation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(planung)/debts/actions.ts:updateDebt",
+      "type": "function",
+      "name": "updateDebt",
+      "filePath": "src/app/(dashboard)/finance/(planung)/debts/actions.ts",
+      "lineRange": [
+        58,
+        103
+      ],
+      "summary": "Server action for updating debt information including amount, interest rate, and status.",
+      "tags": [
+        "server-action",
+        "update",
+        "mutation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(planung)/debts/actions.ts:deleteDebt",
+      "type": "function",
+      "name": "deleteDebt",
+      "filePath": "src/app/(dashboard)/finance/(planung)/debts/actions.ts",
+      "lineRange": [
+        106,
+        119
+      ],
+      "summary": "Server action deleting a debt record and associated data from the database.",
+      "tags": [
+        "server-action",
+        "delete",
+        "mutation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(planung)/debts/actions.ts:recordPayment",
+      "type": "function",
+      "name": "recordPayment",
+      "filePath": "src/app/(dashboard)/finance/(planung)/debts/actions.ts",
+      "lineRange": [
+        122,
+        179
+      ],
+      "summary": "Server action recording transaction or activity data with validation.",
+      "tags": [
+        "server-action",
+        "logging",
+        "mutation"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/app/(dashboard)/finance/(planung)/goals/actions.ts",
+      "type": "file",
+      "name": "actions.ts",
+      "filePath": "src/app/(dashboard)/finance/(planung)/goals/actions.ts",
+      "summary": "Server actions for savings goal management including createGoal, updateGoal and progress tracking.",
+      "tags": [
+        "server-actions",
+        "database",
+        "supabase"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(planung)/goals/actions.ts:createGoal",
+      "type": "function",
+      "name": "createGoal",
+      "filePath": "src/app/(dashboard)/finance/(planung)/goals/actions.ts",
+      "lineRange": [
+        9,
+        43
+      ],
+      "summary": "Server action for creating a savings goal with target amount and monthly savings rate.",
+      "tags": [
+        "server-action",
+        "create",
+        "mutation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(planung)/goals/actions.ts:updateGoal",
+      "type": "function",
+      "name": "updateGoal",
+      "filePath": "src/app/(dashboard)/finance/(planung)/goals/actions.ts",
+      "lineRange": [
+        46,
+        85
+      ],
+      "summary": "Server action for updating savings goal details and progress tracking settings.",
+      "tags": [
+        "server-action",
+        "update",
+        "mutation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(planung)/goals/actions.ts:setGoalStatus",
+      "type": "function",
+      "name": "setGoalStatus",
+      "filePath": "src/app/(dashboard)/finance/(planung)/goals/actions.ts",
+      "lineRange": [
+        88,
+        99
+      ],
+      "summary": "Server action updating state information.",
+      "tags": [
+        "server-action",
+        "update",
+        "mutation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(planung)/goals/actions.ts:addGoalPayment",
+      "type": "function",
+      "name": "addGoalPayment",
+      "filePath": "src/app/(dashboard)/finance/(planung)/goals/actions.ts",
+      "lineRange": [
+        102,
+        130
+      ],
+      "summary": "Server action adding a new goalpayment with validation.",
+      "tags": [
+        "server-action",
+        "create",
+        "mutation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(planung)/goals/actions.ts:deleteGoal",
+      "type": "function",
+      "name": "deleteGoal",
+      "filePath": "src/app/(dashboard)/finance/(planung)/goals/actions.ts",
+      "lineRange": [
+        133,
+        146
+      ],
+      "summary": "Server action deleting a goal record and associated data from the database.",
+      "tags": [
+        "server-action",
+        "delete",
+        "mutation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/(dashboard)/finance/(planung)/goals/page.tsx",
+      "type": "file",
+      "name": "page.tsx",
+      "filePath": "src/app/(dashboard)/finance/(planung)/goals/page.tsx",
+      "summary": "Page component displaying savings goals with progress tracking, payment dialogs, and lifecycle management.",
+      "tags": [
+        "page",
+        "server-component",
+        "ui"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(planung)/goals/page.tsx:GoalsPage",
+      "type": "function",
+      "name": "GoalsPage",
+      "filePath": "src/app/(dashboard)/finance/(planung)/goals/page.tsx",
+      "lineRange": [
+        93,
+        154
+      ],
+      "summary": "Server component rendering savings goals page with progress tracking and filtering.",
+      "tags": [
+        "page",
+        "server-component"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(planung)/goals/page.tsx:GoalCard",
+      "type": "function",
+      "name": "GoalCard",
+      "filePath": "src/app/(dashboard)/finance/(planung)/goals/page.tsx",
+      "lineRange": [
+        157,
+        253
+      ],
+      "summary": "Function GoalCard providing core functionality.",
+      "tags": [
+        "utility",
+        "helper"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(planung)/goals/page.tsx:SavingsPlanBadge",
+      "type": "function",
+      "name": "SavingsPlanBadge",
+      "filePath": "src/app/(dashboard)/finance/(planung)/goals/page.tsx",
+      "lineRange": [
+        256,
+        280
+      ],
+      "summary": "Function SavingsPlanBadge providing core functionality.",
+      "tags": [
+        "utility",
+        "helper"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(planung)/goals/page.tsx:EmptyState",
+      "type": "function",
+      "name": "EmptyState",
+      "filePath": "src/app/(dashboard)/finance/(planung)/goals/page.tsx",
+      "lineRange": [
+        282,
+        291
+      ],
+      "summary": "Function EmptyState providing core functionality.",
+      "tags": [
+        "utility",
+        "helper"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts",
+      "type": "file",
+      "name": "actions.ts",
+      "filePath": "src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts",
+      "summary": "Server actions for transaction category management with tax and EUER integration.",
+      "tags": [
+        "server-actions",
+        "database",
+        "supabase"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts:createCategory",
+      "type": "function",
+      "name": "createCategory",
+      "filePath": "src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts",
+      "lineRange": [
+        34,
+        63
+      ],
+      "summary": "Server action for creating a transaction category with budget limits and tax mapping.",
+      "tags": [
+        "server-action",
+        "create",
+        "mutation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts:updateCategory",
+      "type": "function",
+      "name": "updateCategory",
+      "filePath": "src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts",
+      "lineRange": [
+        65,
+        99
+      ],
+      "summary": "Server action for updating category properties including budget and tax classification.",
+      "tags": [
+        "server-action",
+        "update",
+        "mutation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts:deleteCategory",
+      "type": "function",
+      "name": "deleteCategory",
+      "filePath": "src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts",
+      "lineRange": [
+        101,
+        124
+      ],
+      "summary": "Server action deleting a category record and associated data from the database.",
+      "tags": [
+        "server-action",
+        "delete",
+        "mutation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts",
+      "type": "file",
+      "name": "actions.ts",
+      "filePath": "src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts",
+      "summary": "Server actions for transaction management and categorization with Supabase operations.",
+      "tags": [
+        "server-actions",
+        "database",
+        "supabase"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts:createTransaction",
+      "type": "function",
+      "name": "createTransaction",
+      "filePath": "src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts",
+      "lineRange": [
+        8,
+        49
+      ],
+      "summary": "Server action creating a new transaction record in the database.",
+      "tags": [
+        "server-action",
+        "create",
+        "mutation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts:updateTransaction",
+      "type": "function",
+      "name": "updateTransaction",
+      "filePath": "src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts",
+      "lineRange": [
+        51,
+        95
+      ],
+      "summary": "Server action updating an existing transaction record in the database.",
+      "tags": [
+        "server-action",
+        "update",
+        "mutation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts:updateTransactionCategory",
+      "type": "function",
+      "name": "updateTransactionCategory",
+      "filePath": "src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts",
+      "lineRange": [
+        103,
+        126
+      ],
+      "summary": "Server action updating an existing transactioncategory record in the database.",
+      "tags": [
+        "server-action",
+        "update",
+        "mutation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts:deleteTransaction",
+      "type": "function",
+      "name": "deleteTransaction",
+      "filePath": "src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts",
+      "lineRange": [
+        128,
+        141
+      ],
+      "summary": "Server action deleting a transaction record and associated data from the database.",
+      "tags": [
+        "server-action",
+        "delete",
+        "mutation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/(dashboard)/finance/accounts/actions.ts",
+      "type": "file",
+      "name": "actions.ts",
+      "filePath": "src/app/(dashboard)/finance/accounts/actions.ts",
+      "summary": "Server actions for financial account management and reconciliation.",
+      "tags": [
+        "server-actions",
+        "database",
+        "supabase"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/accounts/actions.ts:createAccount",
+      "type": "function",
+      "name": "createAccount",
+      "filePath": "src/app/(dashboard)/finance/accounts/actions.ts",
+      "lineRange": [
+        8,
+        38
+      ],
+      "summary": "Server action for creating a financial account with initial balance.",
+      "tags": [
+        "server-action",
+        "create",
+        "mutation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/accounts/actions.ts:updateAccount",
+      "type": "function",
+      "name": "updateAccount",
+      "filePath": "src/app/(dashboard)/finance/accounts/actions.ts",
+      "lineRange": [
+        40,
+        75
+      ],
+      "summary": "Server action updating an existing account record in the database.",
+      "tags": [
+        "server-action",
+        "update",
+        "mutation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/accounts/actions.ts:deleteAccount",
+      "type": "function",
+      "name": "deleteAccount",
+      "filePath": "src/app/(dashboard)/finance/accounts/actions.ts",
+      "lineRange": [
+        77,
+        90
+      ],
+      "summary": "Server action deleting a account record and associated data from the database.",
+      "tags": [
+        "server-action",
+        "delete",
+        "mutation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/(dashboard)/finance/reports/page.tsx",
+      "type": "file",
+      "name": "page.tsx",
+      "filePath": "src/app/(dashboard)/finance/reports/page.tsx",
+      "summary": "Page component for financial reporting and analytics.",
+      "tags": [
+        "page",
+        "server-component",
+        "ui"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/finance/reports/page.tsx:ReportsPage",
+      "type": "function",
+      "name": "ReportsPage",
+      "filePath": "src/app/(dashboard)/finance/reports/page.tsx",
+      "lineRange": [
+        16,
+        46
+      ],
+      "summary": "Function ReportsPage providing core functionality.",
+      "tags": [
+        "page",
+        "server-component"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/(dashboard)/strategy/combos/actions.ts",
+      "type": "file",
+      "name": "actions.ts",
+      "filePath": "src/app/(dashboard)/strategy/combos/actions.ts",
+      "summary": "Server actions for strategy combination management with validation.",
+      "tags": [
+        "server-actions",
+        "database",
+        "supabase"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/strategy/combos/actions.ts:createCombo",
+      "type": "function",
+      "name": "createCombo",
+      "filePath": "src/app/(dashboard)/strategy/combos/actions.ts",
+      "lineRange": [
+        28,
+        76
+      ],
+      "summary": "Server action creating a new combo record in the database.",
+      "tags": [
+        "server-action",
+        "create",
+        "mutation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/strategy/combos/actions.ts:updateCombo",
+      "type": "function",
+      "name": "updateCombo",
+      "filePath": "src/app/(dashboard)/strategy/combos/actions.ts",
+      "lineRange": [
+        79,
+        128
+      ],
+      "summary": "Server action updating an existing combo record in the database.",
+      "tags": [
+        "server-action",
+        "update",
+        "mutation"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/app/(dashboard)/strategy/combos/actions.ts:deleteCombo",
+      "type": "function",
+      "name": "deleteCombo",
+      "filePath": "src/app/(dashboard)/strategy/combos/actions.ts",
+      "lineRange": [
+        131,
+        144
+      ],
+      "summary": "Server action deleting a combo record and associated data from the database.",
+      "tags": [
+        "server-action",
+        "delete",
+        "mutation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/strategy/combos/actions.ts:updateGuardStatus",
+      "type": "function",
+      "name": "updateGuardStatus",
+      "filePath": "src/app/(dashboard)/strategy/combos/actions.ts",
+      "lineRange": [
+        147,
+        168
+      ],
+      "summary": "Server action updating an existing guardstatus record in the database.",
+      "tags": [
+        "server-action",
+        "update",
+        "mutation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/(dashboard)/strategy/combos/page.tsx",
+      "type": "file",
+      "name": "page.tsx",
+      "filePath": "src/app/(dashboard)/strategy/combos/page.tsx",
+      "summary": "Page component for managing strategy combinations and portfolio allocations.",
+      "tags": [
+        "page",
+        "server-component",
+        "ui"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/strategy/combos/page.tsx:CombosPage",
+      "type": "function",
+      "name": "CombosPage",
+      "filePath": "src/app/(dashboard)/strategy/combos/page.tsx",
+      "lineRange": [
+        61,
+        200
+      ],
+      "summary": "Function CombosPage providing core functionality.",
+      "tags": [
+        "page",
+        "server-component"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/app/(dashboard)/strategy/strategies/[id]/page.tsx",
+      "type": "file",
+      "name": "page.tsx",
+      "filePath": "src/app/(dashboard)/strategy/strategies/[id]/page.tsx",
+      "summary": "Page component for viewing and managing investment strategies with checklists and details.",
+      "tags": [
+        "page",
+        "server-component",
+        "ui"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/strategy/strategies/[id]/page.tsx:TestRow",
+      "type": "function",
+      "name": "TestRow",
+      "filePath": "src/app/(dashboard)/strategy/strategies/[id]/page.tsx",
+      "lineRange": [
+        28,
+        45
+      ],
+      "summary": "Function TestRow providing core functionality.",
+      "tags": [
+        "utility",
+        "helper"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/strategy/strategies/[id]/page.tsx:StrategyDetailPage",
+      "type": "function",
+      "name": "StrategyDetailPage",
+      "filePath": "src/app/(dashboard)/strategy/strategies/[id]/page.tsx",
+      "lineRange": [
+        48,
+        202
+      ],
+      "summary": "Function StrategyDetailPage providing core functionality.",
+      "tags": [
+        "page",
+        "server-component"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/app/(dashboard)/strategy/strategies/actions.ts",
+      "type": "file",
+      "name": "actions.ts",
+      "filePath": "src/app/(dashboard)/strategy/strategies/actions.ts",
+      "summary": "Server actions for investment strategy management and checklist operations.",
+      "tags": [
+        "server-actions",
+        "database",
+        "supabase"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/strategy/strategies/actions.ts:createStrategy",
+      "type": "function",
+      "name": "createStrategy",
+      "filePath": "src/app/(dashboard)/strategy/strategies/actions.ts",
+      "lineRange": [
+        12,
+        47
+      ],
+      "summary": "Server action creating a new strategy record in the database.",
+      "tags": [
+        "server-action",
+        "create",
+        "mutation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/strategy/strategies/actions.ts:updateStrategy",
+      "type": "function",
+      "name": "updateStrategy",
+      "filePath": "src/app/(dashboard)/strategy/strategies/actions.ts",
+      "lineRange": [
+        50,
+        92
+      ],
+      "summary": "Server action updating an existing strategy record in the database.",
+      "tags": [
+        "server-action",
+        "update",
+        "mutation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/strategy/strategies/actions.ts:deleteStrategy",
+      "type": "function",
+      "name": "deleteStrategy",
+      "filePath": "src/app/(dashboard)/strategy/strategies/actions.ts",
+      "lineRange": [
+        95,
+        108
+      ],
+      "summary": "Server action deleting a strategy record and associated data from the database.",
+      "tags": [
+        "server-action",
+        "delete",
+        "mutation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/(dashboard)/strategy/strategies/actions.ts:toggleChecklistItem",
+      "type": "function",
+      "name": "toggleChecklistItem",
+      "filePath": "src/app/(dashboard)/strategy/strategies/actions.ts",
+      "lineRange": [
+        111,
+        129
+      ],
+      "summary": "Function toggleChecklistItem providing core functionality.",
+      "tags": [
+        "utility",
+        "helper"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/(dashboard)/strategy/strategies/page.tsx",
+      "type": "file",
+      "name": "page.tsx",
+      "filePath": "src/app/(dashboard)/strategy/strategies/page.tsx",
+      "summary": "Page component for viewing and managing investment strategies with checklists and details.",
+      "tags": [
+        "page",
+        "server-component",
+        "ui"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/(dashboard)/strategy/strategies/page.tsx:StrategiesPage",
+      "type": "function",
+      "name": "StrategiesPage",
+      "filePath": "src/app/(dashboard)/strategy/strategies/page.tsx",
+      "lineRange": [
+        27,
+        182
+      ],
+      "summary": "Function StrategiesPage providing core functionality.",
+      "tags": [
+        "page",
+        "server-component"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/app/api/bank/balance/route.ts",
+      "type": "file",
+      "name": "route.ts",
+      "filePath": "src/app/api/bank/balance/route.ts",
+      "summary": "API route handler for fetching bank account balances via FinTS integration.",
+      "tags": [
+        "api-handler",
+        "endpoint",
+        "http"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/api/bank/balance/route.ts:readCachedBalances",
+      "type": "function",
+      "name": "readCachedBalances",
+      "filePath": "src/app/api/bank/balance/route.ts",
+      "lineRange": [
+        6,
+        32
+      ],
+      "summary": "Function readCachedBalances providing core functionality.",
+      "tags": [
+        "utility",
+        "helper"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/api/bank/balance/route.ts:GET",
+      "type": "function",
+      "name": "GET",
+      "filePath": "src/app/api/bank/balance/route.ts",
+      "lineRange": [
+        41,
+        52
+      ],
+      "summary": "HTTP GET handler fetching bank account balances via FinTS protocol.",
+      "tags": [
+        "api-handler",
+        "http",
+        "get"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/api/bank/balance/route.ts:POST",
+      "type": "function",
+      "name": "POST",
+      "filePath": "src/app/api/bank/balance/route.ts",
+      "lineRange": [
+        60,
+        108
+      ],
+      "summary": "HTTP POST handler for API endpoint with validation and Supabase operations.",
+      "tags": [
+        "api-handler",
+        "http",
+        "post"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/api/bank/debug/route.ts",
+      "type": "file",
+      "name": "route.ts",
+      "filePath": "src/app/api/bank/debug/route.ts",
+      "summary": "API route handler for debugging FinTS connections and bank sync issues.",
+      "tags": [
+        "api-handler",
+        "endpoint",
+        "http"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/api/bank/debug/route.ts:GET",
+      "type": "function",
+      "name": "GET",
+      "filePath": "src/app/api/bank/debug/route.ts",
+      "lineRange": [
+        12,
+        56
+      ],
+      "summary": "HTTP GET handler for API endpoint with validation and Supabase operations.",
+      "tags": [
+        "api-handler",
+        "http",
+        "get"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/api/bank/sca-status/route.ts",
+      "type": "file",
+      "name": "route.ts",
+      "filePath": "src/app/api/bank/sca-status/route.ts",
+      "summary": "API route handler for checking and managing SCA (Strong Customer Authentication) status.",
+      "tags": [
+        "api-handler",
+        "endpoint",
+        "http"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/api/bank/sca-status/route.ts:GET",
+      "type": "function",
+      "name": "GET",
+      "filePath": "src/app/api/bank/sca-status/route.ts",
+      "lineRange": [
+        15,
+        21
+      ],
+      "summary": "HTTP GET handler checking SCA exemption status and requirements.",
+      "tags": [
+        "api-handler",
+        "http",
+        "get"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/app/api/bank/sync/route.ts",
+      "type": "file",
+      "name": "route.ts",
+      "filePath": "src/app/api/bank/sync/route.ts",
+      "summary": "API route handler for syncing bank transactions and categorizing them automatically.",
+      "tags": [
+        "api-handler",
+        "endpoint",
+        "http"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/app/api/bank/sync/route.ts:POST",
+      "type": "function",
+      "name": "POST",
+      "filePath": "src/app/api/bank/sync/route.ts",
+      "lineRange": [
+        32,
+        133
+      ],
+      "summary": "HTTP POST handler triggering bank transaction synchronization and automatic categorization.",
+      "tags": [
+        "api-handler",
+        "http",
+        "post"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/app/api/bank/transactions/[id]/route.ts",
+      "type": "file",
+      "name": "route.ts",
+      "filePath": "src/app/api/bank/transactions/[id]/route.ts",
+      "summary": "API route handler for retrieving or updating individual bank transaction records.",
+      "tags": [
+        "api-handler",
+        "endpoint",
+        "http"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/api/bank/transactions/[id]/route.ts:PATCH",
+      "type": "function",
+      "name": "PATCH",
+      "filePath": "src/app/api/bank/transactions/[id]/route.ts",
+      "lineRange": [
+        10,
+        35
+      ],
+      "summary": "HTTP PATCH handler updating transaction category assignment.",
+      "tags": [
+        "api-handler",
+        "http",
+        "patch"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/app/api/bank/transactions/route.ts",
+      "type": "file",
+      "name": "route.ts",
+      "filePath": "src/app/api/bank/transactions/route.ts",
+      "summary": "API route handler for fetching bank transactions with filtering and pagination.",
+      "tags": [
+        "api-handler",
+        "endpoint",
+        "http"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/api/bank/transactions/route.ts:GET",
+      "type": "function",
+      "name": "GET",
+      "filePath": "src/app/api/bank/transactions/route.ts",
+      "lineRange": [
+        9,
+        47
+      ],
+      "summary": "HTTP GET handler fetching paginated bank transactions with filtering.",
+      "tags": [
+        "api-handler",
+        "http",
+        "get"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/app/(dashboard)/assistant/knowledge/page.tsx",
+      "target": "file:src/components/assistant/KnowledgeManager.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/knowledge/page.tsx",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/knowledge/page.tsx",
+      "target": "function:src/app/(dashboard)/assistant/knowledge/page.tsx:AthenaKnowledgePage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/memory/page.tsx",
+      "target": "file:src/components/assistant/MemoryManager.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/memory/page.tsx",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/assistant/memory/page.tsx",
+      "target": "function:src/app/(dashboard)/assistant/memory/page.tsx:AthenaMemoryPage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/dashboard/insight-actions.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/dashboard/insight-actions.ts",
+      "target": "function:src/app/(dashboard)/dashboard/insight-actions.ts:dismissInsight",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/contracts/actions.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/contracts/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/(planung)/contracts/actions.ts:buildPayload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/contracts/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/(planung)/contracts/actions.ts:createContract",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/contracts/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/(planung)/contracts/actions.ts:updateContract",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/contracts/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/(planung)/contracts/actions.ts:deleteContract",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/debts/actions.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/debts/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/(planung)/debts/actions.ts:createDebt",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/debts/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/(planung)/debts/actions.ts:updateDebt",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/debts/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/(planung)/debts/actions.ts:deleteDebt",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/debts/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/(planung)/debts/actions.ts:recordPayment",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/goals/actions.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/goals/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/(planung)/goals/actions.ts:createGoal",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/goals/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/(planung)/goals/actions.ts:updateGoal",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/goals/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/(planung)/goals/actions.ts:setGoalStatus",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/goals/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/(planung)/goals/actions.ts:addGoalPayment",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/goals/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/(planung)/goals/actions.ts:deleteGoal",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/goals/page.tsx",
+      "target": "file:src/app/(dashboard)/finance/(planung)/goals/actions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/goals/page.tsx",
+      "target": "file:src/components/finance/goal-form.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/goals/page.tsx",
+      "target": "file:src/components/ui/button.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/goals/page.tsx",
+      "target": "file:src/lib/format.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/goals/page.tsx",
+      "target": "file:src/lib/settings.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/goals/page.tsx",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/goals/page.tsx",
+      "target": "file:src/types/database.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/goals/page.tsx",
+      "target": "function:src/app/(dashboard)/finance/(planung)/goals/page.tsx:GoalsPage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/goals/page.tsx",
+      "target": "function:src/app/(dashboard)/finance/(planung)/goals/page.tsx:GoalCard",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/goals/page.tsx",
+      "target": "function:src/app/(dashboard)/finance/(planung)/goals/page.tsx:SavingsPlanBadge",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(planung)/goals/page.tsx",
+      "target": "function:src/app/(dashboard)/finance/(planung)/goals/page.tsx:EmptyState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts:createCategory",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts:updateCategory",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts:deleteCategory",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts:createTransaction",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts:updateTransaction",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts:updateTransactionCategory",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts:deleteTransaction",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/accounts/actions.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/accounts/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/accounts/actions.ts:createAccount",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/accounts/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/accounts/actions.ts:updateAccount",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/accounts/actions.ts",
+      "target": "function:src/app/(dashboard)/finance/accounts/actions.ts:deleteAccount",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/reports/page.tsx",
+      "target": "file:src/app/(dashboard)/finance/reports/ReportsClient.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/reports/page.tsx",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/finance/reports/page.tsx",
+      "target": "function:src/app/(dashboard)/finance/reports/page.tsx:ReportsPage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/combos/actions.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/combos/actions.ts",
+      "target": "function:src/app/(dashboard)/strategy/combos/actions.ts:createCombo",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/combos/actions.ts",
+      "target": "function:src/app/(dashboard)/strategy/combos/actions.ts:updateCombo",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/combos/actions.ts",
+      "target": "function:src/app/(dashboard)/strategy/combos/actions.ts:deleteCombo",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/combos/actions.ts",
+      "target": "function:src/app/(dashboard)/strategy/combos/actions.ts:updateGuardStatus",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/combos/page.tsx",
+      "target": "file:src/components/strategy/combo-form.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/combos/page.tsx",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/combos/page.tsx",
+      "target": "function:src/app/(dashboard)/strategy/combos/page.tsx:CombosPage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/strategies/[id]/page.tsx",
+      "target": "file:src/components/strategy/checklist-panel.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/strategies/[id]/page.tsx",
+      "target": "file:src/components/strategy/strategy-form.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/strategies/[id]/page.tsx",
+      "target": "file:src/lib/settings.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/strategies/[id]/page.tsx",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/strategies/[id]/page.tsx",
+      "target": "function:src/app/(dashboard)/strategy/strategies/[id]/page.tsx:TestRow",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/strategies/[id]/page.tsx",
+      "target": "function:src/app/(dashboard)/strategy/strategies/[id]/page.tsx:StrategyDetailPage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/strategies/actions.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/strategies/actions.ts",
+      "target": "function:src/app/(dashboard)/strategy/strategies/actions.ts:createStrategy",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/strategies/actions.ts",
+      "target": "function:src/app/(dashboard)/strategy/strategies/actions.ts:updateStrategy",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/strategies/actions.ts",
+      "target": "function:src/app/(dashboard)/strategy/strategies/actions.ts:deleteStrategy",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/strategies/actions.ts",
+      "target": "function:src/app/(dashboard)/strategy/strategies/actions.ts:toggleChecklistItem",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/strategies/page.tsx",
+      "target": "file:src/components/strategy/strategy-form.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/strategies/page.tsx",
+      "target": "file:src/lib/settings.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/strategies/page.tsx",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/(dashboard)/strategy/strategies/page.tsx",
+      "target": "function:src/app/(dashboard)/strategy/strategies/page.tsx:StrategiesPage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/api/bank/balance/route.ts",
+      "target": "file:src/lib/fints/index.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/bank/balance/route.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/bank/balance/route.ts",
+      "target": "function:src/app/api/bank/balance/route.ts:readCachedBalances",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/api/bank/balance/route.ts",
+      "target": "function:src/app/api/bank/balance/route.ts:GET",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/api/bank/balance/route.ts",
+      "target": "function:src/app/api/bank/balance/route.ts:POST",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/api/bank/debug/route.ts",
+      "target": "file:src/lib/fints/sidecar.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/bank/debug/route.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/bank/debug/route.ts",
+      "target": "function:src/app/api/bank/debug/route.ts:GET",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/api/bank/sca-status/route.ts",
+      "target": "file:src/lib/fints/state.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/bank/sca-status/route.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/bank/sca-status/route.ts",
+      "target": "function:src/app/api/bank/sca-status/route.ts:GET",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/api/bank/sync/route.ts",
+      "target": "file:src/lib/fints/categorize.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/bank/sync/route.ts",
+      "target": "file:src/lib/fints/index.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/bank/sync/route.ts",
+      "target": "file:src/lib/fints/state.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/bank/sync/route.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/bank/sync/route.ts",
+      "target": "function:src/app/api/bank/sync/route.ts:POST",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/api/bank/transactions/[id]/route.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/bank/transactions/[id]/route.ts",
+      "target": "function:src/app/api/bank/transactions/[id]/route.ts:PATCH",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/api/bank/transactions/route.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/api/bank/transactions/route.ts",
+      "target": "function:src/app/api/bank/transactions/route.ts:GET",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    }
+  ]
+}

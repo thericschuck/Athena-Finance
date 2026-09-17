@@ -258,7 +258,7 @@ export function BankTransactionsView({ transactions, categories, isLoading, hasL
                             ? <TrendingUp  className="size-3.5 shrink-0" />
                             : <TrendingDown className="size-3.5 shrink-0" />
                         }
-                        {isCredit ? '+' : ''}{fmtEur(tx.amount)}
+                        <span className="tabular-nums">{isCredit ? '+' : ''}{fmtEur(tx.amount)}</span>
                       </span>
                     </td>
                   </tr>

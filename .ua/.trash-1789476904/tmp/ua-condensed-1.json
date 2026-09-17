@@ -1,0 +1,2535 @@
+[
+ {
+  "path": "src/app/(dashboard)/inventar/actions.ts",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 364,
+  "nonEmptyLines": 317,
+  "functions": [
+   {
+    "name": "text",
+    "startLine": 19,
+    "endLine": 22,
+    "params": [
+     "formData",
+     "key"
+    ],
+    "lines": 3
+   },
+   {
+    "name": "zahl",
+    "startLine": 24,
+    "endLine": 35,
+    "params": [
+     "formData",
+     "key"
+    ],
+    "lines": 11
+   },
+   {
+    "name": "schalter",
+    "startLine": 37,
+    "endLine": 39,
+    "params": [
+     "formData",
+     "key"
+    ],
+    "lines": 2
+   },
+   {
+    "name": "felder",
+    "startLine": 42,
+    "endLine": 64,
+    "params": [
+     "formData"
+    ],
+    "lines": 22
+   },
+   {
+    "name": "createValuable",
+    "startLine": 67,
+    "endLine": 121,
+    "params": [
+     "_prev",
+     "formData"
+    ],
+    "lines": 54
+   },
+   {
+    "name": "updateValuable",
+    "startLine": 124,
+    "endLine": 186,
+    "params": [
+     "_prev",
+     "formData"
+    ],
+    "lines": 62
+   },
+   {
+    "name": "addValuation",
+    "startLine": 189,
+    "endLine": 213,
+    "params": [
+     "valuableId",
+     "wert",
+     "bewertetAm",
+     "notiz"
+    ],
+    "lines": 24
+   },
+   {
+    "name": "registerValuableImage",
+    "startLine": 228,
+    "endLine": 256,
+    "params": [
+     "valuableId",
+     "pfad",
+     "art"
+    ],
+    "lines": 28
+   },
+   {
+    "name": "setHauptbild",
+    "startLine": 259,
+    "endLine": 281,
+    "params": [
+     "bildId",
+     "valuableId"
+    ],
+    "lines": 22
+   },
+   {
+    "name": "deleteValuableImage",
+    "startLine": 284,
+    "endLine": 331,
+    "params": [
+     "bildId"
+    ],
+    "lines": 47
+   },
+   {
+    "name": "deleteValuable",
+    "startLine": 334,
+    "endLine": 364,
+    "params": [
+     "id"
+    ],
+    "lines": 30
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "createValuable",
+    "line": 67,
+    "isDefault": false
+   },
+   {
+    "name": "updateValuable",
+    "line": 124,
+    "isDefault": false
+   },
+   {
+    "name": "addValuation",
+    "line": 189,
+    "isDefault": false
+   },
+   {
+    "name": "registerValuableImage",
+    "line": 228,
+    "isDefault": false
+   },
+   {
+    "name": "setHauptbild",
+    "line": 259,
+    "isDefault": false
+   },
+   {
+    "name": "deleteValuableImage",
+    "line": 284,
+    "isDefault": false
+   },
+   {
+    "name": "deleteValuable",
+    "line": 334,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 3,
+   "exportCount": 7,
+   "functionCount": 11,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/app/(dashboard)/inventar/page.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 177,
+  "nonEmptyLines": 162,
+  "functions": [
+   {
+    "name": "InventarPage",
+    "startLine": 20,
+    "endLine": 160,
+    "params": [],
+    "lines": 140
+   },
+   {
+    "name": "Kennzahl",
+    "startLine": 162,
+    "endLine": 177,
+    "params": [
+     "{\r\n  label, value, className = '', hint,\r\n}"
+    ],
+    "lines": 15
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "metadata",
+    "line": 18,
+    "isDefault": false
+   },
+   {
+    "name": "InventarPage",
+    "line": 20,
+    "isDefault": true
+   }
+  ],
+  "metrics": {
+   "importCount": 6,
+   "exportCount": 2,
+   "functionCount": 2,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/app/(dashboard)/strategy/indicators/actions.ts",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 214,
+  "nonEmptyLines": 183,
+  "functions": [
+   {
+    "name": "REVALIDATE",
+    "startLine": 9,
+    "endLine": 9,
+    "params": [],
+    "lines": 0
+   },
+   {
+    "name": "createIndicator",
+    "startLine": 12,
+    "endLine": 44,
+    "params": [
+     "_prev",
+     "formData"
+    ],
+    "lines": 32
+   },
+   {
+    "name": "updateIndicator",
+    "startLine": 46,
+    "endLine": 84,
+    "params": [
+     "_prev",
+     "formData"
+    ],
+    "lines": 38
+   },
+   {
+    "name": "deleteIndicator",
+    "startLine": 86,
+    "endLine": 99,
+    "params": [
+     "id"
+    ],
+    "lines": 13
+   },
+   {
+    "name": "parseOptFloat",
+    "startLine": 102,
+    "endLine": 107,
+    "params": [
+     "fd",
+     "key"
+    ],
+    "lines": 5
+   },
+   {
+    "name": "parseOptDate",
+    "startLine": 109,
+    "endLine": 112,
+    "params": [
+     "fd",
+     "key"
+    ],
+    "lines": 3
+   },
+   {
+    "name": "createPerformance",
+    "startLine": 114,
+    "endLine": 155,
+    "params": [
+     "_prev",
+     "formData"
+    ],
+    "lines": 41
+   },
+   {
+    "name": "updatePerformance",
+    "startLine": 157,
+    "endLine": 200,
+    "params": [
+     "_prev",
+     "formData"
+    ],
+    "lines": 43
+   },
+   {
+    "name": "deletePerformance",
+    "startLine": 202,
+    "endLine": 214,
+    "params": [
+     "id"
+    ],
+    "lines": 12
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "createIndicator",
+    "line": 12,
+    "isDefault": false
+   },
+   {
+    "name": "updateIndicator",
+    "line": 46,
+    "isDefault": false
+   },
+   {
+    "name": "deleteIndicator",
+    "line": 86,
+    "isDefault": false
+   },
+   {
+    "name": "createPerformance",
+    "line": 114,
+    "isDefault": false
+   },
+   {
+    "name": "updatePerformance",
+    "line": 157,
+    "isDefault": false
+   },
+   {
+    "name": "deletePerformance",
+    "line": 202,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 1,
+   "exportCount": 6,
+   "functionCount": 9,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/assistant/AthenaSettingsForm.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 345,
+  "nonEmptyLines": 329,
+  "functions": [
+   {
+    "name": "ToggleField",
+    "startLine": 32,
+    "endLine": 62,
+    "params": [
+     "{\r\n  name,\r\n  label,\r\n  hint,\r\n  defaultChecked,\r\n}"
+    ],
+    "lines": 30
+   },
+   {
+    "name": "AthenaSettingsForm",
+    "startLine": 64,
+    "endLine": 345,
+    "params": [
+     "{\r\n  settings,\r\n  templates,\r\n}"
+    ],
+    "lines": 281
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "AthenaSettingsForm",
+    "line": 64,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 8,
+   "exportCount": 1,
+   "functionCount": 2,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/assistant/KnowledgeManager.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 228,
+  "nonEmptyLines": 218,
+  "functions": [
+   {
+    "name": "KnowledgeManager",
+    "startLine": 28,
+    "endLine": 228,
+    "params": [
+     "{ entries }"
+    ],
+    "lines": 200
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "KnowledgeManager",
+    "line": 28,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 6,
+   "exportCount": 1,
+   "functionCount": 1,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/assistant/MemoryManager.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 208,
+  "nonEmptyLines": 197,
+  "functions": [
+   {
+    "name": "MemoryManager",
+    "startLine": 35,
+    "endLine": 208,
+    "params": [
+     "{ memories }"
+    ],
+    "lines": 173
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "MemoryManager",
+    "line": 35,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 6,
+   "exportCount": 1,
+   "functionCount": 1,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/crypto/asset-form.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 341,
+  "nonEmptyLines": 314,
+  "functions": [
+   {
+    "name": "AssetFields",
+    "startLine": 28,
+    "endLine": 190,
+    "params": [
+     "{ asset, defaultPortfolio }"
+    ],
+    "lines": 162
+   },
+   {
+    "name": "AssetDialog",
+    "startLine": 193,
+    "endLine": 265,
+    "params": [
+     "{\r\n  mode, asset, trigger, open: controlledOpen, onOpenChange, onSuccess, defaultPortfolio,\r\n}"
+    ],
+    "lines": 72
+   },
+   {
+    "name": "AssetFormDialog",
+    "startLine": 270,
+    "endLine": 290,
+    "params": [
+     "{\r\n  open,\r\n  onOpenChange,\r\n  onSuccess,\r\n  defaultPortfolio,\r\n}"
+    ],
+    "lines": 20
+   },
+   {
+    "name": "EditAssetDialog",
+    "startLine": 292,
+    "endLine": 299,
+    "params": [
+     "{ asset }"
+    ],
+    "lines": 7
+   },
+   {
+    "name": "DeleteAssetButton",
+    "startLine": 301,
+    "endLine": 341,
+    "params": [
+     "{ asset }"
+    ],
+    "lines": 40
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "AssetFormDialog",
+    "line": 270,
+    "isDefault": false
+   },
+   {
+    "name": "EditAssetDialog",
+    "line": 292,
+    "isDefault": false
+   },
+   {
+    "name": "DeleteAssetButton",
+    "line": 301,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 10,
+   "exportCount": 3,
+   "functionCount": 5,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/finance/account-form.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 274,
+  "nonEmptyLines": 252,
+  "functions": [
+   {
+    "name": "AccountFields",
+    "startLine": 51,
+    "endLine": 144,
+    "params": [
+     "{\r\n  account, type, setType, currency, setCurrency,\r\n}"
+    ],
+    "lines": 93
+   },
+   {
+    "name": "AccountDialog",
+    "startLine": 147,
+    "endLine": 206,
+    "params": [
+     "{\r\n  mode, account, trigger,\r\n}"
+    ],
+    "lines": 59
+   },
+   {
+    "name": "AddAccountDialog",
+    "startLine": 209,
+    "endLine": 221,
+    "params": [],
+    "lines": 12
+   },
+   {
+    "name": "EditAccountDialog",
+    "startLine": 223,
+    "endLine": 231,
+    "params": [
+     "{ account }"
+    ],
+    "lines": 8
+   },
+   {
+    "name": "DeleteAccountButton",
+    "startLine": 233,
+    "endLine": 274,
+    "params": [
+     "{ account }"
+    ],
+    "lines": 41
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "AddAccountDialog",
+    "line": 209,
+    "isDefault": false
+   },
+   {
+    "name": "EditAccountDialog",
+    "line": 223,
+    "isDefault": false
+   },
+   {
+    "name": "DeleteAccountButton",
+    "line": 233,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 8,
+   "exportCount": 3,
+   "functionCount": 5,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/finance/category-form.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 477,
+  "nonEmptyLines": 452,
+  "functions": [
+   {
+    "name": "CategoryFormFields",
+    "startLine": 71,
+    "endLine": 248,
+    "params": [
+     "{\r\n  allCategories,\r\n  category,\r\n  type,\r\n  setType,\r\n  parentId,\r\n  setParentId,\r\n  taxRole,\r\n  setTaxRole,\r\n  euerZeile,\r\n  setEuerZeile,\r\n  euerZeilen,\r\n}"
+    ],
+    "lines": 177
+   },
+   {
+    "name": "AddCategoryDialog",
+    "startLine": 253,
+    "endLine": 336,
+    "params": [
+     "{\r\n  allCategories,\r\n  euerZeilen,\r\n}"
+    ],
+    "lines": 83
+   },
+   {
+    "name": "EditCategoryDialog",
+    "startLine": 341,
+    "endLine": 427,
+    "params": [
+     "{\r\n  category,\r\n  allCategories,\r\n  euerZeilen,\r\n}"
+    ],
+    "lines": 86
+   },
+   {
+    "name": "DeleteCategoryButton",
+    "startLine": 432,
+    "endLine": 477,
+    "params": [
+     "{ category }"
+    ],
+    "lines": 45
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "AddCategoryDialog",
+    "line": 253,
+    "isDefault": false
+   },
+   {
+    "name": "EditCategoryDialog",
+    "line": 341,
+    "isDefault": false
+   },
+   {
+    "name": "DeleteCategoryButton",
+    "line": 432,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 8,
+   "exportCount": 3,
+   "functionCount": 4,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/finance/contract-form.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 349,
+  "nonEmptyLines": 324,
+  "functions": [
+   {
+    "name": "ContractFields",
+    "startLine": 31,
+    "endLine": 202,
+    "params": [
+     "{\r\n  contract, type, setType, frequency, setFrequency, currency, setCurrency,\r\n  accountId, setAccountId, toAccountId, setToAccountId, categoryId, setCategoryId,\r\n  accounts, categories,\r\n}"
+    ],
+    "lines": 171
+   },
+   {
+    "name": "ContractDialog",
+    "startLine": 205,
+    "endLine": 288,
+    "params": [
+     "{\r\n  mode, contract, accounts, categories, trigger,\r\n}"
+    ],
+    "lines": 83
+   },
+   {
+    "name": "AddContractDialog",
+    "startLine": 291,
+    "endLine": 298,
+    "params": [
+     "{ accounts, categories }"
+    ],
+    "lines": 7
+   },
+   {
+    "name": "EditContractDialog",
+    "startLine": 300,
+    "endLine": 307,
+    "params": [
+     "{ contract, accounts, categories }"
+    ],
+    "lines": 7
+   },
+   {
+    "name": "DeleteContractButton",
+    "startLine": 309,
+    "endLine": 349,
+    "params": [
+     "{ contract }"
+    ],
+    "lines": 40
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "AddContractDialog",
+    "line": 291,
+    "isDefault": false
+   },
+   {
+    "name": "EditContractDialog",
+    "line": 300,
+    "isDefault": false
+   },
+   {
+    "name": "DeleteContractButton",
+    "line": 309,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 9,
+   "exportCount": 3,
+   "functionCount": 5,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/finance/debt-payment-form.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 538,
+  "nonEmptyLines": 484,
+  "functions": [
+   {
+    "name": "AddDebtDialog",
+    "startLine": 53,
+    "endLine": 230,
+    "params": [],
+    "lines": 177
+   },
+   {
+    "name": "EditDebtDialog",
+    "startLine": 235,
+    "endLine": 341,
+    "params": [
+     "{ debt }"
+    ],
+    "lines": 106
+   },
+   {
+    "name": "DeleteDebtButton",
+    "startLine": 346,
+    "endLine": 383,
+    "params": [
+     "{ debt }"
+    ],
+    "lines": 37
+   },
+   {
+    "name": "DebtPaymentDialog",
+    "startLine": 388,
+    "endLine": 486,
+    "params": [
+     "{ debt }"
+    ],
+    "lines": 98
+   },
+   {
+    "name": "SettleDebtButton",
+    "startLine": 492,
+    "endLine": 538,
+    "params": [
+     "{ debt }"
+    ],
+    "lines": 46
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "AddDebtDialog",
+    "line": 53,
+    "isDefault": false
+   },
+   {
+    "name": "EditDebtDialog",
+    "line": 235,
+    "isDefault": false
+   },
+   {
+    "name": "DeleteDebtButton",
+    "line": 346,
+    "isDefault": false
+   },
+   {
+    "name": "DebtPaymentDialog",
+    "line": 388,
+    "isDefault": false
+   },
+   {
+    "name": "SettleDebtButton",
+    "line": 492,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 10,
+   "exportCount": 5,
+   "functionCount": 5,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/finance/goal-form.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 321,
+  "nonEmptyLines": 296,
+  "functions": [
+   {
+    "name": "GoalFields",
+    "startLine": 35,
+    "endLine": 134,
+    "params": [
+     "{\r\n  goal, priority, setPriority,\r\n}"
+    ],
+    "lines": 99
+   },
+   {
+    "name": "GoalDialog",
+    "startLine": 137,
+    "endLine": 192,
+    "params": [
+     "{\r\n  mode, goal, trigger,\r\n}"
+    ],
+    "lines": 55
+   },
+   {
+    "name": "AddGoalDialog",
+    "startLine": 195,
+    "endLine": 202,
+    "params": [],
+    "lines": 7
+   },
+   {
+    "name": "EditGoalDialog",
+    "startLine": 204,
+    "endLine": 211,
+    "params": [
+     "{ goal }"
+    ],
+    "lines": 7
+   },
+   {
+    "name": "GoalPaymentDialog",
+    "startLine": 213,
+    "endLine": 279,
+    "params": [
+     "{ goal }"
+    ],
+    "lines": 66
+   },
+   {
+    "name": "DeleteGoalButton",
+    "startLine": 281,
+    "endLine": 321,
+    "params": [
+     "{ goal }"
+    ],
+    "lines": 40
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "AddGoalDialog",
+    "line": 195,
+    "isDefault": false
+   },
+   {
+    "name": "EditGoalDialog",
+    "line": 204,
+    "isDefault": false
+   },
+   {
+    "name": "GoalPaymentDialog",
+    "line": 213,
+    "isDefault": false
+   },
+   {
+    "name": "DeleteGoalButton",
+    "line": 281,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 8,
+   "exportCount": 4,
+   "functionCount": 6,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/finance/transaction-csv.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 524,
+  "nonEmptyLines": 471,
+  "functions": [
+   {
+    "name": "decodeCsv",
+    "startLine": 28,
+    "endLine": 43,
+    "params": [
+     "buffer"
+    ],
+    "lines": 15
+   },
+   {
+    "name": "parseCSV",
+    "startLine": 47,
+    "endLine": 78,
+    "params": [
+     "text"
+    ],
+    "lines": 31
+   },
+   {
+    "name": "parseGermanAmount",
+    "startLine": 82,
+    "endLine": 91,
+    "params": [
+     "raw"
+    ],
+    "lines": 9
+   },
+   {
+    "name": "detectFormat",
+    "startLine": 109,
+    "endLine": 119,
+    "params": [
+     "headers"
+    ],
+    "lines": 10
+   },
+   {
+    "name": "formatLabel",
+    "startLine": 121,
+    "endLine": 131,
+    "params": [
+     "format"
+    ],
+    "lines": 10
+   },
+   {
+    "name": "mapRows",
+    "startLine": 133,
+    "endLine": 208,
+    "params": [
+     "format",
+     "headers",
+     "rows"
+    ],
+    "lines": 75
+   },
+   {
+    "name": "parseSparkasseDate",
+    "startLine": 210,
+    "endLine": 215,
+    "params": [
+     "raw"
+    ],
+    "lines": 5
+   },
+   {
+    "name": "ExportTransactionsButton",
+    "startLine": 224,
+    "endLine": 242,
+    "params": [
+     "{\r\n  accountId,\r\n  label = 'CSV Export',\r\n}"
+    ],
+    "lines": 18
+   },
+   {
+    "name": "ImportTransactionsDialog",
+    "startLine": 252,
+    "endLine": 524,
+    "params": [
+     "{\r\n  accountId,\r\n  accountName,\r\n  onSuccess,\r\n}"
+    ],
+    "lines": 272
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "ExportTransactionsButton",
+    "line": 224,
+    "isDefault": false
+   },
+   {
+    "name": "ImportTransactionsDialog",
+    "line": 252,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 3,
+   "exportCount": 2,
+   "functionCount": 9,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/finance/transaction-form.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 605,
+  "nonEmptyLines": 557,
+  "functions": [
+   {
+    "name": "categoryLabel",
+    "startLine": 56,
+    "endLine": 58,
+    "params": [
+     "c"
+    ],
+    "lines": 2
+   },
+   {
+    "name": "txFormReducer",
+    "startLine": 85,
+    "endLine": 96,
+    "params": [
+     "state",
+     "action"
+    ],
+    "lines": 11
+   },
+   {
+    "name": "currencyForAccount",
+    "startLine": 98,
+    "endLine": 101,
+    "params": [
+     "accountId",
+     "accounts"
+    ],
+    "lines": 3
+   },
+   {
+    "name": "AddTransactionDialog",
+    "startLine": 103,
+    "endLine": 309,
+    "params": [
+     "{ accounts, categories, defaultAccountId }"
+    ],
+    "lines": 206
+   },
+   {
+    "name": "EditTransactionDialog",
+    "startLine": 311,
+    "endLine": 502,
+    "params": [
+     "{\r\n  tx,\r\n  accounts,\r\n  categories,\r\n}"
+    ],
+    "lines": 191
+   },
+   {
+    "name": "TransactionCategorySelect",
+    "startLine": 510,
+    "endLine": 562,
+    "params": [
+     "{\r\n  tx,\r\n  categories,\r\n}"
+    ],
+    "lines": 52
+   },
+   {
+    "name": "DeleteTransactionButton",
+    "startLine": 564,
+    "endLine": 605,
+    "params": [
+     "{ tx }"
+    ],
+    "lines": 41
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "AddTransactionDialog",
+    "line": 103,
+    "isDefault": false
+   },
+   {
+    "name": "EditTransactionDialog",
+    "line": 311,
+    "isDefault": false
+   },
+   {
+    "name": "TransactionCategorySelect",
+    "line": 510,
+    "isDefault": false
+   },
+   {
+    "name": "DeleteTransactionButton",
+    "line": 564,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 8,
+   "exportCount": 4,
+   "functionCount": 7,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/inventar/InventoryClient.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 496,
+  "nonEmptyLines": 458,
+  "functions": [
+   {
+    "name": "InventoryClient",
+    "startLine": 25,
+    "endLine": 106,
+    "params": [
+     "{ items, locale }"
+    ],
+    "lines": 81
+   },
+   {
+    "name": "Karte",
+    "startLine": 122,
+    "endLine": 314,
+    "params": [
+     "{\r\n  item, eur, onOpen,\r\n}"
+    ],
+    "lines": 192
+   },
+   {
+    "name": "Detail",
+    "startLine": 318,
+    "endLine": 416,
+    "params": [
+     "{\r\n  item, eur, locale,\r\n}"
+    ],
+    "lines": 98
+   },
+   {
+    "name": "Zeile",
+    "startLine": 420,
+    "endLine": 441,
+    "params": [
+     "{\r\n  label, value, stark, mono, className = '',\r\n}"
+    ],
+    "lines": 21
+   },
+   {
+    "name": "Marke",
+    "startLine": 443,
+    "endLine": 457,
+    "params": [
+     "{ an, icon, label }"
+    ],
+    "lines": 14
+   },
+   {
+    "name": "Chip",
+    "startLine": 459,
+    "endLine": 480,
+    "params": [
+     "{\r\n  aktiv, onClick, children,\r\n}"
+    ],
+    "lines": 21
+   },
+   {
+    "name": "LeereVitrine",
+    "startLine": 482,
+    "endLine": 496,
+    "params": [
+     "{ hatObjekte }"
+    ],
+    "lines": 14
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "InventoryClient",
+    "line": 25,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 9,
+   "exportCount": 1,
+   "functionCount": 7,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/inventar/ValuableActions.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 76,
+  "nonEmptyLines": 71,
+  "functions": [
+   {
+    "name": "ValuableActions",
+    "startLine": 20,
+    "endLine": 76,
+    "params": [
+     "{ item }"
+    ],
+    "lines": 56
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "ValuableActions",
+    "line": 20,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 5,
+   "exportCount": 1,
+   "functionCount": 1,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/inventar/ValuableForm.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 266,
+  "nonEmptyLines": 243,
+  "functions": [
+   {
+    "name": "ValuableForm",
+    "startLine": 27,
+    "endLine": 225,
+    "params": [
+     "{ trigger, item }"
+    ],
+    "lines": 198
+   },
+   {
+    "name": "Feld",
+    "startLine": 229,
+    "endLine": 251,
+    "params": [
+     "{\r\n  id, name, label, defaultValue, placeholder, type = 'text', step, min,\r\n}"
+    ],
+    "lines": 22
+   },
+   {
+    "name": "Haken",
+    "startLine": 253,
+    "endLine": 266,
+    "params": [
+     "{\r\n  name, label, defaultChecked,\r\n}"
+    ],
+    "lines": 13
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "ValuableForm",
+    "line": 27,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 9,
+   "exportCount": 1,
+   "functionCount": 3,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/inventar/ValuableIcon.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 152,
+  "nonEmptyLines": 147,
+  "functions": [
+   {
+    "name": "Frame",
+    "startLine": 27,
+    "endLine": 42,
+    "params": [
+     "{ children, className }"
+    ],
+    "lines": 15
+   },
+   {
+    "name": "ValuableIcon",
+    "startLine": 147,
+    "endLine": 152,
+    "params": [
+     "{ kategorie, className }"
+    ],
+    "lines": 5
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "ValuableIcon",
+    "line": 147,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 1,
+   "exportCount": 1,
+   "functionCount": 2,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/inventar/ValuableMedia.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 459,
+  "nonEmptyLines": 417,
+  "functions": [
+   {
+    "name": "verkleinern",
+    "startLine": 46,
+    "endLine": 69,
+    "params": [
+     "datei"
+    ],
+    "lines": 23
+   },
+   {
+    "name": "ValuableMedia",
+    "startLine": 71,
+    "endLine": 459,
+    "params": [
+     "{ item }"
+    ],
+    "lines": 388
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "ValuableMedia",
+    "line": 71,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 7,
+   "exportCount": 1,
+   "functionCount": 2,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/strategy/indicator-export-dialog.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 267,
+  "nonEmptyLines": 237,
+  "functions": [
+   {
+    "name": "IndicatorExportDialog",
+    "startLine": 14,
+    "endLine": 62,
+    "params": [],
+    "lines": 48
+   },
+   {
+    "name": "parseCSV",
+    "startLine": 79,
+    "endLine": 113,
+    "params": [
+     "text"
+    ],
+    "lines": 34
+   },
+   {
+    "name": "IndicatorImportDialog",
+    "startLine": 115,
+    "endLine": 267,
+    "params": [],
+    "lines": 152
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "IndicatorExportDialog",
+    "line": 14,
+    "isDefault": false
+   },
+   {
+    "name": "IndicatorImportDialog",
+    "line": 115,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 2,
+   "exportCount": 2,
+   "functionCount": 3,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/strategy/indicator-form.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 260,
+  "nonEmptyLines": 238,
+  "functions": [],
+  "classes": [],
+  "exports": [],
+  "metrics": {
+   "importCount": 7,
+   "exportCount": 0,
+   "functionCount": 0,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/strategy/indicators-table.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 213,
+  "nonEmptyLines": 193,
+  "functions": [
+   {
+    "name": "sortRows",
+    "startLine": 20,
+    "endLine": 36,
+    "params": [
+     "rows",
+     "key",
+     "asc"
+    ],
+    "lines": 16
+   },
+   {
+    "name": "CobraScore",
+    "startLine": 38,
+    "endLine": 48,
+    "params": [
+     "{ value, color }"
+    ],
+    "lines": 10
+   },
+   {
+    "name": "SortTh",
+    "startLine": 50,
+    "endLine": 76,
+    "params": [
+     "{\r\n  label, sortKey, currentSort, currentDir, onSort, className = '', icon,\r\n}"
+    ],
+    "lines": 26
+   },
+   {
+    "name": "IndicatorsTable",
+    "startLine": 78,
+    "endLine": 213,
+    "params": [
+     "{\r\n  rows,\r\n  perfs,\r\n  defaultAssetClass,\r\n  defaultTimeframe,\r\n  initialSort = 'cobra_green',\r\n  initialDir  = 'desc',\r\n}"
+    ],
+    "lines": 135
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "IndicatorsTable",
+    "line": 78,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 3,
+   "exportCount": 1,
+   "functionCount": 4,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/strategy/performance-form.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 359,
+  "nonEmptyLines": 338,
+  "functions": [
+   {
+    "name": "NumField",
+    "startLine": 30,
+    "endLine": 44,
+    "params": [
+     "{ id, name, label, defaultValue, placeholder, step = '0.01' }"
+    ],
+    "lines": 14
+   },
+   {
+    "name": "PerfFields",
+    "startLine": 49,
+    "endLine": 149,
+    "params": [
+     "{\r\n  perf,\r\n  indicatorId,\r\n  indicators,\r\n  defaultAssetClass,\r\n  defaultTimeframe,\r\n}"
+    ],
+    "lines": 100
+   },
+   {
+    "name": "PerfDialog",
+    "startLine": 152,
+    "endLine": 198,
+    "params": [
+     "{\r\n  mode, perf, indicatorId, indicators, trigger, defaultAssetClass, defaultTimeframe,\r\n}"
+    ],
+    "lines": 46
+   },
+   {
+    "name": "BacktestsDialog",
+    "startLine": 201,
+    "endLine": 338,
+    "params": [
+     "{\r\n  ind, perfs, defaultAssetClass, defaultTimeframe,\r\n}"
+    ],
+    "lines": 137
+   },
+   {
+    "name": "AddBacktestStandaloneDialog",
+    "startLine": 341,
+    "endLine": 359,
+    "params": [
+     "{\r\n  indicators,\r\n  defaultAssetClass,\r\n  defaultTimeframe,\r\n}"
+    ],
+    "lines": 18
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "BacktestsDialog",
+    "line": 201,
+    "isDefault": false
+   },
+   {
+    "name": "AddBacktestStandaloneDialog",
+    "line": 341,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 7,
+   "exportCount": 2,
+   "functionCount": 5,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/ui/alert-dialog.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 196,
+  "nonEmptyLines": 181,
+  "functions": [
+   {
+    "name": "AlertDialog",
+    "startLine": 9,
+    "endLine": 13,
+    "params": [
+     "{\n  ...props\n}"
+    ],
+    "lines": 4
+   },
+   {
+    "name": "AlertDialogTrigger",
+    "startLine": 15,
+    "endLine": 21,
+    "params": [
+     "{\n  ...props\n}"
+    ],
+    "lines": 6
+   },
+   {
+    "name": "AlertDialogPortal",
+    "startLine": 23,
+    "endLine": 29,
+    "params": [
+     "{\n  ...props\n}"
+    ],
+    "lines": 6
+   },
+   {
+    "name": "AlertDialogOverlay",
+    "startLine": 31,
+    "endLine": 45,
+    "params": [
+     "{\n  className,\n  ...props\n}"
+    ],
+    "lines": 14
+   },
+   {
+    "name": "AlertDialogContent",
+    "startLine": 47,
+    "endLine": 68,
+    "params": [
+     "{\n  className,\n  size = \"default\",\n  ...props\n}"
+    ],
+    "lines": 21
+   },
+   {
+    "name": "AlertDialogHeader",
+    "startLine": 70,
+    "endLine": 84,
+    "params": [
+     "{\n  className,\n  ...props\n}"
+    ],
+    "lines": 14
+   },
+   {
+    "name": "AlertDialogFooter",
+    "startLine": 86,
+    "endLine": 100,
+    "params": [
+     "{\n  className,\n  ...props\n}"
+    ],
+    "lines": 14
+   },
+   {
+    "name": "AlertDialogTitle",
+    "startLine": 102,
+    "endLine": 116,
+    "params": [
+     "{\n  className,\n  ...props\n}"
+    ],
+    "lines": 14
+   },
+   {
+    "name": "AlertDialogDescription",
+    "startLine": 118,
+    "endLine": 129,
+    "params": [
+     "{\n  className,\n  ...props\n}"
+    ],
+    "lines": 11
+   },
+   {
+    "name": "AlertDialogMedia",
+    "startLine": 131,
+    "endLine": 145,
+    "params": [
+     "{\n  className,\n  ...props\n}"
+    ],
+    "lines": 14
+   },
+   {
+    "name": "AlertDialogAction",
+    "startLine": 147,
+    "endLine": 163,
+    "params": [
+     "{\n  className,\n  variant = \"default\",\n  size = \"default\",\n  ...props\n}"
+    ],
+    "lines": 16
+   },
+   {
+    "name": "AlertDialogCancel",
+    "startLine": 165,
+    "endLine": 181,
+    "params": [
+     "{\n  className,\n  variant = \"outline\",\n  size = \"default\",\n  ...props\n}"
+    ],
+    "lines": 16
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "AlertDialog",
+    "line": 183,
+    "isDefault": false
+   },
+   {
+    "name": "AlertDialogAction",
+    "line": 183,
+    "isDefault": false
+   },
+   {
+    "name": "AlertDialogCancel",
+    "line": 183,
+    "isDefault": false
+   },
+   {
+    "name": "AlertDialogContent",
+    "line": 183,
+    "isDefault": false
+   },
+   {
+    "name": "AlertDialogDescription",
+    "line": 183,
+    "isDefault": false
+   },
+   {
+    "name": "AlertDialogFooter",
+    "line": 183,
+    "isDefault": false
+   },
+   {
+    "name": "AlertDialogHeader",
+    "line": 183,
+    "isDefault": false
+   },
+   {
+    "name": "AlertDialogMedia",
+    "line": 183,
+    "isDefault": false
+   },
+   {
+    "name": "AlertDialogOverlay",
+    "line": 183,
+    "isDefault": false
+   },
+   {
+    "name": "AlertDialogPortal",
+    "line": 183,
+    "isDefault": false
+   },
+   {
+    "name": "AlertDialogTitle",
+    "line": 183,
+    "isDefault": false
+   },
+   {
+    "name": "AlertDialogTrigger",
+    "line": 183,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 2,
+   "exportCount": 12,
+   "functionCount": 12,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/ui/button.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 64,
+  "nonEmptyLines": 59,
+  "functions": [
+   {
+    "name": "Button",
+    "startLine": 41,
+    "endLine": 62,
+    "params": [
+     "{\n  className,\n  variant = \"default\",\n  size = \"default\",\n  asChild = false,\n  ...props\n}"
+    ],
+    "lines": 21
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "Button",
+    "line": 64,
+    "isDefault": false
+   },
+   {
+    "name": "buttonVariants",
+    "line": 64,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 1,
+   "exportCount": 2,
+   "functionCount": 1,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/ui/checkbox.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 32,
+  "nonEmptyLines": 28,
+  "functions": [
+   {
+    "name": "Checkbox",
+    "startLine": 9,
+    "endLine": 30,
+    "params": [
+     "{\r\n  className,\r\n  ...props\r\n}"
+    ],
+    "lines": 21
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "Checkbox",
+    "line": 32,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 1,
+   "exportCount": 1,
+   "functionCount": 1,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/ui/dialog.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 158,
+  "nonEmptyLines": 145,
+  "functions": [
+   {
+    "name": "Dialog",
+    "startLine": 10,
+    "endLine": 14,
+    "params": [
+     "{\n  ...props\n}"
+    ],
+    "lines": 4
+   },
+   {
+    "name": "DialogTrigger",
+    "startLine": 16,
+    "endLine": 20,
+    "params": [
+     "{\n  ...props\n}"
+    ],
+    "lines": 4
+   },
+   {
+    "name": "DialogPortal",
+    "startLine": 22,
+    "endLine": 26,
+    "params": [
+     "{\n  ...props\n}"
+    ],
+    "lines": 4
+   },
+   {
+    "name": "DialogClose",
+    "startLine": 28,
+    "endLine": 32,
+    "params": [
+     "{\n  ...props\n}"
+    ],
+    "lines": 4
+   },
+   {
+    "name": "DialogOverlay",
+    "startLine": 34,
+    "endLine": 48,
+    "params": [
+     "{\n  className,\n  ...props\n}"
+    ],
+    "lines": 14
+   },
+   {
+    "name": "DialogContent",
+    "startLine": 50,
+    "endLine": 82,
+    "params": [
+     "{\n  className,\n  children,\n  showCloseButton = true,\n  ...props\n}"
+    ],
+    "lines": 32
+   },
+   {
+    "name": "DialogHeader",
+    "startLine": 84,
+    "endLine": 92,
+    "params": [
+     "{ className, ...props }"
+    ],
+    "lines": 8
+   },
+   {
+    "name": "DialogFooter",
+    "startLine": 94,
+    "endLine": 119,
+    "params": [
+     "{\n  className,\n  showCloseButton = false,\n  children,\n  ...props\n}"
+    ],
+    "lines": 25
+   },
+   {
+    "name": "DialogTitle",
+    "startLine": 121,
+    "endLine": 132,
+    "params": [
+     "{\n  className,\n  ...props\n}"
+    ],
+    "lines": 11
+   },
+   {
+    "name": "DialogDescription",
+    "startLine": 134,
+    "endLine": 145,
+    "params": [
+     "{\n  className,\n  ...props\n}"
+    ],
+    "lines": 11
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "Dialog",
+    "line": 147,
+    "isDefault": false
+   },
+   {
+    "name": "DialogClose",
+    "line": 147,
+    "isDefault": false
+   },
+   {
+    "name": "DialogContent",
+    "line": 147,
+    "isDefault": false
+   },
+   {
+    "name": "DialogDescription",
+    "line": 147,
+    "isDefault": false
+   },
+   {
+    "name": "DialogFooter",
+    "line": 147,
+    "isDefault": false
+   },
+   {
+    "name": "DialogHeader",
+    "line": 147,
+    "isDefault": false
+   },
+   {
+    "name": "DialogOverlay",
+    "line": 147,
+    "isDefault": false
+   },
+   {
+    "name": "DialogPortal",
+    "line": 147,
+    "isDefault": false
+   },
+   {
+    "name": "DialogTitle",
+    "line": 147,
+    "isDefault": false
+   },
+   {
+    "name": "DialogTrigger",
+    "line": 147,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 2,
+   "exportCount": 10,
+   "functionCount": 10,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/ui/input.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 21,
+  "nonEmptyLines": 18,
+  "functions": [
+   {
+    "name": "Input",
+    "startLine": 5,
+    "endLine": 19,
+    "params": [
+     "{ className, type, ...props }"
+    ],
+    "lines": 14
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "Input",
+    "line": 21,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 1,
+   "exportCount": 1,
+   "functionCount": 1,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/ui/label.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 24,
+  "nonEmptyLines": 20,
+  "functions": [
+   {
+    "name": "Label",
+    "startLine": 8,
+    "endLine": 22,
+    "params": [
+     "{\n  className,\n  ...props\n}"
+    ],
+    "lines": 14
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "Label",
+    "line": 24,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 1,
+   "exportCount": 1,
+   "functionCount": 1,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/ui/select.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 191,
+  "nonEmptyLines": 178,
+  "functions": [
+   {
+    "name": "Select",
+    "startLine": 9,
+    "endLine": 13,
+    "params": [
+     "{\r\n  ...props\r\n}"
+    ],
+    "lines": 4
+   },
+   {
+    "name": "SelectGroup",
+    "startLine": 15,
+    "endLine": 19,
+    "params": [
+     "{\r\n  ...props\r\n}"
+    ],
+    "lines": 4
+   },
+   {
+    "name": "SelectValue",
+    "startLine": 21,
+    "endLine": 25,
+    "params": [
+     "{\r\n  ...props\r\n}"
+    ],
+    "lines": 4
+   },
+   {
+    "name": "SelectTrigger",
+    "startLine": 27,
+    "endLine": 52,
+    "params": [
+     "{\r\n  className,\r\n  size = \"default\",\r\n  children,\r\n  ...props\r\n}"
+    ],
+    "lines": 25
+   },
+   {
+    "name": "SelectContent",
+    "startLine": 54,
+    "endLine": 89,
+    "params": [
+     "{\r\n  className,\r\n  children,\r\n  position = \"item-aligned\",\r\n  align = \"center\",\r\n  ...props\r\n}"
+    ],
+    "lines": 35
+   },
+   {
+    "name": "SelectLabel",
+    "startLine": 91,
+    "endLine": 102,
+    "params": [
+     "{\r\n  className,\r\n  ...props\r\n}"
+    ],
+    "lines": 11
+   },
+   {
+    "name": "SelectItem",
+    "startLine": 104,
+    "endLine": 129,
+    "params": [
+     "{\r\n  className,\r\n  children,\r\n  ...props\r\n}"
+    ],
+    "lines": 25
+   },
+   {
+    "name": "SelectSeparator",
+    "startLine": 131,
+    "endLine": 142,
+    "params": [
+     "{\r\n  className,\r\n  ...props\r\n}"
+    ],
+    "lines": 11
+   },
+   {
+    "name": "SelectScrollUpButton",
+    "startLine": 144,
+    "endLine": 160,
+    "params": [
+     "{\r\n  className,\r\n  ...props\r\n}"
+    ],
+    "lines": 16
+   },
+   {
+    "name": "SelectScrollDownButton",
+    "startLine": 162,
+    "endLine": 178,
+    "params": [
+     "{\r\n  className,\r\n  ...props\r\n}"
+    ],
+    "lines": 16
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "Select",
+    "line": 180,
+    "isDefault": false
+   },
+   {
+    "name": "SelectContent",
+    "line": 180,
+    "isDefault": false
+   },
+   {
+    "name": "SelectGroup",
+    "line": 180,
+    "isDefault": false
+   },
+   {
+    "name": "SelectItem",
+    "line": 180,
+    "isDefault": false
+   },
+   {
+    "name": "SelectLabel",
+    "line": 180,
+    "isDefault": false
+   },
+   {
+    "name": "SelectScrollDownButton",
+    "line": 180,
+    "isDefault": false
+   },
+   {
+    "name": "SelectScrollUpButton",
+    "line": 180,
+    "isDefault": false
+   },
+   {
+    "name": "SelectSeparator",
+    "line": 180,
+    "isDefault": false
+   },
+   {
+    "name": "SelectTrigger",
+    "line": 180,
+    "isDefault": false
+   },
+   {
+    "name": "SelectValue",
+    "line": 180,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 1,
+   "exportCount": 10,
+   "functionCount": 10,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/components/ui/textarea.tsx",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 18,
+  "nonEmptyLines": 15,
+  "functions": [
+   {
+    "name": "Textarea",
+    "startLine": 5,
+    "endLine": 16,
+    "params": [
+     "{ className, ...props }"
+    ],
+    "lines": 11
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "Textarea",
+    "line": 18,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 1,
+   "exportCount": 1,
+   "functionCount": 1,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/lib/csv.ts",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 102,
+  "nonEmptyLines": 93,
+  "functions": [
+   {
+    "name": "formatCsvAmount",
+    "startLine": 40,
+    "endLine": 42,
+    "params": [
+     "value"
+    ],
+    "lines": 2
+   },
+   {
+    "name": "parseCsvAmount",
+    "startLine": 54,
+    "endLine": 81,
+    "params": [
+     "raw"
+    ],
+    "lines": 27
+   },
+   {
+    "name": "escapeCsvValue",
+    "startLine": 90,
+    "endLine": 102,
+    "params": [
+     "value"
+    ],
+    "lines": 12
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "CSV_SEPARATOR",
+    "line": 21,
+    "isDefault": false
+   },
+   {
+    "name": "CSV_BOM",
+    "line": 29,
+    "isDefault": false
+   },
+   {
+    "name": "CSV_EOL",
+    "line": 32,
+    "isDefault": false
+   },
+   {
+    "name": "formatCsvAmount",
+    "line": 40,
+    "isDefault": false
+   },
+   {
+    "name": "parseCsvAmount",
+    "line": 54,
+    "isDefault": false
+   },
+   {
+    "name": "escapeCsvValue",
+    "line": 90,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 0,
+   "exportCount": 6,
+   "functionCount": 3,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/lib/inventar/bildurls.ts",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 96,
+  "nonEmptyLines": 85,
+  "functions": [
+   {
+    "name": "signierteBildUrls",
+    "startLine": 58,
+    "endLine": 91,
+    "params": [
+     "supabase",
+     "pfade"
+    ],
+    "lines": 33
+   },
+   {
+    "name": "vergisseBildUrl",
+    "startLine": 94,
+    "endLine": 96,
+    "params": [
+     "pfad"
+    ],
+    "lines": 2
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "signierteBildUrls",
+    "line": 58,
+    "isDefault": false
+   },
+   {
+    "name": "vergisseBildUrl",
+    "line": 94,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 0,
+   "exportCount": 2,
+   "functionCount": 2,
+   "classCount": 0
+  }
+ },
+ {
+  "path": "src/lib/valuables.ts",
+  "language": "typescript",
+  "fileCategory": "code",
+  "totalLines": 256,
+  "nonEmptyLines": 235,
+  "functions": [
+   {
+    "name": "kategorieLabel",
+    "startLine": 133,
+    "endLine": 135,
+    "params": [
+     "key"
+    ],
+    "lines": 2
+   },
+   {
+    "name": "kategorieEn",
+    "startLine": 138,
+    "endLine": 140,
+    "params": [
+     "key"
+    ],
+    "lines": 2
+   },
+   {
+    "name": "zustandLabel",
+    "startLine": 151,
+    "endLine": 154,
+    "params": [
+     "key"
+    ],
+    "lines": 3
+   },
+   {
+    "name": "zustandEn",
+    "startLine": 169,
+    "endLine": 172,
+    "params": [
+     "key"
+    ],
+    "lines": 3
+   },
+   {
+    "name": "wertstufe",
+    "startLine": 219,
+    "endLine": 226,
+    "params": [
+     "wert"
+    ],
+    "lines": 7
+   },
+   {
+    "name": "haltedauerMonate",
+    "startLine": 231,
+    "endLine": 237,
+    "params": [
+     "gekauftAm",
+     "bis"
+    ],
+    "lines": 6
+   },
+   {
+    "name": "haltedauerLabel",
+    "startLine": 239,
+    "endLine": 246,
+    "params": [
+     "gekauftAm"
+    ],
+    "lines": 7
+   },
+   {
+    "name": "gesamtwert",
+    "startLine": 252,
+    "endLine": 256,
+    "params": [
+     "items",
+     "nurVermoegen"
+    ],
+    "lines": 4
+   }
+  ],
+  "classes": [],
+  "exports": [
+   {
+    "name": "MAX_VORLAGEN",
+    "line": 102,
+    "isDefault": false
+   },
+   {
+    "name": "HINWEIS_MAX",
+    "line": 105,
+    "isDefault": false
+   },
+   {
+    "name": "KATEGORIEN",
+    "line": 115,
+    "isDefault": false
+   },
+   {
+    "name": "kategorieLabel",
+    "line": 133,
+    "isDefault": false
+   },
+   {
+    "name": "kategorieEn",
+    "line": 138,
+    "isDefault": false
+   },
+   {
+    "name": "ZUSTAENDE",
+    "line": 143,
+    "isDefault": false
+   },
+   {
+    "name": "zustandLabel",
+    "line": 151,
+    "isDefault": false
+   },
+   {
+    "name": "zustandEn",
+    "line": 169,
+    "isDefault": false
+   },
+   {
+    "name": "WERTSTUFEN",
+    "line": 196,
+    "isDefault": false
+   },
+   {
+    "name": "wertstufe",
+    "line": 219,
+    "isDefault": false
+   },
+   {
+    "name": "haltedauerMonate",
+    "line": 231,
+    "isDefault": false
+   },
+   {
+    "name": "haltedauerLabel",
+    "line": 239,
+    "isDefault": false
+   },
+   {
+    "name": "gesamtwert",
+    "line": 252,
+    "isDefault": false
+   }
+  ],
+  "metrics": {
+   "importCount": 0,
+   "exportCount": 13,
+   "functionCount": 8,
+   "classCount": 0
+  }
+ }
+]

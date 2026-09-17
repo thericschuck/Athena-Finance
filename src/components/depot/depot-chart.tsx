@@ -75,7 +75,7 @@ export function DepotChart({ chartTab, history, height = 220 }: { chartTab: Char
         <LineChart data={history} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
           <XAxis dataKey="date" tickFormatter={fmtDateShort} tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} axisLine={false} tickLine={false} />
-          <YAxis tickFormatter={v => yTickFmt(v, chartTab)} tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} axisLine={false} tickLine={false} width={50} />
+          <YAxis tickFormatter={v => yTickFmt(v, chartTab)} tick={{ fill: 'var(--muted-foreground)', fontSize: 11, className: 'tabular-nums' }} axisLine={false} tickLine={false} width={50} />
           <Tooltip content={<ChartTooltip />} />
           <ReferenceLine y={0} stroke="var(--border)" strokeDasharray="4 2" />
           {/* Theme-Akzentfarbe statt fixem Gold — dieselbe --chart-accent-
@@ -97,7 +97,7 @@ export function DepotChart({ chartTab, history, height = 220 }: { chartTab: Char
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
           <XAxis dataKey="date" tickFormatter={fmtDateShort} tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} axisLine={false} tickLine={false} />
-          <YAxis tickFormatter={v => yTickFmt(v, chartTab)} tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} axisLine={false} tickLine={false} width={50} />
+          <YAxis tickFormatter={v => yTickFmt(v, chartTab)} tick={{ fill: 'var(--muted-foreground)', fontSize: 11, className: 'tabular-nums' }} axisLine={false} tickLine={false} width={50} />
           <Tooltip content={<ChartTooltip />} />
           {chartTab === 'Wert' && (
             <Area type="monotone" dataKey="portfolioValue" stroke="var(--chart-accent)" fill="url(#gradValue)" strokeWidth={2} dot={false} />

@@ -1,0 +1,1566 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/app/auth/callback/route.ts",
+      "type": "file",
+      "name": "route.ts",
+      "filePath": "src/app/auth/callback/route.ts",
+      "summary": "OAuth2 callback handler processing authentication tokens and session establishment",
+      "tags": [
+        "authentication",
+        "core-logic"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/app/auth/callback/route.ts:GET",
+      "type": "function",
+      "name": "GET",
+      "filePath": "src/app/auth/callback/route.ts",
+      "lineRange": [
+        11,
+        25
+      ],
+      "summary": "GET performs core operational logic",
+      "tags": [
+        "route-handler",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/dashboard/athena-insights.tsx",
+      "type": "file",
+      "name": "athena-insights.tsx",
+      "filePath": "src/components/dashboard/athena-insights.tsx",
+      "summary": "Dashboard widget displaying AI-generated financial insights and recommendations",
+      "tags": [
+        "component",
+        "core-logic"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/dashboard/athena-insights.tsx:AthenaInsights",
+      "type": "function",
+      "name": "AthenaInsights",
+      "filePath": "src/components/dashboard/athena-insights.tsx",
+      "lineRange": [
+        32,
+        91
+      ],
+      "summary": "AthenaInsights performs core operational logic",
+      "tags": [
+        "react-component",
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/strategy/checklist-panel.tsx",
+      "type": "file",
+      "name": "checklist-panel.tsx",
+      "filePath": "src/components/strategy/checklist-panel.tsx",
+      "summary": "Side panel or layout component for strategy checklist management",
+      "tags": [
+        "component",
+        "strategy",
+        "core-logic"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/strategy/checklist-panel.tsx:ChecklistPanel",
+      "type": "function",
+      "name": "ChecklistPanel",
+      "filePath": "src/components/strategy/checklist-panel.tsx",
+      "lineRange": [
+        29,
+        81
+      ],
+      "summary": "ChecklistPanel performs core operational logic",
+      "tags": [
+        "validation",
+        "react-component",
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/strategy/combo-form.tsx",
+      "type": "file",
+      "name": "combo-form.tsx",
+      "filePath": "src/components/strategy/combo-form.tsx",
+      "summary": "Form component for composing and managing strategy definitions",
+      "tags": [
+        "component",
+        "strategy",
+        "core-logic"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/strategy/combo-form.tsx:IndicatorList",
+      "type": "function",
+      "name": "IndicatorList",
+      "filePath": "src/components/strategy/combo-form.tsx",
+      "lineRange": [
+        56,
+        158
+      ],
+      "summary": "IndicatorList performs core operational logic",
+      "tags": [
+        "react-component",
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/strategy/combo-form.tsx:ComboFormBody",
+      "type": "function",
+      "name": "ComboFormBody",
+      "filePath": "src/components/strategy/combo-form.tsx",
+      "lineRange": [
+        161,
+        245
+      ],
+      "summary": "ComboFormBody performs core operational logic",
+      "tags": [
+        "react-component",
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/strategy/combo-form.tsx:AddComboDialog",
+      "type": "function",
+      "name": "AddComboDialog",
+      "filePath": "src/components/strategy/combo-form.tsx",
+      "lineRange": [
+        248,
+        289
+      ],
+      "summary": "AddComboDialog performs core operational logic",
+      "tags": [
+        "react-component",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/strategy/combo-form.tsx:EditComboDialog",
+      "type": "function",
+      "name": "EditComboDialog",
+      "filePath": "src/components/strategy/combo-form.tsx",
+      "lineRange": [
+        292,
+        343
+      ],
+      "summary": "EditComboDialog performs core operational logic",
+      "tags": [
+        "react-component",
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/strategy/combo-form.tsx:DeleteComboButton",
+      "type": "function",
+      "name": "DeleteComboButton",
+      "filePath": "src/components/strategy/combo-form.tsx",
+      "lineRange": [
+        346,
+        379
+      ],
+      "summary": "DeleteComboButton performs core operational logic",
+      "tags": [
+        "react-component",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/strategy/strategy-form.tsx",
+      "type": "file",
+      "name": "strategy-form.tsx",
+      "filePath": "src/components/strategy/strategy-form.tsx",
+      "summary": "Form component for composing and managing strategy definitions",
+      "tags": [
+        "component",
+        "strategy",
+        "core-logic"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/strategy/strategy-form.tsx:StrategyFormBody",
+      "type": "function",
+      "name": "StrategyFormBody",
+      "filePath": "src/components/strategy/strategy-form.tsx",
+      "lineRange": [
+        44,
+        207
+      ],
+      "summary": "StrategyFormBody performs core operational logic",
+      "tags": [
+        "react-component",
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/strategy/strategy-form.tsx:AddStrategyDialog",
+      "type": "function",
+      "name": "AddStrategyDialog",
+      "filePath": "src/components/strategy/strategy-form.tsx",
+      "lineRange": [
+        210,
+        254
+      ],
+      "summary": "AddStrategyDialog performs core operational logic",
+      "tags": [
+        "react-component",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/strategy/strategy-form.tsx:EditStrategyDialog",
+      "type": "function",
+      "name": "EditStrategyDialog",
+      "filePath": "src/components/strategy/strategy-form.tsx",
+      "lineRange": [
+        257,
+        299
+      ],
+      "summary": "EditStrategyDialog performs core operational logic",
+      "tags": [
+        "react-component",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/strategy/strategy-form.tsx:DeleteStrategyButton",
+      "type": "function",
+      "name": "DeleteStrategyButton",
+      "filePath": "src/components/strategy/strategy-form.tsx",
+      "lineRange": [
+        302,
+        337
+      ],
+      "summary": "DeleteStrategyButton performs core operational logic",
+      "tags": [
+        "react-component",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/fints/categorize.ts",
+      "type": "file",
+      "name": "categorize.ts",
+      "filePath": "src/lib/fints/categorize.ts",
+      "summary": "Transaction categorization engine with ML learning and category suggestions",
+      "tags": [
+        "utility",
+        "integration",
+        "banking"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/lib/fints/categorize.ts:normalizeCounterpart",
+      "type": "function",
+      "name": "normalizeCounterpart",
+      "filePath": "src/lib/fints/categorize.ts",
+      "lineRange": [
+        154,
+        156
+      ],
+      "summary": "normalizeCounterpart performs core operational logic",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/fints/categorize.ts:buildLearnedCategoryMap",
+      "type": "function",
+      "name": "buildLearnedCategoryMap",
+      "filePath": "src/lib/fints/categorize.ts",
+      "lineRange": [
+        167,
+        190
+      ],
+      "summary": "buildLearnedCategoryMap performs core operational logic",
+      "tags": [
+        "factory",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/fints/categorize.ts:suggestCategory",
+      "type": "function",
+      "name": "suggestCategory",
+      "filePath": "src/lib/fints/categorize.ts",
+      "lineRange": [
+        198,
+        223
+      ],
+      "summary": "suggestCategory performs core operational logic",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/fints/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "src/lib/fints/index.ts",
+      "summary": "Core FinTS bank integration library handling transaction sync and data mapping",
+      "tags": [
+        "utility",
+        "integration",
+        "banking"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/lib/fints/index.ts:getFinTSErrorDetails",
+      "type": "function",
+      "name": "getFinTSErrorDetails",
+      "filePath": "src/lib/fints/index.ts",
+      "lineRange": [
+        35,
+        38
+      ],
+      "summary": "getFinTSErrorDetails performs core operational logic",
+      "tags": [
+        "data-retrieval",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/fints/index.ts:scaFreeStartDate",
+      "type": "function",
+      "name": "scaFreeStartDate",
+      "filePath": "src/lib/fints/index.ts",
+      "lineRange": [
+        142,
+        146
+      ],
+      "summary": "scaFreeStartDate performs core operational logic",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/fints/index.ts:mapAccount",
+      "type": "function",
+      "name": "mapAccount",
+      "filePath": "src/lib/fints/index.ts",
+      "lineRange": [
+        165,
+        174
+      ],
+      "summary": "mapAccount performs core operational logic",
+      "tags": [
+        "data-transformation",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/fints/index.ts:mapHolding",
+      "type": "function",
+      "name": "mapHolding",
+      "filePath": "src/lib/fints/index.ts",
+      "lineRange": [
+        180,
+        198
+      ],
+      "summary": "mapHolding performs core operational logic",
+      "tags": [
+        "data-transformation",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/fints/index.ts:mapTransaction",
+      "type": "function",
+      "name": "mapTransaction",
+      "filePath": "src/lib/fints/index.ts",
+      "lineRange": [
+        205,
+        234
+      ],
+      "summary": "mapTransaction performs core operational logic",
+      "tags": [
+        "data-transformation",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/fints/index.ts:fetchBalances",
+      "type": "function",
+      "name": "fetchBalances",
+      "filePath": "src/lib/fints/index.ts",
+      "lineRange": [
+        242,
+        258
+      ],
+      "summary": "fetchBalances performs core operational logic",
+      "tags": [
+        "data-retrieval",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/fints/index.ts:startSync",
+      "type": "function",
+      "name": "startSync",
+      "filePath": "src/lib/fints/index.ts",
+      "lineRange": [
+        265,
+        299
+      ],
+      "summary": "startSync performs core operational logic",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/fints/index.ts:mapBalances",
+      "type": "function",
+      "name": "mapBalances",
+      "filePath": "src/lib/fints/index.ts",
+      "lineRange": [
+        308,
+        323
+      ],
+      "summary": "mapBalances performs core operational logic",
+      "tags": [
+        "data-transformation",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/fints/index.ts:upsertBankBalances",
+      "type": "function",
+      "name": "upsertBankBalances",
+      "filePath": "src/lib/fints/index.ts",
+      "lineRange": [
+        330,
+        356
+      ],
+      "summary": "upsertBankBalances performs core operational logic",
+      "tags": [
+        "data-mutation",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/fints/index.ts:isScaRequiredError",
+      "type": "function",
+      "name": "isScaRequiredError",
+      "filePath": "src/lib/fints/index.ts",
+      "lineRange": [
+        362,
+        364
+      ],
+      "summary": "isScaRequiredError performs core operational logic",
+      "tags": [
+        "validation",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/fints/index.ts:stateFromError",
+      "type": "function",
+      "name": "stateFromError",
+      "filePath": "src/lib/fints/index.ts",
+      "lineRange": [
+        367,
+        370
+      ],
+      "summary": "stateFromError performs core operational logic",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/fints/index.ts:upsertBankTransactions",
+      "type": "function",
+      "name": "upsertBankTransactions",
+      "filePath": "src/lib/fints/index.ts",
+      "lineRange": [
+        377,
+        526
+      ],
+      "summary": "upsertBankTransactions performs core operational logic",
+      "tags": [
+        "data-mutation",
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/fints/index.ts:applyLearnedCategoriesToBacklog",
+      "type": "function",
+      "name": "applyLearnedCategoriesToBacklog",
+      "filePath": "src/lib/fints/index.ts",
+      "lineRange": [
+        538,
+        577
+      ],
+      "summary": "applyLearnedCategoriesToBacklog performs core operational logic",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/fints/index.ts:upsertDepotHoldings",
+      "type": "function",
+      "name": "upsertDepotHoldings",
+      "filePath": "src/lib/fints/index.ts",
+      "lineRange": [
+        586,
+        617
+      ],
+      "summary": "upsertDepotHoldings performs core operational logic",
+      "tags": [
+        "data-mutation",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/fints/index.ts:isCloudRuntime",
+      "type": "function",
+      "name": "isCloudRuntime",
+      "filePath": "src/lib/fints/index.ts",
+      "lineRange": [
+        637,
+        639
+      ],
+      "summary": "isCloudRuntime performs core operational logic",
+      "tags": [
+        "validation",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/fints/index.ts:triggerCloudBankSync",
+      "type": "function",
+      "name": "triggerCloudBankSync",
+      "filePath": "src/lib/fints/index.ts",
+      "lineRange": [
+        651,
+        676
+      ],
+      "summary": "triggerCloudBankSync performs core operational logic",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/fints/sidecar.ts",
+      "type": "file",
+      "name": "sidecar.ts",
+      "filePath": "src/lib/fints/sidecar.ts",
+      "summary": "Python subprocess handler for FinTS protocol communication",
+      "tags": [
+        "utility",
+        "integration",
+        "banking"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/lib/fints/sidecar.ts:resolvePythonExecutable",
+      "type": "function",
+      "name": "resolvePythonExecutable",
+      "filePath": "src/lib/fints/sidecar.ts",
+      "lineRange": [
+        132,
+        142
+      ],
+      "summary": "resolvePythonExecutable performs core operational logic",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/fints/sidecar.ts:runSidecar",
+      "type": "function",
+      "name": "runSidecar",
+      "filePath": "src/lib/fints/sidecar.ts",
+      "lineRange": [
+        151,
+        261
+      ],
+      "summary": "runSidecar performs core operational logic",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/fints/sidecar.ts:parsePayload",
+      "type": "function",
+      "name": "parsePayload",
+      "filePath": "src/lib/fints/sidecar.ts",
+      "lineRange": [
+        267,
+        279
+      ],
+      "summary": "parsePayload performs core operational logic",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/fints/state.ts",
+      "type": "file",
+      "name": "state.ts",
+      "filePath": "src/lib/fints/state.ts",
+      "summary": "Bank client state management for SCA challenges and session persistence",
+      "tags": [
+        "utility",
+        "integration",
+        "banking"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/fints/state.ts:loadBankClientState",
+      "type": "function",
+      "name": "loadBankClientState",
+      "filePath": "src/lib/fints/state.ts",
+      "lineRange": [
+        49,
+        65
+      ],
+      "summary": "loadBankClientState performs core operational logic",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/fints/state.ts:saveBankClientState",
+      "type": "function",
+      "name": "saveBankClientState",
+      "filePath": "src/lib/fints/state.ts",
+      "lineRange": [
+        74,
+        103
+      ],
+      "summary": "saveBankClientState performs core operational logic",
+      "tags": [
+        "data-mutation",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/fints/state.ts:markScaRequired",
+      "type": "function",
+      "name": "markScaRequired",
+      "filePath": "src/lib/fints/state.ts",
+      "lineRange": [
+        111,
+        119
+      ],
+      "summary": "markScaRequired performs core operational logic",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/fints/state.ts:getBankScaStatus",
+      "type": "function",
+      "name": "getBankScaStatus",
+      "filePath": "src/lib/fints/state.ts",
+      "lineRange": [
+        134,
+        156
+      ],
+      "summary": "getBankScaStatus performs core operational logic",
+      "tags": [
+        "data-retrieval",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/inventar/artwork.ts",
+      "type": "file",
+      "name": "artwork.ts",
+      "filePath": "src/lib/inventar/artwork.ts",
+      "summary": "Artwork generation and management utilities for inventory valuations using AI",
+      "tags": [
+        "utility",
+        "asset-management",
+        "core-logic"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/lib/inventar/artwork.ts:artworkVerfuegbar",
+      "type": "function",
+      "name": "artworkVerfuegbar",
+      "filePath": "src/lib/inventar/artwork.ts",
+      "lineRange": [
+        251,
+        253
+      ],
+      "summary": "artworkVerfuegbar performs core operational logic",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/inventar/artwork.ts:beschreibung",
+      "type": "function",
+      "name": "beschreibung",
+      "filePath": "src/lib/inventar/artwork.ts",
+      "lineRange": [
+        263,
+        283
+      ],
+      "summary": "beschreibung performs core operational logic",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/inventar/artwork.ts:baueArtworkPrompt",
+      "type": "function",
+      "name": "baueArtworkPrompt",
+      "filePath": "src/lib/inventar/artwork.ts",
+      "lineRange": [
+        292,
+        330
+      ],
+      "summary": "baueArtworkPrompt performs core operational logic",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/inventar/artwork.ts:erzeugeArtwork",
+      "type": "function",
+      "name": "erzeugeArtwork",
+      "filePath": "src/lib/inventar/artwork.ts",
+      "lineRange": [
+        366,
+        440
+      ],
+      "summary": "erzeugeArtwork performs core operational logic",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/inventar/artwork.ts:ladeVorlagen",
+      "type": "function",
+      "name": "ladeVorlagen",
+      "filePath": "src/lib/inventar/artwork.ts",
+      "lineRange": [
+        449,
+        482
+      ],
+      "summary": "ladeVorlagen performs core operational logic",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/inventar/artwork.ts:rendern",
+      "type": "function",
+      "name": "rendern",
+      "filePath": "src/lib/inventar/artwork.ts",
+      "lineRange": [
+        485,
+        519
+      ],
+      "summary": "rendern performs core operational logic",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/inventar/artwork.ts:erzeugen",
+      "type": "function",
+      "name": "erzeugen",
+      "filePath": "src/lib/inventar/artwork.ts",
+      "lineRange": [
+        521,
+        545
+      ],
+      "summary": "erzeugen performs core operational logic",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/inventar/artwork.ts:bearbeiten",
+      "type": "function",
+      "name": "bearbeiten",
+      "filePath": "src/lib/inventar/artwork.ts",
+      "lineRange": [
+        547,
+        615
+      ],
+      "summary": "bearbeiten performs core operational logic",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/supabase/server.ts",
+      "type": "file",
+      "name": "server.ts",
+      "filePath": "src/lib/supabase/server.ts",
+      "summary": "Supabase server-side client initialization with authentication context",
+      "tags": [
+        "utility",
+        "database",
+        "orm"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/supabase/server.ts:createClient",
+      "type": "function",
+      "name": "createClient",
+      "filePath": "src/lib/supabase/server.ts",
+      "lineRange": [
+        6,
+        25
+      ],
+      "summary": "createClient performs core operational logic",
+      "tags": [
+        "factory",
+        "utility"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/app/auth/callback/route.ts",
+      "target": "function:src/app/auth/callback/route.ts:GET",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/app/auth/callback/route.ts",
+      "target": "function:src/app/auth/callback/route.ts:GET",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/dashboard/athena-insights.tsx",
+      "target": "function:src/components/dashboard/athena-insights.tsx:AthenaInsights",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/dashboard/athena-insights.tsx",
+      "target": "function:src/components/dashboard/athena-insights.tsx:AthenaInsights",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/strategy/checklist-panel.tsx",
+      "target": "function:src/components/strategy/checklist-panel.tsx:ChecklistPanel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/strategy/checklist-panel.tsx",
+      "target": "function:src/components/strategy/checklist-panel.tsx:ChecklistPanel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/strategy/combo-form.tsx",
+      "target": "function:src/components/strategy/combo-form.tsx:IndicatorList",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/strategy/combo-form.tsx",
+      "target": "function:src/components/strategy/combo-form.tsx:ComboFormBody",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/strategy/combo-form.tsx",
+      "target": "function:src/components/strategy/combo-form.tsx:AddComboDialog",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/strategy/combo-form.tsx",
+      "target": "function:src/components/strategy/combo-form.tsx:AddComboDialog",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/strategy/combo-form.tsx",
+      "target": "function:src/components/strategy/combo-form.tsx:EditComboDialog",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/strategy/combo-form.tsx",
+      "target": "function:src/components/strategy/combo-form.tsx:EditComboDialog",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/strategy/combo-form.tsx",
+      "target": "function:src/components/strategy/combo-form.tsx:DeleteComboButton",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/strategy/combo-form.tsx",
+      "target": "function:src/components/strategy/combo-form.tsx:DeleteComboButton",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/strategy/strategy-form.tsx",
+      "target": "function:src/components/strategy/strategy-form.tsx:StrategyFormBody",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/strategy/strategy-form.tsx",
+      "target": "function:src/components/strategy/strategy-form.tsx:AddStrategyDialog",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/strategy/strategy-form.tsx",
+      "target": "function:src/components/strategy/strategy-form.tsx:AddStrategyDialog",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/strategy/strategy-form.tsx",
+      "target": "function:src/components/strategy/strategy-form.tsx:EditStrategyDialog",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/strategy/strategy-form.tsx",
+      "target": "function:src/components/strategy/strategy-form.tsx:EditStrategyDialog",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/strategy/strategy-form.tsx",
+      "target": "function:src/components/strategy/strategy-form.tsx:DeleteStrategyButton",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/strategy/strategy-form.tsx",
+      "target": "function:src/components/strategy/strategy-form.tsx:DeleteStrategyButton",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/fints/categorize.ts",
+      "target": "function:src/lib/fints/categorize.ts:normalizeCounterpart",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/categorize.ts",
+      "target": "function:src/lib/fints/categorize.ts:normalizeCounterpart",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/fints/categorize.ts",
+      "target": "function:src/lib/fints/categorize.ts:buildLearnedCategoryMap",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/categorize.ts",
+      "target": "function:src/lib/fints/categorize.ts:buildLearnedCategoryMap",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/fints/categorize.ts",
+      "target": "function:src/lib/fints/categorize.ts:suggestCategory",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/categorize.ts",
+      "target": "function:src/lib/fints/categorize.ts:suggestCategory",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:getFinTSErrorDetails",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:getFinTSErrorDetails",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:scaFreeStartDate",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:scaFreeStartDate",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:mapAccount",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:mapHolding",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:mapTransaction",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:fetchBalances",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:fetchBalances",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:startSync",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:startSync",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:mapBalances",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:upsertBankBalances",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:upsertBankBalances",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:isScaRequiredError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:isScaRequiredError",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:stateFromError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:stateFromError",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:upsertBankTransactions",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:upsertBankTransactions",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:applyLearnedCategoriesToBacklog",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:applyLearnedCategoriesToBacklog",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:upsertDepotHoldings",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:upsertDepotHoldings",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:isCloudRuntime",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:isCloudRuntime",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:triggerCloudBankSync",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "function:src/lib/fints/index.ts:triggerCloudBankSync",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/fints/sidecar.ts",
+      "target": "function:src/lib/fints/sidecar.ts:resolvePythonExecutable",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/sidecar.ts",
+      "target": "function:src/lib/fints/sidecar.ts:runSidecar",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/sidecar.ts",
+      "target": "function:src/lib/fints/sidecar.ts:runSidecar",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/fints/sidecar.ts",
+      "target": "function:src/lib/fints/sidecar.ts:parsePayload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/state.ts",
+      "target": "function:src/lib/fints/state.ts:loadBankClientState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/state.ts",
+      "target": "function:src/lib/fints/state.ts:loadBankClientState",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/fints/state.ts",
+      "target": "function:src/lib/fints/state.ts:saveBankClientState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/state.ts",
+      "target": "function:src/lib/fints/state.ts:saveBankClientState",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/fints/state.ts",
+      "target": "function:src/lib/fints/state.ts:markScaRequired",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/state.ts",
+      "target": "function:src/lib/fints/state.ts:markScaRequired",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/fints/state.ts",
+      "target": "function:src/lib/fints/state.ts:getBankScaStatus",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/fints/state.ts",
+      "target": "function:src/lib/fints/state.ts:getBankScaStatus",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/inventar/artwork.ts",
+      "target": "function:src/lib/inventar/artwork.ts:artworkVerfuegbar",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/inventar/artwork.ts",
+      "target": "function:src/lib/inventar/artwork.ts:artworkVerfuegbar",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/inventar/artwork.ts",
+      "target": "function:src/lib/inventar/artwork.ts:beschreibung",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/inventar/artwork.ts",
+      "target": "function:src/lib/inventar/artwork.ts:beschreibung",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/inventar/artwork.ts",
+      "target": "function:src/lib/inventar/artwork.ts:baueArtworkPrompt",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/inventar/artwork.ts",
+      "target": "function:src/lib/inventar/artwork.ts:baueArtworkPrompt",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/inventar/artwork.ts",
+      "target": "function:src/lib/inventar/artwork.ts:erzeugeArtwork",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/inventar/artwork.ts",
+      "target": "function:src/lib/inventar/artwork.ts:erzeugeArtwork",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/inventar/artwork.ts",
+      "target": "function:src/lib/inventar/artwork.ts:ladeVorlagen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/inventar/artwork.ts",
+      "target": "function:src/lib/inventar/artwork.ts:rendern",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/inventar/artwork.ts",
+      "target": "function:src/lib/inventar/artwork.ts:erzeugen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/inventar/artwork.ts",
+      "target": "function:src/lib/inventar/artwork.ts:bearbeiten",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/supabase/server.ts",
+      "target": "function:src/lib/supabase/server.ts:createClient",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/supabase/server.ts",
+      "target": "function:src/lib/supabase/server.ts:createClient",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/app/auth/callback/route.ts",
+      "target": "file:src/lib/supabase/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/dashboard/athena-insights.tsx",
+      "target": "file:src/app/(dashboard)/dashboard/insight-actions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/dashboard/athena-insights.tsx",
+      "target": "file:src/components/ui/button.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/dashboard/athena-insights.tsx",
+      "target": "file:src/lib/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/strategy/checklist-panel.tsx",
+      "target": "file:src/app/(dashboard)/strategy/strategies/actions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/strategy/combo-form.tsx",
+      "target": "file:src/app/(dashboard)/strategy/combos/actions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/strategy/combo-form.tsx",
+      "target": "file:src/components/ui/button.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/strategy/strategy-form.tsx",
+      "target": "file:src/app/(dashboard)/strategy/strategies/actions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/strategy/strategy-form.tsx",
+      "target": "file:src/components/ui/button.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/fints/categorize.ts",
+      "target": "file:src/types/bank.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "file:src/lib/fints/categorize.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "file:src/lib/fints/sidecar.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/fints/index.ts",
+      "target": "file:src/types/bank.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/fints/state.ts",
+      "target": "file:src/lib/fints/sidecar.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/inventar/artwork.ts",
+      "target": "file:src/lib/valuables.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/inventar/artwork.ts",
+      "target": "file:src/types/database.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/supabase/server.ts",
+      "target": "file:src/types/database.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}

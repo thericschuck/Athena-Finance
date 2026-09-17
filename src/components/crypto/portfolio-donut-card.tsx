@@ -78,7 +78,7 @@ export function DonutCard({
     <div className="rounded-lg border border-border bg-card p-5 space-y-4">
       <div>
         <h3 className="text-sm font-semibold">{title}</h3>
-        <p className="text-xs text-muted-foreground">{subtitle}</p>
+        <p className="text-xs text-muted-foreground tabular-nums">{subtitle}</p>
       </div>
 
       <div className="relative">

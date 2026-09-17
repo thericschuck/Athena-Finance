@@ -167,7 +167,7 @@ export default async function EuerPage({
           <AlertTriangle className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
           <span>
             <strong>{ohneBeleg.length}</strong> Betriebsausgaben über zusammen{' '}
-            <strong>{euro(summeOhneBeleg)}</strong> haben keinen Beleg. Aufklappen und über die
+            <strong className="tabular-nums">{euro(summeOhneBeleg)}</strong> haben keinen Beleg. Aufklappen und über die
             Büroklammer hochladen — eine Ausgabe ohne Nachweis kann das Finanzamt streichen.
           </span>
         </div>

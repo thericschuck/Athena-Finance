@@ -150,7 +150,7 @@ export function MonatsVergleich({ data }: Props) {
           <YAxis
             yAxisId="eur"
             tickFormatter={v => `${((v as number) / 1000).toFixed(0)}k`}
-            tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
+            tick={{ fontSize: 11, fill: 'var(--muted-foreground)', className: 'tabular-nums' }}
             axisLine={false}
             tickLine={false}
             width={36}

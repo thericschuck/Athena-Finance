@@ -105,9 +105,9 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
 
       {/* Info grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <InfoCard label="Betrag" value={`${fmtEur(c.amount, c.currency)} / ${FREQ_LABEL[c.frequency] ?? c.frequency}`} />
+        <InfoCard label="Betrag" value={`${fmtEur(c.amount, c.currency)} / ${FREQ_LABEL[c.frequency] ?? c.frequency}`} money />
         {monthlyEur !== null && (
-          <InfoCard label="Monatlich" value={fmtEur(monthlyEur)} />
+          <InfoCard label="Monatlich" value={fmtEur(monthlyEur)} money />
         )}
         <InfoCard label="Typ" value={TYPE_LABEL[c.type] ?? c.type} />
         {isTransfer ? (
@@ -189,11 +189,11 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
   )
 }
 
-function InfoCard({ label, value }: { label: string; value: string }) {
+function InfoCard({ label, value, money }: { label: string; value: string; money?: boolean }) {
   return (
     <div className="rounded-lg border border-border bg-card p-3 space-y-0.5">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-sm font-medium">{value}</p>
+      <p className={`text-sm font-medium ${money ? 'tabular-nums' : ''}`}>{value}</p>
     </div>
   )
 }

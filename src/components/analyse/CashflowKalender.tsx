@@ -159,7 +159,7 @@ export function CashflowKalender({ events }: Props) {
                       {inc > 0 && (
                         <div className="flex items-center gap-0.75">
                           <div className="w-0.75 h-0.75 rounded-full bg-(--chart-income) shrink-0" />
-                          <span className="text-[9px] text-(--chart-income) font-medium truncate leading-tight">
+                          <span className="text-[9px] text-(--chart-income) font-medium truncate leading-tight tabular-nums">
                             +{inc % 1 === 0 ? inc : inc.toFixed(0)}€
                           </span>
                         </div>
@@ -167,7 +167,7 @@ export function CashflowKalender({ events }: Props) {
                       {exp > 0 && (
                         <div className="flex items-center gap-0.75">
                           <div className="w-0.75 h-0.75 rounded-full bg-(--chart-expense) shrink-0" />
-                          <span className="text-[9px] text-(--chart-expense) font-medium truncate leading-tight">
+                          <span className="text-[9px] text-(--chart-expense) font-medium truncate leading-tight tabular-nums">
                             −{exp % 1 === 0 ? exp : exp.toFixed(0)}€
                           </span>
                         </div>
@@ -229,13 +229,13 @@ export function CashflowKalender({ events }: Props) {
           {(popupIncome > 0 || popupExpense > 0) && (
             <div className="px-3.5 pt-2 pb-3 border-t border-border flex items-center justify-between gap-2">
               {popupIncome > 0 && (
-                <span className="text-[10px] text-(--chart-income) font-semibold">+{fmtAmt(popupIncome)} €</span>
+                <span className="text-[10px] text-(--chart-income) font-semibold tabular-nums">+{fmtAmt(popupIncome)} €</span>
               )}
               {popupExpense > 0 && (
-                <span className="text-[10px] text-(--chart-expense) font-semibold">−{fmtAmt(popupExpense)} €</span>
+                <span className="text-[10px] text-(--chart-expense) font-semibold tabular-nums">−{fmtAmt(popupExpense)} €</span>
               )}
               {popupIncome > 0 && popupExpense > 0 && (
-                <span className={`text-[10px] font-bold ml-auto ${
+                <span className={`text-[10px] font-bold ml-auto tabular-nums ${
                   popupIncome - popupExpense >= 0 ? 'text-(--chart-income)' : 'text-(--chart-expense)'
                 }`}>
                   Netto: {popupIncome - popupExpense >= 0 ? '+' : '−'}{fmtAmt(Math.abs(popupIncome - popupExpense))} €
@@ -254,8 +254,8 @@ export function CashflowKalender({ events }: Props) {
           style={tipPos}
         >
           <p className="text-muted-foreground mb-1 font-medium">{tip.day}. {MONTH_NAMES[month]}</p>
-          {tipIncome  > 0 && <p className="text-(--chart-income)">+{fmtAmt(tipIncome)} €</p>}
-          {tipExpense > 0 && <p className="text-(--chart-expense)">−{fmtAmt(tipExpense)} €</p>}
+          {tipIncome  > 0 && <p className="text-(--chart-income) tabular-nums">+{fmtAmt(tipIncome)} €</p>}
+          {tipExpense > 0 && <p className="text-(--chart-expense) tabular-nums">−{fmtAmt(tipExpense)} €</p>}
           <p className="text-muted-foreground/70 mt-0.5">{tipEvs.length} Transaktion{tipEvs.length > 1 ? 'en' : ''}</p>
         </div>
       )}

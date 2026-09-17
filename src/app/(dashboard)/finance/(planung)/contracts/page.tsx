@@ -150,7 +150,7 @@ export default async function ContractsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Verträge & Abos</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            {active.length} aktive Verträge · monatlich ca. {fmtEur(monthlyTotal, locale)}
+            {active.length} aktive Verträge · monatlich ca. <span className="tabular-nums">{fmtEur(monthlyTotal, locale)}</span>
             {warningCount > 0 && (
               <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">
                 <AlertTriangle className="size-3" />

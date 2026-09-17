@@ -8,6 +8,7 @@ import { PageWrapper } from '@/components/layout/page-wrapper'
 import { AssistantSheet } from '@/components/assistant/AssistantSheet'
 import { useSettings } from '@/components/providers/settings-context'
 import { OliveVines } from '@/components/landing/olive-vines'
+import { PrivacyToggle } from '@/components/layout/privacy-toggle'
 
 /**
  * Pro Bereich unterschiedliche Ranken-Platzierung (Seite/Dichte/Größe) statt
@@ -111,7 +112,8 @@ export function AppShell({
           >
             <Menu className="size-5" />
           </button>
-          <span className="text-sm font-semibold tracking-tight">Athena Finance</span>
+          <span className="flex-1 text-sm font-semibold tracking-tight">Athena Finance</span>
+          <PrivacyToggle />
         </header>
 
         <PageWrapper>{children}</PageWrapper>

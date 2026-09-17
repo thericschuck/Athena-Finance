@@ -119,7 +119,7 @@ export default async function GoalsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Sparziele</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            {active.length} aktive Ziele · Gesamt {fmt(totalTarget, locale)} · {fmt(totalMonthly, locale)}/Monat
+            {active.length} aktive Ziele · Gesamt <span className="tabular-nums">{fmt(totalTarget, locale)} · {fmt(totalMonthly, locale)}/Monat</span>
           </p>
         </div>
         <AddGoalDialog />
@@ -197,7 +197,7 @@ function GoalCard({ goal, locale, dateFormat }: { goal: Goal; locale: string; da
         </div>
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>{pct}%</span>
-          <span>{fmt(saved, locale)} / {fmt(goal.target_amount, locale)}</span>
+          <span className="tabular-nums">{fmt(saved, locale)} / {fmt(goal.target_amount, locale)}</span>
         </div>
       </div>
 
@@ -211,7 +211,7 @@ function GoalCard({ goal, locale, dateFormat }: { goal: Goal; locale: string; da
         {goal.monthly_savings_rate && (
           <div>
             <p className="text-muted-foreground">Sparrate</p>
-            <p className="font-medium">{fmt(goal.monthly_savings_rate, locale)}/Mo.</p>
+            <p className="font-medium tabular-nums">{fmt(goal.monthly_savings_rate, locale)}/Mo.</p>
           </div>
         )}
         {remaining !== null && remaining > 0 && (
@@ -264,7 +264,7 @@ function SavingsPlanBadge({ gap, locale }: { gap: number; locale: string }) {
         <TrendingUp className="size-3.5 shrink-0" />
         <span>
           {gap >= 5
-            ? <><strong>{fmt(gap)}</strong> voraus</>
+            ? <><strong className="tabular-nums">{fmt(gap)}</strong> voraus</>
             : 'Sparplan eingehalten'}
         </span>
       </div>
@@ -274,7 +274,7 @@ function SavingsPlanBadge({ gap, locale }: { gap: number; locale: string }) {
   return (
     <div className="flex items-center gap-1.5 rounded-md bg-warning/10 border border-warning/30 px-2.5 py-1.5 text-xs text-warning">
       <TrendingDown className="size-3.5 shrink-0" />
-      <span><strong>{fmt(gap)}</strong> im Rückstand</span>
+      <span><strong className="tabular-nums">{fmt(gap)}</strong> im Rückstand</span>
     </div>
   )
 }

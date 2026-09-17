@@ -1,0 +1,280 @@
+{
+  "projectRoot": "C:\\Users\\eschu\\OneDrive\\Desktop\\Unternehmensstruktur\\06-Projekte\\athena-finance",
+  "batchFiles": [
+    {
+      "path": "src/app/actions/waitlist.ts",
+      "language": "typescript",
+      "sizeLines": 45,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/app/datenschutz/page.tsx",
+      "language": "typescript",
+      "sizeLines": 97,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/app/impressum/page.tsx",
+      "language": "typescript",
+      "sizeLines": 70,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/app/interesse/InteresseClient.tsx",
+      "language": "typescript",
+      "sizeLines": 152,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/app/interesse/page.tsx",
+      "language": "typescript",
+      "sizeLines": 63,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/app/layout.tsx",
+      "language": "typescript",
+      "sizeLines": 113,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/app/loading.tsx",
+      "language": "typescript",
+      "sizeLines": 63,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/app/login/PasswordField.tsx",
+      "language": "typescript",
+      "sizeLines": 140,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/app/login/actions.ts",
+      "language": "typescript",
+      "sizeLines": 52,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/app/login/page.tsx",
+      "language": "typescript",
+      "sizeLines": 167,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/app/not-found.tsx",
+      "language": "typescript",
+      "sizeLines": 103,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/app/page.tsx",
+      "language": "typescript",
+      "sizeLines": 99,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/app/robots.ts",
+      "language": "typescript",
+      "sizeLines": 25,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/app/sitemap.ts",
+      "language": "typescript",
+      "sizeLines": 29,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/inventar/ValuablePlinth.tsx",
+      "language": "typescript",
+      "sizeLines": 137,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/LandingClient.tsx",
+      "language": "typescript",
+      "sizeLines": 4586,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/SmoothScrollProvider.tsx",
+      "language": "typescript",
+      "sizeLines": 165,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/landing-tokens.ts",
+      "language": "typescript",
+      "sizeLines": 148,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/olive-vines.tsx",
+      "language": "typescript",
+      "sizeLines": 575,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/scroll-control.ts",
+      "language": "typescript",
+      "sizeLines": 59,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/layout/app-shell.tsx",
+      "language": "typescript",
+      "sizeLines": 125,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/layout/page-wrapper.tsx",
+      "language": "typescript",
+      "sizeLines": 98,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/layout/sidebar.tsx",
+      "language": "typescript",
+      "sizeLines": 292,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/seo/json-ld.tsx",
+      "language": "typescript",
+      "sizeLines": 23,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/ui/logo.tsx",
+      "language": "typescript",
+      "sizeLines": 47,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/waitlist/WaitlistForm.tsx",
+      "language": "typescript",
+      "sizeLines": 127,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/seo.ts",
+      "language": "typescript",
+      "sizeLines": 53,
+      "fileCategory": "code"
+    }
+  ],
+  "batchImportData": {
+    "src/app/actions/waitlist.ts": [
+      "src/lib/supabase/server.ts"
+    ],
+    "src/app/datenschutz/page.tsx": [
+      "src/components/landing/landing-tokens.ts"
+    ],
+    "src/app/impressum/page.tsx": [
+      "src/components/landing/landing-tokens.ts"
+    ],
+    "src/app/interesse/InteresseClient.tsx": [
+      "src/app/interesse/interesse.css",
+      "src/components/landing/SmoothScrollProvider.tsx",
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/olive-vines.tsx",
+      "src/components/ui/logo.tsx",
+      "src/components/waitlist/WaitlistForm.tsx",
+      "src/lib/use-reduced-motion.ts"
+    ],
+    "src/app/interesse/page.tsx": [
+      "src/app/interesse/InteresseClient.tsx",
+      "src/components/seo/json-ld.tsx",
+      "src/lib/seo.ts"
+    ],
+    "src/app/layout.tsx": [
+      "src/app/globals.css",
+      "src/lib/seo.ts"
+    ],
+    "src/app/loading.tsx": [
+      "src/components/landing/landing-tokens.ts",
+      "src/components/ui/logo.tsx"
+    ],
+    "src/app/login/PasswordField.tsx": [],
+    "src/app/login/actions.ts": [
+      "src/lib/supabase/server.ts"
+    ],
+    "src/app/login/page.tsx": [
+      "src/app/login/PasswordField.tsx",
+      "src/app/login/actions.ts",
+      "src/app/login/login.css",
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/olive-vines.tsx",
+      "src/components/ui/logo.tsx"
+    ],
+    "src/app/not-found.tsx": [
+      "src/components/landing/olive-vines.tsx",
+      "src/components/ui/button.tsx",
+      "src/components/ui/logo.tsx"
+    ],
+    "src/app/page.tsx": [
+      "src/components/landing/LandingClient.tsx",
+      "src/components/seo/json-ld.tsx",
+      "src/lib/seo.ts",
+      "src/lib/supabase/server.ts"
+    ],
+    "src/app/robots.ts": [
+      "src/lib/seo.ts"
+    ],
+    "src/app/sitemap.ts": [
+      "src/lib/seo.ts"
+    ],
+    "src/components/inventar/ValuablePlinth.tsx": [
+      "src/components/landing/olive-vines.tsx",
+      "src/components/providers/settings-context.tsx",
+      "src/lib/utils.ts"
+    ],
+    "src/components/landing/LandingClient.tsx": [
+      "src/components/landing/DashboardMock.tsx",
+      "src/components/landing/SmoothScrollProvider.tsx",
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/landing.css",
+      "src/components/landing/olive-vines.tsx",
+      "src/components/landing/scroll-control.ts",
+      "src/components/ui/logo.tsx",
+      "src/components/waitlist/WaitlistForm.tsx",
+      "src/lib/use-reduced-motion.ts"
+    ],
+    "src/components/landing/SmoothScrollProvider.tsx": [
+      "src/components/landing/scroll-control.ts"
+    ],
+    "src/components/landing/landing-tokens.ts": [],
+    "src/components/landing/olive-vines.tsx": [
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/vines.css"
+    ],
+    "src/components/landing/scroll-control.ts": [],
+    "src/components/layout/app-shell.tsx": [
+      "src/components/assistant/AssistantSheet.tsx",
+      "src/components/landing/olive-vines.tsx",
+      "src/components/layout/page-wrapper.tsx",
+      "src/components/layout/sidebar.tsx",
+      "src/components/providers/settings-context.tsx"
+    ],
+    "src/components/layout/page-wrapper.tsx": [],
+    "src/components/layout/sidebar.tsx": [
+      "src/app/login/actions.ts",
+      "src/components/landing/olive-vines.tsx",
+      "src/components/providers/settings-context.tsx",
+      "src/components/ui/button.tsx",
+      "src/components/ui/logo.tsx",
+      "src/lib/utils.ts"
+    ],
+    "src/components/seo/json-ld.tsx": [],
+    "src/components/ui/logo.tsx": [
+      "src/lib/utils.ts"
+    ],
+    "src/components/waitlist/WaitlistForm.tsx": [
+      "src/app/actions/waitlist.ts",
+      "src/components/landing/landing-tokens.ts",
+      "src/components/waitlist/waitlist.css"
+    ],
+    "src/lib/seo.ts": []
+  }
+}

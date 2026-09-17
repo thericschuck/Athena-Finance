@@ -77,8 +77,8 @@ function StatCard({ title, value, sub, color, loading }: {
         <><Skeleton className="h-6 w-24 mb-1" /><Skeleton className="h-4 w-16" /></>
       ) : (
         <>
-          <p className={`text-lg font-semibold ${colorClass}`}>{value}</p>
-          {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
+          <p className={`text-lg font-semibold tabular-nums ${colorClass}`}>{value}</p>
+          {sub && <p className="text-xs text-muted-foreground mt-0.5 tabular-nums">{sub}</p>}
         </>
       )}
     </div>
@@ -493,7 +493,7 @@ export function DepotDashboard() {
           <span className={`size-2 rounded-full shrink-0 ${priceStatus.dot}`} />
           <span className={`text-xs font-medium ${priceStatus.color}`}>{priceStatus.label}</span>
           {livePrice !== null && (
-            <span className="text-base font-semibold text-foreground ml-1">
+            <span className="text-base font-semibold text-foreground ml-1 tabular-nums">
               {livePrice.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
             </span>
           )}
@@ -511,7 +511,7 @@ export function DepotDashboard() {
               <Zap className="size-4 text-warning shrink-0" />
               <p className="text-sm text-warning flex-1">
                 Sparplan fällig — {plan.fund_name}{' '}
-                {plan.monthly_amount.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €
+                <span className="tabular-nums">{plan.monthly_amount.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span>
               </p>
               <Button
                 size="sm"
@@ -683,7 +683,7 @@ export function DepotDashboard() {
                           className="rounded-lg border border-border bg-background p-3 space-y-2">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm text-foreground font-medium">
+                              <p className="text-sm text-foreground font-medium tabular-nums">
                                 {plan.monthly_amount.toLocaleString('de-DE', { minimumFractionDigits: 2 })} € / Monat
                               </p>
                               <p className="text-xs text-muted-foreground">
@@ -718,7 +718,7 @@ export function DepotDashboard() {
                                 <AlertDialogHeader>
                                   <AlertDialogTitle className="text-foreground">Sparplan löschen?</AlertDialogTitle>
                                   <AlertDialogDescription className="text-muted-foreground">
-                                    Der Sparplan über {plan.monthly_amount.toLocaleString('de-DE', { minimumFractionDigits: 2 })} € (Tag {plan.execution_day}) wird dauerhaft gelöscht.
+                                    Der Sparplan über <span className="tabular-nums">{plan.monthly_amount.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span> (Tag {plan.execution_day}) wird dauerhaft gelöscht.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>

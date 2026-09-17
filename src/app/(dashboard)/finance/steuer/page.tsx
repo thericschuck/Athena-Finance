@@ -32,7 +32,7 @@ function Kennzahl({
     <div className="rounded-lg border border-border bg-card px-4 py-3">
       <div className="text-xs text-muted-foreground">{label}</div>
       <div className={`mt-1 font-semibold tabular-nums ${gross ? 'text-2xl' : 'text-lg'}`}>{wert}</div>
-      {fussnote && <div className="mt-1 text-xs text-muted-foreground">{fussnote}</div>}
+      {fussnote && <div className="mt-1 text-xs text-muted-foreground tabular-nums">{fussnote}</div>}
     </div>
   )
 }

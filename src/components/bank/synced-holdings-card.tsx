@@ -45,7 +45,7 @@ export function SyncedHoldingsCard({ holdings }: Props) {
                   <span className="text-muted-foreground/70"> · {rows[0].bank_label}</span>
                 )}
               </span>
-              <span className="font-mono">{fmtEur(total)}</span>
+              <span className="font-mono tabular-nums">{fmtEur(total)}</span>
             </div>
             <div className="space-y-1">
               {rows.map(h => (
@@ -58,8 +58,8 @@ export function SyncedHoldingsCard({ holdings }: Props) {
                     <p className="text-xs text-muted-foreground font-mono">{h.isin}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="font-mono">{h.total_value != null ? fmtEur(h.total_value) : '–'}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="font-mono tabular-nums">{h.total_value != null ? fmtEur(h.total_value) : '–'}</p>
+                    <p className="text-xs text-muted-foreground tabular-nums">
                       {h.pieces != null ? `${h.pieces} Stück` : ''}
                       {h.market_value != null ? ` · ${fmtEur(h.market_value)}` : ''}
                     </p>

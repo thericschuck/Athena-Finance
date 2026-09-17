@@ -230,7 +230,7 @@ export function BankBalanceChart({ accountName, currentBalance, transactions, fr
           />
           <YAxis
             tickFormatter={v => fmtCurrency(v as number, 'EUR', locale, { fractionDigits: 0 })}
-            tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
+            tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5, className: 'tabular-nums' }}
             axisLine={false} tickLine={false} width={56}
           />
           <Tooltip

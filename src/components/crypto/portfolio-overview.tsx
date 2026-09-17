@@ -169,9 +169,9 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, e
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{activePortfolio ?? 'Crypto Portfolio'}</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            {assets.length} Assets · Gesamtwert {fmtEur(totalValue)}
+            {assets.length} Assets · Gesamtwert <span className="tabular-nums">{fmtEur(totalValue)}</span>
             {totalPnL != null && (
-              <span className={`ml-2 font-medium ${isPositive ? 'text-success' : 'text-danger'}`}>
+              <span className={`ml-2 font-medium tabular-nums ${isPositive ? 'text-success' : 'text-danger'}`}>
                 {isPositive ? '+' : ''}{fmtEur(totalPnL)}
                 {totalPnLPct != null && (
                   <> / {isPositive ? '+' : ''}{totalPnLPct.toFixed(2).replace('.', ',')} %</>
