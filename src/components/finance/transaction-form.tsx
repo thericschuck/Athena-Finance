@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useReducer, useState, useTransition } from 'react'
+import { useActionState, useEffect, useReducer, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
@@ -27,10 +27,13 @@ import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ArrowLeftRight, Loader2, Pencil, Plus, Trash2 } from 'lucide-react'
 import {
   createTransaction,
@@ -39,6 +42,8 @@ import {
   deleteTransaction,
   type TransactionActionState,
 } from '@/app/(dashboard)/finance/(transaktionen)/transactions/actions'
+import { DebtSuggestion } from '@/components/finance/debt-suggestion'
+import { groupCategoriesByParent } from '@/lib/finance/category-groups'
 import { Database } from '@/types/database'
 
 type Account = Pick<
@@ -47,14 +52,94 @@ type Account = Pick<
 >
 type Category = Pick<
   Database['public']['Tables']['categories']['Row'],
-  'id' | 'name' | 'color' | 'icon'
+  'id' | 'name' | 'color' | 'icon' | 'parent_id'
 >
 type TxRow = Database['public']['Tables']['transactions']['Row']
+type Debt = Database['public']['Tables']['debts']['Row']
 
 const NO_CATEGORY = '__none__'
 
 function categoryLabel(c: Category): string {
   return c.icon ? `${c.icon} ${c.name}` : c.name
+}
+
+function CategoryDot({ color }: { color: string | null }) {
+  return (
+    <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: color ?? '#94a3b8' }} />
+  )
+}
+
+/**
+ * Händler/Beschreibung einer Buchung -- standardmässig einzeilig abgeschnitten, damit die
+ * Tabelle nicht ausufert. Bank-Verwendungszwecke sind oft deutlich länger als die Spalte
+ * (IBAN, Uhrzeit, Referenznummer, ...), deshalb per Klick als Popover vollständig lesbar.
+ */
+export function TransactionDescriptionCell({
+  merchant,
+  description,
+  badge,
+}: {
+  merchant: string | null
+  description: string | null
+  badge?: React.ReactNode
+}) {
+  const primary = merchant || description
+  const hasSecondary = !!(merchant && description)
+
+  if (!primary) return <span className="text-muted-foreground">—</span>
+
+  return (
+    <Popover>
+      <PopoverTrigger className="block w-full min-w-0 text-left cursor-pointer">
+        <span className="flex items-center gap-1.5">
+          <span className="truncate text-foreground">{primary}</span>
+          {badge}
+        </span>
+        {hasSecondary && (
+          <span className="text-xs text-muted-foreground truncate block">{description}</span>
+        )}
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-80 space-y-1 text-sm">
+        <p className="font-medium text-foreground break-words">{merchant || description}</p>
+        {hasSecondary && (
+          <p className="text-muted-foreground whitespace-pre-wrap break-words">{description}</p>
+        )}
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+/**
+ * Kategorien-Optionen nach Hauptkategorie gruppiert statt flach -- bei 30+ Kategorien war die
+ * Reihenfolge sonst praktisch zufällig (fast alle haben `sort_order = 0`). Die Hauptkategorie
+ * bleibt selbst wählbar (manche Buchungen hängen direkt an ihr, ohne Unterkategorie), ihre
+ * Kinder folgen darunter eingerückt.
+ */
+function CategorySelectOptions({ categories }: { categories: Category[] }) {
+  const groups = groupCategoriesByParent(categories)
+  return (
+    <>
+      {groups.map(({ parent, children }, i) => (
+        <SelectGroup key={parent.id}>
+          {i > 0 && <SelectSeparator />}
+          <SelectItem value={parent.id}>
+            <span className="flex items-center gap-2">
+              <CategoryDot color={parent.color} />
+              {categoryLabel(parent)}
+            </span>
+          </SelectItem>
+          {children.map((c) => (
+            <SelectItem key={c.id} value={c.id} className="pl-6">
+              <span className="flex items-center gap-2">
+                <CategoryDot color={c.color} />
+                {categoryLabel(c)}
+              </span>
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      ))}
+    </>
+  )
 }
 
 const CURRENCIES = ['EUR', 'USD', 'CHF', 'GBP', 'BTC', 'ETH']
@@ -63,6 +148,33 @@ interface AddTransactionDialogProps {
   accounts: Account[]
   categories: Category[]
   defaultAccountId?: string
+  /** Aktive Schulden + die ID der Kategorie "Schulden" -- fuer den Vorschlag nach dem Speichern,
+   * siehe DebtSuggestion. Ohne schuldenCategoryId bleibt der Vorschlag stumm. */
+  debts?: Debt[]
+  schuldenCategoryId?: string | null
+}
+
+/** Snapshot der fuer DebtSuggestion relevanten Felder, aus dem Formular genommen, BEVOR die
+ * Server Action abgeschickt wird -- danach ist die FormData weg, aber die frisch vergebene ID
+ * kommt erst mit dem Ergebnis der Action zurueck. */
+type TxSnapshot = {
+  amount: number
+  date: string
+  description: string | null
+  merchant: string | null
+  direction: 'expense' | 'income'
+}
+
+function snapshotFromForm(form: HTMLFormElement): TxSnapshot {
+  const fd = new FormData(form)
+  const raw = parseFloat((fd.get('amount') as string) || '0')
+  return {
+    amount: Math.abs(raw),
+    date: (fd.get('date') as string) ?? '',
+    description: (fd.get('description') as string) || null,
+    merchant: (fd.get('merchant') as string) || null,
+    direction: raw >= 0 ? 'income' : 'expense',
+  }
 }
 
 // ─── Grouped form state ────────────────────────────────────────────────────────
@@ -100,9 +212,13 @@ function currencyForAccount(accountId: string | undefined, accounts: Account[]):
   return acc?.currency ?? 'EUR'
 }
 
-export function AddTransactionDialog({ accounts, categories, defaultAccountId }: AddTransactionDialogProps) {
+export function AddTransactionDialog({ accounts, categories, defaultAccountId, debts = [], schuldenCategoryId = null }: AddTransactionDialogProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
+  // Gesetzt, sobald eine als "Schulden" kategorisierte Buchung gespeichert wurde -- ersetzt
+  // dann das Formular durch den DebtSuggestion-Vorschlag, statt den Dialog sofort zu schliessen.
+  const [savedTx, setSavedTx] = useState<(TxSnapshot & { id: string }) | null>(null)
+  const pendingSnapshot = useRef<TxSnapshot | null>(null)
 
   const [form, dispatch] = useReducer(txFormReducer, defaultAccountId, (accId) => ({
     accountId:  accId ?? '',
@@ -118,12 +234,18 @@ export function AddTransactionDialog({ accounts, categories, defaultAccountId }:
     null
   )
 
-  // Close + refresh on success
+  // Nach dem Speichern: bei "Schulden" bleibt der Dialog offen und zeigt den Vorschlag; sonst
+  // wie zuvor sofort schliessen.
   useEffect(() => {
     if (state && 'success' in state) {
-      setOpen(false)
       router.refresh()
+      if (state.id && schuldenCategoryId && categoryId === schuldenCategoryId && pendingSnapshot.current) {
+        setSavedTx({ ...pendingSnapshot.current, id: state.id })
+      } else {
+        setOpen(false)
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, router])
 
   // Auto-fill currency from selected account
@@ -136,6 +258,7 @@ export function AddTransactionDialog({ accounts, categories, defaultAccountId }:
     setOpen(next)
     if (next) {
       dispatch({ type: 'reset', accountId: defaultAccountId ?? '', currency: currencyForAccount(defaultAccountId, accounts) })
+      setSavedTx(null)
     }
   }
 
@@ -156,7 +279,30 @@ export function AddTransactionDialog({ accounts, categories, defaultAccountId }:
           <DialogTitle>Neue Transaktion</DialogTitle>
         </DialogHeader>
 
-        <form action={formAction} className="space-y-4 pt-2">
+        {savedTx ? (
+          <div className="space-y-4 pt-2">
+            <p className="text-sm text-muted-foreground">Transaktion gespeichert.</p>
+            <DebtSuggestion
+              transactionId={savedTx.id}
+              source="manual"
+              amount={savedTx.amount}
+              date={savedTx.date}
+              description={savedTx.description}
+              merchant={savedTx.merchant}
+              direction={savedTx.direction}
+              debts={debts}
+              onHandled={() => setOpen(false)}
+            />
+            <div className="flex justify-end pt-2">
+              <Button type="button" size="sm" onClick={() => setOpen(false)}>Schließen</Button>
+            </div>
+          </div>
+        ) : (
+        <form
+          action={formAction}
+          onSubmit={(e) => { pendingSnapshot.current = snapshotFromForm(e.currentTarget) }}
+          className="space-y-4 pt-2"
+        >
           {/* Hidden select values */}
           <input type="hidden" name="account_id" value={accountId} />
           <input type="hidden" name="category_id" value={categoryId} />
@@ -229,11 +375,7 @@ export function AddTransactionDialog({ accounts, categories, defaultAccountId }:
                 <SelectValue placeholder="Kategorie wählen…" />
               </SelectTrigger>
               <SelectContent>
-                {categories.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
-                  </SelectItem>
-                ))}
+                <CategorySelectOptions categories={categories} />
               </SelectContent>
             </Select>
           </div>
@@ -303,6 +445,7 @@ export function AddTransactionDialog({ accounts, categories, defaultAccountId }:
             </Button>
           </div>
         </form>
+        )}
       </DialogContent>
     </Dialog>
   )
@@ -312,10 +455,14 @@ export function EditTransactionDialog({
   tx,
   accounts,
   categories,
+  debts = [],
+  schuldenCategoryId = null,
 }: {
   tx: TxRow
   accounts: Account[]
   categories: Category[]
+  debts?: Debt[]
+  schuldenCategoryId?: string | null
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -426,11 +573,23 @@ export function EditTransactionDialog({
             <Select value={categoryId} onValueChange={setCategoryId}>
               <SelectTrigger><SelectValue placeholder="Kategorie wählen" /></SelectTrigger>
               <SelectContent>
-                {categories.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                ))}
+                <CategorySelectOptions categories={categories} />
               </SelectContent>
             </Select>
+            {schuldenCategoryId && categoryId === schuldenCategoryId && (
+              <div className="pt-1.5">
+                <DebtSuggestion
+                  transactionId={tx.id}
+                  source="manual"
+                  amount={Math.abs(tx.amount)}
+                  date={tx.date}
+                  description={tx.description}
+                  merchant={tx.merchant}
+                  direction={tx.type === 'income' ? 'income' : 'expense'}
+                  debts={debts}
+                />
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -510,54 +669,80 @@ export function EditTransactionDialog({
 export function TransactionCategorySelect({
   tx,
   categories,
+  debts = [],
+  schuldenCategoryId = null,
 }: {
-  tx: { id: string; category_id: string | null; source: 'manual' | 'bank_sync' }
+  tx: {
+    id: string
+    category_id: string | null
+    source: 'manual' | 'bank_sync'
+    amount?: number
+    date?: string
+    description?: string | null
+    merchant?: string | null
+    type?: string
+  }
   categories: Category[]
+  debts?: Debt[]
+  schuldenCategoryId?: string | null
 }) {
   const [categoryId, setCategoryId] = useState(tx.category_id ?? NO_CATEGORY)
   const [, startTransition] = useTransition()
+  // Nur nach einer aktiven Auswahl in DIESER Sitzung zeigen -- sonst wuerde jede bereits vor
+  // dem Laden "Schulden"-kategorisierte Buchung dauerhaft einen Vorschlag anzeigen, und genau
+  // dieses Nachtraeglich-durchforsten der Bank-Buchungen war bewusst nicht der Umfang.
+  const [justChanged, setJustChanged] = useState(false)
 
   const current = categories.find(c => c.id === categoryId)
 
   function handleChange(next: string) {
     const previous = categoryId
     setCategoryId(next)
+    setJustChanged(next !== previous && next === schuldenCategoryId)
     startTransition(async () => {
       const result = await updateTransactionCategory(tx.id, next === NO_CATEGORY ? null : next, tx.source)
       if (result.error) {
         setCategoryId(previous)
+        setJustChanged(false)
         toast.error(result.error)
       }
     })
   }
 
   return (
-    <Select value={categoryId} onValueChange={handleChange}>
-      <SelectTrigger
-        size="sm"
-        aria-label="Kategorie ändern"
-        className="h-7 max-w-[160px] rounded-full border-none px-2.5 text-xs shadow-none"
-        style={current?.color ? { backgroundColor: `${current.color}1a`, color: current.color } : undefined}
-      >
-        <SelectValue placeholder="Kategorisieren…">
-          {current ? categoryLabel(current) : 'Ohne Kategorie'}
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value={NO_CATEGORY}>Ohne Kategorie</SelectItem>
-        {categories.map(c => (
-          <SelectItem key={c.id} value={c.id}>
-            <span className="flex items-center gap-2">
-              <span
-                className="size-2 rounded-full shrink-0"
-                style={{ backgroundColor: c.color ?? '#94a3b8' }}
-              />
-              {categoryLabel(c)}
-            </span>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <>
+      <Select value={categoryId} onValueChange={handleChange}>
+        <SelectTrigger
+          size="sm"
+          aria-label="Kategorie ändern"
+          className="h-7 max-w-[160px] rounded-full border-none px-2.5 text-xs shadow-none"
+          style={current?.color ? { backgroundColor: `${current.color}1a`, color: current.color } : undefined}
+        >
+          <SelectValue placeholder="Kategorisieren…">
+            {current ? categoryLabel(current) : 'Ohne Kategorie'}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={NO_CATEGORY}>Ohne Kategorie</SelectItem>
+          <CategorySelectOptions categories={categories} />
+        </SelectContent>
+      </Select>
+      {justChanged && schuldenCategoryId && categoryId === schuldenCategoryId && (
+        <div className="mt-1.5 max-w-xs">
+          <DebtSuggestion
+            transactionId={tx.id}
+            source={tx.source}
+            amount={Math.abs(tx.amount ?? 0)}
+            date={tx.date ?? ''}
+            description={tx.description ?? null}
+            merchant={tx.merchant ?? null}
+            direction={tx.type === 'income' ? 'income' : 'expense'}
+            debts={debts}
+            onHandled={() => setJustChanged(false)}
+          />
+        </div>
+      )}
+    </>
   )
 }
 

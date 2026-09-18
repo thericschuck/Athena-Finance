@@ -80,6 +80,7 @@ function CategoryFormFields({
   euerZeile,
   setEuerZeile,
   euerZeilen,
+  lockedParentName,
 }: {
   allCategories: Category[]
   category?: Category
@@ -92,6 +93,13 @@ function CategoryFormFields({
   euerZeile: string
   setEuerZeile: (v: string) => void
   euerZeilen: EuerZeile[]
+  /**
+   * Name der Oberkategorie, wenn der Parent von aussen fest vorgegeben ist (z.B. beim Anlegen
+   * über das "+" einer Hauptkategorie-Gruppe). Zeigt dann nur den Namen statt der Auswahl --
+   * verhindert, dass die Auswahl versehentlich auf "Keine" steht bleibt, obwohl man aus einer
+   * bestimmten Gruppe heraus angelegt hat.
+   */
+  lockedParentName?: string
 }) {
   // Exclude self from parent options (prevent circular ref)
   const parentOptions = allCategories.filter(
@@ -138,19 +146,25 @@ function CategoryFormFields({
 
         <div className="space-y-1.5">
           <Label>Übergeordnet</Label>
-          <Select value={parentId} onValueChange={setParentId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Keine (Hauptkategorie)" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none__">Keine (Hauptkategorie)</SelectItem>
-              {parentOptions.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {lockedParentName ? (
+            <div className="flex h-9 items-center rounded-md border border-input bg-muted/40 px-3 text-sm text-muted-foreground">
+              {lockedParentName}
+            </div>
+          ) : (
+            <Select value={parentId} onValueChange={setParentId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Keine (Hauptkategorie)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Keine (Hauptkategorie)</SelectItem>
+                {parentOptions.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </div>
 
@@ -253,14 +267,23 @@ function CategoryFormFields({
 export function AddCategoryDialog({
   allCategories,
   euerZeilen,
+  defaultParentId,
+  trigger,
 }: {
   allCategories: Category[]
   euerZeilen: EuerZeile[]
+  /** Vorbelegt die "Übergeordnet"-Auswahl -- fürs Anlegen direkt aus einer Hauptkategorie-Gruppe heraus. */
+  defaultParentId?: string
+  /** Ersetzt den Standard-"Kategorie anlegen"-Button, z.B. durch ein kleines "+"-Icon pro Gruppe. */
+  trigger?: React.ReactNode
 }) {
   const router = useRouter()
+  const defaultParent = defaultParentId
+    ? allCategories.find((c) => c.id === defaultParentId)
+    : undefined
   const [open, setOpen] = useState(false)
-  const [type, setType] = useState('expense')
-  const [parentId, setParentId] = useState('__none__')
+  const [type, setType] = useState(defaultParent?.type ?? 'expense')
+  const [parentId, setParentId] = useState(defaultParentId ?? '__none__')
   const [taxRole, setTaxRole] = useState('__none__')
   const [euerZeile, setEuerZeile] = useState('__none__')
 
@@ -279,8 +302,8 @@ export function AddCategoryDialog({
   function handleOpenChange(next: boolean) {
     setOpen(next)
     if (next) {
-      setType('expense')
-      setParentId('__none__')
+      setType(defaultParent?.type ?? 'expense')
+      setParentId(defaultParentId ?? '__none__')
       setTaxRole('__none__')
       setEuerZeile('__none__')
     }
@@ -289,10 +312,12 @@ export function AddCategoryDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="sm">
-          <Plus className="size-4" />
-          Kategorie anlegen
-        </Button>
+        {trigger ?? (
+          <Button size="sm">
+            <Plus className="size-4" />
+            Kategorie anlegen
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -317,6 +342,7 @@ export function AddCategoryDialog({
             euerZeile={euerZeile}
             setEuerZeile={setEuerZeile}
             euerZeilen={euerZeilen}
+            lockedParentName={defaultParent?.name}
           />
           {state && 'error' in state && (
             <p className="text-sm text-destructive">{state.error}</p>

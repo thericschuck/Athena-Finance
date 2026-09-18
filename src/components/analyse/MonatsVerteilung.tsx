@@ -103,6 +103,53 @@ function median(values: number[]): number {
 }
 
 /**
+ * Arithmetisches Mittel — bewusst als eigene Linie neben dem Median, nicht als Ersatz: beide
+ * beantworten verschiedene Fragen und fallen nur bei einer symmetrischen Verteilung zusammen.
+ * Der Median ist robust gegen Ausreißer (die Hälfte der Monate liegt darüber, die Hälfte
+ * darunter); der Mittelwert wird von genau den Ausreißer-Monaten verzogen, die Erics Daten
+ * ausmachen (ein Dezember mit 3.874 € Ausgaben gegen einen Sockel um 2.000 €, s.o.
+ * binCountFor) — deshalb liegt er meist NICHT am Scheitel der Dichtekurve.
+ *
+ * Der Scheitel selbst ist auch keins von beiden: er ist der Modus der geschätzten Verteilung
+ * (die wahrscheinlichste Betragsklasse), und bei einer rechtsschiefen Verteilung — dem
+ * Normalfall bei Ausgaben/Einnahmen, wenige teure Monate ziehen die Kurve nach rechts — gilt
+ * typischerweise Modus < Median < Mittelwert. Dass hier keine der beiden Linien exakt auf dem
+ * Scheitel sitzt, ist deshalb kein Rechenfehler, sondern zeigt genau diese Schiefe.
+ */
+function mean(values: number[]): number {
+  return values.reduce((sum, v) => sum + v, 0) / values.length
+}
+
+/**
+ * Modus, als höchster Punkt der bereits gezeichneten Dichtekurve (x UND y) — nicht separat aus
+ * den Rohwerten geschätzt, weil "der Scheitel der Kurve" ohnehin die Definition ist, die im
+ * Chart zu sehen ist; ein zweites, unabhängig berechnetes Maximum könnte an einer anderen
+ * Stelle liegen als die goldene Linie selbst und wäre dann falsch anschaulich. Die y-Koordinate
+ * wird gleich mitgeliefert, weil genau die den Punkt-Marker auf der Kurve positioniert.
+ */
+function modeFromKurve(kurve: KurvePunkt[]): KurvePunkt {
+  return kurve.reduce((best, p) => (p.y > best.y ? p : best), kurve[0])
+}
+
+/**
+ * Stichproben-Standardabweichung (n−1, Bessel-Korrektur) — die Monate hier sind eine Stichprobe
+ * aus dem, was künftige Monate bringen, nicht die ganze Grundgesamtheit. `avg` wird übergeben
+ * statt neu berechnet, weil der Aufrufer ihn für die Mittelwert-Linie ohnehin schon hat.
+ */
+function stddev(values: number[], avg: number): number {
+  if (values.length < 2) return 0
+  const variance = values.reduce((sum, v) => sum + (v - avg) ** 2, 0) / (values.length - 1)
+  return Math.sqrt(variance)
+}
+
+/** "+1,3" / "−0,7" — Vorzeichen immer sichtbar (auch bei Plus) und das echte Minuszeichen
+    (siehe MINUS oben), sonst sieht "-0.7" bei tabular-nums wie ein Bindestrich-Präfix aus. */
+function fmtZ(z: number): string {
+  const s = Math.abs(z).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+  return (z < 0 ? MINUS : '+') + s
+}
+
+/**
  * Referenz-Klassenzahl nach Freedman-Diaconis (Klassenbreite = 2·IQR/n^⅓) — NICHT mehr für
  * die angezeigten Balken (die zeigen jetzt jeden Monat einzeln, siehe `displayBinCountFor`),
  * sondern für die Bandbreite der Dichtekurve in `buildVerteilung`. Eine feste Zahl war dafür
@@ -253,7 +300,8 @@ function BinTooltip({ active, payload, fmt }: {
 }
 
 /**
- * Der Punkt des laufenden Monats auf der Dichtekurve.
+ * Ein Punkt auf der Dichtekurve — für den laufenden Monat UND für Median/Mittelwert/Modus,
+ * die vorher nur als vertikale Linie ohne Fixpunkt auf der Kurve zu sehen waren.
  *
  * Eigene Komponente statt einer im Render definierten Funktion (react-hooks/static-
  * components): sie braucht eigenen Hover-State, der bei jedem Neu-Erzeugen verloren ginge.
@@ -262,7 +310,7 @@ function BinTooltip({ active, payload, fmt }: {
  * ausgeblendet (ganz ohne Wert). Jetzt zeigt der Punkt den Betrag erst beim Hover/Fokus
  * direkt an sich selbst — „auf der Linie anfokussieren", nicht dauerhaft im Weg.
  */
-function CurrentMonthDot({ cx, cy, color, fmt, value, align }: {
+function MarkerDot({ cx, cy, color, fmt, value, align, label, variant = 'current' }: {
   cx?: number
   cy?: number
   color: string
@@ -271,11 +319,18 @@ function CurrentMonthDot({ cx, cy, color, fmt, value, align }: {
   /** Ausrichtung der Wertblase relativ zum Punkt, damit sie am Rand der Zeichenfläche
       nicht abgeschnitten wird — grob aus der Position des Punkts im Wertebereich abgeleitet. */
   align: 'start' | 'middle' | 'end'
+  /** Beschriftung vor dem Betrag in der Hover-Blase, z.B. "Median" — ohne beim laufenden
+      Monat, der hat schon eine eigene Legendenzeile "Dieser Monat" ohne Namenspräfix im Wert. */
+  label?: string
+  /** 'stat' zeichnet Median/Mittelwert/Modus kleiner und in Grau statt in der Modus-Farbe,
+      damit sie neben dem (größeren, farbigen) Punkt des laufenden Monats erkennbar als
+      Lagemaße und nicht als zweiter "aktueller Monat" wirken. */
+  variant?: 'current' | 'stat'
 }) {
   const [hover, setHover] = useState(false)
   if (cx == null || cy == null) return null
 
-  const text = fmt(value)
+  const text = label ? `${label} ${fmt(value)}` : fmt(value)
   const boxW = Math.max(46, text.length * 6.5 + 16)
   const boxX = align === 'start' ? cx : align === 'end' ? cx - boxW : cx - boxW / 2
   // Sitzt der Punkt hoch (z. B. am Kurvenscheitel), fehlt über ihm der Platz für die
@@ -283,6 +338,8 @@ function CurrentMonthDot({ cx, cy, color, fmt, value, align }: {
   const above = cy > 40
   const boxY  = above ? cy - 34 : cy + 12
   const textY = above ? cy - 19 : cy + 27
+  const baseR  = variant === 'current' ? 5   : 3.5
+  const hoverR = variant === 'current' ? 6.5 : 5
 
   return (
     <g
@@ -293,7 +350,7 @@ function CurrentMonthDot({ cx, cy, color, fmt, value, align }: {
       {/* Unsichtbarer, großzügiger Hit-Bereich — der sichtbare Punkt allein ist zu klein,
           um ihn zuverlässig zu treffen. */}
       <circle cx={cx} cy={cy} r={14} fill="transparent" />
-      <circle cx={cx} cy={cy} r={hover ? 6.5 : 5} fill={color} stroke="var(--card)" strokeWidth={2} />
+      <circle cx={cx} cy={cy} r={hover ? hoverR : baseR} fill={color} stroke="var(--card)" strokeWidth={2} />
       {hover && (
         <g>
           <rect
@@ -352,8 +409,13 @@ export function MonatsVerteilung({ history, current }: Props) {
 
   const { bins, kurve, min, max, width, h, ticks } = vert
   const med        = median(values)
+  const avg        = mean(values)
+  const modusPunkt = modeFromKurve(kurve)
+  const modus      = modusPunkt.x
+  const sd         = stddev(values, avg)
   const percentile = currentValue != null ? computePercentileRank(values, currentValue) : null
   const countBelow = currentValue != null ? values.filter(v => v < currentValue).length : null
+  const zScore     = currentValue != null && sd > 0 ? (currentValue - avg) / sd : null
   // Auffällig heißt „liegt am Rand der eigenen Historie" — in beide Richtungen
   // und ohne Wertung: ein einnahmenstarker Monat ist so auffällig wie ein
   // ausgabenstarker. Als Farbe die des Modus, nicht --destructive: das ist in
@@ -361,17 +423,27 @@ export function MonatsVerteilung({ history, current }: Props) {
   // selbst nicht zu unterscheiden.
   const striking = percentile != null && (percentile >= 75 || percentile <= 25)
 
+  // Ausrichtung der Wertblase relativ zum Punkt, damit sie am Rand der Zeichenfläche nicht
+  // abgeschnitten wird — für alle vier Marker (laufender Monat, Median, Mittelwert, Modus)
+  // dieselbe Regel, grob aus der Position im Wertebereich abgeleitet.
+  const alignFor = (x: number): 'start' | 'middle' | 'end' =>
+    x < min + (max - min) * 0.25 ? 'start'
+    : x > max - (max - min) * 0.25 ? 'end'
+    : 'middle'
+
   // Der Marker sitzt auf dem exakten Betrag des laufenden Monats, nicht mehr auf der
   // Klassenmitte — dafür die zweite Achse „betrag" unten. Geklemmt wird nur auf den
   // Rand der Achse: ein Monat jenseits der Historie hat kein Stück Kurve, auf dem er
   // sitzen könnte, das Perzentil im Kopf sagt dazu ohnehin 0 bzw. 100.
   const dotX = currentValue == null ? null : Math.min(max, Math.max(min, currentValue))
   const dotY = dotX == null ? null : kdeDensityAt(values, dotX, h) * values.length * width
-  const dotAlign: 'start' | 'middle' | 'end' =
-    dotX == null ? 'middle'
-    : dotX < min + (max - min) * 0.25 ? 'start'
-    : dotX > max - (max - min) * 0.25 ? 'end'
-    : 'middle'
+  const dotAlign = dotX == null ? 'middle' : alignFor(dotX)
+
+  // Median/Mittelwert liegen wie der laufende Monat auf der Kurve, nicht auf einer eigenen
+  // Höhe — sonst schwebten die Punkte sichtbar über oder unter der Kurve statt auf ihr zu
+  // sitzen. Der Modus-Punkt braucht das nicht: seine Höhe IST der Kurvenscheitel (modusPunkt.y).
+  const medY = kdeDensityAt(values, med, h) * values.length * width
+  const avgY = kdeDensityAt(values, avg, h) * values.length * width
 
   // Zeichnet eine Klasse als Stapel einzelner, durch schmale Lücken getrennter Einheiten
   // statt eines durchgehenden Balkens — eine Einheit pro Monat in dieser Klasse. Keine
@@ -431,6 +503,11 @@ export function MonatsVerteilung({ history, current }: Props) {
           >
             Dieser Monat {fmt(currentValue!)} · {percentile}. Perzentil
             <span className="font-normal"> — höher als in {countBelow} von {values.length} Monaten</span>
+            {/* z-Score direkt neben dem Perzentil statt unten in der Legende: er ist wie das
+                Perzentil eine Aussage über DIESEN Monat (wie viele Standardabweichungen vom
+                Mittelwert entfernt), σ selbst (die Streuung der ganzen Verteilung) steht
+                unten bei Median/Mittelwert/Modus. */}
+            {zScore != null && <span className="font-normal"> · z {fmtZ(zScore)}</span>}
           </p>
         )}
       </div>
@@ -532,7 +609,7 @@ export function MonatsVerteilung({ history, current }: Props) {
               Balken: die Umrandung ging in derselben Farbe wie die Füllung unter,
               vor allem bei nur einem Monat in der Klasse. Der Ring in --card hebt
               ihn von Balken und Kurve ab. Der Betrag steht nicht mehr permanent
-              daneben (siehe CurrentMonthDot) — erst beim Hover, direkt am Punkt. */}
+              daneben (siehe MarkerDot) — erst beim Hover, direkt am Punkt. */}
           {dotX != null && dotY != null && (
             <ReferenceDot
               xAxisId="betrag"
@@ -540,7 +617,7 @@ export function MonatsVerteilung({ history, current }: Props) {
               y={dotY}
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               shape={(props: any) => (
-                <CurrentMonthDot
+                <MarkerDot
                   cx={props.cx}
                   cy={props.cy}
                   color={color}
@@ -551,6 +628,50 @@ export function MonatsVerteilung({ history, current }: Props) {
               )}
             />
           )}
+          {/* Median/Mittelwert/Modus zusätzlich als Punkte AUF der Kurve, nicht nur als
+              vertikale Linie — sonst war auf einen Blick nicht zu erkennen, WO auf der Kurve
+              sie liegen, nur dass es irgendwo eine graue Linie gibt. Kleiner und grau statt
+              in der Modus-Farbe, damit der (größere, farbige) Punkt des laufenden Monats
+              weiterhin der auffälligste bleibt. */}
+          <ReferenceDot
+            xAxisId="betrag"
+            x={med}
+            y={medY}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            shape={(props: any) => (
+              <MarkerDot
+                cx={props.cx} cy={props.cy}
+                color="var(--muted-foreground)" fmt={fmt} value={med}
+                align={alignFor(med)} label="Median" variant="stat"
+              />
+            )}
+          />
+          <ReferenceDot
+            xAxisId="betrag"
+            x={avg}
+            y={avgY}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            shape={(props: any) => (
+              <MarkerDot
+                cx={props.cx} cy={props.cy}
+                color="var(--muted-foreground)" fmt={fmt} value={avg}
+                align={alignFor(avg)} label="Mittelwert" variant="stat"
+              />
+            )}
+          />
+          <ReferenceDot
+            xAxisId="betrag"
+            x={modusPunkt.x}
+            y={modusPunkt.y}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            shape={(props: any) => (
+              <MarkerDot
+                cx={props.cx} cy={props.cy}
+                color="var(--muted-foreground)" fmt={fmt} value={modus}
+                align={alignFor(modus)} label="Modus" variant="stat"
+              />
+            )}
+          />
           {/* Median auf dem exakten Betrag, nicht mehr auf der Klassenmitte. Ohne
               Beschriftung oben: die stand direkt im Scheitel der (goldenen) Dichtekurve
               und wirkte dadurch wie ein Teil davon, obwohl beide nichts miteinander zu tun
@@ -561,6 +682,28 @@ export function MonatsVerteilung({ history, current }: Props) {
             x={med}
             stroke="var(--muted-foreground)"
             strokeDasharray="4 3"
+          />
+          {/* Mittelwert als zweite, gepunktete Linie daneben — siehe mean() oben. Beide
+              grau, damit keine der beiden wie ein Teil der (goldenen) Dichtekurve wirkt;
+              unterschieden werden sie über das Strichmuster, genau wie in der Legende
+              darunter. Faellt bei einer symmetrischen Verteilung mit dem Median zusammen,
+              bei Erics schiefen Daten liegen sie sichtbar auseinander. */}
+          <ReferenceLine
+            xAxisId="betrag"
+            x={avg}
+            stroke="var(--muted-foreground)"
+            strokeDasharray="1 3"
+          />
+          {/* Modus als dritte Linie — sitzt per Definition (modeFromKurve) exakt auf dem
+              Scheitel der goldenen Kurve und macht daher optisch kaum etwas Neues sichtbar.
+              Trotzdem eine eigene Linie statt nur "der Scheitel ist der Modus" im Kopf: erst
+              damit stehen alle drei Lagemaße nebeneinander in derselben Legende und lassen
+              sich auf einen Blick vergleichen, ohne die Kurve selbst abzulesen. */}
+          <ReferenceLine
+            xAxisId="betrag"
+            x={modus}
+            stroke="var(--muted-foreground)"
+            strokeDasharray="6 2 1 2"
           />
         </ComposedChart>
       </ResponsiveContainer>
@@ -577,6 +720,27 @@ export function MonatsVerteilung({ history, current }: Props) {
         <span className="flex items-center gap-1.5 tabular-nums">
           <span className="inline-block w-4 border-t-[2.5px] border-dashed border-muted-foreground" />
           Median {fmt(med)}
+        </span>
+        <span className="flex items-center gap-1.5 tabular-nums">
+          <span className="inline-block w-4 border-t-[2.5px] border-dotted border-muted-foreground" />
+          Mittelwert {fmt(avg)}
+        </span>
+        <span className="flex items-center gap-1.5 tabular-nums">
+          {/* Kein Tailwind-Randstil trifft "6 2 1 2" (Strich-Punkt) — daher als Inline-SVG,
+              damit die Legende exakt das Muster der ReferenceLine zeigt statt einer
+              Näherung. */}
+          <svg width="16" height="3" className="shrink-0">
+            <line x1="0" y1="1.5" x2="16" y2="1.5" stroke="var(--muted-foreground)" strokeWidth="2.5" strokeDasharray="6 2 1 2" />
+          </svg>
+          Modus {fmt(modus)}
+        </span>
+        {/* Kein Punkt/keine Linie im Chart dafür — σ ist keine Stelle auf der Achse, sondern
+            eine Spannweite, und deshalb hier reiner Text statt eines vierten Markers. Der
+            z-Score (wie viele σ der laufende Monat vom Mittelwert entfernt ist) steht
+            stattdessen oben neben dem Perzentil, weil er wie das Perzentil eine Aussage über
+            DIESEN Monat ist, nicht über die Verteilung insgesamt. */}
+        <span className="flex items-center gap-1.5 tabular-nums">
+          σ {fmt(sd)}
         </span>
         {currentValue != null && (
           <span className="flex items-center gap-1.5">

@@ -1,17 +1,11 @@
-import React from 'react'
 import { getAuthUser } from '@/lib/supabase/server'
 import { Database } from '@/types/database'
-import {
-  AddCategoryDialog,
-  EditCategoryDialog,
-  DeleteCategoryButton,
-} from '@/components/finance/category-form'
+import { AddCategoryDialog } from '@/components/finance/category-form'
+import { CategoriesView, type CategoryNode } from '@/components/finance/categories-view'
 import { getSettings } from '@/lib/settings'
-import { fmtCurrency } from '@/lib/format'
 
 type Category = Database['public']['Tables']['categories']['Row']
 type EuerZeile = Database['public']['Tables']['euer_zeilen']['Row']
-type CategoryNode = Category & { children: CategoryNode[] }
 
 // Build parent→child tree from flat list
 function buildTree(categories: Category[]): CategoryNode[] {
@@ -33,21 +27,6 @@ function buildTree(categories: Category[]): CategoryNode[] {
 
   for (const node of map.values()) sort(node.children)
   return sort(roots)
-}
-
-const TYPE_CONFIG: Record<string, { label: string; classes: string }> = {
-  expense: {
-    label: 'Ausgabe',
-    classes: 'bg-danger/10 text-danger',
-  },
-  income: {
-    label: 'Einnahme',
-    classes: 'bg-success/10 text-success',
-  },
-  neutral: {
-    label: 'Neutral',
-    classes: 'bg-muted text-muted-foreground',
-  },
 }
 
 export default async function CategoriesPage() {
@@ -94,137 +73,7 @@ export default async function CategoriesPage() {
         <AddCategoryDialog allCategories={flat} euerZeilen={euerZeilen} />
       </div>
 
-      {/* Tree */}
-      {tree.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <div className="rounded-lg border border-border bg-card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/40">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Name</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Typ</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Budget/Monat</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground w-20">
-                  Aktionen
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {tree.map((parent) => (
-                <React.Fragment key={parent.id}>
-                  {/* Parent row */}
-                  <CategoryRow
-                    category={parent}
-                    allCategories={flat}
-                    euerZeilen={euerZeilen}
-                    isParent
-                    locale={locale}
-                  />
-                  {/* Child rows */}
-                  {parent.children.map((child) => (
-                    <CategoryRow
-                      key={child.id}
-                      category={child}
-                      allCategories={flat}
-                      euerZeilen={euerZeilen}
-                      isParent={false}
-                      locale={locale}
-                    />
-                  ))}
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function CategoryRow({
-  category,
-  allCategories,
-  euerZeilen,
-  isParent,
-  locale,
-}: {
-  category: CategoryNode
-  allCategories: Category[]
-  euerZeilen: EuerZeile[]
-  isParent: boolean
-  locale: string
-}) {
-  const typeCfg =
-    TYPE_CONFIG[category.type] ?? { label: category.type, classes: 'bg-muted text-muted-foreground' }
-
-  return (
-    <tr className="hover:bg-muted/30 transition-colors group">
-      {/* Name */}
-      <td className="px-4 py-3">
-        <div className={isParent ? 'flex items-center gap-2.5' : 'flex items-center gap-2.5 pl-6'}>
-          {/* Indent indicator for children */}
-          {!isParent && (
-            <span className="text-muted-foreground/40 select-none">↳</span>
-          )}
-
-          {/* Color dot */}
-          <span
-            className="size-2.5 rounded-full shrink-0"
-            style={{ backgroundColor: category.color ?? '#94a3b8' }}
-          />
-
-          {/* Icon + name */}
-          <span className={isParent ? 'font-medium text-foreground' : 'text-foreground'}>
-            {category.icon && (
-              <span className="mr-1.5">{category.icon}</span>
-            )}
-            {category.name}
-          </span>
-
-          {/* Child count badge */}
-          {isParent && (category as CategoryNode).children.length > 0 && (
-            <span className="text-xs text-muted-foreground">
-              ({(category as CategoryNode).children.length})
-            </span>
-          )}
-        </div>
-      </td>
-
-      {/* Typ */}
-      <td className="px-4 py-3">
-        <span
-          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${typeCfg.classes}`}
-        >
-          {typeCfg.label}
-        </span>
-      </td>
-
-      {/* Budget */}
-      <td className="px-4 py-3 text-muted-foreground tabular-nums">
-        {category.budget_monthly != null
-          ? fmtCurrency(category.budget_monthly, 'EUR', locale)
-          : '—'}
-      </td>
-
-      {/* Actions */}
-      <td className="px-4 py-3">
-        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <EditCategoryDialog category={category} allCategories={allCategories} euerZeilen={euerZeilen} />
-          <DeleteCategoryButton category={category} />
-        </div>
-      </td>
-    </tr>
-  )
-}
-
-function EmptyState() {
-  return (
-    <div className="rounded-lg border border-dashed border-border bg-card py-16 text-center">
-      <p className="text-sm font-medium text-foreground">Noch keine Kategorien</p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Lege deine erste Kategorie an, um Transaktionen zu organisieren.
-      </p>
+      <CategoriesView tree={tree} flat={flat} euerZeilen={euerZeilen} locale={locale} />
     </div>
   )
 }

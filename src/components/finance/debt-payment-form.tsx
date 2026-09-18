@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useState, useTransition } from 'react'
+import { useActionState, useEffect, useState, useTransition, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Dialog,
@@ -50,10 +50,24 @@ const CURRENCIES = ['EUR', 'USD', 'CHF', 'GBP']
 // ─────────────────────────────────────────────
 // Add Debt Dialog
 // ─────────────────────────────────────────────
-export function AddDebtDialog() {
+interface AddDebtDialogProps {
+  /** Vorausgefuellte Werte -- z.B. aus DebtSuggestion, wenn eine Buchung als "Schulden"
+   * kategorisiert wurde und zu keiner bestehenden Schuld passt. */
+  defaultValues?: {
+    name?: string
+    creditor?: string
+    original_amount?: number
+    type?: string
+  }
+  /** Eigener Ausloeser statt des Standard-"Schuld anlegen"-Buttons. */
+  trigger?: ReactNode
+  onCreated?: () => void
+}
+
+export function AddDebtDialog({ defaultValues, trigger, onCreated }: AddDebtDialogProps = {}) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [type, setType] = useState('borrowed')
+  const [type, setType] = useState(defaultValues?.type ?? 'borrowed')
   const [currency, setCurrency] = useState('EUR')
 
   const [state, formAction, isPending] = useActionState<DebtActionState, FormData>(
@@ -65,13 +79,15 @@ export function AddDebtDialog() {
     if (state && 'success' in state) {
       setOpen(false)
       router.refresh()
+      onCreated?.()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, router])
 
   function handleOpenChange(next: boolean) {
     setOpen(next)
     if (next) {
-      setType('borrowed')
+      setType(defaultValues?.type ?? 'borrowed')
       setCurrency('EUR')
     }
   }
@@ -81,10 +97,12 @@ export function AddDebtDialog() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="sm">
-          <Plus className="size-4" />
-          Schuld anlegen
-        </Button>
+        {trigger ?? (
+          <Button size="sm">
+            <Plus className="size-4" />
+            Schuld anlegen
+          </Button>
+        )}
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-md">
@@ -99,7 +117,13 @@ export function AddDebtDialog() {
           {/* Name */}
           <div className="space-y-1.5">
             <Label htmlFor="debt-name">Bezeichnung *</Label>
-            <Input id="debt-name" name="name" placeholder="z.B. Auto-Kredit, Freund Max" required />
+            <Input
+              id="debt-name"
+              name="name"
+              placeholder="z.B. Auto-Kredit, Freund Max"
+              defaultValue={defaultValues?.name ?? ''}
+              required
+            />
           </div>
 
           {/* Typ + Währung */}
@@ -145,6 +169,7 @@ export function AddDebtDialog() {
                 step="0.01"
                 min="0.01"
                 placeholder="0,00"
+                defaultValue={defaultValues?.original_amount ?? undefined}
                 required
               />
             </div>
@@ -165,7 +190,12 @@ export function AddDebtDialog() {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="debt-creditor">{creditorLabel}</Label>
-              <Input id="debt-creditor" name="creditor" placeholder="Name oder Institution" />
+              <Input
+                id="debt-creditor"
+                name="creditor"
+                placeholder="Name oder Institution"
+                defaultValue={defaultValues?.creditor ?? ''}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="debt-due">Fällig am</Label>
@@ -385,7 +415,25 @@ export function DeleteDebtButton({ debt }: { debt: Debt }) {
 // ─────────────────────────────────────────────
 // Payment Dialog
 // ─────────────────────────────────────────────
-export function DebtPaymentDialog({ debt }: { debt: Debt }) {
+interface DebtPaymentDialogProps {
+  debt: Debt
+  /** Vorbelegung aus einer Buchung heraus (siehe DebtSuggestion). */
+  defaultAmount?: number
+  defaultDate?: string
+  /** Verknuepft die entstehende Zahlung mit ihrer Quellbuchung -- siehe recordPayment. */
+  sourceTransaction?: { id: string; source: 'manual' | 'bank_sync' }
+  trigger?: ReactNode
+  onRecorded?: () => void
+}
+
+export function DebtPaymentDialog({
+  debt,
+  defaultAmount,
+  defaultDate,
+  sourceTransaction,
+  trigger,
+  onRecorded,
+}: DebtPaymentDialogProps) {
   const { locale } = useSettings()
   const fmt = (amount: number, currency: string) => fmtCurrency(amount, currency, locale)
   const router = useRouter()
@@ -400,7 +448,9 @@ export function DebtPaymentDialog({ debt }: { debt: Debt }) {
     if (state && 'success' in state) {
       setOpen(false)
       router.refresh()
+      onRecorded?.()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, router])
 
   const today = new Date().toISOString().split('T')[0]
@@ -409,10 +459,12 @@ export function DebtPaymentDialog({ debt }: { debt: Debt }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-1.5">
-          <CreditCard className="size-3.5" />
-          Zahlung erfassen
-        </Button>
+        {trigger ?? (
+          <Button variant="outline" size="sm" className="gap-1.5">
+            <CreditCard className="size-3.5" />
+            Zahlung erfassen
+          </Button>
+        )}
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-sm">
@@ -427,12 +479,18 @@ export function DebtPaymentDialog({ debt }: { debt: Debt }) {
 
         <form action={formAction} className="space-y-4">
           <input type="hidden" name="debt_id" value={debt.id} />
+          {sourceTransaction && (
+            <>
+              <input type="hidden" name="source_transaction_id" value={sourceTransaction.id} />
+              <input type="hidden" name="source_transaction_type" value={sourceTransaction.source} />
+            </>
+          )}
 
           {/* Datum + Betrag */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="pay-date">Datum *</Label>
-              <Input id="pay-date" name="payment_date" type="date" defaultValue={today} required />
+              <Input id="pay-date" name="payment_date" type="date" defaultValue={defaultDate ?? today} required />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="pay-amount">Betrag *</Label>
@@ -444,6 +502,7 @@ export function DebtPaymentDialog({ debt }: { debt: Debt }) {
                 min="0.01"
                 max={maxAmount}
                 placeholder="0,00"
+                defaultValue={defaultAmount ?? undefined}
                 required
               />
             </div>

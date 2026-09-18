@@ -4,8 +4,9 @@
  */
 import { createHash, createHmac } from 'crypto'
 import { getEurUsdRate } from '@/lib/crypto/coingecko'
+import { findBySymbol } from '@/lib/crypto/coin-registry'
 
-const KRAKEN_API = 'https://api.kraken.com'
+export const KRAKEN_API = 'https://api.kraken.com'
 
 // ─── Asset Code Mapping ───────────────────────────────────────────────────────
 // Kraken uses internal codes that differ from standard trading symbols.
@@ -54,6 +55,34 @@ export function krakenCodeToSymbol(code: string): string {
   return code
 }
 
+export interface ResolvedKrakenAsset {
+  symbol:      string           // display ticker, e.g. 'BTC'
+  dbSymbol:    string           // what `syncFromKraken()` writes into assets.symbol
+  name:        string
+  type:        'crypto' | 'stable' | 'fiat'
+  coingeckoId: string | null
+}
+
+/**
+ * Resolves a Kraken code (+ its `/Assets` altname) to exactly what the sync pipeline would
+ * store for it — shared by `syncFromKraken()` and `fetchKrakenTradeableAssets()` below so a
+ * target/asset picked before ever syncing resolves to the identical `assets.symbol` value the
+ * next real sync writes. Two separate implementations of this would drift the moment either one
+ * changes (e.g. a new registry entry) and silently break the match.
+ */
+export function resolveKrakenAsset(code: string, altname: string | undefined): ResolvedKrakenAsset {
+  const symbol = KRAKEN_TO_SYMBOL[code] ?? altname ?? krakenCodeToSymbol(code)
+  const isFiat = code.startsWith('Z') && code.length <= 5
+  const registryMatch = findBySymbol(symbol)
+  return {
+    symbol,
+    dbSymbol:    registryMatch?.coingecko_id ?? symbol,
+    name:        registryMatch?.name ?? symbol,
+    type:        isFiat ? 'fiat' : (registryMatch?.type === 'stable' ? 'stable' : 'crypto'),
+    coingeckoId: registryMatch?.coingecko_id ?? null,
+  }
+}
+
 // ─── Request Signing ──────────────────────────────────────────────────────────
 /**
  * Signs a Kraken private API request.
@@ -74,7 +103,10 @@ export function signKrakenRequest(path: string, nonce: string, postData: string,
 // call in this module is the only safe way to avoid that — it also protects against two calls
 // firing within the same millisecond (e.g. React Strict Mode double-invoking an effect).
 let lastNonce = 0
-function nextNonce(): string {
+// Exportiert, damit orders.ts (echte AddOrder-Aufrufe) denselben Zähler benutzt statt einen
+// zweiten zu fuehren — zwei unabhaengige Nonce-Zaehler fuer denselben Key waeren genau das
+// Problem, vor dem der Kommentar oben warnt.
+export function nextNonce(): string {
   const now = Date.now()
   lastNonce = now > lastNonce ? now : lastNonce + 1
   return lastNonce.toString()
@@ -118,30 +150,113 @@ export async function fetchKrakenBalances(apiKey: string, apiSecret: string): Pr
 // having to maintain a hardcoded code→symbol list; covers every current and future asset).
 export interface KrakenAssetInfo { altname: string }
 
+// Kraken's public endpoints default to `aclass=currency`/`aclass_base=currency` — xStocks
+// (tokenized equities like VTIx) live under the separate `tokenized_asset` class and are
+// silently absent unless asked for explicitly. Both fetchers below always merge the two, so
+// nothing downstream (sync, the tradeable-asset picker) has to know xStocks are a second class
+// of asset at all — a real Kraken holding of e.g. VTIx must resolve the same way regardless.
+async function fetchKrakenAssetInfoRaw(init: RequestInit): Promise<Record<string, KrakenAssetInfo>> {
+  const [currencyRes, tokenizedRes] = await Promise.all([
+    fetch(`${KRAKEN_API}/0/public/Assets`, init),
+    fetch(`${KRAKEN_API}/0/public/Assets?aclass=tokenized_asset`, init),
+  ])
+  const currency  = await currencyRes.json()  as { error: string[]; result?: Record<string, KrakenAssetInfo> }
+  const tokenized = await tokenizedRes.json() as { error: string[]; result?: Record<string, KrakenAssetInfo> }
+  if (currency.error?.length)  throw new Error(currency.error.join(', '))
+  if (tokenized.error?.length) throw new Error(tokenized.error.join(', '))
+  return { ...currency.result, ...tokenized.result }
+}
+
 export async function fetchKrakenAssetInfo(): Promise<Record<string, KrakenAssetInfo>> {
-  const res  = await fetch(`${KRAKEN_API}/0/public/Assets`, { cache: 'no-store' })
-  const json = await res.json() as { error: string[]; result?: Record<string, KrakenAssetInfo> }
-  if (json.error?.length) throw new Error(json.error.join(', '))
-  return json.result ?? {}
+  return fetchKrakenAssetInfoRaw({ cache: 'no-store' })
 }
 
 // ─── Asset Pairs (public) ──────────────────────────────────────────────────────
 // Which pairs actually exist for a code — needed before calling Ticker, since Kraken errors
 // on a guessed pair name instead of returning "no data".
-export interface KrakenAssetPair { altname: string; base: string; quote: string }
+export interface KrakenAssetPair {
+  altname: string
+  base:    string
+  quote:   string
+  /** 'currency' für normale Krypto-/Fiat-Pairs, 'tokenized_asset' für xStocks (z. B. VTIx,
+   *  AAPLx). Tokenized-Pairs brauchen bei Ticker UND AddOrder zwingend den zusätzlichen
+   *  Parameter `asset_class=tokenized_asset` — ohne ihn kennt Kraken den Pair-Namen schlicht
+   *  nicht ("Unknown asset pair"), siehe `fetchKrakenTickers()` unten. */
+  aclass_base?: string
+  /** Mindestordergröße in der Basis-Einheit — Kraken lehnt AddOrder darunter ab.
+   *  Kommt in der rohen `/0/public/AssetPairs`-Antwort mit, wurde bisher aber nie
+   *  ausgelesen (der `as {...}`-Cast unten wirft nichts weg, er ignoriert nur die
+   *  TS-Typisierung dafür). */
+  ordermin?: string
+  /** Mindest-Ordervolumen in der Quote-Währung. */
+  costmin?: string
+  /** Taker-Gebührenstaffel: [[Volumenschwelle, Gebühr-%], ...], aufsteigend nach Volumen. */
+  fees?: [number, number][]
+}
+
+async function fetchKrakenAssetPairsRaw(init: RequestInit): Promise<Record<string, KrakenAssetPair>> {
+  const [currencyRes, tokenizedRes] = await Promise.all([
+    fetch(`${KRAKEN_API}/0/public/AssetPairs`, init),
+    fetch(`${KRAKEN_API}/0/public/AssetPairs?aclass_base=tokenized_asset`, init),
+  ])
+  const currency  = await currencyRes.json()  as { error: string[]; result?: Record<string, KrakenAssetPair> }
+  const tokenized = await tokenizedRes.json() as { error: string[]; result?: Record<string, KrakenAssetPair> }
+  if (currency.error?.length)  throw new Error(currency.error.join(', '))
+  if (tokenized.error?.length) throw new Error(tokenized.error.join(', '))
+  return { ...currency.result, ...tokenized.result }
+}
 
 export async function fetchKrakenAssetPairs(): Promise<Record<string, KrakenAssetPair>> {
-  const res  = await fetch(`${KRAKEN_API}/0/public/AssetPairs`, { cache: 'no-store' })
-  const json = await res.json() as { error: string[]; result?: Record<string, KrakenAssetPair> }
-  if (json.error?.length) throw new Error(json.error.join(', '))
-  return json.result ?? {}
+  return fetchKrakenAssetPairsRaw({ cache: 'no-store' })
+}
+
+// ─── Tradeable assets (public, cached) ─────────────────────────────────────────
+export interface KrakenTradeableAsset {
+  code:     string   // Kraken's own code, e.g. 'XXBT'
+  symbol:   string
+  dbSymbol: string
+  name:     string
+  type:     'crypto' | 'stable' | 'fiat'
+}
+
+/**
+ * Every Kraken asset with a real EUR or USD pair — i.e. actually tradeable, not just listed
+ * (crypto and xStocks alike). Powers the rebalancing-target picker with Kraken's own ground
+ * truth instead of a manually maintained registry, so a target added here resolves to the exact
+ * `assets.symbol` value the next real Kraken sync writes for it. Unlike the sync fetchers above
+ * (deliberately `no-store` — a sync must see this instant's balances), this list barely
+ * changes, so it's revalidated every 6h instead of hitting Kraken on every combobox open.
+ */
+export async function fetchKrakenTradeableAssets(): Promise<KrakenTradeableAsset[]> {
+  const cacheInit: RequestInit = { next: { revalidate: 21600 } }
+  const [assetInfo, pairs] = await Promise.all([
+    fetchKrakenAssetInfoRaw(cacheInit),
+    fetchKrakenAssetPairsRaw(cacheInit),
+  ])
+
+  const tradeableCodes = new Set<string>()
+  for (const pair of Object.values(pairs)) {
+    if (pair.quote === 'ZEUR' || pair.quote === 'ZUSD') tradeableCodes.add(pair.base)
+  }
+
+  const seen = new Set<string>()
+  const out: KrakenTradeableAsset[] = []
+  for (const code of tradeableCodes) {
+    const resolved = resolveKrakenAsset(code, assetInfo[code]?.altname)
+    if (resolved.type === 'fiat') continue          // cash, not something to hold a rebalancing target for
+    if (seen.has(resolved.dbSymbol)) continue        // two Kraken codes resolving to the same registry coin
+    seen.add(resolved.dbSymbol)
+    out.push({ code, symbol: resolved.symbol, dbSymbol: resolved.dbSymbol, name: resolved.name, type: resolved.type })
+  }
+  return out.sort((a, b) => a.symbol.localeCompare(b.symbol))
 }
 
 // ─── Ticker (public) ───────────────────────────────────────────────────────────
-// Kraken accepts a comma-separated pair list, so every price we need comes back in one call.
-export async function fetchKrakenTickers(pairs: string[]): Promise<Record<string, number>> {
+async function fetchTickerBatch(pairs: string[], assetClass?: 'tokenized_asset'): Promise<Record<string, number>> {
   if (pairs.length === 0) return {}
-  const res  = await fetch(`${KRAKEN_API}/0/public/Ticker?pair=${pairs.join(',')}`, { cache: 'no-store' })
+  const qs = new URLSearchParams({ pair: pairs.join(',') })
+  if (assetClass) qs.set('asset_class', assetClass)
+  const res  = await fetch(`${KRAKEN_API}/0/public/Ticker?${qs}`, { cache: 'no-store' })
   const json = await res.json() as { error: string[]; result?: Record<string, { c: [string, string] }> }
   if (json.error?.length) throw new Error(json.error.join(', '))
 
@@ -151,6 +266,30 @@ export async function fetchKrakenTickers(pairs: string[]): Promise<Record<string
     if (!isNaN(price)) out[pair] = price
   }
   return out
+}
+
+/**
+ * Kraken accepts eine kommagetrennte Pair-Liste pro Anfrage — aber xStocks (tokenized_asset)
+ * brauchen zusätzlich `asset_class=tokenized_asset`, sonst kennt Kraken den Pair-Namen gar
+ * nicht ("Unknown asset pair"). Wird ein normaler Krypto-Pair und ein xStock in DERSELBEN
+ * Anfrage gemischt, liefert Kraken den Fehler trotzdem für die ganze Anfrage zurück, auch wenn
+ * `result` die gültigen Daten enthält — das hätte hier (vor dem Aufteilen) den Preis für JEDEN
+ * mitgefragten Coin unbrauchbar gemacht, sobald auch nur ein xStock dabei war. Deshalb zwei
+ * getrennte Batches nach `aclass_base`, jeder für sich fehlertolerant.
+ */
+export async function fetchKrakenTickers(
+  pairs: string[],
+  assetPairs: Record<string, KrakenAssetPair> = {},
+): Promise<Record<string, number>> {
+  if (pairs.length === 0) return {}
+  const tokenized = pairs.filter(p => assetPairs[p]?.aclass_base === 'tokenized_asset')
+  const standard  = pairs.filter(p => assetPairs[p]?.aclass_base !== 'tokenized_asset')
+
+  const [standardResult, tokenizedResult] = await Promise.all([
+    fetchTickerBatch(standard).catch(() => ({} as Record<string, number>)),
+    fetchTickerBatch(tokenized, 'tokenized_asset').catch(() => ({} as Record<string, number>)),
+  ])
+  return { ...standardResult, ...tokenizedResult }
 }
 
 // ─── Trades History (private, paginated) ───────────────────────────────────────
@@ -291,7 +430,7 @@ export async function buildKrakenPriceMap(
   }
   if (fxPairName) pairsToFetch.add(fxPairName)
 
-  const tickers = pairsToFetch.size > 0 ? await fetchKrakenTickers([...pairsToFetch]) : {}
+  const tickers = pairsToFetch.size > 0 ? await fetchKrakenTickers([...pairsToFetch], assetPairs) : {}
 
   let usdPerEur: number | null = null
   if (fxPairName && tickers[fxPairName] != null) {

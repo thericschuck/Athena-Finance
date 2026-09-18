@@ -4,8 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database, Json } from '@/types/database'
 import {
   WRITE_ACTIONS,
-  describeWriteAction,
-  validateWriteAction,
+  proposeWriteAction,
   type WriteActionName,
 } from '@/lib/assistant/actions'
 import type { AiLogger } from '@/lib/assistant/logger'
@@ -1686,49 +1685,22 @@ function buildProposalTools(supabase: DB, userId: string, options: AthenaToolOpt
       inputSchema: definition.schema,
       execute: async (input: unknown) => {
         const actionName = name as WriteActionName
-        // Erst prüfen, dann vorschlagen: eine Aktion, die am aktuellen
-        // Datenstand nicht ausführbar ist (Kategorie mit Unterkategorien
-        // löschen, dritte Ebene anlegen), soll als Werkzeugfehler beim Modell
-        // landen und nicht als Karte bei Eric, die beim Klick scheitert.
-        // Der Fehler landet über onStepFinish ohnehin in ai_tool_calls und im
-        // System-Log — hier deshalb kein zweiter Log-Eintrag.
-        const problem = await validateWriteAction(actionName, input, { supabase, userId })
-        if (problem) return { error: `Vorschlag nicht möglich: ${problem}` }
-
-        const { label, summary, details } = await describeWriteAction(actionName, input, {
-          supabase,
-          userId,
-        })
-        const { data, error } = await supabase
-          .from('ai_pending_actions')
-          .insert({
-            user_id: userId,
-            conversation_id: options.conversationId,
-            message_id: options.messageId,
-            action: actionName,
-            input: input as Json,
-            summary,
-            status: 'pending',
-          })
-          .select('id')
-          .single()
-        if (error) return { error: error.message }
-        await options.logger({
-          event: 'action.proposed',
-          message: summary,
-          meta: { actionId: data.id, action: actionName, input },
-        })
-        // `details` gehen bewusst durch die Werkzeugausgabe und nicht über eine
-        // eigene Spalte: so landen sie mit den Nachrichten-Parts in ai_messages
-        // und stehen beim Wiederöffnen der Session unverändert wieder da.
-        return {
-          status: 'pending_confirmation',
-          actionId: data.id,
-          label,
-          summary,
-          details,
-          note: 'Wartet auf die Bestätigung des Nutzers. Noch wurde NICHTS geändert.',
-        }
+        // `proposeWriteAction` prüft erst (validate), dann erzeugt sie den Vorschlag: eine
+        // Aktion, die am aktuellen Datenstand nicht ausführbar ist (Kategorie mit
+        // Unterkategorien löschen, dritte Ebene anlegen), landet so als Werkzeugfehler beim
+        // Modell statt als Karte bei Eric, die beim Klick scheitert. Der Fehler landet über
+        // onStepFinish ohnehin in ai_tool_calls und im System-Log — hier deshalb kein zweiter
+        // Log-Eintrag.
+        //
+        // `details` gehen bewusst durch die Werkzeugausgabe und nicht über eine eigene Spalte:
+        // so landen sie mit den Nachrichten-Parts in ai_messages und stehen beim Wiederöffnen
+        // der Session unverändert wieder da.
+        return proposeWriteAction(
+          actionName,
+          input,
+          { supabase, userId },
+          { conversationId: options.conversationId, messageId: options.messageId, logger: options.logger },
+        )
       },
     }),
   ])

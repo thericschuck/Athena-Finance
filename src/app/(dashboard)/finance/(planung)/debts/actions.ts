@@ -146,7 +146,13 @@ export async function recordPayment(
 
   const newOutstanding = Math.max(0, debt.outstanding - amount)
 
-  // Insert payment record
+  // Optionale Verknuepfung zur Buchung, aus der dieser Vorschlag entstand (siehe
+  // DebtSuggestion) -- manuelle und bank-synchte Buchungen leben in getrennten Tabellen,
+  // daher zwei Spalten statt einer. Der Unique-Index auf beiden verhindert, dieselbe
+  // Buchung zweimal als Zahlung zu verbuchen.
+  const sourceTransactionId = (formData.get('source_transaction_id') as string) || null
+  const sourceType = formData.get('source_transaction_type') as string | null
+
   const { error: payError } = await supabase.from('debt_payments').insert({
     debt_id: debtId,
     payment_date: paymentDate,
@@ -158,6 +164,8 @@ export async function recordPayment(
       ? parseFloat(formData.get('interest') as string)
       : null,
     notes: (formData.get('notes') as string) || null,
+    transaction_id: sourceTransactionId && sourceType === 'manual' ? sourceTransactionId : null,
+    bank_transaction_id: sourceTransactionId && sourceType === 'bank_sync' ? sourceTransactionId : null,
   })
   if (payError) return { error: payError.message }
 

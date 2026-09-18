@@ -3,7 +3,7 @@
 import { getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-export type TransactionActionState = { error: string } | { success: true } | null
+export type TransactionActionState = { error: string } | { success: true; id?: string } | null
 
 export async function createTransaction(
   _prev: TransactionActionState,
@@ -28,24 +28,31 @@ export async function createTransaction(
   const type = isTransfer ? 'transfer' : (parseFloat(amountRaw) >= 0 ? 'income' : 'expense')
   const amount = Math.abs(parseFloat(amountRaw))
 
-  const { error } = await supabase.from('transactions').insert({
-    date,
-    type,
-    account_id,
-    currency,
-    amount,
-    transfer_to: isTransfer ? transferTo : null,
-    category_id: (formData.get('category_id') as string) || null,
-    description: (formData.get('description') as string) || null,
-    merchant: (formData.get('merchant') as string) || null,
-    user_id: user.id,
-    fx_rate: 1,
-  })
+  const { data, error } = await supabase
+    .from('transactions')
+    .insert({
+      date,
+      type,
+      account_id,
+      currency,
+      amount,
+      transfer_to: isTransfer ? transferTo : null,
+      category_id: (formData.get('category_id') as string) || null,
+      description: (formData.get('description') as string) || null,
+      merchant: (formData.get('merchant') as string) || null,
+      user_id: user.id,
+      fx_rate: 1,
+    })
+    .select('id')
+    .single()
 
   if (error) return { error: error.message }
 
   revalidatePath('/finance/transactions')
-  return { success: true }
+  // Die ID geht an den Aufrufer zurueck, damit z.B. der Schulden-Vorschlag (DebtSuggestion)
+  // die frisch gespeicherte Buchung verknuepfen kann -- vor dem Speichern existiert noch
+  // keine ID, auf die eine Zahlung zeigen koennte.
+  return { success: true, id: data?.id }
 }
 
 export async function updateTransaction(

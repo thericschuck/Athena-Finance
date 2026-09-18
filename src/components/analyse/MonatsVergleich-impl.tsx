@@ -2,7 +2,7 @@
 
 import {
   ComposedChart, Bar, Line, ReferenceLine,
-  XAxis, YAxis, CartesianGrid, Tooltip,
+  XAxis, YAxis, CartesianGrid, Tooltip, Cell,
   ResponsiveContainer,
 } from 'recharts'
 import type { MonthlyComparison } from '@/lib/analyseData'
@@ -28,7 +28,10 @@ function CustomTooltip({ active, payload, label }: any) {
 
   return (
     <div className="rounded-lg border border-border bg-popover p-3 shadow-xl text-xs min-w-37">
-      <p className="font-semibold text-popover-foreground mb-2">{label}</p>
+      <p className="font-semibold text-popover-foreground mb-2">
+        {label}
+        {row.laufend && <span className="ml-1.5 font-normal text-muted-foreground">· läuft noch</span>}
+      </p>
       <div className="space-y-1">
         <div className="flex justify-between gap-4">
           <span className="text-muted-foreground">Einnahmen</span>
@@ -56,6 +59,11 @@ function CustomTooltip({ active, payload, label }: any) {
         {row.clamped && (
           <p className="text-[10px] text-muted-foreground pt-0.5">
             Liegt außerhalb der Achse — Punkt am Rand gekappt
+          </p>
+        )}
+        {row.laufend && (
+          <p className="text-[10px] text-muted-foreground pt-0.5">
+            Monat noch nicht abgeschlossen — Werte ändern sich noch
           </p>
         )}
       </div>
@@ -97,11 +105,16 @@ function toRows(data: MonthlyComparison[], [lo, hi]: [number, number]): Row[] {
 
 /**
  * Punkt auf der Sparquoten-Linie. Gekappte Monate bekommen einen Ring, damit man am Rand
- * unterscheiden kann „genau dieser Wert" von „mindestens so weit draußen".
+ * unterscheiden kann „genau dieser Wert" von „mindestens so weit draußen". Der laufende Monat
+ * bekommt denselben Ring, aber gestrichelt — er ist kein Extremwert, sondern schlicht noch
+ * nicht fertig.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function SparquoteDot({ cx, cy, payload }: any) {
   if (cx == null || cy == null || payload?.plot == null) return null
+  if (payload.laufend) {
+    return <circle cx={cx} cy={cy} r={4} fill="var(--card)" stroke="var(--chart-accent)" strokeWidth={2} strokeDasharray="2 2" />
+  }
   return payload.clamped
     ? <circle cx={cx} cy={cy} r={4} fill="var(--card)" stroke="var(--chart-accent)" strokeWidth={2} />
     : <circle cx={cx} cy={cy} r={3} fill="var(--chart-accent)" />
@@ -109,17 +122,20 @@ function SparquoteDot({ cx, cy, payload }: any) {
 
 export function MonatsVergleich({ data }: Props) {
   const rows = toRows(data, PCT_DOMAIN)
+  // Der laufende Monat haengt separat dran (siehe withLaufendemMonat in AnalysePage) — die
+  // Unterschrift zaehlt nur die wirklich abgeschlossenen Monate, der laufende wird im Chart
+  // selbst (abgeschwaechte Balken, "läuft noch" im Tooltip) als unvollstaendig markiert.
+  const abgeschlossen = data.filter(d => !d.laufend).length
+  const hatLaufenden = data.some(d => d.laufend)
 
   return (
     <div className="bg-card border border-border rounded-xl p-5">
       <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
         <div>
           <h2 className="text-sm font-medium text-foreground">Monatlicher Vergleich</h2>
-          {/* Explizit „abgeschlossen": der laufende Monat ist bewusst nicht dabei (siehe
-              buildMonthlyComparison), sonst hinge die Sparquote am Monatsanfang an zwei
-              Buchungen. */}
           <p className="text-xs text-muted-foreground mt-0.5">
-            {data.length === 1 ? 'Letzter abgeschlossener Monat' : `Letzte ${data.length} abgeschlossene Monate`}
+            {abgeschlossen === 1 ? 'Letzter abgeschlossener Monat' : `Letzte ${abgeschlossen} abgeschlossene Monate`}
+            {hatLaufenden && ' + laufender Monat'}
           </p>
         </div>
         <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
@@ -175,22 +191,31 @@ export function MonatsVergleich({ data }: Props) {
             content={<CustomTooltip />}
             cursor={{ fill: 'var(--muted)', fillOpacity: 0.5 }}
           />
+          {/* Pro Monat eine Cell statt einer festen fillOpacity: nur so kann der laufende
+              Monat (unvollstaendig, siehe withLaufendemMonat) blasser gezeichnet werden als
+              die abgeschlossenen — ohne eine zweite <Bar> für einen einzigen Balken zu brauchen. */}
           <Bar
             yAxisId="eur"
             dataKey="einnahmen"
             fill="var(--chart-income)"
-            fillOpacity={0.75}
             radius={[3, 3, 0, 0]}
             maxBarSize={28}
-          />
+          >
+            {rows.map((r, i) => (
+              <Cell key={i} fillOpacity={r.laufend ? 0.35 : 0.75} />
+            ))}
+          </Bar>
           <Bar
             yAxisId="eur"
             dataKey="ausgaben"
             fill="var(--chart-expense)"
-            fillOpacity={0.75}
             radius={[3, 3, 0, 0]}
             maxBarSize={28}
-          />
+          >
+            {rows.map((r, i) => (
+              <Cell key={i} fillOpacity={r.laufend ? 0.35 : 0.75} />
+            ))}
+          </Bar>
           {/* Nulllinie der Sparquote, jetzt fest auf halber Kartenhöhe: darunter ist mehr
               rausgegangen als reinkam. Ohne sie liest man die rechte Achse falsch, weil die
               Balken auf der EUR-Null unten stehen. Nicht mehr an Minusmonate gebunden — bei

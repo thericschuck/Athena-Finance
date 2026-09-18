@@ -5,23 +5,22 @@ import { revalidatePath } from 'next/cache'
 import { getSettings } from '@/lib/settings'
 import { getPrices, getEurUsdRate } from '@/lib/crypto/coingecko'
 import type { Json } from '@/types/database'
-import {
-  DEFAULT_STRATEGY_SIGNALS,
-  DEFAULT_PORTFOLIO_ALLOCATIONS,
-  type StrategySignals,
-  type PortfolioAllocations,
-} from '@/lib/crypto/rebalancing-defaults'
+import type { RebalancingTarget } from '@/lib/crypto/rebalancing'
 import { FIAT_EUR_PRICES } from '@/lib/crypto/coin-registry'
 import { decrypt } from '@/lib/encryption'
 import {
   fetchKrakenAssetPairs,
   fetchKrakenOpenPositions,
+  fetchKrakenTradeableAssets,
   buildKrakenPriceMap,
   type KrakenAssetPair,
   type KrakenOpenPosition,
+  type KrakenTradeableAsset,
 } from '@/lib/kraken'
 import { fetchKrakenFuturesOpenPositions, type KrakenFuturesPosition } from '@/lib/kraken/futures'
 import { syncKrakenForUser } from '@/lib/kraken/sync'
+import { proposeWriteAction, type ProposeWriteActionResult } from '@/lib/assistant/actions'
+import { createLogger } from '@/lib/assistant/logger'
 
 export type AssetActionState = { error: string } | { success: true } | null
 
@@ -321,57 +320,44 @@ export async function refreshPrices(): Promise<{ error?: string; updated?: numbe
   return { updated: matched.length }
 }
 
-// ─── Strategy signals ─────────────────────────────────────────────────────────
-export async function getStrategySignals(userId: string): Promise<StrategySignals> {
+// ─── Kraken-live asset picker (for rebalancing targets) ──────────────────────
+// Malik bleibt vorerst im Kraken-Ökosystem — der Picker soll deshalb genau die Assets zeigen,
+// die auf Kraken tatsächlich handelbar sind, statt der statischen Registry. Öffentliche
+// Kraken-Daten, aber trotzdem hinter Login (Konsistenz mit dem Rest dieser Datei).
+export async function getKrakenTradeableAssets(): Promise<KrakenTradeableAsset[]> {
+  const { user } = await getAuthUser()
+  if (!user) return []
+  return fetchKrakenTradeableAssets()
+}
+
+// ─── Rebalancing targets ──────────────────────────────────────────────────────
+// Flache Liste "Asset → Ziel-%" statt des früheren Core/Adam/High-Beta-Signalsystems.
+export async function getRebalancingTargets(userId: string): Promise<RebalancingTarget[]> {
   // getSettings() ist React-cache()-dedupliziert: liest ein Aufrufer im selben
   // Request bereits alle Settings (z.B. das Dashboard-Layout), kostet das hier
-  // keinen weiteren DB-Roundtrip statt der vorherigen eigenen user_settings-Abfrage.
+  // keinen weiteren DB-Roundtrip statt einer eigenen user_settings-Abfrage.
   const settings = await getSettings(userId)
-  const value = settings.strategy_signals
-  if (!value) return DEFAULT_STRATEGY_SIGNALS
-  return value as unknown as StrategySignals
+  const value = settings.rebalancing_targets
+  if (!value) return []
+  return value as unknown as RebalancingTarget[]
 }
 
-export async function saveStrategySignals(signals: StrategySignals): Promise<void> {
+export async function saveRebalancingTargets(targets: RebalancingTarget[]): Promise<void> {
   const { supabase, user } = await getAuthUser()
   if (!user) throw new Error('Nicht eingeloggt')
 
   const { error } = await supabase.from('user_settings').upsert(
     {
       user_id: user.id,
-      key:     'strategy_signals',
-      value:   signals as unknown as Json,
+      key:     'rebalancing_targets',
+      value:   targets as unknown as Json,
     },
     { onConflict: 'user_id,key' }
   )
 
   if (error) throw new Error(error.message)
   revalidatePath('/crypto/rebalancing')
-}
-
-// ─── Portfolio allocations ────────────────────────────────────────────────────
-export async function getPortfolioAllocations(userId: string): Promise<PortfolioAllocations> {
-  const settings = await getSettings(userId)
-  const value = settings.portfolio_allocations
-  if (!value) return DEFAULT_PORTFOLIO_ALLOCATIONS
-  return value as unknown as PortfolioAllocations
-}
-
-export async function savePortfolioAllocations(allocations: PortfolioAllocations): Promise<void> {
-  const { supabase, user } = await getAuthUser()
-  if (!user) throw new Error('Nicht eingeloggt')
-
-  const { error } = await supabase.from('user_settings').upsert(
-    {
-      user_id: user.id,
-      key:     'portfolio_allocations',
-      value:   allocations as unknown as Json,
-    },
-    { onConflict: 'user_id,key' }
-  )
-
-  if (error) throw new Error(error.message)
-  revalidatePath('/crypto/rebalancing')
+  revalidatePath('/crypto')
 }
 
 // ─── Last rebalancing ─────────────────────────────────────────────────────────
@@ -421,6 +407,22 @@ export async function syncFromKraken(): Promise<SyncState> {
   const result = await syncKrakenForUser(supabase, user.id)
   if ('success' in result) revalidatePath('/crypto')
   return result
+}
+
+// ─── Rebalancing: Ausführung vorschlagen (Button außerhalb des Chats) ──────────
+// Ruft dieselbe WRITE_ACTION auf, die Athena im Chat vorschlagen würde
+// (`executeRebalancing` in src/lib/assistant/actions.ts) über `proposeWriteAction` — der Button
+// auf der Rebalancing-Seite nimmt damit exakt denselben Vorschlags-/Bestätigungsweg wie der
+// Chat, inklusive derselben PendingActionCard. Kein eigener zweiter Ausführungspfad.
+export async function proposeRebalanceExecution(): Promise<ProposeWriteActionResult> {
+  const { supabase, user } = await getAuthUser()
+  if (!user) return { error: 'Nicht eingeloggt' }
+  return proposeWriteAction(
+    'executeRebalancing',
+    {},
+    { supabase, userId: user.id },
+    { logger: createLogger(supabase, user.id, null) },
+  )
 }
 
 // ─── Open Positions (margin/leveraged, read-only, not persisted) ──────────────

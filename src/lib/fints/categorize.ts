@@ -32,6 +32,27 @@ const RULES: CategoryRule[] = [
     ],
   },
   {
+    // Eigene Unterkategorien pro Anbieter -- ohne diese vier Regeln landen Anthropic/Vercel/
+    // Supabase/Figma-Buchungen alle in der groben "Abo"-Sammelkategorie darunter, obwohl für
+    // jeden Anbieter längst eine eigene Unterkategorie existiert. Stehen vor dem generischen
+    // Business-Tools-Fallback, der dieselben Muster nochmal abdeckt -- für Nutzer ohne eigene
+    // Vendor-Kategorie greift dann der.
+    candidates: ['Claude / Anthropic'],
+    patterns: [/\b(anthropic|claude)\b/i],
+  },
+  {
+    candidates: ['Vercel'],
+    patterns: [/\bvercel\b/i],
+  },
+  {
+    candidates: ['Supabase'],
+    patterns: [/\bsupabase\b/i],
+  },
+  {
+    candidates: ['Figma'],
+    patterns: [/\bfigma\b/i],
+  },
+  {
     // Business/dev infrastructure — checked before the personal "Abo" rule so a webdesign/dev
     // tool doesn't get lumped in with Netflix-style consumer subscriptions.
     candidates: ['Business-Tools', 'Software & Tech', 'Abo'],
@@ -41,7 +62,22 @@ const RULES: CategoryRule[] = [
     ],
   },
   {
-    candidates: ['Abo', 'Streaming'],
+    // Eigene Unterkategorie für Amazon Prime -- ohne diese Regel matcht die generische
+    // "Abo"-Regel unten zwar auch (deren Muster enthält amazon\s?prime), landet aber in der
+    // groben Sammelkategorie statt im eigens dafür angelegten Eintrag.
+    candidates: ['Amazon Prime'],
+    patterns: [/\bamazon\s?prime\b/i],
+  },
+  {
+    // "marbis" matcht sonst keine Regel und blieb deshalb bisher immer unkategorisiert.
+    candidates: ['marbis'],
+    patterns: [/\bmarbis\b/i],
+  },
+  {
+    // 'Sonstige Abos' vor dem groben 'Abo'-Fallback: Konsumenten-Abos ohne eigene
+    // Vendor-Kategorie (Netflix, Spotify, iCloud, ...) landen so in der dafür vorgesehenen
+    // Sammelkategorie statt in der Oberkategorie selbst.
+    candidates: ['Sonstige Abos', 'Abo', 'Streaming'],
     patterns: [
       /\b(netflix|amazon\s?prime|disney\+|disney\s?plus|spotify|apple\s?music|deezer|tidal|youtube\s?premium|sky\s?ticket|joyn|maxdome)\b/i,
       /\b(icloud|dropbox|notion|canva|1password|lastpass|kindle|audible)\b/i,

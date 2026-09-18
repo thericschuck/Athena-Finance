@@ -3,7 +3,7 @@ import { getSettings } from '@/lib/settings'
 import { fmtCurrency, fmtDate } from '@/lib/format'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { AddTransactionDialog, EditTransactionDialog, DeleteTransactionButton, TransactionCategorySelect } from '@/components/finance/transaction-form'
+import { AddTransactionDialog, EditTransactionDialog, DeleteTransactionButton, TransactionCategorySelect, TransactionDescriptionCell } from '@/components/finance/transaction-form'
 import { ExportTransactionsButton, ImportTransactionsDialog } from '@/components/finance/transaction-csv'
 import { AccountBalanceChart, type AccountBalancePoint } from '@/components/finance/account-balance-chart'
 import { UrlFiltersProvider, FilterPending } from '@/components/providers/url-filters'
@@ -17,7 +17,7 @@ import { ChevronLeft, Landmark } from 'lucide-react'
 
 type TxRow = Database['public']['Tables']['transactions']['Row']
 type Account = { id: string; name: string; color: string | null; currency: string }
-type Category = { id: string; name: string; color: string | null; icon: string | null }
+type Category = { id: string; name: string; color: string | null; icon: string | null; parent_id: string | null }
 
 // Row shape of the `unified_transactions` view (see migration 20260821010000) — merges the
 // manual `transactions` ledger with FinTS-synced `bank_transactions` for any linked account.
@@ -41,6 +41,7 @@ type UnifiedRow = {
   contract_id: string | null
   tags: string[]
   source: 'manual' | 'bank_sync'
+  signed_amount: number
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -55,8 +56,12 @@ const TYPE_LABELS: Record<string, string> = {
 }
 
 
-function formatAmount(amount: number, currency: string, type: string, locale: string) {
-  const net = type === 'income' ? amount : type === 'expense' ? -amount : amount
+// `signedAmount` kommt aus der view-Spalte `signed_amount` -- die trägt die echte Richtung
+// (negativ bei Abgang) schon korrekt, auch für Transfers zwischen eigenen Konten. Über `type`
+// herzuleiten reichte nur für 'income'/'expense'; 'transfer' fiel sonst in den else-Zweig und
+// zeigte den Betrag (immer positiv, weil `amount` = abs()) fälschlich immer mit "+" an.
+function formatAmount(signedAmount: number, amount: number, currency: string, locale: string) {
+  const net = signedAmount
   const sign = net > 0 ? '+' : net < 0 ? '-' : ''
   const display = ['BTC', 'ETH'].includes(currency)
     ? `${Math.abs(amount).toFixed(6)} ${currency}`
@@ -113,7 +118,7 @@ export default async function AccountDetailPage({ params, searchParams }: PagePr
       .order('sort_order'),
     supabase
       .from('categories')
-      .select('id, name, color, icon')
+      .select('id, name, color, icon, parent_id')
       .eq('user_id', user!.id)
       .order('sort_order'),
     supabase
@@ -464,7 +469,7 @@ function Metric({ label, value, className }: { label: string; value: string; cla
 }
 
 function TransactionRow({ tx, accounts, categories, locale, dateFormat }: { tx: UnifiedRow; accounts: Account[]; categories: Category[]; locale: string; dateFormat: string }) {
-  const { sign, display, net } = formatAmount(tx.amount, tx.currency, tx.type, locale)
+  const { sign, display, net } = formatAmount(tx.signed_amount, tx.amount, tx.currency, locale)
   const isTransfer = tx.type === 'transfer'
   const amountColor =
     isTransfer ? 'text-muted-foreground'
@@ -482,19 +487,17 @@ function TransactionRow({ tx, accounts, categories, locale, dateFormat }: { tx: 
         />
       </td>
       <td className="px-4 py-3 max-w-xs">
-        <span className="flex items-center gap-1.5">
-          <span className="truncate text-foreground">
-            {tx.merchant || tx.description || <span className="text-muted-foreground">—</span>}
-          </span>
-          {isTransfer && (
-            <span className="inline-flex shrink-0 rounded-full px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-              Umbuchung
-            </span>
-          )}
-        </span>
-        {tx.merchant && tx.description && (
-          <span className="text-xs text-muted-foreground truncate block">{tx.description}</span>
-        )}
+        <TransactionDescriptionCell
+          merchant={tx.merchant}
+          description={tx.description}
+          badge={
+            isTransfer && (
+              <span className="inline-flex shrink-0 rounded-full px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                Umbuchung
+              </span>
+            )
+          }
+        />
       </td>
       <td className={`px-4 py-3 text-right font-medium tabular-nums ${amountColor}`}>
         {sign}{display}

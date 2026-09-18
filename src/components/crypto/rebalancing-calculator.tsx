@@ -1,20 +1,21 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { CheckCircle2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { CheckCircle2, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { markRebalancingDone } from '@/app/(dashboard)/crypto/actions'
+import { Label } from '@/components/ui/label'
 import {
-  calculateRebalancing, sortRows, formatDiffQty,
-  type RebalancingResult, type RebalancingRow,
+  saveRebalancingTargets, markRebalancingDone, proposeRebalanceExecution,
+} from '@/app/(dashboard)/crypto/actions'
+import { PendingActionCard } from '@/components/assistant/PendingActionCard'
+import { Zap } from 'lucide-react'
+import {
+  calculateRebalancing, formatDiffQty,
+  type RebalancingResult, type RebalancingTarget,
 } from '@/lib/crypto/rebalancing'
-import { StrategySignals } from '@/components/crypto/strategy-signals'
+import { KrakenAssetCombobox } from '@/components/crypto/kraken-asset-combobox'
 import type { AssetWithPrice } from '@/components/crypto/portfolio-overview'
-import type {
-  StrategySignals as StrategySignalsType,
-  PortfolioAllocations,
-} from '@/lib/crypto/rebalancing-defaults'
 import { useSettings } from '@/components/providers/settings-context'
 import { fmtCurrency } from '@/lib/format'
 
@@ -23,39 +24,16 @@ function fmtDate(iso: string): string {
   return `${d}.${m}.${y}`
 }
 
-// ─── Sub-portfolio badge ──────────────────────────────────────────────────────
-const SP_BADGE: Record<string, string> = {
-  core:      'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-  adam:      'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
-  high_beta: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
-}
-
-function SubBadge({ row }: { row: RebalancingRow }) {
-  return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${SP_BADGE[row.sub_portfolio]}`}>
-      {row.sub_portfolio_label}
-    </span>
-  )
-}
-
 // ─── Status badge ─────────────────────────────────────────────────────────────
-const STATUS_BADGE_CLASS: Record<RebalancingRow['status'], string> = {
+const STATUS_BADGE_CLASS: Record<string, string> = {
   underweight: 'bg-success/10 text-success',
   overweight:  'bg-danger/10 text-danger',
   balanced:    'bg-muted text-muted-foreground',
 }
-const STATUS_BADGE_LABEL: Record<RebalancingRow['status'], string> = {
+const STATUS_BADGE_LABEL: Record<string, string> = {
   underweight: 'UNTERGEWICHTET',
   overweight:  'ÜBERGEWICHTET',
   balanced:    'BALANCED',
-}
-
-function StatusBadge({ status }: { status: RebalancingRow['status'] }) {
-  return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE_CLASS[status]}`}>
-      {STATUS_BADGE_LABEL[status]}
-    </span>
-  )
 }
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
@@ -70,77 +48,124 @@ function StatCard({ label, value, valueClass }: { label: string; value: string; 
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface Props {
-  assets:              AssetWithPrice[]
-  initialSignals:      StrategySignalsType
-  initialAllocations:  PortfolioAllocations
-  totalValue:          number
-  lastRebalancing:     string | null
+  assets:          AssetWithPrice[]
+  initialTargets:  RebalancingTarget[]
+  totalValue:      number
+  lastRebalancing: string | null
+  livePrices?:     Record<string, number>
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export function RebalancingCalculator({
-  assets, initialSignals, initialAllocations, totalValue, lastRebalancing: initLast,
+  assets, initialTargets, totalValue, lastRebalancing: initLast, livePrices = {},
 }: Props) {
   const { locale } = useSettings()
   const fmtEur     = (n: number) => fmtCurrency(n, 'EUR', locale)
-  const decimalSeparator = useMemo(() => new Intl.NumberFormat(locale).format(1.1)[1], [locale])
-  const fmtPct     = (n: number) => `${n.toFixed(1).replace('.', decimalSeparator)} %`
   const fmtDiffEur = (n: number) => `${n > 0 ? '+' : ''}${fmtEur(n)}`
 
-  const [signals,     setSignals]     = useState<StrategySignalsType>(initialSignals)
-  const [allocations, setAllocations] = useState<PortfolioAllocations>(initialAllocations)
-  const [threshold,   setThreshold]   = useState(5)
-  const [result,      setResult]      = useState<RebalancingResult>(() =>
-    calculateRebalancing(initialSignals, initialAllocations, assets, totalValue, 5)
+  const nextRowId = useRef(initialTargets.length)
+  const [targets, setTargets] = useState(() => initialTargets.map((t, i) => ({ ...t, _id: i })))
+  const [threshold, setThreshold] = useState(5)
+  const [result, setResult] = useState<RebalancingResult>(() =>
+    calculateRebalancing(initialTargets, assets, totalValue, 5, livePrices)
   )
   const [lastRebalancing, setLastRebalancing] = useState(initLast)
-  const [isMarking,   setIsMarking]   = useState(false)
-  const [markMsg,     setMarkMsg]     = useState<string | null>(null)
+  const [isMarking, setIsMarking] = useState(false)
+  const [isSaving,  setIsSaving]  = useState(false)
+  const [saveMsg,   setSaveMsg]   = useState<{ text: string; ok: boolean } | null>(null)
+  const [dirty,     setDirty]     = useState(false)
 
-  // Recalculate whenever inputs change
+  // Automatisches Rebalancing: derselbe Vorschlags-/Bestätigungsweg wie im Athena-Chat (siehe
+  // proposeRebalanceExecution) — nach dem Vorschlag übernimmt exakt dieselbe PendingActionCard,
+  // die auch im Chat erscheint.
+  type RebalanceProposal = Extract<
+    Awaited<ReturnType<typeof proposeRebalanceExecution>>, { status: 'pending_confirmation' }
+  >
+  const [proposal, setProposal]           = useState<RebalanceProposal | null>(null)
+  const [proposeError, setProposeError]   = useState<string | null>(null)
+  const [isProposing, setIsProposing]     = useState(false)
+
+  async function handleAutoRebalance() {
+    setIsProposing(true)
+    setProposeError(null)
+    try {
+      const res = await proposeRebalanceExecution()
+      if ('error' in res) setProposeError(res.error)
+      else setProposal(res)
+    } finally {
+      setIsProposing(false)
+    }
+  }
+
+  // New-target inputs
+  const [newSymbol, setNewSymbol]         = useState('')
+  const [newCoingeckoId, setNewCoingeckoId] = useState('')
+  const [newPct, setNewPct]               = useState('')
+  const [coinKey, setCoinKey]             = useState(0)
+
   useEffect(() => {
-    setResult(calculateRebalancing(signals, allocations, assets, totalValue, threshold))
-  }, [signals, allocations, assets, totalValue, threshold])
+    setResult(calculateRebalancing(targets, assets, totalValue, threshold, livePrices))
+  }, [targets, assets, totalValue, threshold, livePrices])
 
-  function handleSignalsChange(s: StrategySignalsType, a: PortfolioAllocations) {
-    setSignals(s)
-    setAllocations(a)
+  const sumPct  = targets.reduce((s, t) => s + (t.target_pct || 0), 0)
+  const isValid = Math.abs(sumPct - 100) < 0.1
+
+  function updatePct(i: number, val: string) {
+    const next = targets.map((t, idx) => idx === i ? { ...t, target_pct: parseFloat(val) || 0 } : t)
+    setTargets(next)
+    setDirty(true)
+  }
+
+  function removeRow(i: number) {
+    setTargets(targets.filter((_, idx) => idx !== i))
+    setDirty(true)
+  }
+
+  function addRow() {
+    const sym  = newSymbol.trim().toUpperCase()
+    const cgId = newCoingeckoId.trim().toLowerCase()
+    const pct  = parseFloat(newPct) || 0
+    if (!sym || !cgId || pct <= 0) return
+    if (targets.some(t => t.coingecko_id === cgId)) return
+    setTargets([...targets, { symbol: sym, coingecko_id: cgId, target_pct: pct, _id: nextRowId.current++ }])
+    setNewSymbol(''); setNewCoingeckoId(''); setNewPct('')
+    setCoinKey(k => k + 1)
+    setDirty(true)
+  }
+
+  async function handleSave() {
+    setIsSaving(true)
+    setSaveMsg(null)
+    try {
+      await saveRebalancingTargets(targets.map(({ symbol, coingecko_id, target_pct }) => ({ symbol, coingecko_id, target_pct })))
+      setSaveMsg({ text: 'Gespeichert', ok: true })
+      setDirty(false)
+    } catch (e) {
+      setSaveMsg({ text: e instanceof Error ? e.message : 'Fehler beim Speichern', ok: false })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   async function handleMarkDone() {
     setIsMarking(true)
-    setMarkMsg(null)
     try {
       await markRebalancingDone()
       setLastRebalancing(new Date().toISOString())
-      setMarkMsg('Als erledigt markiert')
-    } catch (e) {
-      setMarkMsg(e instanceof Error ? e.message : 'Fehler')
     } finally {
       setIsMarking(false)
     }
   }
 
-  const sortedRows = sortRows(result.rows)
-  const isBalanced = result.rebalancing_volume < 1  // less than €1 → effectively balanced
+  const isBalanced = result.rebalancing_volume < 1 && result.rows.length > 0
 
   return (
     <div className="space-y-8">
-      {/* ── Strategy signals ─────────────────────────────────────────────── */}
-      <StrategySignals
-        initialSignals={signals}
-        initialAllocations={allocations}
-        onChange={handleSignalsChange}
-      />
-
-      <hr className="border-border" />
-
-      {/* ── Calculator header ────────────────────────────────────────────── */}
+      {/* ── Header + stat cards ──────────────────────────────────────────── */}
       <div className="space-y-4">
         <div className="flex items-start justify-between gap-4 flex-wrap">
-          <h2 className="text-lg font-semibold">Rebalancing-Rechner</h2>
+          <h2 className="text-lg font-semibold">Ziel-Portfolio</h2>
 
-          {/* Threshold input */}
           <div className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">Abweichung ignorieren unter:</span>
             <Input
@@ -153,9 +178,8 @@ export function RebalancingCalculator({
           </div>
         </div>
 
-        {/* Stat cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <StatCard label="Gesamtportfolio"     value={fmtEur(totalValue)} />
+          <StatCard label="Gesamtportfolio" value={fmtEur(totalValue)} />
           <StatCard
             label="Letztes Rebalancing"
             value={lastRebalancing ? fmtDate(lastRebalancing) : 'Noch nie'}
@@ -167,12 +191,137 @@ export function RebalancingCalculator({
           />
         </div>
 
-        {/* Mark done button */}
         <div className="flex items-center gap-3">
           <Button variant="outline" size="sm" onClick={handleMarkDone} disabled={isMarking}>
             {isMarking ? 'Wird gespeichert…' : 'Als erledigt markieren'}
           </Button>
-          {markMsg && <span className="text-xs text-muted-foreground">{markMsg}</span>}
+        </div>
+      </div>
+
+      {/* ── Target + result table ────────────────────────────────────────── */}
+      <div className="space-y-2">
+        <div className="rounded-lg border border-border overflow-x-auto">
+          <table className="w-full text-sm min-w-[900px]">
+            <thead>
+              <tr className="bg-muted/40 border-b border-border text-muted-foreground">
+                <th className="text-left px-4 py-2.5 font-medium">Coin</th>
+                <th className="text-right px-4 py-2.5 font-medium">Ziel %</th>
+                <th className="text-right px-4 py-2.5 font-medium">Ziel €</th>
+                <th className="text-right px-4 py-2.5 font-medium">Aktuell €</th>
+                <th className="text-right px-4 py-2.5 font-medium">Differenz €</th>
+                <th className="text-left px-4 py-2.5 font-medium">Aktion</th>
+                <th className="text-left px-4 py-2.5 font-medium">Status</th>
+                <th className="w-8 px-2 py-2.5" />
+              </tr>
+            </thead>
+            <tbody>
+              {targets.map((t, i) => {
+                const row = result.rows.find(r => r.coingecko_id === t.coingecko_id)
+                const diffClass =
+                  row?.action === 'buy'  ? 'text-success' :
+                  row?.action === 'sell' ? 'text-danger'  : 'text-muted-foreground'
+
+                return (
+                  <tr key={t._id} className="border-b border-border hover:bg-muted/30 transition-colors last:border-0">
+                    <td className="px-4 py-3">
+                      <p className="font-medium">{t.symbol}</p>
+                      <p className="text-xs text-muted-foreground/60">{t.coingecko_id}</p>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Input
+                        type="number" min="0" max="100" step="0.1"
+                        value={t.target_pct}
+                        onChange={e => updatePct(i, e.target.value)}
+                        className="h-7 w-20 text-right ml-auto"
+                      />
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums">{row ? fmtEur(row.target_eur) : '—'}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{row ? fmtEur(row.current_eur) : '—'}</td>
+                    <td className={`px-4 py-3 text-right tabular-nums font-medium ${diffClass}`}>
+                      {row ? fmtDiffEur(row.diff_eur) : '—'}
+                    </td>
+                    <td className={`px-4 py-3 text-sm tabular-nums ${diffClass}`}>
+                      {row ? formatDiffQty(row.diff_qty, row.symbol, row.diff_eur) : '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      {row && (
+                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE_CLASS[row.status]}`}>
+                          {STATUS_BADGE_LABEL[row.status]}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-2 py-3">
+                      <button
+                        onClick={() => removeRow(i)}
+                        aria-label={`${t.symbol} entfernen`}
+                        className="text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+              {targets.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                    Noch keine Ziel-Assets — unten hinzufügen.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Sum indicator */}
+        {targets.length > 0 && (
+          <div className={`text-xs flex items-center gap-1 ${isValid ? 'text-success' : 'text-warning'}`}>
+            <span>Summe: {sumPct.toFixed(1).replace('.', ',')} %</span>
+            <span>{isValid ? '✓' : '✗ (sollte 100 % ergeben)'}</span>
+          </div>
+        )}
+
+        {/* Add row */}
+        <div className="flex gap-2 items-end pt-1">
+          <div className="space-y-1 flex-1 max-w-xs">
+            <Label className="text-xs">Coin (Kraken)</Label>
+            <KrakenAssetCombobox
+              key={coinKey}
+              defaultValue={newCoingeckoId || null}
+              onChange={coin => {
+                setNewSymbol(coin.symbol.toUpperCase())
+                setNewCoingeckoId(coin.dbSymbol)
+              }}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Ziel %</Label>
+            <Input
+              type="number" placeholder="33.3"
+              value={newPct}
+              onChange={e => setNewPct(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addRow()}
+              className="h-9 w-24"
+            />
+          </div>
+          <Button
+            variant="outline" size="sm"
+            onClick={addRow}
+            disabled={!newSymbol || !newCoingeckoId || !(parseFloat(newPct) > 0)}
+          >
+            <Plus className="size-3.5" />
+            Hinzufügen
+          </Button>
+        </div>
+
+        {/* Save */}
+        <div className="flex items-center justify-end gap-3 pt-1">
+          {saveMsg && (
+            <span className={`text-xs ${saveMsg.ok ? 'text-success' : 'text-danger'}`}>{saveMsg.text}</span>
+          )}
+          <Button size="sm" onClick={handleSave} disabled={isSaving || !dirty}>
+            {isSaving ? 'Wird gespeichert…' : 'Ziel-Portfolio speichern'}
+          </Button>
         </div>
       </div>
 
@@ -183,67 +332,6 @@ export function RebalancingCalculator({
           <p className="text-sm font-medium text-success">
             Portfolio ist balanced — kein Rebalancing nötig
           </p>
-        </div>
-      )}
-
-      {/* ── Rebalancing table ────────────────────────────────────────────── */}
-      {sortedRows.length > 0 && (
-        <div className="rounded-lg border border-border overflow-x-auto">
-          <table className="w-full text-sm min-w-[900px]">
-            <thead>
-              <tr className="bg-muted/40 border-b border-border text-muted-foreground">
-                <th className="text-left px-4 py-2.5 font-medium">Coin</th>
-                <th className="text-left px-4 py-2.5 font-medium">Sub-Portfolio</th>
-                <th className="text-right px-4 py-2.5 font-medium">Ziel %</th>
-                <th className="text-right px-4 py-2.5 font-medium">Ziel €</th>
-                <th className="text-right px-4 py-2.5 font-medium">Aktuell €</th>
-                <th className="text-right px-4 py-2.5 font-medium">Differenz €</th>
-                <th className="text-left px-4 py-2.5 font-medium">Aktion</th>
-                <th className="text-left px-4 py-2.5 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedRows.map((row, i) => {
-                const isLast    = i === sortedRows.length - 1
-                const diffClass =
-                  row.action === 'buy'  ? 'text-success' :
-                  row.action === 'sell' ? 'text-danger'     : 'text-muted-foreground'
-
-                return (
-                  <tr
-                    key={`${row.sub_portfolio}-${row.symbol}`}
-                    className={`hover:bg-muted/30 transition-colors ${!isLast ? 'border-b border-border' : ''}`}
-                  >
-                    <td className="px-4 py-3">
-                      <p className="font-medium">{row.symbol}</p>
-                      <p className="text-xs text-muted-foreground/60">{row.coingecko_id}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <SubBadge row={row} />
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums">
-                      {fmtPct(row.target_pct)}
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums">
-                      {fmtEur(row.target_eur)}
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
-                      {fmtEur(row.current_eur)}
-                    </td>
-                    <td className={`px-4 py-3 text-right tabular-nums font-medium ${diffClass}`}>
-                      {fmtDiffEur(row.diff_eur)}
-                    </td>
-                    <td className={`px-4 py-3 text-sm tabular-nums ${diffClass}`}>
-                      {formatDiffQty(row.diff_qty, row.symbol, row.diff_eur)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={row.status} />
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
         </div>
       )}
 
@@ -271,12 +359,31 @@ export function RebalancingCalculator({
         </div>
       )}
 
-      {/* Empty state */}
-      {sortedRows.length === 0 && (
-        <div className="rounded-lg border border-dashed border-border py-12 text-center">
-          <p className="text-sm text-muted-foreground">
-            Keine Assets in der Berechnung — setze ein aktives Signal und füge Assets hinzu.
-          </p>
+      {/* ── Automatisches Rebalancing ────────────────────────────────────── */}
+      {result.rebalancing_volume > 0 && (
+        <div className="space-y-2">
+          {!proposal && (
+            <div className="flex items-center gap-3">
+              <Button variant="default" size="sm" onClick={handleAutoRebalance} disabled={isProposing}>
+                <Zap className="size-3.5" />
+                {isProposing ? 'Prüft Kraken-Preise & Pairs…' : 'Automatisch rebalancen'}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Prüft den günstigsten Ausführungsweg auf Kraken und zeigt die Trades zur
+                Bestätigung — es wird noch nichts ausgeführt.
+              </p>
+            </div>
+          )}
+          {proposeError && <p className="text-xs text-destructive">{proposeError}</p>}
+          {proposal && (
+            <PendingActionCard
+              actionId={proposal.actionId}
+              action="executeRebalancing"
+              label={proposal.label}
+              summary={proposal.summary}
+              details={proposal.details}
+            />
+          )}
         </div>
       )}
     </div>

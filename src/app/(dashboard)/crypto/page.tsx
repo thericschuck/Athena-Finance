@@ -2,9 +2,10 @@ import { getAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { fmtDate as fmtDateLib } from '@/lib/format'
 import { PortfolioOverview, type AssetWithPrice } from '@/components/crypto/portfolio-overview'
+import { RebalanceBanner } from '@/components/crypto/rebalance-banner'
 import { PortfolioSwitcher, type PortfolioMeta } from '@/components/crypto/portfolio-switcher'
 import { OpenPositionsCard } from '@/components/crypto/open-positions-card'
-import { getStrategySignals, getPortfolioAllocations } from '@/app/(dashboard)/crypto/actions'
+import { getRebalancingTargets } from '@/app/(dashboard)/crypto/actions'
 import { calculateRebalancing } from '@/lib/crypto/rebalancing'
 import { getEurUsdRate } from '@/lib/crypto/coingecko'
 import { History } from 'lucide-react'
@@ -24,8 +25,7 @@ export default async function CryptoPage({
     { data: rawAssets },
     { data: snapshots },
     { data: auditLog },
-    signals,
-    allocations,
+    targets,
     settings,
     eurUsdRate,
     { data: krakenKey },
@@ -50,8 +50,7 @@ export default async function CryptoPage({
       .eq('user_id', user!.id)
       .order('created_at', { ascending: false })
       .limit(50),
-    getStrategySignals(user!.id),
-    getPortfolioAllocations(user!.id),
+    getRebalancingTargets(user!.id),
     getSettings(user!.id),
     getEurUsdRate(),
     // Check Kraken connection (no decryption needed)
@@ -149,7 +148,7 @@ export default async function CryptoPage({
 
   // ── Rebalancing ───────────────────────────────────────────────────────────
   const totalValue       = assets.reduce((s, a) => s + (a.current_value ?? 0), 0)
-  const rebalancingResult = calculateRebalancing(signals, allocations, assets, totalValue)
+  const rebalancingResult = calculateRebalancing(targets, assets, totalValue)
 
   return (
     <>
@@ -159,6 +158,9 @@ export default async function CryptoPage({
         krakenConnected={krakenConnected}
         lastSync={lastSync}
       />
+      {targets.length > 0 && rebalancingResult.rebalancing_volume > 1 && (
+        <RebalanceBanner volumeEur={rebalancingResult.rebalancing_volume} />
+      )}
       <PortfolioOverview
         initialAssets={assets}
         snapshots={filteredSnapshots}

@@ -10,7 +10,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { getPrices } from '@/lib/crypto/coingecko'
 import type { Database, Json } from '@/types/database'
-import { FIAT_EUR_PRICES, findBySymbol } from '@/lib/crypto/coin-registry'
+import { FIAT_EUR_PRICES } from '@/lib/crypto/coin-registry'
 import { decrypt } from '@/lib/encryption'
 import {
   fetchKrakenBalances,
@@ -18,8 +18,7 @@ import {
   fetchKrakenAssetPairs,
   fetchKrakenTradesHistory,
   buildKrakenPriceMap,
-  krakenCodeToSymbol,
-  KRAKEN_TO_SYMBOL,
+  resolveKrakenAsset,
   type KrakenAssetPair,
 } from '@/lib/kraken'
 import { computeAverageCostBasis, type NormalizedTrade } from '@/lib/kraken/cost-basis'
@@ -59,16 +58,20 @@ export async function syncKrakenForUser(
     return { error: `Kraken API Fehler: ${(e as Error).message}` }
   }
 
-  // Kraken fuehrt Staking-, Earn- und Opt-in-Rewards-Guthaben als eigene Codes mit Suffix:
-  // `SOL.S` (staked), `USDG.F` (Earn flexible), `XXBT.M` (opt-in rewards), `.B` (bonded),
-  // `.P`. Fuer keinen davon existiert ein Kraken-Handelspaar oder ein Registry-Eintrag — sie
-  // kaemen als eigene, dauerhaft mit 0 bewertete Zeilen neben dem Basis-Coin an. Deshalb
-  // werden sie auf den Basis-Code aufaddiert: 1 SOL + 3 SOL.S sind in der Uebersicht 4 SOL.
+  // Kraken fuehrt Staking-, Earn-, Opt-in-Rewards- und Tokenized-Asset-Guthaben als eigene Codes
+  // mit Suffix: `SOL.S` (staked), `USDG.F` (Earn flexible), `XXBT.M` (opt-in rewards), `.B`
+  // (bonded), `.P`, und `.T` (Tokenized — xStocks wie `VTIx.T`; anders als bei den anderen
+  // Suffixen gibt es hier gar keine "nackte" Variante des Codes, VTIx existiert auf Kraken nur
+  // als Tokenized Asset). Fuer keinen davon existiert ein Kraken-Handelspaar oder ein
+  // Registry-Eintrag unter dem Suffix-Namen — sie kaemen als eigene, dauerhaft mit 0 bewertete
+  // Zeilen neben dem Basis-Coin an (bzw. bei `.T` komplett unaufgeloest, ohne Preis, siehe
+  // Erics VTIx.T vom 18.09.2026). Deshalb werden sie auf den Basis-Code aufaddiert: 1 SOL + 3
+  // SOL.S sind in der Uebersicht 4 SOL.
   const byBaseCode = new Map<string, number>()
   for (const [code, amountStr] of Object.entries(raw)) {
     const quantity = parseFloat(amountStr)
     if (!(quantity > 0)) continue
-    const base = code.replace(/\.(S|M|F|B|P)$/i, '')
+    const base = code.replace(/\.(S|M|F|B|P|T)$/i, '')
     byBaseCode.set(base, (byBaseCode.get(base) ?? 0) + quantity)
   }
   const held = [...byBaseCode].map(([code, quantity]) => ({ code, quantity }))
@@ -77,12 +80,9 @@ export async function syncKrakenForUser(
 
   const warnings: string[] = []
 
-  // 3. Resolve display symbols — the curated legacy map wins for the handful of codes in it
-  // (Kraken's API calls Bitcoin "XBT", which nobody using Kraken's own UI ever sees as such),
-  // else Kraken's own /Assets endpoint (its `altname`), else the last-resort prefix-stripping
-  // heuristic. The coin-registry is only consulted as a best-effort enrichment (nicer display
-  // name, stablecoin classification, a CoinGecko id to fall back to) — nothing is dropped if
-  // it's not in it.
+  // 3. Resolve display symbols via `resolveKrakenAsset()` — same resolution the live
+  // Kraken-asset picker uses (see src/lib/kraken/index.ts), so a target/asset added there
+  // before ever syncing lands on the exact same `assets.symbol` value this sync writes.
   let assetInfo: Record<string, { altname: string }> = {}
   try {
     assetInfo = await fetchKrakenAssetInfo()
@@ -95,27 +95,8 @@ export async function syncKrakenForUser(
     quantity: number; coingeckoId: string | null
   }
   const entries: Entry[] = held.map(({ code, quantity }) => {
-    const symbol = KRAKEN_TO_SYMBOL[code] ?? assetInfo[code]?.altname ?? krakenCodeToSymbol(code)
-    const isFiat = code.startsWith('Z') && code.length <= 5
-    const registryMatch = findBySymbol(symbol)
-    return {
-      code,
-      symbol,
-      // The DB `symbol` column doubles as this app's "which coin is this" key everywhere
-      // outside this sync — rebalancing targets, the portfolio donut, and the generic
-      // CoinGecko price-refresh button all match assets by treating `symbol` as a CoinGecko
-      // id (see e.g. src/lib/crypto/rebalancing.ts:90-141, `a.symbol.toLowerCase()` compared
-      // against `coingecko_id`). Storing Kraken's own ticker there instead would silently
-      // break all of that for every well-known coin — so this uses the registry's
-      // coingecko_id whenever one is found, and only falls back to Kraken's ticker for coins
-      // with no registry match at all (where there's no existing convention to stay
-      // compatible with anyway).
-      dbSymbol:    registryMatch?.coingecko_id ?? symbol,
-      name:        registryMatch?.name ?? symbol,
-      type:        isFiat ? 'fiat' : (registryMatch?.type === 'stable' ? 'stable' : 'crypto'),
-      quantity,
-      coingeckoId: registryMatch?.coingecko_id ?? null,
-    }
+    const resolved = resolveKrakenAsset(code, assetInfo[code]?.altname)
+    return { code, quantity, ...resolved }
   })
 
   // 4. Price everything — Kraken's own ticker first (EUR pair, else USD pair converted via

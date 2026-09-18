@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Search, X } from 'lucide-react'
 import { useUrlFilters } from '@/components/providers/url-filters'
+import { groupCategoriesByParent } from '@/lib/finance/category-groups'
 import { Database } from '@/types/database'
 
 type Account = Pick<Database['public']['Tables']['accounts']['Row'], 'id' | 'name' | 'color'>
-type Category = Pick<Database['public']['Tables']['categories']['Row'], 'id' | 'name'>
+type Category = Pick<Database['public']['Tables']['categories']['Row'], 'id' | 'name' | 'parent_id'>
 
 interface TransactionFiltersProps {
   accounts: Account[]
@@ -124,10 +125,17 @@ export function TransactionFilters({ accounts, categories }: TransactionFiltersP
         onChange={(e) => filters.set('category', e.target.value)}
       >
         <option value="">Alle Kategorien</option>
-        {categories.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name}
-          </option>
+        {/* Nach Hauptkategorie gruppiert -- bei 30+ Kategorien war die Reihenfolge sonst
+            praktisch zufaellig (fast alle haben sort_order = 0). */}
+        {groupCategoriesByParent(categories).map(({ parent, children }) => (
+          <optgroup key={parent.id} label={parent.name}>
+            <option value={parent.id}>{parent.name}</option>
+            {children.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </optgroup>
         ))}
       </select>
 

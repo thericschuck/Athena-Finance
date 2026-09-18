@@ -49,6 +49,13 @@ export interface MonthlyComparison {
    * eine schwarze Null aussah, obwohl in dem Monat nur Geld rausging.
    */
   sparquote: number | null
+  /**
+   * true nur bei der optional angehängten Zeile für den laufenden Monat (siehe
+   * AnalysePage — buildMonthlyComparison selbst liefert nie einen laufenden Monat,
+   * genau deshalb heißt die Reihe hier bewusst anders als die Werte der Vormonate).
+   * MonatsVergleich stellt diese Zeile abgeschwächt dar, weil sie unvollständig ist.
+   */
+  laufend?: boolean
 }
 
 /** Umschaltbare Sicht der Analyse-Karten (Heatmap, Verteilung). */

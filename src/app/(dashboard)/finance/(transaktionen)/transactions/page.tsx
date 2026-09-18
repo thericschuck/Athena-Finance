@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { getAuthUser } from '@/lib/supabase/server'
-import { AddTransactionDialog, EditTransactionDialog, DeleteTransactionButton, TransactionCategorySelect } from '@/components/finance/transaction-form'
+import { AddTransactionDialog, EditTransactionDialog, DeleteTransactionButton, TransactionCategorySelect, TransactionDescriptionCell } from '@/components/finance/transaction-form'
 import { TransactionFilters } from '@/components/finance/transaction-filters'
 import { ExportTransactionsButton } from '@/components/finance/transaction-csv'
 import { Database } from '@/types/database'
@@ -14,7 +14,8 @@ import { CategorySuggestionsPanel } from '@/components/bank/category-suggestions
 
 type TxRow = Database['public']['Tables']['transactions']['Row']
 type Account = { id: string; name: string; color: string | null; currency: string }
-type Category = { id: string; name: string; color: string | null; icon: string | null }
+type Category = { id: string; name: string; color: string | null; icon: string | null; parent_id: string | null }
+type Debt = Database['public']['Tables']['debts']['Row']
 
 // Row shape of the `unified_transactions` view (see migration 20260821010000) — merges the
 // manual `transactions` ledger with FinTS-synced `bank_transactions` for any linked account,
@@ -39,6 +40,7 @@ type UnifiedRow = {
   contract_id: string | null
   tags: string[]
   source: 'manual' | 'bank_sync'
+  signed_amount: number
 }
 
 interface PageProps {
@@ -70,9 +72,12 @@ interface PageProps {
  */
 
 
-function formatAmount(amount: number, currency: string, type: string, locale: string) {
-  // net = financial impact on the account (+income, -expense). Negative amounts flip the direction.
-  const net = type === 'income' ? amount : type === 'expense' ? -amount : amount
+// `signedAmount` kommt aus der view-Spalte `signed_amount` -- die trägt die echte Richtung
+// (negativ bei Abgang) schon korrekt, auch für Transfers zwischen eigenen Konten. Über `type`
+// herzuleiten reichte nur für 'income'/'expense'; 'transfer' fiel sonst in den else-Zweig und
+// zeigte den Betrag (immer positiv, weil `amount` = abs()) fälschlich immer mit "+" an.
+function formatAmount(signedAmount: number, amount: number, currency: string, locale: string) {
+  const net = signedAmount
   const sign = net > 0 ? '+' : net < 0 ? '-' : ''
   const display = ['BTC', 'ETH'].includes(currency)
     ? `${Math.abs(amount).toFixed(6)} ${currency}`
@@ -88,7 +93,7 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
   const [filters, { supabase, user }] = await Promise.all([searchParams, getAuthUser()])
 
   // Load accounts + categories for dropdowns and filter bar
-  const [{ data: accounts }, { data: categories }, settings] = await Promise.all([
+  const [{ data: accounts }, { data: categories }, { data: debts }, settings] = await Promise.all([
     supabase
       .from('accounts')
       .select('id, name, color, currency')
@@ -97,14 +102,22 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
       .order('sort_order'),
     supabase
       .from('categories')
-      .select('id, name, color, icon')
+      .select('id, name, color, icon, parent_id')
       .eq('user_id', user!.id)
       .order('sort_order'),
+    // Fuer den Schulden-Vorschlag (DebtSuggestion) -- nur aktive, abgeschlossene Schulden
+    // sind kein sinnvolles Ziel mehr fuer eine neue Zahlung.
+    supabase
+      .from('debts')
+      .select('*')
+      .eq('user_id', user!.id)
+      .eq('is_active', true),
     getSettings(user!.id),
   ])
 
   const locale = (settings.number_format as string) ?? 'de-DE'
   const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
+  const schuldenCategoryId = categories?.find(c => c.name === 'Schulden')?.id ?? null
 
   // Build transactions query with optional filters — reads the unified view (manual +
   // bank-synced) instead of the raw `transactions` table.
@@ -179,6 +192,8 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
           <AddTransactionDialog
             accounts={accounts ?? []}
             categories={categories ?? []}
+            debts={debts ?? []}
+            schuldenCategoryId={schuldenCategoryId}
           />
         </div>
       </div>
@@ -215,7 +230,16 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
                       </thead>
                       <tbody className="divide-y divide-border">
                         {rows.map((tx) => (
-                          <TransactionRow key={tx.id} tx={tx} accounts={accounts ?? []} categories={categories ?? []} locale={locale} dateFormat={dateFormat} />
+                          <TransactionRow
+                            key={tx.id}
+                            tx={tx}
+                            accounts={accounts ?? []}
+                            categories={categories ?? []}
+                            debts={debts ?? []}
+                            schuldenCategoryId={schuldenCategoryId}
+                            locale={locale}
+                            dateFormat={dateFormat}
+                          />
                         ))}
                       </tbody>
                     </table>
@@ -235,8 +259,8 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
   )
 }
 
-function TransactionRow({ tx, accounts, categories, locale, dateFormat }: { tx: UnifiedRow; accounts: Account[]; categories: Category[]; locale: string; dateFormat: string }) {
-  const { sign, display, net } = formatAmount(tx.amount, tx.currency, tx.type, locale)
+function TransactionRow({ tx, accounts, categories, debts, schuldenCategoryId, locale, dateFormat }: { tx: UnifiedRow; accounts: Account[]; categories: Category[]; debts: Debt[]; schuldenCategoryId: string | null; locale: string; dateFormat: string }) {
+  const { sign, display, net } = formatAmount(tx.signed_amount, tx.amount, tx.currency, locale)
 
   const amountColor =
     tx.type === 'transfer' ? 'text-muted-foreground'
@@ -274,19 +298,25 @@ function TransactionRow({ tx, accounts, categories, locale, dateFormat }: { tx: 
       {/* Kategorie — inline, optimistisches Select statt Textanzeige */}
       <td className="px-4 py-3 hidden sm:table-cell">
         <TransactionCategorySelect
-          tx={{ id: tx.id, category_id: tx.category_id, source: tx.source }}
+          tx={{
+            id: tx.id,
+            category_id: tx.category_id,
+            source: tx.source,
+            amount: tx.amount,
+            date: tx.date,
+            description: tx.description,
+            merchant: tx.merchant,
+            type: tx.type,
+          }}
           categories={categories}
+          debts={debts}
+          schuldenCategoryId={schuldenCategoryId}
         />
       </td>
 
       {/* Beschreibung / Händler */}
       <td className="px-4 py-3 max-w-xs hidden md:table-cell">
-        <span className="truncate block text-foreground">
-          {tx.merchant || tx.description || <span className="text-muted-foreground">—</span>}
-        </span>
-        {tx.merchant && tx.description && (
-          <span className="text-xs text-muted-foreground truncate block">{tx.description}</span>
-        )}
+        <TransactionDescriptionCell merchant={tx.merchant} description={tx.description} />
       </td>
 
       {/* Betrag */}
@@ -304,7 +334,7 @@ function TransactionRow({ tx, accounts, categories, locale, dateFormat }: { tx: 
           </span>
         ) : (
           <span className="flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-            <EditTransactionDialog tx={tx as unknown as TxRow} accounts={accounts} categories={categories} />
+            <EditTransactionDialog tx={tx as unknown as TxRow} accounts={accounts} categories={categories} debts={debts} schuldenCategoryId={schuldenCategoryId} />
             <DeleteTransactionButton tx={tx as unknown as TxRow} />
           </span>
         )}

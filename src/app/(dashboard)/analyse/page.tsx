@@ -22,6 +22,20 @@ const HEATMAP_MODES: HeatmapMode[] = ['ausgaben', 'einnahmen', 'guv']
 type Period = '1M' | '3M' | '6M' | '1J' | 'Alles'
 const VALID: Period[] = ['1M', '3M', '6M', '1J', 'Alles']
 
+// Wie viele Monate der Monatsvergleich zeigt — an denselben Zeitraum-Filter gekoppelt wie der
+// Rest der Seite, statt an eine feste Zahl (siehe buildMonthlyComparison). "Alles" bleibt bei
+// 24: mehr liefert weder die `monthly_finance_summary`-Abfrage (`.limit(25)`) noch das
+// 24-Monats-Fenster der Konten-gefilterten Variante (`monthlyCutoff`) ohnehin her.
+function monthsForPeriod(period: Period): number {
+  switch (period) {
+    case '1M':   return 1
+    case '3M':   return 3
+    case '6M':   return 6
+    case '1J':   return 12
+    case 'Alles': return 24
+  }
+}
+
 // Row shape of the `unified_transactions` view (see migrations 20260821010000/020000) —
 // merges the manual `transactions` ledger with FinTS-synced `bank_transactions` for any
 // account linked via accounts.bank_iban.
@@ -172,6 +186,7 @@ function buildCashflow(txns: TxnRow[]): CashflowEvent[] {
 function buildMonthlyComparisonFromTxns(
   txns: Pick<TxnRow, 'date' | 'type' | 'amount' | 'amount_base'>[],
   currentMonthKey: string,
+  monthsToShow: number,
 ): MonthlyComparison[] {
   const map = new Map<string, { income: number; expenses: number }>()
   for (const t of txns) {
@@ -186,7 +201,7 @@ function buildMonthlyComparisonFromTxns(
   const rows: MonthlySummaryRow[] = [...map.entries()].map(([month, v]) => ({
     month, total_income: v.income, total_expenses: v.expenses,
   }))
-  return buildMonthlyComparison(rows, currentMonthKey)
+  return buildMonthlyComparison(rows, currentMonthKey, monthsToShow)
 }
 
 // Historie für die Verteilungs-Karte — bis zu 24 ABGESCHLOSSENE Monate, der
@@ -276,14 +291,20 @@ function currentMonthTotals(txns: TxnRow[], currentMonthKey: string): MonthTotal
 // zeigte dieselbe Karte je nach Konten-Auswahl unterschiedliche Monate — und am Monatsanfang
 // eine Sparquote aus zwei Buchungen (1.9.: 80 € ein, 174 € aus, also −117 %), die den ganzen
 // Achsenbereich verzogen hat.
+//
+// `monthsToShow` kam frueher als feste 6 daher, unabhaengig vom gewaehlten Zeitraum oben auf
+// der Seite — bei "1 Jahr" zeigte die Karte trotzdem nur ein halbes, bei "1 Monat" faelschlich
+// ebenfalls sechs. Jetzt richtet sie sich nach demselben Zeitraum-Filter wie der Rest der Seite
+// (siehe monthsForPeriod).
 function buildMonthlyComparison(
   rows: MonthlySummaryRow[],
   currentMonthKey: string,
+  monthsToShow: number,
 ): MonthlyComparison[] {
   return [...rows]
     .filter(r => r.month.slice(0, 7) !== currentMonthKey)
     .sort((a, b) => a.month.localeCompare(b.month))
-    .slice(-6)
+    .slice(-monthsToShow)
     .map(r => {
       const dateStr = r.month.length <= 7 ? r.month + '-01' : r.month.slice(0, 10)
       const month   = new Date(dateStr + 'T12:00:00').toLocaleDateString('de-DE', { month: 'short' })
@@ -304,6 +325,32 @@ function buildMonthlyComparison(
         sparquote,
       }
     })
+}
+
+// Haengt den laufenden Monat als siebte, ausdruecklich unvollstaendige Zeile an die sechs
+// abgeschlossenen Monate aus buildMonthlyComparison an. Eric wollte ihn in der Karte sehen,
+// obwohl buildMonthlyComparison ihn bewusst ausfiltert (siehe deren Kommentar) — deshalb hier
+// separat und mit `laufend: true` markiert, statt den Filter selbst aufzuweichen: MonatsVergleich
+// stellt die Zeile dadurch abgeschwaecht dar, und die Sparquoten-Berechnung der sechs
+// abgeschlossenen Monate bleibt unberuehrt.
+//
+// `thisMonth` kommt aus currentMonthTotals(txns, …) — denselben, periodengefilterten
+// Transaktionen, die auch MonatsVerteilung als Vergleichswert nutzt. Bei sehr kurzem Zeitraum
+// (z.B. "7 Tage") ist das entsprechend unvollstaendig; dieselbe Einschraenkung gilt dort schon.
+function withLaufendemMonat(
+  comparison: MonthlyComparison[],
+  thisMonth: MonthTotals | null,
+  currentMonthKey: string,
+): MonthlyComparison[] {
+  if (!thisMonth) return comparison
+  const month = new Date(currentMonthKey + '-01T12:00:00').toLocaleDateString('de-DE', { month: 'short' })
+  const sparquote = thisMonth.einnahmen > 0
+    ? Math.round((thisMonth.guv / thisMonth.einnahmen) * 100)
+    : null
+  return [
+    ...comparison,
+    { month, einnahmen: thisMonth.einnahmen, ausgaben: thisMonth.ausgaben, sparquote, laufend: true },
+  ]
 }
 
 // ── Page ───────────────────────────────────────────────────────────────────────
@@ -354,10 +401,11 @@ export default async function AnalysePage({
   const now = new Date()
   const calStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0]
   const calEnd   = new Date(now.getFullYear(), now.getMonth() + 2, 0).toISOString().split('T')[0]
-  // Trailing 24-month window, independent of `period` — covers both the
-  // Monatsvergleich (nur die letzten 6, siehe buildMonthlyComparison) und die
-  // KDE-Ausgabenverteilung (bis zu 24 abgeschlossene Monate, siehe
-  // buildExpenseHistory). Ein Fetch statt zwei getrennter Fenster.
+  // Trailing 24-month window für den FETCH, unabhängig von `period` — der Monatsvergleich
+  // zeigt zwar nur so viele Monate wie monthsForPeriod(period) hergibt (siehe
+  // buildMonthlyComparison), aber die KDE-Ausgabenverteilung braucht unabhängig vom
+  // Zeitraum-Filter bis zu 24 abgeschlossene Monate (siehe buildExpenseHistory). Ein Fetch
+  // statt zwei getrennter Fenster, monthsForPeriod schneidet den Ueberschuss beim Anzeigen ab.
   const monthlyCutoff = new Date(now.getFullYear(), now.getMonth() - 23, 1).toISOString().split('T')[0]
   const currentMonthKey = now.toISOString().slice(0, 7)
 
@@ -454,13 +502,15 @@ export default async function AnalysePage({
   const cashflowEvents   = buildCashflow(calTxns)
   const monthlyRows    = (monthlyRes?.data ?? []) as MonthlySummaryRow[]
   const monthlyTxns    = (monthlyTxnRes?.data ?? []) as Pick<TxnRow, 'date' | 'type' | 'amount' | 'amount_base'>[]
-  const monthlyComparison = hasAccountFilter
-    ? buildMonthlyComparisonFromTxns(monthlyTxns, currentMonthKey)
-    : buildMonthlyComparison(monthlyRows, currentMonthKey)
+  const monthsToShow = monthsForPeriod(period)
+  const monthlyComparisonAbgeschlossen = hasAccountFilter
+    ? buildMonthlyComparisonFromTxns(monthlyTxns, currentMonthKey, monthsToShow)
+    : buildMonthlyComparison(monthlyRows, currentMonthKey, monthsToShow)
   const monthSeries = hasAccountFilter
     ? buildMonthSeriesFromTxns(monthlyTxns, currentMonthKey)
     : buildMonthSeries(monthlyRows, currentMonthKey)
   const thisMonth = currentMonthTotals(txns, currentMonthKey)
+  const monthlyComparison = withLaufendemMonat(monthlyComparisonAbgeschlossen, thisMonth, currentMonthKey)
 
   return (
     // Zeitraum- und Kontenwahl schreiben in die URL und lösen ein Server-Rendering aus.

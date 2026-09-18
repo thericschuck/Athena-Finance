@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Plus, RefreshCw } from 'lucide-react'
@@ -151,6 +151,29 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, e
     }
   }
 
+  // ─── Chart: "heute" live statt aus der letzten persistierten Momentaufnahme ──
+  // `snapshots` kommt aus portfolio_snapshots — die wird nur beim naechtlichen
+  // Cron (23:59) bzw. bei einem Bank-Sync neu geschrieben. Tagsueber steht dort
+  // oft noch der Preis vom letzten Lauf (oder 0, wenn der Preisabruf in dem
+  // Moment leer war), waehrend `assets` hier laufend mit frischen Kursen
+  // aktualisiert wird (siehe Preis-Tick oben). Ohne diese Ueberschreibung zeigte
+  // der Chart fuer "heute" z.B. 0 EUR, obwohl auf dem Konto laengst Geld lag.
+  // Der Cron ersetzt diesen Punkt am naechsten Tag ohnehin durch den fest
+  // gespeicherten Wert.
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const chartSnapshots = useMemo(() => {
+    const liveByPortfolio = new Map<string, number>()
+    for (const a of assets) {
+      const key = a.portfolio_name ?? 'Sonstige'
+      liveByPortfolio.set(key, (liveByPortfolio.get(key) ?? 0) + (a.current_value ?? 0))
+    }
+    const withoutToday = snapshots.filter(s => s.snapshot_date !== todayStr)
+    const todayRows: SnapshotRow[] = Array.from(liveByPortfolio, ([portfolio_name, value_eur]) => ({
+      snapshot_date: todayStr, portfolio_name, value_eur,
+    }))
+    return [...withoutToday, ...todayRows]
+  }, [snapshots, assets, todayStr])
+
   // ─── Derived totals ──────────────────────────────────────────────────────────
   const totalValue   = assets.reduce((s, a) => s + (a.current_value ?? 0), 0)
   // P&L only for assets with a known cost basis (fiat/stables without avg_buy_price excluded)
@@ -232,7 +255,7 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, e
       )}
 
       {/* Chart */}
-      {snapshots.length > 0 && <PortfolioChart snapshots={snapshots} />}
+      {snapshots.length > 0 && <PortfolioChart snapshots={chartSnapshots} />}
 
       {/* IST vs ZIEL donuts */}
       {rebalancingRows && rebalancingRows.length > 0 && (

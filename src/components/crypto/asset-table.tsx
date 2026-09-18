@@ -51,15 +51,6 @@ function groupAssets(assets: AssetWithPrice[]): Group[] {
     .map(([name, items]) => ({ name, assets: items }))
 }
 
-// ─── Rebalancing helpers ──────────────────────────────────────────────────────
-function getSubPortfolio(portfolioName: string): 'core' | 'adam' | 'high_beta' | null {
-  const lower = portfolioName.toLowerCase()
-  if (lower.includes('main') || lower.includes('core'))   return 'core'
-  if (lower.includes('eltern') || lower.includes('adam')) return 'adam'
-  if (lower.includes('high'))                             return 'high_beta'
-  return null
-}
-
 const STATUS_CLASS: Record<string, string> = {
   underweight: 'bg-success/10 text-success',
   overweight:  'bg-danger/10 text-danger',
@@ -85,12 +76,12 @@ function GroupSection({ group, rebalancingRows, fmt, readonly }: { group: Group;
   const pricedValue  = pricedAssets.reduce((s, a) => s + (a.current_value ?? 0), 0)
   const groupPnL = groupCost > 0 ? pricedValue - groupCost : null
 
+  // Kleinstbestände fließen weiter in jede Summe ein, tauchen aber nirgends mehr auf — auch
+  // nicht als "+N Positionen ausgeblendet"-Hinweis. Wer sie sehen will, schaut auf Kraken direkt.
   const visibleAssets = group.assets.filter(a => a.current_value == null || a.current_value >= DUST_THRESHOLD_EUR)
-  const dustAssets     = group.assets.filter(a => a.current_value != null && a.current_value < DUST_THRESHOLD_EUR)
-  const dustValue      = dustAssets.reduce((s, a) => s + (a.current_value ?? 0), 0)
 
-  const subKey      = getSubPortfolio(group.name)
-  const groupRebRows = rebalancingRows?.filter(r => r.sub_portfolio === subKey) ?? []
+  const groupSymbols = new Set(group.assets.map(a => a.symbol).filter((s): s is string => !!s))
+  const groupRebRows = rebalancingRows?.filter(r => groupSymbols.has(r.coingecko_id)) ?? []
   const hasReb       = rebalancingRows != null
 
   return (
@@ -130,15 +121,12 @@ function GroupSection({ group, rebalancingRows, fmt, readonly }: { group: Group;
           </thead>
           <tbody>
             {visibleAssets.map((asset, i) => {
-              const rebRow = rebalancingRows?.find(r =>
-                r.coingecko_id === asset.symbol &&
-                r.sub_portfolio === subKey
-              )
+              const rebRow = rebalancingRows?.find(r => r.coingecko_id === asset.symbol)
               return (
                 <AssetRow
                   key={asset.id}
                   asset={asset}
-                  isLast={i === visibleAssets.length - 1 && dustAssets.length === 0}
+                  isLast={i === visibleAssets.length - 1}
                   rebRow={rebRow}
                   hasReb={hasReb}
                   fmt={fmt}
@@ -146,14 +134,6 @@ function GroupSection({ group, rebalancingRows, fmt, readonly }: { group: Group;
                 />
               )
             })}
-            {dustAssets.length > 0 && (
-              <tr className="border-b border-border text-xs text-muted-foreground">
-                <td className="px-4 py-2" colSpan={7 + (hasReb ? 3 : 0) + (readonly ? 0 : 1)}>
-                  +{dustAssets.length} Position{dustAssets.length > 1 ? 'en' : ''} unter {fmt.eur(DUST_THRESHOLD_EUR)} ausgeblendet
-                  {' '}(Σ <span className="tabular-nums">{fmt.eur(dustValue)}</span>) — {dustAssets.map(a => a.name).join(', ')}
-                </td>
-              </tr>
-            )}
             <SumRow assets={group.assets} groupRebRows={groupRebRows} hasReb={hasReb} fmt={fmt} readonly={readonly} />
           </tbody>
         </table>

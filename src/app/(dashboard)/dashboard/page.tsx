@@ -8,7 +8,7 @@ import { NetWorthChart } from '@/components/dashboard/net-worth-chart'
 import { PortfolioDonut } from '@/components/dashboard/portfolio-donut'
 import { FinanceAnalytics } from '@/components/dashboard/finance-analytics'
 import { AthenaInsights, type InsightRow } from '@/components/dashboard/athena-insights'
-import { getStrategySignals, getPortfolioAllocations, getLastRebalancing } from '@/app/(dashboard)/crypto/actions'
+import { getRebalancingTargets, getLastRebalancing } from '@/app/(dashboard)/crypto/actions'
 import { getDepotsSummaries } from '@/app/actions/depot'
 import { calculateRebalancing } from '@/lib/crypto/rebalancing'
 import { getSettings } from '@/lib/settings'
@@ -130,8 +130,7 @@ export default async function DashboardPage() {
     { data: cryptoAssetsRaw },
     { data: contractsRaw },
     { data: insightsRaw },
-    cryptoSignals,
-    cryptoAllocations,
+    cryptoTargets,
     lastRebalancing,
     depotSummaries,
     { data: valuablesRaw },
@@ -151,8 +150,7 @@ export default async function DashboardPage() {
     supabase.from('contracts').select('id,name,provider,frequency,amount,currency,end_date,notice_days,auto_renews,account_id').eq('user_id', user!.id).eq('is_active', true),
     // Hinweise, die Athena angelegt hat (siehe lib/assistant/actions.ts, createInsight).
     supabase.from('insights').select('id, type, severity, title, body, created_at').eq('user_id', user!.id).is('dismissed_at', null).order('created_at', { ascending: false }).limit(6),
-    getStrategySignals(user!.id),
-    getPortfolioAllocations(user!.id),
+    getRebalancingTargets(user!.id),
     getLastRebalancing(user!.id),
     getDepotsSummaries(),
     // Inventar. Bewusst NICHT im Net Worth (siehe Migration 20260831000002) -- die
@@ -319,7 +317,7 @@ export default async function DashboardPage() {
   const snapshotsWithToday = existingSnapshots.filter(s => s.snapshot_date !== todayDateStr).concat(todaySnapshot)
 
   // ── Rebalancing ───────────────────────────────────────────────────────────
-  const rebResult        = calculateRebalancing(cryptoSignals, cryptoAllocations, cryptoAssets, cryptoTotal)
+  const rebResult        = calculateRebalancing(cryptoTargets, cryptoAssets, cryptoTotal)
   const rebalancingVolume = rebResult.rebalancing_volume
   const topAssets = [...cryptoAssets]
     .filter(a => (a.current_value ?? 0) > 0)

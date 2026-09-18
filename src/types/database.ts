@@ -1189,6 +1189,7 @@ export type Database = {
       debt_payments: {
         Row: {
           amount: number
+          bank_transaction_id: string | null
           created_at: string
           debt_id: string
           id: string
@@ -1200,6 +1201,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          bank_transaction_id?: string | null
           created_at?: string
           debt_id: string
           id?: string
@@ -1211,6 +1213,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          bank_transaction_id?: string | null
           created_at?: string
           debt_id?: string
           id?: string
@@ -1233,6 +1236,13 @@ export type Database = {
             columns: ["transaction_id"]
             isOneToOne: false
             referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debt_payments_bank_transaction_id_fkey"
+            columns: ["bank_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "bank_transactions"
             referencedColumns: ["id"]
           },
         ]
@@ -1844,6 +1854,71 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      kraken_order_log: {
+        Row: {
+          cost_eur: number | null
+          created_at: string
+          error: string | null
+          fee_eur: number | null
+          filled_volume: number | null
+          id: string
+          kraken_order_id: string | null
+          kraken_pair: string
+          leg_group: string
+          order_type: string
+          pending_action_id: string | null
+          price_eur: number | null
+          requested_volume: number
+          side: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          cost_eur?: number | null
+          created_at?: string
+          error?: string | null
+          fee_eur?: number | null
+          filled_volume?: number | null
+          id?: string
+          kraken_order_id?: string | null
+          kraken_pair: string
+          leg_group: string
+          order_type?: string
+          pending_action_id?: string | null
+          price_eur?: number | null
+          requested_volume: number
+          side: string
+          status: string
+          user_id: string
+        }
+        Update: {
+          cost_eur?: number | null
+          created_at?: string
+          error?: string | null
+          fee_eur?: number | null
+          filled_volume?: number | null
+          id?: string
+          kraken_order_id?: string | null
+          kraken_pair?: string
+          leg_group?: string
+          order_type?: string
+          pending_action_id?: string | null
+          price_eur?: number | null
+          requested_volume?: number
+          side?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kraken_order_log_pending_action_id_fkey"
+            columns: ["pending_action_id"]
+            isOneToOne: false
+            referencedRelation: "ai_pending_actions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_finance_summary: {
         Row: {
