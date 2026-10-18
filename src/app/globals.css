@@ -284,12 +284,23 @@ a, button {
 html[data-privacy-hidden] .tabular-nums,
 html[data-privacy-hidden] .recharts-tooltip-wrapper,
 html[data-privacy-hidden] .privacy-blur {
-  filter: blur(6px);
   user-select: none;
 }
-.tabular-nums,
-.privacy-blur {
-  transition: filter 150ms ease;
+/* Maskierung statt Blur: jede Ziffer wird zu •, Schriftgröße/Layout bleiben
+   identisch. Fallback (Browser ohne -webkit-text-security): Blur. */
+@supports (-webkit-text-security: disc) {
+  html[data-privacy-hidden] .tabular-nums,
+  html[data-privacy-hidden] .recharts-tooltip-wrapper,
+  html[data-privacy-hidden] .privacy-blur {
+    -webkit-text-security: disc;
+  }
+}
+@supports not (-webkit-text-security: disc) {
+  html[data-privacy-hidden] .tabular-nums,
+  html[data-privacy-hidden] .recharts-tooltip-wrapper,
+  html[data-privacy-hidden] .privacy-blur {
+    filter: blur(6px);
+  }
 }
 
 /* ── Table row hover ───────────────────────────────────────────────────────── */

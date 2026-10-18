@@ -20,7 +20,7 @@ export function usePrivacy(): PrivacyContextValue {
 
 /**
  * Steuert den Präsentations-Modus (Sidebar-Auge-Icon): blendet Kontostände, Beträge
- * und Chart-Werte per CSS-Blur aus, ohne echte Daten aus dem DOM zu entfernen.
+ * und Chart-Werte per CSS-Maskierung (•••) aus, ohne echte Daten aus dem DOM zu entfernen.
  * Rein client-seitig (localStorage) — Server Components rendern weiterhin die
  * echten Werte, das Blurring passiert erst im Browser, siehe globals.css
  * (`html[data-privacy-hidden] .tabular-nums, ... .privacy-blur`).
