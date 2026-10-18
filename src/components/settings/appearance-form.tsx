@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { saveAppearance, SettingsState } from '@/app/(dashboard)/settings/actions'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { DEFAULT_PRESET } from '@/components/providers/settings-context'
 import type { SettingsMap } from '@/lib/settings'
 import { Check } from 'lucide-react'
 
@@ -275,7 +276,11 @@ function ThemePreviewCard({
 export function AppearanceForm({ initialSettings }: { initialSettings: SettingsMap }) {
   const { setTheme } = useTheme()
 
-  const [themePreset,     setThemePreset]     = useState<PresetId>((initialSettings.theme_preset as PresetId) ?? '')
+  const [themePreset,     setThemePreset]     = useState<PresetId>(
+    initialSettings.theme_preset === undefined
+      ? DEFAULT_PRESET
+      : ((initialSettings.theme_preset as PresetId) ?? ''),
+  )
   const [selectedTheme,   setSelectedTheme]   = useState((initialSettings.theme as string) ?? 'system')
   const [primaryColor,    setPrimaryColor]    = useState((initialSettings.primary_color as string) ?? '#00B4D8')
   const [compactTables,   setCompactTables]   = useState(!!(initialSettings.compact_tables))

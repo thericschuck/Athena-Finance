@@ -25,6 +25,8 @@ export function useSettings(): UserSettings {
   return useContext(SettingsContext)
 }
 
+export const DEFAULT_PRESET = 'athena'
+
 const DARK_PRESETS  = new Set(['obsidian', 'aurum', 'void', 'copper', 'athena-dark'])
 const LIGHT_PRESETS = new Set(['arctic', 'sakura', 'athena'])
 
@@ -41,10 +43,17 @@ export function SettingsProvider({
   const dateFormat    = (settings.date_format   as string) ?? 'dd.MM.yyyy'
   const compactTables = !!(settings.compact_tables)
   const primaryColor  = (settings.primary_color as string) ?? null
-  const themePreset   = (settings.theme_preset  as string) ?? null
+  // Nie gewählt (Key fehlt) → Athena Light. Ein explizit gespeichertes `null`
+  // bedeutet „Eigene Farbe (kein Preset)" und bleibt erhalten.
+  const themePreset   = settings.theme_preset === undefined
+    ? DEFAULT_PRESET
+    : ((settings.theme_preset as string) ?? null)
 
   useEffect(() => {
     const root = document.documentElement
+
+    // Für das Inline-Script in app/layout.tsx (Theme vor dem ersten Paint)
+    try { localStorage.setItem('athena-theme-preset', themePreset ?? 'none') } catch {}
 
     if (themePreset) {
       root.setAttribute('data-theme', themePreset)

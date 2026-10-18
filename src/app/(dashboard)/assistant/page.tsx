@@ -6,6 +6,9 @@ import { ladeSessionZustand, listeSessions, type SessionZustand } from '@/lib/as
 // Sessions und Nachrichten ändern sich bei jedem Chat-Zug — statisches Caching
 // würde hier immer die vorletzte Konversation zeigen.
 export const dynamic = 'force-dynamic'
+// Server Actions erben das Zeitlimit der Seite: der Bank-Sync (Aktion syncBank) kann auf eine
+// Freigabe in der SecureGo-plus-App warten.
+export const maxDuration = 300
 
 export default async function AthenaChatPage({
   searchParams,

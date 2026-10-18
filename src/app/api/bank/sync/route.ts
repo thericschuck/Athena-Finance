@@ -1,13 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/supabase/server'
-import {
-  getFinTSErrorDetails, startSync, upsertBankTransactions, upsertDepotHoldings,
-  upsertBankBalances,
-  isCloudRuntime, triggerCloudBankSync, scaFreeStartDate, stateFromError,
-  applyLearnedCategoriesToBacklog,
-} from '@/lib/fints'
-import { loadBankClientState, saveBankClientState } from '@/lib/fints/state'
-import { buildLearnedCategoryMap } from '@/lib/fints/categorize'
+import { getFinTSErrorDetails, isCloudRuntime, triggerCloudBankSync } from '@/lib/fints'
+import { syncBankForUser } from '@/lib/fints/user-sync'
 
 // The sidecar drives the whole dialog (incl. waiting for a decoupled app approval),
 // so this route can block for a while. Give the platform enough headroom.
@@ -72,57 +66,10 @@ export async function POST(request: Request) {
     fullHistory = body.fullHistory === true
   } catch { /* no body */ }
 
-  if (!startDate) {
-    startDate = fullHistory
-      // As far back as the bank will give us. Transactions are deduplicated by external_id
-      // downstream, so requesting more history than the bank retains is harmless. Costs an
-      // app approval every time (older than 90 days is never SCA-exempt), hence opt-in.
-      ? new Date('2000-01-01')
-      // Routine sync: stay inside the 90-day exemption so no approval is needed.
-      : scaFreeStartDate()
-  }
-
   try {
-    const { data: categories } = await supabase
-      .from('categories')
-      .select('id, name, type, color, icon, parent_id')
-      .eq('user_id', user.id)
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: categorized } = await (supabase as any)
-      .from('bank_transactions')
-      .select('counterpart_name, category_id')
-      .eq('user_id', user.id)
-      .not('category_id', 'is', null)
-    const learnedMap = buildLearnedCategoryMap(categorized ?? [])
-
-    // Handing the stored state to the sidecar is what suppresses the per-sync app
-    // approval: it carries the Kundensystem-ID, so the bank recognises this as the same
-    // access it already authenticated instead of a brand-new one.
-    const clientState = await loadBankClientState(user.id)
-
-    const result = await startSync(startDate, endDate, categories ?? [], learnedMap, {
-      state: clientState,
-    })
-    await saveBankClientState(user.id, result.state)
-
-    const { imported, skipped } = await upsertBankTransactions(supabase, user.id, result.transactions)
-    const { synced: holdingsSynced } = await upsertDepotHoldings(supabase, user.id, result.holdings)
-    // Balances last: the fn_ensure_linked_account trigger on bank_balance mirrors each row
-    // into account_balances for today, so this is what makes the freshly synced figure the
-    // one the accounts page and the charts show.
-    const { synced: balancesSynced } = await upsertBankBalances(supabase, user.id, result.balances)
-    const { applied: backlogCategorized } = await applyLearnedCategoriesToBacklog(supabase, user.id)
-    return NextResponse.json({
-      imported, skipped, holdingsSynced, balancesSynced,
-      categorized: backlogCategorized, warnings: result.warnings,
-    })
-
+    // Standardfenster: 90 Tage (innerhalb der PSD2-Ausnahme, siehe syncBankForUser).
+    return NextResponse.json(await syncBankForUser(supabase, user.id, { startDate, endDate, fullHistory }))
   } catch (err) {
-    // A run can fail for one bank and still have produced usable state for another —
-    // persist whatever came back so that bank doesn't need an extra approval next time.
-    await saveBankClientState(user.id, stateFromError(err))
-
     const details = getFinTSErrorDetails(err)
     return NextResponse.json({
       error: details.message,

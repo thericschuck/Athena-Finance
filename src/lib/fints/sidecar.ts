@@ -197,7 +197,8 @@ export async function runSidecar(opts: SidecarOptions = {}): Promise<SidecarSucc
   return new Promise<SidecarSuccess>((resolve, reject) => {
     const child = spawn(python, args, {
       cwd: PROJECT_ROOT,
-      env: process.env,
+      // UTF-8 erzwingen: unter Windows loggt Python sonst in cp1252 (Umlaute → �).
+      env: { ...process.env, PYTHONIOENCODING: 'utf-8' },
       windowsHide: true,
     })
 

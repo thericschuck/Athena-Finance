@@ -853,6 +853,9 @@ def sync_one_bank(profile, start_date, end_date, args, client_classes, prev_stat
             # behind a call that just aborted a TAN challenge: the observed follow-up errors
             # ("9260 Challenge abgebrochen", "3070 Ungültige Challenge-Anforderung") come
             # from the dialog still carrying the failed HKWPD challenge.
+            # Saldo abgelehnt (9380) = die Bank kennt dieses Konto für diesen Login nicht. Dann sind
+            # Depot- und Umsatzabfrage sinnlos und erzeugen nur Folgefehler (Challenge-Reste).
+            probe_denied = False
             try:
                 if is_iban:
                     bal = settle(client, client.get_balance(probe_acc), NeedTANResponse)
@@ -867,6 +870,7 @@ def sync_one_bank(profile, start_date, end_date, args, client_classes, prev_stat
                     # A refused HKSAL still returns an object; only .amount tells us apart.
                     log(f"[fints] [{label}] {probe_label}: Saldo abgelehnt — die Bank hat keinen "
                         f"Betrag geliefert (siehe die 9xxx-Meldung oben). Nichts gespeichert.")
+                    probe_denied = not info_entry
                 else:
                     entry = serialize_balance(label, probe_acc, bal)
                     entry["accountName"] = probe_label
@@ -888,6 +892,11 @@ def sync_one_bank(profile, start_date, end_date, args, client_classes, prev_stat
             # leaves a dead challenge in the dialog that breaks the following call. When
             # get_information() doesn't list the account at all we still try — that is
             # exactly the "bank doesn't surface the Depot" case probing exists for.
+            if probe_denied:
+                log(f"[fints] [{label}] {probe_label}: gehört nicht zu diesem Login (Saldo abgelehnt, "
+                    f"nicht in HIUPD) — Depot-/Umsatzabfrage übersprungen.")
+                continue
+
             supports_holdings = True
             if info_entry:
                 ops = info_entry.get("supported_operations") or {}
