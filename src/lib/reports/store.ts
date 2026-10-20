@@ -6,10 +6,11 @@
  * ersetzt den Report, statt einen zweiten anzulegen.
  */
 import type { ReportData, ReportType } from './types'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/types/database'
 
 export async function persistReport(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   userId: string,
   args: {
     type:        ReportType
@@ -49,8 +50,7 @@ export async function persistReport(
 }
 
 export async function markReportSent(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   reportId: string,
 ): Promise<void> {
   await supabase.from('reports').update({ sent_at: new Date().toISOString() }).eq('id', reportId)

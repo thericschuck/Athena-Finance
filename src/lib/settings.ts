@@ -1,31 +1,18 @@
 import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
+import {
+  fetchProfile, fetchSettings,
+  type UserProfile, type SettingsMap,
+} from '@/lib/data/settings'
 
-export type UserProfile = {
-  id: string
-  display_name: string | null
-  avatar_url: string | null
-  timezone: string
-  currency: string
-}
-
-export type SettingsMap = Record<string, unknown>
+export type { UserProfile, SettingsMap }
 
 export async function getProfile(userId: string): Promise<UserProfile | null> {
   const supabase = await createClient()
-  const { data } = await supabase
-    .from('user_profiles')
-    .select('id, display_name, avatar_url, timezone, currency')
-    .eq('id', userId)
-    .single()
-  return data ?? null
+  return fetchProfile(supabase, userId)
 }
 
 export const getSettings = cache(async (userId: string): Promise<SettingsMap> => {
   const supabase = await createClient()
-  const { data } = await supabase
-    .from('user_settings')
-    .select('key, value')
-    .eq('user_id', userId)
-  return Object.fromEntries((data ?? []).map(r => [r.key, r.value]))
+  return fetchSettings(supabase, userId)
 })

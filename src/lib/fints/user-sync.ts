@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/types/database'
 import {
   startSync, upsertBankTransactions, upsertDepotHoldings, upsertBankBalances,
   applyLearnedCategoriesToBacklog, isCloudRuntime, triggerCloudBankSync,
@@ -31,8 +32,7 @@ export class BankSyncForbiddenError extends Error {}
  * angestoßen), deshalb ist hier — anders als im Cron — eine Freigabe erlaubt.
  */
 export async function syncBankForUser(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: SupabaseClient<any>,
+  supabase: SupabaseClient<Database>,
   userId: string,
   opts: { fullHistory?: boolean; startDate?: Date; endDate?: Date; origin?: string } = {},
 ): Promise<UserBankSyncResult> {

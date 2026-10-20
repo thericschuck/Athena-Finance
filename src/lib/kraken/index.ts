@@ -5,55 +5,13 @@
 import { createHash, createHmac } from 'crypto'
 import { getEurUsdRate } from '@/lib/crypto/coingecko'
 import { findBySymbol } from '@/lib/crypto/coin-registry'
+import { KRAKEN_TO_SYMBOL, krakenCodeToSymbol } from './symbols'
 
 export const KRAKEN_API = 'https://api.kraken.com'
 
 // ─── Asset Code Mapping ───────────────────────────────────────────────────────
-// Kraken uses internal codes that differ from standard trading symbols.
-// X prefix = crypto, Z prefix = fiat. Some modern assets use plain symbols.
-export const KRAKEN_TO_SYMBOL: Record<string, string> = {
-  // X-prefixed legacy crypto codes
-  XXBT:  'BTC',
-  XETH:  'ETH',
-  XXRP:  'XRP',
-  XLTC:  'LTC',
-  XXLM:  'XLM',
-  XDOGE: 'DOGE',
-  XXMR:  'XMR',
-  XREP:  'REP',
-  XZEC:  'ZEC',
-  XMLN:  'MLN',
-  XICN:  'ICN',
-  // Z-prefixed fiat codes
-  ZEUR:  'EUR',
-  ZUSD:  'USD',
-  ZGBP:  'GBP',
-  ZCAD:  'CAD',
-  ZJPY:  'JPY',
-  ZCHF:  'CHF',
-  ZAUD:  'AUD',
-  // Modern assets already use standard symbols — pass through as-is
-}
-
-/**
- * Resolves a Kraken internal asset code to a standard trading symbol.
- * Falls back to stripping a leading X/Z if no explicit mapping exists.
- *
- * `KRAKEN_TO_SYMBOL` still wins over Kraken's own `/Assets` "altname" for the handful of
- * legacy-prefixed codes in it — Kraken's API calls Bitcoin "XBT" (an old ISO-4217-style
- * currency code), but nobody using Kraken's own web/app UI ever sees that name, so blindly
- * preferring the API's altname there would show "XBT" instead of "Bitcoin". For every other
- * (mostly modern, unprefixed) code, `/Assets`' altname is what actually gets used — see
- * `fetchKrakenAssetInfo()` below and its call site in `syncFromKraken()`.
- */
-export function krakenCodeToSymbol(code: string): string {
-  if (KRAKEN_TO_SYMBOL[code]) return KRAKEN_TO_SYMBOL[code]
-  // Heuristic: single-letter X/Z prefix on 3-4 char codes
-  if ((code.startsWith('X') || code.startsWith('Z')) && code.length <= 5) {
-    return code.slice(1)
-  }
-  return code
-}
+// Ausgelagert nach ./symbols (rein, ohne @/-Importe, testbar); hier re-exportiert.
+export { KRAKEN_TO_SYMBOL, krakenCodeToSymbol }
 
 export interface ResolvedKrakenAsset {
   symbol:      string           // display ticker, e.g. 'BTC'
@@ -71,7 +29,7 @@ export interface ResolvedKrakenAsset {
  * changes (e.g. a new registry entry) and silently break the match.
  */
 export function resolveKrakenAsset(code: string, altname: string | undefined): ResolvedKrakenAsset {
-  const symbol = KRAKEN_TO_SYMBOL[code] ?? altname ?? krakenCodeToSymbol(code)
+  const symbol = (Object.hasOwn(KRAKEN_TO_SYMBOL, code) ? KRAKEN_TO_SYMBOL[code] : undefined) ?? altname ?? krakenCodeToSymbol(code)
   const isFiat = code.startsWith('Z') && code.length <= 5
   const registryMatch = findBySymbol(symbol)
   return {

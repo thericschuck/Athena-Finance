@@ -95,11 +95,11 @@ export async function ladeSteuerdaten(
   jahr: number,
 ): Promise<LadeErgebnis> {
   const [tarifeRes, kategorienRes, profilRes, zieleRes, euerRes, belegeRes] = await Promise.all([
-    supabase.from('tax_tariffs').select('*').order('jahr', { ascending: true }),
+    supabase.from('tax_tariffs').select('jahr, grundfreibetrag, zone2_bis, zone2_faktor, zone2_konstante, zone3_bis, zone3_faktor, zone3_konstante, zone3_sockel, zone4_bis, zone4_satz, zone4_abzug, zone5_satz, zone5_abzug, werbungskostenpauschale, sonderausgabenpauschale, soli_freigrenze, kleinunternehmer_vorjahr, kleinunternehmer_laufend, quelle, geprueft_am').order('jahr', { ascending: true }),
     supabase.from('categories').select('id, name, parent_id, tax_role, type').eq('user_id', userId),
     supabase.from('user_settings').select('value').eq('user_id', userId).eq('key', 'tax_profile').maybeSingle(),
     supabase.from('savings_goals').select('id, description, target_amount, current_amount').eq('user_id', userId),
-    supabase.from('euer_zeilen').select('*').order('zeile', { ascending: true }),
+    supabase.from('euer_zeilen').select('jahr, zeile, bezeichnung, art, sammelzeile, quelle, geprueft_am').order('zeile', { ascending: true }),
     supabase.from('belege').select('id, transaction_id, dateiname, beleg_datum, betrag, aussteller, pfad, sha256, hochgeladen_am, ersetzt_durch').eq('user_id', userId),
   ])
   if (tarifeRes.error) throw new Error(tarifeRes.error.message)

@@ -3465,6 +3465,33 @@ export type Database = {
       }
     }
     Views: {
+      account_balance_sums_manual: {
+        Row: {
+          account_id: string | null
+          balance: number | null
+          tx_count: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      account_balance_sums_unified: {
+        Row: {
+          account_id: string | null
+          balance: number | null
+          tx_count: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      asset_valuations_latest: {
+        Row: {
+          asset_id: string | null
+          price_per_unit: number | null
+          total_value: number | null
+          valuation_date: string | null
+        }
+        Relationships: []
+      }
       current_net_worth: {
         Row: {
           net_worth: number | null

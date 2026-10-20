@@ -22,7 +22,12 @@ import {
   type SidecarAccount, type SidecarTransaction, type SidecarHolding, type SidecarBalance,
   type BankClientStateMap,
 } from './sidecar'
+import { isScaRequiredError, stateFromError } from './sca'
 import type { FinanceCategory } from '@/types/bank'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/types/database'
+
+export { isScaRequiredError, stateFromError }
 
 // ── Error helpers ────────────────────────────────────────────────────────────
 
@@ -328,8 +333,7 @@ function mapBalances(balances: SidecarBalance[], accounts: SidecarAccount[]): Fe
  * account_balances for today, and the daily snapshot anchors its history on them.
  */
 export async function upsertBankBalances(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   userId: string,
   balances: FetchedBalance[],
 ): Promise<{ synced: number }> {
@@ -356,27 +360,12 @@ export async function upsertBankBalances(
 }
 
 /**
- * True if this error is the sidecar refusing to wait for an app approval (--no-sca).
- * Callers use it to surface "bitte einmal manuell synchronisieren" instead of a bank error.
- */
-export function isScaRequiredError(err: unknown): boolean {
-  return typeof err === 'object' && err !== null && (err as { code?: string }).code === 'sca_required'
-}
-
-/** The client state a failed sidecar run still managed to produce, if any. */
-export function stateFromError(err: unknown): BankClientStateMap | undefined {
-  if (typeof err !== 'object' || err === null) return undefined
-  return (err as { state?: BankClientStateMap }).state
-}
-
-/**
  * Upserts parsed transactions for a user, deduplicated by (user_id, external_id).
  * Shared by the interactive sync route (cookie-scoped client) and the cron route
  * (service-role admin client) — pass whichever Supabase client fits the caller.
  */
 export async function upsertBankTransactions(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   userId: string,
   transactions: ParsedTransaction[],
 ): Promise<{ imported: number; skipped: number }> {
@@ -536,8 +525,7 @@ export async function upsertBankTransactions(
  * suggestions panel — see docs/athenas-takt.html.
  */
 export async function applyLearnedCategoriesToBacklog(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   userId: string,
 ): Promise<{ applied: number }> {
   const { data: categorized } = await supabase
@@ -584,8 +572,7 @@ export async function applyLearnedCategoriesToBacklog(
  * `upsertBankTransactions`'s ignore-duplicates.
  */
 export async function upsertDepotHoldings(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   userId: string,
   holdings: ParsedHolding[],
 ): Promise<{ synced: number }> {

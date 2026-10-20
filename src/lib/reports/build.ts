@@ -10,6 +10,8 @@
  * flow_kind_regel). Das Nettovermögen kommt direkt aus `net_worth_snapshots.net_worth`,
  * derselben Kernzahl wie auf dem Dashboard (siehe Memory networth_definition).
  */
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/types/database'
 import type {
   ReportData, ReportType, ReportTotals, ReportCategoryDatum, ReportCategoryChange,
   ReportNetWorth, ReportInsightRow,
@@ -40,6 +42,9 @@ export type ReportPeriod = {
 
 /** Kalendermonat `month` (1-12) in `year`, plus der direkt vorangehende Monat als Vergleich. */
 export function monthPeriod(year: number, month: number): ReportPeriod {
+  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+    throw new RangeError(`monthPeriod: ungültiger Monat ${year}-${month} (Monat muss 1-12 sein)`)
+  }
   const start     = new Date(Date.UTC(year, month - 1, 1))
   const end       = new Date(Date.UTC(year, month, 0))
   const prevStart = new Date(Date.UTC(year, month - 2, 1))
@@ -69,8 +74,7 @@ export function yearPeriod(year: number): ReportPeriod {
 }
 
 async function periodTotals(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   userId: string,
   start: string,
   end: string,
@@ -94,8 +98,7 @@ async function periodTotals(
 }
 
 async function categoryBreakdown(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   userId: string,
   start: string,
   end: string,
@@ -138,8 +141,7 @@ function notableChanges(
 }
 
 async function netWorthDelta(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   userId: string,
   start: string,
   end: string,
@@ -174,8 +176,7 @@ async function netWorthDelta(
 }
 
 async function openInsightsList(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   userId: string,
 ): Promise<ReportInsightRow[]> {
   const { data } = await supabase
@@ -190,8 +191,7 @@ async function openInsightsList(
 }
 
 export async function buildReportData(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   userId: string,
   period: ReportPeriod,
 ): Promise<ReportData> {
