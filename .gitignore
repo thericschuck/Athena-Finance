@@ -169,3 +169,10 @@ backup-cleanup-*/
 # Python-Bytecode (auch api/__pycache__ der Vercel-Function)
 __pycache__/
 *.pyc
+
+# Understand-Anything: nur Graph, Fingerprints, Konfiguration und Scan-Ergebnis ins Repo
+.ua/.trash-*
+.ua/tmp/
+.ua/dashboard.log
+.ua/intermediate/*
+!.ua/intermediate/scan-result.json
