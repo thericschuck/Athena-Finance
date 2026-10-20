@@ -165,3 +165,7 @@ scripts/fints/__pycache__/
 # Lokale Sicherungen vor Aufräumaktionen (nicht ins Repo)
 backup-cleanup-*/
 .cleanup-backup-dir
+
+# Python-Bytecode (auch api/__pycache__ der Vercel-Function)
+__pycache__/
+*.pyc
