@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/supabase/server'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/types/database'
 import { fetchBalances, isCloudRuntime, triggerCloudBankSync } from '@/lib/fints'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function readCachedBalances(supabase: any, userId: string) {
+async function readCachedBalances(supabase: SupabaseClient<Database>, userId: string) {
   const { data, error } = await supabase
     .from('bank_balance')
     .select('*')
@@ -22,10 +23,10 @@ async function readCachedBalances(supabase: any, userId: string) {
     .not('bank_iban', 'is', null)
 
   const idByIban = new Map(
-    (linked ?? []).map((a: { id: string; bank_iban: string }) => [a.bank_iban, a.id]),
+    (linked ?? []).flatMap(a => (a.bank_iban ? [[a.bank_iban, a.id] as const] : [])),
   )
 
-  return (data ?? []).map((b: { account_iban: string }) => ({
+  return (data ?? []).map(b => ({
     ...b,
     account_id: idByIban.get(b.account_iban) ?? null,
   }))
@@ -92,8 +93,7 @@ export async function POST(request: Request) {
         fetched_at:        new Date().toISOString(),
       }))
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('bank_balance')
         .upsert(rows, { onConflict: 'user_id,account_iban' })
 

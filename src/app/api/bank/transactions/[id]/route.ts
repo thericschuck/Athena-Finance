@@ -1,5 +1,14 @@
 import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/supabase/server'
+import { z } from 'zod'
+import { parseBody, parseParams } from '@/lib/api/validate'
+import { uuid } from '@/lib/api/schemas'
+
+const paramsSchema = z.object({ id: uuid })
+// category_id muss vorhanden sein (null oder '' entfernt die Kategorie).
+const bodySchema = z.object({
+  category_id: z.union([uuid, z.literal(''), z.null()]).transform(v => v || null),
+})
 
 /**
  * PATCH /api/bank/transactions/:id
@@ -11,16 +20,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { supabase, user } = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
-  const { id } = await params
-  const body = await request.json().catch(() => null) as { category_id?: string | null } | null
-  if (!body || !('category_id' in body)) {
-    return NextResponse.json({ error: 'category_id erforderlich' }, { status: 400 })
-  }
+  const p = parseParams(await params, paramsSchema)
+  if (p.response) return p.response
+  const b = await parseBody(request, bodySchema)
+  if (b.response) return b.response
+  const { id } = p.data
+  const categoryId = b.data.category_id
 
-  const categoryId = body.category_id?.trim() || null
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('bank_transactions')
     .update({ category_id: categoryId })
     .eq('id', id)

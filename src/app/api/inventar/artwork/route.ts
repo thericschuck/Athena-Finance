@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/supabase/server'
-import { erzeugeArtwork, ArtworkFehler, MAX_VORLAGEN } from '@/lib/inventar/artwork'
+import { erzeugeArtwork, ArtworkFehler, MAX_VORLAGEN, HINWEIS_MAX } from '@/lib/inventar/artwork'
+import { z } from 'zod'
+import { parseBody } from '@/lib/api/validate'
+import { uuid } from '@/lib/api/schemas'
 
 /**
  * POST /api/inventar/artwork
@@ -28,20 +31,23 @@ import { erzeugeArtwork, ArtworkFehler, MAX_VORLAGEN } from '@/lib/inventar/artw
 export const maxDuration = 120
 
 /** Alte Aufrufer schickten `basisBildId` (Einzahl). Beide Formen werden angenommen. */
-interface Body {
-  id?: string
-  basisBildId?: string
-  basisBildIds?: string[]
-  hinweis?: string
-  qualitaet?: 'auto' | 'high'
-}
+const bodySchema = z.object({
+  id: uuid,
+  basisBildId: uuid.optional(),
+  // Mehr als MAX_VORLAGEN werden wie bisher abgeschnitten (kein Fehler), aber nicht unbegrenzt.
+  basisBildIds: z.array(uuid).max(50).optional(),
+  // Zu lange Hinweise kürzt `erzeugeArtwork` selbst; hier nur eine Obergrenze gegen Missbrauch.
+  hinweis: z.string().max(Math.max(HINWEIS_MAX * 10, 4000)).optional(),
+  qualitaet: z.enum(['auto', 'high']).optional(),
+})
 
 export async function POST(request: Request) {
   const { supabase, user } = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
-  const body = (await request.json().catch(() => null)) as Body | null
-  if (!body?.id) return NextResponse.json({ error: 'id fehlt' }, { status: 400 })
+  const parsed = await parseBody(request, bodySchema)
+  if (parsed.response) return parsed.response
+  const body = parsed.data
 
   const basisBildIds = (body.basisBildIds ?? (body.basisBildId ? [body.basisBildId] : [])).slice(
     0,

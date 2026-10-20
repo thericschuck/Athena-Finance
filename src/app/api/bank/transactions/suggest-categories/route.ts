@@ -25,8 +25,7 @@ export async function GET() {
 
   const categoriesById = new Map((categories ?? []).map(c => [c.id, c as FinanceCategory]))
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('bank_transactions')
     .select('id, description, counterpart_name, counterpart_iban, category_id, amount, value_date')
     .eq('user_id', user.id)

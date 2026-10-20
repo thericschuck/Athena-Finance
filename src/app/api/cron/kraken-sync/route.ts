@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { syncKrakenForUser } from '@/lib/kraken/sync'
+import { requireCron } from '@/lib/api/auth'
 
 // Der Sync selbst ist schnell (Balance + Assets + AssetPairs + ein Ticker-Call), aber
 // `fetchKrakenTradesHistory()` blättert bis zu 10 Seiten mit je 1,5 s Pause dazwischen — die
@@ -35,10 +36,8 @@ function adminClient() {
  * sich auf der Function-Laufzeit gegenseitig ausbremsen.
  */
 export async function GET(req: NextRequest) {
-  const auth = req.headers.get('authorization')
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const denied = requireCron(req)
+  if (denied) return denied
 
   const supabase = adminClient()
 

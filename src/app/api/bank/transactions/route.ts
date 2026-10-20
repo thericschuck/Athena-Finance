@@ -1,5 +1,23 @@
 import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/supabase/server'
+import { z } from 'zod'
+import { parseQuery } from '@/lib/api/validate'
+import { uuid } from '@/lib/api/schemas'
+
+// Leere Parameter (`?q=`) zählen wie fehlende.
+const emptyToUndef = (v: unknown) => (v === '' ? undefined : v)
+
+const querySchema = z.object({
+  iban: z.preprocess(emptyToUndef, z.string().max(64).optional()),
+  // Obergrenze wird gekappt statt abgelehnt (wie bisher Math.min(.., 5000)).
+  limit: z.preprocess(
+    emptyToUndef,
+    z.coerce.number().int().min(1).optional().transform(v => Math.min(v ?? 3000, 5000)),
+  ),
+  offset: z.preprocess(emptyToUndef, z.coerce.number().int().min(0).optional().transform(v => v ?? 0)),
+  categoryId: z.preprocess(emptyToUndef, uuid.optional()),
+  q: z.preprocess(emptyToUndef, z.string().max(200).optional()),
+})
 
 /**
  * GET /api/bank/transactions?iban=...&limit=100&offset=0&category=...&q=...
@@ -10,21 +28,17 @@ export async function GET(request: Request) {
   const { supabase, user } = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
-  const { searchParams } = new URL(request.url)
-  const iban       = searchParams.get('iban')
+  const parsed = parseQuery(request, querySchema)
+  if (parsed.response) return parsed.response
   // Default/cap raised from 200/500: monthly aggregation and the balance-history chart need
   // the account's full ledger, not just the most recent rows — a count cap silently truncates
   // the oldest visible month and throws off the reconstructed running balance.
-  const limit      = Math.min(parseInt(searchParams.get('limit') ?? '3000', 10), 5000)
-  const offset     = parseInt(searchParams.get('offset') ?? '0', 10)
-  const categoryId = searchParams.get('categoryId')
-  const q          = searchParams.get('q')
+  const { iban, limit, offset, categoryId, q } = parsed.data
 
   // Spalten explizit statt '*': external_id ist ein base64-Hash, den ausschliesslich die
   // Dedup beim Sync braucht — im Browser wird sie nie gelesen, macht aber rund 12 % der
   // uebertragenen Nutzlast aus.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let query = (supabase as any)
+  let query = supabase
     .from('bank_transactions')
     .select(
       'id, user_id, bank_label, account_iban, account_bic, amount, currency, value_date, ' +

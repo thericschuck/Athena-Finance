@@ -1,15 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireUser } from '@/lib/api/auth'
+import { z } from 'zod'
+import { parseQuery } from '@/lib/api/validate'
+
+const querySchema = z.object({
+  isin: z.string().trim().max(32).optional().default(''),
+})
 
 // Diese Route liest nur den Cache – das Scraping übernimmt ausschließlich
 // die Supabase Edge Function (fetch-fund-price) via XPath + deno-dom.
 // Cron: alle 15 Min, Mo-Fr 8-20 Uhr.
 
 export async function GET(req: NextRequest) {
-  const isin = req.nextUrl.searchParams.get('isin') ?? ''
+  const auth = await requireUser()
+  if (auth.response) return auth.response
+
+  const q = parseQuery(req, querySchema)
+  if (q.response) return q.response
+  const { isin } = q.data
   if (!isin) return NextResponse.json({ price: null, fetchedAt: null, isLive: false })
 
-  const supabase = await createClient()
+  const { supabase } = auth
 
   const { data: cache } = await supabase
     .from('fund_price_cache')

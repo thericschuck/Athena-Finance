@@ -1,5 +1,14 @@
 import type { NextRequest } from 'next/server'
 import { getAuthUser } from '@/lib/supabase/server'
+import type { TablesInsert } from '@/types/database'
+import { z } from 'zod'
+import { parseBody } from '@/lib/api/validate'
+
+// Export-JSON der App selbst; die Spaltenstruktur prüft die DB. Hier nur Form und Größe.
+const importSchema = z.object({
+  indicators: z.array(z.record(z.string(), z.unknown())).max(2000),
+  backtests: z.array(z.record(z.string(), z.unknown())).max(20000).optional(),
+})
 
 export async function POST(req: NextRequest) {
   const { supabase, user } = await getAuthUser()
@@ -8,18 +17,9 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  let body: { indicators: Record<string, unknown>[]; backtests?: Record<string, unknown>[] }
-  try {
-    body = await req.json()
-  } catch {
-    return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
-  }
-
-  const { indicators, backtests } = body
-
-  if (!Array.isArray(indicators)) {
-    return Response.json({ error: 'indicators must be an array' }, { status: 400 })
-  }
+  const parsed = await parseBody(req, importSchema)
+  if (parsed.response) return parsed.response
+  const { indicators, backtests } = parsed.data
 
   // Map old id → new id for backtests
   const idMap = new Map<string, string>()
@@ -38,8 +38,8 @@ export async function POST(req: NextRequest) {
 
       const { data: inserted, error } = await supabase
         .from('indicators')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .insert(toInsert as any)
+        // Export-JSON des Users selbst; Struktur wird erst von der DB geprüft.
+        .insert(toInsert as unknown as TablesInsert<'indicators'>)
         .select('id')
         .single()
 
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  if (backtests && Array.isArray(backtests) && backtests.length > 0) {
+  if (backtests && backtests.length > 0) {
     const backtestRows = backtests
       .map((bt) => {
         const oldIndicatorId = bt.indicator_id as string | undefined
@@ -72,8 +72,7 @@ export async function POST(req: NextRequest) {
     if (backtestRows.length > 0) {
       const { data: insertedBacktests, error: btError } = await supabase
         .from('indicator_performance')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .insert(backtestRows as any)
+        .insert(backtestRows as unknown as TablesInsert<'indicator_performance'>[])
         .select('id')
 
       if (!btError) {

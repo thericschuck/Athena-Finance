@@ -3,6 +3,8 @@ import { getAuthUser } from '@/lib/supabase/server'
 import { ladeSteuerdaten } from '@/lib/tax/laden'
 import { berechneEuer } from '@/lib/tax/euer'
 import { berechneSteuerposition } from '@/lib/tax/position'
+import { z } from 'zod'
+import { parseQuery } from '@/lib/api/validate'
 import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvValue, formatCsvAmount } from '@/lib/csv'
 
 /**
@@ -20,6 +22,16 @@ import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvValue, formatCsvAmount } from
 
 const SP = CSV_SEPARATOR
 
+// Ungültiges oder fehlendes Jahr fällt wie bisher auf das aktuelle Jahr zurück.
+const querySchema = z.object({
+  jahr: z.coerce
+    .number()
+    .int()
+    .min(2020)
+    .max(2100)
+    .catch(() => new Date().getFullYear()),
+})
+
 function zeile(...felder: (string | number | null)[]): string {
   return felder
     .map(f => (typeof f === 'number' ? formatCsvAmount(f) : escapeCsvValue(f)))
@@ -30,10 +42,9 @@ export async function GET(req: NextRequest) {
   const { supabase, user } = await getAuthUser()
   if (!user) return new Response('Unauthorized', { status: 401 })
 
-  const roh = Number(req.nextUrl.searchParams.get('jahr'))
-  const jahr = Number.isInteger(roh) && roh >= 2020 && roh <= 2100
-    ? roh
-    : new Date().getFullYear()
+  const q = parseQuery(req, querySchema)
+  if (q.response) return q.response
+  const { jahr } = q.data
 
   let daten
   try {

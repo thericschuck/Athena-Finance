@@ -8,6 +8,13 @@ import {
 } from '@/lib/kraken'
 import { getPrices } from '@/lib/crypto/coingecko'
 import { COIN_REGISTRY, FIAT_EUR_PRICES } from '@/lib/crypto/coin-registry'
+import { requireUser } from '@/lib/api/auth'
+import { parseQuery } from '@/lib/api/validate'
+import { z } from 'zod'
+
+const querySchema = z.object({
+  ids: z.string().max(4000).optional().default(''),
+})
 
 /**
  * GET /api/crypto/prices?ids=bitcoin,ethereum,SOL
@@ -51,7 +58,12 @@ function toTicker(id: string): string {
 }
 
 export async function GET(req: NextRequest) {
-  const raw = req.nextUrl.searchParams.get('ids') ?? ''
+  const auth = await requireUser()
+  if (auth.response) return auth.response
+
+  const q = parseQuery(req, querySchema)
+  if (q.response) return q.response
+  const raw = q.data.ids
   const ids = [...new Set(raw.split(',').map(s => s.trim()).filter(Boolean))].slice(0, 200)
   if (ids.length === 0) return NextResponse.json({ prices: {}, sources: {} })
 

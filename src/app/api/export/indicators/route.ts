@@ -1,5 +1,11 @@
 import type { NextRequest } from 'next/server'
 import { getAuthUser } from '@/lib/supabase/server'
+import { z } from 'zod'
+import { parseQuery } from '@/lib/api/validate'
+
+const querySchema = z.object({
+  with_backtests: z.string().max(10).optional().transform(v => v === 'true'),
+})
 
 export async function GET(req: NextRequest) {
   const { supabase, user } = await getAuthUser()
@@ -8,8 +14,9 @@ export async function GET(req: NextRequest) {
     return new Response('Unauthorized', { status: 401 })
   }
 
-  const { searchParams } = req.nextUrl
-  const withBacktests = searchParams.get('with_backtests') === 'true'
+  const q = parseQuery(req, querySchema)
+  if (q.response) return q.response
+  const withBacktests = q.data.with_backtests
 
   const { data: indicators, error } = await supabase
     .from('indicators')

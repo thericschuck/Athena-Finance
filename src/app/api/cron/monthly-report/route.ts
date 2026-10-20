@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/types/database'
 import { buildReportData, monthPeriod } from '@/lib/reports/build'
 import { renderReportHtml } from '@/lib/reports/render-html'
 import { renderReportPdf } from '@/lib/reports/render-pdf'
 import { persistReport, markReportSent } from '@/lib/reports/store'
 import { sendReportEmail } from '@/lib/reports/email'
+import { requireCron } from '@/lib/api/auth'
 
 // PDF-Rendering (react-pdf) plus ein Mail-Versand mit Anhang — großzügiger als die reinen
 // Datenbank-Crons, aber deutlich unter dem Limit von /api/assistant.
 export const maxDuration = 120
 
 function adminClient() {
-  return createClient(
+  return createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   )
@@ -31,10 +34,8 @@ function adminClient() {
  * Abschnitt III).
  */
 export async function GET(req: NextRequest) {
-  const auth = req.headers.get('authorization')
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const denied = requireCron(req)
+  if (denied) return denied
 
   const userId    = process.env.REPORT_USER_ID
   const recipient = process.env.REPORT_RECIPIENT_EMAIL
@@ -92,8 +93,7 @@ export async function GET(req: NextRequest) {
 }
 
 async function ensureAnnualReportReminder(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   userId: string,
   year: number,
 ): Promise<boolean> {

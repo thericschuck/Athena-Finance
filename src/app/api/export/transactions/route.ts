@@ -1,5 +1,8 @@
 import type { NextRequest } from 'next/server'
 import { getAuthUser } from '@/lib/supabase/server'
+import { z } from 'zod'
+import { parseQuery } from '@/lib/api/validate'
+import { uuid } from '@/lib/api/schemas'
 import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvValue, formatCsvAmount } from '@/lib/csv'
 
 /**
@@ -18,6 +21,10 @@ import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvValue, formatCsvAmount } from
  * Datum, und der Import-Parser versteht ohnehin beide Schreibweisen.
  */
 
+const querySchema = z.object({
+  account_id: z.preprocess(v => (v === '' ? undefined : v), uuid.optional()),
+})
+
 const CSV_HEADERS = ['datum', 'betrag', 'beschreibung', 'haendler', 'kategorie', 'konto', 'waehrung']
 
 export async function GET(req: NextRequest) {
@@ -27,8 +34,9 @@ export async function GET(req: NextRequest) {
     return new Response('Unauthorized', { status: 401 })
   }
 
-  const { searchParams } = req.nextUrl
-  const accountId = searchParams.get('account_id')
+  const q = parseQuery(req, querySchema)
+  if (q.response) return q.response
+  const accountId = q.data.account_id
 
   // unified_transactions (see migration 20260821010000) merges in FinTS-synced bank
   // transactions for linked accounts, so an export includes those alongside manual entries.

@@ -6,6 +6,7 @@ import {
 } from '@/lib/fints'
 import { buildLearnedCategoryMap } from '@/lib/fints/categorize'
 import { loadBankClientState, saveBankClientState, markScaRequired } from '@/lib/fints/state'
+import { requireCron } from '@/lib/api/auth'
 
 // The sidecar drives the whole FinTS dialog. It runs with noSca, so it can no longer block
 // for minutes waiting on an app approval — but the dialog itself plus a full camt.052 fetch
@@ -41,10 +42,8 @@ function adminClient() {
  * 90-day re-authentication is regulatory, not a limitation of this implementation.
  */
 export async function GET(req: NextRequest) {
-  const auth = req.headers.get('authorization')
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const denied = requireCron(req)
+  if (denied) return denied
 
   const userId = process.env.BANK_SYNC_USER_ID
   if (!userId) {

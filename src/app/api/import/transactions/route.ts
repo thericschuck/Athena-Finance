@@ -1,31 +1,41 @@
 import type { NextRequest } from 'next/server'
+import { z } from 'zod'
 import { getAuthUser } from '@/lib/supabase/server'
+import { parseBody } from '@/lib/api/validate'
 
-interface ImportRow {
-  date: string
-  amount: number
-  description?: string
-  merchant?: string
-  category_name?: string
-}
+// Zeilen werden einzeln geprüft, damit ein kaputter Eintrag nicht den ganzen Import kippt.
+const rowSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Datum muss JJJJ-MM-TT sein'),
+  amount: z.number().finite(),
+  description: z.string().max(500).nullish(),
+  merchant: z.string().max(200).nullish(),
+  category_name: z.string().max(100).nullish(),
+})
+
+const bodySchema = z.object({
+  account_id: z.uuid(),
+  rows: z.array(z.unknown()).max(5000),
+})
 
 export async function POST(req: NextRequest) {
   const { supabase, user } = await getAuthUser()
 
   if (!user) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    return Response.json({ error: 'Nicht eingeloggt' }, { status: 401 })
   }
 
-  let body: { account_id: string; rows: ImportRow[] }
-  try {
-    body = await req.json()
-  } catch {
-    return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
-  }
+  const parsed = await parseBody(req, bodySchema)
+  if (parsed.response) return parsed.response
+  const { account_id, rows } = parsed.data
 
-  const { account_id, rows } = body
-  if (!account_id || !Array.isArray(rows)) {
-    return Response.json({ error: 'account_id and rows are required' }, { status: 400 })
+  const { data: account } = await supabase
+    .from('accounts')
+    .select('id')
+    .eq('id', account_id)
+    .eq('user_id', user.id)
+    .maybeSingle()
+  if (!account) {
+    return Response.json({ error: 'Konto nicht gefunden' }, { status: 404 })
   }
 
   // Load categories for name lookup
@@ -53,12 +63,12 @@ export async function POST(req: NextRequest) {
   }[] = []
 
   for (let i = 0; i < rows.length; i++) {
-    const row = rows[i]
-
-    if (!row.date || row.amount == null) {
-      errors.push(`Row ${i + 1}: missing date or amount`)
+    const parsedRow = rowSchema.safeParse(rows[i])
+    if (!parsedRow.success) {
+      errors.push(`Zeile ${i + 1}: Datum oder Betrag fehlt bzw. ist ungültig`)
       continue
     }
+    const row = parsedRow.data
 
     const type = row.amount >= 0 ? 'income' : 'expense'
     const amount = Math.abs(row.amount)
