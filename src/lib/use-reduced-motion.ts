@@ -22,7 +22,7 @@ import { useReducedMotion as useFramerReducedMotion } from 'framer-motion'
  * passiert einen Tick später als ganz normaler, unverdächtiger Re-Render
  * statt während der Hydration selbst.
  *
- * Lag als lokale Funktion in `LandingClient.tsx`, bis die Settings-Tabs
+ * Lag als lokale Funktion in der früheren `LandingClient.tsx`, bis die Settings-Tabs
  * denselben Guard brauchten — bewusst gleicher Name wie das Original, damit
  * bestehende `useReducedMotion()`-Aufrufe unverändert diese sichere Fassung
  * bekommen.

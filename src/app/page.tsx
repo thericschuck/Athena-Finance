@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { getAuthUser } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { LandingClient } from '@/components/landing/LandingClient'
+import { LandingContent } from '@/components/landing/LandingContent'
 import { JsonLd } from '@/components/seo/json-ld'
 import { SITE, abs } from '@/lib/seo'
 
@@ -93,7 +93,7 @@ export default async function LandingPage() {
   return (
     <>
       <JsonLd data={STRUCTURED_DATA} />
-      <LandingClient />
+      <LandingContent />
     </>
   )
 }

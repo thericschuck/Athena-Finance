@@ -14,7 +14,7 @@ import { C, F } from '@/components/landing/landing-tokens'
  * Mit dieser Datei bekommt der Browser sofort ein leichtgewichtiges,
  * gebrandetes Bild statt Weiß, und wenn die echte Seite eintrifft, ersetzt
  * React nur den DOM-Knoten — die eigenen Eintritts-Animationen von
- * LandingClient (af-rise, Ranken, Athena) laufen danach unverändert normal
+ * Landing-Komponenten (af-rise, Ranken, Athena) laufen danach unverändert normal
  * an, jetzt aber sichtbar statt teils schon während der Ladezeit verpufft.
  *
  * Bewusst eine Server Component (kein 'use client'): dieser Bildschirm muss
