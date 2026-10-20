@@ -141,7 +141,7 @@
     {
       "path": "scripts/fints/fints_sync.py",
       "language": "python",
-      "sizeLines": 1066,
+      "sizeLines": 1075,
       "fileCategory": "code"
     },
     {
@@ -181,6 +181,12 @@
       "fileCategory": "code"
     },
     {
+      "path": "src/app/(dashboard)/analyse/error.tsx",
+      "language": "typescript",
+      "sizeLines": 10,
+      "fileCategory": "code"
+    },
+    {
       "path": "src/app/(dashboard)/analyse/loading.tsx",
       "language": "typescript",
       "sizeLines": 58,
@@ -189,7 +195,7 @@
     {
       "path": "src/app/(dashboard)/analyse/page.tsx",
       "language": "typescript",
-      "sizeLines": 506,
+      "sizeLines": 492,
       "fileCategory": "code"
     },
     {
@@ -201,7 +207,7 @@
     {
       "path": "src/app/(dashboard)/analyse/verlauf/page.tsx",
       "language": "typescript",
-      "sizeLines": 410,
+      "sizeLines": 385,
       "fileCategory": "code"
     },
     {
@@ -237,7 +243,7 @@
     {
       "path": "src/app/(dashboard)/assistant/page.tsx",
       "language": "typescript",
-      "sizeLines": 45,
+      "sizeLines": 48,
       "fileCategory": "code"
     },
     {
@@ -249,19 +255,25 @@
     {
       "path": "src/app/(dashboard)/crypto/actions.ts",
       "language": "typescript",
-      "sizeLines": 646,
+      "sizeLines": 682,
       "fileCategory": "code"
     },
     {
       "path": "src/app/(dashboard)/crypto/assets/actions.ts",
       "language": "typescript",
-      "sizeLines": 60,
+      "sizeLines": 70,
       "fileCategory": "code"
     },
     {
       "path": "src/app/(dashboard)/crypto/assets/page.tsx",
       "language": "typescript",
       "sizeLines": 20,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/app/(dashboard)/crypto/error.tsx",
+      "language": "typescript",
+      "sizeLines": 10,
       "fileCategory": "code"
     },
     {
@@ -279,13 +291,13 @@
     {
       "path": "src/app/(dashboard)/crypto/page.tsx",
       "language": "typescript",
-      "sizeLines": 278,
+      "sizeLines": 224,
       "fileCategory": "code"
     },
     {
       "path": "src/app/(dashboard)/crypto/rebalancing/page.tsx",
       "language": "typescript",
-      "sizeLines": 77,
+      "sizeLines": 70,
       "fileCategory": "code"
     },
     {
@@ -303,7 +315,13 @@
     {
       "path": "src/app/(dashboard)/dashboard/page.tsx",
       "language": "typescript",
-      "sizeLines": 734,
+      "sizeLines": 586,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/app/(dashboard)/depot/error.tsx",
+      "language": "typescript",
+      "sizeLines": 10,
       "fileCategory": "code"
     },
     {
@@ -319,15 +337,21 @@
       "fileCategory": "code"
     },
     {
+      "path": "src/app/(dashboard)/error.tsx",
+      "language": "typescript",
+      "sizeLines": 10,
+      "fileCategory": "code"
+    },
+    {
       "path": "src/app/(dashboard)/finance/(planung)/contracts/[id]/page.tsx",
       "language": "typescript",
-      "sizeLines": 199,
+      "sizeLines": 188,
       "fileCategory": "code"
     },
     {
       "path": "src/app/(dashboard)/finance/(planung)/contracts/actions.ts",
       "language": "typescript",
-      "sizeLines": 116,
+      "sizeLines": 101,
       "fileCategory": "code"
     },
     {
@@ -339,13 +363,13 @@
     {
       "path": "src/app/(dashboard)/finance/(planung)/contracts/page.tsx",
       "language": "typescript",
-      "sizeLines": 394,
+      "sizeLines": 395,
       "fileCategory": "code"
     },
     {
       "path": "src/app/(dashboard)/finance/(planung)/debts/actions.ts",
       "language": "typescript",
-      "sizeLines": 179,
+      "sizeLines": 182,
       "fileCategory": "code"
     },
     {
@@ -357,13 +381,13 @@
     {
       "path": "src/app/(dashboard)/finance/(planung)/debts/page.tsx",
       "language": "typescript",
-      "sizeLines": 285,
+      "sizeLines": 274,
       "fileCategory": "code"
     },
     {
       "path": "src/app/(dashboard)/finance/(planung)/goals/actions.ts",
       "language": "typescript",
-      "sizeLines": 146,
+      "sizeLines": 156,
       "fileCategory": "code"
     },
     {
@@ -375,7 +399,7 @@
     {
       "path": "src/app/(dashboard)/finance/(planung)/goals/page.tsx",
       "language": "typescript",
-      "sizeLines": 291,
+      "sizeLines": 284,
       "fileCategory": "code"
     },
     {
@@ -387,7 +411,7 @@
     {
       "path": "src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts",
       "language": "typescript",
-      "sizeLines": 124,
+      "sizeLines": 121,
       "fileCategory": "code"
     },
     {
@@ -399,7 +423,7 @@
     {
       "path": "src/app/(dashboard)/finance/(transaktionen)/categories/page.tsx",
       "language": "typescript",
-      "sizeLines": 230,
+      "sizeLines": 69,
       "fileCategory": "code"
     },
     {
@@ -411,7 +435,7 @@
     {
       "path": "src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts",
       "language": "typescript",
-      "sizeLines": 141,
+      "sizeLines": 177,
       "fileCategory": "code"
     },
     {
@@ -423,19 +447,19 @@
     {
       "path": "src/app/(dashboard)/finance/(transaktionen)/transactions/page.tsx",
       "language": "typescript",
-      "sizeLines": 345,
+      "sizeLines": 314,
       "fileCategory": "code"
     },
     {
       "path": "src/app/(dashboard)/finance/accounts/[id]/page.tsx",
       "language": "typescript",
-      "sizeLines": 516,
+      "sizeLines": 483,
       "fileCategory": "code"
     },
     {
       "path": "src/app/(dashboard)/finance/accounts/actions.ts",
       "language": "typescript",
-      "sizeLines": 90,
+      "sizeLines": 87,
       "fileCategory": "code"
     },
     {
@@ -447,13 +471,13 @@
     {
       "path": "src/app/(dashboard)/finance/accounts/page.tsx",
       "language": "typescript",
-      "sizeLines": 374,
+      "sizeLines": 357,
       "fileCategory": "code"
     },
     {
       "path": "src/app/(dashboard)/finance/budget/actions.ts",
       "language": "typescript",
-      "sizeLines": 196,
+      "sizeLines": 201,
       "fileCategory": "code"
     },
     {
@@ -465,7 +489,7 @@
     {
       "path": "src/app/(dashboard)/finance/budget/page.tsx",
       "language": "typescript",
-      "sizeLines": 60,
+      "sizeLines": 57,
       "fileCategory": "code"
     },
     {
@@ -489,13 +513,13 @@
     {
       "path": "src/app/(dashboard)/finance/reports/actions.ts",
       "language": "typescript",
-      "sizeLines": 111,
+      "sizeLines": 116,
       "fileCategory": "code"
     },
     {
       "path": "src/app/(dashboard)/finance/reports/page.tsx",
       "language": "typescript",
-      "sizeLines": 46,
+      "sizeLines": 35,
       "fileCategory": "code"
     },
     {
@@ -519,7 +543,7 @@
     {
       "path": "src/app/(dashboard)/inventar/actions.ts",
       "language": "typescript",
-      "sizeLines": 364,
+      "sizeLines": 416,
       "fileCategory": "code"
     },
     {
@@ -531,7 +555,7 @@
     {
       "path": "src/app/(dashboard)/inventar/page.tsx",
       "language": "typescript",
-      "sizeLines": 177,
+      "sizeLines": 156,
       "fileCategory": "code"
     },
     {
@@ -555,7 +579,7 @@
     {
       "path": "src/app/(dashboard)/settings/actions.ts",
       "language": "typescript",
-      "sizeLines": 291,
+      "sizeLines": 347,
       "fileCategory": "code"
     },
     {
@@ -567,31 +591,31 @@
     {
       "path": "src/app/(dashboard)/settings/page.tsx",
       "language": "typescript",
-      "sizeLines": 37,
+      "sizeLines": 32,
       "fileCategory": "code"
     },
     {
       "path": "src/app/(dashboard)/strategy/combos/actions.ts",
       "language": "typescript",
-      "sizeLines": 168,
+      "sizeLines": 172,
       "fileCategory": "code"
     },
     {
       "path": "src/app/(dashboard)/strategy/combos/page.tsx",
       "language": "typescript",
-      "sizeLines": 200,
+      "sizeLines": 162,
       "fileCategory": "code"
     },
     {
       "path": "src/app/(dashboard)/strategy/indicators/actions.ts",
       "language": "typescript",
-      "sizeLines": 214,
+      "sizeLines": 171,
       "fileCategory": "code"
     },
     {
       "path": "src/app/(dashboard)/strategy/indicators/page.tsx",
       "language": "typescript",
-      "sizeLines": 150,
+      "sizeLines": 130,
       "fileCategory": "code"
     },
     {
@@ -621,25 +645,25 @@
     {
       "path": "src/app/(dashboard)/strategy/strategies/actions.ts",
       "language": "typescript",
-      "sizeLines": 129,
+      "sizeLines": 134,
       "fileCategory": "code"
     },
     {
       "path": "src/app/(dashboard)/strategy/strategies/page.tsx",
       "language": "typescript",
-      "sizeLines": 182,
+      "sizeLines": 168,
       "fileCategory": "code"
     },
     {
       "path": "src/app/(dashboard)/strategy/tests/page.tsx",
       "language": "typescript",
-      "sizeLines": 95,
+      "sizeLines": 81,
       "fileCategory": "code"
     },
     {
       "path": "src/app/actions/depot.ts",
       "language": "typescript",
-      "sizeLines": 463,
+      "sizeLines": 349,
       "fileCategory": "code"
     },
     {
@@ -675,31 +699,31 @@
     {
       "path": "src/app/api/bank/sync/route.ts",
       "language": "typescript",
-      "sizeLines": 133,
+      "sizeLines": 80,
       "fileCategory": "code"
     },
     {
       "path": "src/app/api/bank/transactions/[id]/route.ts",
       "language": "typescript",
-      "sizeLines": 35,
+      "sizeLines": 42,
       "fileCategory": "code"
     },
     {
       "path": "src/app/api/bank/transactions/route.ts",
       "language": "typescript",
-      "sizeLines": 47,
+      "sizeLines": 61,
       "fileCategory": "code"
     },
     {
       "path": "src/app/api/bank/transactions/suggest-categories/route.ts",
       "language": "typescript",
-      "sizeLines": 76,
+      "sizeLines": 75,
       "fileCategory": "code"
     },
     {
       "path": "src/app/api/cron/bank-sync/route.ts",
       "language": "typescript",
-      "sizeLines": 121,
+      "sizeLines": 120,
       "fileCategory": "code"
     },
     {
@@ -723,7 +747,7 @@
     {
       "path": "src/app/api/cron/kraken-sync/route.ts",
       "language": "typescript",
-      "sizeLines": 78,
+      "sizeLines": 77,
       "fileCategory": "code"
     },
     {
@@ -735,7 +759,7 @@
     {
       "path": "src/app/api/crypto/prices/route.ts",
       "language": "typescript",
-      "sizeLines": 114,
+      "sizeLines": 126,
       "fileCategory": "code"
     },
     {
@@ -747,25 +771,25 @@
     {
       "path": "src/app/api/depot/live-price/route.ts",
       "language": "typescript",
-      "sizeLines": 31,
+      "sizeLines": 42,
       "fileCategory": "code"
     },
     {
       "path": "src/app/api/export/euer/route.ts",
       "language": "typescript",
-      "sizeLines": 164,
+      "sizeLines": 175,
       "fileCategory": "code"
     },
     {
       "path": "src/app/api/export/indicators/route.ts",
       "language": "typescript",
-      "sizeLines": 49,
+      "sizeLines": 56,
       "fileCategory": "code"
     },
     {
       "path": "src/app/api/export/transactions/route.ts",
       "language": "typescript",
-      "sizeLines": 85,
+      "sizeLines": 93,
       "fileCategory": "code"
     },
     {
@@ -777,19 +801,19 @@
     {
       "path": "src/app/api/import/indicators/route.ts",
       "language": "typescript",
-      "sizeLines": 86,
+      "sizeLines": 85,
       "fileCategory": "code"
     },
     {
       "path": "src/app/api/import/transactions/route.ts",
       "language": "typescript",
-      "sizeLines": 97,
+      "sizeLines": 107,
       "fileCategory": "code"
     },
     {
       "path": "src/app/api/inventar/artwork/route.ts",
       "language": "typescript",
-      "sizeLines": 68,
+      "sizeLines": 74,
       "fileCategory": "code"
     },
     {
@@ -811,9 +835,15 @@
       "fileCategory": "code"
     },
     {
+      "path": "src/app/global-error.tsx",
+      "language": "typescript",
+      "sizeLines": 47,
+      "fileCategory": "code"
+    },
+    {
       "path": "src/app/globals.css",
       "language": "css",
-      "sizeLines": 874,
+      "sizeLines": 885,
       "fileCategory": "markup"
     },
     {
@@ -843,7 +873,7 @@
     {
       "path": "src/app/layout.tsx",
       "language": "typescript",
-      "sizeLines": 113,
+      "sizeLines": 125,
       "fileCategory": "code"
     },
     {
@@ -861,7 +891,7 @@
     {
       "path": "src/app/login/actions.ts",
       "language": "typescript",
-      "sizeLines": 52,
+      "sizeLines": 66,
       "fileCategory": "code"
     },
     {
@@ -933,7 +963,7 @@
     {
       "path": "src/components/analyse/GeldflussChart-impl.tsx",
       "language": "typescript",
-      "sizeLines": 191,
+      "sizeLines": 218,
       "fileCategory": "code"
     },
     {
@@ -957,7 +987,7 @@
     {
       "path": "src/components/analyse/MonatsVergleich-impl.tsx",
       "language": "typescript",
-      "sizeLines": 228,
+      "sizeLines": 251,
       "fileCategory": "code"
     },
     {
@@ -969,7 +999,7 @@
     {
       "path": "src/components/analyse/MonatsVerteilung.tsx",
       "language": "typescript",
-      "sizeLines": 595,
+      "sizeLines": 753,
       "fileCategory": "code"
     },
     {
@@ -1137,7 +1167,7 @@
     {
       "path": "src/components/crypto/asset-table.tsx",
       "language": "typescript",
-      "sizeLines": 334,
+      "sizeLines": 314,
       "fileCategory": "code"
     },
     {
@@ -1150,6 +1180,12 @@
       "path": "src/components/crypto/coin-combobox.tsx",
       "language": "typescript",
       "sizeLines": 171,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/crypto/kraken-asset-combobox.tsx",
+      "language": "typescript",
+      "sizeLines": 166,
       "fileCategory": "code"
     },
     {
@@ -1179,13 +1215,13 @@
     {
       "path": "src/components/crypto/portfolio-donut.tsx",
       "language": "typescript",
-      "sizeLines": 112,
+      "sizeLines": 101,
       "fileCategory": "code"
     },
     {
       "path": "src/components/crypto/portfolio-overview.tsx",
       "language": "typescript",
-      "sizeLines": 259,
+      "sizeLines": 282,
       "fileCategory": "code"
     },
     {
@@ -1195,15 +1231,15 @@
       "fileCategory": "code"
     },
     {
-      "path": "src/components/crypto/rebalancing-calculator.tsx",
+      "path": "src/components/crypto/rebalance-banner.tsx",
       "language": "typescript",
-      "sizeLines": 284,
+      "sizeLines": 67,
       "fileCategory": "code"
     },
     {
-      "path": "src/components/crypto/strategy-signals.tsx",
+      "path": "src/components/crypto/rebalancing-calculator.tsx",
       "language": "typescript",
-      "sizeLines": 368,
+      "sizeLines": 391,
       "fileCategory": "code"
     },
     {
@@ -1221,7 +1257,7 @@
     {
       "path": "src/components/dashboard/finance-analytics.tsx",
       "language": "typescript",
-      "sizeLines": 352,
+      "sizeLines": 356,
       "fileCategory": "code"
     },
     {
@@ -1303,21 +1339,33 @@
       "fileCategory": "code"
     },
     {
+      "path": "src/components/finance/categories-view.tsx",
+      "language": "typescript",
+      "sizeLines": 327,
+      "fileCategory": "code"
+    },
+    {
       "path": "src/components/finance/category-form.tsx",
       "language": "typescript",
-      "sizeLines": 477,
+      "sizeLines": 503,
       "fileCategory": "code"
     },
     {
       "path": "src/components/finance/contract-form.tsx",
       "language": "typescript",
-      "sizeLines": 349,
+      "sizeLines": 350,
       "fileCategory": "code"
     },
     {
       "path": "src/components/finance/debt-payment-form.tsx",
       "language": "typescript",
-      "sizeLines": 538,
+      "sizeLines": 597,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/finance/debt-suggestion.tsx",
+      "language": "typescript",
+      "sizeLines": 134,
       "fileCategory": "code"
     },
     {
@@ -1329,7 +1377,7 @@
     {
       "path": "src/components/finance/goal-form.tsx",
       "language": "typescript",
-      "sizeLines": 321,
+      "sizeLines": 320,
       "fileCategory": "code"
     },
     {
@@ -1341,13 +1389,13 @@
     {
       "path": "src/components/finance/transaction-filters.tsx",
       "language": "typescript",
-      "sizeLines": 163,
+      "sizeLines": 171,
       "fileCategory": "code"
     },
     {
       "path": "src/components/finance/transaction-form.tsx",
       "language": "typescript",
-      "sizeLines": 605,
+      "sizeLines": 791,
       "fileCategory": "code"
     },
     {
@@ -1389,19 +1437,127 @@
     {
       "path": "src/components/landing/DashboardMock.tsx",
       "language": "typescript",
-      "sizeLines": 1766,
+      "sizeLines": 298,
       "fileCategory": "code"
     },
     {
-      "path": "src/components/landing/LandingClient.tsx",
+      "path": "src/components/landing/LandingContent.tsx",
       "language": "typescript",
-      "sizeLines": 4586,
+      "sizeLines": 80,
       "fileCategory": "code"
     },
     {
       "path": "src/components/landing/SmoothScrollProvider.tsx",
       "language": "typescript",
       "sizeLines": 165,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/dashboard-mock/mock-data.ts",
+      "language": "typescript",
+      "sizeLines": 434,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/dashboard-mock/mock-hooks.ts",
+      "language": "typescript",
+      "sizeLines": 136,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/dashboard-mock/mock-primitives.tsx",
+      "language": "typescript",
+      "sizeLines": 268,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/dashboard-mock/mock-static.tsx",
+      "language": "typescript",
+      "sizeLines": 105,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/dashboard-mock/views/AnalyseView.tsx",
+      "language": "typescript",
+      "sizeLines": 88,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/dashboard-mock/views/AthenaView.tsx",
+      "language": "typescript",
+      "sizeLines": 123,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/dashboard-mock/views/CryptoView.tsx",
+      "language": "typescript",
+      "sizeLines": 141,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/dashboard-mock/views/DashboardView.tsx",
+      "language": "typescript",
+      "sizeLines": 234,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/islands/CustomCursor.tsx",
+      "language": "typescript",
+      "sizeLines": 120,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/islands/ExtrasCarousel.tsx",
+      "language": "typescript",
+      "sizeLines": 205,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/islands/ExtrasJumpButton.tsx",
+      "language": "typescript",
+      "sizeLines": 34,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/islands/FooterSections.tsx",
+      "language": "typescript",
+      "sizeLines": 33,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/islands/HeroParallax.tsx",
+      "language": "typescript",
+      "sizeLines": 55,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/islands/InstrumentariumVines.tsx",
+      "language": "typescript",
+      "sizeLines": 82,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/islands/LandingProviders.tsx",
+      "language": "typescript",
+      "sizeLines": 21,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/islands/Reveal.tsx",
+      "language": "typescript",
+      "sizeLines": 153,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/islands/SectionProgressBar.tsx",
+      "language": "typescript",
+      "sizeLines": 344,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/islands/gsap-setup.ts",
+      "language": "typescript",
+      "sizeLines": 12,
       "fileCategory": "code"
     },
     {
@@ -1426,6 +1582,162 @@
       "path": "src/components/landing/scroll-control.ts",
       "language": "typescript",
       "sizeLines": 59,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/sections/ExtrasSection.tsx",
+      "language": "typescript",
+      "sizeLines": 67,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/sections/Hero.tsx",
+      "language": "typescript",
+      "sizeLines": 150,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/sections/InstrumentariumSection.tsx",
+      "language": "typescript",
+      "sizeLines": 219,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/sections/SiteFooter.tsx",
+      "language": "typescript",
+      "sizeLines": 113,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/sections/SiteHeader.tsx",
+      "language": "typescript",
+      "sizeLines": 62,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/sections/WaitlistSection.tsx",
+      "language": "typescript",
+      "sizeLines": 141,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/sections/WegSection.tsx",
+      "language": "typescript",
+      "sizeLines": 143,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/sections/analyse/AnalyseCandles.tsx",
+      "language": "typescript",
+      "sizeLines": 286,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/sections/analyse/AnalyseDeck.tsx",
+      "language": "typescript",
+      "sizeLines": 128,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/sections/analyse/AnalyseReveal.tsx",
+      "language": "typescript",
+      "sizeLines": 344,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/sections/analyse/AnalyseSection.tsx",
+      "language": "typescript",
+      "sizeLines": 24,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/sections/analyse/CardDiverging.tsx",
+      "language": "typescript",
+      "sizeLines": 72,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/sections/analyse/analyse-cards.tsx",
+      "language": "typescript",
+      "sizeLines": 307,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/sections/pediment/PedimentReveal.tsx",
+      "language": "typescript",
+      "sizeLines": 691,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/sections/pediment/PedimentSection.tsx",
+      "language": "typescript",
+      "sizeLines": 48,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/sections/pediment/StatsBandFallback.tsx",
+      "language": "typescript",
+      "sizeLines": 50,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/sections/pillars/PillarsReveal.tsx",
+      "language": "typescript",
+      "sizeLines": 518,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/sections/pillars/PillarsSection.tsx",
+      "language": "typescript",
+      "sizeLines": 23,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/shared/analyse-config.ts",
+      "language": "typescript",
+      "sizeLines": 30,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/shared/editorial.tsx",
+      "language": "typescript",
+      "sizeLines": 141,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/shared/hash-noise.ts",
+      "language": "typescript",
+      "sizeLines": 25,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/shared/layout.ts",
+      "language": "typescript",
+      "sizeLines": 8,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/shared/mini-visuals.tsx",
+      "language": "typescript",
+      "sizeLines": 99,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/shared/motion.ts",
+      "language": "typescript",
+      "sizeLines": 3,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/shared/nav-sections.ts",
+      "language": "typescript",
+      "sizeLines": 32,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/landing/shared/stats.ts",
+      "language": "typescript",
+      "sizeLines": 13,
       "fileCategory": "code"
     },
     {
@@ -1503,7 +1815,7 @@
     {
       "path": "src/components/providers/settings-context.tsx",
       "language": "typescript",
-      "sizeLines": 85,
+      "sizeLines": 94,
       "fileCategory": "code"
     },
     {
@@ -1527,7 +1839,7 @@
     {
       "path": "src/components/settings/appearance-form.tsx",
       "language": "typescript",
-      "sizeLines": 491,
+      "sizeLines": 496,
       "fileCategory": "code"
     },
     {
@@ -1651,6 +1963,12 @@
       "fileCategory": "code"
     },
     {
+      "path": "src/components/ui/collapsible.tsx",
+      "language": "typescript",
+      "sizeLines": 27,
+      "fileCategory": "code"
+    },
+    {
       "path": "src/components/ui/confirm-dialog.tsx",
       "language": "typescript",
       "sizeLines": 94,
@@ -1660,6 +1978,12 @@
       "path": "src/components/ui/dialog.tsx",
       "language": "typescript",
       "sizeLines": 158,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/ui/error-fallback.tsx",
+      "language": "typescript",
+      "sizeLines": 39,
       "fileCategory": "code"
     },
     {
@@ -1755,13 +2079,121 @@
     {
       "path": "src/lib/analyseData.ts",
       "language": "typescript",
-      "sizeLines": 74,
+      "sizeLines": 81,
       "fileCategory": "code"
     },
     {
-      "path": "src/lib/assistant/actions.ts",
+      "path": "src/lib/api/auth.ts",
       "language": "typescript",
-      "sizeLines": 1430,
+      "sizeLines": 43,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/api/cron-auth.test.ts",
+      "language": "typescript",
+      "sizeLines": 57,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/api/cron-auth.ts",
+      "language": "typescript",
+      "sizeLines": 21,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/api/parse.ts",
+      "language": "typescript",
+      "sizeLines": 57,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/api/schemas.test.ts",
+      "language": "typescript",
+      "sizeLines": 168,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/api/schemas.ts",
+      "language": "typescript",
+      "sizeLines": 121,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/api/validate.ts",
+      "language": "typescript",
+      "sizeLines": 63,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/actions/bank.ts",
+      "language": "typescript",
+      "sizeLines": 61,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/actions/categories.ts",
+      "language": "typescript",
+      "sizeLines": 675,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/actions/contracts.ts",
+      "language": "typescript",
+      "sizeLines": 121,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/actions/crypto.ts",
+      "language": "typescript",
+      "sizeLines": 172,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/actions/format.ts",
+      "language": "typescript",
+      "sizeLines": 48,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/actions/goals.ts",
+      "language": "typescript",
+      "sizeLines": 128,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/actions/index.ts",
+      "language": "typescript",
+      "sizeLines": 172,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/actions/insights.ts",
+      "language": "typescript",
+      "sizeLines": 48,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/actions/inventory.ts",
+      "language": "typescript",
+      "sizeLines": 168,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/actions/shared.ts",
+      "language": "typescript",
+      "sizeLines": 39,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/actions/transactions.ts",
+      "language": "typescript",
+      "sizeLines": 85,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/actions/types.ts",
+      "language": "typescript",
+      "sizeLines": 65,
       "fileCategory": "code"
     },
     {
@@ -1819,15 +2251,123 @@
       "fileCategory": "code"
     },
     {
-      "path": "src/lib/assistant/tools.ts",
+      "path": "src/lib/assistant/tools/account-history.ts",
       "language": "typescript",
-      "sizeLines": 1738,
+      "sizeLines": 53,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/tools/accounts.ts",
+      "language": "typescript",
+      "sizeLines": 51,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/tools/categories.ts",
+      "language": "typescript",
+      "sizeLines": 160,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/tools/chart.ts",
+      "language": "typescript",
+      "sizeLines": 50,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/tools/data-quality.ts",
+      "language": "typescript",
+      "sizeLines": 242,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/tools/index.ts",
+      "language": "typescript",
+      "sizeLines": 70,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/tools/insights.ts",
+      "language": "typescript",
+      "sizeLines": 38,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/tools/inventory.ts",
+      "language": "typescript",
+      "sizeLines": 111,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/tools/memory.ts",
+      "language": "typescript",
+      "sizeLines": 161,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/tools/obligations.ts",
+      "language": "typescript",
+      "sizeLines": 259,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/tools/planning.ts",
+      "language": "typescript",
+      "sizeLines": 86,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/tools/portfolio.ts",
+      "language": "typescript",
+      "sizeLines": 95,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/tools/proposals.ts",
+      "language": "typescript",
+      "sizeLines": 45,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/tools/recurring.ts",
+      "language": "typescript",
+      "sizeLines": 94,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/tools/savings-plans.ts",
+      "language": "typescript",
+      "sizeLines": 36,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/tools/shared.ts",
+      "language": "typescript",
+      "sizeLines": 46,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/tools/tax.ts",
+      "language": "typescript",
+      "sizeLines": 108,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/tools/transactions.ts",
+      "language": "typescript",
+      "sizeLines": 110,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/assistant/tools/user-settings.ts",
+      "language": "typescript",
+      "sizeLines": 57,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/crypto/coin-registry.ts",
       "language": "typescript",
-      "sizeLines": 77,
+      "sizeLines": 78,
       "fileCategory": "code"
     },
     {
@@ -1837,21 +2377,87 @@
       "fileCategory": "code"
     },
     {
-      "path": "src/lib/crypto/rebalancing-defaults.ts",
+      "path": "src/lib/crypto/rebalance-plan.test.ts",
       "language": "typescript",
-      "sizeLines": 57,
+      "sizeLines": 177,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/crypto/rebalance-plan.ts",
+      "language": "typescript",
+      "sizeLines": 390,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/crypto/rebalancing.ts",
       "language": "typescript",
-      "sizeLines": 244,
+      "sizeLines": 137,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/csv.ts",
       "language": "typescript",
       "sizeLines": 102,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/data/crypto.ts",
+      "language": "typescript",
+      "sizeLines": 141,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/data/depot.ts",
+      "language": "typescript",
+      "sizeLines": 236,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/data/finance-accounts.ts",
+      "language": "typescript",
+      "sizeLines": 85,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/data/finance-budget.ts",
+      "language": "typescript",
+      "sizeLines": 89,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/data/finance-planning.ts",
+      "language": "typescript",
+      "sizeLines": 116,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/data/finance-transactions.ts",
+      "language": "typescript",
+      "sizeLines": 210,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/data/inventar.ts",
+      "language": "typescript",
+      "sizeLines": 59,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/data/overview.ts",
+      "language": "typescript",
+      "sizeLines": 409,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/data/settings.ts",
+      "language": "typescript",
+      "sizeLines": 48,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/data/strategy.ts",
+      "language": "typescript",
+      "sizeLines": 213,
       "fileCategory": "code"
     },
     {
@@ -1867,9 +2473,45 @@
       "fileCategory": "code"
     },
     {
+      "path": "src/lib/finance/category-groups.test.ts",
+      "language": "typescript",
+      "sizeLines": 32,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/finance/category-groups.ts",
+      "language": "typescript",
+      "sizeLines": 39,
+      "fileCategory": "code"
+    },
+    {
       "path": "src/lib/finance/contract-constants.ts",
       "language": "typescript",
       "sizeLines": 24,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/finance/dashboard-calc.test.ts",
+      "language": "typescript",
+      "sizeLines": 74,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/finance/dashboard-calc.ts",
+      "language": "typescript",
+      "sizeLines": 178,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/finance/schulden-match.test.ts",
+      "language": "typescript",
+      "sizeLines": 32,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/finance/schulden-match.ts",
+      "language": "typescript",
+      "sizeLines": 32,
       "fileCategory": "code"
     },
     {
@@ -1885,27 +2527,57 @@
       "fileCategory": "code"
     },
     {
+      "path": "src/lib/fints/categorize-learned.test.ts",
+      "language": "typescript",
+      "sizeLines": 58,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/fints/categorize.test.ts",
+      "language": "typescript",
+      "sizeLines": 58,
+      "fileCategory": "code"
+    },
+    {
       "path": "src/lib/fints/categorize.ts",
       "language": "typescript",
-      "sizeLines": 223,
+      "sizeLines": 259,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/fints/index.ts",
       "language": "typescript",
-      "sizeLines": 676,
+      "sizeLines": 663,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/fints/sca.test.ts",
+      "language": "typescript",
+      "sizeLines": 55,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/fints/sca.ts",
+      "language": "typescript",
+      "sizeLines": 16,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/fints/sidecar.ts",
       "language": "typescript",
-      "sizeLines": 279,
+      "sizeLines": 280,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/fints/state.ts",
       "language": "typescript",
       "sizeLines": 156,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/fints/user-sync.ts",
+      "language": "typescript",
+      "sizeLines": 101,
       "fileCategory": "code"
     },
     {
@@ -1951,6 +2623,12 @@
       "fileCategory": "code"
     },
     {
+      "path": "src/lib/kraken/cost-basis.test.ts",
+      "language": "typescript",
+      "sizeLines": 56,
+      "fileCategory": "code"
+    },
+    {
       "path": "src/lib/kraken/cost-basis.ts",
       "language": "typescript",
       "sizeLines": 48,
@@ -1965,13 +2643,37 @@
     {
       "path": "src/lib/kraken/index.ts",
       "language": "typescript",
-      "sizeLines": 320,
+      "sizeLines": 417,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/kraken/orders.ts",
+      "language": "typescript",
+      "sizeLines": 117,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/kraken/rebalance-execution.ts",
+      "language": "typescript",
+      "sizeLines": 166,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/kraken/symbols.test.ts",
+      "language": "typescript",
+      "sizeLines": 46,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/kraken/symbols.ts",
+      "language": "typescript",
+      "sizeLines": 45,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/kraken/sync.ts",
       "language": "typescript",
-      "sizeLines": 282,
+      "sizeLines": 263,
       "fileCategory": "code"
     },
     {
@@ -1996,6 +2698,12 @@
       "path": "src/lib/reports/email.ts",
       "language": "typescript",
       "sizeLines": 41,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/reports/period.test.ts",
+      "language": "typescript",
+      "sizeLines": 63,
       "fileCategory": "code"
     },
     {
@@ -2031,7 +2739,7 @@
     {
       "path": "src/lib/settings.ts",
       "language": "typescript",
-      "sizeLines": 31,
+      "sizeLines": 18,
       "fileCategory": "code"
     },
     {
@@ -2151,7 +2859,7 @@
     {
       "path": "src/types/database.ts",
       "language": "typescript",
-      "sizeLines": 3754,
+      "sizeLines": 3856,
       "fileCategory": "code"
     },
     {
@@ -2503,6 +3211,42 @@
       "fileCategory": "data"
     },
     {
+      "path": "supabase/migrations/20260918130000_kraken_order_log.sql",
+      "language": "sql",
+      "sizeLines": 45,
+      "fileCategory": "data"
+    },
+    {
+      "path": "supabase/migrations/20260918140000_debt_payments_bank_transaction_link.sql",
+      "language": "sql",
+      "sizeLines": 15,
+      "fileCategory": "data"
+    },
+    {
+      "path": "supabase/migrations/20261020120000_balance_and_valuation_views.sql",
+      "language": "sql",
+      "sizeLines": 69,
+      "fileCategory": "data"
+    },
+    {
+      "path": "supabase/migrations/20261020130000_views_security_invoker.sql",
+      "language": "sql",
+      "sizeLines": 19,
+      "fileCategory": "data"
+    },
+    {
+      "path": "supabase/migrations/20261020140000_revoke_definer_execute.sql",
+      "language": "sql",
+      "sizeLines": 31,
+      "fileCategory": "data"
+    },
+    {
+      "path": "supabase/migrations/20261020150000_pin_function_search_path.sql",
+      "language": "sql",
+      "sizeLines": 14,
+      "fileCategory": "data"
+    },
+    {
       "path": "supabase/migrations/add_contract_to_account.sql",
       "language": "sql",
       "sizeLines": 5,
@@ -2551,9 +3295,9 @@
       "fileCategory": "config"
     }
   ],
-  "totalFiles": 420,
-  "filteredByIgnore": 274,
-  "estimatedComplexity": "large",
+  "totalFiles": 544,
+  "filteredByIgnore": 187,
+  "estimatedComplexity": "very-large",
   "importMap": {
     "CLAUDE.md": [],
     "README.md": [],
@@ -2594,6 +3338,9 @@
       "src/lib/period.ts",
       "src/types/bank.ts"
     ],
+    "src/app/(dashboard)/analyse/error.tsx": [
+      "src/components/ui/error-fallback.tsx"
+    ],
     "src/app/(dashboard)/analyse/loading.tsx": [
       "src/components/ui/skeleton.tsx"
     ],
@@ -2608,6 +3355,7 @@
       "src/components/analyse/MonatsVerteilung.tsx",
       "src/components/providers/url-filters.tsx",
       "src/lib/analyseData.ts",
+      "src/lib/data/overview.ts",
       "src/lib/period.ts",
       "src/lib/settings.ts",
       "src/lib/supabase/server.ts"
@@ -2616,12 +3364,14 @@
       "src/components/ui/skeleton.tsx"
     ],
     "src/app/(dashboard)/analyse/verlauf/page.tsx": [
+      "src/lib/data/overview.ts",
       "src/lib/format.ts",
       "src/lib/settings.ts",
-      "src/lib/supabase/server.ts"
+      "src/lib/supabase/server.ts",
+      "src/types/database.ts"
     ],
     "src/app/(dashboard)/assistant/actions.ts": [
-      "src/lib/assistant/actions.ts",
+      "src/lib/assistant/actions/index.ts",
       "src/lib/assistant/logger.ts",
       "src/lib/assistant/prompts.ts",
       "src/lib/assistant/sessions.ts",
@@ -2660,9 +3410,14 @@
       "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/crypto/actions.ts": [
+      "src/lib/api/schemas.ts",
+      "src/lib/api/validate.ts",
+      "src/lib/assistant/actions/index.ts",
+      "src/lib/assistant/logger.ts",
       "src/lib/crypto/coin-registry.ts",
       "src/lib/crypto/coingecko.ts",
-      "src/lib/crypto/rebalancing-defaults.ts",
+      "src/lib/crypto/rebalancing.ts",
+      "src/lib/data/crypto.ts",
       "src/lib/encryption.ts",
       "src/lib/kraken/futures.ts",
       "src/lib/kraken/index.ts",
@@ -2672,7 +3427,9 @@
       "src/types/database.ts"
     ],
     "src/app/(dashboard)/crypto/assets/actions.ts": [
+      "src/lib/api/validate.ts",
       "src/lib/crypto/coin-registry.ts",
+      "src/lib/data/crypto.ts",
       "src/lib/supabase/server.ts",
       "src/types/database.ts"
     ],
@@ -2680,6 +3437,9 @@
       "src/app/(dashboard)/crypto/assets/actions.ts",
       "src/components/crypto/coin-catalog-manager.tsx",
       "src/lib/crypto/coin-registry.ts"
+    ],
+    "src/app/(dashboard)/crypto/error.tsx": [
+      "src/components/ui/error-fallback.tsx"
     ],
     "src/app/(dashboard)/crypto/layout.tsx": [
       "src/components/layout/section-tabs.tsx"
@@ -2692,16 +3452,19 @@
       "src/components/crypto/open-positions-card.tsx",
       "src/components/crypto/portfolio-overview.tsx",
       "src/components/crypto/portfolio-switcher.tsx",
+      "src/components/crypto/rebalance-banner.tsx",
       "src/lib/crypto/coingecko.ts",
       "src/lib/crypto/rebalancing.ts",
+      "src/lib/data/crypto.ts",
       "src/lib/format.ts",
       "src/lib/settings.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/crypto/rebalancing/page.tsx": [
       "src/app/(dashboard)/crypto/actions.ts",
-      "src/components/crypto/portfolio-overview.tsx",
       "src/components/crypto/rebalancing-calculator.tsx",
+      "src/lib/data/crypto.ts",
+      "src/lib/kraken/index.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/dashboard/insight-actions.ts": [
@@ -2721,9 +3484,14 @@
       "src/components/dashboard/rebalancing-alert.tsx",
       "src/components/finance/fixed-costs-widget.tsx",
       "src/lib/crypto/rebalancing.ts",
+      "src/lib/data/overview.ts",
+      "src/lib/finance/dashboard-calc.ts",
       "src/lib/format.ts",
       "src/lib/settings.ts",
       "src/lib/supabase/server.ts"
+    ],
+    "src/app/(dashboard)/depot/error.tsx": [
+      "src/components/ui/error-fallback.tsx"
     ],
     "src/app/(dashboard)/depot/loading.tsx": [
       "src/components/ui/skeleton.tsx"
@@ -2732,30 +3500,41 @@
       "src/components/depot/DepotDashboard.tsx",
       "src/lib/supabase/server.ts"
     ],
+    "src/app/(dashboard)/error.tsx": [
+      "src/components/ui/error-fallback.tsx"
+    ],
     "src/app/(dashboard)/finance/(planung)/contracts/[id]/page.tsx": [
       "src/components/finance/contract-form.tsx",
+      "src/lib/data/finance-accounts.ts",
+      "src/lib/data/finance-planning.ts",
+      "src/lib/data/finance-transactions.ts",
       "src/lib/finance/contract-constants.ts",
       "src/lib/format.ts",
       "src/lib/settings.ts",
-      "src/lib/supabase/server.ts",
-      "src/types/database.ts"
+      "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/finance/(planung)/contracts/actions.ts": [
+      "src/lib/api/schemas.ts",
+      "src/lib/api/validate.ts",
+      "src/lib/finance/contract-constants.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/finance/(planung)/contracts/loading.tsx": [
       "src/components/ui/skeleton.tsx"
     ],
     "src/app/(dashboard)/finance/(planung)/contracts/page.tsx": [
-      "src/app/actions/depot.ts",
       "src/components/finance/contract-form.tsx",
+      "src/lib/data/finance-accounts.ts",
+      "src/lib/data/finance-planning.ts",
+      "src/lib/data/finance-transactions.ts",
       "src/lib/finance/contract-constants.ts",
       "src/lib/format.ts",
       "src/lib/settings.ts",
-      "src/lib/supabase/server.ts",
-      "src/types/database.ts"
+      "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/finance/(planung)/debts/actions.ts": [
+      "src/lib/api/schemas.ts",
+      "src/lib/api/validate.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/finance/(planung)/debts/loading.tsx": [
@@ -2763,12 +3542,15 @@
     ],
     "src/app/(dashboard)/finance/(planung)/debts/page.tsx": [
       "src/components/finance/debt-payment-form.tsx",
+      "src/lib/data/finance-planning.ts",
       "src/lib/format.ts",
       "src/lib/settings.ts",
-      "src/lib/supabase/server.ts",
-      "src/types/database.ts"
+      "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/finance/(planung)/goals/actions.ts": [
+      "src/lib/api/schemas.ts",
+      "src/lib/api/validate.ts",
+      "src/lib/data/finance-planning.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/finance/(planung)/goals/loading.tsx": [
@@ -2778,31 +3560,35 @@
       "src/app/(dashboard)/finance/(planung)/goals/actions.ts",
       "src/components/finance/goal-form.tsx",
       "src/components/ui/button.tsx",
+      "src/lib/data/finance-planning.ts",
       "src/lib/format.ts",
       "src/lib/settings.ts",
-      "src/lib/supabase/server.ts",
-      "src/types/database.ts"
+      "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/finance/(planung)/layout.tsx": [
       "src/components/layout/section-tabs.tsx"
     ],
     "src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts": [
+      "src/lib/api/schemas.ts",
+      "src/lib/api/validate.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/finance/(transaktionen)/categories/loading.tsx": [
       "src/components/ui/skeleton.tsx"
     ],
     "src/app/(dashboard)/finance/(transaktionen)/categories/page.tsx": [
+      "src/components/finance/categories-view.tsx",
       "src/components/finance/category-form.tsx",
-      "src/lib/format.ts",
+      "src/lib/data/finance-transactions.ts",
       "src/lib/settings.ts",
-      "src/lib/supabase/server.ts",
-      "src/types/database.ts"
+      "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/finance/(transaktionen)/layout.tsx": [
       "src/components/layout/section-tabs.tsx"
     ],
     "src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts": [
+      "src/lib/api/schemas.ts",
+      "src/lib/api/validate.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/finance/(transaktionen)/transactions/loading.tsx": [
@@ -2815,6 +3601,9 @@
       "src/components/finance/transaction-form.tsx",
       "src/components/providers/url-filters.tsx",
       "src/components/ui/url-pagination.tsx",
+      "src/lib/data/finance-accounts.ts",
+      "src/lib/data/finance-planning.ts",
+      "src/lib/data/finance-transactions.ts",
       "src/lib/format.ts",
       "src/lib/pagination.ts",
       "src/lib/settings.ts",
@@ -2830,6 +3619,8 @@
       "src/components/providers/url-filters.tsx",
       "src/components/ui/period-selector.tsx",
       "src/lib/account-history.ts",
+      "src/lib/data/finance-accounts.ts",
+      "src/lib/data/finance-transactions.ts",
       "src/lib/format.ts",
       "src/lib/period.ts",
       "src/lib/settings.ts",
@@ -2837,6 +3628,8 @@
       "src/types/database.ts"
     ],
     "src/app/(dashboard)/finance/accounts/actions.ts": [
+      "src/lib/api/schemas.ts",
+      "src/lib/api/validate.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/finance/accounts/loading.tsx": [
@@ -2851,13 +3644,16 @@
       "src/components/providers/url-filters.tsx",
       "src/components/ui/period-selector.tsx",
       "src/lib/account-history.ts",
+      "src/lib/data/finance-accounts.ts",
+      "src/lib/finance/dashboard-calc.ts",
       "src/lib/format.ts",
       "src/lib/period.ts",
       "src/lib/settings.ts",
-      "src/lib/supabase/server.ts",
-      "src/types/database.ts"
+      "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/finance/budget/actions.ts": [
+      "src/lib/api/schemas.ts",
+      "src/lib/api/validate.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/finance/budget/loading.tsx": [
@@ -2866,6 +3662,7 @@
     "src/app/(dashboard)/finance/budget/page.tsx": [
       "src/app/(dashboard)/finance/budget/actions.ts",
       "src/components/lebenshaltungskosten/LebenshaltungskostenClient.tsx",
+      "src/lib/data/finance-budget.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/finance/layout.tsx": [],
@@ -2877,6 +3674,9 @@
       "src/components/ui/sheet.tsx"
     ],
     "src/app/(dashboard)/finance/reports/actions.ts": [
+      "src/lib/api/schemas.ts",
+      "src/lib/api/validate.ts",
+      "src/lib/data/finance-budget.ts",
       "src/lib/reports/build.ts",
       "src/lib/reports/email.ts",
       "src/lib/reports/render-html.ts",
@@ -2886,6 +3686,7 @@
     ],
     "src/app/(dashboard)/finance/reports/page.tsx": [
       "src/app/(dashboard)/finance/reports/ReportsClient.tsx",
+      "src/lib/data/finance-budget.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/finance/steuer/belege-actions.ts": [
@@ -2903,6 +3704,8 @@
       "src/lib/tax/position.ts"
     ],
     "src/app/(dashboard)/inventar/actions.ts": [
+      "src/lib/api/schemas.ts",
+      "src/lib/api/validate.ts",
       "src/lib/csv.ts",
       "src/lib/inventar/bildurls.ts",
       "src/lib/supabase/server.ts"
@@ -2912,6 +3715,7 @@
     ],
     "src/app/(dashboard)/inventar/page.tsx": [
       "src/components/inventar/InventoryClient.tsx",
+      "src/lib/data/inventar.ts",
       "src/lib/format.ts",
       "src/lib/inventar/bildurls.ts",
       "src/lib/settings.ts",
@@ -2930,6 +3734,9 @@
     ],
     "src/app/(dashboard)/loading.tsx": [],
     "src/app/(dashboard)/settings/actions.ts": [
+      "src/lib/api/schemas.ts",
+      "src/lib/api/validate.ts",
+      "src/lib/data/settings.ts",
       "src/lib/encryption.ts",
       "src/lib/supabase/server.ts",
       "src/lib/tax/profil.ts",
@@ -2940,18 +3747,24 @@
     ],
     "src/app/(dashboard)/settings/page.tsx": [
       "src/components/settings/settings-shell.tsx",
+      "src/lib/data/overview.ts",
       "src/lib/settings.ts",
       "src/lib/supabase/server.ts",
       "src/lib/waitlist.ts"
     ],
     "src/app/(dashboard)/strategy/combos/actions.ts": [
+      "src/lib/api/schemas.ts",
+      "src/lib/api/validate.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/strategy/combos/page.tsx": [
       "src/components/strategy/combo-form.tsx",
+      "src/lib/data/strategy.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/strategy/indicators/actions.ts": [
+      "src/lib/api/schemas.ts",
+      "src/lib/api/validate.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/strategy/indicators/page.tsx": [
@@ -2960,9 +3773,9 @@
       "src/components/strategy/indicator-filters.tsx",
       "src/components/strategy/indicator-form.tsx",
       "src/components/strategy/indicators-table.tsx",
+      "src/lib/data/strategy.ts",
       "src/lib/settings.ts",
-      "src/lib/supabase/server.ts",
-      "src/types/database.ts"
+      "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/strategy/layout.tsx": [
       "src/components/layout/section-tabs.tsx"
@@ -2974,14 +3787,18 @@
     "src/app/(dashboard)/strategy/strategies/[id]/page.tsx": [
       "src/components/strategy/checklist-panel.tsx",
       "src/components/strategy/strategy-form.tsx",
+      "src/lib/data/strategy.ts",
       "src/lib/settings.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/strategy/strategies/actions.ts": [
+      "src/lib/api/schemas.ts",
+      "src/lib/api/validate.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/(dashboard)/strategy/strategies/page.tsx": [
       "src/components/strategy/strategy-form.tsx",
+      "src/lib/data/strategy.ts",
       "src/lib/settings.ts",
       "src/lib/supabase/server.ts"
     ],
@@ -2990,11 +3807,14 @@
       "src/components/strategy/performance-form.tsx",
       "src/components/strategy/tests-filters.tsx",
       "src/components/strategy/tests-table.tsx",
+      "src/lib/data/strategy.ts",
       "src/lib/settings.ts",
-      "src/lib/supabase/server.ts",
-      "src/types/database.ts"
+      "src/lib/supabase/server.ts"
     ],
     "src/app/actions/depot.ts": [
+      "src/lib/api/schemas.ts",
+      "src/lib/api/validate.ts",
+      "src/lib/data/depot.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/actions/waitlist.ts": [
@@ -3005,13 +3825,14 @@
       "src/lib/assistant/logger.ts",
       "src/lib/assistant/prompts.ts",
       "src/lib/assistant/settings.ts",
-      "src/lib/assistant/tools.ts",
+      "src/lib/assistant/tools/index.ts",
       "src/lib/supabase/server.ts",
       "src/types/database.ts"
     ],
     "src/app/api/bank/balance/route.ts": [
       "src/lib/fints/index.ts",
-      "src/lib/supabase/server.ts"
+      "src/lib/supabase/server.ts",
+      "src/types/database.ts"
     ],
     "src/app/api/bank/debug/route.ts": [
       "src/lib/fints/sidecar.ts",
@@ -3022,15 +3843,18 @@
       "src/lib/supabase/server.ts"
     ],
     "src/app/api/bank/sync/route.ts": [
-      "src/lib/fints/categorize.ts",
       "src/lib/fints/index.ts",
-      "src/lib/fints/state.ts",
+      "src/lib/fints/user-sync.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/api/bank/transactions/[id]/route.ts": [
+      "src/lib/api/schemas.ts",
+      "src/lib/api/validate.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/api/bank/transactions/route.ts": [
+      "src/lib/api/schemas.ts",
+      "src/lib/api/validate.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/api/bank/transactions/suggest-categories/route.ts": [
@@ -3039,6 +3863,7 @@
       "src/types/bank.ts"
     ],
     "src/app/api/cron/bank-sync/route.ts": [
+      "src/lib/api/auth.ts",
       "src/lib/fints/categorize.ts",
       "src/lib/fints/index.ts",
       "src/lib/fints/state.ts"
@@ -3047,17 +3872,22 @@
     "src/app/api/cron/daily-snapshot/route.ts": [],
     "src/app/api/cron/execute-savings-plans/route.ts": [],
     "src/app/api/cron/kraken-sync/route.ts": [
+      "src/lib/api/auth.ts",
       "src/lib/kraken/sync.ts",
       "src/types/database.ts"
     ],
     "src/app/api/cron/monthly-report/route.ts": [
+      "src/lib/api/auth.ts",
       "src/lib/reports/build.ts",
       "src/lib/reports/email.ts",
       "src/lib/reports/render-html.ts",
       "src/lib/reports/render-pdf.tsx",
-      "src/lib/reports/store.ts"
+      "src/lib/reports/store.ts",
+      "src/types/database.ts"
     ],
     "src/app/api/crypto/prices/route.ts": [
+      "src/lib/api/auth.ts",
+      "src/lib/api/validate.ts",
       "src/lib/crypto/coin-registry.ts",
       "src/lib/crypto/coingecko.ts",
       "src/lib/kraken/index.ts"
@@ -3066,9 +3896,11 @@
       "src/lib/supabase/server.ts"
     ],
     "src/app/api/depot/live-price/route.ts": [
-      "src/lib/supabase/server.ts"
+      "src/lib/api/auth.ts",
+      "src/lib/api/validate.ts"
     ],
     "src/app/api/export/euer/route.ts": [
+      "src/lib/api/validate.ts",
       "src/lib/csv.ts",
       "src/lib/supabase/server.ts",
       "src/lib/tax/euer.ts",
@@ -3076,9 +3908,12 @@
       "src/lib/tax/position.ts"
     ],
     "src/app/api/export/indicators/route.ts": [
+      "src/lib/api/validate.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/api/export/transactions/route.ts": [
+      "src/lib/api/schemas.ts",
+      "src/lib/api/validate.ts",
       "src/lib/csv.ts",
       "src/lib/supabase/server.ts"
     ],
@@ -3086,12 +3921,17 @@
       "src/lib/supabase/server.ts"
     ],
     "src/app/api/import/indicators/route.ts": [
-      "src/lib/supabase/server.ts"
+      "src/lib/api/validate.ts",
+      "src/lib/supabase/server.ts",
+      "src/types/database.ts"
     ],
     "src/app/api/import/transactions/route.ts": [
+      "src/lib/api/validate.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/api/inventar/artwork/route.ts": [
+      "src/lib/api/schemas.ts",
+      "src/lib/api/validate.ts",
       "src/lib/inventar/artwork.ts",
       "src/lib/supabase/server.ts"
     ],
@@ -3104,6 +3944,7 @@
     "src/app/datenschutz/page.tsx": [
       "src/components/landing/landing-tokens.ts"
     ],
+    "src/app/global-error.tsx": [],
     "src/app/globals.css": [],
     "src/app/impressum/page.tsx": [
       "src/components/landing/landing-tokens.ts"
@@ -3133,6 +3974,7 @@
     ],
     "src/app/login/PasswordField.tsx": [],
     "src/app/login/actions.ts": [
+      "src/lib/api/validate.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/app/login/login.css": [],
@@ -3151,7 +3993,7 @@
       "src/components/ui/logo.tsx"
     ],
     "src/app/page.tsx": [
-      "src/components/landing/LandingClient.tsx",
+      "src/components/landing/LandingContent.tsx",
       "src/components/seo/json-ld.tsx",
       "src/lib/seo.ts",
       "src/lib/supabase/server.ts"
@@ -3236,7 +4078,7 @@
       "src/components/ui/popover.tsx",
       "src/components/ui/scroll-area.tsx",
       "src/components/ui/textarea.tsx",
-      "src/lib/assistant/actions.ts",
+      "src/lib/assistant/actions/index.ts",
       "src/lib/assistant/settings.ts",
       "src/lib/utils.ts"
     ],
@@ -3277,7 +4119,7 @@
     "src/components/assistant/PendingActionCard.tsx": [
       "src/app/(dashboard)/assistant/actions.ts",
       "src/components/ui/button.tsx",
-      "src/lib/assistant/actions.ts",
+      "src/lib/assistant/actions/index.ts",
       "src/lib/utils.ts"
     ],
     "src/components/assistant/SessionList.tsx": [
@@ -3391,6 +4233,10 @@
       "src/app/(dashboard)/crypto/assets/actions.ts",
       "src/lib/crypto/coin-registry.ts"
     ],
+    "src/components/crypto/kraken-asset-combobox.tsx": [
+      "src/app/(dashboard)/crypto/actions.ts",
+      "src/lib/kraken/index.ts"
+    ],
     "src/components/crypto/open-positions-card.tsx": [
       "src/app/(dashboard)/crypto/actions.ts",
       "src/components/providers/settings-context.tsx",
@@ -3428,25 +4274,24 @@
       "src/app/(dashboard)/crypto/actions.ts",
       "src/lib/utils.ts"
     ],
+    "src/components/crypto/rebalance-banner.tsx": [
+      "src/app/(dashboard)/crypto/actions.ts",
+      "src/components/assistant/PendingActionCard.tsx",
+      "src/components/providers/settings-context.tsx",
+      "src/components/ui/button.tsx",
+      "src/lib/format.ts"
+    ],
     "src/components/crypto/rebalancing-calculator.tsx": [
       "src/app/(dashboard)/crypto/actions.ts",
+      "src/components/assistant/PendingActionCard.tsx",
+      "src/components/crypto/kraken-asset-combobox.tsx",
       "src/components/crypto/portfolio-overview.tsx",
-      "src/components/crypto/strategy-signals.tsx",
       "src/components/providers/settings-context.tsx",
       "src/components/ui/button.tsx",
       "src/components/ui/input.tsx",
-      "src/lib/crypto/rebalancing-defaults.ts",
+      "src/components/ui/label.tsx",
       "src/lib/crypto/rebalancing.ts",
       "src/lib/format.ts"
-    ],
-    "src/components/crypto/strategy-signals.tsx": [
-      "src/app/(dashboard)/crypto/actions.ts",
-      "src/components/crypto/coin-combobox.tsx",
-      "src/components/ui/button.tsx",
-      "src/components/ui/input.tsx",
-      "src/components/ui/label.tsx",
-      "src/lib/crypto/rebalancing-defaults.ts",
-      "src/lib/crypto/rebalancing.ts"
     ],
     "src/components/dashboard/athena-insights.tsx": [
       "src/app/(dashboard)/dashboard/insight-actions.ts",
@@ -3500,7 +4345,7 @@
       "src/components/ui/input.tsx",
       "src/components/ui/label.tsx",
       "src/components/ui/select.tsx",
-      "src/types/database.ts"
+      "src/lib/data/finance-accounts.ts"
     ],
     "src/components/finance/account-month-chart-impl.tsx": [
       "src/components/finance/account-month-chart.tsx",
@@ -3518,6 +4363,14 @@
     "src/components/finance/beleg-upload.tsx": [
       "src/app/(dashboard)/finance/steuer/belege-actions.ts"
     ],
+    "src/components/finance/categories-view.tsx": [
+      "src/components/finance/category-form.tsx",
+      "src/components/ui/button.tsx",
+      "src/components/ui/collapsible.tsx",
+      "src/lib/data/finance-transactions.ts",
+      "src/lib/format.ts",
+      "src/lib/tax/rollen.ts"
+    ],
     "src/components/finance/category-form.tsx": [
       "src/app/(dashboard)/finance/(transaktionen)/categories/actions.ts",
       "src/components/ui/alert-dialog.tsx",
@@ -3526,7 +4379,7 @@
       "src/components/ui/input.tsx",
       "src/components/ui/label.tsx",
       "src/components/ui/select.tsx",
-      "src/types/database.ts"
+      "src/lib/data/finance-transactions.ts"
     ],
     "src/components/finance/contract-form.tsx": [
       "src/app/(dashboard)/finance/(planung)/contracts/actions.ts",
@@ -3536,6 +4389,7 @@
       "src/components/ui/input.tsx",
       "src/components/ui/label.tsx",
       "src/components/ui/select.tsx",
+      "src/lib/data/finance-planning.ts",
       "src/lib/finance/contract-constants.ts",
       "src/types/database.ts"
     ],
@@ -3548,8 +4402,15 @@
       "src/components/ui/input.tsx",
       "src/components/ui/label.tsx",
       "src/components/ui/select.tsx",
-      "src/lib/format.ts",
-      "src/types/database.ts"
+      "src/lib/data/finance-planning.ts",
+      "src/lib/format.ts"
+    ],
+    "src/components/finance/debt-suggestion.tsx": [
+      "src/components/finance/debt-payment-form.tsx",
+      "src/components/ui/button.tsx",
+      "src/components/ui/select.tsx",
+      "src/lib/data/finance-planning.ts",
+      "src/lib/finance/schulden-match.ts"
     ],
     "src/components/finance/fixed-costs-widget.tsx": [
       "src/components/providers/settings-context.tsx",
@@ -3564,7 +4425,7 @@
       "src/components/ui/input.tsx",
       "src/components/ui/label.tsx",
       "src/components/ui/select.tsx",
-      "src/types/database.ts"
+      "src/lib/data/finance-planning.ts"
     ],
     "src/components/finance/transaction-csv.tsx": [
       "src/components/ui/button.tsx",
@@ -3573,16 +4434,21 @@
     ],
     "src/components/finance/transaction-filters.tsx": [
       "src/components/providers/url-filters.tsx",
+      "src/lib/finance/category-groups.ts",
       "src/types/database.ts"
     ],
     "src/components/finance/transaction-form.tsx": [
       "src/app/(dashboard)/finance/(transaktionen)/transactions/actions.ts",
+      "src/components/finance/debt-suggestion.tsx",
       "src/components/ui/alert-dialog.tsx",
       "src/components/ui/button.tsx",
       "src/components/ui/dialog.tsx",
       "src/components/ui/input.tsx",
       "src/components/ui/label.tsx",
+      "src/components/ui/popover.tsx",
       "src/components/ui/select.tsx",
+      "src/lib/data/finance-planning.ts",
+      "src/lib/finance/category-groups.ts",
       "src/types/database.ts"
     ],
     "src/components/inventar/InventoryClient.tsx": [
@@ -3632,33 +4498,118 @@
       "src/lib/utils.ts"
     ],
     "src/components/landing/DashboardMock.tsx": [
+      "src/components/landing/dashboard-mock/mock-data.ts",
+      "src/components/landing/dashboard-mock/mock-hooks.ts",
+      "src/components/landing/dashboard-mock/views/AnalyseView.tsx",
+      "src/components/landing/dashboard-mock/views/AthenaView.tsx",
+      "src/components/landing/dashboard-mock/views/CryptoView.tsx",
+      "src/components/landing/dashboard-mock/views/DashboardView.tsx",
+      "src/components/landing/landing-tokens.ts",
+      "src/components/ui/logo.tsx"
+    ],
+    "src/components/landing/LandingContent.tsx": [
+      "src/components/landing/islands/CustomCursor.tsx",
+      "src/components/landing/islands/LandingProviders.tsx",
+      "src/components/landing/islands/SectionProgressBar.tsx",
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/landing.css",
+      "src/components/landing/olive-vines.tsx",
+      "src/components/landing/sections/ExtrasSection.tsx",
+      "src/components/landing/sections/Hero.tsx",
+      "src/components/landing/sections/InstrumentariumSection.tsx",
+      "src/components/landing/sections/SiteFooter.tsx",
+      "src/components/landing/sections/SiteHeader.tsx",
+      "src/components/landing/sections/WaitlistSection.tsx",
+      "src/components/landing/sections/WegSection.tsx",
+      "src/components/landing/sections/analyse/AnalyseSection.tsx",
+      "src/components/landing/sections/pediment/PedimentSection.tsx",
+      "src/components/landing/sections/pillars/PillarsSection.tsx"
+    ],
+    "src/components/landing/SmoothScrollProvider.tsx": [
+      "src/components/landing/scroll-control.ts"
+    ],
+    "src/components/landing/dashboard-mock/mock-data.ts": [
+      "src/components/crypto/portfolio-donut-card.tsx",
+      "src/components/dashboard/finance-analytics.tsx",
+      "src/components/dashboard/net-worth-chart.tsx",
+      "src/components/landing/landing-tokens.ts",
+      "src/lib/analyseData.ts"
+    ],
+    "src/components/landing/dashboard-mock/mock-hooks.ts": [
+      "src/components/landing/dashboard-mock/mock-data.ts"
+    ],
+    "src/components/landing/dashboard-mock/mock-primitives.tsx": [
+      "src/components/landing/dashboard-mock/mock-data.ts",
+      "src/components/landing/dashboard-mock/mock-hooks.ts",
+      "src/components/landing/dashboard-mock/mock-static.tsx",
+      "src/components/landing/landing-tokens.ts"
+    ],
+    "src/components/landing/dashboard-mock/mock-static.tsx": [
+      "src/components/landing/dashboard-mock/mock-data.ts",
+      "src/components/landing/landing-tokens.ts"
+    ],
+    "src/components/landing/dashboard-mock/views/AnalyseView.tsx": [
       "src/components/analyse/AusgabenHeatmap.tsx",
       "src/components/analyse/CashflowKalender.tsx",
       "src/components/analyse/GeldflussChart.tsx",
       "src/components/analyse/KategorienChart.tsx",
       "src/components/analyse/MonatsVergleich.tsx",
-      "src/components/assistant/AthenaAvatar.tsx",
-      "src/components/crypto/portfolio-donut-card.tsx",
-      "src/components/dashboard/finance-analytics.tsx",
-      "src/components/dashboard/net-worth-chart.tsx",
-      "src/components/landing/landing-tokens.ts",
-      "src/components/ui/logo.tsx",
-      "src/lib/analyseData.ts"
+      "src/components/landing/dashboard-mock/mock-data.ts",
+      "src/components/landing/dashboard-mock/mock-primitives.tsx",
+      "src/components/landing/landing-tokens.ts"
     ],
-    "src/components/landing/LandingClient.tsx": [
-      "src/components/landing/DashboardMock.tsx",
-      "src/components/landing/SmoothScrollProvider.tsx",
+    "src/components/landing/dashboard-mock/views/AthenaView.tsx": [
+      "src/components/assistant/AthenaAvatar.tsx",
+      "src/components/landing/dashboard-mock/mock-data.ts"
+    ],
+    "src/components/landing/dashboard-mock/views/CryptoView.tsx": [
+      "src/components/landing/dashboard-mock/mock-data.ts",
+      "src/components/landing/dashboard-mock/mock-hooks.ts",
+      "src/components/landing/dashboard-mock/mock-primitives.tsx",
+      "src/components/landing/dashboard-mock/mock-static.tsx",
+      "src/components/landing/landing-tokens.ts"
+    ],
+    "src/components/landing/dashboard-mock/views/DashboardView.tsx": [
+      "src/components/landing/dashboard-mock/mock-data.ts",
+      "src/components/landing/dashboard-mock/mock-hooks.ts",
+      "src/components/landing/dashboard-mock/mock-primitives.tsx",
+      "src/components/landing/dashboard-mock/mock-static.tsx",
+      "src/components/landing/landing-tokens.ts"
+    ],
+    "src/components/landing/islands/CustomCursor.tsx": [],
+    "src/components/landing/islands/ExtrasCarousel.tsx": [
       "src/components/landing/landing-tokens.ts",
-      "src/components/landing/landing.css",
-      "src/components/landing/olive-vines.tsx",
-      "src/components/landing/scroll-control.ts",
-      "src/components/ui/logo.tsx",
-      "src/components/waitlist/WaitlistForm.tsx",
       "src/lib/use-reduced-motion.ts"
     ],
-    "src/components/landing/SmoothScrollProvider.tsx": [
+    "src/components/landing/islands/ExtrasJumpButton.tsx": [
+      "src/components/landing/landing-tokens.ts",
       "src/components/landing/scroll-control.ts"
     ],
+    "src/components/landing/islands/FooterSections.tsx": [
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/shared/nav-sections.ts"
+    ],
+    "src/components/landing/islands/HeroParallax.tsx": [
+      "src/components/landing/islands/gsap-setup.ts",
+      "src/lib/use-reduced-motion.ts"
+    ],
+    "src/components/landing/islands/InstrumentariumVines.tsx": [],
+    "src/components/landing/islands/LandingProviders.tsx": [
+      "src/components/landing/SmoothScrollProvider.tsx"
+    ],
+    "src/components/landing/islands/Reveal.tsx": [
+      "src/components/landing/shared/motion.ts",
+      "src/lib/use-reduced-motion.ts"
+    ],
+    "src/components/landing/islands/SectionProgressBar.tsx": [
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/scroll-control.ts",
+      "src/components/landing/shared/editorial.tsx",
+      "src/components/landing/shared/nav-sections.ts",
+      "src/components/ui/logo.tsx",
+      "src/lib/use-reduced-motion.ts"
+    ],
+    "src/components/landing/islands/gsap-setup.ts": [],
     "src/components/landing/landing-tokens.ts": [],
     "src/components/landing/landing.css": [],
     "src/components/landing/olive-vines.tsx": [
@@ -3666,6 +4617,135 @@
       "src/components/landing/vines.css"
     ],
     "src/components/landing/scroll-control.ts": [],
+    "src/components/landing/sections/ExtrasSection.tsx": [
+      "src/components/landing/islands/ExtrasCarousel.tsx",
+      "src/components/landing/islands/ExtrasJumpButton.tsx",
+      "src/components/landing/islands/Reveal.tsx",
+      "src/components/landing/landing-tokens.ts"
+    ],
+    "src/components/landing/sections/Hero.tsx": [
+      "src/components/landing/islands/HeroParallax.tsx",
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/olive-vines.tsx",
+      "src/components/landing/shared/editorial.tsx",
+      "src/components/landing/shared/layout.ts"
+    ],
+    "src/components/landing/sections/InstrumentariumSection.tsx": [
+      "src/components/landing/islands/InstrumentariumVines.tsx",
+      "src/components/landing/islands/Reveal.tsx",
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/olive-vines.tsx",
+      "src/components/landing/shared/editorial.tsx",
+      "src/components/landing/shared/mini-visuals.tsx"
+    ],
+    "src/components/landing/sections/SiteFooter.tsx": [
+      "src/components/landing/islands/FooterSections.tsx",
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/olive-vines.tsx",
+      "src/components/landing/shared/layout.ts",
+      "src/components/ui/logo.tsx"
+    ],
+    "src/components/landing/sections/SiteHeader.tsx": [
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/shared/layout.ts",
+      "src/components/ui/logo.tsx"
+    ],
+    "src/components/landing/sections/WaitlistSection.tsx": [
+      "src/components/landing/islands/Reveal.tsx",
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/olive-vines.tsx",
+      "src/components/landing/shared/editorial.tsx",
+      "src/components/waitlist/WaitlistForm.tsx"
+    ],
+    "src/components/landing/sections/WegSection.tsx": [
+      "src/components/landing/islands/ExtrasJumpButton.tsx",
+      "src/components/landing/islands/Reveal.tsx",
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/shared/editorial.tsx"
+    ],
+    "src/components/landing/sections/analyse/AnalyseCandles.tsx": [
+      "src/components/landing/islands/gsap-setup.ts",
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/shared/hash-noise.ts",
+      "src/lib/use-reduced-motion.ts"
+    ],
+    "src/components/landing/sections/analyse/AnalyseDeck.tsx": [
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/shared/analyse-config.ts",
+      "src/lib/use-reduced-motion.ts"
+    ],
+    "src/components/landing/sections/analyse/AnalyseReveal.tsx": [
+      "src/components/landing/islands/Reveal.tsx",
+      "src/components/landing/islands/gsap-setup.ts",
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/scroll-control.ts",
+      "src/components/landing/sections/analyse/AnalyseCandles.tsx",
+      "src/components/landing/sections/analyse/AnalyseDeck.tsx",
+      "src/components/landing/shared/analyse-config.ts",
+      "src/lib/use-reduced-motion.ts"
+    ],
+    "src/components/landing/sections/analyse/AnalyseSection.tsx": [
+      "src/components/landing/sections/analyse/AnalyseReveal.tsx",
+      "src/components/landing/sections/analyse/CardDiverging.tsx",
+      "src/components/landing/sections/analyse/analyse-cards.tsx",
+      "src/components/landing/shared/editorial.tsx"
+    ],
+    "src/components/landing/sections/analyse/CardDiverging.tsx": [
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/shared/motion.ts",
+      "src/lib/use-reduced-motion.ts"
+    ],
+    "src/components/landing/sections/analyse/analyse-cards.tsx": [
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/shared/hash-noise.ts"
+    ],
+    "src/components/landing/sections/pediment/PedimentReveal.tsx": [
+      "src/components/landing/DashboardMock.tsx",
+      "src/components/landing/islands/gsap-setup.ts",
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/scroll-control.ts",
+      "src/components/landing/shared/stats.ts",
+      "src/lib/use-reduced-motion.ts"
+    ],
+    "src/components/landing/sections/pediment/PedimentSection.tsx": [
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/olive-vines.tsx",
+      "src/components/landing/sections/pediment/PedimentReveal.tsx",
+      "src/components/landing/sections/pediment/StatsBandFallback.tsx"
+    ],
+    "src/components/landing/sections/pediment/StatsBandFallback.tsx": [
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/olive-vines.tsx",
+      "src/components/landing/shared/layout.ts",
+      "src/components/landing/shared/stats.ts"
+    ],
+    "src/components/landing/sections/pillars/PillarsReveal.tsx": [
+      "src/components/landing/islands/Reveal.tsx",
+      "src/components/landing/islands/gsap-setup.ts",
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/scroll-control.ts",
+      "src/lib/use-reduced-motion.ts"
+    ],
+    "src/components/landing/sections/pillars/PillarsSection.tsx": [
+      "src/components/landing/landing-tokens.ts",
+      "src/components/landing/olive-vines.tsx",
+      "src/components/landing/sections/pillars/PillarsReveal.tsx",
+      "src/components/landing/shared/editorial.tsx"
+    ],
+    "src/components/landing/shared/analyse-config.ts": [],
+    "src/components/landing/shared/editorial.tsx": [
+      "src/components/landing/landing-tokens.ts"
+    ],
+    "src/components/landing/shared/hash-noise.ts": [],
+    "src/components/landing/shared/layout.ts": [
+      "src/components/landing/landing-tokens.ts"
+    ],
+    "src/components/landing/shared/mini-visuals.tsx": [
+      "src/components/landing/landing-tokens.ts"
+    ],
+    "src/components/landing/shared/motion.ts": [],
+    "src/components/landing/shared/nav-sections.ts": [],
+    "src/components/landing/shared/stats.ts": [],
     "src/components/landing/vines.css": [],
     "src/components/layout/app-shell.tsx": [
       "src/components/assistant/AssistantSheet.tsx",
@@ -3731,6 +4811,7 @@
     ],
     "src/components/settings/appearance-form.tsx": [
       "src/app/(dashboard)/settings/actions.ts",
+      "src/components/providers/settings-context.tsx",
       "src/components/ui/button.tsx",
       "src/lib/settings.ts",
       "src/lib/utils.ts"
@@ -3800,12 +4881,12 @@
       "src/components/ui/dialog.tsx",
       "src/components/ui/input.tsx",
       "src/components/ui/label.tsx",
-      "src/types/database.ts"
+      "src/lib/data/strategy.ts"
     ],
     "src/components/strategy/indicators-table.tsx": [
       "src/components/strategy/indicator-form.tsx",
       "src/components/strategy/performance-form.tsx",
-      "src/types/database.ts"
+      "src/lib/data/strategy.ts"
     ],
     "src/components/strategy/performance-form.tsx": [
       "src/app/(dashboard)/strategy/indicators/actions.ts",
@@ -3814,7 +4895,7 @@
       "src/components/ui/dialog.tsx",
       "src/components/ui/input.tsx",
       "src/components/ui/label.tsx",
-      "src/types/database.ts"
+      "src/lib/data/strategy.ts"
     ],
     "src/components/strategy/strategy-form.tsx": [
       "src/app/(dashboard)/strategy/strategies/actions.ts",
@@ -3824,7 +4905,7 @@
       "src/components/providers/url-filters.tsx"
     ],
     "src/components/strategy/tests-table.tsx": [
-      "src/types/database.ts"
+      "src/lib/data/strategy.ts"
     ],
     "src/components/ui/alert-dialog.tsx": [
       "src/components/ui/button.tsx",
@@ -3836,6 +4917,7 @@
     "src/components/ui/checkbox.tsx": [
       "src/lib/utils.ts"
     ],
+    "src/components/ui/collapsible.tsx": [],
     "src/components/ui/confirm-dialog.tsx": [
       "src/components/ui/alert-dialog.tsx",
       "src/lib/utils.ts"
@@ -3843,6 +4925,9 @@
     "src/components/ui/dialog.tsx": [
       "src/components/ui/button.tsx",
       "src/lib/utils.ts"
+    ],
+    "src/components/ui/error-fallback.tsx": [
+      "src/components/ui/button.tsx"
     ],
     "src/components/ui/input.tsx": [
       "src/lib/utils.ts"
@@ -3896,8 +4981,83 @@
       "src/types/database.ts"
     ],
     "src/lib/analyseData.ts": [],
-    "src/lib/assistant/actions.ts": [
-      "src/lib/inventar/artwork.ts",
+    "src/lib/api/auth.ts": [
+      "src/lib/api/cron-auth.ts",
+      "src/lib/supabase/server.ts"
+    ],
+    "src/lib/api/cron-auth.test.ts": [
+      "src/lib/api/cron-auth.ts"
+    ],
+    "src/lib/api/cron-auth.ts": [],
+    "src/lib/api/parse.ts": [],
+    "src/lib/api/schemas.test.ts": [
+      "src/lib/api/parse.ts",
+      "src/lib/api/schemas.ts"
+    ],
+    "src/lib/api/schemas.ts": [],
+    "src/lib/api/validate.ts": [
+      "src/lib/api/parse.ts"
+    ],
+    "src/lib/assistant/actions/bank.ts": [
+      "src/lib/assistant/actions/types.ts",
+      "src/lib/fints/index.ts",
+      "src/lib/fints/user-sync.ts"
+    ],
+    "src/lib/assistant/actions/categories.ts": [
+      "src/lib/assistant/actions/format.ts",
+      "src/lib/assistant/actions/shared.ts",
+      "src/lib/assistant/actions/types.ts"
+    ],
+    "src/lib/assistant/actions/contracts.ts": [
+      "src/lib/assistant/actions/format.ts",
+      "src/lib/assistant/actions/shared.ts",
+      "src/lib/assistant/actions/types.ts"
+    ],
+    "src/lib/assistant/actions/crypto.ts": [
+      "src/lib/assistant/actions/format.ts",
+      "src/lib/assistant/actions/types.ts",
+      "src/lib/crypto/rebalance-plan.ts",
+      "src/lib/crypto/rebalancing.ts",
+      "src/lib/kraken/index.ts",
+      "src/lib/kraken/rebalance-execution.ts",
+      "src/lib/settings.ts"
+    ],
+    "src/lib/assistant/actions/format.ts": [],
+    "src/lib/assistant/actions/goals.ts": [
+      "src/lib/assistant/actions/format.ts",
+      "src/lib/assistant/actions/types.ts"
+    ],
+    "src/lib/assistant/actions/index.ts": [
+      "src/lib/assistant/actions/bank.ts",
+      "src/lib/assistant/actions/categories.ts",
+      "src/lib/assistant/actions/contracts.ts",
+      "src/lib/assistant/actions/crypto.ts",
+      "src/lib/assistant/actions/goals.ts",
+      "src/lib/assistant/actions/insights.ts",
+      "src/lib/assistant/actions/inventory.ts",
+      "src/lib/assistant/actions/transactions.ts",
+      "src/lib/assistant/actions/types.ts",
+      "src/lib/assistant/logger.ts",
+      "src/types/database.ts"
+    ],
+    "src/lib/assistant/actions/insights.ts": [
+      "src/lib/assistant/actions/format.ts",
+      "src/lib/assistant/actions/types.ts",
+      "src/types/database.ts"
+    ],
+    "src/lib/assistant/actions/inventory.ts": [
+      "src/lib/assistant/actions/types.ts",
+      "src/lib/inventar/artwork.ts"
+    ],
+    "src/lib/assistant/actions/shared.ts": [
+      "src/lib/assistant/actions/types.ts"
+    ],
+    "src/lib/assistant/actions/transactions.ts": [
+      "src/lib/assistant/actions/format.ts",
+      "src/lib/assistant/actions/shared.ts",
+      "src/lib/assistant/actions/types.ts"
+    ],
+    "src/lib/assistant/actions/types.ts": [
       "src/types/database.ts"
     ],
     "src/lib/assistant/atlas.ts": [],
@@ -3924,47 +5084,191 @@
     "src/lib/assistant/settings.ts": [
       "src/types/database.ts"
     ],
-    "src/lib/assistant/tools.ts": [
+    "src/lib/assistant/tools/account-history.ts": [
       "src/lib/account-history.ts",
-      "src/lib/assistant/actions.ts",
-      "src/lib/assistant/logger.ts",
+      "src/lib/assistant/tools/shared.ts"
+    ],
+    "src/lib/assistant/tools/accounts.ts": [
+      "src/lib/assistant/tools/shared.ts"
+    ],
+    "src/lib/assistant/tools/categories.ts": [
+      "src/lib/assistant/tools/shared.ts"
+    ],
+    "src/lib/assistant/tools/chart.ts": [],
+    "src/lib/assistant/tools/data-quality.ts": [
+      "src/lib/assistant/tools/shared.ts"
+    ],
+    "src/lib/assistant/tools/index.ts": [
+      "src/lib/assistant/tools/account-history.ts",
+      "src/lib/assistant/tools/accounts.ts",
+      "src/lib/assistant/tools/categories.ts",
+      "src/lib/assistant/tools/chart.ts",
+      "src/lib/assistant/tools/data-quality.ts",
+      "src/lib/assistant/tools/insights.ts",
+      "src/lib/assistant/tools/inventory.ts",
+      "src/lib/assistant/tools/memory.ts",
+      "src/lib/assistant/tools/obligations.ts",
+      "src/lib/assistant/tools/planning.ts",
+      "src/lib/assistant/tools/portfolio.ts",
+      "src/lib/assistant/tools/proposals.ts",
+      "src/lib/assistant/tools/recurring.ts",
+      "src/lib/assistant/tools/savings-plans.ts",
+      "src/lib/assistant/tools/shared.ts",
+      "src/lib/assistant/tools/tax.ts",
+      "src/lib/assistant/tools/transactions.ts",
+      "src/lib/assistant/tools/user-settings.ts",
+      "src/types/database.ts"
+    ],
+    "src/lib/assistant/tools/insights.ts": [
+      "src/lib/assistant/tools/shared.ts"
+    ],
+    "src/lib/assistant/tools/inventory.ts": [
+      "src/lib/assistant/tools/shared.ts",
+      "src/lib/valuables.ts"
+    ],
+    "src/lib/assistant/tools/memory.ts": [
+      "src/lib/assistant/tools/shared.ts"
+    ],
+    "src/lib/assistant/tools/obligations.ts": [
       "src/lib/assistant/recurrence.ts",
-      "src/lib/finance/wiederkehrend.ts",
+      "src/lib/assistant/tools/shared.ts"
+    ],
+    "src/lib/assistant/tools/planning.ts": [
+      "src/lib/assistant/tools/shared.ts"
+    ],
+    "src/lib/assistant/tools/portfolio.ts": [
+      "src/lib/assistant/tools/shared.ts"
+    ],
+    "src/lib/assistant/tools/proposals.ts": [
+      "src/lib/assistant/actions/index.ts",
+      "src/lib/assistant/tools/shared.ts"
+    ],
+    "src/lib/assistant/tools/recurring.ts": [
+      "src/lib/assistant/tools/shared.ts",
+      "src/lib/finance/wiederkehrend.ts"
+    ],
+    "src/lib/assistant/tools/savings-plans.ts": [
+      "src/lib/assistant/tools/shared.ts"
+    ],
+    "src/lib/assistant/tools/shared.ts": [
+      "src/lib/assistant/logger.ts",
+      "src/types/database.ts"
+    ],
+    "src/lib/assistant/tools/tax.ts": [
+      "src/lib/assistant/tools/shared.ts",
       "src/lib/tax/euer.ts",
       "src/lib/tax/laden.ts",
-      "src/lib/tax/position.ts",
-      "src/lib/valuables.ts",
+      "src/lib/tax/position.ts"
+    ],
+    "src/lib/assistant/tools/transactions.ts": [
+      "src/lib/assistant/tools/shared.ts"
+    ],
+    "src/lib/assistant/tools/user-settings.ts": [
+      "src/lib/assistant/tools/shared.ts",
       "src/types/database.ts"
     ],
     "src/lib/crypto/coin-registry.ts": [],
     "src/lib/crypto/coingecko.ts": [
       "src/lib/crypto/coin-registry.ts"
     ],
-    "src/lib/crypto/rebalancing-defaults.ts": [],
-    "src/lib/crypto/rebalancing.ts": [
-      "src/lib/crypto/rebalancing-defaults.ts"
+    "src/lib/crypto/rebalance-plan.test.ts": [
+      "src/lib/crypto/rebalance-plan.ts",
+      "src/lib/crypto/rebalancing.ts",
+      "src/lib/kraken/index.ts"
     ],
+    "src/lib/crypto/rebalance-plan.ts": [
+      "src/lib/crypto/rebalancing.ts",
+      "src/lib/kraken/index.ts"
+    ],
+    "src/lib/crypto/rebalancing.ts": [],
     "src/lib/csv.ts": [],
+    "src/lib/data/crypto.ts": [
+      "src/types/database.ts"
+    ],
+    "src/lib/data/depot.ts": [
+      "src/types/database.ts"
+    ],
+    "src/lib/data/finance-accounts.ts": [
+      "src/types/database.ts"
+    ],
+    "src/lib/data/finance-budget.ts": [
+      "src/types/database.ts"
+    ],
+    "src/lib/data/finance-planning.ts": [
+      "src/types/database.ts"
+    ],
+    "src/lib/data/finance-transactions.ts": [
+      "src/types/database.ts"
+    ],
+    "src/lib/data/inventar.ts": [
+      "src/lib/valuables.ts",
+      "src/types/database.ts"
+    ],
+    "src/lib/data/overview.ts": [
+      "src/types/database.ts"
+    ],
+    "src/lib/data/settings.ts": [
+      "src/types/database.ts"
+    ],
+    "src/lib/data/strategy.ts": [
+      "src/types/database.ts"
+    ],
     "src/lib/depot/savingsPlanChecker.ts": [
       "src/app/actions/depot.ts"
     ],
     "src/lib/encryption.ts": [],
+    "src/lib/finance/category-groups.test.ts": [
+      "src/lib/finance/category-groups.ts"
+    ],
+    "src/lib/finance/category-groups.ts": [],
     "src/lib/finance/contract-constants.ts": [],
+    "src/lib/finance/dashboard-calc.test.ts": [
+      "src/lib/finance/dashboard-calc.ts"
+    ],
+    "src/lib/finance/dashboard-calc.ts": [],
+    "src/lib/finance/schulden-match.test.ts": [
+      "src/lib/finance/schulden-match.ts"
+    ],
+    "src/lib/finance/schulden-match.ts": [
+      "src/lib/finance/wiederkehrend.ts"
+    ],
     "src/lib/finance/wiederkehrend.test.ts": [
       "src/lib/finance/wiederkehrend.ts"
     ],
     "src/lib/finance/wiederkehrend.ts": [],
+    "src/lib/fints/categorize-learned.test.ts": [
+      "src/lib/fints/categorize.ts",
+      "src/types/bank.ts"
+    ],
+    "src/lib/fints/categorize.test.ts": [
+      "src/lib/fints/categorize.ts",
+      "src/types/bank.ts"
+    ],
     "src/lib/fints/categorize.ts": [
       "src/types/bank.ts"
     ],
     "src/lib/fints/index.ts": [
       "src/lib/fints/categorize.ts",
+      "src/lib/fints/sca.ts",
       "src/lib/fints/sidecar.ts",
-      "src/types/bank.ts"
+      "src/types/bank.ts",
+      "src/types/database.ts"
+    ],
+    "src/lib/fints/sca.test.ts": [
+      "src/lib/fints/sca.ts"
+    ],
+    "src/lib/fints/sca.ts": [
+      "src/lib/fints/sidecar.ts"
     ],
     "src/lib/fints/sidecar.ts": [],
     "src/lib/fints/state.ts": [
       "src/lib/fints/sidecar.ts"
+    ],
+    "src/lib/fints/user-sync.ts": [
+      "src/lib/fints/categorize.ts",
+      "src/lib/fints/index.ts",
+      "src/lib/fints/state.ts",
+      "src/types/database.ts"
     ],
     "src/lib/format.ts": [],
     "src/lib/hooks/use-avoid-overlap.ts": [],
@@ -3978,11 +5282,31 @@
     ],
     "src/lib/inventar/bildurls.ts": [],
     "src/lib/kde.ts": [],
+    "src/lib/kraken/cost-basis.test.ts": [
+      "src/lib/kraken/cost-basis.ts"
+    ],
     "src/lib/kraken/cost-basis.ts": [],
     "src/lib/kraken/futures.ts": [],
     "src/lib/kraken/index.ts": [
-      "src/lib/crypto/coingecko.ts"
+      "src/lib/crypto/coin-registry.ts",
+      "src/lib/crypto/coingecko.ts",
+      "src/lib/kraken/symbols.ts"
     ],
+    "src/lib/kraken/orders.ts": [
+      "src/lib/kraken/index.ts"
+    ],
+    "src/lib/kraken/rebalance-execution.ts": [
+      "src/lib/crypto/rebalance-plan.ts",
+      "src/lib/encryption.ts",
+      "src/lib/kraken/index.ts",
+      "src/lib/kraken/orders.ts",
+      "src/lib/kraken/sync.ts",
+      "src/types/database.ts"
+    ],
+    "src/lib/kraken/symbols.test.ts": [
+      "src/lib/kraken/symbols.ts"
+    ],
+    "src/lib/kraken/symbols.ts": [],
     "src/lib/kraken/sync.ts": [
       "src/lib/crypto/coin-registry.ts",
       "src/lib/crypto/coingecko.ts",
@@ -3994,9 +5318,13 @@
     "src/lib/pagination.ts": [],
     "src/lib/period.ts": [],
     "src/lib/reports/build.ts": [
-      "src/lib/reports/types.ts"
+      "src/lib/reports/types.ts",
+      "src/types/database.ts"
     ],
     "src/lib/reports/email.ts": [],
+    "src/lib/reports/period.test.ts": [
+      "src/lib/reports/build.ts"
+    ],
     "src/lib/reports/render-html.ts": [
       "src/lib/reports/types.ts"
     ],
@@ -4004,11 +5332,13 @@
       "src/lib/reports/types.ts"
     ],
     "src/lib/reports/store.ts": [
-      "src/lib/reports/types.ts"
+      "src/lib/reports/types.ts",
+      "src/types/database.ts"
     ],
     "src/lib/reports/types.ts": [],
     "src/lib/seo.ts": [],
     "src/lib/settings.ts": [
+      "src/lib/data/settings.ts",
       "src/lib/supabase/server.ts"
     ],
     "src/lib/supabase/client.ts": [
@@ -4120,6 +5450,12 @@
     "supabase/migrations/20260906210000_audit_log_truncate_entziehen.sql": [],
     "supabase/migrations/20260906220000_waitlist_signups.sql": [],
     "supabase/migrations/20260909120000_reports_table_and_storage.sql": [],
+    "supabase/migrations/20260918130000_kraken_order_log.sql": [],
+    "supabase/migrations/20260918140000_debt_payments_bank_transaction_link.sql": [],
+    "supabase/migrations/20261020120000_balance_and_valuation_views.sql": [],
+    "supabase/migrations/20261020130000_views_security_invoker.sql": [],
+    "supabase/migrations/20261020140000_revoke_definer_execute.sql": [],
+    "supabase/migrations/20261020150000_pin_function_search_path.sql": [],
     "supabase/migrations/add_contract_to_account.sql": [],
     "supabase/migrations/add_goal_current_amount.sql": [],
     "supabase/migrations/add_goal_rate_start_date.sql": [],
@@ -4128,5 +5464,6 @@
     "supabase/migrations/fix_contracts_type_check.sql": [],
     "tsconfig.json": [],
     "vercel.json": []
-  }
+  },
+  "contentDigest": "d67fd7b40f8119d08f87262d9abd93ddb69ecbdf50c389564f703ba7cd18b5f3"
 }

@@ -55,24 +55,25 @@ Für Kontext zu Investing-Konzepten, die in dieser App umgesetzt werden:
 - Vercel Deployment: `vercel.json` nicht ohne Rückfrage ändern
 - `athena-finance(old)` im Nachbarordner = veraltete Version, nicht anfassen
 
-## graphify – Knowledge Graph (Token-Effizienz)
+## Understand-Anything Knowledge Graph (Token-Effizienz)
 
-Dieses Projekt hat einen Graphify Knowledge Graph unter `graphify-out/`.
+Dieses Projekt hat einen Knowledge Graph unter `.ua/knowledge-graph.json` (Dateien, Funktionen, Imports, Aufrufe, 12 Schichten, geführte Tour). Er ersetzt den früheren Graphify-Graph.
 
 ### PFLICHT: Zu Beginn jeder Konversation
 
-**Lies immer zuerst `graphify-out/GRAPH_REPORT.md`** bevor du einzelne Dateien öffnest.
-Der Graph gibt dir Architektur, God Nodes und Community-Struktur auf einen Blick — das spart 100–200x Tokens gegenüber blindem File-Lesen.
+**Lies immer zuerst `.ua/ARCHITECTURE_REPORT.md`** bevor du einzelne Dateien öffnest.
+Der Report gibt dir Schichten, God Nodes (meistimportierte Dateien), Abhängigkeiten zwischen Schichten und die wichtigsten Dateien je Schicht auf einen Blick — das spart viele Tokens gegenüber blindem File-Lesen.
 
 Workflow:
-1. `graphify-out/GRAPH_REPORT.md` lesen → God Nodes und Communities verstehen
+1. `.ua/ARCHITECTURE_REPORT.md` lesen → Schichten und God Nodes verstehen
 2. Erst dann gezielt einzelne Dateien öffnen, die für die Aufgabe relevant sind
 3. Niemals das gesamte `src/` blind durchsuchen — Graph zuerst!
 
 ### Weitere Regeln
-- Für gezielte Fragen: `python -m graphify query "deine Frage"` in `graphify-out/graph.json`
-- Nach Code-Änderungen Graph aktualisieren: `python -m graphify . --update`
-- Graph neu aufbauen bei großen Änderungen: `/graphify .`
+- Für gezielte Fragen: `/understand-chat`; eine Datei oder Funktion erklären: `/understand-explain`; Auswirkungen eines Diffs: `/understand-diff`
+- Visuell erkunden: `/understand-dashboard`
+- Nach größeren Code-Änderungen Graph aktualisieren: `/understand --update`, danach `node scripts/ua-report.mjs` (erzeugt den Report neu)
+- `.ua/` enthält nur Graph, Fingerprints, Konfiguration und Scan-Ergebnis; Zwischendateien (`.ua/tmp`, `.ua/.trash-*`, `.ua/intermediate/*`) sind per `.gitignore` ausgeschlossen
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph
