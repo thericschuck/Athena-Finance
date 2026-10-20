@@ -1,51 +1,62 @@
 'use server'
 
 import { createClient, getAuthUser } from '@/lib/supabase/server'
+import { z } from 'zod'
+import { parseInput, issueMessage } from '@/lib/api/validate'
+import { uuid, isoDate, money } from '@/lib/api/schemas'
+import {
+  getDepots as loadDepots,
+  getDepotTransactions as loadDepotTransactions,
+  getDepotsSummaries as loadDepotsSummaries,
+  getPortfolioHistory as loadPortfolioHistory,
+  getSavingsPlan,
+  getSavingsPlans as loadSavingsPlans,
+  hasInitialTransaction,
+  type Depot,
+  type DepotTransaction,
+  type DepotSummary,
+  type DepotWithSummary,
+  type PortfolioHistoryPoint,
+  type SavingsPlan,
+} from '@/lib/data/depot'
+
+export type { Depot, DepotTransaction, DepotSummary, DepotWithSummary, PortfolioHistoryPoint, SavingsPlan }
+
+// ─── Eingabe-Schemas ──────────────────────────────────────────────────────────
+
+const isinField = z.string().trim().min(1, 'ISIN ist erforderlich').max(32)
+const nameField = z.string().max(200)
+const positive = (msg: string) => money.refine(n => n > 0, msg)
+
+const initialHoldingSchema = z.object({
+  isin: isinField,
+  fundName: nameField,
+  shares: positive('Anteile müssen größer als 0 sein'),
+  pricePerShare: positive('Kurs muss größer als 0 sein'),
+  date: isoDate,
+})
+const manualDepositSchema = z.object({
+  isin: isinField,
+  fundName: nameField,
+  amountEur: positive('Betrag muss größer als 0 sein'),
+  pricePerShare: positive('Kurs muss größer als 0 sein'),
+  date: isoDate,
+  notes: z.string().max(2000).optional(),
+})
+const savingsPlanSchema = z.object({
+  isin: isinField,
+  fundName: nameField,
+  monthlyAmount: positive('Betrag muss größer als 0 sein'),
+  executionDay: z.number().int().min(1, 'Ausführungstag muss zwischen 1 und 28 liegen').max(28, 'Ausführungstag muss zwischen 1 und 28 liegen'),
+  startDate: isoDate,
+})
+
+const invalid = (r: { error: string; issues: { message: string }[] }) => ({
+  success: false as const,
+  error: issueMessage(r as Parameters<typeof issueMessage>[0]),
+})
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-export type DepotTransaction = {
-  id: string
-  user_id: string
-  isin: string
-  fund_name: string
-  transaction_date: string
-  amount_eur: number
-  price_per_share: number
-  shares: number
-  transaction_type: 'initial' | 'buy' | 'savings_plan'
-  notes: string | null
-  created_at: string
-}
-
-export type PortfolioHistoryPoint = {
-  date: string
-  price: number
-  totalShares: number
-  totalInvested: number
-  portfolioValue: number
-  returnPct: number
-}
-
-export type SavingsPlan = {
-  id: string
-  user_id: string
-  isin: string
-  fund_name: string
-  monthly_amount: number
-  execution_day: number
-  start_date: string
-  is_active: boolean
-  created_at: string
-}
-
-export type DepotSummary = {
-  totalShares: number
-  totalInvested: number
-  livePrice: number | null
-  depotValue: number | null
-  returnPct: number | null
-}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -74,20 +85,12 @@ export async function addInitialHolding(
   const { supabase, user } = await getAuthUser()
   if (!user) return { success: false, error: 'Nicht eingeloggt' }
 
-  if (shares <= 0) return { success: false, error: 'Anteile müssen größer als 0 sein' }
-  if (pricePerShare <= 0) return { success: false, error: 'Kurs muss größer als 0 sein' }
+  const args = parseInput(initialHoldingSchema, { isin, fundName, shares, pricePerShare, date })
+  if (!args.ok) return invalid(args)
 
   try {
     // Check: initial darf nur einmal pro ISIN existieren
-    const { data: existing } = await supabase
-      .from('depot_transactions')
-      .select('id')
-      .eq('isin', isin)
-      .eq('user_id', user.id)
-      .eq('transaction_type', 'initial')
-      .limit(1)
-
-    if (existing && existing.length > 0) {
+    if (await hasInitialTransaction(supabase, user.id, isin)) {
       return { success: false, error: 'Bestand wurde bereits eingetragen' }
     }
 
@@ -122,8 +125,8 @@ export async function addManualDeposit(
   const { supabase, user } = await getAuthUser()
   if (!user) return { success: false, error: 'Nicht eingeloggt' }
 
-  if (amountEur <= 0) return { success: false, error: 'Betrag muss größer als 0 sein' }
-  if (pricePerShare <= 0) return { success: false, error: 'Kurs muss größer als 0 sein' }
+  const args = parseInput(manualDepositSchema, { isin, fundName, amountEur, pricePerShare, date, notes })
+  if (!args.ok) return invalid(args)
 
   try {
     await upsertFundPrice(supabase, isin, fundName, pricePerShare, date)
@@ -147,69 +150,22 @@ export async function addManualDeposit(
 export async function getDepotTransactions(isin: string): Promise<DepotTransaction[]> {
   const { supabase, user } = await getAuthUser()
   if (!user) return []
-
-  const { data } = await supabase
-    .from('depot_transactions')
-    .select('*')
-    .eq('isin', isin)
-    .eq('user_id', user.id)
-    .order('transaction_date', { ascending: true })
-    .order('created_at', { ascending: true })
-
-  return (data ?? []) as DepotTransaction[]
+  if (!parseInput(isinField, isin).ok) return []
+  return loadDepotTransactions(supabase, user.id, isin)
 }
 
 export async function getPortfolioHistory(isin: string): Promise<PortfolioHistoryPoint[]> {
   const { supabase, user } = await getAuthUser()
   if (!user) return []
-
-  const [{ data: prices }, { data: transactions }] = await Promise.all([
-    supabase
-      .from('fund_prices')
-      .select('price_date, price')
-      .eq('isin', isin)
-      .order('price_date', { ascending: true }),
-    supabase
-      .from('depot_transactions')
-      .select('transaction_date, amount_eur, shares')
-      .eq('isin', isin)
-      .eq('user_id', user.id)
-      .order('transaction_date', { ascending: true })
-      .order('created_at', { ascending: true }),
-  ])
-
-  if (!prices || prices.length === 0 || !transactions) return []
-
-  let totalShares = 0
-  let totalInvested = 0
-  let txIndex = 0
-  const result: PortfolioHistoryPoint[] = []
-
-  for (const { price_date, price } of prices) {
-    while (txIndex < transactions.length && transactions[txIndex].transaction_date <= price_date) {
-      totalShares   += Number(transactions[txIndex].shares)
-      totalInvested += Number(transactions[txIndex].amount_eur)
-      txIndex++
-    }
-    if (totalShares === 0) continue
-
-    const portfolioValue = totalShares * Number(price)
-    result.push({
-      date: price_date,
-      price: Number(price),
-      totalShares,
-      totalInvested,
-      portfolioValue,
-      returnPct: ((portfolioValue - totalInvested) / totalInvested) * 100,
-    })
-  }
-
-  return result
+  if (!parseInput(isinField, isin).ok) return []
+  return loadPortfolioHistory(supabase, user.id, isin)
 }
 
 export async function deleteDepotTransaction(id: string): Promise<{ success: boolean; error?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { success: false, error: 'Nicht eingeloggt' }
+  const idP = parseInput(uuid, id)
+  if (!idP.ok) return invalid(idP)
 
   try {
     const { error } = await supabase
@@ -236,8 +192,8 @@ export async function createSavingsPlan(
   const { supabase, user } = await getAuthUser()
   if (!user) return { success: false, error: 'Nicht eingeloggt' }
 
-  if (monthlyAmount <= 0) return { success: false, error: 'Betrag muss größer als 0 sein' }
-  if (executionDay < 1 || executionDay > 28) return { success: false, error: 'Ausführungstag muss zwischen 1 und 28 liegen' }
+  const args = parseInput(savingsPlanSchema, { isin, fundName, monthlyAmount, executionDay, startDate })
+  if (!args.ok) return invalid(args)
 
   try {
     const { error } = await supabase.from('savings_plans').insert({
@@ -254,19 +210,14 @@ export async function createSavingsPlan(
 export async function getSavingsPlans(): Promise<SavingsPlan[]> {
   const { supabase, user } = await getAuthUser()
   if (!user) return []
-
-  const { data } = await supabase
-    .from('savings_plans')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: true })
-
-  return (data ?? []) as SavingsPlan[]
+  return loadSavingsPlans(supabase, user.id)
 }
 
 export async function toggleSavingsPlan(id: string, isActive: boolean): Promise<{ success: boolean; error?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { success: false, error: 'Nicht eingeloggt' }
+  const args = parseInput(z.object({ id: uuid, isActive: z.boolean() }), { id, isActive })
+  if (!args.ok) return invalid(args)
 
   try {
     const { error } = await supabase
@@ -284,6 +235,8 @@ export async function toggleSavingsPlan(id: string, isActive: boolean): Promise<
 export async function deleteSavingsPlan(id: string): Promise<{ success: boolean; error?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { success: false, error: 'Nicht eingeloggt' }
+  const idP = parseInput(uuid, id)
+  if (!idP.ok) return invalid(idP)
 
   try {
     const { error } = await supabase
@@ -304,16 +257,13 @@ export async function executeSavingsPlanPayment(
 ): Promise<{ success: boolean; error?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { success: false, error: 'Nicht eingeloggt' }
+  const args = parseInput(z.object({ planId: uuid, pricePerShare: positive('Kurs muss größer als 0 sein') }), { planId, pricePerShare })
+  if (!args.ok) return invalid(args)
 
   try {
-    const { data: plan, error: planErr } = await supabase
-      .from('savings_plans')
-      .select('*')
-      .eq('id', planId)
-      .eq('user_id', user.id)
-      .single()
+    const plan = await getSavingsPlan(supabase, user.id, planId)
 
-    if (planErr || !plan) return { success: false, error: 'Sparplan nicht gefunden' }
+    if (!plan) return { success: false, error: 'Sparplan nicht gefunden' }
     if (pricePerShare <= 0) return { success: false, error: 'Kurs muss größer als 0 sein' }
 
     const today = new Date().toISOString().split('T')[0]
@@ -339,26 +289,10 @@ export async function executeSavingsPlanPayment(
 
 // ─── Depots ───────────────────────────────────────────────────────────────────
 
-export type Depot = {
-  id: string
-  user_id: string
-  name: string
-  isin: string
-  created_at: string
-}
-
 export async function getDepots(): Promise<Depot[]> {
   const { supabase, user } = await getAuthUser()
   if (!user) return []
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await (supabase as any)
-    .from('depots')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: true })
-
-  return (data ?? []) as Depot[]
+  return loadDepots(supabase, user.id)
 }
 
 export async function createDepot(
@@ -368,12 +302,14 @@ export async function createDepot(
   const { supabase, user } = await getAuthUser()
   if (!user) return { success: false, error: 'Nicht eingeloggt' }
 
-  if (!name.trim()) return { success: false, error: 'Name ist erforderlich' }
-  if (!isin.trim()) return { success: false, error: 'ISIN ist erforderlich' }
+  const args = parseInput(
+    z.object({ name: z.string().trim().min(1, 'Name ist erforderlich').max(200), isin: isinField }),
+    { name, isin },
+  )
+  if (!args.ok) return invalid(args)
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('depots')
       .insert({ user_id: user.id, name: name.trim(), isin: isin.trim().toUpperCase() })
       .select('id')
@@ -388,10 +324,11 @@ export async function createDepot(
 export async function deleteDepot(id: string): Promise<{ success: boolean; error?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { success: false, error: 'Nicht eingeloggt' }
+  const idP = parseInput(uuid, id)
+  if (!idP.ok) return invalid(idP)
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('depots')
       .delete()
       .eq('id', id)
@@ -405,59 +342,8 @@ export async function deleteDepot(id: string): Promise<{ success: boolean; error
 
 // ─── Summary (for accounts page & dashboard) ──────────────────────────────────
 
-export type DepotWithSummary = Depot & DepotSummary
-
 export async function getDepotsSummaries(): Promise<DepotWithSummary[]> {
   const { supabase, user } = await getAuthUser()
   if (!user) return []
-
-  const depots = await getDepots()
-  if (!depots.length) return []
-
-  const isins = depots.map(d => d.isin)
-
-  const [{ data: transactions }, { data: caches }, { data: history }] = await Promise.all([
-    supabase
-      .from('depot_transactions')
-      .select('isin, amount_eur, shares')
-      .eq('user_id', user.id)
-      .in('isin', isins),
-    supabase
-      .from('fund_price_cache')
-      .select('isin, price')
-      .in('isin', isins),
-    // Rückfallebene, wenn der Cache leer ist. Ohne sie stand depotValue auf null
-    // und das Dashboard zeigte 0 € Depot, während fn_take_snapshot über
-    // fn_fund_price_eur den letzten bekannten Kurs nimmt — die Kachel und die
-    // Verlaufskurve wären damit sofort wieder auseinandergelaufen.
-    supabase
-      .from('fund_price_history')
-      .select('isin, price, price_date')
-      .in('isin', isins)
-      .order('price_date', { ascending: false }),
-  ])
-
-  // Pro ISIN der jüngste Eintrag — die Abfrage liefert absteigend sortiert.
-  const letzterKurs = new Map<string, number>()
-  for (const row of history ?? []) {
-    if (!letzterKurs.has(row.isin)) letzterKurs.set(row.isin, Number(row.price))
-  }
-
-  return depots.map(depot => {
-    const txs       = (transactions ?? []).filter(t => t.isin === depot.isin)
-    const cache     = caches?.find(c => c.isin === depot.isin)
-    const totalShares   = txs.reduce((s, t) => s + Number(t.shares), 0)
-    const totalInvested = txs.reduce((s, t) => s + Number(t.amount_eur), 0)
-    // Dieselbe Kette wie fn_fund_price_eur: Tagescache, dann letzter bekannter
-    // Kurs, dann mengengewichteter Einstandspreis. Nur wenn zu der ISIN gar
-    // nichts bekannt ist, bleibt es null — dann zeigt die UI „—" statt 0 €.
-    const livePrice     = cache?.price ? Number(cache.price)
-                        : letzterKurs.get(depot.isin)
-                        ?? (totalShares > 0 ? totalInvested / totalShares : null)
-    const depotValue    = livePrice && totalShares > 0 ? totalShares * livePrice : null
-    const returnPct     = depotValue && totalInvested > 0
-      ? ((depotValue - totalInvested) / totalInvested) * 100
-      : null
-    return { ...depot, totalShares, totalInvested, livePrice, depotValue, returnPct }
-  })
+  return loadDepotsSummaries(supabase, user.id)
 }

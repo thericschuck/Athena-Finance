@@ -4,6 +4,28 @@ import { getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { parseCsvAmount } from '@/lib/csv'
 import { vergisseBildUrl } from '@/lib/inventar/bildurls'
+import { z } from 'zod'
+import { parseForm, parseInput, issueMessage } from '@/lib/api/validate'
+import { idField, uuid, isoDate, money, MAX_AMOUNT, optDate, optText } from '@/lib/api/schemas'
+
+// Textfelder und Datumsangaben des Formulars. Beträge laufen weiter über `zahl()`
+// (parseCsvAmount versteht beide Schreibweisen) und werden danach auf Endlichkeit geprüft.
+const textfelderSchema = z.object({
+  name: z.string({ error: 'Bezeichnung ist erforderlich' }).trim().min(1, 'Bezeichnung ist erforderlich').max(200),
+  kategorie: optText(50),
+  marke: optText(100),
+  modell: optText(200),
+  referenz: optText(100),
+  seriennummer: optText(100),
+  gekauft_am: optDate,
+  kaufquelle: optText(200),
+  zustand: optText(100),
+  lagerort: optText(200),
+  versicherungsnummer: optText(100),
+  notizen: optText(5000),
+  verkauft_am: optDate,
+})
+const betragSchema = z.number().min(-MAX_AMOUNT).max(MAX_AMOUNT)
 
 // Bewusst NUR '/inventar' revalidieren, nie '/dashboard'.
 //
@@ -14,6 +36,17 @@ import { vergisseBildUrl } from '@/lib/inventar/bildurls'
 // stehen, obwohl die Zeile in der DB laengst geschrieben war.
 
 export type ValuableActionState = { error: string } | { success: true } | null
+
+/** Prüft das Formular und liefert die Felder; sonst die Fehlermeldung. */
+function pruefeFelder(formData: FormData): { f: ReturnType<typeof felder> } | { error: string } {
+  const roh = parseForm(formData, textfelderSchema)
+  if (!roh.ok) return { error: issueMessage(roh) }
+  const f = felder(formData)
+  for (const wert of [f.kaufpreis, f.verkaufspreis, zahl(formData, 'aktueller_wert')]) {
+    if (wert !== null && !betragSchema.safeParse(wert).success) return { error: 'Betrag ist ungültig' }
+  }
+  return { f }
+}
 
 /** Leerer String aus einem Formular ist „nicht ausgefüllt", nicht „leerer Text". */
 function text(formData: FormData, key: string): string | null {
@@ -71,8 +104,9 @@ export async function createValuable(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const f = felder(formData)
-  if (!f.name) return { error: 'Bezeichnung ist erforderlich' }
+  const geprueft = pruefeFelder(formData)
+  if ('error' in geprueft) return { error: geprueft.error }
+  const f = geprueft.f
 
   const { data, error } = await supabase
     .from('valuables')
@@ -128,11 +162,13 @@ export async function updateValuable(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const id = formData.get('id') as string
-  if (!id) return { error: 'ID fehlt' }
+  const idP = parseInput(idField(), formData.get('id'))
+  if (!idP.ok) return { error: issueMessage(idP) }
+  const id = idP.data
 
-  const f = felder(formData)
-  if (!f.name) return { error: 'Bezeichnung ist erforderlich' }
+  const geprueft = pruefeFelder(formData)
+  if ('error' in geprueft) return { error: geprueft.error }
+  const f = geprueft.f
 
   // Ein gesetztes Verkaufsdatum nimmt das Stueck aus der Vitrine und aus der Summe. Die
   // Zeile bleibt samt Wertverlauf erhalten -- fuer die Frage „was war die Sammlung 2025
@@ -194,6 +230,11 @@ export async function addValuation(
 ): Promise<{ error?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
+  const args = parseInput(
+    z.object({ valuableId: uuid, wert: money, bewertetAm: isoDate, notiz: z.string().max(1000).optional() }),
+    { valuableId, wert, bewertetAm, notiz },
+  )
+  if (!args.ok) return { error: issueMessage(args) }
 
   const { error } = await supabase.from('valuable_valuations').upsert(
     {
@@ -232,7 +273,12 @@ export async function registerValuableImage(
 ): Promise<{ error?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
-  if (!pfad.startsWith(`${user.id}/`)) return { error: 'Ungültiger Pfad' }
+  const args = parseInput(
+    z.object({ valuableId: uuid, pfad: z.string().min(1).max(500), art: z.enum(['foto', 'artwork']) }),
+    { valuableId, pfad, art },
+  )
+  if (!args.ok) return { error: issueMessage(args) }
+  if (!pfad.startsWith(`${user.id}/`) || pfad.includes('..')) return { error: 'Ungültiger Pfad' }
 
   // Erstes Bild wird automatisch Hauptbild — sonst bliebe die Vitrine nach dem ersten
   // Upload beim Kategorie-Icon stehen und man müsste noch einmal klicken.
@@ -259,6 +305,8 @@ export async function registerValuableImage(
 export async function setHauptbild(bildId: string, valuableId: string): Promise<{ error?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
+  const args = parseInput(z.object({ bildId: uuid, valuableId: uuid }), { bildId, valuableId })
+  if (!args.ok) return { error: issueMessage(args) }
 
   // Erst alle zurücksetzen, dann eins setzen. Andersherum verletzt es den partiellen
   // Unique-Index `valuable_images_ein_hauptbild_idx` (zwei Hauptbilder für einen Moment).
@@ -284,6 +332,8 @@ export async function setHauptbild(bildId: string, valuableId: string): Promise<
 export async function deleteValuableImage(bildId: string): Promise<{ error?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
+  const idP = parseInput(uuid, bildId)
+  if (!idP.ok) return { error: issueMessage(idP) }
 
   const { data: row } = await supabase
     .from('valuable_images')
@@ -334,6 +384,8 @@ export async function deleteValuableImage(bildId: string): Promise<{ error?: str
 export async function deleteValuable(id: string): Promise<{ error?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
+  const idP = parseInput(uuid, id)
+  if (!idP.ok) return { error: issueMessage(idP) }
 
   // Dateien mitentfernen, sonst bleiben verwaiste Bilder im Bucket liegen. Die ZEILEN in
   // valuable_images gehen per `on delete cascade` mit, die Dateien nicht — Storage weiß

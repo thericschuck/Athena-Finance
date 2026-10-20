@@ -54,8 +54,17 @@ function buildNodeColorMap(nodes: SankeyNodeDatum[]): Map<string, string> {
   return map
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function SankeyNode(props: any) {
+/** Die von recharts an `node`/`link` durchgereichten Props — nur die hier gelesenen Felder. */
+interface SankeyNodeProps {
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+  payload?: { name?: string; depth?: number }
+  colorMap?: Map<string, string>
+}
+
+function SankeyNode(props: SankeyNodeProps) {
   const { x = 0, y = 0, width = 0, height = 0, payload, colorMap } = props
   const name:  string = payload?.name  ?? ''
   const depth: number = payload?.depth ?? 0
@@ -85,7 +94,7 @@ function SankeyNode(props: any) {
 
 /**
  * Bänder als Farbverlauf statt Einheitsfarbe — genau wie CardSankey in der
- * "III · Die Analyse"-Sektion (siehe LandingClient.tsx): von der Farbe des
+ * "III · Die Analyse"-Sektion (siehe components/landing/): von der Farbe des
  * äußeren Endpunkts (Quelle links, Ziel rechts) zu Gold am "Einnahmen"-Knoten
  * in der Mitte. Das `<defs>` steckt bewusst IM selben Fragment wie der
  * `<path>` statt einmalig außerhalb — SVG referenziert Gradient-IDs
@@ -93,9 +102,20 @@ function SankeyNode(props: any) {
  * `<defs>` außerhalb müsste recharts' Link-Rendering an einer Stelle
  * durchbrechen, die dafür nicht vorgesehen ist.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function SankeyLink(props: any) {
-  const { sourceX, sourceY, sourceControlX, targetX, targetY, targetControlX, linkWidth, payload, colorMap } = props
+interface SankeyLinkProps {
+  sourceX?: number
+  sourceY?: number
+  sourceControlX?: number
+  targetX?: number
+  targetY?: number
+  targetControlX?: number
+  linkWidth?: number
+  payload?: { source?: { name?: string }; target?: { name?: string } }
+  colorMap?: Map<string, string>
+}
+
+function SankeyLink(props: SankeyLinkProps) {
+  const { sourceX = 0, sourceY = 0, sourceControlX = 0, targetX = 0, targetY = 0, targetControlX = 0, linkWidth = 0, payload, colorMap } = props
   const sourceName: string = payload?.source?.name ?? ''
   const targetName: string = payload?.target?.name ?? ''
   const intoEinnahmen = targetName === 'Einnahmen'
@@ -129,8 +149,15 @@ function SankeyLink(props: any) {
   )
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function SankeyTooltip({ active, payload }: any) {
+interface SankeyTooltipItem {
+  name?: string
+  value?: number
+  realValue?: number
+  source?: { name?: string }
+  target?: { name?: string }
+}
+
+function SankeyTooltip({ active, payload }: { active?: boolean; payload?: { payload?: SankeyTooltipItem }[] }) {
   if (!active || !payload?.length) return null
   const item = payload[0]?.payload
   if (!item) return null
@@ -140,7 +167,7 @@ function SankeyTooltip({ active, payload }: any) {
     // realValue statt value: `value` ist die auf das Sankey-Layout normierte Bandbreite,
     // bei Ausgaben also gestaucht, sobald mehr ausgegeben als eingenommen wurde. Der
     // Tooltip soll den echten Betrag nennen (siehe SankeyLinkDatum in lib/analyseData.ts).
-    const betrag = (item.realValue ?? item.value) as number
+    const betrag = item.realValue ?? item.value ?? 0
     return (
       <div className="rounded-lg border border-border bg-popover shadow-lg p-2.5 text-xs">
         <p className="text-muted-foreground">{item.source?.name} → {item.target?.name}</p>
@@ -154,7 +181,7 @@ function SankeyTooltip({ active, payload }: any) {
     <div className="rounded-lg border border-border bg-popover shadow-lg p-2.5 text-xs">
       <p className="text-popover-foreground font-medium">{item.name}</p>
       <p className="text-muted-foreground mt-0.5 tabular-nums">
-        {Math.round(item.value as number).toLocaleString('de-DE')} €
+        {Math.round(item.value ?? 0).toLocaleString('de-DE')} €
       </p>
     </div>
   )

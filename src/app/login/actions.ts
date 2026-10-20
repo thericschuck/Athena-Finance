@@ -3,14 +3,25 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
+import { z } from 'zod'
+import { parseForm } from '@/lib/api/validate'
+
+// Nur Grenzen gegen Missbrauch (Länge/Typ), keine Formatprüfung: Supabase entscheidet über
+// gültige Zugangsdaten. Fehler laufen wie bisher per Redirect ?error= zurück an /login.
+const credentialsSchema = z.object({
+  email: z.string({ error: 'E-Mail fehlt' }).max(320, 'E-Mail ist zu lang'),
+  password: z.string({ error: 'Passwort fehlt' }).max(1024, 'Passwort ist zu lang'),
+})
 
 export async function signIn(formData: FormData) {
   const supabase = await createClient()
-  const email = formData.get('email') as string
+  const creds = parseForm(formData, credentialsSchema)
+  if (!creds.ok) redirect(`/login?error=${encodeURIComponent(creds.issues[0]?.message ?? creds.error)}`)
+  const { email, password } = creds.data
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
-    password: formData.get('password') as string,
+    password,
   })
 
   if (error) {
@@ -30,9 +41,12 @@ export async function signUp(formData: FormData) {
     ? `https://${headersList.get('x-forwarded-host')}`
     : process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
+  const creds = parseForm(formData, credentialsSchema)
+  if (!creds.ok) redirect(`/login?error=${encodeURIComponent(creds.issues[0]?.message ?? creds.error)}`)
+
   const { error } = await supabase.auth.signUp({
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
+    email: creds.data.email,
+    password: creds.data.password,
     options: {
       emailRedirectTo: `${origin}/auth/callback`,
     },

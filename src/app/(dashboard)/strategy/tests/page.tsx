@@ -1,15 +1,16 @@
 import { getAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
-import { Database } from '@/types/database'
+import {
+  getIndicatorInfos, getPerformanceFiltered,
+  type IndicatorInfo, type IndicatorPerformanceRow,
+} from '@/lib/data/strategy'
 import { TestsFilters } from '@/components/strategy/tests-filters'
 import { UrlFiltersProvider, FilterPending } from '@/components/providers/url-filters'
 import { AddBacktestStandaloneDialog } from '@/components/strategy/performance-form'
 import { TestsTable } from '@/components/strategy/tests-table'
 import { Suspense } from 'react'
 
-type Perf = Database['public']['Tables']['indicator_performance']['Row']
-type IndicatorInfo = { id: string; name: string; author: string; type: string }
-type Row = Perf & { indicator: IndicatorInfo | null }
+type Row = IndicatorPerformanceRow & { indicator: IndicatorInfo | null }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default async function TestsPage({
@@ -32,32 +33,17 @@ export default async function TestsPage({
   const defaultTimeframe  = (settings.default_timeframe  as string) ?? ''
 
   // Load indicators for this user
-  const { data: rawIndicators } = await supabase
-    .from('indicators')
-    .select('id, name, author, type')
-    .eq('user_id', user!.id)
-
   const indicatorMap = new Map<string, IndicatorInfo>(
-    (rawIndicators ?? []).map(i => [i.id, i])
+    (await getIndicatorInfos(supabase, user!.id)).map(i => [i.id, i])
   )
-  const userIndicatorIds = [...indicatorMap.keys()]
 
   // Load all performance entries for these indicators
-  let query = supabase
-    .from('indicator_performance')
-    .select('*')
-    .in('indicator_id', userIndicatorIds.length ? userIndicatorIds : ['__none__'])
-
-  if (assetClass) query = query.eq('asset_class', assetClass)
-  if (minCg != null) query = query.gte('cobra_green', minCg)
-  if (minCr != null) query = query.gte('cobra_red', minCr)
-  if (minPf != null) query = query.gte('profit_factor', minPf)
-  if (minWr != null) query = query.gte('win_rate', minWr)
-
-  const { data: rawPerfs } = await query
+  const rawPerfs = await getPerformanceFiltered(supabase, [...indicatorMap.keys()], {
+    assetClass, minCobraGreen: minCg, minCobraRed: minCr, minProfitFactor: minPf, minWinRate: minWr,
+  })
 
   // Merge with indicator info
-  const rows: Row[] = (rawPerfs ?? []).map(p => ({
+  const rows: Row[] = rawPerfs.map(p => ({
     ...p,
     indicator: indicatorMap.get(p.indicator_id) ?? null,
   }))

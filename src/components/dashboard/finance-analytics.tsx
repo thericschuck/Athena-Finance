@@ -27,7 +27,12 @@ export type Summary = {
   created_at:       string
 }
 
-type Props = { summaries: Summary[]; locale: string }
+/** Spalten, die die Dashboard-Auswertung wirklich liest (Teilmenge von Summary). */
+export type SummaryRow = Pick<Summary,
+  'month' | 'food' | 'leisure' | 'subscriptions' | 'pocket_money' | 'other_expenses' |
+  'total_income' | 'total_expenses' | 'net_balance'>
+
+type Props = { summaries: SummaryRow[]; locale: string }
 
 function monthLabel(month: string, locale: string) {
   const dateStr = month.length <= 7 ? month + '-01' : month.slice(0, 10)
@@ -45,7 +50,7 @@ function useMounted() {
   return useSyncExternalStore(subscribeNever, () => true, () => false)
 }
 
-function netBal(m: Summary) {
+function netBal(m: SummaryRow) {
   return m.net_balance ?? (m.total_income - m.total_expenses)
 }
 
@@ -78,8 +83,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 // ─── Custom Tooltip (theme-aware via Tailwind, not hsl(var())) ─────────────────
 function ChartTooltip({ active, payload, label, fmt }: {
   active?: boolean
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  payload?: any[]
+  payload?: { name: string; value: number; color: string }[]
   label?: string
   fmt: (n: number) => string
 }) {
@@ -87,7 +91,7 @@ function ChartTooltip({ active, payload, label, fmt }: {
   return (
     <div className="rounded-lg border border-border bg-popover shadow-lg p-3 text-xs min-w-37.5">
       <p className="font-semibold text-popover-foreground mb-2">{label}</p>
-      {payload.map((entry: { name: string; value: number; color: string }) => (
+      {payload.map(entry => (
         <div key={entry.name} className="flex items-center justify-between gap-3 mt-1">
           <span className="flex items-center gap-1.5 text-muted-foreground">
             <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: entry.color }} />
@@ -105,7 +109,7 @@ function ChartTooltip({ active, payload, label, fmt }: {
 // Landing-Mockup-Pilot (siehe DashboardMock.tsx, BarsChart) — dort wird nur
 // dieser einzelne Chart gebraucht, nicht das komplette FinanceAnalytics-Bundle
 // samt Kategorie-Chart und Monatsabweichungs-Tabelle.
-export function IncomeExpenseChart({ summaries, locale, height = 200 }: { summaries: Summary[]; locale: string; height?: number | `${number}%` }) {
+export function IncomeExpenseChart({ summaries, locale, height = 200 }: { summaries: SummaryRow[]; locale: string; height?: number | `${number}%` }) {
   const fmt = (n: number) => fmtCurrency(n, 'EUR', locale)
   const mounted = useMounted()
 
@@ -167,7 +171,7 @@ const ALL_CATS = ['Lebensmittel', 'Freizeit', 'Abos', 'Taschengeld', 'Sonstiges'
 type Cat = typeof ALL_CATS[number]
 
 // ─── 2. Ausgaben nach Kategorien ───────────────────────────────────────────────
-function CategoryChart({ summaries, locale }: { summaries: Summary[]; locale: string }) {
+function CategoryChart({ summaries, locale }: { summaries: SummaryRow[]; locale: string }) {
   const fmt = (n: number) => fmtCurrency(n, 'EUR', locale)
   const [active, setActive] = useState<Set<Cat>>(() => new Set(ALL_CATS))
   const mounted = useMounted()
@@ -241,7 +245,7 @@ function CategoryChart({ summaries, locale }: { summaries: Summary[]; locale: st
 }
 
 // ─── 3. Monatliche Abweichung ──────────────────────────────────────────────────
-function DeviationTable({ summaries, locale }: { summaries: Summary[]; locale: string }) {
+function DeviationTable({ summaries, locale }: { summaries: SummaryRow[]; locale: string }) {
   const fmt = (n: number) => fmtCurrency(n, 'EUR', locale)
 
   const sorted = [...summaries].sort((a, b) => b.month.localeCompare(a.month))

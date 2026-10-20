@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
-import { Database } from '@/types/database'
+import type { IndicatorPerformanceRow } from '@/lib/data/strategy'
 
-type Perf = Database['public']['Tables']['indicator_performance']['Row']
+type Perf = IndicatorPerformanceRow
 type IndicatorInfo = { id: string; name: string; author: string; type: string }
 type Row = Perf & { indicator: IndicatorInfo | null }
 

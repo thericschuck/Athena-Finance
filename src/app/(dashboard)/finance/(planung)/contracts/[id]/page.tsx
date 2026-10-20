@@ -1,15 +1,14 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getAuthUser } from '@/lib/supabase/server'
-import { Database } from '@/types/database'
+import { getContract } from '@/lib/data/finance-planning'
+import { getAccountNames } from '@/lib/data/finance-accounts'
+import { getCategoryNames, getContractTransactions } from '@/lib/data/finance-transactions'
 import { EditContractDialog, DeleteContractButton } from '@/components/finance/contract-form'
 import { CONTRACT_TYPES, FREQUENCIES, TRANSFER_TYPES } from '@/lib/finance/contract-constants'
 import { ArrowLeft, RefreshCw, AlertTriangle } from 'lucide-react'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency, fmtDate as libFmtDate } from '@/lib/format'
-
-type Contract    = Database['public']['Tables']['contracts']['Row'] & { to_account_id?: string | null }
-type Transaction = Database['public']['Tables']['transactions']['Row']
 
 function toMonthly(amount: number, frequency: string): number {
   const map: Record<string, number> = {
@@ -26,18 +25,11 @@ const FREQ_LABEL   = Object.fromEntries(FREQUENCIES.map(f => [f.value, f.label])
 export default async function ContractDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [{ id }, { supabase, user }] = await Promise.all([params, getAuthUser()])
 
-  const [
-    { data: contract },
-    { data: transactions },
-    { data: accounts },
-    { data: categories },
-    settings,
-  ] = await Promise.all([
-    supabase.from('contracts').select('*').eq('id', id).eq('user_id', user!.id).single(),
-    supabase.from('transactions').select('*').eq('contract_id', id).eq('user_id', user!.id)
-      .order('date', { ascending: false }),
-    supabase.from('accounts').select('id, name').eq('user_id', user!.id).order('sort_order'),
-    supabase.from('categories').select('id, name').eq('user_id', user!.id).order('name'),
+  const [contract, txs, accs, cats, settings] = await Promise.all([
+    getContract(supabase, user!.id, id),
+    getContractTransactions(supabase, user!.id, id),
+    getAccountNames(supabase, user!.id),
+    getCategoryNames(supabase, user!.id),
     getSettings(user!.id),
   ])
 
@@ -48,10 +40,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
 
   if (!contract) notFound()
 
-  const c = contract as Contract
-  const txs = (transactions ?? []) as Transaction[]
-  const accs = accounts ?? []
-  const cats = categories ?? []
+  const c = contract
 
   const isTransfer  = TRANSFER_TYPES.has(c.type)
   const fromAccount = accs.find(a => a.id === c.account_id)

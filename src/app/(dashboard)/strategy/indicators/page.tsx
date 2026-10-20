@@ -1,6 +1,9 @@
 import { getAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
-import { Database } from '@/types/database'
+import {
+  getIndicators, getPerformanceForIndicators, getIndicatorFilterOptions,
+  type IndicatorRow,
+} from '@/lib/data/strategy'
 import { AddIndicatorDialog } from '@/components/strategy/indicator-form'
 import { IndicatorExportDialog, IndicatorImportDialog } from '@/components/strategy/indicator-export-dialog'
 import { IndicatorFilters } from '@/components/strategy/indicator-filters'
@@ -8,10 +11,7 @@ import { UrlFiltersProvider, FilterPending } from '@/components/providers/url-fi
 import { IndicatorsTable } from '@/components/strategy/indicators-table'
 import { Suspense } from 'react'
 
-type Indicator = Database['public']['Tables']['indicators']['Row']
-type Perf      = Database['public']['Tables']['indicator_performance']['Row']
-
-type IndicatorWithCobra = Indicator & {
+type IndicatorWithCobra = IndicatorRow & {
   cobraGreen: number | null
   cobraRed:   number | null
   testCount:  number
@@ -34,29 +34,12 @@ export default async function IndicatorsPage({
   const defaultAssetClass = (settings.default_asset_class as string) ?? 'major'
   const defaultTimeframe  = (settings.default_timeframe  as string) ?? ''
 
-  // Build indicator query
-  let query = supabase
-    .from('indicators')
-    .select('*')
-    .eq('user_id', user!.id)
-
-  if (filterType)   query = query.eq('type', filterType)
-  if (filterAuthor) query = query.eq('author', filterAuthor)
-  if (onlyAllowed)  query = query.eq('is_forbidden', false)
-
-  const { data: rawIndicators } = await query.order('name')
-  const indicators = rawIndicators ?? []
+  const indicators = await getIndicators(supabase, user!.id, {
+    type: filterType, author: filterAuthor, onlyAllowed,
+  })
 
   // Load performance entries for these indicators
-  const indicatorIds = indicators.map(i => i.id)
-  const { data: rawPerfs } = indicatorIds.length
-    ? await supabase
-        .from('indicator_performance')
-        .select('*')
-        .in('indicator_id', indicatorIds)
-        .order('created_at', { ascending: false })
-    : { data: [] }
-  const perfs = rawPerfs ?? []
+  const perfs = await getPerformanceForIndicators(supabase, indicators.map(i => i.id))
 
   // Aggregate cobra scores per indicator
   const cobraMap = new Map<string, { green: number | null; red: number | null; count: number }>()
@@ -82,13 +65,10 @@ export default async function IndicatorsPage({
   }))
 
   // Unique filter options (from unfiltered data for better UX — load all)
-  const { data: allIndicators } = await supabase
-    .from('indicators')
-    .select('type, author')
-    .eq('user_id', user!.id)
+  const allIndicators = await getIndicatorFilterOptions(supabase, user!.id)
 
-  const allTypes   = [...new Set((allIndicators ?? []).map(i => i.type))].sort()
-  const allAuthors = [...new Set((allIndicators ?? []).map(i => i.author))].sort()
+  const allTypes   = [...new Set(allIndicators.map(i => i.type))].sort()
+  const allAuthors = [...new Set(allIndicators.map(i => i.author))].sort()
 
   const forbiddenCount = enriched.filter(i => i.is_forbidden).length
   const repaintsCount  = enriched.filter(i => i.repaints).length

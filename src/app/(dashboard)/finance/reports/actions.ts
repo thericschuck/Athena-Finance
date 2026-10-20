@@ -1,12 +1,21 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
+import { parseInput, issueMessage } from '@/lib/api/validate'
+import { uuid } from '@/lib/api/schemas'
 import { createClient } from '@/lib/supabase/server'
 import { buildReportData, yearPeriod } from '@/lib/reports/build'
 import { renderReportHtml } from '@/lib/reports/render-html'
 import { renderReportPdf } from '@/lib/reports/render-pdf'
 import { persistReport, markReportSent } from '@/lib/reports/store'
 import { sendReportEmail } from '@/lib/reports/email'
+import { getReportForEmail, getReportPdfPath } from '@/lib/data/finance-budget'
+
+const annualArgs = z.object({
+  year: z.number().int().min(2000).max(2100),
+  opts: z.object({ sendEmail: z.boolean().optional() }).optional(),
+})
 
 /**
  * Jahresreport wird NICHT automatisch erzeugt — Eric will vor dem Versand noch etwas prüfen
@@ -21,6 +30,8 @@ export async function generateAnnualReport(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Nicht eingeloggt' }
+  const args = parseInput(annualArgs, { year, opts })
+  if (!args.ok) return { error: issueMessage(args) }
 
   const period = yearPeriod(year)
   const title  = `Jahresreport ${period.label}`
@@ -57,13 +68,10 @@ export async function sendExistingReportEmail(reportId: string): Promise<{ succe
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Nicht eingeloggt' }
   if (!user.email) return { error: 'Kein E-Mail-Adresse am Konto hinterlegt' }
+  const idP = parseInput(uuid, reportId)
+  if (!idP.ok) return { error: issueMessage(idP) }
 
-  const { data: report, error } = await supabase
-    .from('reports')
-    .select('title, html, pdf_path')
-    .eq('id', reportId)
-    .eq('user_id', user.id)
-    .single()
+  const { data: report, error } = await getReportForEmail(supabase, user.id, reportId)
   if (error || !report) return { error: 'Report nicht gefunden' }
 
   const { data: pdfBlob, error: downloadErr } = await supabase.storage
@@ -93,13 +101,10 @@ export async function getReportDownloadUrl(reportId: string): Promise<{ url: str
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Nicht eingeloggt' }
+  const idP = parseInput(uuid, reportId)
+  if (!idP.ok) return { error: issueMessage(idP) }
 
-  const { data: report, error } = await supabase
-    .from('reports')
-    .select('pdf_path')
-    .eq('id', reportId)
-    .eq('user_id', user.id)
-    .single()
+  const { data: report, error } = await getReportPdfPath(supabase, user.id, reportId)
   if (error || !report?.pdf_path) return { error: 'Report nicht gefunden' }
 
   const { data: signed, error: signErr } = await supabase.storage

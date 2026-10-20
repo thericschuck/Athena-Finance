@@ -1,7 +1,11 @@
 'use server'
 
+import { getUserSettingValue } from '@/lib/data/crypto'
 import { createClient, getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
+import { parseForm, parseInput, issueMessage } from '@/lib/api/validate'
+import { idField, uuid, reqText, optText, optMoneyField, moneyField } from '@/lib/api/schemas'
 import { getSettings } from '@/lib/settings'
 import { getPrices, getEurUsdRate } from '@/lib/crypto/coingecko'
 import type { Json } from '@/types/database'
@@ -24,6 +28,49 @@ import { createLogger } from '@/lib/assistant/logger'
 
 export type AssetActionState = { error: string } | { success: true } | null
 
+const coinId = (msg: string) =>
+  z.string({ error: msg }).trim().toLowerCase().min(1, msg).max(100)
+
+const createAssetSchema = z.object({
+  name: reqText('Name ist erforderlich', 100),
+  coingecko_id: coinId('Bitte einen Coin auswählen'),
+  // 'crypto' | 'stable' | 'fiat'; alles andere gilt wie bisher als 'crypto'
+  coin_type: z.string().max(20).optional().transform(v => v || 'crypto'),
+  quantity: moneyField('Menge muss größer als 0 sein').refine(n => n > 0, 'Menge muss größer als 0 sein'),
+  avg_buy_price: optMoneyField('Ø Kaufpreis ist ungültig').refine(
+    v => v === null || v >= 0,
+    'Ø Kaufpreis darf nicht negativ sein',
+  ),
+  portfolio_name: optText(100),
+  exchange: optText(100),
+  notes: optText(2000),
+})
+
+const updateAssetSchema = z.object({
+  id: idField(),
+  name: reqText('Name ist erforderlich', 100),
+  coingecko_id: coinId('CoinGecko-ID ist erforderlich'),
+  quantity: moneyField('Menge muss größer als 0 sein').refine(n => n > 0, 'Menge muss größer als 0 sein'),
+  avg_buy_price: optMoneyField('Ø Kaufpreis ist ungültig'),
+  portfolio_name: optText(100),
+  exchange: optText(100),
+  notes: optText(2000),
+})
+
+const priceUpdateSchema = z
+  .array(z.object({ id: uuid, coingecko_id: z.string().min(1).max(100) }))
+  .max(500)
+
+const rebalancingTargetsSchema = z
+  .array(
+    z.object({
+      symbol: z.string().max(32),
+      coingecko_id: z.string().max(100),
+      target_pct: z.number().min(0, 'Ziel-% muss zwischen 0 und 100 liegen').max(100, 'Ziel-% muss zwischen 0 und 100 liegen'),
+    }),
+  )
+  .max(200)
+
 // ─── Create ───────────────────────────────────────────────────────────────────
 export async function createAsset(
   _prev: AssetActionState,
@@ -32,16 +79,9 @@ export async function createAsset(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const name         = (formData.get('name') as string)?.trim()
-  const coingeckoId  = (formData.get('coingecko_id') as string)?.trim().toLowerCase()
-  const coinType     = (formData.get('coin_type') as string) || 'crypto'  // 'crypto' | 'stable' | 'fiat'
-  const quantity     = parseFloat(formData.get('quantity') as string)
-  const avgBuyPrice  = formData.get('avg_buy_price') ? parseFloat(formData.get('avg_buy_price') as string) : null
-
-  if (!name)                              return { error: 'Name ist erforderlich' }
-  if (!coingeckoId)                       return { error: 'Bitte einen Coin auswählen' }
-  if (isNaN(quantity) || quantity <= 0)   return { error: 'Menge muss größer als 0 sein' }
-  if (avgBuyPrice !== null && avgBuyPrice < 0) return { error: 'Ø Kaufpreis darf nicht negativ sein' }
+  const parsed = parseForm(formData, createAssetSchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
+  const { name, coingecko_id: coingeckoId, coin_type: coinType, quantity, avg_buy_price: avgBuyPrice } = parsed.data
 
   // Map coin_type to the DB asset type (keep 'crypto' as umbrella for all crypto-related assets)
   const assetDbType = coinType === 'fiat' ? 'fiat' : coinType === 'stable' ? 'stable' : 'crypto'
@@ -56,18 +96,17 @@ export async function createAsset(
       currency:      'EUR',
       user_id:       user.id,
       avg_buy_price: avgBuyPrice,
-      portfolio_name: (formData.get('portfolio_name') as string) || null,
-      exchange:       (formData.get('exchange') as string) || null,
-      notes:          (formData.get('notes') as string) || null,
+      portfolio_name: parsed.data.portfolio_name,
+      exchange:       parsed.data.exchange,
+      notes:          parsed.data.notes,
     })
     .select('id')
     .single()
 
   if (insertError) return { error: insertError.message }
 
-  // Audit log (table not yet in generated types → cast)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase as any).from('asset_audit_log').insert({
+  // Audit log
+  await supabase.from('asset_audit_log').insert({
     user_id:      user.id,
     asset_id:     asset.id,
     asset_name:   name,
@@ -76,8 +115,8 @@ export async function createAsset(
     changes: {
       quantity:      quantity,
       avg_buy_price: avgBuyPrice,
-      portfolio_name: (formData.get('portfolio_name') as string) || null,
-      exchange:       (formData.get('exchange') as string) || null,
+      portfolio_name: parsed.data.portfolio_name,
+      exchange:       parsed.data.exchange,
     },
   })
 
@@ -113,15 +152,9 @@ export async function updateAsset(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const id          = formData.get('id') as string
-  const name        = (formData.get('name') as string)?.trim()
-  const coingeckoId = (formData.get('coingecko_id') as string)?.trim().toLowerCase()
-  const quantity    = parseFloat(formData.get('quantity') as string)
-
-  if (!id)                                return { error: 'ID fehlt' }
-  if (!name)                              return { error: 'Name ist erforderlich' }
-  if (!coingeckoId)                       return { error: 'CoinGecko-ID ist erforderlich' }
-  if (isNaN(quantity) || quantity <= 0)   return { error: 'Menge muss größer als 0 sein' }
+  const parsed = parseForm(formData, updateAssetSchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
+  const { id, name, coingecko_id: coingeckoId, quantity } = parsed.data
 
   // Fetch current values for diff
   const { data: current } = await supabase
@@ -131,10 +164,10 @@ export async function updateAsset(
     .eq('user_id', user.id)
     .single()
 
-  const newAvgBuyPrice  = formData.get('avg_buy_price') ? parseFloat(formData.get('avg_buy_price') as string) : null
-  const newPortfolio    = (formData.get('portfolio_name') as string) || null
-  const newExchange     = (formData.get('exchange') as string) || null
-  const newNotes        = (formData.get('notes') as string) || null
+  const newAvgBuyPrice  = parsed.data.avg_buy_price
+  const newPortfolio    = parsed.data.portfolio_name
+  const newExchange     = parsed.data.exchange
+  const newNotes        = parsed.data.notes
 
   const { error } = await supabase
     .from('assets')
@@ -155,7 +188,7 @@ export async function updateAsset(
 
   // Audit log — only record changed fields
   if (current) {
-    const changes: Record<string, { from: unknown; to: unknown }> = {}
+    const changes: { [key: string]: { from: Json; to: Json } } = {}
     if (current.quantity      !== quantity)        changes.quantity      = { from: current.quantity,      to: quantity }
     if (current.avg_buy_price !== newAvgBuyPrice)  changes.avg_buy_price = { from: current.avg_buy_price, to: newAvgBuyPrice }
     if (current.portfolio_name !== newPortfolio)   changes.portfolio_name = { from: current.portfolio_name, to: newPortfolio }
@@ -164,8 +197,7 @@ export async function updateAsset(
     if (current.notes          !== newNotes)       changes.notes          = { from: current.notes,          to: newNotes }
 
     if (Object.keys(changes).length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any).from('asset_audit_log').insert({
+      await supabase.from('asset_audit_log').insert({
         user_id:      user.id,
         asset_id:     id,
         asset_name:   name,
@@ -184,6 +216,8 @@ export async function updateAsset(
 export async function deleteAsset(id: string): Promise<{ error?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
+  const idP = parseInput(uuid, id)
+  if (!idP.ok) return { error: issueMessage(idP) }
 
   // Fetch before delete for audit log
   const { data: current } = await supabase
@@ -202,8 +236,7 @@ export async function deleteAsset(id: string): Promise<{ error?: string }> {
   if (error) return { error: error.message }
 
   if (current) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from('asset_audit_log').insert({
+    await supabase.from('asset_audit_log').insert({
       user_id:      user.id,
       asset_id:     null,
       asset_name:   current.name,
@@ -227,6 +260,8 @@ export async function updateAssetPrices(
 ): Promise<{ updated: number; errors: string[] }> {
   const { supabase, user } = await getAuthUser()
   if (!user) throw new Error('Nicht eingeloggt')
+  const argP = parseInput(priceUpdateSchema, assets)
+  if (!argP.ok) return { updated: 0, errors: [issueMessage(argP)] }
 
   const uniqueIds = [...new Set(assets.map(a => a.coingecko_id))]
   const prices    = await getPrices(uniqueIds)
@@ -345,6 +380,8 @@ export async function getRebalancingTargets(userId: string): Promise<Rebalancing
 export async function saveRebalancingTargets(targets: RebalancingTarget[]): Promise<void> {
   const { supabase, user } = await getAuthUser()
   if (!user) throw new Error('Nicht eingeloggt')
+  const argP = parseInput(rebalancingTargetsSchema, targets)
+  if (!argP.ok) throw new Error(issueMessage(argP))
 
   const { error } = await supabase.from('user_settings').upsert(
     {
@@ -374,6 +411,7 @@ export type CryptoSource = 'all' | 'kraken' | 'manual'
 export async function saveCryptoSource(source: CryptoSource): Promise<void> {
   const { supabase, user } = await getAuthUser()
   if (!user) return
+  if (!parseInput(z.enum(['all', 'kraken', 'manual']), source).ok) return
 
   await supabase.from('user_settings').upsert(
     { user_id: user.id, key: 'crypto_source', value: source as unknown as Json },
@@ -384,13 +422,7 @@ export async function saveCryptoSource(source: CryptoSource): Promise<void> {
 
 export async function getCryptoSource(userId: string): Promise<CryptoSource> {
   const supabase = await createClient()
-  const { data } = await supabase
-    .from('user_settings')
-    .select('value')
-    .eq('user_id', userId)
-    .eq('key', 'crypto_source')
-    .maybeSingle()
-  const v = data?.value as string | undefined
+  const v = (await getUserSettingValue(supabase, userId, 'crypto_source')) as string | null
   return (v === 'kraken' || v === 'manual') ? v : 'all'
 }
 
@@ -411,7 +443,7 @@ export async function syncFromKraken(): Promise<SyncState> {
 
 // ─── Rebalancing: Ausführung vorschlagen (Button außerhalb des Chats) ──────────
 // Ruft dieselbe WRITE_ACTION auf, die Athena im Chat vorschlagen würde
-// (`executeRebalancing` in src/lib/assistant/actions.ts) über `proposeWriteAction` — der Button
+// (`executeRebalancing` in src/lib/assistant/actions/crypto.ts) über `proposeWriteAction` — der Button
 // auf der Rebalancing-Seite nimmt damit exakt denselben Vorschlags-/Bestätigungsweg wie der
 // Chat, inklusive derselben PendingActionCard. Kein eigener zweiter Ausführungspfad.
 export async function proposeRebalanceExecution(): Promise<ProposeWriteActionResult> {
@@ -612,7 +644,9 @@ export async function getKrakenOpenPositions(): Promise<
 
 /** Delete all assets belonging to a manual portfolio (by portfolio_name). */
 export async function deletePortfolio(portfolioName: string): Promise<{ error: string } | { success: true }> {
-  if (!portfolioName || portfolioName === 'Kraken') return { error: 'Ungültiger Portfolio-Name' }
+  if (!parseInput(z.string().trim().min(1).max(100), portfolioName).ok || portfolioName === 'Kraken') {
+    return { error: 'Ungültiger Portfolio-Name' }
+  }
 
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }

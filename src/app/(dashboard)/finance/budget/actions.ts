@@ -2,9 +2,49 @@
 
 import { getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
+import { parseForm, parseInput, issueMessage } from '@/lib/api/validate'
+import { idField, uuid, reqText, optText, optUuid, optMoneyField, optIntField, moneyField } from '@/lib/api/schemas'
 
 const PATH = '/finance/budget'
 type State = { error: string } | { success: true } | null
+
+const categorySchema = z.object({
+  name: reqText('Name ist erforderlich', 100),
+  icon: optText(32),
+  monthly_budget: optMoneyField('Monatsbudget ist ungültig'),
+  sort_order: optIntField('Reihenfolge ist ungültig').transform(v => v ?? 0),
+})
+const updateCategorySchema = categorySchema.extend({ id: idField() })
+
+const itemFields = {
+  name: reqText('Name ist erforderlich', 200),
+  unit_price: moneyField('Preis ungültig'),
+  quantity: optMoneyField('Menge ist ungültig').transform(v => v ?? 1),
+  interval_days: moneyField('Intervall muss mindestens 1 Tag sein').refine(
+    n => Number.isInteger(n) && n >= 1,
+    'Intervall muss mindestens 1 Tag sein',
+  ),
+  notes: optText(2000),
+}
+const createItemSchema = z.object({
+  ...itemFields,
+  category_id: idField('Kategorie fehlt', 'Kategorie ist ungültig'),
+})
+const updateItemSchema = z.object({ id: idField(), ...itemFields })
+
+// Prozentwerte: 0–100; leer → bisheriger Standard.
+const pct = (fallback: number, msg: string) =>
+  optMoneyField(msg)
+    .refine(v => v === null || (v >= 0 && v <= 100), msg)
+    .transform(v => v ?? fallback)
+const incomeTargetSchema = z.object({
+  id: optUuid(),
+  label: optText(100).transform(v => v ?? 'Standard'),
+  buffer_pct: pct(15, 'Puffer muss zwischen 0 und 100 % liegen'),
+  tax_pct: pct(30, 'Steuer muss zwischen 0 und 100 % liegen'),
+  savings_pct: pct(10, 'Sparquote muss zwischen 0 und 100 % liegen'),
+})
 
 // ── Categories ─────────────────────────────────────────────────────────────────
 
@@ -12,15 +52,12 @@ export async function createCategory(_prev: State, formData: FormData): Promise<
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const name = (formData.get('name') as string)?.trim()
-  if (!name) return { error: 'Name ist erforderlich' }
+  const parsed = parseForm(formData, categorySchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
 
   const { error } = await supabase.from('budget_categories').insert({
     user_id: user.id,
-    name,
-    icon:           (formData.get('icon') as string) || null,
-    monthly_budget: formData.get('monthly_budget') ? Number(formData.get('monthly_budget')) : null,
-    sort_order:     Number(formData.get('sort_order') || 0),
+    ...parsed.data,
   })
 
   if (error) return { error: error.message }
@@ -32,21 +69,15 @@ export async function updateCategory(_prev: State, formData: FormData): Promise<
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const id   = formData.get('id') as string
-  const name = (formData.get('name') as string)?.trim()
-  if (!id)   return { error: 'ID fehlt' }
-  if (!name) return { error: 'Name ist erforderlich' }
+  const parsed = parseForm(formData, updateCategorySchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
+  const { id, ...fields } = parsed.data
 
   // .eq('user_id', ...) zusätzlich zur RLS-Policy — dieselbe Defense-in-Depth
   // wie bei bank_transactions/crypto-Actions: die Policy allein reicht,
   // die explizite Bedingung macht den Besitzer-Scope auch im Anwendungscode
   // sichtbar statt sich ausschließlich auf die DB-Ebene zu verlassen.
-  const { error } = await supabase.from('budget_categories').update({
-    name,
-    icon:           (formData.get('icon') as string) || null,
-    monthly_budget: formData.get('monthly_budget') ? Number(formData.get('monthly_budget')) : null,
-    sort_order:     Number(formData.get('sort_order') || 0),
-  }).eq('id', id).eq('user_id', user.id)
+  const { error } = await supabase.from('budget_categories').update(fields).eq('id', id).eq('user_id', user.id)
 
   if (error) return { error: error.message }
   revalidatePath(PATH)
@@ -56,6 +87,8 @@ export async function updateCategory(_prev: State, formData: FormData): Promise<
 export async function deleteCategory(id: string): Promise<{ error?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
+  const idP = parseInput(uuid, id)
+  if (!idP.ok) return { error: issueMessage(idP) }
 
   const { error } = await supabase.from('budget_categories').delete().eq('id', id).eq('user_id', user.id)
   if (error) return { error: error.message }
@@ -69,25 +102,12 @@ export async function createItem(_prev: State, formData: FormData): Promise<Stat
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const name          = (formData.get('name') as string)?.trim()
-  const category_id   = formData.get('category_id') as string
-  const unit_price    = Number(formData.get('unit_price'))
-  const quantity      = Number(formData.get('quantity') || 1)
-  const interval_days = Number(formData.get('interval_days'))
-
-  if (!name)              return { error: 'Name ist erforderlich' }
-  if (!category_id)       return { error: 'Kategorie fehlt' }
-  if (isNaN(unit_price))  return { error: 'Preis ungültig' }
-  if (!interval_days || interval_days < 1) return { error: 'Intervall muss mindestens 1 Tag sein' }
+  const parsed = parseForm(formData, createItemSchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
 
   const { error } = await supabase.from('budget_items').insert({
     user_id: user.id,
-    name,
-    category_id,
-    unit_price,
-    quantity,
-    interval_days,
-    notes: (formData.get('notes') as string) || null,
+    ...parsed.data,
   })
 
   if (error) return { error: error.message }
@@ -99,24 +119,11 @@ export async function updateItem(_prev: State, formData: FormData): Promise<Stat
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const id            = formData.get('id') as string
-  const name          = (formData.get('name') as string)?.trim()
-  const unit_price    = Number(formData.get('unit_price'))
-  const quantity      = Number(formData.get('quantity') || 1)
-  const interval_days = Number(formData.get('interval_days'))
+  const parsed = parseForm(formData, updateItemSchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
+  const { id, ...fields } = parsed.data
 
-  if (!id)             return { error: 'ID fehlt' }
-  if (!name)           return { error: 'Name ist erforderlich' }
-  if (isNaN(unit_price)) return { error: 'Preis ungültig' }
-  if (!interval_days || interval_days < 1) return { error: 'Intervall muss mindestens 1 Tag sein' }
-
-  const { error } = await supabase.from('budget_items').update({
-    name,
-    unit_price,
-    quantity,
-    interval_days,
-    notes: (formData.get('notes') as string) || null,
-  }).eq('id', id).eq('user_id', user.id)
+  const { error } = await supabase.from('budget_items').update(fields).eq('id', id).eq('user_id', user.id)
 
   if (error) return { error: error.message }
   revalidatePath(PATH)
@@ -126,6 +133,8 @@ export async function updateItem(_prev: State, formData: FormData): Promise<Stat
 export async function deleteItem(id: string): Promise<{ error?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
+  const idP = parseInput(uuid, id)
+  if (!idP.ok) return { error: issueMessage(idP) }
 
   const { error } = await supabase.from('budget_items').delete().eq('id', id).eq('user_id', user.id)
   if (error) return { error: error.message }
@@ -139,13 +148,9 @@ export async function upsertIncomeTarget(_prev: State, formData: FormData): Prom
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const id          = formData.get('id') as string | null
-  const label       = (formData.get('label') as string)?.trim() || 'Standard'
-  const buffer_pct  = Number(formData.get('buffer_pct') || 15)
-  const tax_pct     = Number(formData.get('tax_pct') || 30)
-  const savings_pct = Number(formData.get('savings_pct') || 10)
-
-  const payload = { label, buffer_pct, tax_pct, savings_pct }
+  const parsed = parseForm(formData, incomeTargetSchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
+  const { id, ...payload } = parsed.data
 
   const { error } = id
     ? await supabase.from('income_targets').update(payload).eq('id', id).eq('user_id', user.id)
@@ -168,7 +173,7 @@ export async function seedIfEmpty(): Promise<void> {
 
   const { count: catCount } = await supabase
     .from('budget_categories')
-    .select('*', { count: 'exact', head: true })
+    .select('id', { count: 'exact', head: true })
     .eq('user_id', user.id)
 
   if ((catCount ?? 0) === 0) {
@@ -184,7 +189,7 @@ export async function seedIfEmpty(): Promise<void> {
 
   const { count: targetCount } = await supabase
     .from('income_targets')
-    .select('*', { count: 'exact', head: true })
+    .select('id', { count: 'exact', head: true })
     .eq('user_id', user.id)
 
   if ((targetCount ?? 0) === 0) {

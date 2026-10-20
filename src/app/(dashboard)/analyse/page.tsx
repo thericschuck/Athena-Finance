@@ -12,6 +12,10 @@ import { MonatsVergleich }       from '@/components/analyse/MonatsVergleich'
 import { KategorienChart }       from '@/components/analyse/KategorienChart'
 import { MonatsVerteilung }      from '@/components/analyse/MonatsVerteilung'
 import { getSettings }          from '@/lib/settings'
+import {
+  getActiveAccountOptions, getAnalyseTransactions, getCalendarTransactions,
+  getMonthlyTotals, getMonthlyWindowTransactions,
+} from '@/lib/data/overview'
 import { periodCutoff }         from '@/lib/period'
 import { UrlFiltersProvider, FilterPending } from '@/components/providers/url-filters'
 
@@ -53,13 +57,6 @@ type MonthlySummaryRow = {
   month:          string
   total_income:   number
   total_expenses: number
-}
-
-type AccountRow = {
-  id:    string
-  name:  string
-  type:  string
-  color: string | null
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -169,7 +166,7 @@ function buildSankey(txns: TxnRow[]): SankeyData {
   return { nodes, links: links.filter(l => l.value > 0) }
 }
 
-function buildCashflow(txns: TxnRow[]): CashflowEvent[] {
+function buildCashflow(txns: Omit<TxnRow, 'amount_base'>[]): CashflowEvent[] {
   return txns
     .filter(t => t.type === 'income' || t.type === 'expense')
     .map(t => ({
@@ -363,18 +360,11 @@ export default async function AnalysePage({
   const [{ period: rawPeriod, accounts: rawAccounts }, { supabase, user }] = await Promise.all([searchParams, getAuthUser()])
   if (!user) return null
 
-  const [{ data: accountRows }, settings] = await Promise.all([
-    supabase
-      .from('accounts')
-      .select('id, name, type, color')
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true })
-      .order('created_at', { ascending: true }),
+  const [accounts, settings] = await Promise.all([
+    getActiveAccountOptions(supabase, user.id),
     getSettings(user.id),
   ])
 
-  const accounts = (accountRows ?? []) as AccountRow[]
   const accountIds = new Set(accounts.map(a => a.id))
 
   // Zeitraum: explicit URL param wins, else the saved Settings-Standard, else '1J'.
@@ -429,79 +419,25 @@ export default async function AnalysePage({
   }
   const hasAccountFilter = selectedAccountIds.length > 0
 
-  const [txnRes, calRes, monthlyRes, monthlyTxnRes] = await Promise.all([
-    // Transactions for period (heatmap, categories, sankey) — unified_transactions merges in
-    // FinTS-synced bank transactions for accounts linked via accounts.bank_iban.
-    (() => {
-      let q = supabase
-        .from('unified_transactions')
-        .select('date, type, amount, amount_base, category_name, description, merchant')
-        .eq('user_id', user.id)
-        .in('type', ['income', 'expense'])
-        // Nur echte Einnahmen/Ausgaben — Umbuchungen, Anlagen (Krypto/Depot/Bausparer),
-        // Forderungen und Anfangsbestaende zaehlen hier nicht mit.
-        .eq('flow_kind', 'echt')
-      if (cutoff) q = q.gte('date', cutoff)
-      if (hasAccountFilter) q = q.in('account_id', selectedAccountIds)
-      return q.order('date')
-    })(),
-
-    // Transactions for calendar (3-month window, independent of period)
-    (() => {
-      let q = supabase
-        .from('unified_transactions')
-        .select('date, type, amount, category_name, description, merchant')
-        .eq('user_id', user.id)
-        .gte('date', calStart)
-        .lte('date', calEnd)
-        .in('type', ['income', 'expense'])
-        // Nur echte Einnahmen/Ausgaben — Umbuchungen, Anlagen (Krypto/Depot/Bausparer),
-        // Forderungen und Anfangsbestaende zaehlen hier nicht mit.
-        .eq('flow_kind', 'echt')
-      if (hasAccountFilter) q = q.in('account_id', selectedAccountIds)
-      return q.order('date')
-    })(),
-
-    // Monthly summaries for MonatsVergleich — the precomputed table has no account_id,
-    // so it's only used when there's no Konten-Filter (see buildMonthlyComparisonFromTxns).
+  const accountFilter = hasAccountFilter ? selectedAccountIds : undefined
+  const [txns, calTxns, monthlyRows, monthlyTxns] = await Promise.all([
+    // Transaktionen im Zeitraum (Heatmap, Kategorien, Sankey)
+    getAnalyseTransactions(supabase, user.id, { cutoff, accountIds: accountFilter }),
+    // Kalender: 3-Monats-Fenster, unabhängig vom Zeitraum
+    getCalendarTransactions(supabase, user.id, { from: calStart, to: calEnd, accountIds: accountFilter }),
+    // Vorberechnete Monatssummen haben keine account_id → nur ohne Konten-Filter nutzbar
+    // (siehe buildMonthlyComparisonFromTxns).
+    hasAccountFilter ? Promise.resolve([] as MonthlySummaryRow[]) : getMonthlyTotals(supabase, user.id),
+    // 24-Monats-Fenster (Monatsvergleich + KDE-Verteilung), nur beim Konten-Filter
     hasAccountFilter
-      ? Promise.resolve(null)
-      : supabase
-          .from('monthly_finance_summary')
-          // Explizit auf den User filtern, obwohl RLS das ohnehin tut: fn_take_snapshot
-          // schreibt eine Zeile pro auth.user, in der Tabelle stehen also auch fremde
-          // Monate. Ohne den Filter haengt die Richtigkeit dieser Seite allein an einer
-          // Policy — und `limit(25)` wuerde als Erstes zuschlagen, nicht der Besitz.
-          .select('month, total_income, total_expenses')
-          .eq('user_id', user.id)
-          .order('month', { ascending: false })
-          .limit(25),
-
-    // Transactions for the 24-month window (Monatsvergleich + KDE-Ausgabenverteilung),
-    // only fetched when filtering by account.
-    hasAccountFilter
-      ? supabase
-          .from('unified_transactions')
-          .select('date, type, amount, amount_base')
-          .eq('user_id', user.id)
-          .gte('date', monthlyCutoff)
-          .in('type', ['income', 'expense'])
-          // Nur echte Einnahmen/Ausgaben — siehe unified_transactions.flow_kind.
-          .eq('flow_kind', 'echt')
-          .in('account_id', selectedAccountIds)
-          .order('date')
-      : Promise.resolve(null),
+      ? getMonthlyWindowTransactions(supabase, user.id, { from: monthlyCutoff, accountIds: selectedAccountIds })
+      : Promise.resolve([] as Pick<TxnRow, 'date' | 'type' | 'amount' | 'amount_base'>[]),
   ])
-
-  const txns    = (txnRes.data  ?? []) as TxnRow[]
-  const calTxns = (calRes.data  ?? []) as TxnRow[]
 
   const heatmapData      = buildHeatmap(txns)
   const categoryData     = buildCategories(txns)
   const sankeyData       = buildSankey(txns)
   const cashflowEvents   = buildCashflow(calTxns)
-  const monthlyRows    = (monthlyRes?.data ?? []) as MonthlySummaryRow[]
-  const monthlyTxns    = (monthlyTxnRes?.data ?? []) as Pick<TxnRow, 'date' | 'type' | 'amount' | 'amount_base'>[]
   const monthsToShow = monthsForPeriod(period)
   const monthlyComparisonAbgeschlossen = hasAccountFilter
     ? buildMonthlyComparisonFromTxns(monthlyTxns, currentMonthKey, monthsToShow)

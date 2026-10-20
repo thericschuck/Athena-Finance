@@ -31,9 +31,9 @@ import {
   deleteAccount,
   type AccountActionState,
 } from '@/app/(dashboard)/finance/accounts/actions'
-import { Database } from '@/types/database'
+import type { AccountRow } from '@/lib/data/finance-accounts'
 
-type Account = Database['public']['Tables']['accounts']['Row']
+type Account = AccountRow
 
 const ACCOUNT_TYPES = [
   { value: 'checking',        label: 'Girokonto' },

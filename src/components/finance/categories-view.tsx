@@ -11,10 +11,10 @@ import {
 } from '@/components/finance/category-form'
 import { effektiveRollen } from '@/lib/tax/rollen'
 import { fmtCurrency } from '@/lib/format'
-import { Database } from '@/types/database'
+import type { CategoryRow, EuerZeileRow } from '@/lib/data/finance-transactions'
 
-type Category = Database['public']['Tables']['categories']['Row']
-type EuerZeile = Database['public']['Tables']['euer_zeilen']['Row']
+type Category = CategoryRow
+type EuerZeile = EuerZeileRow
 export type CategoryNode = Category & { children: CategoryNode[] }
 
 const TYPE_CONFIG: Record<string, { label: string; classes: string }> = {

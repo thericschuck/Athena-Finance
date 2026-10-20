@@ -7,74 +7,26 @@ import { FixedCostsWidget } from '@/components/finance/fixed-costs-widget'
 import { NetWorthChart } from '@/components/dashboard/net-worth-chart'
 import { PortfolioDonut } from '@/components/dashboard/portfolio-donut'
 import { FinanceAnalytics } from '@/components/dashboard/finance-analytics'
-import { AthenaInsights, type InsightRow } from '@/components/dashboard/athena-insights'
+import { AthenaInsights } from '@/components/dashboard/athena-insights'
 import { getRebalancingTargets, getLastRebalancing } from '@/app/(dashboard)/crypto/actions'
 import { getDepotsSummaries } from '@/app/actions/depot'
 import { calculateRebalancing } from '@/lib/crypto/rebalancing'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency, fmtDateShort } from '@/lib/format'
-
-function daysUntil(d: Date): number {
-  const today = new Date(); today.setHours(0, 0, 0, 0)
-  return Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-}
-
-// ─── Contract renewal helpers ─────────────────────────────────────────────────
-type ContractRow = {
-  id: string; name: string; provider: string | null; frequency: string
-  amount: number; currency: string; end_date: string | null
-  notice_days: number; auto_renews: boolean; account_id: string | null
-}
-
-function toMonthly(amount: number, frequency: string): number {
-  const map: Record<string, number> = {
-    weekly: 52 / 12, biweekly: 26 / 12,
-    monthly: 1, quarterly: 1 / 3, biannual: 1 / 6, yearly: 1 / 12,
-  }
-  return amount * (map[frequency] ?? 1)
-}
-function addFrequency(d: Date, f: string) {
-  if (f === 'weekly')    d.setDate(d.getDate() + 7)
-  else if (f === 'biweekly')  d.setDate(d.getDate() + 14)
-  else if (f === 'monthly')   d.setMonth(d.getMonth() + 1)
-  else if (f === 'quarterly') d.setMonth(d.getMonth() + 3)
-  else if (f === 'biannual')  d.setMonth(d.getMonth() + 6)
-  else if (f === 'yearly')    d.setFullYear(d.getFullYear() + 1)
-}
-function getNextRenewal(c: ContractRow): Date | null {
-  if (!c.end_date) return null
-  const today = new Date(); today.setHours(0, 0, 0, 0)
-  const d = new Date(c.end_date)
-  if (d >= today) return d
-  if (!c.auto_renews) return null
-  let i = 0
-  while (d < today && i++ < 200) addFrequency(d, c.frequency)
-  return d >= today ? d : null
-}
+import {
+  getDashboardAccounts, getBalanceSums, getRealTransactionsSince, getActiveDebts,
+  getOpenSavingsGoals, getDashboardCryptoAssets, getLatestAssetValuations, getActiveContracts,
+  getOpenInsights, getActiveValuables, getMonthlySummariesSince, getNetWorthSnapshotsSince,
+  getBankBalances,
+} from '@/lib/data/overview'
+import {
+  buildCryptoPortfolio, buildFixedCosts, computeAccountBalances, computeInventory,
+  computeLiveBuckets, computeMonthTotals, computeUpcomingRenewals,
+} from '@/lib/finance/dashboard-calc'
 
 // ─── Shared card ──────────────────────────────────────────────────────────────
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return <div className={`rounded-lg border border-border bg-card ${className}`}>{children}</div>
-}
-
-// Spiegelt die Bucket-Zuordnung aus fn_take_snapshot (v3). Muss deckungsgleich
-// bleiben: sonst rechnet der heutige Punkt im Verlauf anders als alle davor.
-// `investment` hat seit 2026-09-02 seinen eigenen Bucket — 1.500 € Geschäftsanteile
-// als „Girokonto" auszuweisen hat die Kachel um genau diesen Betrag zu liquide
-// aussehen lassen. 'bausparer', 'business', 'loan' und 'debt' stehen hier nicht
-// mehr: accounts_type_check erlaubt sie gar nicht, die Zweige waren toter Code.
-function liveAccountBucket(type: string): string | null {
-  switch (type) {
-    case 'checking':         return 'checking'
-    case 'investment':       return 'investment'
-    case 'savings':          return 'savings'
-    case 'cash':
-    case 'other':            return 'cash'
-    case 'building_savings': return 'bausparer'
-    case 'credit':           return 'debts'
-    case 'crypto':           return 'crypto'
-    default:                 return null
-  }
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -121,146 +73,70 @@ export default async function DashboardPage() {
   const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
 
   // ── Parallel data fetching ────────────────────────────────────────────────
-  const [
-    { data: accountsRaw },
-    { data: txAll },
-    { data: txMonth },
-    { data: debtsRaw },
-    { data: goalsRaw },
-    { data: cryptoAssetsRaw },
-    { data: contractsRaw },
-    { data: insightsRaw },
-    cryptoTargets,
-    lastRebalancing,
-    depotSummaries,
-    { data: valuablesRaw },
-  ] = await Promise.all([
-    supabase.from('accounts').select('id, name, type, color, currency, is_active, bank_iban').eq('user_id', user!.id).order('sort_order'),
-    // unified_transactions (see migration 20260821010000) merges in FinTS-synced bank
-    // transactions for linked accounts, so net worth / monthly totals below include them too.
-    // Für die Kontostände bewusst OHNE flow_kind-Filter: ein Krypto-Kauf ist keine
-    // Ausgabe, senkt das Girokonto aber sehr wohl.
-    supabase.from('unified_transactions').select('account_id, type, amount, currency').eq('user_id', user!.id),
-    // Für „Einnahmen/Ausgaben diesen Monat" dagegen nur echte Bewegungen — sonst
-    // zählen Umbuchungen, Krypto-Käufe und Bauspar-Einzahlungen als Konsum.
-    supabase.from('unified_transactions').select('type, amount').eq('user_id', user!.id).gte('date', monthStart).eq('flow_kind', 'echt'),
-    supabase.from('debts').select('outstanding, type').eq('user_id', user!.id).eq('is_active', true),
-    supabase.from('savings_goals').select('*').eq('user_id', user!.id).eq('status', 'offen'),
-    supabase.from('assets').select('id, symbol, name, portfolio_name, quantity, avg_buy_price').in('type', ['crypto', 'stable', 'fiat']).eq('user_id', user!.id),
-    supabase.from('contracts').select('id,name,provider,frequency,amount,currency,end_date,notice_days,auto_renews,account_id').eq('user_id', user!.id).eq('is_active', true),
-    // Hinweise, die Athena angelegt hat (siehe lib/assistant/actions.ts, createInsight).
-    supabase.from('insights').select('id, type, severity, title, body, created_at').eq('user_id', user!.id).is('dismissed_at', null).order('created_at', { ascending: false }).limit(6),
-    getRebalancingTargets(user!.id),
-    getLastRebalancing(user!.id),
-    getDepotsSummaries(),
-    // Inventar. Bewusst NICHT im Net Worth (siehe Migration 20260831000002) -- die
-    // Kachel unten steht daneben, nicht darin.
-    supabase.from('valuables_current').select('aktueller_wert, kaufpreis, im_vermoegen')
-      .eq('user_id', user!.id).eq('is_active', true),
-  ])
-
-  // ── Inventar ──────────────────────────────────────────────────────────────
-  // Getrennt vom Vermoegen gehalten: der Wert einer Uhr ist geschaetzt, und in den Net
-  // Worth gemischt macht er aus einer harten Zahl eine weiche.
-  const valuables = (valuablesRaw ?? []) as { aktueller_wert: number | null; kaufpreis: number | null; im_vermoegen: boolean | null }[]
-  const inventarWert = valuables
-    .filter(v => v.im_vermoegen !== false)
-    .reduce((s, v) => s + (v.aktueller_wert ?? 0), 0)
-  const inventarStueck = valuables.length
-
-  // Monthly finance summaries (last 12 months)
-  // month is stored as "YYYY-MM-01" (full date string) by the cron
+  // Net-Worth-Snapshots: letzte 2 Jahre; Monatszusammenfassungen: letzte 12 Monate
+  // (month ist als "YYYY-MM-01" gespeichert).
   const twelveMonthsAgo = new Date()
   twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12)
   const fromMonth = `${twelveMonthsAgo.getFullYear()}-${String(twelveMonthsAgo.getMonth() + 1).padStart(2, '0')}-01`
-  const { data: monthlySummaries } = await supabase
-    .from('monthly_finance_summary')
-    .select('*')
-    .eq('user_id', user!.id)
-    .gte('month', fromMonth)
-    .order('month')
-
-  // Net worth snapshots for chart (last 2 years)
   const snapshotFrom = new Date()
   snapshotFrom.setFullYear(snapshotFrom.getFullYear() - 2)
-  const { data: netWorthSnapshots } = await supabase
-    .from('net_worth_snapshots')
-    .select('snapshot_date,net_worth,total_checking,total_investment,total_savings,total_cash,total_depot,total_crypto,total_bausparer,total_business,total_debts,total_assets')
-    .eq('user_id', user!.id)
-    .gte('snapshot_date', snapshotFrom.toISOString().split('T')[0])
-    .order('snapshot_date')
 
-  type GoalDash = { id: string; current_amount: number; target_amount: number; description: string; status: string }
+  const [
+    accounts,
+    balanceSums,
+    txMonth,
+    debts,
+    goals,
+    cryptoAssetsRaw,
+    contractsRaw,
+    insights,
+    cryptoTargets,
+    lastRebalancing,
+    depotSummaries,
+    valuables,
+    monthlySummaries,
+    netWorthSnapshots,
+    bankBalances,
+  ] = await Promise.all([
+    getDashboardAccounts(supabase, user!.id),
+    // unified_transactions (siehe Migration 20260821010000) enthält auch FinTS-Buchungen
+    // verknüpfter Konten. Für Kontostände ohne flow_kind-Filter, für „diesen Monat" nur echte.
+    getBalanceSums(supabase, user!.id),
+    getRealTransactionsSince(supabase, user!.id, monthStart),
+    getActiveDebts(supabase, user!.id),
+    getOpenSavingsGoals(supabase, user!.id),
+    getDashboardCryptoAssets(supabase, user!.id),
+    getActiveContracts(supabase, user!.id),
+    getOpenInsights(supabase, user!.id),
+    getRebalancingTargets(user!.id),
+    getLastRebalancing(user!.id),
+    getDepotsSummaries(),
+    getActiveValuables(supabase, user!.id),
+    getMonthlySummariesSince(supabase, user!.id, fromMonth),
+    getNetWorthSnapshotsSince(supabase, user!.id, snapshotFrom.toISOString().split('T')[0]),
+    getBankBalances(supabase, user!.id),
+  ])
 
-  const accounts       = accountsRaw ?? []
+  // Inventar: getrennt vom Vermögen (Wert ist geschätzt).
+  const { wert: inventarWert, stueck: inventarStueck } = computeInventory(valuables)
+
   const activeAccounts = accounts.filter(a => a.is_active)
-  const contracts = (contractsRaw ?? []) as ContractRow[]
-  const goals     = (goalsRaw ?? []) as unknown as GoalDash[]
+  const contracts = contractsRaw
 
-  // ── Account balances from transactions ────────────────────────────────────
-  type BalTxRow = { account_id: string; type: string; amount: number; currency: string }
-  const balTxAll = (txAll ?? []) as BalTxRow[]
-  const balMap = new Map<string, number>()
-  for (const tx of balTxAll) {
-    const cur = balMap.get(tx.account_id) ?? 0
-    if (tx.type === 'income')   balMap.set(tx.account_id, cur + tx.amount)
-    if (tx.type === 'expense')  balMap.set(tx.account_id, cur - tx.amount)
-    // transfers / investments: neutral for simple balance sum
-  }
+  // ── Kontostände (Bankstand gewinnt bei verknüpften Konten) ────────────────
+  const bankBalanceByIban = new Map(bankBalances.map(b => [b.account_iban, Number(b.booked_balance)]))
+  const balMap = computeAccountBalances(accounts, balanceSums, bankBalanceByIban)
 
-  // For a bank-linked account the sum above is NOT a balance. FinTS only ever hands out a
-  // window of transactions (90 days on a routine sync), so summing them from zero yields the
-  // movement over that window, not what is on the account — Girokonto came out at 517.45 €
-  // against a real 1544.57 €. bank_balance holds the figure the bank itself reported, so it
-  // wins wherever it exists; the same precedence the accounts page already applies.
-  const { data: bankBalances } = await supabase
-    .from('bank_balance')
-    .select('account_iban, booked_balance')
-    .eq('user_id', user!.id)
-  const bankBalanceByIban = new Map(
-    (bankBalances ?? []).map(b => [b.account_iban, Number(b.booked_balance)]),
-  )
-  for (const a of accounts) {
-    if (!a.bank_iban) continue
-    const real = bankBalanceByIban.get(a.bank_iban)
-    if (real != null) balMap.set(a.id, real)
-  }
-
-  // ── Monthly income / expenses ─────────────────────────────────────────────
-  type MonthTxRow = { type: string; amount: number }
-  let monthIncome = 0, monthExpense = 0
-  for (const tx of ((txMonth ?? []) as MonthTxRow[])) {
-    if (tx.type === 'income')  monthIncome  += tx.amount
-    if (tx.type === 'expense') monthExpense += tx.amount
-  }
-  const monthNet = monthIncome - monthExpense
+  // ── Monatsbilanz ──────────────────────────────────────────────────────────
+  const { income: monthIncome, expense: monthExpense, net: monthNet } = computeMonthTotals(txMonth)
 
   // ── Crypto portfolio ──────────────────────────────────────────────────────
-  const cryptoAssetIds = (cryptoAssetsRaw ?? []).map(a => a.id)
-  const cryptoValMap = new Map<string, { price_per_unit: number; total_value: number }>()
-  if (cryptoAssetIds.length > 0) {
-    const { data: vals } = await supabase
-      .from('asset_valuations')
-      .select('asset_id, price_per_unit, total_value')
-      .in('asset_id', cryptoAssetIds)
-      .order('valuation_date', { ascending: false })
-      .order('created_at', { ascending: false })
-    for (const v of vals ?? []) {
-      if (!cryptoValMap.has(v.asset_id)) cryptoValMap.set(v.asset_id, v)
-    }
-  }
-  const cryptoAssets = (cryptoAssetsRaw ?? []).map(a => ({
-    ...a,
-    current_price: cryptoValMap.get(a.id)?.price_per_unit ?? null,
-    current_value: cryptoValMap.get(a.id)?.total_value ?? null,
-  }))
-  const cryptoTotal     = cryptoAssets.reduce((s, a) => s + (a.current_value ?? 0), 0)
-  const cryptoTotalCost = cryptoAssets.reduce((s, a) =>
-    a.avg_buy_price != null && a.quantity != null ? s + a.avg_buy_price * a.quantity : s, 0)
+  const cryptoVals = await getLatestAssetValuations(supabase, cryptoAssetsRaw.map(a => a.id))
+  const { cryptoAssets, total: cryptoTotal, totalCost: cryptoTotalCost } =
+    buildCryptoPortfolio(cryptoAssetsRaw, cryptoVals)
 
   // ── Net Worth ─────────────────────────────────────────────────────────────
-  // Nur aktive Konten — fn_take_snapshot filtert genauso. Vorher standen hier alle,
-  // inaktive inklusive.
+  // Nur aktive Konten — fn_take_snapshot filtert genauso.
   const financeTotal  = activeAccounts.reduce((s, a) => s + (balMap.get(a.id) ?? 0), 0)
   const depotTotal    = depotSummaries.reduce((s, d) => s + (d.depotValue ?? 0), 0)
 
@@ -281,18 +157,12 @@ export default async function DashboardPage() {
   const netWorth = financeTotal + cryptoTotal + depotTotal
 
   // Nur noch für die Kacheln neben dem Nettovermögen, nicht mehr Teil davon.
-  const borrowedTotal = (debtsRaw ?? []).filter(d => d.type === 'borrowed').reduce((s, d) => s + (d.outstanding ?? 0), 0)
-  const lentTotal     = (debtsRaw ?? []).filter(d => d.type === 'lent').reduce((s, d) => s + (d.outstanding ?? 0), 0)
+  const borrowedTotal = debts.filter(d => d.type === 'borrowed').reduce((s, d) => s + (d.outstanding ?? 0), 0)
+  const lentTotal     = debts.filter(d => d.type === 'lent').reduce((s, d) => s + (d.outstanding ?? 0), 0)
   const savingsTotal  = goals.reduce((s, g) => s + (g.current_amount ?? 0), 0)
 
   // ── Today's snapshot for chart (live data point) ──────────────────────────
-  const liveBuckets: Record<string, number> = {
-    checking: 0, investment: 0, savings: 0, cash: 0, bausparer: 0, crypto: 0, debts: 0,
-  }
-  for (const a of activeAccounts) {
-    const bucket = liveAccountBucket(a.type)
-    if (bucket) liveBuckets[bucket] = (liveBuckets[bucket] ?? 0) + (balMap.get(a.id) ?? 0)
-  }
+  const liveBuckets = computeLiveBuckets(activeAccounts, balMap)
   const todayDateStr = now.toISOString().split('T')[0]
   const todaySnapshot = {
     snapshot_date:    todayDateStr,
@@ -313,8 +183,7 @@ export default async function DashboardPage() {
     total_debts:      Math.abs(liveBuckets.debts),
     total_assets:     0,
   }
-  const existingSnapshots = netWorthSnapshots ?? []
-  const snapshotsWithToday = existingSnapshots.filter(s => s.snapshot_date !== todayDateStr).concat(todaySnapshot)
+  const snapshotsWithToday = netWorthSnapshots.filter(s => s.snapshot_date !== todayDateStr).concat(todaySnapshot)
 
   // ── Rebalancing ───────────────────────────────────────────────────────────
   const rebResult        = calculateRebalancing(cryptoTargets, cryptoAssets, cryptoTotal)
@@ -329,25 +198,10 @@ export default async function DashboardPage() {
     })
 
   // ── Fixed costs widget data ───────────────────────────────────────────────
-  const contractsForWidget = contracts
-    .filter(c => c.currency === 'EUR')
-    .map(c => ({ id: c.id, name: c.name, monthly: toMonthly(c.amount, c.frequency), accountId: c.account_id }))
-    .sort((a, b) => b.monthly - a.monthly)
-
-  const fixedCostsTotal = contractsForWidget.reduce((s, c) => s + c.monthly, 0)
+  const { contracts: contractsForWidget, total: fixedCostsTotal } = buildFixedCosts(contracts)
 
   // ── Contract renewals ─────────────────────────────────────────────────────
-  type UpcomingContract = ContractRow & { renewalDate: Date; deadlineDate: Date; days: number }
-  const upcoming: UpcomingContract[] = contracts
-    .map(c => {
-      const renewalDate = getNextRenewal(c)
-      if (!renewalDate) return null
-      const deadlineDate = new Date(renewalDate)
-      deadlineDate.setDate(deadlineDate.getDate() - c.notice_days)
-      return { ...c, renewalDate, deadlineDate, days: daysUntil(deadlineDate) }
-    })
-    .filter((c): c is UpcomingContract => c !== null && c.days <= 45)
-    .sort((a, b) => a.days - b.days)
+  const upcoming = computeUpcomingRenewals(contracts, now)
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -360,7 +214,7 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <AthenaInsights insights={(insightsRaw ?? []) as InsightRow[]} />
+      <AthenaInsights insights={insights} />
 
       {/* ── Row 1: Net Worth + Monat + Crypto ───────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -509,7 +363,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── Finanzanalyse ─────────────────────────────────────────────────────── */}
-      {monthlySummaries && monthlySummaries.length > 0 && (
+      {monthlySummaries.length > 0 && (
         <FinanceAnalytics summaries={monthlySummaries} locale={locale} />
       )}
 
@@ -593,7 +447,7 @@ export default async function DashboardPage() {
             {activeAccounts.map(a => {
               const bal = balMap.get(a.id) ?? 0
               const neg = bal < 0
-              const hasTransactions = txAll?.some(t => t.account_id === a.id) ?? false
+              const hasTransactions = balanceSums.some(t => t.account_id === a.id && t.tx_count > 0)
               return (
                 <Link key={a.id} href={`/finance/accounts/${a.id}`}>
                   <Card className="p-4 hover:border-primary/50 transition-colors cursor-pointer">

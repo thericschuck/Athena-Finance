@@ -18,9 +18,9 @@ import {
   createIndicator, updateIndicator, deleteIndicator,
   type IndicatorActionState,
 } from '@/app/(dashboard)/strategy/indicators/actions'
-import { Database } from '@/types/database'
+import type { IndicatorRow } from '@/lib/data/strategy'
 
-type Indicator = Database['public']['Tables']['indicators']['Row']
+type Indicator = IndicatorRow
 
 const TYPE_SUGGESTIONS = [
   'Trend', 'Momentum', 'Volatility', 'Volume', 'Oscillator',

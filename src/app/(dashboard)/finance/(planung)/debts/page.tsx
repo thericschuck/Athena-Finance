@@ -1,11 +1,9 @@
 import { getAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency, fmtDate } from '@/lib/format'
-import { Database } from '@/types/database'
+import { getDebts, type DebtRow as Debt } from '@/lib/data/finance-planning'
 import { AddDebtDialog, DebtPaymentDialog, SettleDebtButton, EditDebtDialog, DeleteDebtButton } from '@/components/finance/debt-payment-form'
 import { CalendarDays, TrendingDown, TrendingUp } from 'lucide-react'
-
-type Debt = Database['public']['Tables']['debts']['Row']
 
 interface PageProps {
   searchParams: Promise<{ all?: string }>
@@ -33,16 +31,7 @@ export default async function DebtsPage({ searchParams }: PageProps) {
   const locale = (settings.number_format as string) ?? 'de-DE'
   const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
 
-  let query = supabase
-    .from('debts')
-    .select('*')
-    .eq('user_id', user!.id)
-    .order('created_at', { ascending: false })
-
-  if (!showAll) query = query.eq('is_active', true)
-
-  const { data: debts } = await query
-  const all_debts = debts ?? []
+  const all_debts = await getDebts(supabase, user!.id, { onlyActive: !showAll })
 
   const borrowed = all_debts.filter((d) => d.type === 'borrowed')
   const lent = all_debts.filter((d) => d.type === 'lent')

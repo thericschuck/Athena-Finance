@@ -19,9 +19,10 @@ import {
   createContract, updateContract, deleteContract, type ContractActionState,
 } from '@/app/(dashboard)/finance/(planung)/contracts/actions'
 import { Database } from '@/types/database'
+import type { ContractRow } from '@/lib/data/finance-planning'
 import { CONTRACT_TYPES, FREQUENCIES, TRANSFER_TYPES } from '@/lib/finance/contract-constants'
 
-type Contract = Database['public']['Tables']['contracts']['Row']
+type Contract = ContractRow
 type Account  = Pick<Database['public']['Tables']['accounts']['Row'],  'id' | 'name'>
 type Category = Pick<Database['public']['Tables']['categories']['Row'], 'id' | 'name'>
 

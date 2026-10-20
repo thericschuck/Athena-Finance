@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { CheckCircle2, ExternalLink } from 'lucide-react'
 import { AddStrategyDialog } from '@/components/strategy/strategy-form'
 import { DeleteStrategyButton } from '@/components/strategy/strategy-form'
+import { getComboOptions, getStrategies, getSubmissionReadyIds } from '@/lib/data/strategy'
 import { getSettings } from '@/lib/settings'
 
 // ─── Badge helpers ────────────────────────────────────────────────────────────
@@ -40,27 +41,12 @@ export default async function StrategiesPage({
   const defaultAssetClass = (settings.default_asset_class as string) ?? 'major'
   const defaultTimeframe  = (settings.default_timeframe  as string) ?? ''
 
-  // Load combos for form selector
-  const { data: combosRaw } = await supabase
-    .from('combos')
-    .select('id, name')
-    .eq('user_id', user!.id)
-    .order('name')
-  const comboOptions = combosRaw ?? []
-
-  // Load all strategies
-  const { data: strategiesRaw } = await supabase
-    .from('strategies')
-    .select('*')
-    .eq('user_id', user!.id)
-    .order('name')
-  const allStrategies = strategiesRaw ?? []
-
-  // Load submission-ready IDs for filter and badge
-  const { data: readyRaw } = await supabase
-    .from('submission_ready')
-    .select('id')
-  const readyIdSet = new Set((readyRaw ?? []).map(r => r.id).filter(Boolean) as string[])
+  const [comboOptions, allStrategies, readyIds] = await Promise.all([
+    getComboOptions(supabase, user!.id),
+    getStrategies(supabase, user!.id),
+    getSubmissionReadyIds(supabase),
+  ])
+  const readyIdSet = new Set(readyIds)
 
   const strategies = onlyReady
     ? allStrategies.filter(s => readyIdSet.has(s.id))

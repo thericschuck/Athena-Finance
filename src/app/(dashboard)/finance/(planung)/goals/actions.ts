@@ -2,8 +2,35 @@
 
 import { getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
+import { parseForm, parseInput, issueMessage } from '@/lib/api/validate'
+import { idField, uuid, reqText, optText, optDate, optEnum, optMoneyField, moneyField, MAX_AMOUNT } from '@/lib/api/schemas'
+import { getSavingsGoalProgress } from '@/lib/data/finance-planning'
 
 export type GoalActionState = { error: string } | { success: true } | null
+
+const goalFields = {
+  description: reqText('Bezeichnung ist erforderlich', 200),
+  target_amount: moneyField('Zielbetrag muss größer als 0 sein').refine(n => n > 0, 'Zielbetrag muss größer als 0 sein'),
+  monthly_savings_rate: optMoneyField('Sparrate ist ungültig'),
+  savings_rate_start_date: optDate,
+  priority: optEnum(['hoch', 'mittel', 'niedrig'] as const, 'Priorität ist ungültig'),
+  target_date: optDate,
+  notes: optText(2000),
+}
+const createGoalSchema = z.object(goalFields)
+const updateGoalSchema = z.object({ id: idField(), ...goalFields })
+
+/** Sparrate nur, wenn > 0; Startdatum dann Formularwert oder heute. */
+function rateFields(d: { monthly_savings_rate: number | null; savings_rate_start_date: string | null }) {
+  const hasRate = d.monthly_savings_rate !== null && d.monthly_savings_rate > 0
+  return {
+    monthly_savings_rate: hasRate ? d.monthly_savings_rate : null,
+    savings_rate_start_date: hasRate
+      ? d.savings_rate_start_date || new Date().toISOString().split('T')[0]
+      : null,
+  }
+}
 
 // ─── Create ───────────────────────────────────────────────────────────────────
 export async function createGoal(
@@ -13,28 +40,19 @@ export async function createGoal(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const description = (formData.get('description') as string)?.trim()
-  const target_amount = parseFloat(formData.get('target_amount') as string)
-
-  if (!description) return { error: 'Bezeichnung ist erforderlich' }
-  if (isNaN(target_amount) || target_amount <= 0) return { error: 'Zielbetrag muss größer als 0 sein' }
-
-  const rateRaw = formData.get('monthly_savings_rate') as string
-  const rate    = rateRaw ? parseFloat(rateRaw) : null
-  const hasRate = rate && rate > 0
+  const parsed = parseForm(formData, createGoalSchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
+  const d = parsed.data
 
   const { error } = await supabase.from('savings_goals').insert({
-    description,
-    target_amount,
+    description: d.description,
+    target_amount: d.target_amount,
     status: 'offen',
     user_id: user.id,
-    priority: (formData.get('priority') as string) || null,
-    monthly_savings_rate: hasRate ? rate : null,
-    savings_rate_start_date: hasRate
-      ? (formData.get('savings_rate_start_date') as string) || new Date().toISOString().split('T')[0]
-      : null,
-    target_date: (formData.get('target_date') as string) || null,
-    notes: (formData.get('notes') as string) || null,
+    priority: d.priority,
+    ...rateFields(d),
+    target_date: d.target_date,
+    notes: d.notes,
   } as never)
 
   if (error) return { error: error.message }
@@ -50,30 +68,19 @@ export async function updateGoal(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const id = formData.get('id') as string
-  const description = (formData.get('description') as string)?.trim()
-  const target_amount = parseFloat(formData.get('target_amount') as string)
-
-  if (!id) return { error: 'ID fehlt' }
-  if (!description) return { error: 'Bezeichnung ist erforderlich' }
-  if (isNaN(target_amount) || target_amount <= 0) return { error: 'Zielbetrag muss größer als 0 sein' }
-
-  const rateRaw = formData.get('monthly_savings_rate') as string
-  const rate    = rateRaw ? parseFloat(rateRaw) : null
-  const hasRate = rate && rate > 0
+  const parsed = parseForm(formData, updateGoalSchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
+  const { id, ...d } = parsed.data
 
   const { error } = await supabase
     .from('savings_goals')
     .update({
-      description,
-      target_amount,
-      priority: (formData.get('priority') as string) || null,
-      monthly_savings_rate: hasRate ? rate : null,
-      savings_rate_start_date: hasRate
-        ? (formData.get('savings_rate_start_date') as string) || new Date().toISOString().split('T')[0]
-        : null,
-      target_date: (formData.get('target_date') as string) || null,
-      notes: (formData.get('notes') as string) || null,
+      description: d.description,
+      target_amount: d.target_amount,
+      priority: d.priority,
+      ...rateFields(d),
+      target_date: d.target_date,
+      notes: d.notes,
       updated_at: new Date().toISOString(),
     } as never)
     .eq('id', id)
@@ -88,6 +95,7 @@ export async function updateGoal(
 export async function setGoalStatus(id: string, newStatus: string): Promise<void> {
   const { supabase, user } = await getAuthUser()
   if (!user) return
+  if (!parseInput(z.object({ id: uuid, status: z.enum(['offen', 'geschlossen']) }), { id, status: newStatus }).ok) return
 
   await supabase
     .from('savings_goals')
@@ -105,17 +113,17 @@ export async function addGoalPayment(
 ): Promise<{ error?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
+  const args = parseInput(
+    z.object({ goalId: uuid, amount: z.number().positive('Betrag muss größer als 0 sein').max(MAX_AMOUNT) }),
+    { goalId, amount },
+  )
+  if (!args.ok) return { error: issueMessage(args) }
 
-  const { data: goal, error: fetchErr } = await supabase
-    .from('savings_goals')
-    .select('*')
-    .eq('id', goalId)
-    .eq('user_id', user.id)
-    .single()
+  const { data: goal, error: fetchErr } = await getSavingsGoalProgress(supabase, user.id, goalId)
 
   if (fetchErr || !goal) return { error: 'Sparziel nicht gefunden' }
 
-  const currentAmount = ((goal as unknown as Record<string, number>)['current_amount']) ?? 0
+  const currentAmount = goal.current_amount ?? 0
   const newAmount = Math.min(currentAmount + amount, goal.target_amount)
 
   const { error } = await supabase
@@ -133,6 +141,8 @@ export async function addGoalPayment(
 export async function deleteGoal(id: string): Promise<{ error?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
+  const idP = parseInput(uuid, id)
+  if (!idP.ok) return { error: issueMessage(idP) }
 
   const { error } = await supabase
     .from('savings_goals')

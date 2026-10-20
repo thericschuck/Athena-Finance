@@ -5,6 +5,79 @@ import { revalidatePath } from 'next/cache'
 import type { Json } from '@/types/database'
 import { encrypt } from '@/lib/encryption'
 import { leseSteuerprofil, schreibeSteuerprofil } from '@/lib/tax/profil'
+import { fetchSettingValue } from '@/lib/data/settings'
+import { z } from 'zod'
+import { parseForm, parseInput, formDataToObject, issueMessage } from '@/lib/api/validate'
+import { uuid, optText, optMoneyField, optIntField, boolTrue, checkbox } from '@/lib/api/schemas'
+
+/** Leer/fehlend → Standardwert (wie bisher `value || default`). */
+const textOr = (fallback: string, max: number) =>
+  z.string().max(max).optional().transform(v => v || fallback)
+
+const profileSchema = z.object({
+  avatar_url: optText(2000),
+  display_name: optText(100),
+  timezone: textOr('Europe/Berlin', 64),
+  currency: textOr('EUR', 10),
+})
+
+const appearanceSchema = z.object({
+  theme_preset: optText(64),
+  theme: textOr('system', 20),
+  primary_color: z
+    .string()
+    .optional()
+    .transform(v => v || '#00B4D8')
+    .pipe(z.string().regex(/^#[0-9a-fA-F]{3,8}$/, 'Primärfarbe muss ein Hex-Wert sein (#RRGGBB)')),
+  compact_tables: boolTrue,
+  number_format: textOr('de-DE', 20),
+  date_format: textOr('dd.MM.yyyy', 30),
+})
+
+const financeSchema = z.object({
+  monthly_budget: optMoneyField('Monatsbudget ist ungültig'),
+  default_tax_rate: optMoneyField('Steuersatz ist ungültig'),
+  brutto_jahreslohn: optMoneyField('Bruttojahreslohn ist ungültig'),
+  vorsorge_anteil_pct: optMoneyField('Vorsorgeanteil ist ungültig'),
+  kirchensteuer_pct: optMoneyField('Kirchensteuer ist ungültig'),
+  netto_quote: optMoneyField('Nettoquote ist ungültig'),
+  kleinunternehmer: checkbox,
+})
+
+const analyseSchema = z.object({
+  analyse_default_period: optText(20),
+  analyse_default_heatmap_mode: optText(40),
+  analyse_default_accounts: z.preprocess(
+    v => (v === undefined ? [] : Array.isArray(v) ? v : [v]),
+    z.array(uuid).max(200),
+  ),
+})
+
+const exchangeName = z
+  .string({ error: 'Alle Felder sind erforderlich' })
+  .trim()
+  .regex(/^[a-z0-9_]{1,40}$/, 'Börse ist ungültig')
+
+const exchangeKeySchema = z.object({
+  exchange: exchangeName,
+  api_key: z.string({ error: 'Alle Felder sind erforderlich' }).trim().min(1, 'Alle Felder sind erforderlich').max(1000),
+  api_secret: z.string({ error: 'Alle Felder sind erforderlich' }).trim().min(1, 'Alle Felder sind erforderlich').max(4000),
+})
+
+const tradingSchema = z.object({
+  default_asset_class: textOr('major', 20),
+  default_timeframe: optText(20),
+  risk_per_trade_pct: optMoneyField('Risiko pro Trade ist ungültig'),
+  max_open_trades: optIntField('Max. offene Trades ist ungültig'),
+})
+
+const passwordSchema = z.object({
+  current_password: z.string({ error: 'Alle Felder ausfüllen' }).min(1, 'Alle Felder ausfüllen').max(256),
+  new_password: z.string({ error: 'Alle Felder ausfüllen' }).min(1, 'Alle Felder ausfüllen').max(256),
+  confirm_password: z.string({ error: 'Alle Felder ausfüllen' }).min(1, 'Alle Felder ausfüllen').max(256),
+})
+
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024
 
 export type SettingsState = { error: string } | { success: true } | null
 
@@ -33,12 +106,17 @@ export async function saveProfile(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  let avatarUrl = (formData.get('avatar_url') as string) || null
+  const parsed = parseForm(formData, profileSchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
+  let avatarUrl = parsed.data.avatar_url
 
   // Handle file upload to Supabase Storage
   const file = formData.get('avatar_file') as File | null
   if (file && file.size > 0) {
-    const ext      = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+    if (file.size > MAX_AVATAR_BYTES) return { error: 'Bild ist zu groß (max. 5 MB)' }
+    if (!file.type.startsWith('image/')) return { error: 'Nur Bilddateien sind erlaubt' }
+    const rawExt   = file.name.split('.').pop()?.toLowerCase() ?? ''
+    const ext      = /^[a-z0-9]{1,5}$/.test(rawExt) ? rawExt : 'jpg'
     const filePath = `${user.id}/avatar.${ext}`
 
     const { error: uploadError } = await supabase.storage
@@ -55,10 +133,10 @@ export async function saveProfile(
     .from('user_profiles')
     .upsert({
       id:           user.id,
-      display_name: (formData.get('display_name') as string) || null,
+      display_name: parsed.data.display_name,
       avatar_url:   avatarUrl,
-      timezone:     (formData.get('timezone') as string) || 'Europe/Berlin',
-      currency:     (formData.get('currency') as string) || 'EUR',
+      timezone:     parsed.data.timezone,
+      currency:     parsed.data.currency,
       updated_at:   new Date().toISOString(),
     })
 
@@ -76,14 +154,10 @@ export async function saveAppearance(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const { error } = await upsertSettings(supabase, user.id, {
-    theme_preset:   (formData.get('theme_preset') as string) || null,
-    theme:          formData.get('theme') as string || 'system',
-    primary_color:  formData.get('primary_color') as string || '#00B4D8',
-    compact_tables: formData.get('compact_tables') === 'true',
-    number_format:  formData.get('number_format') as string || 'de-DE',
-    date_format:    formData.get('date_format') as string || 'dd.MM.yyyy',
-  })
+  const parsed = parseForm(formData, appearanceSchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
+
+  const { error } = await upsertSettings(supabase, user.id, parsed.data)
 
   if (error) return { error: error.message }
   revalidatePath('/', 'layout')
@@ -99,31 +173,21 @@ export async function saveFinance(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const monthlyBudget = formData.get('monthly_budget') as string
-  const taxRate       = formData.get('default_tax_rate') as string
+  const parsed = parseForm(formData, financeSchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
+  const f = parsed.data
 
   // Steuerprofil: ein jsonb-Wert unter dem Schluessel `tax_profile`. Gelesen
   // wird der bisherige Stand mit, weil das Datum `brutto_stand` NUR dann neu
   // gesetzt wird, wenn sich der Bruttolohn wirklich aendert -- sonst wuerde
   // jedes Speichern irgendeiner anderen Einstellung den Wert "frisch"
   // aussehen lassen, und die Warnung vor einem veralteten Lohn waere wertlos.
-  const { data: bisher } = await supabase
-    .from('user_settings')
-    .select('value')
-    .eq('user_id', user.id)
-    .eq('key', 'tax_profile')
-    .maybeSingle()
-  const altesProfil = leseSteuerprofil(bisher?.value ?? null)
+  const altesProfil = leseSteuerprofil(await fetchSettingValue(supabase, user.id, 'tax_profile'))
 
-  const bruttoEingabe = formData.get('brutto_jahreslohn') as string
-  const bruttoNeu = bruttoEingabe ? parseFloat(bruttoEingabe) : null
+  const bruttoNeu = f.brutto_jahreslohn
   const bruttoGeaendert = (bruttoNeu ?? null) !== (altesProfil.bruttoJahreslohn ?? null)
 
-  const zahlOderStandard = (feld: string, standard: number) => {
-    const roh = formData.get(feld) as string
-    const n = roh ? parseFloat(roh) : NaN
-    return Number.isFinite(n) ? n : standard
-  }
+  const zahlOderStandard = (wert: number | null, standard: number) => wert ?? standard
 
   const neuesProfil = schreibeSteuerprofil(
     leseSteuerprofil({
@@ -131,16 +195,16 @@ export async function saveFinance(
       brutto_stand: bruttoGeaendert
         ? new Date().toISOString().slice(0, 10)
         : altesProfil.bruttoStand,
-      vorsorge_anteil_pct: zahlOderStandard('vorsorge_anteil_pct', altesProfil.vorsorgeAnteilPct),
-      kirchensteuer_pct:   zahlOderStandard('kirchensteuer_pct', altesProfil.kirchensteuerPct),
-      netto_quote:         zahlOderStandard('netto_quote', altesProfil.nettoQuote),
-      kleinunternehmer:    formData.get('kleinunternehmer') === 'on',
+      vorsorge_anteil_pct: zahlOderStandard(f.vorsorge_anteil_pct, altesProfil.vorsorgeAnteilPct),
+      kirchensteuer_pct:   zahlOderStandard(f.kirchensteuer_pct, altesProfil.kirchensteuerPct),
+      netto_quote:         zahlOderStandard(f.netto_quote, altesProfil.nettoQuote),
+      kleinunternehmer:    f.kleinunternehmer,
     }),
   )
 
   const { error } = await upsertSettings(supabase, user.id, {
-    monthly_budget:   monthlyBudget ? parseFloat(monthlyBudget) : null,
-    default_tax_rate: taxRate ? parseFloat(taxRate) : null,
+    monthly_budget:   f.monthly_budget,
+    default_tax_rate: f.default_tax_rate,
     tax_profile:      neuesProfil,
   })
 
@@ -158,16 +222,13 @@ export async function saveAnalyseDefaults(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const period      = formData.get('analyse_default_period') as string
-  const heatmapMode = formData.get('analyse_default_heatmap_mode') as string
-  // Multiple checkboxes share the name "analyse_default_accounts" — getAll collects every
-  // checked value. Empty array is a valid, meaningful choice ("alle Konten").
-  const accountIds  = formData.getAll('analyse_default_accounts') as string[]
+  const parsed = parseForm(formData, analyseSchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
 
   const { error } = await upsertSettings(supabase, user.id, {
-    analyse_default_period:       period || null,
-    analyse_default_heatmap_mode: heatmapMode || null,
-    analyse_default_accounts:     accountIds,
+    analyse_default_period:       parsed.data.analyse_default_period,
+    analyse_default_heatmap_mode: parsed.data.analyse_default_heatmap_mode,
+    analyse_default_accounts:     parsed.data.analyse_default_accounts,
   })
 
   if (error) return { error: error.message }
@@ -184,11 +245,10 @@ export async function changePassword(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const current = formData.get('current_password') as string
-  const next    = formData.get('new_password') as string
-  const confirm = formData.get('confirm_password') as string
+  const parsed = parseForm(formData, passwordSchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
+  const { current_password: current, new_password: next, confirm_password: confirm } = parsed.data
 
-  if (!current || !next || !confirm) return { error: 'Alle Felder ausfüllen' }
   if (next.length < 8) return { error: 'Passwort muss mindestens 8 Zeichen haben' }
   if (next !== confirm) return { error: 'Neue Passwörter stimmen nicht überein' }
 
@@ -212,13 +272,9 @@ export async function saveExchangeKey(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const exchange  = (formData.get('exchange')   as string)?.trim()
-  const api_key   = (formData.get('api_key')    as string)?.trim()
-  const api_secret = (formData.get('api_secret') as string)?.trim()
-
-  if (!exchange || !api_key || !api_secret) {
-    return { error: 'Alle Felder sind erforderlich' }
-  }
+  const parsed = parseForm(formData, exchangeKeySchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
+  const { exchange, api_key, api_secret } = parsed.data
 
   let encryptedKey: string
   let encryptedSecret: string
@@ -253,7 +309,12 @@ export async function deleteExchangeKey(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const exchange = (formData.get('exchange') as string)?.trim() ?? 'kraken'
+  const parsed = parseInput(
+    z.object({ exchange: exchangeName.optional().transform(v => v ?? 'kraken') }),
+    formDataToObject(formData),
+  )
+  if (!parsed.ok) return { error: issueMessage(parsed) }
+  const { exchange } = parsed.data
 
   const { error } = await supabase
     .from('exchange_keys')
@@ -274,15 +335,10 @@ export async function saveTrading(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const riskPct   = formData.get('risk_per_trade_pct') as string
-  const maxTrades = formData.get('max_open_trades') as string
+  const parsed = parseForm(formData, tradingSchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
 
-  const { error } = await upsertSettings(supabase, user.id, {
-    default_asset_class: formData.get('default_asset_class') as string || 'major',
-    default_timeframe:   (formData.get('default_timeframe') as string) || null,
-    risk_per_trade_pct:  riskPct ? parseFloat(riskPct) : null,
-    max_open_trades:     maxTrades ? parseInt(maxTrades) : null,
-  })
+  const { error } = await upsertSettings(supabase, user.id, parsed.data)
 
   if (error) return { error: error.message }
   revalidatePath('/', 'layout')

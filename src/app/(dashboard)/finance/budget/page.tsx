@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getAuthUser } from '@/lib/supabase/server'
 import { seedIfEmpty } from './actions'
+import { getBudgetCategories, getBudgetItems, getIncomeTarget } from '@/lib/data/finance-budget'
 import { LebenshaltungskostenClient } from '@/components/lebenshaltungskosten/LebenshaltungskostenClient'
 
 export type BudgetCategory = {
@@ -40,21 +41,17 @@ export default async function LebenshaltungskostenPage() {
 
   // .eq('user_id', ...) zusätzlich zur RLS-Policy — siehe Kommentar in
   // actions.ts (updateCategory): dieselbe Defense-in-Depth-Konvention.
-  const [
-    { data: categories },
-    { data: items },
-    { data: targets },
-  ] = await Promise.all([
-    supabase.from('budget_categories').select('*').eq('user_id', user.id).order('sort_order').order('name'),
-    supabase.from('budget_items').select('*').eq('user_id', user.id).order('name'),
-    supabase.from('income_targets').select('*').eq('user_id', user.id).order('created_at').limit(1),
+  const [categories, items, target] = await Promise.all([
+    getBudgetCategories(supabase, user.id),
+    getBudgetItems(supabase, user.id),
+    getIncomeTarget(supabase, user.id),
   ])
 
   return (
     <LebenshaltungskostenClient
-      categories={(categories ?? []) as BudgetCategory[]}
-      items={(items ?? []) as BudgetItem[]}
-      target={(targets?.[0] ?? null) as IncomeTarget | null}
+      categories={categories as BudgetCategory[]}
+      items={items as BudgetItem[]}
+      target={target as IncomeTarget | null}
     />
   )
 }

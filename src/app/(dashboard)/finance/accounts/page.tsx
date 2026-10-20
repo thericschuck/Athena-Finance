@@ -2,7 +2,12 @@ import { getAuthUser } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Landmark } from 'lucide-react'
 import { AddAccountDialog, EditAccountDialog, DeleteAccountButton } from '@/components/finance/account-form'
-import { Database } from '@/types/database'
+import {
+  getAccounts,
+  getManualBalanceSums,
+  getBankBalances,
+  type AccountRow as Account,
+} from '@/lib/data/finance-accounts'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency } from '@/lib/format'
 import { getDepotsSummaries } from '@/app/actions/depot'
@@ -14,8 +19,7 @@ import { BankSyncPanel } from '@/components/bank/bank-sync-panel'
 import { SyncedHoldingsSection } from '@/components/bank/synced-holdings-section'
 import { parsePeriod, periodCutoff, type Period } from '@/lib/period'
 import { fetchBalanceHistory } from '@/lib/account-history'
-
-type Account = Database['public']['Tables']['accounts']['Row']
+import { computeAccountBalances } from '@/lib/finance/dashboard-calc'
 
 /**
  * Saldenverlauf eines Kontos im gewaehlten Zeitraum. `first`/`last` mitgefuehrt, weil die
@@ -52,21 +56,10 @@ export default async function AccountsPage({
   const period: Period = parsePeriod(rawPeriod)
   const cutoff = periodCutoff(period)
 
-  const [{ data: accounts }, { data: transactions }, { data: bankBalances }, settings, depots] = await Promise.all([
-    supabase
-      .from('accounts')
-      .select('*')
-      .eq('user_id', user!.id)
-      .order('sort_order', { ascending: true })
-      .order('created_at', { ascending: true }),
-    supabase
-      .from('transactions')
-      .select('account_id, amount, type')
-      .eq('user_id', user!.id),
-    supabase
-      .from('bank_balance')
-      .select('account_iban, booked_balance')
-      .eq('user_id', user!.id),
+  const [accounts, transactions, bankBalances, settings, depots] = await Promise.all([
+    getAccounts(supabase, user!.id),
+    getManualBalanceSums(supabase, user!.id),
+    getBankBalances(supabase, user!.id),
     getSettings(user!.id),
     getDepotsSummaries(),
   ])
@@ -97,21 +90,11 @@ export default async function AccountsPage({
 
   // Compute balance per account from manually-entered transactions — used for accounts that
   // aren't linked to a synced bank account.
-  const balanceMap = new Map<string, number>()
-  for (const tx of transactions ?? []) {
-    const cur = balanceMap.get(tx.account_id) ?? 0
-    if (tx.type === 'income')  balanceMap.set(tx.account_id, cur + tx.amount)
-    if (tx.type === 'expense') balanceMap.set(tx.account_id, cur - tx.amount)
-  }
-
   // For accounts linked via accounts.bank_iban (see migration 20260821010000), the synced
-  // bank_balance is the real, live balance — prefer it over summing local transactions.
+  // bank_balance is the real, live balance — it wins over the summed local transactions.
+  // Die Summe je Konto rechnet die DB (View account_balance_sums_manual).
   const bankBalanceByIban = new Map((bankBalances ?? []).map(b => [b.account_iban, b.booked_balance]))
-  for (const account of accounts ?? []) {
-    if (account.bank_iban && bankBalanceByIban.has(account.bank_iban)) {
-      balanceMap.set(account.id, bankBalanceByIban.get(account.bank_iban)!)
-    }
-  }
+  const balanceMap = computeAccountBalances(accounts ?? [], transactions, bankBalanceByIban)
 
   return (
     <UrlFiltersProvider>

@@ -13,36 +13,20 @@ import { AccountTxToolbar, SortableHeader, MonthChip } from '@/components/financ
 import { parsePeriod, periodCutoff, type Period } from '@/lib/period'
 import { fetchBalanceHistory } from '@/lib/account-history'
 import { Database } from '@/types/database'
+import {
+  getAccount,
+  getActiveAccountOptions,
+  type AccountOptionRow as Account,
+} from '@/lib/data/finance-accounts'
+import {
+  getAccountTransactions,
+  getCategoryOptions,
+  type AccountTransactionRow as UnifiedRow,
+  type CategoryOptionRow as Category,
+} from '@/lib/data/finance-transactions'
 import { ChevronLeft, Landmark } from 'lucide-react'
 
 type TxRow = Database['public']['Tables']['transactions']['Row']
-type Account = { id: string; name: string; color: string | null; currency: string }
-type Category = { id: string; name: string; color: string | null; icon: string | null; parent_id: string | null }
-
-// Row shape of the `unified_transactions` view (see migration 20260821010000) — merges the
-// manual `transactions` ledger with FinTS-synced `bank_transactions` for any linked account.
-type UnifiedRow = {
-  id: string
-  account_id: string | null
-  account_name: string | null
-  account_color: string | null
-  category_id: string | null
-  category_name: string | null
-  category_color: string | null
-  date: string
-  type: string
-  amount: number
-  amount_base: number | null
-  fx_rate: number
-  currency: string
-  description: string | null
-  merchant: string | null
-  transfer_to: string | null
-  contract_id: string | null
-  tags: string[]
-  source: 'manual' | 'bank_sync'
-  signed_amount: number
-}
 
 const TYPE_LABELS: Record<string, string> = {
   checking:         'Girokonto',
@@ -103,30 +87,11 @@ export default async function AccountDetailPage({ params, searchParams }: PagePr
   const period: Period = parsePeriod(rawPeriod)
   const cutoff = periodCutoff(period)
 
-  const [{ data: account }, { data: accounts }, { data: categories }, { data: transactions }, balanceHistory, settings] = await Promise.all([
-    supabase
-      .from('accounts')
-      .select('*')
-      .eq('id', id)
-      .eq('user_id', user!.id)
-      .single(),
-    supabase
-      .from('accounts')
-      .select('id, name, color, currency')
-      .eq('user_id', user!.id)
-      .eq('is_active', true)
-      .order('sort_order'),
-    supabase
-      .from('categories')
-      .select('id, name, color, icon, parent_id')
-      .eq('user_id', user!.id)
-      .order('sort_order'),
-    supabase
-      .from('unified_transactions')
-      .select('*')
-      .eq('user_id', user!.id)
-      .eq('account_id', id)
-      .order('date', { ascending: false }),
+  const [account, accounts, categories, allRows, balanceHistory, settings] = await Promise.all([
+    getAccount(supabase, user!.id, id),
+    getActiveAccountOptions(supabase, user!.id),
+    getCategoryOptions(supabase, user!.id),
+    getAccountTransactions(supabase, user!.id, id),
     // Seitenweise: „Geschaeftsanteile" hat ueber 3.000 Snapshots seit 2018, und eine
     // einzelne Abfrage liefert davon nur die aeltesten 1.000 (bis Maerz 2021). Der
     // Kontostand unten kommt aus `at(-1)` und waere damit fuenf Jahre alt.
@@ -142,7 +107,6 @@ export default async function AccountDetailPage({ params, searchParams }: PagePr
   // Ein Zeitraum fuer die ganze Seite: Chart, Kennzahlen und Tabelle zeigen denselben
   // Ausschnitt. Vorher galt der Umschalter nur fuer den Chart, waehrend die Karten daneben
   // die komplette Historie summierten — der Chart sagte "1J", der Saldo meinte "seit 2018".
-  const allRows = (transactions ?? []) as UnifiedRow[]
   const rows = cutoff ? allRows.filter(t => t.date >= cutoff) : allRows
   const currency = account.currency
 

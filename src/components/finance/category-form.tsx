@@ -37,10 +37,10 @@ import {
   deleteCategory,
   type CategoryActionState,
 } from '@/app/(dashboard)/finance/(transaktionen)/categories/actions'
-import { Database } from '@/types/database'
+import type { CategoryRow, EuerZeileRow } from '@/lib/data/finance-transactions'
 
-type Category = Database['public']['Tables']['categories']['Row']
-type EuerZeile = Database['public']['Tables']['euer_zeilen']['Row']
+type Category = CategoryRow
+type EuerZeile = EuerZeileRow
 
 const CATEGORY_TYPES = [
   { value: 'expense', label: 'Ausgabe' },

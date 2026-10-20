@@ -32,11 +32,11 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Database } from '@/types/database'
+import type { DebtRow } from '@/lib/data/finance-planning'
 import { useSettings } from '@/components/providers/settings-context'
 import { fmtCurrency } from '@/lib/format'
 
-type Debt = Database['public']['Tables']['debts']['Row']
+type Debt = DebtRow
 
 const DEBT_TYPES = [
   { value: 'borrowed', label: 'Geliehen (ich schulde)' },

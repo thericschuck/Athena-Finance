@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { ArrowLeft, CheckCircle2, XCircle, Minus, ExternalLink } from 'lucide-react'
 import { ChecklistPanel, ChecklistState } from '@/components/strategy/checklist-panel'
 import { EditStrategyDialog, DeleteStrategyButton } from '@/components/strategy/strategy-form'
+import { getStrategy, getSubmissionChecklist, getRobustnessStatus, getComboOptions } from '@/lib/data/strategy'
 import { getSettings } from '@/lib/settings'
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
@@ -56,16 +57,16 @@ export default async function StrategyDetailPage({
 
   // Parallel data fetching
   const [
-    { data: strategy },
-    { data: checklist },
-    { data: robustness },
-    { data: combosRaw },
+    strategy,
+    checklist,
+    robustness,
+    comboOptions,
     settings,
   ] = await Promise.all([
-    supabase.from('strategies').select('*').eq('id', id).eq('user_id', user!.id).single(),
-    supabase.from('submission_checklist').select('*').eq('strategy_id', id).maybeSingle(),
-    supabase.from('robustness_status').select('*').eq('strategy_id', id).maybeSingle(),
-    supabase.from('combos').select('id, name').eq('user_id', user!.id).order('name'),
+    getStrategy(supabase, user!.id, id),
+    getSubmissionChecklist(supabase, id),
+    getRobustnessStatus(supabase, id),
+    getComboOptions(supabase, user!.id),
     getSettings(user!.id),
   ])
 
@@ -74,7 +75,6 @@ export default async function StrategyDetailPage({
 
   if (!strategy) notFound()
 
-  const comboOptions = combosRaw ?? []
   const comboName = comboOptions.find(c => c.id === strategy.combo_id)?.name ?? null
 
   // Default checklist (all false if row doesn't exist yet)

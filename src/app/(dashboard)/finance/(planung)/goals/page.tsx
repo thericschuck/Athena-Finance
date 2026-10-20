@@ -1,14 +1,12 @@
 import { getAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency, fmtDate } from '@/lib/format'
-import { Database } from '@/types/database'
+import { getSavingsGoals, type SavingsGoalRow as Goal } from '@/lib/data/finance-planning'
 import { AddGoalDialog, EditGoalDialog, DeleteGoalButton, GoalPaymentDialog } from '@/components/finance/goal-form'
 import { setGoalStatus } from './actions'
 import { Button } from '@/components/ui/button'
 import { CheckCircle2, Circle, TrendingDown, TrendingUp } from 'lucide-react'
 
-type GoalRow = Database['public']['Tables']['savings_goals']['Row']
-type Goal = GoalRow & { current_amount: number; savings_rate_start_date: string | null }
 
 // ─── Calculations ─────────────────────────────────────────────────────────────
 function progressPct(goal: Goal): number {
@@ -93,19 +91,14 @@ const STATUS_ICON: Record<string, React.ReactNode> = {
 export default async function GoalsPage() {
   const { supabase, user } = await getAuthUser()
 
-  const [{ data: goals }, settings] = await Promise.all([
-    supabase
-      .from('savings_goals')
-      .select('*')
-      .eq('user_id', user!.id)
-      .order('created_at', { ascending: false }),
+  const [all, settings] = await Promise.all([
+    getSavingsGoals(supabase, user!.id),
     getSettings(user!.id),
   ])
 
   const locale = (settings.number_format as string) ?? 'de-DE'
   const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
 
-  const all = (goals ?? []) as unknown as Goal[]
   const active = sortGoals(all.filter(g => g.status !== 'geschlossen'))
   const closed = all.filter(g => g.status === 'geschlossen')
 

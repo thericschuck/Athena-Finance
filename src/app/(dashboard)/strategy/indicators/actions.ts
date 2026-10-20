@@ -2,11 +2,55 @@
 
 import { getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
+import { parseForm, parseInput, issueMessage } from '@/lib/api/validate'
+import { idField, uuid, reqText, optText, optDate, optMoneyField, boolTrue } from '@/lib/api/schemas'
 
 export type IndicatorActionState = { error: string } | { success: true } | null
 export type PerfActionState      = { error: string } | { success: true } | null
 
 const REVALIDATE = () => revalidatePath('/strategy/indicators')
+
+const indicatorFields = {
+  name: reqText('Name ist erforderlich', 200),
+  author: reqText('Author ist erforderlich', 200),
+  type: reqText('Typ ist erforderlich', 100),
+  subtype: optText(100),
+  repaints: boolTrue,
+  is_forbidden: boolTrue,
+  forbidden_reason: optText(1000),
+  tv_url: optText(2000),
+  notes: optText(5000),
+  code: optText(100000),
+}
+const createIndicatorSchema = z.object(indicatorFields)
+const updateIndicatorSchema = z.object({ id: idField(), ...indicatorFields })
+
+const perfNum = (label: string) => optMoneyField(label + ' ist ungültig')
+const perfFields = {
+  asset: reqText('Asset ist erforderlich', 100),
+  asset_class: reqText('Asset-Klasse ist erforderlich', 50),
+  timeframe: reqText('Timeframe ist erforderlich', 20),
+  cobra_green: perfNum('Cobra Green'),
+  cobra_red: perfNum('Cobra Red'),
+  net_profit_pct: perfNum('Net Profit %'),
+  profit_factor: perfNum('Profit Factor'),
+  win_rate: perfNum('Win Rate'),
+  trades: perfNum('Trades'),
+  sharpe: perfNum('Sharpe'),
+  sortino: perfNum('Sortino'),
+  omega_ratio: perfNum('Omega Ratio'),
+  equity_max_dd: perfNum('Equity Max DD'),
+  intra_trade_dd: perfNum('Intra-Trade DD'),
+  test_start: optDate,
+  test_end: optDate,
+  settings: optText(2000),
+}
+const createPerformanceSchema = z.object({
+  indicator_id: idField('Indicator-ID fehlt', 'Indicator-ID ist ungültig'),
+  ...perfFields,
+})
+const updatePerformanceSchema = z.object({ id: idField(), ...perfFields })
 
 // ─── Indicators ───────────────────────────────────────────────────────────────
 export async function createIndicator(
@@ -16,26 +60,12 @@ export async function createIndicator(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const name   = (formData.get('name') as string)?.trim()
-  const author = (formData.get('author') as string)?.trim()
-  const type   = (formData.get('type') as string)?.trim()
-
-  if (!name)   return { error: 'Name ist erforderlich' }
-  if (!author) return { error: 'Author ist erforderlich' }
-  if (!type)   return { error: 'Typ ist erforderlich' }
+  const parsed = parseForm(formData, createIndicatorSchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
 
   const { error } = await supabase.from('indicators').insert({
-    name,
-    author,
-    type,
-    subtype:          (formData.get('subtype') as string) || null,
-    repaints:         formData.get('repaints') === 'true',
-    is_forbidden:     formData.get('is_forbidden') === 'true',
-    forbidden_reason: (formData.get('forbidden_reason') as string) || null,
-    tv_url:           (formData.get('tv_url') as string) || null,
-    notes:            (formData.get('notes') as string) || null,
-    code:             (formData.get('code') as string) || null,
-    user_id:          user.id,
+    ...parsed.data,
+    user_id: user.id,
   })
 
   if (error) return { error: error.message }
@@ -50,30 +80,15 @@ export async function updateIndicator(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const id     = formData.get('id') as string
-  const name   = (formData.get('name') as string)?.trim()
-  const author = (formData.get('author') as string)?.trim()
-  const type   = (formData.get('type') as string)?.trim()
-
-  if (!id)     return { error: 'ID fehlt' }
-  if (!name)   return { error: 'Name ist erforderlich' }
-  if (!author) return { error: 'Author ist erforderlich' }
-  if (!type)   return { error: 'Typ ist erforderlich' }
+  const parsed = parseForm(formData, updateIndicatorSchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
+  const { id, ...fields } = parsed.data
 
   const { error } = await supabase
     .from('indicators')
     .update({
-      name,
-      author,
-      type,
-      subtype:          (formData.get('subtype') as string) || null,
-      repaints:         formData.get('repaints') === 'true',
-      is_forbidden:     formData.get('is_forbidden') === 'true',
-      forbidden_reason: (formData.get('forbidden_reason') as string) || null,
-      tv_url:           (formData.get('tv_url') as string) || null,
-      notes:            (formData.get('notes') as string) || null,
-      code:             (formData.get('code') as string) || null,
-      updated_at:       new Date().toISOString(),
+      ...fields,
+      updated_at: new Date().toISOString(),
     })
     .eq('id', id)
     .eq('user_id', user.id)
@@ -86,6 +101,8 @@ export async function updateIndicator(
 export async function deleteIndicator(id: string): Promise<{ error?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
+  const idP = parseInput(uuid, id)
+  if (!idP.ok) return { error: issueMessage(idP) }
 
   const { error } = await supabase
     .from('indicators')
@@ -99,18 +116,6 @@ export async function deleteIndicator(id: string): Promise<{ error?: string }> {
 }
 
 // ─── Performance entries ──────────────────────────────────────────────────────
-function parseOptFloat(fd: FormData, key: string): number | null {
-  const v = fd.get(key) as string
-  if (!v?.trim()) return null
-  const n = parseFloat(v)
-  return isNaN(n) ? null : n
-}
-
-function parseOptDate(fd: FormData, key: string): string | null {
-  const v = fd.get(key) as string
-  return v?.trim() || null
-}
-
 export async function createPerformance(
   _prev: PerfActionState,
   formData: FormData
@@ -118,36 +123,10 @@ export async function createPerformance(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const indicator_id = formData.get('indicator_id') as string
-  const asset        = (formData.get('asset') as string)?.trim()
-  const asset_class  = (formData.get('asset_class') as string)?.trim()
-  const timeframe    = (formData.get('timeframe') as string)?.trim()
+  const parsed = parseForm(formData, createPerformanceSchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
 
-  if (!indicator_id) return { error: 'Indicator-ID fehlt' }
-  if (!asset)        return { error: 'Asset ist erforderlich' }
-  if (!asset_class)  return { error: 'Asset-Klasse ist erforderlich' }
-  if (!timeframe)    return { error: 'Timeframe ist erforderlich' }
-
-  const { error } = await supabase.from('indicator_performance').insert({
-    indicator_id,
-    asset,
-    asset_class,
-    timeframe,
-    cobra_green:    parseOptFloat(formData, 'cobra_green'),
-    cobra_red:      parseOptFloat(formData, 'cobra_red'),
-    net_profit_pct: parseOptFloat(formData, 'net_profit_pct'),
-    profit_factor:  parseOptFloat(formData, 'profit_factor'),
-    win_rate:       parseOptFloat(formData, 'win_rate'),
-    trades:         parseOptFloat(formData, 'trades'),
-    sharpe:         parseOptFloat(formData, 'sharpe'),
-    sortino:        parseOptFloat(formData, 'sortino'),
-    omega_ratio:    parseOptFloat(formData, 'omega_ratio'),
-    equity_max_dd:  parseOptFloat(formData, 'equity_max_dd'),
-    intra_trade_dd: parseOptFloat(formData, 'intra_trade_dd'),
-    test_start:     parseOptDate(formData, 'test_start'),
-    test_end:       parseOptDate(formData, 'test_end'),
-    settings:       (formData.get('settings') as string) || null,
-  })
+  const { error } = await supabase.from('indicator_performance').insert(parsed.data)
 
   if (error) return { error: error.message }
   REVALIDATE()
@@ -161,37 +140,13 @@ export async function updatePerformance(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const id          = formData.get('id') as string
-  const asset       = (formData.get('asset') as string)?.trim()
-  const asset_class = (formData.get('asset_class') as string)?.trim()
-  const timeframe   = (formData.get('timeframe') as string)?.trim()
-
-  if (!id)          return { error: 'ID fehlt' }
-  if (!asset)       return { error: 'Asset ist erforderlich' }
-  if (!asset_class) return { error: 'Asset-Klasse ist erforderlich' }
-  if (!timeframe)   return { error: 'Timeframe ist erforderlich' }
+  const parsed = parseForm(formData, updatePerformanceSchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
+  const { id, ...fields } = parsed.data
 
   const { error } = await supabase
     .from('indicator_performance')
-    .update({
-      asset,
-      asset_class,
-      timeframe,
-      cobra_green:    parseOptFloat(formData, 'cobra_green'),
-      cobra_red:      parseOptFloat(formData, 'cobra_red'),
-      net_profit_pct: parseOptFloat(formData, 'net_profit_pct'),
-      profit_factor:  parseOptFloat(formData, 'profit_factor'),
-      win_rate:       parseOptFloat(formData, 'win_rate'),
-      trades:         parseOptFloat(formData, 'trades'),
-      sharpe:         parseOptFloat(formData, 'sharpe'),
-      sortino:        parseOptFloat(formData, 'sortino'),
-      omega_ratio:    parseOptFloat(formData, 'omega_ratio'),
-      equity_max_dd:  parseOptFloat(formData, 'equity_max_dd'),
-      intra_trade_dd: parseOptFloat(formData, 'intra_trade_dd'),
-      test_start:     parseOptDate(formData, 'test_start'),
-      test_end:       parseOptDate(formData, 'test_end'),
-      settings:       (formData.get('settings') as string) || null,
-    })
+    .update(fields)
     .eq('id', id)
 
   if (error) return { error: error.message }
@@ -202,6 +157,8 @@ export async function updatePerformance(
 export async function deletePerformance(id: string): Promise<{ error?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
+  const idP = parseInput(uuid, id)
+  if (!idP.ok) return { error: issueMessage(idP) }
 
   const { error } = await supabase
     .from('indicator_performance')

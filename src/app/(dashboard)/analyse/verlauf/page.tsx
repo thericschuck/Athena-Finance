@@ -1,5 +1,11 @@
 import Link from 'next/link'
-import { createClient, getAuthUser } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/types/database'
+import {
+  getNetWorthHistoryPage, getHistoryAccounts, getAccountBalanceHistoryPage, getHistoryAssets,
+  getPortfolioSnapshotHistoryPage, getMonthlyHistoryPage,
+} from '@/lib/data/overview'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency, fmtNumber, fmtDate as fmtDateLib } from '@/lib/format'
 
@@ -81,7 +87,7 @@ function Pagination({ tab, page, total }: { tab: string; page: number; total: nu
 
 // ─── Shared tab context ───────────────────────────────────────────────────────
 type TabCtx = {
-  supabase: Awaited<ReturnType<typeof createClient>>
+  supabase: SupabaseClient<Database>
   uid: string
   locale: string
   dateFormat: string
@@ -92,14 +98,7 @@ type TabCtx = {
 
 // ─── Tab: Net Worth ───────────────────────────────────────────────────────────
 async function NetworthTab({ supabase, uid, locale, dateFormat, page, from, to }: TabCtx) {
-  const [{ data, count }] = await Promise.all([
-    supabase
-      .from('net_worth_snapshots')
-      .select('*', { count: 'exact' })
-      .eq('user_id', uid)
-      .order('snapshot_date', { ascending: false })
-      .range(from, to),
-  ])
+  const { rows: data, count } = await getNetWorthHistoryPage(supabase, uid, { from, to })
 
   return (
     <div className="overflow-x-auto">
@@ -122,7 +121,7 @@ async function NetworthTab({ supabase, uid, locale, dateFormat, page, from, to }
           </tr>
         </thead>
         <tbody>
-          {(data ?? []).map((r, i) => (
+          {data.map((r, i) => (
             <tr key={r.id} className={`border-b border-border/50 hover:bg-muted/20 ${i % 2 === 0 ? '' : 'bg-muted/10'}`}>
               <Td>{fmtDate(r.snapshot_date, dateFormat)}</Td>
               <Td right mono>
@@ -143,7 +142,7 @@ async function NetworthTab({ supabase, uid, locale, dateFormat, page, from, to }
           ))}
         </tbody>
       </table>
-      <Pagination tab="networth" page={page} total={count ?? 0} />
+      <Pagination tab="networth" page={page} total={count} />
     </div>
   )
 }
@@ -151,21 +150,12 @@ async function NetworthTab({ supabase, uid, locale, dateFormat, page, from, to }
 // ─── Tab: Accounts ────────────────────────────────────────────────────────────
 async function AccountsTab({ supabase, uid, locale, dateFormat, page, from, to }: TabCtx) {
   // Get user's accounts first, then filter balances
-  const { data: accts } = await supabase
-    .from('accounts')
-    .select('id, name, type, color')
-    .eq('user_id', uid)
+  const accts = await getHistoryAccounts(supabase, uid)
 
-  const acctIds  = (accts ?? []).map(a => a.id)
-  const acctMap  = new Map((accts ?? []).map(a => [a.id, a]))
+  const acctIds  = accts.map(a => a.id)
+  const acctMap  = new Map(accts.map(a => [a.id, a]))
 
-  const { data, count } = await supabase
-    .from('account_balances')
-    .select('*', { count: 'exact' })
-    .in('account_id', acctIds.length ? acctIds : ['__none__'])
-    .order('snapshot_date', { ascending: false })
-    .order('account_id')
-    .range(from, to)
+  const { rows: data, count } = await getAccountBalanceHistoryPage(supabase, acctIds, { from, to })
 
   return (
     <div className="overflow-x-auto">
@@ -181,7 +171,7 @@ async function AccountsTab({ supabase, uid, locale, dateFormat, page, from, to }
           </tr>
         </thead>
         <tbody>
-          {(data ?? []).map((r, i) => {
+          {data.map((r, i) => {
             const acct = acctMap.get(r.account_id)
             const neg  = r.balance < 0
             return (
@@ -206,29 +196,19 @@ async function AccountsTab({ supabase, uid, locale, dateFormat, page, from, to }
           })}
         </tbody>
       </table>
-      <Pagination tab="accounts" page={page} total={count ?? 0} />
+      <Pagination tab="accounts" page={page} total={count} />
     </div>
   )
 }
 
 // ─── Tab: Portfolio ───────────────────────────────────────────────────────────
 async function PortfolioTab({ supabase, uid, locale, dateFormat, page, from, to }: TabCtx) {
-  const { data: assetsAll } = await supabase
-    .from('assets')
-    .select('id, name, symbol, type')
-    .eq('user_id', uid)
+  const assetsAll = await getHistoryAssets(supabase, uid)
 
-  const assetMap = new Map((assetsAll ?? []).map(a => [a.id, a]))
-  const assetIds = (assetsAll ?? []).map(a => a.id)
+  const assetMap = new Map(assetsAll.map(a => [a.id, a]))
+  const assetIds = assetsAll.map(a => a.id)
 
-  const { data, count } = await supabase
-    .from('portfolio_snapshots')
-    .select('*', { count: 'exact' })
-    .eq('user_id', uid)
-    .in('asset_id', assetIds.length ? assetIds : ['__none__'])
-    .order('snapshot_date', { ascending: false })
-    .order('asset_id')
-    .range(from, to)
+  const { rows: data, count } = await getPortfolioSnapshotHistoryPage(supabase, uid, assetIds, { from, to })
 
   return (
     <div className="overflow-x-auto">
@@ -247,7 +227,7 @@ async function PortfolioTab({ supabase, uid, locale, dateFormat, page, from, to 
           </tr>
         </thead>
         <tbody>
-          {(data ?? []).map((r, i) => {
+          {data.map((r, i) => {
             const asset = assetMap.get(r.asset_id)
             return (
               <tr key={r.id} className={`border-b border-border/50 hover:bg-muted/20 ${i % 2 === 0 ? '' : 'bg-muted/10'}`}>
@@ -267,19 +247,14 @@ async function PortfolioTab({ supabase, uid, locale, dateFormat, page, from, to 
           })}
         </tbody>
       </table>
-      <Pagination tab="portfolio" page={page} total={count ?? 0} />
+      <Pagination tab="portfolio" page={page} total={count} />
     </div>
   )
 }
 
 // ─── Tab: Monthly ─────────────────────────────────────────────────────────────
 async function MonthlyTab({ supabase, uid, locale, page, from, to }: TabCtx) {
-  const { data, count } = await supabase
-    .from('monthly_finance_summary')
-    .select('*', { count: 'exact' })
-    .eq('user_id', uid)
-    .order('month', { ascending: false })
-    .range(from, to)
+  const { rows: data, count } = await getMonthlyHistoryPage(supabase, uid, { from, to })
 
   return (
     <div className="overflow-x-auto">
@@ -302,7 +277,7 @@ async function MonthlyTab({ supabase, uid, locale, page, from, to }: TabCtx) {
           </tr>
         </thead>
         <tbody>
-          {(data ?? []).map((r, i) => {
+          {data.map((r, i) => {
             const pos = r.net_balance >= 0
             return (
               <tr key={r.id} className={`border-b border-border/50 hover:bg-muted/20 ${i % 2 === 0 ? '' : 'bg-muted/10'}`}>
@@ -334,7 +309,7 @@ async function MonthlyTab({ supabase, uid, locale, page, from, to }: TabCtx) {
           })}
         </tbody>
       </table>
-      <Pagination tab="monthly" page={page} total={count ?? 0} />
+      <Pagination tab="monthly" page={page} total={count} />
     </div>
   )
 }

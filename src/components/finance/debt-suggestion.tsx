@@ -12,9 +12,9 @@ import {
 import { Button } from '@/components/ui/button'
 import { AddDebtDialog, DebtPaymentDialog } from '@/components/finance/debt-payment-form'
 import { matchDebtForText } from '@/lib/finance/schulden-match'
-import { Database } from '@/types/database'
+import type { DebtRow } from '@/lib/data/finance-planning'
 
-type Debt = Database['public']['Tables']['debts']['Row']
+type Debt = DebtRow
 
 interface DebtSuggestionProps {
   transactionId: string
@@ -70,7 +70,7 @@ export function DebtSuggestion({
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs text-foreground">
           {treffer
-            ? <>Passt vermutlich zu <strong>„{treffer.name}"</strong> — als Zahlung verbuchen?</>
+            ? <>Passt vermutlich zu <strong>„{treffer.name}“</strong> — als Zahlung verbuchen?</>
             : 'Als Schulden kategorisiert. Gehört das zu einer bestehenden Schuld — oder ist es eine neue?'}
         </p>
         <button

@@ -2,8 +2,9 @@ import { getAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency } from '@/lib/format'
 import { InventoryClient } from '@/components/inventar/InventoryClient'
-import { gesamtwert, type Valuable, type ValuableImage, type ValuableWithImage } from '@/lib/valuables'
+import { gesamtwert, type ValuableImage, type ValuableWithImage } from '@/lib/valuables'
 import { Gem } from 'lucide-react'
+import { getActiveValuables, getValuableImages } from '@/lib/data/inventar'
 import { signierteBildUrls } from '@/lib/inventar/bildurls'
 
 /**
@@ -21,35 +22,13 @@ export default async function InventarPage() {
   const { supabase, user } = await getAuthUser()
   if (!user) return null
 
-  const [{ data: rows }, { data: bildRows }, settings] = await Promise.all([
-    supabase
-      .from('valuables_current')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true })
-      .order('created_at', { ascending: false }),
-    supabase
-      .from('valuable_images')
-      .select('id, valuable_id, pfad, art, ist_hauptbild, created_at, hinweis, prompt, basis_bild_id')
-      .eq('user_id', user.id)
-      // Hauptbild zuerst, danach das Neueste — dieselbe Reihenfolge wie in der View, damit
-      // Galerie und angezeigtes Hauptbild nicht auseinanderlaufen.
-      .order('ist_hauptbild', { ascending: false })
-      .order('created_at', { ascending: false }),
+  const [items, bilder, settings] = await Promise.all([
+    getActiveValuables(supabase, user.id),
+    getValuableImages(supabase, user.id),
     getSettings(user.id),
   ])
 
   const locale = (settings.number_format as string) ?? 'de-DE'
-  const items = (rows ?? []) as Valuable[]
-
-  type BildRow = {
-    id: string; valuable_id: string; pfad: string
-    art: string; ist_hauptbild: boolean; created_at: string
-    hinweis: string | null; prompt: string | null; basis_bild_id: string | null
-  }
-  const bilder = (bildRows ?? []) as BildRow[]
-
   // Der Bucket ist privat — ohne signierte URL liefert Storage 400. Alle Pfade in EINEM
   // Aufruf signieren (bei 30 Objekten mit je vier Bildern wären es sonst 120 Round-Trips),
   // und über `signierteBildUrls` zwischengespeichert, damit derselbe Pfad zwischen zwei

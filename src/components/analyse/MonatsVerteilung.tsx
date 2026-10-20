@@ -272,8 +272,7 @@ function buildVerteilung(values: number[], binCount: number, currentValue: numbe
  */
 function BinTooltip({ active, payload, fmt }: {
   active?: boolean
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  payload?: any[]
+  payload?: { payload?: object }[]
   fmt: (n: number) => string
 }) {
   if (!active || !payload?.length) return null
@@ -449,10 +448,9 @@ export function MonatsVerteilung({ history, current }: Props) {
   // statt eines durchgehenden Balkens — eine Einheit pro Monat in dieser Klasse. Keine
   // eigene Komponente nötig (kein Hook, kein State): recharts ruft das bei jedem Render neu
   // auf, `mode`/`color` kommen aus dem Closure.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function monthStackShape(props: any) {
+  function monthStackShape(props: { x?: number; y?: number; width?: number; height?: number; payload?: Bin }) {
     const { x = 0, y = 0, width: w = 0, height: hgt = 0, payload } = props
-    const b = payload as Bin
+    const b = payload
     if (!b || b.count === 0) return <g />
 
     const fill = mode === 'guv'
@@ -615,8 +613,7 @@ export function MonatsVerteilung({ history, current }: Props) {
               xAxisId="betrag"
               x={dotX}
               y={dotY}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              shape={(props: any) => (
+              shape={(props: { cx?: number; cy?: number }) => (
                 <MarkerDot
                   cx={props.cx}
                   cy={props.cy}
@@ -637,8 +634,7 @@ export function MonatsVerteilung({ history, current }: Props) {
             xAxisId="betrag"
             x={med}
             y={medY}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            shape={(props: any) => (
+            shape={(props: { cx?: number; cy?: number }) => (
               <MarkerDot
                 cx={props.cx} cy={props.cy}
                 color="var(--muted-foreground)" fmt={fmt} value={med}
@@ -650,8 +646,7 @@ export function MonatsVerteilung({ history, current }: Props) {
             xAxisId="betrag"
             x={avg}
             y={avgY}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            shape={(props: any) => (
+            shape={(props: { cx?: number; cy?: number }) => (
               <MarkerDot
                 cx={props.cx} cy={props.cy}
                 color="var(--muted-foreground)" fmt={fmt} value={avg}
@@ -663,8 +658,7 @@ export function MonatsVerteilung({ history, current }: Props) {
             xAxisId="betrag"
             x={modusPunkt.x}
             y={modusPunkt.y}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            shape={(props: any) => (
+            shape={(props: { cx?: number; cy?: number }) => (
               <MarkerDot
                 cx={props.cx} cy={props.cy}
                 color="var(--muted-foreground)" fmt={fmt} value={modus}

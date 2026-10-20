@@ -4,6 +4,14 @@ import { AddTransactionDialog, EditTransactionDialog, DeleteTransactionButton, T
 import { TransactionFilters } from '@/components/finance/transaction-filters'
 import { ExportTransactionsButton } from '@/components/finance/transaction-csv'
 import { Database } from '@/types/database'
+import {
+  getTransactionsPage,
+  getCategoryOptions,
+  type CategoryOptionRow as Category,
+  type TransactionListRow as UnifiedRow,
+} from '@/lib/data/finance-transactions'
+import { getActiveAccountOptions, type AccountOptionRow as Account } from '@/lib/data/finance-accounts'
+import { getActiveDebts, type DebtRow as Debt } from '@/lib/data/finance-planning'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency, fmtDateShort } from '@/lib/format'
 import { Landmark } from 'lucide-react'
@@ -13,35 +21,6 @@ import { parsePage, parsePageSize } from '@/lib/pagination'
 import { CategorySuggestionsPanel } from '@/components/bank/category-suggestions-panel'
 
 type TxRow = Database['public']['Tables']['transactions']['Row']
-type Account = { id: string; name: string; color: string | null; currency: string }
-type Category = { id: string; name: string; color: string | null; icon: string | null; parent_id: string | null }
-type Debt = Database['public']['Tables']['debts']['Row']
-
-// Row shape of the `unified_transactions` view (see migration 20260821010000) — merges the
-// manual `transactions` ledger with FinTS-synced `bank_transactions` for any linked account,
-// so this page doesn't need a second query path for Banking data.
-type UnifiedRow = {
-  id: string
-  account_id: string | null
-  account_name: string | null
-  account_color: string | null
-  category_id: string | null
-  category_name: string | null
-  category_color: string | null
-  date: string
-  type: string
-  amount: number
-  amount_base: number | null
-  fx_rate: number
-  currency: string
-  description: string | null
-  merchant: string | null
-  transfer_to: string | null
-  contract_id: string | null
-  tags: string[]
-  source: 'manual' | 'bank_sync'
-  signed_amount: number
-}
 
 interface PageProps {
   searchParams: Promise<{
@@ -93,31 +72,18 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
   const [filters, { supabase, user }] = await Promise.all([searchParams, getAuthUser()])
 
   // Load accounts + categories for dropdowns and filter bar
-  const [{ data: accounts }, { data: categories }, { data: debts }, settings] = await Promise.all([
-    supabase
-      .from('accounts')
-      .select('id, name, color, currency')
-      .eq('user_id', user!.id)
-      .eq('is_active', true)
-      .order('sort_order'),
-    supabase
-      .from('categories')
-      .select('id, name, color, icon, parent_id')
-      .eq('user_id', user!.id)
-      .order('sort_order'),
+  const [accounts, categories, debts, settings] = await Promise.all([
+    getActiveAccountOptions(supabase, user!.id),
+    getCategoryOptions(supabase, user!.id),
     // Fuer den Schulden-Vorschlag (DebtSuggestion) -- nur aktive, abgeschlossene Schulden
     // sind kein sinnvolles Ziel mehr fuer eine neue Zahlung.
-    supabase
-      .from('debts')
-      .select('*')
-      .eq('user_id', user!.id)
-      .eq('is_active', true),
+    getActiveDebts(supabase, user!.id),
     getSettings(user!.id),
   ])
 
   const locale = (settings.number_format as string) ?? 'de-DE'
   const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
-  const schuldenCategoryId = categories?.find(c => c.name === 'Schulden')?.id ?? null
+  const schuldenCategoryId = categories.find(c => c.name === 'Schulden')?.id ?? null
 
   // Build transactions query with optional filters — reads the unified view (manual +
   // bank-synced) instead of the raw `transactions` table.
@@ -130,34 +96,7 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
   const page = parsePage(filters.page)
   const pageSize = parsePageSize(filters.per)
 
-  let query = supabase
-    .from('unified_transactions')
-    .select('*', { count: 'exact' })
-    .eq('user_id', user!.id)
-    .order('date', { ascending: false })
-    // Zweites Sortierkriterium, und ohne das waere die Seiteneinteilung schlicht falsch:
-    // `date` ist kein Zeitstempel, sondern ein Datum, und an einem Tag liegen oft ein
-    // Dutzend Buchungen. Bei mehrdeutiger Sortierung darf Postgres die Reihenfolge je
-    // Abfrage anders waehlen — dieselbe Buchung erschiene dann auf zwei Seiten und eine
-    // andere auf keiner. `id` ist eindeutig und macht die Ordnung stabil.
-    .order('id', { ascending: false })
-
-  if (filters.type) query = query.eq('type', filters.type)
-  if (filters.account) query = query.eq('account_id', filters.account)
-  if (filters.category) query = query.eq('category_id', filters.category)
-  if (filters.from) query = query.gte('date', filters.from)
-  if (filters.to) query = query.lte('date', filters.to)
-  if (filters.q) {
-    // Kommas und Klammern trennen in PostgREST die or()-Bedingungen — unmaskiert würde ein
-    // Suchbegriff mit diesen Zeichen die Query zerlegen statt gefiltert zu werden.
-    const term = filters.q.replace(/[,()*]/g, ' ').trim()
-    if (term) query = query.or(`description.ilike.%${term}%,merchant.ilike.%${term}%`)
-  }
-
-  const von = (page - 1) * pageSize
-  const { data: transactions, count, error } = await query.range(von, von + pageSize - 1)
-
-  const rows = (transactions ?? []) as UnifiedRow[]
+  const { rows, count, error } = await getTransactionsPage(supabase, user!.id, { filters, page, pageSize })
   const total = count ?? rows.length
   // `page`/`per` sind Ansichtseinstellungen, keine Filter — sonst stünde bei „100 pro
   // Seite" dauerhaft „(gefiltert)" hinter der Anzahl.
@@ -190,9 +129,9 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
           <CategorySuggestionsPanel />
           <ExportTransactionsButton />
           <AddTransactionDialog
-            accounts={accounts ?? []}
-            categories={categories ?? []}
-            debts={debts ?? []}
+            accounts={accounts}
+            categories={categories}
+            debts={debts}
             schuldenCategoryId={schuldenCategoryId}
           />
         </div>
@@ -207,8 +146,8 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
         <UrlFiltersProvider replace resetKeys="page">
           <div className="space-y-5">
             <TransactionFilters
-              accounts={accounts ?? []}
-              categories={categories ?? []}
+              accounts={accounts}
+              categories={categories}
             />
 
             <FilterPending className="space-y-4">
@@ -233,9 +172,9 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
                           <TransactionRow
                             key={tx.id}
                             tx={tx}
-                            accounts={accounts ?? []}
-                            categories={categories ?? []}
-                            debts={debts ?? []}
+                            accounts={accounts}
+                            categories={categories}
+                            debts={debts}
                             schuldenCategoryId={schuldenCategoryId}
                             locale={locale}
                             dateFormat={dateFormat}

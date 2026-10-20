@@ -17,13 +17,12 @@ interface Row extends MonthlyComparison {
   clamped: boolean
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function CustomTooltip({ active, payload, label }: any) {
+function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { payload?: Row }[]; label?: string | number }) {
   if (!active || !payload?.length) return null
   // Alle Serien dieses Monats zeigen auf dieselbe Datenzeile — die lesen wir direkt,
   // statt die Werte über dataKey aus dem payload zu fischen. Nur so kommt auch die
   // ungekappte Sparquote in den Tooltip (payload trägt den gezeichneten Wert `plot`).
-  const row = payload[0]?.payload as Row | undefined
+  const row = payload[0]?.payload
   if (!row) return null
 
   return (
@@ -109,8 +108,7 @@ function toRows(data: MonthlyComparison[], [lo, hi]: [number, number]): Row[] {
  * bekommt denselben Ring, aber gestrichelt — er ist kein Extremwert, sondern schlicht noch
  * nicht fertig.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function SparquoteDot({ cx, cy, payload }: any) {
+function SparquoteDot({ cx, cy, payload }: { cx?: number; cy?: number; payload?: Row }) {
   if (cx == null || cy == null || payload?.plot == null) return null
   if (payload.laufend) {
     return <circle cx={cx} cy={cy} r={4} fill="var(--card)" stroke="var(--chart-accent)" strokeWidth={2} strokeDasharray="2 2" />

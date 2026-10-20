@@ -1,30 +1,9 @@
 import { getAuthUser } from '@/lib/supabase/server'
 import { CheckCircle2, XCircle, CircleDashed } from 'lucide-react'
+import { getIndicatorOptions, getCombosWithIndicators } from '@/lib/data/strategy'
 import { AddComboDialog, EditComboDialog, DeleteComboButton } from '@/components/strategy/combo-form'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type ComboIndicatorRow = {
-  indicator_id: string
-  role: string
-  settings_override: string | null
-  sort_order: number
-}
-
-type ComboRow = {
-  id: string
-  name: string
-  asset: string
-  asset_class: string
-  status: string
-  passes_guard: boolean | null
-  guard_failures: string[] | null
-  long_condition: string | null
-  short_condition: string | null
-  indicator_count: number | null
-  notes: string | null
-  combo_indicators: ComboIndicatorRow[]
-}
-
 // ─── Badge helpers ────────────────────────────────────────────────────────────
 const STATUS_BADGE: Record<string, string> = {
   draft:    'bg-muted text-muted-foreground',
@@ -61,27 +40,10 @@ function GuardIcon({ passes }: { passes: boolean | null }) {
 export default async function CombosPage() {
   const { supabase, user } = await getAuthUser()
 
-  // Load indicators for selector options
-  const { data: indicatorsRaw } = await supabase
-    .from('indicators')
-    .select('id, name, author')
-    .eq('user_id', user!.id)
-    .order('name')
-
-  const indicatorOptions = indicatorsRaw ?? []
-
-  // Load combos with their combo_indicators (sorted by sort_order)
-  const { data: combosRaw } = await supabase
-    .from('combos')
-    .select('*, combo_indicators(indicator_id, role, settings_override, sort_order)')
-    .eq('user_id', user!.id)
-    .order('name')
-
-  const combos: ComboRow[] = (combosRaw ?? []).map(c => ({
-    ...c,
-    combo_indicators: ((c.combo_indicators as ComboIndicatorRow[]) ?? [])
-      .sort((a, b) => a.sort_order - b.sort_order),
-  }))
+  const [indicatorOptions, combos] = await Promise.all([
+    getIndicatorOptions(supabase, user!.id),
+    getCombosWithIndicators(supabase, user!.id),
+  ])
 
   // Build indicator name map for display
   const indicatorMap = new Map(indicatorOptions.map(i => [i.id, i.name]))

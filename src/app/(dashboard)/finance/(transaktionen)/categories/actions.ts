@@ -2,6 +2,9 @@
 
 import { getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
+import { parseForm, parseInput, issueMessage } from '@/lib/api/validate'
+import { idField, uuid, reqText, reqEnum, optText, optUuid, optMoneyField } from '@/lib/api/schemas'
 
 export type CategoryActionState = { error: string } | { success: true } | null
 
@@ -31,6 +34,17 @@ function leseTaxRole(formData: FormData): string | null {
   return (TAX_ROLES as readonly string[]).includes(wert) ? wert : null
 }
 
+const categoryFields = {
+  name: reqText('Name ist erforderlich', 100),
+  type: reqEnum(['expense', 'income', 'neutral'] as const, 'Typ ist erforderlich'),
+  parent_id: optUuid(),
+  color: optText(32),
+  icon: optText(64),
+  budget_monthly: optMoneyField('Monatsbudget ist ungültig'),
+}
+const createCategorySchema = z.object(categoryFields)
+const updateCategorySchema = z.object({ id: idField(), ...categoryFields })
+
 export async function createCategory(
   _prev: CategoryActionState,
   formData: FormData
@@ -38,21 +52,12 @@ export async function createCategory(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const name = (formData.get('name') as string)?.trim()
-  const type = formData.get('type') as string
-  if (!name) return { error: 'Name ist erforderlich' }
-  if (!type) return { error: 'Typ ist erforderlich' }
+  const parsed = parseForm(formData, createCategorySchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
 
   const { error } = await supabase.from('categories').insert({
-    name,
-    type,
+    ...parsed.data,
     user_id: user.id,
-    parent_id: (formData.get('parent_id') as string) || null,
-    color: (formData.get('color') as string) || null,
-    icon: (formData.get('icon') as string) || null,
-    budget_monthly: formData.get('budget_monthly')
-      ? Number(formData.get('budget_monthly'))
-      : null,
     tax_role: leseTaxRole(formData),
     euer_zeile: leseEuerZeile(formData),
   })
@@ -69,24 +74,14 @@ export async function updateCategory(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const id = formData.get('id') as string
-  const name = (formData.get('name') as string)?.trim()
-  const type = formData.get('type') as string
-  if (!id) return { error: 'ID fehlt' }
-  if (!name) return { error: 'Name ist erforderlich' }
-  if (!type) return { error: 'Typ ist erforderlich' }
+  const parsed = parseForm(formData, updateCategorySchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
+  const { id, ...fields } = parsed.data
 
   const { error } = await supabase
     .from('categories')
     .update({
-      name,
-      type,
-      parent_id: (formData.get('parent_id') as string) || null,
-      color: (formData.get('color') as string) || null,
-      icon: (formData.get('icon') as string) || null,
-      budget_monthly: formData.get('budget_monthly')
-        ? Number(formData.get('budget_monthly'))
-        : null,
+      ...fields,
       tax_role: leseTaxRole(formData),
       euer_zeile: leseEuerZeile(formData),
     })
@@ -101,6 +96,8 @@ export async function updateCategory(
 export async function deleteCategory(id: string): Promise<{ error?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
+  const idP = parseInput(uuid, id)
+  if (!idP.ok) return { error: issueMessage(idP) }
 
   // Guard: block deletion if category has children
   const { count } = await supabase

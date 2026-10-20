@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { getAuthUser } from '@/lib/supabase/server'
-import { Database } from '@/types/database'
 import {
   AddContractDialog,
   EditContractDialog,
@@ -10,9 +9,14 @@ import { CONTRACT_TYPES, FREQUENCIES, TRANSFER_TYPES } from '@/lib/finance/contr
 import { AlertTriangle, RefreshCw, TrendingUp, ExternalLink } from 'lucide-react'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency as fmtCurrencyLib, fmtDate as fmtDateLib } from '@/lib/format'
-import type { SavingsPlan } from '@/app/actions/depot'
-
-type Contract = Database['public']['Tables']['contracts']['Row'] & { to_account_id?: string | null }
+import {
+  getContracts,
+  getSavingsPlansForContracts,
+  type ContractRow as Contract,
+  type SavingsPlanRow as SavingsPlan,
+} from '@/lib/data/finance-planning'
+import { getAccountNames } from '@/lib/data/finance-accounts'
+import { getCategoryNames } from '@/lib/data/finance-transactions'
 
 // ─── Date utilities ───────────────────────────────────────────────────────────
 function nextBillingDate(startDate: string, frequency: string, billingDay?: number | null): Date {
@@ -103,21 +107,18 @@ const FREQ_LABEL = Object.fromEntries(FREQUENCIES.map(f => [f.value, f.label]))
 export default async function ContractsPage() {
   const { supabase, user } = await getAuthUser()
 
-  const [{ data: contracts }, { data: accounts }, { data: categories }, { data: savingsPlansRaw }, settings] = await Promise.all([
-    supabase.from('contracts').select('*').eq('user_id', user!.id).order('name'),
-    supabase.from('accounts').select('id, name').eq('user_id', user!.id).order('sort_order'),
-    supabase.from('categories').select('id, name').eq('user_id', user!.id).order('name'),
-    supabase.from('savings_plans').select('*').eq('user_id', user!.id).order('created_at'),
+  const [all, accs, categories, savingsPlans, settings] = await Promise.all([
+    getContracts(supabase, user!.id),
+    getAccountNames(supabase, user!.id),
+    getCategoryNames(supabase, user!.id),
+    getSavingsPlansForContracts(supabase, user!.id),
     getSettings(user!.id),
   ])
 
   const locale = (settings.number_format as string) ?? 'de-DE'
   const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
 
-  const savingsPlans = (savingsPlansRaw ?? []) as SavingsPlan[]
-  const all    = (contracts ?? []) as Contract[]
   const active = all.filter(c => c.is_active)
-  const accs   = accounts ?? []
 
   const monthlyTotal = active
     .filter(c => c.currency === 'EUR')

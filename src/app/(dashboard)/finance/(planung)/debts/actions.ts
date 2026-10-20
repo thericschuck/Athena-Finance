@@ -2,8 +2,39 @@
 
 import { getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
+import { parseForm, parseInput, issueMessage } from '@/lib/api/validate'
+import { idField, uuid, reqText, reqEnum, reqDate, optText, optDate, optUuid, optMoneyField, moneyField, currency } from '@/lib/api/schemas'
 
 export type DebtActionState = { error: string } | { success: true } | null
+
+const positiveAmount = (msg: string) => moneyField(msg).refine(n => n > 0, msg)
+
+const debtFields = {
+  name: reqText('Name ist erforderlich', 200),
+  type: reqEnum(['borrowed', 'lent'] as const, 'Typ ist erforderlich'),
+  original_amount: positiveAmount('Betrag muss größer als 0 sein'),
+  outstanding: optMoneyField('Offener Betrag ist ungültig'),
+  currency,
+  creditor: optText(200),
+  interest_rate: optMoneyField('Zinssatz ist ungültig'),
+  monthly_payment: optMoneyField('Monatsrate ist ungültig'),
+  due_date: optDate,
+  notes: optText(2000),
+}
+const createDebtSchema = z.object(debtFields)
+const updateDebtSchema = z.object({ id: idField(), ...debtFields })
+
+const recordPaymentSchema = z.object({
+  debt_id: idField('Schuld-ID fehlt', 'Schuld-ID ist ungültig'),
+  payment_date: reqDate(),
+  amount: positiveAmount('Betrag muss größer als 0 sein'),
+  principal: optMoneyField('Tilgung ist ungültig'),
+  interest: optMoneyField('Zinsanteil ist ungültig'),
+  notes: optText(2000),
+  source_transaction_id: optUuid(),
+  source_transaction_type: z.enum(['manual', 'bank_sync']).nullish().catch(null),
+})
 
 // ─── Create a new debt entry ──────────────────────────────────────────────────
 export async function createDebt(
@@ -13,39 +44,22 @@ export async function createDebt(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const name = (formData.get('name') as string)?.trim()
-  const type = formData.get('type') as string
-  const originalAmount = parseFloat(formData.get('original_amount') as string)
-  const currency = formData.get('currency') as string
-
-  if (!name) return { error: 'Name ist erforderlich' }
-  if (!type) return { error: 'Typ ist erforderlich' }
-  if (isNaN(originalAmount) || originalAmount <= 0)
-    return { error: 'Betrag muss größer als 0 sein' }
-  if (!currency) return { error: 'Währung ist erforderlich' }
-
-  // outstanding defaults to original_amount at creation
-  const outstandingRaw = formData.get('outstanding') as string
-  const outstanding =
-    outstandingRaw && !isNaN(parseFloat(outstandingRaw))
-      ? parseFloat(outstandingRaw)
-      : originalAmount
+  const parsed = parseForm(formData, createDebtSchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
+  const d = parsed.data
 
   const { error } = await supabase.from('debts').insert({
-    name,
-    type,
-    original_amount: originalAmount,
-    outstanding,
-    currency,
-    creditor: (formData.get('creditor') as string) || null,
-    interest_rate: formData.get('interest_rate')
-      ? parseFloat(formData.get('interest_rate') as string)
-      : null,
-    monthly_payment: formData.get('monthly_payment')
-      ? parseFloat(formData.get('monthly_payment') as string)
-      : null,
-    due_date: (formData.get('due_date') as string) || null,
-    notes: (formData.get('notes') as string) || null,
+    name: d.name,
+    type: d.type,
+    original_amount: d.original_amount,
+    // outstanding defaults to original_amount at creation
+    outstanding: d.outstanding ?? d.original_amount,
+    currency: d.currency,
+    creditor: d.creditor,
+    interest_rate: d.interest_rate,
+    monthly_payment: d.monthly_payment,
+    due_date: d.due_date,
+    notes: d.notes,
     user_id: user.id,
   })
 
@@ -62,37 +76,24 @@ export async function updateDebt(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const id             = formData.get('id') as string
-  const name           = (formData.get('name') as string)?.trim()
-  const originalAmount = parseFloat(formData.get('original_amount') as string)
-  const currency       = formData.get('currency') as string
-
-  if (!id)   return { error: 'ID fehlt' }
-  if (!name) return { error: 'Name ist erforderlich' }
-  if (isNaN(originalAmount) || originalAmount <= 0)
-    return { error: 'Betrag muss größer als 0 sein' }
-
-  const outstandingRaw = formData.get('outstanding') as string
-  const outstanding = outstandingRaw && !isNaN(parseFloat(outstandingRaw))
-    ? parseFloat(outstandingRaw)
-    : originalAmount
-
-  const type = formData.get('type') as string
+  const parsed = parseForm(formData, updateDebtSchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
+  const { id, ...d } = parsed.data
 
   const { error } = await supabase
     .from('debts')
     .update({
-      name,
-      type,
-      original_amount: originalAmount,
-      outstanding,
-      currency,
-      creditor:        (formData.get('creditor') as string) || null,
-      interest_rate:   formData.get('interest_rate') ? parseFloat(formData.get('interest_rate') as string) : null,
-      monthly_payment: formData.get('monthly_payment') ? parseFloat(formData.get('monthly_payment') as string) : null,
-      due_date:        (formData.get('due_date') as string) || null,
-      notes:           (formData.get('notes') as string) || null,
-      updated_at:      new Date().toISOString(),
+      name: d.name,
+      type: d.type,
+      original_amount: d.original_amount,
+      outstanding: d.outstanding ?? d.original_amount,
+      currency: d.currency,
+      creditor: d.creditor,
+      interest_rate: d.interest_rate,
+      monthly_payment: d.monthly_payment,
+      due_date: d.due_date,
+      notes: d.notes,
+      updated_at: new Date().toISOString(),
     })
     .eq('id', id)
     .eq('user_id', user.id)
@@ -106,6 +107,8 @@ export async function updateDebt(
 export async function deleteDebt(id: string): Promise<{ error?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
+  const idP = parseInput(uuid, id)
+  if (!idP.ok) return { error: issueMessage(idP) }
 
   const { error } = await supabase
     .from('debts')
@@ -126,13 +129,9 @@ export async function recordPayment(
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const debtId = formData.get('debt_id') as string
-  const paymentDate = formData.get('payment_date') as string
-  const amount = parseFloat(formData.get('amount') as string)
-
-  if (!debtId) return { error: 'Schuld-ID fehlt' }
-  if (!paymentDate) return { error: 'Datum ist erforderlich' }
-  if (isNaN(amount) || amount <= 0) return { error: 'Betrag muss größer als 0 sein' }
+  const parsed = parseForm(formData, recordPaymentSchema)
+  if (!parsed.ok) return { error: issueMessage(parsed) }
+  const { debt_id: debtId, payment_date: paymentDate, amount } = parsed.data
 
   // Fetch current outstanding to compute new balance
   const { data: debt, error: fetchError } = await supabase
@@ -150,20 +149,16 @@ export async function recordPayment(
   // DebtSuggestion) -- manuelle und bank-synchte Buchungen leben in getrennten Tabellen,
   // daher zwei Spalten statt einer. Der Unique-Index auf beiden verhindert, dieselbe
   // Buchung zweimal als Zahlung zu verbuchen.
-  const sourceTransactionId = (formData.get('source_transaction_id') as string) || null
-  const sourceType = formData.get('source_transaction_type') as string | null
+  const sourceTransactionId = parsed.data.source_transaction_id
+  const sourceType = parsed.data.source_transaction_type
 
   const { error: payError } = await supabase.from('debt_payments').insert({
     debt_id: debtId,
     payment_date: paymentDate,
     amount,
-    principal: formData.get('principal')
-      ? parseFloat(formData.get('principal') as string)
-      : null,
-    interest: formData.get('interest')
-      ? parseFloat(formData.get('interest') as string)
-      : null,
-    notes: (formData.get('notes') as string) || null,
+    principal: parsed.data.principal,
+    interest: parsed.data.interest,
+    notes: parsed.data.notes,
     transaction_id: sourceTransactionId && sourceType === 'manual' ? sourceTransactionId : null,
     bank_transaction_id: sourceTransactionId && sourceType === 'bank_sync' ? sourceTransactionId : null,
   })

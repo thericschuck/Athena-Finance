@@ -45,6 +45,7 @@ import {
 import { DebtSuggestion } from '@/components/finance/debt-suggestion'
 import { groupCategoriesByParent } from '@/lib/finance/category-groups'
 import { Database } from '@/types/database'
+import type { DebtRow } from '@/lib/data/finance-planning'
 
 type Account = Pick<
   Database['public']['Tables']['accounts']['Row'],
@@ -55,7 +56,7 @@ type Category = Pick<
   'id' | 'name' | 'color' | 'icon' | 'parent_id'
 >
 type TxRow = Database['public']['Tables']['transactions']['Row']
-type Debt = Database['public']['Tables']['debts']['Row']
+type Debt = DebtRow
 
 const NO_CATEGORY = '__none__'
 

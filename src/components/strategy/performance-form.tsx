@@ -18,10 +18,10 @@ import {
   createPerformance, updatePerformance, deletePerformance,
   type PerfActionState,
 } from '@/app/(dashboard)/strategy/indicators/actions'
-import { Database } from '@/types/database'
+import type { IndicatorRow, IndicatorPerformanceRow } from '@/lib/data/strategy'
 
-type Perf      = Database['public']['Tables']['indicator_performance']['Row']
-type Indicator = Database['public']['Tables']['indicators']['Row']
+type Perf      = IndicatorPerformanceRow
+type Indicator = IndicatorRow
 
 const ASSET_CLASSES = ['major', 'alt']
 const TIMEFRAMES    = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1D', '3D', '1W', '1M']

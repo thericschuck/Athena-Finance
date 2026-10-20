@@ -1,12 +1,16 @@
 import { getAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { fmtDate as fmtDateLib } from '@/lib/format'
-import { PortfolioOverview, type AssetWithPrice } from '@/components/crypto/portfolio-overview'
+import { PortfolioOverview } from '@/components/crypto/portfolio-overview'
 import { RebalanceBanner } from '@/components/crypto/rebalance-banner'
 import { PortfolioSwitcher, type PortfolioMeta } from '@/components/crypto/portfolio-switcher'
 import { OpenPositionsCard } from '@/components/crypto/open-positions-card'
+import {
+  getCryptoAssetsWithPrice, getPortfolioSnapshots, getAssetAuditLog, hasExchangeKey, getUserSettingValue,
+} from '@/lib/data/crypto'
 import { getRebalancingTargets } from '@/app/(dashboard)/crypto/actions'
 import { calculateRebalancing } from '@/lib/crypto/rebalancing'
+import type { AssetWithPrice } from '@/lib/data/crypto'
 import { getEurUsdRate } from '@/lib/crypto/coingecko'
 import { History } from 'lucide-react'
 
@@ -22,90 +26,30 @@ export default async function CryptoPage({
   })()
 
   const [
-    { data: rawAssets },
-    { data: snapshots },
-    { data: auditLog },
+    allAssets,
+    snapshots,
+    auditLog,
     targets,
     settings,
     eurUsdRate,
-    { data: krakenKey },
-    { data: lastSyncSetting },
+    krakenConnected,
+    lastSyncValue,
   ] = await Promise.all([
-    supabase
-      .from('assets')
-      .select('*')
-      .in('type', ['crypto', 'stable', 'fiat'])
-      .eq('user_id', user!.id)
-      .order('name'),
-    supabase
-      .from('portfolio_snapshots')
-      .select('snapshot_date, portfolio_name, value_eur')
-      .eq('user_id', user!.id)
-      .gte('snapshot_date', oneYearAgo)
-      .order('snapshot_date'),
-    supabase
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .from('asset_audit_log' as any)
-      .select('*')
-      .eq('user_id', user!.id)
-      .order('created_at', { ascending: false })
-      .limit(50),
+    getCryptoAssetsWithPrice(supabase, user!.id),
+    getPortfolioSnapshots(supabase, user!.id, oneYearAgo),
+    getAssetAuditLog(supabase, user!.id, 50),
     getRebalancingTargets(user!.id),
     getSettings(user!.id),
     getEurUsdRate(),
     // Check Kraken connection (no decryption needed)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any)
-      .from('exchange_keys')
-      .select('id')
-      .eq('user_id', user!.id)
-      .eq('exchange', 'kraken')
-      .maybeSingle(),
-    supabase
-      .from('user_settings')
-      .select('value')
-      .eq('user_id', user!.id)
-      .eq('key', 'kraken_last_sync')
-      .maybeSingle(),
+    hasExchangeKey(supabase, user!.id, 'kraken'),
+    getUserSettingValue(supabase, user!.id, 'kraken_last_sync'),
   ])
 
   const locale     = (settings.number_format as string) ?? 'de-DE'
   const dateFormat = (settings.date_format as string)   ?? 'dd.MM.yyyy'
 
-  const krakenConnected = !!krakenKey
-  const lastSync        = (lastSyncSetting?.value as string) ?? null
-
-  // ── Build valuation map ───────────────────────────────────────────────────
-  const assetIds = (rawAssets ?? []).map(a => a.id)
-  const { data: rawValuations } = assetIds.length
-    ? await supabase
-        .from('asset_valuations')
-        .select('*')
-        .in('asset_id', assetIds)
-        .order('valuation_date', { ascending: false })
-        .order('created_at',    { ascending: false })
-    : { data: [] }
-
-  const latestMap = new Map<string, { price_per_unit: number; total_value: number; valuation_date: string }>()
-  for (const v of rawValuations ?? []) {
-    if (!latestMap.has(v.asset_id)) {
-      latestMap.set(v.asset_id, {
-        price_per_unit: v.price_per_unit,
-        total_value:    v.total_value,
-        valuation_date: v.valuation_date,
-      })
-    }
-  }
-
-  const allAssets: AssetWithPrice[] = (rawAssets ?? []).map(a => {
-    const val = latestMap.get(a.id)
-    return {
-      ...a,
-      current_price: val?.price_per_unit ?? null,
-      current_value: val?.total_value    ?? null,
-      last_updated:  val?.valuation_date ?? null,
-    }
-  })
+  const lastSync = (lastSyncValue as string) ?? null
 
   // ── Build portfolio list ──────────────────────────────────────────────────
   // Kraken portfolio = assets with exchange='Kraken'
@@ -143,8 +87,8 @@ export default async function CryptoPage({
     : allAssets
 
   const filteredSnapshots = activePortfolio
-    ? (snapshots ?? []).filter(s => s.portfolio_name === activePortfolio)
-    : (snapshots ?? [])
+    ? snapshots.filter(s => s.portfolio_name === activePortfolio)
+    : snapshots
 
   // ── Rebalancing ───────────────────────────────────────────────────────────
   const totalValue       = assets.reduce((s, a) => s + (a.current_value ?? 0), 0)
@@ -169,7 +113,7 @@ export default async function CryptoPage({
         activePortfolio={activePortfolio ?? undefined}
       />
       {activePortfolio === 'Kraken' && <OpenPositionsCard />}
-      <AssetAuditLog entries={(auditLog ?? []) as unknown as AuditEntry[]} locale={locale} dateFormat={dateFormat} />
+      <AssetAuditLog entries={auditLog as unknown as AuditEntry[]} locale={locale} dateFormat={dateFormat} />
     </>
   )
 }

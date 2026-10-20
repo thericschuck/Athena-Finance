@@ -4,10 +4,10 @@ import { useState } from 'react'
 import { ExternalLink, ShieldX, RefreshCw, Repeat2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { EditIndicatorDialog, DeleteIndicatorButton } from '@/components/strategy/indicator-form'
 import { BacktestsDialog } from '@/components/strategy/performance-form'
-import { Database } from '@/types/database'
+import type { IndicatorRow, IndicatorPerformanceRow } from '@/lib/data/strategy'
 
-type Indicator = Database['public']['Tables']['indicators']['Row']
-type Perf      = Database['public']['Tables']['indicator_performance']['Row']
+type Indicator = IndicatorRow
+type Perf      = IndicatorPerformanceRow
 
 type IndicatorWithCobra = Indicator & {
   cobraGreen: number | null
