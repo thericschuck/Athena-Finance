@@ -11,7 +11,7 @@ import { useSettings } from '@/components/providers/settings-context'
 import { fmtCurrency } from '@/lib/format'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-// Deckungsgleich mit dem `showChart`-Werkzeug in src/lib/assistant/tools.ts —
+// Deckungsgleich mit dem `showChart`-Werkzeug in src/lib/assistant/tools/chart.ts —
 // Änderungen an der Form dort immer hier nachziehen.
 export type ChartUnit = 'eur' | 'percent' | 'count'
 export type ChartKind = 'line' | 'bar' | 'donut'

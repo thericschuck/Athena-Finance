@@ -73,7 +73,7 @@ type ToolPart = Extract<
   { type: `tool-${string}` } | { type: 'dynamic-tool' }
 >
 
-/** Erkennt die Antwort eines Vorschlags-Werkzeugs (siehe tools.ts,
+/** Erkennt die Antwort eines Vorschlags-Werkzeugs (siehe lib/assistant/tools/proposals.ts,
     buildProposalTools) und zieht die Felder heraus, die die Karte braucht. */
 function asProposal(
   part: ToolPart,
@@ -90,7 +90,7 @@ function asProposal(
   }
 }
 
-/** Erkennt die Antwort des `showChart`-Werkzeugs (siehe tools.ts) — dieselbe
+/** Erkennt die Antwort des `showChart`-Werkzeugs (siehe lib/assistant/tools/chart.ts) — dieselbe
     Erkennung wie bei `asProposal`, nur ohne Bestätigungspflicht: ein Chart ist
     eine Aussage Athenas, keine Handlung, die Eric erst freigeben muss. */
 function asChartSpec(part: ToolPart): ChartSpec | null {

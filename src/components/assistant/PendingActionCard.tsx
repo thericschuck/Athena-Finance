@@ -13,7 +13,7 @@ import type { ActionDetail } from '@/lib/assistant/actions'
 
 export type PendingActionStatus = 'pending' | 'executed' | 'rejected' | 'failed' | 'expired'
 
-/** Name des Werkzeugs aus WRITE_ACTIONS (siehe assistant/actions.ts) — der einzige
+/** Name des Werkzeugs aus WRITE_ACTIONS (siehe lib/assistant/actions/) — der einzige
     Vorschlag, bei dem das Bestätigen einen 15–60 Sekunden langen Bildlauf anstößt und
     damit den eigenen Ladezustand unten verdient, statt nur den Knopf-Spinner. */
 const ARTWORK_ACTION = 'generateValuableArtwork'
