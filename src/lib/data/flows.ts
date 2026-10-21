@@ -53,11 +53,13 @@ export type MonthlyFlowRow = FlowRow & {
   month: string
   account_id: string | null
   source: string
+  /** Vererbte Steuerrolle der Kategorie (z. B. lohn, betriebseinnahme), null = keine. */
+  tax_role: string | null
   tx_count: number
 }
 
 const MONTHLY_COLUMNS =
-  'month, account_id, source, flow_kind, category_id, category_name, root_category_id, root_category_name, income, expense, tx_count'
+  'month, account_id, source, flow_kind, category_id, category_name, root_category_id, root_category_name, tax_role_effective, income, expense, tx_count'
 
 /**
  * Aggregierte Zeilen je Monat/Konto/Quelle/Art/Kategorie. Klein, auch für „Alles".
@@ -97,6 +99,7 @@ export async function getMonthlyFlows(supabase: Client, userId: string, scope: F
         category_name: r.category_name,
         root_category_id: r.root_category_id,
         root_category_name: r.root_category_name,
+        tax_role: r.tax_role_effective,
         income: Number(r.income ?? 0),
         expense: Number(r.expense ?? 0),
         tx_count: Number(r.tx_count ?? 0),

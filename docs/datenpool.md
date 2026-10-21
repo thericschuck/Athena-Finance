@@ -55,6 +55,12 @@ Verfahren gilt, muss der Steuerberater bestätigen.
    `supabase/rollbacks/`). **`with (security_invoker = on)` nicht vergessen** — `CREATE OR REPLACE VIEW`
    ohne diese Klausel setzt die Option zurück und umgeht die RLS.
 2. `supabase/tests/flows_invariants.sql` ausführen; jede Zeile muss `ok = true` sein.
+   **Laufzeit immer MIT RLS messen**, nicht als `postgres`: in einer Transaktion `set local role
+   authenticated; select set_config('request.jwt.claims', '{"sub":"<user-id>"}', true);` und dann
+   `explain (analyze)` auf die Abfrage der Seite. Ohne RLS wählt der Planer einen anderen Plan: die View
+   `category_tree` wurde dadurch für jede Buchung neu berechnet (3,8 s, Statement-Timeout in der Analyse),
+   ohne dass ein Test als `postgres` es zeigte. `unified_transactions` holt den Baum deshalb über eine
+   `MATERIALIZED`-CTE (Migration 20261021180000).
 3. `npm test` (reine Rechenfunktionen).
 
 `monthly_finance_summary` ist Archiv und wird nicht mehr geschrieben oder gelesen.

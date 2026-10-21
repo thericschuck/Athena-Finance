@@ -1,0 +1,5 @@
+-- Rollback zu 20261021180000_category_tree_fast.sql: die langsame, aber inhaltlich gleiche Fassung
+-- wiederherstellen. Dazu die beiden create-or-replace-view-Blöcke aus
+--   supabase/migrations/20261021100000_category_tree.sql   (category_tree)
+--   supabase/migrations/20261021110000_unified_transactions_flow_columns.sql   (unified_transactions)
+-- erneut ausführen. Nicht empfohlen: diese Fassung läuft mit RLS in das Statement-Timeout.

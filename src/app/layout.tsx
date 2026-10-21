@@ -1,34 +1,45 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Space_Mono, Playfair_Display, Lora } from "next/font/google";
+import localFont from "next/font/local";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { SITE } from "@/lib/seo";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+/*
+ * Alle Schriften kommen aus node_modules (geist, @fontsource) statt von Google Fonts. Vorher lud
+ * next/font/google beim Build und im Dev-Server von fonts.googleapis.com; ohne Verbindung gab es
+ * dutzende Warnungen und die Ersatzschrift. Jetzt braucht der Build keine Netzverbindung.
+ * Geist bringt `--font-geist-sans` / `--font-geist-mono` selbst mit; die drei anderen behalten
+ * ihre bisherigen CSS-Variablen. Nur der Latin-Schnitt (enthält äöüß).
+ */
+const geistSans = GeistSans;
+const geistMono = GeistMono;
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const spaceMono = Space_Mono({
+const spaceMono = localFont({
   variable: "--font-space-mono",
-  weight: ["400", "700"],
-  subsets: ["latin"],
+  display: "swap",
+  src: [
+    { path: "../../node_modules/@fontsource/space-mono/files/space-mono-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "../../node_modules/@fontsource/space-mono/files/space-mono-latin-700-normal.woff2", weight: "700", style: "normal" },
+  ],
 });
 
-const playfair = Playfair_Display({
+const playfair = localFont({
   variable: "--font-playfair",
-  subsets: ["latin"],
+  display: "swap",
+  src: [
+    { path: "../../node_modules/@fontsource-variable/playfair-display/files/playfair-display-latin-wght-normal.woff2", weight: "400 900", style: "normal" },
+  ],
 });
 
-const lora = Lora({
+const lora = localFont({
   variable: "--font-lora",
-  subsets: ["latin"],
+  display: "swap",
+  src: [
+    { path: "../../node_modules/@fontsource-variable/lora/files/lora-latin-wght-normal.woff2", weight: "400 700", style: "normal" },
+  ],
 });
 
 export const metadata: Metadata = {
