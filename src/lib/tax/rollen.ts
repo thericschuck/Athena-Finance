@@ -5,6 +5,8 @@ export type Kategorieknoten = {
   tax_role: string | null
   /** Zeile der Anlage EUER. Erst ab der Migration 20260906180000 vorhanden. */
   euer_zeile?: number | null
+  /** Betrieblicher Anteil in Prozent (0-100), null = 100. Erst ab Migration 20261021150000. */
+  business_share?: number | null
 }
 
 /**
@@ -54,4 +56,23 @@ export function effektiveRollen(kategorien: Kategorieknoten[]): Map<string, stri
  */
 export function effektiveEuerZeilen(kategorien: Kategorieknoten[]): Map<string, number | null> {
   return vererbtesFeld(kategorien, k => k.euer_zeile ?? null)
+}
+
+/**
+ * Der betriebliche Anteil je Kategorie in Prozent (0-100), inklusive Vererbung. `null` heisst
+ * 100 %: ohne eigenen Wert in der ganzen Kette ist die Ausgabe voll betrieblich. Wirkt nur auf
+ * Betriebsausgaben (siehe `wendeAnteilAn`).
+ */
+export function effektiveAnteile(kategorien: Kategorieknoten[]): Map<string, number | null> {
+  return vererbtesFeld(kategorien, k => k.business_share ?? null)
+}
+
+/**
+ * Rechnet den betrieblichen Anteil auf einen Betrag an. Wertebereich wird begrenzt (0-100), damit
+ * ein kaputter Wert die Steuer nicht ueber den Buchungsbetrag hinaus verzerrt. `null`/fehlend = 100 %.
+ */
+export function wendeAnteilAn(betrag: number, anteilProzent: number | null | undefined): number {
+  if (anteilProzent === null || anteilProzent === undefined || !Number.isFinite(anteilProzent)) return betrag
+  const anteil = Math.min(100, Math.max(0, anteilProzent)) / 100
+  return Math.round(betrag * anteil * 100) / 100
 }

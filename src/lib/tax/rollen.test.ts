@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { effektiveRollen, type Kategorieknoten } from './rollen.ts'
+import { effektiveRollen, effektiveAnteile, wendeAnteilAn, type Kategorieknoten } from './rollen.ts'
 
 /** Erics Baum, verkuerzt auf das, was steuerlich zaehlt. */
 const BAUM: Kategorieknoten[] = [
@@ -77,4 +77,28 @@ test('fehlende Oberkategorie wird nicht zum Absturz', () => {
 test('jede Kategorie kommt genau einmal im Ergebnis vor', () => {
   const rollen = effektiveRollen(BAUM)
   assert.equal(rollen.size, BAUM.length)
+})
+
+test('betrieblicher Anteil: eigener Wert gewinnt, sonst erbt der Teilbaum, sonst null (= 100 %)', () => {
+  const baum: Kategorieknoten[] = [
+    { id: 'abo',    parent_id: null,  tax_role: null, business_share: 50 },
+    { id: 'claude', parent_id: 'abo', tax_role: null, business_share: 80 },
+    { id: 'figma',  parent_id: 'abo', tax_role: null },
+    { id: 'lebens', parent_id: null,  tax_role: null },
+  ]
+  const a = effektiveAnteile(baum)
+  assert.equal(a.get('claude'), 80)
+  assert.equal(a.get('figma'), 50)
+  assert.equal(a.get('lebens'), null)
+})
+
+test('wendeAnteilAn: Prozent, Rundung, Begrenzung, null = voll', () => {
+  assert.equal(wendeAnteilAn(100, 70), 70)
+  assert.equal(wendeAnteilAn(-100, 70), -70)
+  assert.equal(wendeAnteilAn(33.33, 50), 16.67)
+  assert.equal(wendeAnteilAn(100, null), 100)
+  assert.equal(wendeAnteilAn(100, undefined), 100)
+  assert.equal(wendeAnteilAn(100, 250), 100)
+  assert.equal(wendeAnteilAn(100, -5), 0)
+  assert.equal(wendeAnteilAn(100, Number.NaN), 100)
 })

@@ -3,7 +3,7 @@ import type { Database } from '@/types/database'
 import type { Tarif } from './tarif.ts'
 import type { SteuerEingaben } from './position.ts'
 import { leseSteuerprofil } from './profil.ts'
-import { effektiveRollen, effektiveEuerZeilen } from './rollen.ts'
+import { effektiveRollen, effektiveEuerZeilen, effektiveAnteile, wendeAnteilAn } from './rollen.ts'
 import type { EuerBuchung, EuerZeileDef } from './euer.ts'
 
 type DB = SupabaseClient<Database>
@@ -96,7 +96,7 @@ export async function ladeSteuerdaten(
 ): Promise<LadeErgebnis> {
   const [tarifeRes, kategorienRes, profilRes, zieleRes, euerRes, belegeRes] = await Promise.all([
     supabase.from('tax_tariffs').select('jahr, grundfreibetrag, zone2_bis, zone2_faktor, zone2_konstante, zone3_bis, zone3_faktor, zone3_konstante, zone3_sockel, zone4_bis, zone4_satz, zone4_abzug, zone5_satz, zone5_abzug, werbungskostenpauschale, sonderausgabenpauschale, soli_freigrenze, kleinunternehmer_vorjahr, kleinunternehmer_laufend, quelle, geprueft_am').order('jahr', { ascending: true }),
-    supabase.from('categories').select('id, name, parent_id, tax_role, type').eq('user_id', userId),
+    supabase.from('categories').select('id, name, parent_id, tax_role, type, business_share').eq('user_id', userId),
     supabase.from('user_settings').select('value').eq('user_id', userId).eq('key', 'tax_profile').maybeSingle(),
     supabase.from('savings_goals').select('id, description, target_amount, current_amount').eq('user_id', userId),
     supabase.from('euer_zeilen').select('jahr, zeile, bezeichnung, art, sammelzeile, quelle, geprueft_am').order('zeile', { ascending: true }),
@@ -120,6 +120,7 @@ export async function ladeSteuerdaten(
   const kategorien = kategorienRes.data ?? []
   const rollenMap = effektiveRollen(kategorien)
   const euerZeilenMap = effektiveEuerZeilen(kategorien)
+  const anteilMap = effektiveAnteile(kategorien.map(k => ({ ...k, business_share: k.business_share === null ? null : Number(k.business_share) })))
 
   // Zeilendefinitionen des naechstgelegenen Jahres -- dieselbe Regel wie beim
   // Tarif. Die Nummern verschieben sich jaehrlich, deshalb wird das Jahr
@@ -137,6 +138,22 @@ export async function ladeSteuerdaten(
     buchungenImJahr(supabase, userId, jahr),
     buchungenImJahr(supabase, userId, jahr - 1),
   ])
+
+  // Betrieblicher Anteil gemischt genutzter Ausgaben (categories.business_share): steuerlich zaehlt
+  // nur der betriebliche Teil. Wirkt hier, an EINER Stelle, damit EUER und Steuerposition
+  // dieselbe Zahl sehen; Dashboard und Analyse rechnen mit dem vollen Betrag (das Geld ist
+  // tatsaechlich abgeflossen). `summeJeKategorie` bleibt bewusst ungekuerzt.
+  const betrieblich = (b: (typeof buchungen)[number]) => {
+    const kid = b.category_id
+    if (!kid || rollenMap.get(kid) !== 'betriebsausgabe') return b
+    const anteil = anteilMap.get(kid) ?? null
+    if (anteil === null || anteil >= 100) return b
+    return {
+      ...b,
+      signed_amount: wendeAnteilAn(b.signed_amount, anteil),
+      description: `${b.description ?? ''} (${anteil} % betrieblich)`.trim(),
+    }
+  }
 
   let betriebseinnahmen = 0
   let betriebsausgaben = 0
@@ -159,7 +176,7 @@ export async function ladeSteuerdaten(
       // negativem Vorzeichen ist eine Rueckzahlung und mindert den Umsatz.
       betriebseinnahmen += b.signed_amount
     } else if (rolle === 'betriebsausgabe') {
-      betriebsausgaben += -b.signed_amount
+      betriebsausgaben += -betrieblich(b).signed_amount
     } else if (rolle === 'lohn') {
       if (b.signed_amount > 0) {
         lohnNetto += b.signed_amount
@@ -215,6 +232,7 @@ export async function ladeSteuerdaten(
           const r = x.category_id ? rollenMap.get(x.category_id) ?? null : null
           return r === 'betriebseinnahme' || r === 'betriebsausgabe'
         })
+        .map(betrieblich)
         .map(x => ({
           id: x.id,
           datum: x.date,

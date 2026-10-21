@@ -5,9 +5,12 @@ import type { Database } from '@/types/database'
  * Datenzugriff für Dashboard, Analyse (inkl. Verlauf) und die zugehörigen Widgets.
  * Reine Funktionen: Client und userId kommen vom Aufrufer (getAuthUser()).
  *
- * Hinweis: Einige Queries (Konten, Transaktionen, Verträge, Schulden, Sparziele, Krypto-Assets)
- * gehören fachlich zu anderen Domänen. Sie sind hier bewusst dupliziert (Parallel-Refactoring)
- * und werden später mit src/lib/data/{finance,crypto,...}.ts konsolidiert.
+ * Einnahmen/Ausgaben (Buchungen, Monatssummen) stehen NICHT hier, sondern in flows.ts.
+ * Schulden (`getActiveDebts`) und Bank-Salden (`getBankBalances`) kommen aus
+ * finance-planning.ts bzw. finance-accounts.ts. Die übrigen Dashboard-Abfragen sind auf die
+ * Spalten zugeschnitten, die das Dashboard braucht, und gehören fachlich teils zu anderen
+ * Domänen (Konten, Verträge, Sparziele, Krypto-Assets) — eine Verschiebung wäre reine
+ * Kosmetik und ist bewusst nicht Teil der Datenpool-Umstellung.
  */
 
 type Client = SupabaseClient<Database>
@@ -44,30 +47,6 @@ export async function getBalanceSums(supabase: Client, userId: string): Promise<
     .eq('user_id', userId)
   // View-Spalten sind im generierten Typ nullable, in der Praxis gefüllt.
   return (data ?? []) as BalanceSum[]
-}
-
-export type MonthTxRow = { type: string; amount: number }
-
-/** Echte Bewegungen (flow_kind = echt) ab `monthStart` (YYYY-MM-DD) — ohne Umbuchungen/Anlagen. */
-export async function getRealTransactionsSince(supabase: Client, userId: string, monthStart: string): Promise<MonthTxRow[]> {
-  const { data } = await supabase
-    .from('unified_transactions')
-    .select('type, amount')
-    .eq('user_id', userId)
-    .gte('date', monthStart)
-    .eq('flow_kind', 'echt')
-  return (data ?? []) as MonthTxRow[]
-}
-
-export type ActiveDebt = { outstanding: number | null; type: string }
-
-export async function getActiveDebts(supabase: Client, userId: string): Promise<ActiveDebt[]> {
-  const { data } = await supabase
-    .from('debts')
-    .select('outstanding, type')
-    .eq('user_id', userId)
-    .eq('is_active', true)
-  return (data ?? []) as ActiveDebt[]
 }
 
 export type OpenSavingsGoal = {
@@ -154,27 +133,6 @@ export async function getActiveValuables(supabase: Client, userId: string): Prom
   return (data ?? []) as DashboardValuable[]
 }
 
-/** Spalten, die FinanceAnalytics tatsächlich liest (Summary-Teilmenge). */
-export type MonthlySummaryLite = {
-  month: string; food: number; leisure: number; subscriptions: number
-  pocket_money: number; other_expenses: number
-  total_income: number; total_expenses: number; net_balance: number | null
-}
-
-/**
- * Monatszusammenfassungen ab `fromMonth` (YYYY-MM-01), aufsteigend. Zeitlich begrenzt (12 Monate),
- * dadurch klein.
- */
-export async function getMonthlySummariesSince(supabase: Client, userId: string, fromMonth: string): Promise<MonthlySummaryLite[]> {
-  const { data } = await supabase
-    .from('monthly_finance_summary')
-    .select('month, food, leisure, subscriptions, pocket_money, other_expenses, total_income, total_expenses, net_balance')
-    .eq('user_id', userId)
-    .gte('month', fromMonth)
-    .order('month')
-  return data ?? []
-}
-
 export type NetWorthSnapshotLite = {
   snapshot_date: string; net_worth: number
   total_checking: number; total_investment: number; total_savings: number; total_cash: number
@@ -193,17 +151,8 @@ export async function getNetWorthSnapshotsSince(supabase: Client, userId: string
   return (data ?? []) as NetWorthSnapshotLite[]
 }
 
-export type BankBalanceRow = { account_iban: string; booked_balance: number }
-
-export async function getBankBalances(supabase: Client, userId: string): Promise<BankBalanceRow[]> {
-  const { data } = await supabase
-    .from('bank_balance')
-    .select('account_iban, booked_balance')
-    .eq('user_id', userId)
-  return (data ?? []) as BankBalanceRow[]
-}
-
 // ─── Analyse ─────────────────────────────────────────────────────────────────
+// Einnahmen/Ausgaben (Buchungen, Monatssummen) liegen in lib/data/flows.ts.
 
 export type ActiveAccountOption = { id: string; name: string; type: string; color: string | null }
 
@@ -217,96 +166,6 @@ export async function getActiveAccountOptions(supabase: Client, userId: string):
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true })
   return (data ?? []) as ActiveAccountOption[]
-}
-
-export type AnalyseTxnRow = {
-  date: string; type: string; amount: number; amount_base: number | null
-  category_name: string | null; description: string | null; merchant: string | null
-}
-
-type AnalyseFilter = { accountIds?: string[] }
-
-/**
- * Echte Einnahmen/Ausgaben für den Analysezeitraum (Heatmap, Kategorien, Sankey, laufender Monat).
- * `cutoff = null` heißt: nicht nach Datum filtern („Alles"). Unbegrenzt — wächst mit dem
- * Zeitraum; Kandidat für serverseitige Aggregation (Heatmap/Kategorien) bzw. Caching.
- */
-export async function getAnalyseTransactions(
-  supabase: Client, userId: string,
-  opts: AnalyseFilter & { cutoff: string | null },
-): Promise<AnalyseTxnRow[]> {
-  let q = supabase
-    .from('unified_transactions')
-    .select('date, type, amount, amount_base, category_name, description, merchant')
-    .eq('user_id', userId)
-    .in('type', ['income', 'expense'])
-    // Nur echte Einnahmen/Ausgaben — Umbuchungen, Anlagen (Krypto/Depot/Bausparer),
-    // Forderungen und Anfangsbestände zählen hier nicht mit.
-    .eq('flow_kind', 'echt')
-  if (opts.cutoff) q = q.gte('date', opts.cutoff)
-  if (opts.accountIds?.length) q = q.in('account_id', opts.accountIds)
-  const { data } = await q.order('date')
-  return (data ?? []) as AnalyseTxnRow[]
-}
-
-export type CalendarTxnRow = {
-  date: string; type: string; amount: number
-  category_name: string | null; description: string | null; merchant: string | null
-}
-
-/** Buchungen für den Cashflow-Kalender (Fenster [from, to], unabhängig vom Zeitraumfilter). */
-export async function getCalendarTransactions(
-  supabase: Client, userId: string,
-  opts: AnalyseFilter & { from: string; to: string },
-): Promise<CalendarTxnRow[]> {
-  let q = supabase
-    .from('unified_transactions')
-    .select('date, type, amount, category_name, description, merchant')
-    .eq('user_id', userId)
-    .gte('date', opts.from)
-    .lte('date', opts.to)
-    .in('type', ['income', 'expense'])
-    .eq('flow_kind', 'echt')
-  if (opts.accountIds?.length) q = q.in('account_id', opts.accountIds)
-  const { data } = await q.order('date')
-  return (data ?? []) as CalendarTxnRow[]
-}
-
-export type MonthlyTotalsRow = { month: string; total_income: number; total_expenses: number }
-
-/**
- * Vorberechnete Monatssummen (kein account_id — nur ohne Konten-Filter nutzbar).
- * `.limit(25)` ist Teil der bisherigen Seitenlogik (24 Monate + laufender), nicht neu.
- */
-export async function getMonthlyTotals(supabase: Client, userId: string, limit = 25): Promise<MonthlyTotalsRow[]> {
-  // Explizit auf den User filtern, obwohl RLS das ohnehin tut: fn_take_snapshot schreibt eine
-  // Zeile pro auth.user, und `limit` würde sonst als Erstes zuschlagen, nicht der Besitz.
-  const { data } = await supabase
-    .from('monthly_finance_summary')
-    .select('month, total_income, total_expenses')
-    .eq('user_id', userId)
-    .order('month', { ascending: false })
-    .limit(limit)
-  return data ?? []
-}
-
-export type MonthlyTxnRow = { date: string; type: string; amount: number; amount_base: number | null }
-
-/** Echte Buchungen ab `from` für ausgewählte Konten (24-Monats-Fenster von Vergleich + Verteilung). Unbegrenzt. */
-export async function getMonthlyWindowTransactions(
-  supabase: Client, userId: string,
-  opts: { from: string; accountIds: string[] },
-): Promise<MonthlyTxnRow[]> {
-  const { data } = await supabase
-    .from('unified_transactions')
-    .select('date, type, amount, amount_base')
-    .eq('user_id', userId)
-    .gte('date', opts.from)
-    .in('type', ['income', 'expense'])
-    .eq('flow_kind', 'echt')
-    .in('account_id', opts.accountIds)
-    .order('date')
-  return (data ?? []) as MonthlyTxnRow[]
 }
 
 // ─── Analyse / Verlauf (paginiert, `range` ist hier Teil der UI) ──────────────
@@ -385,25 +244,4 @@ export async function getPortfolioSnapshotHistoryPage(
     .order('asset_id')
     .range(range.from, range.to)
   return { rows: (data ?? []) as PortfolioSnapshotHistoryRow[], count: count ?? 0 }
-}
-
-export type MonthlyHistoryRow = {
-  id: string; month: string; total_income: number; total_expenses: number; net_balance: number
-  salary: number; food: number; leisure: number; subscriptions: number; savings_transfer: number
-  pocket_money: number; other_income: number; other_expenses: number; source: string
-}
-
-export async function getMonthlyHistoryPage(
-  supabase: Client, userId: string, range: PageRange,
-): Promise<{ rows: MonthlyHistoryRow[]; count: number }> {
-  const { data, count } = await supabase
-    .from('monthly_finance_summary')
-    .select(
-      'id, month, total_income, total_expenses, net_balance, salary, food, leisure, subscriptions, savings_transfer, pocket_money, other_income, other_expenses, source',
-      { count: 'exact' },
-    )
-    .eq('user_id', userId)
-    .order('month', { ascending: false })
-    .range(range.from, range.to)
-  return { rows: (data ?? []) as MonthlyHistoryRow[], count: count ?? 0 }
 }

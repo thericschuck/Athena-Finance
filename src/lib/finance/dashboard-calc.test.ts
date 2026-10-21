@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  computeAccountBalances, computeMonthTotals, computeLiveBuckets, computeUpcomingRenewals,
+  computeAccountBalances, computeLiveBuckets, computeUpcomingRenewals,
   toMonthly, buildCryptoPortfolio, computeInventory, type ContractRow,
 } from './dashboard-calc.ts'
 
@@ -16,13 +16,6 @@ test('Kontostand: Summe aus DB, Bankstand gewinnt', () => {
   )
   assert.equal(bal.get('a'), 70)
   assert.equal(bal.get('b'), 1544.57)
-})
-
-test('Monatssummen', () => {
-  assert.deepEqual(
-    computeMonthTotals([{ type: 'income', amount: 10 }, { type: 'expense', amount: 4 }, { type: 'transfer', amount: 9 }]),
-    { income: 10, expense: 4, net: 6 },
-  )
 })
 
 test('Live-Buckets: cash+other zusammen, unbekannter Typ ignoriert', () => {

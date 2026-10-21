@@ -68,3 +68,24 @@ export function periodDateFormat(period: Period): Intl.DateTimeFormatOptions {
     ? { day: '2-digit', month: 'short' }
     : { month: 'short', year: '2-digit' }
 }
+
+/**
+ * Wie viele Monate eine Monatsübersicht für den Zeitraum zeigt. „Alles" bleibt bei 24: das
+ * ist der Horizont der Verteilungs-Karte, mehr Monate liefern die Auswertungen nicht.
+ * Mindestens ein Monat, auch bei 1W.
+ */
+export function monthsForPeriod(period: Period): number {
+  switch (period) {
+    case '1W':
+    case '1M':    return 1
+    case '3M':    return 3
+    case '6M':    return 6
+    case '1J':    return 12
+    case 'Alles': return 24
+  }
+}
+
+/** Lokales Datum als `YYYY-MM-DD` (nicht `toISOString()`, das erst nach UTC umrechnet). */
+export function ymd(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}

@@ -30,7 +30,8 @@ const SIDE_OPTIONS: readonly { value: Side; label: string }[] = [
   { value: 'einnahmen', label: 'Einnahmen' },
 ]
 
-interface Row { name: string; amount: number; share: number }
+interface Child { name: string; amount: number }
+interface Row { name: string; amount: number; share: number; children: Child[] }
 
 export function KategorienChart({ data }: { data: CategoryDatum[] }) {
   const { locale } = useSettings()
@@ -38,6 +39,14 @@ export function KategorienChart({ data }: { data: CategoryDatum[] }) {
 
   const [side, setSide]         = useState<Side>('ausgaben')
   const [expanded, setExpanded] = useState(false)
+  // Aufgeklappte Hauptkategorien (Drilldown auf die Unterkategorien).
+  const [open, setOpen]         = useState<Set<string>>(() => new Set())
+  const toggleOpen = (name: string) => setOpen(prev => {
+    const next = new Set(prev)
+    if (next.has(name)) next.delete(name)
+    else next.add(name)
+    return next
+  })
 
   const color = side === 'ausgaben' ? 'var(--chart-expense)' : 'var(--chart-income)'
 
@@ -45,7 +54,14 @@ export function KategorienChart({ data }: { data: CategoryDatum[] }) {
     // `value` trägt das Vorzeichen (siehe CategoryDatum): negativ = Ausgabe.
     const raw = data
       .filter(d => (side === 'ausgaben' ? d.value < 0 : d.value > 0))
-      .map(d => ({ name: d.name, amount: Math.abs(d.value) }))
+      .map(d => ({
+        name: d.name,
+        amount: Math.abs(d.value),
+        children: (d.children ?? [])
+          .filter(c => (side === 'ausgaben' ? c.value < 0 : c.value > 0))
+          .map(c => ({ name: c.name, amount: Math.abs(c.value) }))
+          .sort((a, b) => b.amount - a.amount),
+      }))
       .sort((a, b) => b.amount - a.amount)
 
     const sum = raw.reduce((s, r) => s + r.amount, 0)
@@ -70,6 +86,7 @@ export function KategorienChart({ data }: { data: CategoryDatum[] }) {
         name: `Sonstige (${rest.length})`,
         amount: restAmount,
         share: total > 0 ? (restAmount / total) * 100 : 0,
+        children: [],
       },
     ]
   }, [rows, expanded, hidden, total])
@@ -97,12 +114,26 @@ export function KategorienChart({ data }: { data: CategoryDatum[] }) {
         </p>
       ) : (
         <ul className={`space-y-1 ${expanded ? 'max-h-72 overflow-y-auto pr-1' : ''}`}>
-          {visible.map(r => (
-            <li
-              key={r.name}
-              className="grid grid-cols-[minmax(3.5rem,7rem)_minmax(0,1fr)_auto] items-center gap-2.5"
-            >
-              <span className="truncate text-xs text-foreground" title={r.name}>{r.name}</span>
+          {visible.map(r => {
+            // Nur Hauptkategorien mit mehr als einer Unterkategorie lassen sich aufklappen.
+            const drillable = r.children.length > 1
+            const isOpen = drillable && open.has(r.name)
+            return (
+            <li key={r.name} className="space-y-1">
+            <div className="grid grid-cols-[minmax(3.5rem,7rem)_minmax(0,1fr)_auto] items-center gap-2.5">
+              {drillable ? (
+                <button
+                  type="button"
+                  onClick={() => toggleOpen(r.name)}
+                  aria-expanded={isOpen}
+                  className="truncate text-left text-xs text-foreground hover:underline"
+                  title={r.name}
+                >
+                  {isOpen ? '▾' : '▸'} {r.name}
+                </button>
+              ) : (
+                <span className="truncate text-xs text-foreground" title={r.name}>{r.name}</span>
+              )}
               <span className="h-1.5 rounded-full bg-muted overflow-hidden">
                 <span
                   className="block h-full rounded-full transition-[width] duration-300"
@@ -115,8 +146,20 @@ export function KategorienChart({ data }: { data: CategoryDatum[] }) {
                   {r.share.toFixed(r.share < 10 ? 1 : 0)}%
                 </span>
               </span>
+            </div>
+            {isOpen && (
+              <ul className="ml-3 space-y-0.5 border-l border-border pl-3">
+                {r.children.map(c => (
+                  <li key={c.name} className="flex items-center justify-between gap-3 text-[11px] text-muted-foreground">
+                    <span className="truncate" title={c.name}>{c.name}</span>
+                    <span className="tabular-nums whitespace-nowrap">{fmt(c.amount)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
             </li>
-          ))}
+            )
+          })}
         </ul>
       )}
 

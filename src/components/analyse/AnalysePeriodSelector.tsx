@@ -2,7 +2,7 @@
 
 import { useUrlFilters } from '@/components/providers/url-filters'
 
-const PERIODS = ['1M', '3M', '6M', '1J', 'Alles'] as const
+import { PERIODS } from '@/lib/period'
 
 interface Props {
   /** Zeitraum aus der URL — nur noch der Startwert für das erste Rendering. */

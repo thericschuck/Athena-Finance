@@ -2,10 +2,10 @@
 
 import dynamic from 'next/dynamic'
 import { SkeletonChart } from '@/components/ui/skeleton'
-import type { BankTransaction } from '@/types/bank'
+import type { TrendMonth } from './bank-trend-chart-impl'
 
 interface Props {
-  transactions: BankTransaction[]
+  months: TrendMonth[]
   /** `YYYY-MM` des ausgewählten Monats, oder null. */
   selectedMonth?: string | null
   /** Klick auf eine Säule. Derselbe Monat nochmal hebt die Auswahl auf. */

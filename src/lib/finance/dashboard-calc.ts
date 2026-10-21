@@ -118,15 +118,6 @@ export function computeAccountBalances(
   return balMap
 }
 
-export function computeMonthTotals(txMonth: { type: string; amount: number }[]): { income: number; expense: number; net: number } {
-  let income = 0, expense = 0
-  for (const tx of txMonth) {
-    if (tx.type === 'income')  income  += tx.amount
-    if (tx.type === 'expense') expense += tx.amount
-  }
-  return { income, expense, net: income - expense }
-}
-
 export type LiveBuckets = {
   checking: number; investment: number; savings: number; cash: number
   bausparer: number; crypto: number; debts: number

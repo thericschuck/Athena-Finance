@@ -23,6 +23,8 @@ export type UnifiedTxRow = {
   transfer_to: string | null
   source: 'manual' | 'bank_sync'
   signed_amount: number
+  /** echt | anlage | forderung | umbuchung | anfangsbestand — siehe unified_transactions. */
+  flow_kind: string
 }
 
 /** Zeile der globalen Transaktionsliste (zusätzlich Konto-Name/-Farbe für die Tabelle). */
@@ -47,7 +49,7 @@ export type TransactionListFilters = {
 }
 
 const UNIFIED_BASE_COLUMNS =
-  'id, account_id, category_id, date, type, amount, currency, description, merchant, transfer_to, source, signed_amount'
+  'id, account_id, category_id, date, type, amount, currency, description, merchant, transfer_to, source, signed_amount, flow_kind'
 const TRANSACTION_LIST_COLUMNS = `${UNIFIED_BASE_COLUMNS}, account_name, account_color`
 const ACCOUNT_TRANSACTION_COLUMNS = `${UNIFIED_BASE_COLUMNS}, category_name, category_color`
 
@@ -145,12 +147,12 @@ export async function getContractTransactions(supabase: DB, userId: string, cont
 // ─── Kategorien ───────────────────────────────────────────────────────────────────────────
 
 const CATEGORY_COLUMNS =
-  'id, name, type, color, icon, parent_id, sort_order, budget_monthly, tax_role, euer_zeile'
+  'id, name, type, color, icon, parent_id, sort_order, budget_monthly, tax_role, euer_zeile, business_share'
 
 /** Kategorie mit allen für Verwaltung und Formulare gelesenen Spalten. */
 export type CategoryRow = Pick<
   Database['public']['Tables']['categories']['Row'],
-  'id' | 'name' | 'type' | 'color' | 'icon' | 'parent_id' | 'sort_order' | 'budget_monthly' | 'tax_role' | 'euer_zeile'
+  'id' | 'name' | 'type' | 'color' | 'icon' | 'parent_id' | 'sort_order' | 'budget_monthly' | 'tax_role' | 'euer_zeile' | 'business_share'
 >
 
 /** Kategorie-Auswahl (Dropdowns, Filter, Kategorie-Select in der Tabelle). */

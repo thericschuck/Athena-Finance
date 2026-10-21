@@ -7,6 +7,7 @@ import {
 } from 'recharts'
 import { AlertTriangle, TrendingUp, Minus } from 'lucide-react'
 import { fmtCurrency } from '@/lib/format'
+import type { CategoryMonthSeries } from '@/lib/finance/flow-calc'
 
 export type Summary = {
   id:               string
@@ -27,12 +28,10 @@ export type Summary = {
   created_at:       string
 }
 
-/** Spalten, die die Dashboard-Auswertung wirklich liest (Teilmenge von Summary). */
-export type SummaryRow = Pick<Summary,
-  'month' | 'food' | 'leisure' | 'subscriptions' | 'pocket_money' | 'other_expenses' |
-  'total_income' | 'total_expenses' | 'net_balance'>
+/** Spalten, die die Dashboard-Auswertung wirklich liest. Kommen aus `monthly_flows` (siehe flow-calc). */
+export type SummaryRow = Pick<Summary, 'month' | 'total_income' | 'total_expenses' | 'net_balance'>
 
-type Props = { summaries: SummaryRow[]; locale: string }
+type Props = { summaries: SummaryRow[]; categorySeries: CategoryMonthSeries; locale: string }
 
 function monthLabel(month: string, locale: string) {
   const dateStr = month.length <= 7 ? month + '-01' : month.slice(0, 10)
@@ -59,13 +58,9 @@ function abbr(n: number) {
   return n.toFixed(0)
 }
 
-const CAT_COLORS: Record<string, string> = {
-  Lebensmittel: '#f59e0b',
-  Freizeit:     '#8b5cf6',
-  Abos:         '#3b82f6',
-  Taschengeld:  '#ec4899',
-  Sonstiges:    '#94a3b8',
-}
+// Feste Reihenfolge statt fester Kategorienamen: die Hauptkategorien kommen aus den Daten.
+const CAT_PALETTE = ['#f59e0b', '#8b5cf6', '#3b82f6', '#ec4899', '#10b981', '#94a3b8']
+const catColor = (index: number, last: boolean) => (last ? '#94a3b8' : CAT_PALETTE[index % (CAT_PALETTE.length - 1)])
 
 // ─── Shared card wrapper ────────────────────────────────────────────────────────
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
@@ -167,49 +162,42 @@ export function IncomeExpenseChart({ summaries, locale, height = 200 }: { summar
   )
 }
 
-const ALL_CATS = ['Lebensmittel', 'Freizeit', 'Abos', 'Taschengeld', 'Sonstiges'] as const
-type Cat = typeof ALL_CATS[number]
-
-// ─── 2. Ausgaben nach Kategorien ───────────────────────────────────────────────
-function CategoryChart({ summaries, locale }: { summaries: SummaryRow[]; locale: string }) {
+// ─── 2. Ausgaben nach Hauptkategorie ───────────────────────────────────────────
+function CategoryChart({ series, locale }: { series: CategoryMonthSeries; locale: string }) {
   const fmt = (n: number) => fmtCurrency(n, 'EUR', locale)
-  const [active, setActive] = useState<Set<Cat>>(() => new Set(ALL_CATS))
+  const [hidden, setHidden] = useState<Set<string>>(() => new Set())
   const mounted = useMounted()
 
-  function toggle(cat: Cat) {
-    setActive(prev => {
+  function toggle(cat: string) {
+    setHidden(prev => {
       const next = new Set(prev)
-      next.has(cat) ? next.delete(cat) : next.add(cat)
+      if (next.has(cat)) next.delete(cat)
+      else next.add(cat)
       return next
     })
   }
 
-  const data = [...summaries]
-    .sort((a, b) => a.month.localeCompare(b.month))
-    .slice(-6)
-    .map(m => ({
-      label:        monthLabel(m.month, locale),
-      Lebensmittel: m.food,
-      Freizeit:     m.leisure,
-      Abos:         m.subscriptions,
-      Taschengeld:  m.pocket_money,
-      Sonstiges:    m.other_expenses,
-    }))
+  const cats = series.categories
+  const colorFor = (cat: string) => catColor(cats.indexOf(cat), cat === series.otherKey)
+  const data = series.months.slice(-6).map(m => ({
+    label: monthLabel(m.month, locale),
+    ...Object.fromEntries(cats.map(c => [c, m.values[c] ?? 0])),
+  }))
 
   return (
     <Card>
-      <SectionTitle>Ausgaben nach Kategorie</SectionTitle>
+      <SectionTitle>Ausgaben nach Hauptkategorie</SectionTitle>
       <div className="flex flex-wrap gap-1.5 mb-3">
-        {ALL_CATS.map(cat => (
+        {cats.map(cat => (
           <button
             key={cat}
             onClick={() => toggle(cat)}
             className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border transition-opacity ${
-              active.has(cat) ? 'opacity-100' : 'opacity-25'
+              hidden.has(cat) ? 'opacity-25' : 'opacity-100'
             }`}
-            style={{ borderColor: CAT_COLORS[cat], color: CAT_COLORS[cat] }}
+            style={{ borderColor: colorFor(cat), color: colorFor(cat) }}
           >
-            <span className="size-1.5 rounded-full shrink-0" style={{ background: CAT_COLORS[cat] }} />
+            <span className="size-1.5 rounded-full shrink-0" style={{ background: colorFor(cat) }} />
             {cat}
           </button>
         ))}
@@ -232,8 +220,8 @@ function CategoryChart({ summaries, locale }: { summaries: SummaryRow[]; locale:
               content={<ChartTooltip fmt={fmt} />}
               cursor={{ fill: 'var(--muted)', fillOpacity: 0.4 }}
             />
-            {ALL_CATS.filter(cat => active.has(cat)).map(cat => (
-              <Bar key={cat} dataKey={cat} stackId="a" fill={CAT_COLORS[cat]} fillOpacity={0.85} maxBarSize={36} />
+            {cats.filter(cat => !hidden.has(cat)).map(cat => (
+              <Bar key={cat} dataKey={cat} stackId="a" fill={colorFor(cat)} fillOpacity={0.85} maxBarSize={36} />
             ))}
           </BarChart>
         </ResponsiveContainer>
@@ -333,7 +321,7 @@ function DeviationTable({ summaries, locale }: { summaries: SummaryRow[]; locale
 }
 
 // ─── Export ────────────────────────────────────────────────────────────────────
-export function FinanceAnalytics({ summaries, locale }: Props) {
+export function FinanceAnalytics({ summaries, categorySeries, locale }: Props) {
   if (summaries.length === 0) return null
 
   return (
@@ -341,13 +329,13 @@ export function FinanceAnalytics({ summaries, locale }: Props) {
       <h2 className="text-sm font-semibold text-foreground">
         Finanzanalyse
         <span className="ml-2 text-xs font-normal text-muted-foreground">
-          letzte {summaries.length} Monat{summaries.length !== 1 ? 'e' : ''}
+          letzte {summaries.length} Monat{summaries.length !== 1 ? 'e' : ''} · ohne Anlagen und Forderungen
         </span>
       </h2>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <IncomeExpenseChart summaries={summaries} locale={locale} />
-        <CategoryChart      summaries={summaries} locale={locale} />
+        <CategoryChart      series={categorySeries} locale={locale} />
       </div>
 
       <DeviationTable summaries={summaries} locale={locale} />

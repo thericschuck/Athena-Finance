@@ -1,6 +1,7 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { type DB } from '@/lib/assistant/tools/shared'
+import { getFlowTransactions } from '@/lib/data/flows'
 
 export function buildDataQualityTools(supabase: DB, userId: string) {
   return {
@@ -163,13 +164,13 @@ export function buildDataQualityTools(supabase: DB, userId: string) {
             .from('unified_transactions')
             .select('id', { count: 'exact', head: true })
             .eq('user_id', userId)
-            .eq('flow_kind', 'echt')
+            .eq('counts_in_flow', true)
             .gte('date', seit90),
           supabase
             .from('unified_transactions')
             .select('id', { count: 'exact', head: true })
             .eq('user_id', userId)
-            .eq('flow_kind', 'echt')
+            .eq('counts_in_flow', true)
             .gte('date', seit90)
             .is('category_id', null),
         ])
@@ -181,9 +182,46 @@ export function buildDataQualityTools(supabase: DB, userId: string) {
         if (anteilOhneKategorie > 10) {
           melde(
             'hinweis',
-            `${anteilOhneKategorie} % der echten Buchungen der letzten 90 Tage haben keine Kategorie ` +
+            `${anteilOhneKategorie} % der Buchungen der letzten 90 Tage (ohne Umbuchungen) haben keine Kategorie ` +
             `(${buchungenOhneKategorie} von ${buchungenGesamt}). Jede Auswertung nach Kategorie ist um diesen Anteil unvollständig.`,
           )
+        }
+
+        // 3b) Steuerrollen — Kategorien mit Buchungen in diesem Jahr, aber ohne (geerbte) Rolle.
+        // Einnahmen ohne Rolle fehlen in der Steuerrechnung, Ausgaben ohne Rolle sind nicht abzugsfähig;
+        // beides passiert still. Anlage-Kategorien (neutral) brauchen keine Rolle.
+        try {
+          const jahrStart = `${heute.getFullYear()}-01-01`
+          const [{ data: baum }, buchungen] = await Promise.all([
+            supabase.from('category_tree').select('id, name, path, type, tax_role_effective').eq('user_id', userId),
+            getFlowTransactions(supabase, userId, { from: jahrStart, include: { anlage: false, forderung: false } }),
+          ])
+          const ohneRolle = new Map(
+            (baum ?? [])
+              .filter(k => k.id && k.type !== 'neutral' && !k.tax_role_effective)
+              .map(k => [k.id as string, String(k.path ?? k.name)]),
+          )
+          const summen = new Map<string, { anzahl: number; betrag: number }>()
+          for (const b of buchungen) {
+            if (!b.category_id || !ohneRolle.has(b.category_id)) continue
+            const e = summen.get(b.category_id) ?? { anzahl: 0, betrag: 0 }
+            e.anzahl += 1
+            e.betrag += b.amount
+            summen.set(b.category_id, e)
+          }
+          if (summen.size > 0) {
+            const liste = [...summen.entries()]
+              .sort((a, b) => b[1].betrag - a[1].betrag)
+              .slice(0, 5)
+              .map(([id, v]) => `${ohneRolle.get(id)} (${v.anzahl}, ${Math.round(v.betrag)} €)`)
+            melde(
+              'hinweis',
+              `${summen.size} Kategorien mit Buchungen in diesem Jahr haben keine steuerliche Rolle, u. a. ${liste.join('; ')}. ` +
+              'Steuerzahlen aus getTaxPosition/getEuerPosition lassen diese Buchungen aus.',
+            )
+          }
+        } catch {
+          // Reiner Zusatzhinweis — ein Fehler hier darf die übrigen Befunde nicht verhindern.
         }
 
         // 4) Kurse — ein alter Cache macht Krypto- und Depotwerte still falsch.

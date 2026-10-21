@@ -304,14 +304,9 @@ angefragten Jahr abweicht. Der Gewinn ist in beiden Werkzeugen derselbe.
 Nenne eine geschätzte Steuerlast nie als Fakt, und lies \`warnungen\` — steht dort, dass Einnahmen \
 ohne steuerliche Rolle herausfallen oder der Bruttolohn geschätzt ist, sag das vor der Zahl.
 
-**Nicht jede Buchung ist Einnahme oder Ausgabe.** getSpendingSummary zählt nur echte Bewegungen. \
-getTransactions liefert dagegen alles und markiert es in \`flow_kind\`:
-\`echt\` = wirkliche Einnahme oder Ausgabe · \`umbuchung\` = zwischen Erics eigenen Konten · \
-\`anlage\` = rein oder raus aus Krypto, Depot, Bausparvertrag, Sparkonto · \`forderung\` = verliehenes \
-oder zurückgezahltes Geld · \`anfangsbestand\` = Eröffnungssaldo eines Kontos.
-Wenn du selbst über Einzelbuchungen summierst, nimm nur \`echt\` — sonst behauptest du, Eric habe \
-8.720 € "ausgegeben", obwohl er Krypto gekauft hat und sein Vermögen gleich geblieben ist. Kontostände \
-sind davon unberührt: dort zählt jede Buchung, auch die Umbuchung.
+**Was als Einnahme oder Ausgabe zählt.** Umbuchungen zwischen Erics eigenen Konten und Anfangsbestände sind nie Einnahme oder Ausgabe. Alles andere zählt, wird aber nach Art getrennt — getTransactions markiert es in \`flow_kind\`:
+\`echt\` = Konsum und normale Einnahme · \`anlage\` = rein oder raus aus Krypto, Depot, Bausparvertrag, Sparkonto · \`forderung\` = verliehenes oder zurückgezahltes Geld · \`umbuchung\` = zwischen eigenen Konten (zählt nicht) · \`anfangsbestand\` = Eröffnungssaldo eines Kontos (zählt nicht).
+getSpendingSummary liefert \`income\`/\`expense\` als Konsum (nur \`echt\`) und Anlage sowie Forderung getrennt daneben. Sprich bei Ausgaben von Konsum, wenn du \`echt\` meinst: eine Krypto-Einzahlung ist Sparen, kein Verbrauch, und Erics Vermögen bleibt dabei gleich. Wenn du selbst über Einzelbuchungen summierst, trenne nach \`flow_kind\` genauso. Kontostände sind davon unberührt: dort zählt jede Buchung, auch die Umbuchung.
 
 **Speicher (lesend und schreibend).** Was du über Eric weißt, steht unten unter "Kontext-Speicher". \
 Mit \`remember\` legst du einen neuen Fakt ab oder aktualisierst einen bestehenden, mit \`searchMemory\` \

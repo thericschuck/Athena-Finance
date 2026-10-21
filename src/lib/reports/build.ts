@@ -5,13 +5,16 @@
  * und frei von Bank-Freitext, der theoretisch Prompt-Injection tragen könnte (siehe
  * docs/athenas-takt.html, Abschnitt III).
  *
- * Einnahmen/Ausgaben werden ausschließlich aus `flow_kind = 'echt'` gebildet — Anlagen,
- * Forderungen und Umbuchungen verzerren sonst die Cashflow-Zahl (siehe Memory
- * flow_kind_regel). Das Nettovermögen kommt direkt aus `net_worth_snapshots.net_worth`,
+ * Einnahmen/Ausgaben kommen aus derselben Datenschicht wie Dashboard und Analyse
+ * (lib/data/flows) und zählen in der Konsum-Sicht (nur `flow_kind = 'echt'`): Anlagen und
+ * Forderungen sind Vermögensverschiebungen und verzerren sonst die Cashflow-Zahl des
+ * Berichts. Umbuchungen zwischen eigenen Konten fehlen grundsätzlich. Das Nettovermögen kommt direkt aus `net_worth_snapshots.net_worth`,
  * derselben Kernzahl wie auf dem Dashboard (siehe Memory networth_definition).
  */
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { getFlowTransactions, txToFlowRow } from '../data/flows.ts'
+import { INCLUDE_CONSUMPTION, rollupByRoot, sumFlows } from '../finance/flow-calc.ts'
 import type {
   ReportData, ReportType, ReportTotals, ReportCategoryDatum, ReportCategoryChange,
   ReportNetWorth, ReportInsightRow,
@@ -79,48 +82,21 @@ async function periodTotals(
   start: string,
   end: string,
 ): Promise<ReportTotals> {
-  const { data } = await supabase
-    .from('unified_transactions')
-    .select('type, amount, amount_base')
-    .eq('user_id', userId)
-    .eq('flow_kind', 'echt')
-    .gte('date', start)
-    .lte('date', end)
-
-  let income = 0
-  let expenses = 0
-  for (const row of (data ?? []) as { type: string; amount: number; amount_base: number | null }[]) {
-    const eur = Math.abs(row.amount_base ?? row.amount)
-    if (row.type === 'income') income += eur
-    else if (row.type === 'expense') expenses += eur
-  }
-  return { income: round2(income), expenses: round2(expenses), net: round2(income - expenses) }
+  const txns = await getFlowTransactions(supabase, userId, { from: start, to: end, include: INCLUDE_CONSUMPTION })
+  const t = sumFlows(txns.map(txToFlowRow), INCLUDE_CONSUMPTION)
+  return { income: round2(t.income), expenses: round2(t.expense), net: round2(t.net) }
 }
 
+/** Ausgaben je Hauptkategorie (Konsum-Sicht), größte zuerst. */
 async function categoryBreakdown(
   supabase: SupabaseClient<Database>,
   userId: string,
   start: string,
   end: string,
 ): Promise<ReportCategoryDatum[]> {
-  const { data } = await supabase
-    .from('unified_transactions')
-    .select('category_name, amount, amount_base')
-    .eq('user_id', userId)
-    .eq('flow_kind', 'echt')
-    .eq('type', 'expense')
-    .gte('date', start)
-    .lte('date', end)
-
-  const map = new Map<string, number>()
-  for (const row of (data ?? []) as { category_name: string | null; amount: number; amount_base: number | null }[]) {
-    const name = row.category_name ?? 'Ohne Kategorie'
-    const eur  = Math.abs(row.amount_base ?? row.amount)
-    map.set(name, (map.get(name) ?? 0) + eur)
-  }
-  return [...map.entries()]
-    .map(([name, amount]) => ({ name, amount: round2(amount) }))
-    .sort((a, b) => b.amount - a.amount)
+  const txns = await getFlowTransactions(supabase, userId, { from: start, to: end, include: INCLUDE_CONSUMPTION })
+  return rollupByRoot(txns.map(txToFlowRow), INCLUDE_CONSUMPTION, 'expense')
+    .map(c => ({ name: c.name, amount: round2(c.expense) }))
 }
 
 /** Nur Kategorien, die sich gegenüber der Vorperiode um mindestens 30 EUR UND 25% verändert

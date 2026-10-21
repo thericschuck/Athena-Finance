@@ -4,8 +4,9 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import {
   getNetWorthHistoryPage, getHistoryAccounts, getAccountBalanceHistoryPage, getHistoryAssets,
-  getPortfolioSnapshotHistoryPage, getMonthlyHistoryPage,
+  getPortfolioSnapshotHistoryPage,
 } from '@/lib/data/overview'
+import { getMonthlyTotalsPage } from '@/lib/data/flows'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency, fmtNumber, fmtDate as fmtDateLib } from '@/lib/format'
 
@@ -253,8 +254,11 @@ async function PortfolioTab({ supabase, uid, locale, dateFormat, page, from, to 
 }
 
 // ─── Tab: Monthly ─────────────────────────────────────────────────────────────
+// Aus `monthly_flow_totals` (live aus monthly_flows) statt der früheren Cron-Tabelle. Einnahmen und
+// Ausgaben zählen alles, was zählt; Konsum, Anlage und Forderungen stehen getrennt daneben.
+// Die Sparquote rechnet nur auf Konsum (siehe lib/finance/flow-calc).
 async function MonthlyTab({ supabase, uid, locale, page, from, to }: TabCtx) {
-  const { rows: data, count } = await getMonthlyHistoryPage(supabase, uid, { from, to })
+  const { rows: data, count } = await getMonthlyTotalsPage(supabase, uid, { from, to })
 
   return (
     <div className="overflow-x-auto">
@@ -264,46 +268,46 @@ async function MonthlyTab({ supabase, uid, locale, page, from, to }: TabCtx) {
             <Th>Monat</Th>
             <Th right>Einnahmen</Th>
             <Th right>Ausgaben</Th>
-            <Th right>Bilanz</Th>
-            <Th right>Gehalt</Th>
-            <Th right>Lebensmittel</Th>
-            <Th right>Freizeit</Th>
-            <Th right>Abos</Th>
-            <Th right>Sparen</Th>
-            <Th right>Taschengeld</Th>
-            <Th right>Sonstige&nbsp;E.</Th>
-            <Th right>Sonstige&nbsp;A.</Th>
-            <Th>Quelle</Th>
+            <Th right>Saldo</Th>
+            <Th right>Konsum&nbsp;E.</Th>
+            <Th right>Konsum&nbsp;A.</Th>
+            <Th right>Sparquote</Th>
+            <Th right>Anlage&nbsp;A.</Th>
+            <Th right>Anlage&nbsp;E.</Th>
+            <Th right>Forderung&nbsp;A.</Th>
+            <Th right>Forderung&nbsp;E.</Th>
+            <Th right>Buchungen</Th>
           </tr>
         </thead>
         <tbody>
           {data.map((r, i) => {
-            const pos = r.net_balance >= 0
+            const net = r.income - r.expense
+            const pos = net >= 0
+            const rate = r.echt_income > 0 ? Math.round(((r.echt_income - r.echt_expense) / r.echt_income) * 100) : null
             return (
-              <tr key={r.id} className={`border-b border-border/50 hover:bg-muted/20 ${i % 2 === 0 ? '' : 'bg-muted/10'}`}>
+              <tr key={r.month} className={`border-b border-border/50 hover:bg-muted/20 ${i % 2 === 0 ? '' : 'bg-muted/10'}`}>
                 <Td>
-                  <span className="font-medium">{r.month}</span>
+                  <span className="font-medium">{r.month.slice(0, 7)}</span>
                 </Td>
                 <Td right mono>
-                  <span className="text-success font-medium">{fmtEur(r.total_income, locale)}</span>
+                  <span className="text-success font-medium">{fmtEur(r.income, locale)}</span>
                 </Td>
                 <Td right mono>
-                  <span className="text-danger">{fmtEur(r.total_expenses, locale)}</span>
+                  <span className="text-danger">{fmtEur(r.expense, locale)}</span>
                 </Td>
                 <Td right mono>
                   <span className={pos ? 'text-success font-semibold' : 'text-danger font-semibold'}>
-                    {pos ? '+' : ''}{fmtEur(r.net_balance, locale)}
+                    {pos ? '+' : ''}{fmtEur(net, locale)}
                   </span>
                 </Td>
-                <Td right mono dim>{fmtEur(r.salary, locale)}</Td>
-                <Td right mono dim>{fmtEur(r.food, locale)}</Td>
-                <Td right mono dim>{fmtEur(r.leisure, locale)}</Td>
-                <Td right mono dim>{fmtEur(r.subscriptions, locale)}</Td>
-                <Td right mono dim>{fmtEur(r.savings_transfer, locale)}</Td>
-                <Td right mono dim>{fmtEur(r.pocket_money, locale)}</Td>
-                <Td right mono dim>{fmtEur(r.other_income, locale)}</Td>
-                <Td right mono dim>{fmtEur(r.other_expenses, locale)}</Td>
-                <Td dim>{r.source}</Td>
+                <Td right mono dim>{fmtEur(r.echt_income, locale)}</Td>
+                <Td right mono dim>{fmtEur(r.echt_expense, locale)}</Td>
+                <Td right mono dim>{rate === null ? '–' : `${rate} %`}</Td>
+                <Td right mono dim>{fmtEur(r.anlage_expense, locale)}</Td>
+                <Td right mono dim>{fmtEur(r.anlage_income, locale)}</Td>
+                <Td right mono dim>{fmtEur(r.forderung_expense, locale)}</Td>
+                <Td right mono dim>{fmtEur(r.forderung_income, locale)}</Td>
+                <Td right mono dim>{r.tx_count}</Td>
               </tr>
             )
           })}

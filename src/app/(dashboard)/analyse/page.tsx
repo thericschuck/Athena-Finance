@@ -11,71 +11,46 @@ import { CashflowKalender }      from '@/components/analyse/CashflowKalender'
 import { MonatsVergleich }       from '@/components/analyse/MonatsVergleich'
 import { KategorienChart }       from '@/components/analyse/KategorienChart'
 import { MonatsVerteilung }      from '@/components/analyse/MonatsVerteilung'
+import { FlowKindToggle }        from '@/components/finance/flow-kind-toggle'
 import { getSettings }          from '@/lib/settings'
+import { getActiveAccountOptions } from '@/lib/data/overview'
+import { getFlowTransactions, getMonthlyFlows, txToFlowRow, type FlowTransaction } from '@/lib/data/flows'
 import {
-  getActiveAccountOptions, getAnalyseTransactions, getCalendarTransactions,
-  getMonthlyTotals, getMonthlyWindowTransactions,
-} from '@/lib/data/overview'
-import { periodCutoff }         from '@/lib/period'
+  INCLUDE_ALL, includeFromParam, monthlySeries, rollupByRoot, UNCATEGORIZED,
+  type FlowInclude, type MonthSummary,
+} from '@/lib/finance/flow-calc'
+import { monthsForPeriod, parsePeriod, periodCutoff, ymd } from '@/lib/period'
 import { UrlFiltersProvider, FilterPending } from '@/components/providers/url-filters'
 
 const HEATMAP_MODES: HeatmapMode[] = ['ausgaben', 'einnahmen', 'guv']
 
-// ── Types ──────────────────────────────────────────────────────────────────────
-
-type Period = '1M' | '3M' | '6M' | '1J' | 'Alles'
-const VALID: Period[] = ['1M', '3M', '6M', '1J', 'Alles']
-
-// Wie viele Monate der Monatsvergleich zeigt — an denselben Zeitraum-Filter gekoppelt wie der
-// Rest der Seite, statt an eine feste Zahl (siehe buildMonthlyComparison). "Alles" bleibt bei
-// 24: mehr liefert weder die `monthly_finance_summary`-Abfrage (`.limit(25)`) noch das
-// 24-Monats-Fenster der Konten-gefilterten Variante (`monthlyCutoff`) ohnehin her.
-function monthsForPeriod(period: Period): number {
-  switch (period) {
-    case '1M':   return 1
-    case '3M':   return 3
-    case '6M':   return 6
-    case '1J':   return 12
-    case 'Alles': return 24
-  }
-}
-
-// Row shape of the `unified_transactions` view (see migrations 20260821010000/020000) —
-// merges the manual `transactions` ledger with FinTS-synced `bank_transactions` for any
-// account linked via accounts.bank_iban.
-type TxnRow = {
-  date:          string
-  type:          string
-  amount:        number
-  amount_base:   number | null
-  category_name: string | null
-  description:   string | null
-  merchant:      string | null
-}
-
-type MonthlySummaryRow = {
-  month:          string
-  total_income:   number
-  total_expenses: number
-}
+/**
+ * Alle Zahlen dieser Seite kommen aus `lib/data/flows` (Views monthly_flows und
+ * unified_transactions, Migration 20261021). Was als Einnahme/Ausgabe zählt, entscheidet die
+ * Datenbank; die Seite wählt nur, ob Anlagen und Forderungen mitgerechnet werden (Schalter,
+ * URL-Parameter `anlage`). Umbuchungen zwischen eigenen Konten fehlen immer.
+ *
+ * Früher gab es zwei Pfade: ohne Konten-Filter die Cron-Tabelle monthly_finance_summary, mit
+ * Filter eine Aggregation im Server. Beide Pfade lieferten für denselben Monat nicht immer
+ * dieselbe Zahl. Jetzt gibt es einen Pfad, die Konten sind eine Dimension der View.
+ */
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function toEur(txn: Pick<TxnRow, 'amount' | 'amount_base'>): number {
-  return Math.abs(txn.amount_base ?? txn.amount)
-}
+const rootName = (t: FlowTransaction) => t.root_category_name ?? t.category_name ?? UNCATEGORIZED
+const monthKey = (month: string) => month.slice(0, 7)
+const monthLabel = (month: string) =>
+  new Date(month.slice(0, 10) + 'T12:00:00').toLocaleDateString('de-DE', { month: 'short' })
 
 // ── Data builders ──────────────────────────────────────────────────────────────
 
-function buildHeatmap(txns: TxnRow[]): HeatmapDay[] {
+function buildHeatmap(txns: FlowTransaction[]): HeatmapDay[] {
   const map = new Map<string, { amount: number; income: number }>()
   for (const t of txns) {
-    const date = t.date.slice(0, 10)
-    const eur  = toEur(t)
-    const cur  = map.get(date) ?? { amount: 0, income: 0 }
-    map.set(date, t.type === 'expense'
-      ? { ...cur, amount: cur.amount + eur }
-      : { ...cur, income: cur.income + eur })
+    const cur = map.get(t.date) ?? { amount: 0, income: 0 }
+    map.set(t.date, t.type === 'expense'
+      ? { ...cur, amount: cur.amount + t.amount }
+      : { ...cur, income: cur.income + t.amount })
   }
   return [...map.entries()]
     .map(([date, { amount, income }]) => ({
@@ -84,28 +59,31 @@ function buildHeatmap(txns: TxnRow[]): HeatmapDay[] {
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 
-function buildCategories(txns: TxnRow[]): CategoryDatum[] {
-  const map = new Map<string, number>()
-  for (const t of txns) {
-    const name = t.category_name ?? 'Sonstiges'
-    const eur  = toEur(t)
-    const sign = t.type === 'income' ? 1 : -1
-    map.set(name, (map.get(name) ?? 0) + sign * eur)
-  }
-  return [...map.entries()]
-    .map(([name, value]) => ({ name, value: Math.round(value) }))
-    .filter(d => d.value !== 0)
-    .sort((a, b) => b.value - a.value)
+/**
+ * Hauptkategorien mit den Unterkategorien darunter. Einnahmen und Ausgaben stehen als
+ * getrennte Einträge (Einnahmen positiv, Ausgaben negativ): eine Hauptkategorie, in der beides
+ * vorkommt, würde sich sonst gegeneinander aufheben.
+ */
+function buildCategories(txns: FlowTransaction[]): CategoryDatum[] {
+  const rows = txns.map(txToFlowRow)
+  const side = (by: 'income' | 'expense', sign: 1 | -1): CategoryDatum[] =>
+    rollupByRoot(rows, INCLUDE_ALL, by).map(root => ({
+      name: root.name,
+      value: Math.round(sign * root[by]),
+      children: root.children
+        .filter(c => c[by] !== 0)
+        .map(c => ({ name: c.name, value: Math.round(sign * c[by]) })),
+    })).filter(d => d.value !== 0)
+  return [...side('income', 1), ...side('expense', -1)]
 }
 
-function buildSankey(txns: TxnRow[]): SankeyData {
+function buildSankey(txns: FlowTransaction[]): SankeyData {
   const incMap = new Map<string, number>()
   const expMap = new Map<string, number>()
   for (const t of txns) {
-    const name = t.category_name ?? 'Sonstiges'
-    const eur  = toEur(t)
-    if (t.type === 'income') incMap.set(name, (incMap.get(name) ?? 0) + eur)
-    else expMap.set(name, (expMap.get(name) ?? 0) + eur)
+    const name = rootName(t)
+    if (t.type === 'income') incMap.set(name, (incMap.get(name) ?? 0) + t.amount)
+    else expMap.set(name, (expMap.get(name) ?? 0) + t.amount)
   }
 
   const totalIncome   = [...incMap.values()].reduce((s, v) => s + v, 0)
@@ -166,188 +144,66 @@ function buildSankey(txns: TxnRow[]): SankeyData {
   return { nodes, links: links.filter(l => l.value > 0) }
 }
 
-function buildCashflow(txns: Omit<TxnRow, 'amount_base'>[]): CashflowEvent[] {
-  return txns
-    .filter(t => t.type === 'income' || t.type === 'expense')
-    .map(t => ({
-      date:   t.date.slice(0, 10),
-      type:   t.type as 'income' | 'expense',
-      label:  t.category_name ?? t.description ?? t.merchant ?? 'Transaktion',
-      amount: Math.abs(t.amount),
-    }))
-}
-
-// `monthly_finance_summary` is a whole-user cron aggregate with no account_id column, so it
-// can't be scoped to a Konten-Auswahl. When a filter is active we instead derive the same
-// income/expense/sparquote shape directly from the (account-filtered) transactions.
-function buildMonthlyComparisonFromTxns(
-  txns: Pick<TxnRow, 'date' | 'type' | 'amount' | 'amount_base'>[],
-  currentMonthKey: string,
-  monthsToShow: number,
-): MonthlyComparison[] {
-  const map = new Map<string, { income: number; expenses: number }>()
-  for (const t of txns) {
-    if (t.type !== 'income' && t.type !== 'expense') continue
-    const month = t.date.slice(0, 7)
-    const cur = map.get(month) ?? { income: 0, expenses: 0 }
-    const eur = toEur(t)
-    if (t.type === 'income') cur.income += eur
-    else cur.expenses += eur
-    map.set(month, cur)
-  }
-  const rows: MonthlySummaryRow[] = [...map.entries()].map(([month, v]) => ({
-    month, total_income: v.income, total_expenses: v.expenses,
+function buildCashflow(txns: FlowTransaction[]): CashflowEvent[] {
+  return txns.map(t => ({
+    date:   t.date,
+    type:   t.type,
+    label:  t.category_name ?? t.description ?? t.merchant ?? 'Transaktion',
+    amount: t.amount,
   }))
-  return buildMonthlyComparison(rows, currentMonthKey, monthsToShow)
 }
 
-// Historie für die Verteilungs-Karte — bis zu 24 ABGESCHLOSSENE Monate, der
-// laufende Monat (currentMonthKey) fliegt bewusst raus: er ist per Definition
-// unvollständig und würde die Verteilung künstlich nach unten ziehen. Er wird
-// stattdessen separat als Vergleichswert (currentMonthTotals) gegen genau diese
-// Historie getestet (siehe computePercentileRank).
-//
-// Alle drei Reihen kommen aus demselben Durchlauf, weil die Karte zwischen
-// Ausgaben, Einnahmen und GuV umschaltbar ist — ein Umschalten soll keinen
-// Server-Roundtrip kosten.
-function buildMonthSeries(rows: MonthlySummaryRow[], currentMonthKey: string): MonthSeries {
-  const months = rows
-    .filter(r => r.month.slice(0, 7) !== currentMonthKey)
-    .sort((a, b) => a.month.localeCompare(b.month))
-    .slice(-24)
-  return {
-    ausgaben:  months.map(r => Math.round(r.total_expenses)),
-    einnahmen: months.map(r => Math.round(r.total_income)),
-    guv:       months.map(r => Math.round(r.total_income - r.total_expenses)),
-  }
-}
-
-// Gleiches Prinzip wie buildMonthlyComparisonFromTxns oben — monthly_finance_summary
-// hat keine account_id, bei aktivem Konten-Filter wird stattdessen direkt aus den
-// (bereits kontogefilterten) Transaktionen aggregiert.
-//
-// Ein Monat mit Einnahmen aber ohne Ausgaben zählt hier als 0 in der
-// Ausgabenreihe. Die frühere, rein ausgabenbasierte Variante hat ihn
-// stillschweigend übersprungen — der Summary-Pfad oben liefert für denselben
-// Monat aber eine Zeile mit total_expenses = 0. Beide Pfade sagen jetzt
-// dasselbe.
-function buildMonthSeriesFromTxns(
-  txns: Pick<TxnRow, 'date' | 'type' | 'amount' | 'amount_base'>[],
-  currentMonthKey: string,
-): MonthSeries {
-  const map = new Map<string, { income: number; expenses: number }>()
-  for (const t of txns) {
-    if (t.type !== 'income' && t.type !== 'expense') continue
-    const month = t.date.slice(0, 7)
-    if (month === currentMonthKey) continue
-    const cur = map.get(month) ?? { income: 0, expenses: 0 }
-    if (t.type === 'income') cur.income += toEur(t)
-    else cur.expenses += toEur(t)
-    map.set(month, cur)
-  }
-  const months = [...map.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .slice(-24)
-    .map(([, v]) => v)
-  return {
-    ausgaben:  months.map(v => Math.round(v.expenses)),
-    einnahmen: months.map(v => Math.round(v.income)),
-    guv:       months.map(v => Math.round(v.income - v.expenses)),
-  }
-}
-
-// Summen des laufenden Monats — aus `txns` (der ohnehin schon geladenen,
-// periodengefilterten Transaktionsliste) statt einer eigenen Query: jeder
-// Zeitraum (period) endet an "heute", der laufende Monat ist also immer
-// Teilmenge von `txns`, unabhängig von der gewählten Periode.
-//
-// `null` bei einem Monat ohne jede Buchung. Die Vorgängerfunktion gab in dem
-// Fall 0 zurück, was in der Karte als "dieser Monat: 0 €" ankam und den Marker
-// an den linken Rand setzte — ein Monat ohne Daten ist aber kein Monat mit
-// Nullausgaben.
-function currentMonthTotals(txns: TxnRow[], currentMonthKey: string): MonthTotals | null {
-  let einnahmen = 0
-  let ausgaben  = 0
-  let seen      = 0
-  for (const t of txns) {
-    if (t.date.slice(0, 7) !== currentMonthKey) continue
-    if (t.type === 'income')       { einnahmen += toEur(t); seen++ }
-    else if (t.type === 'expense') { ausgaben  += toEur(t); seen++ }
-  }
-  if (seen === 0) return null
-  return {
-    einnahmen: Math.round(einnahmen),
-    ausgaben:  Math.round(ausgaben),
-    guv:       Math.round(einnahmen - ausgaben),
-  }
-}
-
-// Der laufende Monat fliegt raus — dieselbe Regel wie in buildMonthSeries, hier aber aus
-// einem zweiten Grund: `monthly_finance_summary` wird per Cron geschrieben und hat die Zeile
-// für den laufenden Monat noch nicht, der Transaktionspfad kennt sie sofort. Ohne den Filter
-// zeigte dieselbe Karte je nach Konten-Auswahl unterschiedliche Monate — und am Monatsanfang
-// eine Sparquote aus zwei Buchungen (1.9.: 80 € ein, 174 € aus, also −117 %), die den ganzen
-// Achsenbereich verzogen hat.
-//
-// `monthsToShow` kam frueher als feste 6 daher, unabhaengig vom gewaehlten Zeitraum oben auf
-// der Seite — bei "1 Jahr" zeigte die Karte trotzdem nur ein halbes, bei "1 Monat" faelschlich
-// ebenfalls sechs. Jetzt richtet sie sich nach demselben Zeitraum-Filter wie der Rest der Seite
-// (siehe monthsForPeriod).
+/**
+ * Monatsvergleich: abgeschlossene Monate plus — ausdrücklich unvollständig — der laufende.
+ *
+ * Der laufende Monat steht nicht in der Historie, weil er per Definition unvollständig ist
+ * und die Verteilung künstlich nach unten ziehen würde (siehe buildMonthSeries).
+ *
+ * Die Sparquote kommt aus `savingsRate` (auf Konsum, nur `echt`) und ist `null` bei einem
+ * Monat ohne Einnahmen: „0 %" würde eine ausgeglichene Bilanz behaupten, tatsächlich ist die
+ * Quote dann nicht definiert. Negativ darf sie sein (mehr Ausgaben als Einnahmen).
+ */
 function buildMonthlyComparison(
-  rows: MonthlySummaryRow[],
-  currentMonthKey: string,
-  monthsToShow: number,
+  series: MonthSummary[], currentMonthKey: string, monthsToShow: number,
 ): MonthlyComparison[] {
-  return [...rows]
-    .filter(r => r.month.slice(0, 7) !== currentMonthKey)
-    .sort((a, b) => a.month.localeCompare(b.month))
-    .slice(-monthsToShow)
-    .map(r => {
-      const dateStr = r.month.length <= 7 ? r.month + '-01' : r.month.slice(0, 10)
-      const month   = new Date(dateStr + 'T12:00:00').toLocaleDateString('de-DE', { month: 'short' })
-      // Kein Math.max(0, …) mehr: ein Monat, in dem mehr rausging als reinkam, hat eine
-      // NEGATIVE Sparquote. Auf 0 % gezogen sah der Dezember 2025 (881,50 € Einnahmen,
-      // 3.874,60 € Ausgaben, also −339 %) aus wie eine schwarze Null. Die Achse in
-      // MonatsVergleich skaliert jetzt passend mit.
-      // `null` statt 0 bei einem Monat ohne Einnahmen: eine Sparquote von „0 %" behauptet
-      // eine ausgeglichene Bilanz, tatsächlich ist die Quote ohne Einnahmen gar nicht
-      // definiert. Die Linie bekommt an der Stelle eine Lücke (siehe MonthlyComparison).
-      const sparquote = r.total_income > 0
-        ? Math.round(((r.total_income - r.total_expenses) / r.total_income) * 100)
-        : null
-      return {
-        month,
-        einnahmen: Math.round(r.total_income),
-        ausgaben:  Math.round(r.total_expenses),
-        sparquote,
-      }
-    })
+  // `<` statt `!==`: ein Monat in der Zukunft (vordatierte manuelle Buchung) ist nicht abgeschlossen.
+  const done = series.filter(m => monthKey(m.month) < currentMonthKey).slice(-monthsToShow)
+  const current = series.find(m => monthKey(m.month) === currentMonthKey)
+  return [
+    ...done.map(m => ({
+      month: monthLabel(m.month),
+      einnahmen: Math.round(m.income),
+      ausgaben: Math.round(m.expense),
+      sparquote: m.savingsRate,
+    })),
+    ...(current ? [{
+      month: monthLabel(current.month),
+      einnahmen: Math.round(current.income),
+      ausgaben: Math.round(current.expense),
+      sparquote: current.savingsRate,
+      laufend: true,
+    }] : []),
+  ]
 }
 
-// Haengt den laufenden Monat als siebte, ausdruecklich unvollstaendige Zeile an die sechs
-// abgeschlossenen Monate aus buildMonthlyComparison an. Eric wollte ihn in der Karte sehen,
-// obwohl buildMonthlyComparison ihn bewusst ausfiltert (siehe deren Kommentar) — deshalb hier
-// separat und mit `laufend: true` markiert, statt den Filter selbst aufzuweichen: MonatsVergleich
-// stellt die Zeile dadurch abgeschwaecht dar, und die Sparquoten-Berechnung der sechs
-// abgeschlossenen Monate bleibt unberuehrt.
-//
-// `thisMonth` kommt aus currentMonthTotals(txns, …) — denselben, periodengefilterten
-// Transaktionen, die auch MonatsVerteilung als Vergleichswert nutzt. Bei sehr kurzem Zeitraum
-// (z.B. "7 Tage") ist das entsprechend unvollstaendig; dieselbe Einschraenkung gilt dort schon.
-function withLaufendemMonat(
-  comparison: MonthlyComparison[],
-  thisMonth: MonthTotals | null,
-  currentMonthKey: string,
-): MonthlyComparison[] {
-  if (!thisMonth) return comparison
-  const month = new Date(currentMonthKey + '-01T12:00:00').toLocaleDateString('de-DE', { month: 'short' })
-  const sparquote = thisMonth.einnahmen > 0
-    ? Math.round((thisMonth.guv / thisMonth.einnahmen) * 100)
-    : null
-  return [
-    ...comparison,
-    { month, einnahmen: thisMonth.einnahmen, ausgaben: thisMonth.ausgaben, sparquote, laufend: true },
-  ]
+// Historie für die Verteilungs-Karte — bis zu 24 ABGESCHLOSSENE Monate. Alle drei Reihen
+// kommen aus demselben Durchlauf, weil die Karte zwischen Ausgaben, Einnahmen und GuV
+// umschaltbar ist — ein Umschalten soll keinen Server-Roundtrip kosten.
+function buildMonthSeries(series: MonthSummary[], currentMonthKey: string): MonthSeries {
+  const months = series.filter(m => monthKey(m.month) < currentMonthKey).slice(-24)
+  return {
+    ausgaben:  months.map(m => Math.round(m.expense)),
+    einnahmen: months.map(m => Math.round(m.income)),
+    guv:       months.map(m => Math.round(m.net)),
+  }
+}
+
+// `null` bei einem Monat ohne jede Buchung: ein Monat ohne Daten ist kein Monat mit
+// Nullausgaben, und die Karte würde den Marker sonst an den linken Rand setzen.
+function currentMonthTotals(series: MonthSummary[], currentMonthKey: string): MonthTotals | null {
+  const m = series.find(s => monthKey(s.month) === currentMonthKey)
+  if (!m) return null
+  return { einnahmen: Math.round(m.income), ausgaben: Math.round(m.expense), guv: Math.round(m.net) }
 }
 
 // ── Page ───────────────────────────────────────────────────────────────────────
@@ -355,9 +211,10 @@ function withLaufendemMonat(
 export default async function AnalysePage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string; accounts?: string }>
+  searchParams: Promise<{ period?: string; accounts?: string; anlage?: string }>
 }) {
-  const [{ period: rawPeriod, accounts: rawAccounts }, { supabase, user }] = await Promise.all([searchParams, getAuthUser()])
+  const [{ period: rawPeriod, accounts: rawAccounts, anlage: rawAnlage }, { supabase, user }] =
+    await Promise.all([searchParams, getAuthUser()])
   if (!user) return null
 
   const [accounts, settings] = await Promise.all([
@@ -368,10 +225,7 @@ export default async function AnalysePage({
   const accountIds = new Set(accounts.map(a => a.id))
 
   // Zeitraum: explicit URL param wins, else the saved Settings-Standard, else '1J'.
-  const defaultPeriod = VALID.includes(settings.analyse_default_period as Period)
-    ? (settings.analyse_default_period as Period)
-    : '1J'
-  const period: Period = VALID.includes(rawPeriod as Period) ? (rawPeriod as Period) : defaultPeriod
+  const period = parsePeriod(rawPeriod, parsePeriod(settings.analyse_default_period))
 
   // Heatmap-Ansicht: same fallback shape, just seeds the client component's initial state
   // (nothing to persist in the URL for this one).
@@ -379,25 +233,20 @@ export default async function AnalysePage({
     ? (settings.analyse_default_heatmap_mode as HeatmapMode)
     : 'ausgaben'
 
-  // Der Cutoff kommt aus lib/period statt aus einer eigenen Rechnung. Die frühere lokale
-  // getCutoff() hatte drei Fehler: `toISOString()` rechnet erst nach UTC um und lieferte
-  // zwischen 0 und 2 Uhr MESZ den Vortag; `setMonth(getMonth() - 1)` läuft am Monatsende
-  // über (31.03. minus ein Monat ergibt in JS den 03.03., also ein 28-Tage-Fenster); und
-  // für „Alles" kam '2000-01-01' zurück statt gar keinem Filter — Buchungen davor wären
-  // stillschweigend verschwunden. `null` heißt jetzt explizit: nicht nach Datum filtern.
+  // Der Cutoff kommt aus lib/period statt aus einer eigenen Rechnung. `null` heißt
+  // ausdrücklich: nicht nach Datum filtern („Alles").
   const cutoff = periodCutoff(period)
+  const include: FlowInclude = includeFromParam(rawAnlage)
 
   // Current + adjacent months for calendar (3-month window so user can navigate)
   const now = new Date()
-  const calStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0]
-  const calEnd   = new Date(now.getFullYear(), now.getMonth() + 2, 0).toISOString().split('T')[0]
-  // Trailing 24-month window für den FETCH, unabhängig von `period` — der Monatsvergleich
-  // zeigt zwar nur so viele Monate wie monthsForPeriod(period) hergibt (siehe
-  // buildMonthlyComparison), aber die KDE-Ausgabenverteilung braucht unabhängig vom
-  // Zeitraum-Filter bis zu 24 abgeschlossene Monate (siehe buildExpenseHistory). Ein Fetch
-  // statt zwei getrennter Fenster, monthsForPeriod schneidet den Ueberschuss beim Anzeigen ab.
-  const monthlyCutoff = new Date(now.getFullYear(), now.getMonth() - 23, 1).toISOString().split('T')[0]
-  const currentMonthKey = now.toISOString().slice(0, 7)
+  const calStart = ymd(new Date(now.getFullYear(), now.getMonth() - 1, 1))
+  const calEnd   = ymd(new Date(now.getFullYear(), now.getMonth() + 2, 0))
+  // Trailing 24-month window für Monatsvergleich und KDE-Verteilung, unabhängig von `period`:
+  // die Verteilung braucht bis zu 24 abgeschlossene Monate. monthsForPeriod schneidet den
+  // Überschuss beim Anzeigen ab.
+  const monthlyCutoff = ymd(new Date(now.getFullYear(), now.getMonth() - 24, 1))
+  const currentMonthKey = ymd(now).slice(0, 7)
 
   // Konten-Filter: 'all' is an explicit "Alle Konten" click (see AnalyseAccountSelector) and
   // always wins. No `accounts` param at all means the page was reached without ever touching
@@ -417,36 +266,19 @@ export default async function AnalysePage({
       .map(s => s.trim())
       .filter(id => accountIds.has(id))
   }
-  const hasAccountFilter = selectedAccountIds.length > 0
+  const accountFilter = selectedAccountIds.length > 0 ? selectedAccountIds : undefined
 
-  const accountFilter = hasAccountFilter ? selectedAccountIds : undefined
-  const [txns, calTxns, monthlyRows, monthlyTxns] = await Promise.all([
-    // Transaktionen im Zeitraum (Heatmap, Kategorien, Sankey)
-    getAnalyseTransactions(supabase, user.id, { cutoff, accountIds: accountFilter }),
+  const [txns, calTxns, monthlyRows] = await Promise.all([
+    // Buchungen im Zeitraum (Heatmap, Kategorien, Sankey)
+    getFlowTransactions(supabase, user.id, { from: cutoff, accountIds: accountFilter, include }),
     // Kalender: 3-Monats-Fenster, unabhängig vom Zeitraum
-    getCalendarTransactions(supabase, user.id, { from: calStart, to: calEnd, accountIds: accountFilter }),
-    // Vorberechnete Monatssummen haben keine account_id → nur ohne Konten-Filter nutzbar
-    // (siehe buildMonthlyComparisonFromTxns).
-    hasAccountFilter ? Promise.resolve([] as MonthlySummaryRow[]) : getMonthlyTotals(supabase, user.id),
-    // 24-Monats-Fenster (Monatsvergleich + KDE-Verteilung), nur beim Konten-Filter
-    hasAccountFilter
-      ? getMonthlyWindowTransactions(supabase, user.id, { from: monthlyCutoff, accountIds: selectedAccountIds })
-      : Promise.resolve([] as Pick<TxnRow, 'date' | 'type' | 'amount' | 'amount_base'>[]),
+    getFlowTransactions(supabase, user.id, { from: calStart, to: calEnd, accountIds: accountFilter, include }),
+    // Monatssummen (Monatsvergleich + Verteilung), mit und ohne Konten-Filter aus derselben View
+    getMonthlyFlows(supabase, user.id, { from: monthlyCutoff, accountIds: accountFilter, include }),
   ])
 
-  const heatmapData      = buildHeatmap(txns)
-  const categoryData     = buildCategories(txns)
-  const sankeyData       = buildSankey(txns)
-  const cashflowEvents   = buildCashflow(calTxns)
-  const monthsToShow = monthsForPeriod(period)
-  const monthlyComparisonAbgeschlossen = hasAccountFilter
-    ? buildMonthlyComparisonFromTxns(monthlyTxns, currentMonthKey, monthsToShow)
-    : buildMonthlyComparison(monthlyRows, currentMonthKey, monthsToShow)
-  const monthSeries = hasAccountFilter
-    ? buildMonthSeriesFromTxns(monthlyTxns, currentMonthKey)
-    : buildMonthSeries(monthlyRows, currentMonthKey)
-  const thisMonth = currentMonthTotals(txns, currentMonthKey)
-  const monthlyComparison = withLaufendemMonat(monthlyComparisonAbgeschlossen, thisMonth, currentMonthKey)
+  const series = monthlySeries(monthlyRows, include)
+  const thisMonth = currentMonthTotals(series, currentMonthKey)
 
   return (
     // Zeitraum- und Kontenwahl schreiben in die URL und lösen ein Server-Rendering aus.
@@ -458,32 +290,40 @@ export default async function AnalysePage({
         <div className="flex items-center justify-between flex-wrap gap-3">
           <h1 className="text-3xl font-bold text-foreground">Analyse</h1>
           <div className="flex items-center gap-4 flex-wrap">
+            <FlowKindToggle />
             <AnalyseAccountSelector accounts={accounts} selected={selectedAccountIds} />
             <AnalysePeriodSelector current={period} />
           </div>
         </div>
 
+        {include.anlage && (
+          <p className="-mt-3 text-xs text-muted-foreground">
+            Anlagen (Krypto, Depot, Bauspar) und Forderungen sind in Einnahmen und Ausgaben
+            eingerechnet. Die Sparquote rechnet weiterhin ohne sie.
+          </p>
+        )}
+
         <FilterPending className="space-y-6">
           <div className="space-y-6">
             {/* Heatmap */}
-            <AusgabenHeatmap data={heatmapData} initialMode={defaultHeatmapMode} />
+            <AusgabenHeatmap data={buildHeatmap(txns)} initialMode={defaultHeatmapMode} />
 
             {/* Geldfluss + Cashflow-Kalender */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <GeldflussChart data={sankeyData} />
-              <CashflowKalender events={cashflowEvents} />
+              <GeldflussChart data={buildSankey(txns)} />
+              <CashflowKalender events={buildCashflow(calTxns)} />
             </div>
 
             {/* Monatlicher Vergleich + Kategorien */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <MonatsVergleich data={monthlyComparison} />
-              <KategorienChart data={categoryData} />
+              <MonatsVergleich data={buildMonthlyComparison(series, currentMonthKey, monthsForPeriod(period))} />
+              <KategorienChart data={buildCategories(txns)} />
             </div>
 
             {/* Verteilung — eigene, kategorieunabhängige Sicht auf die Monatssummen,
                 deshalb immer über den vollen 24-Monats-Horizont statt der
                 `period`-Auswahl (der Konten-Filter greift dagegen schon). */}
-            <MonatsVerteilung history={monthSeries} current={thisMonth} />
+            <MonatsVerteilung history={buildMonthSeries(series, currentMonthKey)} current={thisMonth} />
           </div>
         </FilterPending>
       </div>

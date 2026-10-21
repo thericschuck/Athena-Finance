@@ -14,15 +14,20 @@ import { calculateRebalancing } from '@/lib/crypto/rebalancing'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency, fmtDateShort } from '@/lib/format'
 import {
-  getDashboardAccounts, getBalanceSums, getRealTransactionsSince, getActiveDebts,
+  getDashboardAccounts, getBalanceSums,
   getOpenSavingsGoals, getDashboardCryptoAssets, getLatestAssetValuations, getActiveContracts,
-  getOpenInsights, getActiveValuables, getMonthlySummariesSince, getNetWorthSnapshotsSince,
-  getBankBalances,
+  getOpenInsights, getActiveValuables, getNetWorthSnapshotsSince,
 } from '@/lib/data/overview'
+import { getActiveDebts } from '@/lib/data/finance-planning'
+import { getBankBalances } from '@/lib/data/finance-accounts'
 import {
   buildCryptoPortfolio, buildFixedCosts, computeAccountBalances, computeInventory,
-  computeLiveBuckets, computeMonthTotals, computeUpcomingRenewals,
+  computeLiveBuckets, computeUpcomingRenewals,
 } from '@/lib/finance/dashboard-calc'
+import { getMonthlyFlows } from '@/lib/data/flows'
+import {
+  INCLUDE_ALL, INCLUDE_CONSUMPTION, monthlyCategorySeries, monthlySeries, sumFlows,
+} from '@/lib/finance/flow-calc'
 
 // ─── Shared card ──────────────────────────────────────────────────────────────
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
@@ -84,7 +89,7 @@ export default async function DashboardPage() {
   const [
     accounts,
     balanceSums,
-    txMonth,
+    flowRows,
     debts,
     goals,
     cryptoAssetsRaw,
@@ -94,7 +99,6 @@ export default async function DashboardPage() {
     lastRebalancing,
     depotSummaries,
     valuables,
-    monthlySummaries,
     netWorthSnapshots,
     bankBalances,
   ] = await Promise.all([
@@ -102,7 +106,9 @@ export default async function DashboardPage() {
     // unified_transactions (siehe Migration 20260821010000) enthält auch FinTS-Buchungen
     // verknüpfter Konten. Für Kontostände ohne flow_kind-Filter, für „diesen Monat" nur echte.
     getBalanceSums(supabase, user!.id),
-    getRealTransactionsSince(supabase, user!.id, monthStart),
+    // Eine Quelle für alle Einnahmen/Ausgaben (monthly_flows): Monatskachel und Finanzanalyse
+    // lesen dieselben Zeilen, nur mit anderem Filter.
+    getMonthlyFlows(supabase, user!.id, { from: fromMonth }),
     getActiveDebts(supabase, user!.id),
     getOpenSavingsGoals(supabase, user!.id),
     getDashboardCryptoAssets(supabase, user!.id),
@@ -112,7 +118,6 @@ export default async function DashboardPage() {
     getLastRebalancing(user!.id),
     getDepotsSummaries(),
     getActiveValuables(supabase, user!.id),
-    getMonthlySummariesSince(supabase, user!.id, fromMonth),
     getNetWorthSnapshotsSince(supabase, user!.id, snapshotFrom.toISOString().split('T')[0]),
     getBankBalances(supabase, user!.id),
   ])
@@ -128,7 +133,19 @@ export default async function DashboardPage() {
   const balMap = computeAccountBalances(accounts, balanceSums, bankBalanceByIban)
 
   // ── Monatsbilanz ──────────────────────────────────────────────────────────
-  const { income: monthIncome, expense: monthExpense, net: monthNet } = computeMonthTotals(txMonth)
+  // Einnahmen/Ausgaben insgesamt (inkl. Anlage und Forderungen) plus die Aufschlüsselung.
+  // Das Budget bezieht sich auf Konsum und rechnet deshalb nur mit `echt`.
+  const monthRows = flowRows.filter(r => r.month === monthStart)
+  const monthTotals = sumFlows(monthRows, INCLUDE_ALL)
+  const { income: monthIncome, expense: monthExpense, net: monthNet } = monthTotals
+  const monthConsumption = monthTotals.echt.expense
+
+  // Finanzanalyse: Konsum-Sicht (ohne Anlage/Forderung), gleiche Zahlen wie die Analyse-Seite.
+  // Bis einschließlich laufender Monat: vordatierte Buchungen in der Zukunft gehören nicht in „letzte N Monate".
+  const analyticsSummaries = monthlySeries(flowRows, INCLUDE_CONSUMPTION).filter(m => m.month <= monthStart).map(m => ({
+    month: m.month, total_income: m.income, total_expenses: m.expense, net_balance: m.net,
+  }))
+  const categorySeries = monthlyCategorySeries(flowRows.filter(r => r.month <= monthStart), INCLUDE_CONSUMPTION)
 
   // ── Crypto portfolio ──────────────────────────────────────────────────────
   const cryptoVals = await getLatestAssetValuations(supabase, cryptoAssetsRaw.map(a => a.id))
@@ -305,18 +322,49 @@ export default async function DashboardPage() {
                 </div>
               </div>
 
+              {/* Aufschlüsselung: was in Einnahmen/Ausgaben oben steckt, aber kein Konsum ist.
+                  Dieselbe Trennung (flow_kind) wie in der Analyse. */}
+              {(monthTotals.anlage.income + monthTotals.anlage.expense + monthTotals.forderung.income + monthTotals.forderung.expense) > 0 && (
+                <dl className="mt-3 space-y-1 border-t border-border pt-3 text-xs">
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-muted-foreground">Konsum-Saldo</dt>
+                    <dd className="tabular-nums">{fmt(monthTotals.echt.income - monthTotals.echt.expense)}</dd>
+                  </div>
+                  {(monthTotals.anlage.income + monthTotals.anlage.expense) > 0 && (
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-muted-foreground">davon Anlage (Krypto, Depot, Bauspar)</dt>
+                      <dd className="tabular-nums">
+                        {monthTotals.anlage.expense > 0 && <span className="text-danger">−{fmt(monthTotals.anlage.expense)}</span>}
+                        {monthTotals.anlage.expense > 0 && monthTotals.anlage.income > 0 && ' / '}
+                        {monthTotals.anlage.income > 0 && <span className="text-success">+{fmt(monthTotals.anlage.income)}</span>}
+                      </dd>
+                    </div>
+                  )}
+                  {(monthTotals.forderung.income + monthTotals.forderung.expense) > 0 && (
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-muted-foreground">davon Forderungen/Schulden</dt>
+                      <dd className="tabular-nums">
+                        {monthTotals.forderung.expense > 0 && <span className="text-danger">−{fmt(monthTotals.forderung.expense)}</span>}
+                        {monthTotals.forderung.expense > 0 && monthTotals.forderung.income > 0 && ' / '}
+                        {monthTotals.forderung.income > 0 && <span className="text-success">+{fmt(monthTotals.forderung.income)}</span>}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              )}
+
               {/* Budget bar */}
               {monthlyBudget != null && monthlyBudget > 0 && (
                 <div className="mt-4 space-y-1">
                   {(() => {
-                    const pct = Math.min(100, Math.round((monthExpense / monthlyBudget) * 100))
-                    const over = monthExpense > monthlyBudget
+                    const pct = Math.min(100, Math.round((monthConsumption / monthlyBudget) * 100))
+                    const over = monthConsumption > monthlyBudget
                     return (
                       <>
                         <div className="flex justify-between text-xs text-muted-foreground">
                           <span>Budget</span>
                           <span className={`tabular-nums ${over ? 'text-danger font-medium' : ''}`}>
-                            {fmt(monthExpense)} / {fmt(monthlyBudget)} ({pct}%)
+                            {fmt(monthConsumption)} / {fmt(monthlyBudget)} ({pct}%)
                           </span>
                         </div>
                         <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
@@ -363,8 +411,8 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── Finanzanalyse ─────────────────────────────────────────────────────── */}
-      {monthlySummaries.length > 0 && (
-        <FinanceAnalytics summaries={monthlySummaries} locale={locale} />
+      {analyticsSummaries.length > 0 && (
+        <FinanceAnalytics summaries={analyticsSummaries} categorySeries={categorySeries} locale={locale} />
       )}
 
       {/* ── Depots ────────────────────────────────────────────────────────────── */}

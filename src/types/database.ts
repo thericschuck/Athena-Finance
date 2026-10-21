@@ -701,6 +701,7 @@ export type Database = {
           bank_reference: string | null
           category: string | null
           category_id: string | null
+          category_source: string | null
           counterpart_bic: string | null
           counterpart_iban: string | null
           counterpart_name: string | null
@@ -722,6 +723,7 @@ export type Database = {
           bank_reference?: string | null
           category?: string | null
           category_id?: string | null
+          category_source?: string | null
           counterpart_bic?: string | null
           counterpart_iban?: string | null
           counterpart_name?: string | null
@@ -743,6 +745,7 @@ export type Database = {
           bank_reference?: string | null
           category?: string | null
           category_id?: string | null
+          category_source?: string | null
           counterpart_bic?: string | null
           counterpart_iban?: string | null
           counterpart_name?: string | null
@@ -902,6 +905,7 @@ export type Database = {
       categories: {
         Row: {
           budget_monthly: number | null
+          business_share: number | null
           color: string | null
           euer_zeile: number | null
           icon: string | null
@@ -915,6 +919,7 @@ export type Database = {
         }
         Insert: {
           budget_monthly?: number | null
+          business_share?: number | null
           color?: string | null
           euer_zeile?: number | null
           icon?: string | null
@@ -928,6 +933,7 @@ export type Database = {
         }
         Update: {
           budget_monthly?: number | null
+          business_share?: number | null
           color?: string | null
           euer_zeile?: number | null
           icon?: string | null
@@ -3492,6 +3498,22 @@ export type Database = {
         }
         Relationships: []
       }
+      category_tree: {
+        Row: {
+          depth: number | null
+          euer_zeile_effective: number | null
+          id: string | null
+          name: string | null
+          parent_id: string | null
+          path: string | null
+          root_id: string | null
+          root_name: string | null
+          tax_role_effective: string | null
+          type: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       current_net_worth: {
         Row: {
           net_worth: number | null
@@ -3500,6 +3522,40 @@ export type Database = {
           total_crypto: number | null
           total_debts: number | null
           total_depot: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      monthly_flow_totals: {
+        Row: {
+          anlage_expense: number | null
+          anlage_income: number | null
+          echt_expense: number | null
+          echt_income: number | null
+          expense: number | null
+          forderung_expense: number | null
+          forderung_income: number | null
+          income: number | null
+          month: string | null
+          tx_count: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      monthly_flows: {
+        Row: {
+          account_id: string | null
+          category_id: string | null
+          category_name: string | null
+          expense: number | null
+          flow_kind: string | null
+          income: number | null
+          month: string | null
+          root_category_id: string | null
+          root_category_name: string | null
+          source: string | null
+          tax_role_effective: string | null
+          tx_count: number | null
           user_id: string | null
         }
         Relationships: []
@@ -3595,23 +3651,30 @@ export type Database = {
           account_name: string | null
           amount: number | null
           amount_base: number | null
+          amount_eur: number | null
           booked_date: string | null
           category_color: string | null
           category_id: string | null
           category_name: string | null
+          category_path: string | null
           category_type: string | null
           contract_id: string | null
+          counts_in_flow: boolean | null
           currency: string | null
           date: string | null
           description: string | null
           description_raw: string | null
+          euer_zeile_effective: number | null
           flow_kind: string | null
           fx_rate: number | null
           id: string | null
           merchant: string | null
+          root_category_id: string | null
+          root_category_name: string | null
           signed_amount: number | null
           source: string | null
           tags: string[] | null
+          tax_role_effective: string | null
           transfer_to: string | null
           type: string | null
           user_id: string | null

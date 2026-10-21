@@ -7,7 +7,6 @@ import {
 } from 'recharts'
 import { useSettings } from '@/components/providers/settings-context'
 import { fmtCurrency } from '@/lib/format'
-import type { BankTransaction } from '@/types/bank'
 
 // Theme-Variablen statt fester Hex-Werte — dieselben --chart-income/-expense
 // wie überall sonst, wo Geld gecharted wird (Analyse, Dashboard, Crypto), aber
@@ -21,19 +20,18 @@ const NET = 'var(--foreground)'
 
 interface MonthDatum { month: string; income: number; expense: number; net: number }
 
-function buildData(transactions: BankTransaction[]): MonthDatum[] {
-  const byMonth = new Map<string, { income: number; expense: number }>()
-  for (const tx of transactions) {
-    const key = tx.value_date.slice(0, 7) // YYYY-MM
-    const entry = byMonth.get(key) ?? { income: 0, expense: 0 }
-    if (tx.amount >= 0) entry.income += tx.amount
-    else entry.expense += tx.amount // stays negative — plotted below the baseline
-    byMonth.set(key, entry)
-  }
-  return [...byMonth.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    // expense ist bereits negativ, deshalb Addition statt Subtraktion.
-    .map(([month, v]) => ({ month, ...v, net: v.income + v.expense }))
+/** Monatssummen aus `monthly_flows` (siehe flow-calc). `expense` wird negativ geplottet. */
+export type TrendMonth = { month: string; income: number; expense: number }
+
+function buildData(months: TrendMonth[]): MonthDatum[] {
+  return [...months]
+    .sort((a, b) => a.month.localeCompare(b.month))
+    .map(m => ({
+      month: m.month.slice(0, 7), // YYYY-MM
+      income: m.income,
+      expense: -m.expense, // negativ, unter der Basislinie
+      net: m.income - m.expense,
+    }))
 }
 
 function monthLabel(key: string, locale: string): string {
@@ -42,18 +40,18 @@ function monthLabel(key: string, locale: string): string {
 }
 
 interface Props {
-  transactions: BankTransaction[]
+  months: TrendMonth[]
   /** `YYYY-MM` des ausgewaehlten Monats, oder null. */
   selectedMonth?: string | null
   /** Klick auf eine Saeule. Derselbe Monat nochmal hebt die Auswahl auf. */
   onSelectMonth?: (month: string | null) => void
 }
 
-export function BankTrendChart({ transactions, selectedMonth, onSelectMonth }: Props) {
+export function BankTrendChart({ months, selectedMonth, onSelectMonth }: Props) {
   const { locale } = useSettings()
   const selectable = typeof onSelectMonth === 'function'
 
-  const data = useMemo(() => buildData(transactions), [transactions])
+  const data = useMemo(() => buildData(months), [months])
   const totalIncome  = useMemo(() => data.reduce((s, d) => s + d.income,  0), [data])
   const totalExpense = useMemo(() => data.reduce((s, d) => s + d.expense, 0), [data])
   const totalNet     = totalIncome + totalExpense

@@ -1,6 +1,7 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { ROW_CAP, untrust, type DB } from '@/lib/assistant/tools/shared'
+import { getFlowTransactions } from '@/lib/data/flows'
 
 export function buildTransactionTools(supabase: DB, userId: string) {
   return {
@@ -70,39 +71,54 @@ export function buildTransactionTools(supabase: DB, userId: string) {
         groupBy: z.enum(['category', 'month']).default('category'),
       }),
       execute: async ({ startDate, endDate, groupBy }) => {
-        const { data, error } = await supabase
-          .from('unified_transactions')
-          .select('amount, amount_base, type, date, category_id, category_name')
-          .eq('user_id', userId)
-          .gte('date', startDate)
-          .lte('date', endDate)
-          // Nur echte Einnahmen/Ausgaben. `neq('type','transfer')` reichte nicht:
-          // Krypto-Kaeufe, Bauspar-Einzahlungen und Schuldenrueckzahlungen zaehlten
-          // als Konsum mit — siehe unified_transactions.flow_kind.
-          .eq('flow_kind', 'echt')
-        if (error) return { error: error.message }
+        // Alles, was als Einnahme/Ausgabe zählt (counts_in_flow: echt, anlage, forderung).
+        // Umbuchungen zwischen eigenen Konten und Anfangsbestände fehlen — siehe
+        // unified_transactions. `income`/`expense` sind die Konsum-Sicht (nur echt); Anlage und
+        // Forderungen stehen getrennt daneben, damit eine Krypto-Einzahlung nicht als "Ausgaben"
+        // erzählt wird, obwohl das Vermögen gleich geblieben ist.
+        let data
+        try {
+          // Seitenweise geladen: eine einzelne Abfrage lieferte still nur die ersten 1.000 Zeilen.
+          data = await getFlowTransactions(supabase, userId, { from: startDate, to: endDate })
+        } catch (e) {
+          return { error: e instanceof Error ? e.message : 'Abfrage fehlgeschlagen' }
+        }
 
-        const groups = new Map<string, { label: string; income: number; expense: number }>()
-        for (const row of data ?? []) {
-          if (row.date == null || row.amount == null || row.type == null) continue
+        type Side = { income: number; expense: number }
+        type Entry = { label: string; income: number; expense: number; anlage: Side; forderung: Side }
+        const blank = (): Side => ({ income: 0, expense: 0 })
+        const groups = new Map<string, Entry>()
+        for (const row of data) {
+          // Nach Hauptkategorie gruppiert (Lebenserhaltung statt Lebensmittel, Freizeit, …).
           const key =
             groupBy === 'month'
               ? row.date.slice(0, 7)
-              : (row.category_id ?? 'uncategorized')
+              : (row.root_category_id ?? row.category_id ?? 'uncategorized')
           const label =
             groupBy === 'month'
               ? row.date.slice(0, 7)
-              : (row.category_name ?? 'Ohne Kategorie')
-          const entry = groups.get(key) ?? { label, income: 0, expense: 0 }
-          const betrag = row.amount_base ?? row.amount
-          if (row.type === 'income') entry.income += betrag
-          else entry.expense += betrag
+              : (row.root_category_name ?? row.category_name ?? 'Ohne Kategorie')
+          const entry = groups.get(key) ?? { label, income: 0, expense: 0, anlage: blank(), forderung: blank() }
+          const side: 'income' | 'expense' = row.type === 'income' ? 'income' : 'expense'
+          if (row.flow_kind === 'anlage') entry.anlage[side] += row.amount
+          else if (row.flow_kind === 'forderung') entry.forderung[side] += row.amount
+          else entry[side] += row.amount
           groups.set(key, entry)
         }
 
+        const round = (n: number) => Math.round(n * 100) / 100
+        const list = Array.from(groups.values())
+          .map(g => ({
+            label: g.label,
+            income: round(g.income), expense: round(g.expense),
+            anlage: { income: round(g.anlage.income), expense: round(g.anlage.expense) },
+            forderung: { income: round(g.forderung.income), expense: round(g.forderung.expense) },
+          }))
+          .sort((a, b) => b.expense - a.expense)
         return {
           groupBy,
-          groups: Array.from(groups.values()).sort((a, b) => b.expense - a.expense),
+          hinweis: 'income/expense = Konsum (ohne Anlage und Forderungen). Anlage und Forderung stehen getrennt.',
+          groups: list,
         }
       },
     }),

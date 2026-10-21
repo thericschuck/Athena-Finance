@@ -78,4 +78,6 @@ export interface MonthTotals {
 export interface CategoryDatum {
   name:  string
   value: number  // positiv = Einnahme, negativ = Ausgabe
+  /** Unterkategorien einer Hauptkategorie, gleiche Vorzeichenregel. */
+  children?: CategoryDatum[]
 }

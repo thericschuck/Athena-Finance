@@ -34,6 +34,14 @@ function leseTaxRole(formData: FormData): string | null {
   return (TAX_ROLES as readonly string[]).includes(wert) ? wert : null
 }
 
+/** Betrieblicher Anteil in Prozent. Leer = null (= 100 %); ausserhalb 0-100 oder keine Zahl = null. */
+function leseBusinessShare(formData: FormData): number | null {
+  const roh = (formData.get('business_share') as string | null)?.trim().replace(',', '.')
+  if (!roh) return null
+  const n = Number(roh)
+  return Number.isFinite(n) && n >= 0 && n <= 100 ? Math.round(n * 100) / 100 : null
+}
+
 const categoryFields = {
   name: reqText('Name ist erforderlich', 100),
   type: reqEnum(['expense', 'income', 'neutral'] as const, 'Typ ist erforderlich'),
@@ -60,6 +68,7 @@ export async function createCategory(
     user_id: user.id,
     tax_role: leseTaxRole(formData),
     euer_zeile: leseEuerZeile(formData),
+    business_share: leseBusinessShare(formData),
   })
 
   if (error) return { error: error.message }
@@ -84,6 +93,7 @@ export async function updateCategory(
       ...fields,
       tax_role: leseTaxRole(formData),
       euer_zeile: leseEuerZeile(formData),
+      business_share: leseBusinessShare(formData),
     })
     .eq('id', id)
     .eq('user_id', user.id)

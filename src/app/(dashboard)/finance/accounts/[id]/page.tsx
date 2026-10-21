@@ -110,8 +110,12 @@ export default async function AccountDetailPage({ params, searchParams }: PagePr
   const rows = cutoff ? allRows.filter(t => t.date >= cutoff) : allRows
   const currency = account.currency
 
-  const income  = rows.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
-  const expense = rows.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
+  // Einnahmen/Ausgaben nach derselben Regel wie Dashboard und Analyse: Umbuchungen zwischen
+  // eigenen Konten und Anfangsbestände zählen nicht, Anlagen und Forderungen schon. Die
+  // Tabelle darunter zeigt weiterhin ALLE Buchungen des Kontos.
+  const countsAsFlow = (t: { flow_kind: string }) => t.flow_kind !== 'umbuchung' && t.flow_kind !== 'anfangsbestand'
+  const income  = rows.filter(t => t.type === 'income'  && countsAsFlow(t)).reduce((s, t) => s + t.amount, 0)
+  const expense = rows.filter(t => t.type === 'expense' && countsAsFlow(t)).reduce((s, t) => s + t.amount, 0)
   const net     = income - expense
 
   // Ein per Klick gewaehlter Monat grenzt Kategorien und Tabelle weiter ein. Nur gueltig,
@@ -132,6 +136,7 @@ export default async function AccountDetailPage({ params, searchParams }: PagePr
   const monthMap = new Map<string, { income: number; expense: number }>()
   for (const t of rows) {
     if (t.type !== 'income' && t.type !== 'expense') continue
+    if (!countsAsFlow(t)) continue
     const key = t.date.slice(0, 7)
     const e = monthMap.get(key) ?? { income: 0, expense: 0 }
     if (t.type === 'income') e.income += t.amount
@@ -146,7 +151,7 @@ export default async function AccountDetailPage({ params, searchParams }: PagePr
   // wandert, ist keine Ausgabe und würde die größten Posten sonst anführen.
   const catMap = new Map<string, { name: string; color: string | null; total: number }>()
   for (const t of monthRows) {
-    if (t.type !== 'expense') continue
+    if (t.type !== 'expense' || !countsAsFlow(t)) continue
     const key = t.category_id ?? '__none__'
     const e = catMap.get(key) ?? {
       name: t.category_name ?? 'Ohne Kategorie',

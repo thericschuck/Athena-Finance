@@ -228,6 +228,29 @@ function CategoryFormFields({
         </div>
       )}
 
+      {/* Betrieblicher Anteil — für gemischt genutzte Ausgaben (Internet, Handy, Software).
+          Steuerlich zählt nur dieser Teil; Dashboard und Analyse rechnen mit dem vollen Betrag.
+          Leer = 100 %. */}
+      {taxRole === 'betriebsausgabe' && (
+        <div className="space-y-1.5">
+          <Label htmlFor="cat-business-share">Betrieblicher Anteil (%)</Label>
+          <Input
+            id="cat-business-share"
+            name="business_share"
+            type="number"
+            inputMode="decimal"
+            min={0}
+            max={100}
+            step="0.01"
+            defaultValue={category?.business_share ?? ''}
+            placeholder="100"
+          />
+          <p className="text-xs text-muted-foreground">
+            Nur dieser Anteil wird steuerlich als Betriebsausgabe gezählt. Leer = 100 %.
+          </p>
+        </div>
+      )}
+
       {/* Formularzeile — nur sinnvoll, wenn die Kategorie überhaupt in die EÜR
           fließt. Ohne Auswahl landet der Betrag in der Sammelzeile: rechnerisch
           richtig, im Formular grob. */}

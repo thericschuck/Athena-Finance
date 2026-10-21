@@ -10,7 +10,10 @@ import { BankCategoryChart } from '@/components/bank/bank-category-chart'
 import { BankTrendChart } from '@/components/bank/bank-trend-chart'
 import { BankBalanceChart } from '@/components/bank/bank-balance-chart'
 import { PeriodSelector } from '@/components/ui/period-selector'
-import { DEFAULT_PERIOD, parsePeriod, periodCutoff, type Period } from '@/lib/period'
+import { FlowKindToggle } from '@/components/finance/flow-kind-toggle'
+import { UrlFiltersProvider } from '@/components/providers/url-filters'
+import { INCLUDE_PARAM, includeFromParam, monthlySeries, type FlowRow } from '@/lib/finance/flow-calc'
+import { DEFAULT_PERIOD, parsePeriod, periodCutoff, ymd, type Period } from '@/lib/period'
 import { fmtCurrency, fmtDate } from '@/lib/format'
 import { SkeletonChart, SkeletonStatCards } from '@/components/ui/skeleton'
 import { useSettings } from '@/components/providers/settings-context'
@@ -24,11 +27,12 @@ import type { BankTransaction } from '@/types/bank'
  * ist, ist eine Auswertung — also gehört sie neben die andere. Die alte URL leitet weiter
  * (next.config.ts).
  *
- * Der Unterschied zur Übersicht unter `/analyse` ist die Datenquelle, und der ist der
- * Grund, warum es beide gibt: dort läuft alles über `unified_transactions`, also
- * Bankbuchungen UND manuelle Einträge, umgerechnet und kategorisiert. Hier ausschließlich
- * die gesyncten Rohdaten, Konto für Konto, so wie die Bank sie geliefert hat — die Ansicht,
- * in der man einen Importfehler überhaupt erkennen kann.
+ * Der Unterschied zur Übersicht unter `/analyse` ist der Ausschnitt, und der ist der Grund,
+ * warum es beide gibt: dort zählen Bankbuchungen UND manuelle Einträge, hier nur die
+ * gesyncten Bankbuchungen, Konto für Konto. Die Auswertungen (Monatstrend, Kategorien)
+ * rechnen nach derselben Regel wie Dashboard und Analyse (View `monthly_flows`); nur die
+ * Buchungsliste und die Kontostandskurven bleiben auf den Rohdaten, so wie die Bank sie
+ * geliefert hat — die Ansicht, in der man einen Importfehler überhaupt erkennen kann.
  *
  * Ergänzt die Kontodetailseite unter Finance, statt sie zu ersetzen: dort sieht man EIN
  * Konto mit seinen manuellen Buchungen, Kategorien und Verträgen; hier alle Bankkonten
@@ -49,7 +53,9 @@ const BANK_PERIODS = ['3M', '6M', '1J', 'Alles'] as const
 export default function BankAnalysePage() {
   return (
     <Suspense fallback={<div className="p-4 sm:p-8"><SkeletonStatCards count={3} /></div>}>
-      <BankAnalyse />
+      <UrlFiltersProvider replace>
+        <BankAnalyse />
+      </UrlFiltersProvider>
     </Suspense>
   )
 }
@@ -101,6 +107,22 @@ function BankAnalyse() {
   const setMonth = useCallback((m: string | null) => writeParams({ month: m }), [writeParams])
 
   const [selectedIban, setSelectedIban] = useState<string | undefined>(undefined)
+
+  // Auswertungs-Zeilen aus monthly_flows (nur Bankbuchungen). Alle Arten kommen an; ob
+  // Anlagen und Forderungen mitzählen, entscheidet der Schalter (URL-Parameter `anlage`).
+  const include = includeFromParam(searchParams.get(INCLUDE_PARAM))
+  const [flowRows, setFlowRows] = useState<(FlowRow & { month: string; account_id: string | null })[]>([])
+  const [flowsLoaded, setFlowsLoaded] = useState(false)
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/finance/flows?source=bank_sync')
+      .then(r => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((d: { rows?: (FlowRow & { month: string; account_id: string | null })[] }) => {
+        if (!cancelled) { setFlowRows(d.rows ?? []); setFlowsLoaded(true) }
+      })
+      .catch(() => { if (!cancelled) setFlowsLoaded(true) })
+    return () => { cancelled = true }
+  }, [])
   const [txnFilters, setTxnFilters] = useState<{ q?: string; categoryId?: string }>({})
 
   const handleFilter = useCallback((params: { q?: string; categoryId?: string }) => {
@@ -140,35 +162,39 @@ function BankAnalyse() {
     [ownIbans],
   )
 
-  // Der Abzug gilt AUCH bei ausgewaehltem Konto. Vorher nicht: dort zaehlte eine Umbuchung
-  // als echte Einnahme bzw. Ausgabe des Kontos mit. Im August 2026 hiess das:
-  //
-  //   Girokonto        3.630,13 / 3.288,44  ->  angezeigt wurden 7.280,13 / 6.188,44
-  //   Geteiltes Konto  2.335,00 /   935,44  ->  angezeigt wurden 5.725,00 / 5.075,44
-  //
-  // Alles dazwischen war nur Verschiebung zwischen den beiden eigenen Konten. Im
-  // Kategoriediagramm landeten dieselben Buchungen unter der Kategorie, die ihnen jemand
-  // gegeben hatte: 1.500 EUR als „Freizeit", 900 EUR als „Schulden".
-  //
-  // Mit dem Abzug stimmen die Summen jetzt mit /analyse ueberein (5.965,13 / 4.223,88 fuer
-  // August ueber beide Konten) — dort filtert `unified_transactions` dieselben Buchungen
-  // ueber `type = 'transfer'` heraus.
-  //
-  // Der Kontostandsverlauf bleibt davon unberuehrt — der rechnet weiter mit `transactions`,
-  // denn fuer den Saldo des einzelnen Kontos ist die Umbuchung sehr wohl eine Bewegung.
-  const periodTransactions = useMemo(() => {
-    const inRange = cutoff ? transactions.filter(t => t.value_date >= cutoff) : transactions
-    return inRange.filter(t => !isInternalTransfer(t))
-  }, [transactions, cutoff, isInternalTransfer])
+  // Auswertungen: Zeilen aus `monthly_flows` (Bankbuchungen), eingegrenzt auf Zeitraum und das
+  // gewählte Konto. Umbuchungen zwischen eigenen Konten fehlen dort grundsätzlich — dieselbe
+  // Regel wie auf Dashboard und /analyse, sie wird nicht mehr im Browser nachgebaut.
+  // Der Zeitraum greift auf Monatsebene (ganzer Monat ab dem Monat des Cutoffs).
+  // Der Kontostandsverlauf und die Buchungsliste rechnen weiter mit den Rohbuchungen
+  // (`transactions`): für den Saldo eines einzelnen Kontos ist die Umbuchung sehr wohl eine
+  // Bewegung.
+  const selectedAccountId = selectedIban
+    ? balances.find(b => b.account_iban === selectedIban)?.account_id ?? null
+    : null
+  const periodFlowRows = useMemo(() => {
+    const fromMonth = cutoff ? cutoff.slice(0, 7) + '-01' : null
+    const thisMonth = ymd(new Date()).slice(0, 7) + '-01'
+    return flowRows.filter(r =>
+      (!fromMonth || r.month >= fromMonth) &&
+      r.month <= thisMonth && // keine Zukunftsmonate im Trend
+      (!selectedIban || (selectedAccountId !== null && r.account_id === selectedAccountId)),
+    )
+  }, [flowRows, cutoff, selectedIban, selectedAccountId])
+
+  const trendMonths = useMemo(
+    () => monthlySeries(periodFlowRows, include).map(m => ({ month: m.month, income: m.income, expense: m.expense })),
+    [periodFlowRows, include],
+  )
 
   // Der Monatsfilter greift auf ALLES ausser dem Monatschart selbst — der muss weiter
   // alle Monate zeigen, sonst schrumpft er beim Anklicken auf eine einzelne Saeule und
   // man kaeme nicht mehr zurueck.
-  const monthTransactions = useMemo(
+  const monthFlowRows = useMemo(
     () => selectedMonth
-      ? periodTransactions.filter(t => t.value_date.slice(0, 7) === selectedMonth)
-      : periodTransactions,
-    [periodTransactions, selectedMonth],
+      ? periodFlowRows.filter(r => r.month.slice(0, 7) === selectedMonth)
+      : periodFlowRows,
+    [periodFlowRows, selectedMonth],
   )
 
   // Die Tabelle zeigt sonst bewusst die volle Historie; bei aktivem Monat aber genau ihn.
@@ -193,7 +219,7 @@ function BankAnalyse() {
   )
 
   const showBalanceSkeleton = !loaded.balances
-  const showChartSkeleton   = !loaded.balances || !loaded.transactions
+  const showChartSkeleton   = !loaded.balances || !loaded.transactions || !flowsLoaded
 
   return (
     <div className="p-4 sm:p-8 space-y-8">
@@ -203,8 +229,7 @@ function BankAnalyse() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Bankdaten</h1>
           <p className="mt-0.5 text-sm text-muted-foreground max-w-xl">
-            Alle Bankkonten auf den gesyncten Rohdaten — ohne manuelle Buchungen und ohne
-            Umrechnung. Ein Klick auf eine Kontokarte beschränkt alles darunter auf dieses
+            Alle Bankkonten auf den gesyncten Bankbuchungen — ohne manuelle Buchungen. Ein Klick auf eine Kontokarte beschränkt alles darunter auf dieses
             Konto.
           </p>
         </div>
@@ -318,9 +343,11 @@ function BankAnalyse() {
         {/* Gilt jetzt in jeder Ansicht, auch mit ausgewaehltem Konto — deshalb ohne
             Bedingung. Der Hinweis muss stehen bleiben: sonst wundert man sich, warum die
             Summen hier nicht zu denen in der Buchungsliste darunter passen. */}
+        <FlowKindToggle />
         <p className="text-xs text-muted-foreground/70">
-          Umbuchungen zwischen eigenen Konten sind in den Auswertungen unten herausgerechnet —
-          im Kontostandsverlauf und in der Buchungsliste stehen sie weiterhin drin.
+          Die Auswertungen zählen wie Dashboard und Analyse: ohne Umbuchungen zwischen eigenen
+          Konten, Anlagen und Forderungen nur mit dem Schalter. Im Kontostandsverlauf und in der
+          Buchungsliste stehen alle Bankbuchungen.
         </p>
       </div>
 
@@ -333,11 +360,11 @@ function BankAnalyse() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <BankTrendChart
-            transactions={periodTransactions}
+            months={trendMonths}
             selectedMonth={selectedMonth}
             onSelectMonth={setMonth}
           />
-          <BankCategoryChart transactions={monthTransactions} categories={categories} />
+          <BankCategoryChart rows={monthFlowRows} include={include} categories={categories} />
         </div>
       )}
 

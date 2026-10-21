@@ -2,9 +2,10 @@
 
 import dynamic from 'next/dynamic'
 import { SkeletonChart } from '@/components/ui/skeleton'
-import type { BankTransaction, FinanceCategory } from '@/types/bank'
+import type { FinanceCategory } from '@/types/bank'
+import type { FlowInclude, FlowRow } from '@/lib/finance/flow-calc'
 
-interface Props { transactions: BankTransaction[]; categories: FinanceCategory[] }
+interface Props { rows: FlowRow[]; include: FlowInclude; categories: FinanceCategory[] }
 
 // recharts is heavy and this chart only renders once bank transactions exist, so it's
 // loaded on demand via next/dynamic instead of bundled into the initial page JS.

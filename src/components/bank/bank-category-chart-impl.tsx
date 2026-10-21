@@ -6,7 +6,8 @@ import {
 } from 'recharts'
 import { useSettings } from '@/components/providers/settings-context'
 import { fmtCurrency } from '@/lib/format'
-import type { BankTransaction, FinanceCategory } from '@/types/bank'
+import type { FinanceCategory } from '@/types/bank'
+import { rollupByRoot, UNCATEGORIZED as UNCAT_FLOW, type FlowInclude, type FlowRow } from '@/lib/finance/flow-calc'
 
 const UNCATEGORIZED_COLOR = 'var(--chart-muted-1)'
 const OTHER_COLOR = 'var(--chart-muted-2)'
@@ -22,31 +23,22 @@ type Mode = 'ausgaben' | 'einnahmen'
 
 interface Datum { name: string; value: number; color: string }
 
-// Uses each category's OWN color (set by the user under /finance/categories) instead of a
-// synthetic palette — these are the real Finance categories, so the bar should look the same
-// color here as it does everywhere else in the app.
-function buildData(transactions: BankTransaction[], categories: FinanceCategory[], mode: Mode): Datum[] {
+// Hauptkategorien aus `monthly_flows` (siehe flow-calc.rollupByRoot). Die Farbe kommt von der
+// Kategorie selbst (unter /finance/categories gesetzt), damit der Balken hier genauso aussieht
+// wie überall sonst in der App.
+function buildData(rows: FlowRow[], include: FlowInclude, categories: FinanceCategory[], mode: Mode): Datum[] {
   const byId = new Map(categories.map(c => [c.id, c]))
-  const totals = new Map<string, number>()
-  for (const tx of transactions) {
-    if (mode === 'ausgaben' ? tx.amount >= 0 : tx.amount <= 0) continue
-    // Orphaned category_id (category was deleted) falls back to the same bucket as
-    // "no category" — otherwise both would render under the "Ohne Kategorie" label
-    // as separate bars with a duplicate key.
-    const key = tx.category_id && byId.has(tx.category_id) ? tx.category_id : UNCATEGORIZED
-    totals.set(key, (totals.get(key) ?? 0) + Math.abs(tx.amount))
-  }
+  const rolled = rollupByRoot(rows, include, mode === 'ausgaben' ? 'expense' : 'income')
+  const value = (r: { income: number; expense: number }) => (mode === 'ausgaben' ? r.expense : r.income)
 
-  const sorted = [...totals.entries()].sort((a, b) => b[1] - a[1])
-  const top = sorted.slice(0, MAX_SLOTS)
-  const rest = sorted.slice(MAX_SLOTS)
-  const restSum = rest.reduce((s, [, v]) => s + v, 0)
+  const top = rolled.slice(0, MAX_SLOTS)
+  const restSum = rolled.slice(MAX_SLOTS).reduce((s, r) => s + value(r), 0)
 
-  const data: Datum[] = top.map(([key, value]) => {
-    const cat = byId.get(key)
+  const data: Datum[] = top.map(r => {
+    const cat = r.id ? byId.get(r.id) : undefined
     return {
-      name: cat ? `${cat.icon ?? ''} ${cat.name}`.trim() : UNCATEGORIZED,
-      value,
+      name: r.name === UNCAT_FLOW ? UNCATEGORIZED : `${cat?.icon ?? ''} ${r.name}`.trim(),
+      value: value(r),
       color: cat?.color ?? UNCATEGORIZED_COLOR,
     }
   })
@@ -63,11 +55,11 @@ function CustomYAxisTick({ x, y, payload }: { x: number; y: number; payload: { v
   )
 }
 
-export function BankCategoryChart({ transactions, categories }: { transactions: BankTransaction[]; categories: FinanceCategory[] }) {
+export function BankCategoryChart({ rows, include, categories }: { rows: FlowRow[]; include: FlowInclude; categories: FinanceCategory[] }) {
   const { locale } = useSettings()
   const [mode, setMode] = useState<Mode>('ausgaben')
 
-  const data = useMemo(() => buildData(transactions, categories, mode), [transactions, categories, mode])
+  const data = useMemo(() => buildData(rows, include, categories, mode), [rows, include, categories, mode])
 
   const header = (
     <div className="mb-4 flex items-center justify-between gap-2">
