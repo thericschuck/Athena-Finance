@@ -29,6 +29,7 @@ export function buildForecastTools(supabase: DB, userId: string) {
             stand: d.stand,
             tiefpunkt: sz.tiefpunkt,
             tiefpunkt_in_1_von_10_verlaeufen: sz.risikoTiefpunkt,
+            vom_lernen_ausgenommene_buchungen: d.ausgeschlossen,
             modell: {
               gelernt_aus_tagen: sz.modell.daten.tage,
               halbwertszeit_tage: sz.modell.halbwertszeit,

@@ -80,6 +80,13 @@ Verfahren gilt, muss der Steuerberater bestätigen.
   **Band:** 80-%-Bereich aus den echten Abweichungen des Modells (Block-Bootstrap, deterministisch).
   Auf den echten Daten schlägt das Modell einen flachen Verlauf im Backtest kaum (Fehler etwa gleich): die
   Höhe einzelner Großposten bestimmt den Fehler, nicht ihr Tag. Schulden sind noch nicht modelliert.
+- **Einmalposten** (`einmalig.ts`): Große Einzelposten dominieren die Daten (die 28 größten Ausgaben sind über die
+  Hälfte aller Ausgaben). Getestet wurde, sie pauschal auszuschließen: Das verbesserte die Prognose NICHT, weil solche
+  Posten (Krypto, Bargeld, Darlehen) bei dir wiederkehren. Deshalb: nur **extreme Ausreißer** (≥ max(2.000 €,
+  5 × 95. Perzentil der Art)) sind standardmäßig ausgeschlossen, z. B. eine einmalige Bauspar-Auszahlung. Weitere
+  große Posten stehen zur Auswahl (Seite Prognose), standardmäßig drin. Nie Kandidaten: Gehalt, Geschäftseinnahmen
+  und wiederkehrende Große (≥ 3× dieselbe Gegenpartei, ähnlicher Betrag, z. B. eine Ratenzahlung). Die Entscheidungen
+  stehen als Abweichungen vom Standard in `user_settings.forecast_overrides`.
 - **Steuer** (`steuer.ts`): Ist-Stand plus Laufrate bis Jahresende, durch dieselbe Engine wie die Steuerseite;
   Basis und Szenario nebeneinander, Mehrsteuer, Rücklage pro Monat.
 - **Annahmen** (`annahmen.ts`, `user_settings.forecast_assumptions`): Ein Gehalt (`lohn`) ersetzt das Niveau ab

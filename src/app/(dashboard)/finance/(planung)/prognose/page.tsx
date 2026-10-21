@@ -8,6 +8,7 @@ import type { SteuerPrognose } from '@/lib/forecast/steuer'
 import { baueChartDaten } from '@/lib/forecast/chartdaten'
 import { PrognoseChart } from '@/components/finance/prognose-chart'
 import { AnnahmenForm } from '@/components/finance/annahmen-form'
+import { EinmalpostenForm } from '@/components/finance/einmalposten-form'
 
 export const metadata = { title: 'Prognose' }
 
@@ -200,6 +201,24 @@ export default async function PrognosePage() {
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           {d.steuer.map(s => <SteuerKarte key={s.jahr} s={s} eur={eur} mitAnnahmen={mitAnnahmen} />)}
         </div>
+      </section>
+
+      {/* ── Einmalposten ───────────────────────────────────────────────────────── */}
+      <section aria-labelledby="einmalposten" className="space-y-3">
+        <div>
+          <h2 id="einmalposten" className="text-sm font-semibold">
+            Große Einzelposten
+            {d.ausgeschlossen > 0 && <span className="ml-2 text-xs font-normal text-muted-foreground">{d.ausgeschlossen} vom Lernen ausgenommen</span>}
+          </h2>
+          <p className="mt-0.5 max-w-3xl text-xs text-muted-foreground">
+            Einzelne große Posten können die Prognose verzerren: Die 28 größten Ausgaben machen über die Hälfte aller Ausgaben aus.
+            Extreme Ausreißer (etwa eine einmalige Auszahlung) sind deshalb standardmäßig ausgeschlossen. Alles andere bleibt drin,
+            denn im Rückblick-Test wurde die Prognose durch pauschales Ausschließen nicht genauer: Solche Posten kommen bei dir
+            immer wieder vor. Wähle nur ab, was du sicher nicht mehr erwartest. Gehalt, Geschäftseinnahmen und wiederkehrende Raten
+            stehen hier nie.
+          </p>
+        </div>
+        <EinmalpostenForm kandidaten={d.einmalposten} />
       </section>
 
       {/* ── Annahmen ───────────────────────────────────────────────────────────── */}

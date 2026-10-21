@@ -27,6 +27,15 @@ test('Tage: Umbuchungen und unbekannte Arten zählen nicht, Ergebnis ist aufstei
   assert.equal(t[0].einnahmen, 0)
 })
 
+test('Tage: ausgeschlossene Buchungen werden nicht gelernt', () => {
+  const t = baueTage(
+    [{ ...b('2026-08-27', 'income', 9075, 'anlage'), id: 'a' }, { ...b('2026-08-27', 'expense', 10), id: 'b' }],
+    new Set(['a']),
+  )
+  assert.equal(t[0].einnahmen, 0)
+  assert.equal(t[0].ausgaben, 10)
+})
+
 test('Tage: ohne Buchungen leer', () => {
   assert.deepEqual(baueTage([]), [])
 })

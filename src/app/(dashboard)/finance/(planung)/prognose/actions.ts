@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { getAuthUser } from '@/lib/supabase/server'
 import { ANNAHMEN_KEY, leseAnnahmen } from '@/lib/forecast/annahmen'
+import { leseUeberschreibung, UEBERSCHREIBUNG_KEY } from '@/lib/forecast/einmalig'
 import type { Json } from '@/types/database'
 
 export type AnnahmenState = { error?: string; success?: boolean } | null
@@ -34,6 +35,34 @@ export async function speichereAnnahmen(_prev: AnnahmenState, formData: FormData
   const { error } = await supabase
     .from('user_settings')
     .upsert({ user_id: user.id, key: ANNAHMEN_KEY, value: gueltig as unknown as Json }, { onConflict: 'user_id,key' })
+  if (error) return { error: error.message }
+
+  revalidatePath('/finance/prognose')
+  return { success: true }
+}
+
+/**
+ * Speichert, welche großen Posten das Modell nicht lernen soll. Das Formular schickt nur die
+ * ABWEICHUNGEN vom Standard (`aus`: zusätzlich ausgeschlossen, `ein`: extremer Posten zurückgeholt);
+ * der Standard selbst (extreme Ausreißer draußen) steht in lib/forecast/einmalig.ts.
+ */
+export async function speichereEinmalposten(_prev: AnnahmenState, formData: FormData): Promise<AnnahmenState> {
+  const { supabase, user } = await getAuthUser()
+  if (!user) return { error: 'Nicht eingeloggt' }
+
+  const roh = formData.get('ueberschreibung')
+  if (typeof roh !== 'string') return { error: 'Keine Auswahl übermittelt' }
+  let json: unknown
+  try {
+    json = JSON.parse(roh)
+  } catch {
+    return { error: 'Die Auswahl konnte nicht gelesen werden' }
+  }
+
+  const gueltig = leseUeberschreibung(json)
+  const { error } = await supabase
+    .from('user_settings')
+    .upsert({ user_id: user.id, key: UEBERSCHREIBUNG_KEY, value: gueltig as unknown as Json }, { onConflict: 'user_id,key' })
   if (error) return { error: error.message }
 
   revalidatePath('/finance/prognose')

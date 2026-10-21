@@ -10,6 +10,7 @@ import { addMonate, addTage, monatVon, parse } from './datum'
 import { ANNAHMEN_KEY, leseAnnahmen, type Annahme } from './annahmen'
 import { berechnePrognose, type Prognose, type PrognoseVertrag } from './cashflow'
 import { baueTage, typischerLohnTag } from './historie'
+import { erkenneEinmalposten, leseUeberschreibung, UEBERSCHREIBUNG_KEY, type EinmalKandidat } from './einmalig'
 import { tagesverlauf, type VerlaufPunkt } from './verlauf'
 import { berechneSteuerPrognose, laufrateAus, type SteuerPrognose } from './steuer'
 
@@ -33,6 +34,10 @@ export type PrognoseSeite = {
   steuer: SteuerPrognose[]
   laufrateQuelle: string
   annahmen: Annahme[]
+  /** Große Posten, die das Modell vermutlich verzerren: Auswahl und Stand (ausgeschlossen oder nicht). */
+  einmalposten: EinmalKandidat[]
+  /** Wie viele Buchungen insgesamt vom Lernen ausgenommen sind. */
+  ausgeschlossen: number
   hinweise: string[]
 }
 
@@ -43,7 +48,7 @@ export async function ladePrognose(
   const jahr = parse(heute).y
   const hinweise: string[] = []
 
-  const [accounts, balanceSums, bankBalances, vertraegeRes, nwRes, buchungen, lohnRes, annahmenRoh, snapshots] = await Promise.all([
+  const [accounts, balanceSums, bankBalances, vertraegeRes, nwRes, buchungen, lohnRes, annahmenRoh, snapshots, ueRoh] = await Promise.all([
     getDashboardAccounts(supabase, userId),
     getBalanceSums(supabase, userId),
     getBankBalances(supabase, userId),
@@ -65,6 +70,7 @@ export async function ladePrognose(
       .limit(200),
     fetchSettingValue(supabase, userId, ANNAHMEN_KEY),
     getNetWorthSnapshotsSince(supabase, userId, addTage(heute, -190)),
+    fetchSettingValue(supabase, userId, UEBERSCHREIBUNG_KEY),
   ])
 
   // ── Konten und Liquidität ─────────────────────────────────────────────────────────────
@@ -87,8 +93,18 @@ export async function ladePrognose(
     }))
 
   // ── Historie, Lohn-Tag, Annahmen ──────────────────────────────────────────────────────
+  // Einmalposten: extreme Ausreißer sind standardmäßig draußen, der Rest nur auf Wunsch (siehe einmalig.ts).
+  const einmal = erkenneEinmalposten(
+    buchungen.map(b => ({
+      id: b.id, date: b.date, type: b.type, amount: b.amount, flow_kind: b.flow_kind, tax_role: b.tax_role,
+      gegenpartei: b.merchant ?? b.description, kategorie: b.category_name,
+    })),
+    leseUeberschreibung(ueRoh),
+    heute,
+  )
   const tage = baueTage(
-    buchungen.map(b => ({ date: b.date, type: b.type, amount: b.amount, flow_kind: b.flow_kind, tax_role: b.tax_role })),
+    buchungen.map(b => ({ id: b.id, date: b.date, type: b.type, amount: b.amount, flow_kind: b.flow_kind, tax_role: b.tax_role })),
+    einmal.ausgeschlossen,
   )
   const lohnTag = typischerLohnTag((lohnRes.data ?? []).map(r => String(r.date)))
   const annahmen = leseAnnahmen(annahmenRoh)
@@ -140,6 +156,8 @@ export async function ladePrognose(
     steuer: [steuerJetzt, steuerNaechstes],
     laufrateQuelle: quelle,
     annahmen,
+    einmalposten: einmal.kandidaten,
+    ausgeschlossen: einmal.ausgeschlossen.size,
     hinweise,
   }
 }

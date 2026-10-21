@@ -9,6 +9,8 @@ import type { TagesSumme } from './zyklus.ts'
  */
 
 export type FlussBuchung = {
+  /** Buchungs-ID; nötig, damit einzelne Posten ausgeschlossen werden können. */
+  id?: string
   /** `YYYY-MM-DD` */
   date: string
   type: 'income' | 'expense'
@@ -23,10 +25,13 @@ export type FlussBuchung = {
  * Tagessummen aus Buchungen, die als Einnahme/Ausgabe zählen (echt, anlage, forderung). Tage ohne
  * Buchung fehlen — das Modell füllt sie mit 0 auf. Lohn ist der Teil der `echt`-Einnahmen mit
  * Steuerrolle `lohn` und wird getrennt modelliert. Aufsteigend nach Datum.
+ *
+ * `ausschluss`: IDs von Buchungen, die das Modell nicht lernen soll (Einmalposten, siehe einmalig.ts).
  */
-export function baueTage(buchungen: FlussBuchung[]): TagesSumme[] {
+export function baueTage(buchungen: FlussBuchung[], ausschluss?: Set<string>): TagesSumme[] {
   const nachTag = new Map<string, TagesSumme>()
   for (const b of buchungen) {
+    if (ausschluss && b.id && ausschluss.has(b.id)) continue
     if (b.flow_kind !== 'echt' && b.flow_kind !== 'anlage' && b.flow_kind !== 'forderung') continue
     const datum = b.date.slice(0, 10)
     const t = nachTag.get(datum) ?? { datum, einnahmen: 0, ausgaben: 0, einnahmenEcht: 0, ausgabenEcht: 0, lohn: 0 }
