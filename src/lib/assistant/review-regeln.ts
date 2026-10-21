@@ -13,6 +13,9 @@ export const REVIEW_TYP = 'athena_review'
 export const REVIEW_MAX_BEFUNDE = 5
 export const REVIEW_SETTINGS_KEY = 'athena_review'
 export const REVIEW_LAST_KEY = 'athena_review_last'
+export const REVIEW_LOCK_KEY = 'athena_review_lock'
+/** Eine Sperre gilt höchstens so lange (Zeitlimit des Laufs 240 s plus Puffer), damit ein abgestürzter Lauf nicht ewig blockiert. */
+export const REVIEW_LOCK_TTL_MS = 6 * 60_000
 /** Mindestabstand zwischen zwei Läufen, damit doppelte Auslöser nicht doppelt kosten. */
 export const REVIEW_MIN_ABSTAND_TAGE = 5
 
@@ -56,6 +59,16 @@ export function istFaellig(letzterLauf: unknown, jetzt: Date, minAbstandTage = R
   return jetzt.getTime() - t >= minAbstandTage * 86_400_000
 }
 
+/**
+ * Läuft schon ein Wochenlauf? Zwei überlappende Läufe lesen denselben Stand und melden dasselbe in anderen
+ * Worten; der Titelvergleich in `waehleBefunde` fängt das nicht. Eine unlesbare oder alte Sperre gilt als frei.
+ */
+export function istGesperrt(sperre: unknown, jetzt: Date, ttlMs = REVIEW_LOCK_TTL_MS): boolean {
+  if (typeof sperre !== 'string') return false
+  const t = Date.parse(sperre)
+  return !Number.isNaN(t) && jetzt.getTime() - t < ttlMs
+}
+
 /** Entfernt, was ein Modell aus Fremdtext in einen Hinweis schleusen könnte: Links, HTML, Steuerzeichen. */
 export function bereinigeText(text: string, max: number): string {
   const sauber = text
@@ -96,6 +109,26 @@ export function waehleBefunde(roh: Befund[], offeneTitel: string[], max = REVIEW
     if (out.length >= max) break
   }
   return out
+}
+
+type MitOptionen = { providerOptions?: Record<string, Record<string, unknown>> }
+
+/**
+ * Setzt den Anthropic-Cache-Haltepunkt auf die LETZTE Nachricht und entfernt ihn von allen anderen.
+ *
+ * Ein Wochenlauf schickt in jedem Schritt das gesamte bisherige Gespraech erneut mit (8.500 Token im ersten
+ * Schritt, 45.000 im achten). Mit dem Haltepunkt am Ende wird der unveraenderte Anfang jeweils nur noch zu
+ * 10 % berechnet. Alte Haltepunkte muessen weg: Anthropic erlaubt hoechstens vier, und eine Nachrichtenliste, die
+ * `prepareStep` zurueckgibt, gilt fuer die folgenden Schritte weiter.
+ */
+export function cacheLetzteNachricht<M extends MitOptionen>(messages: M[]): M[] {
+  return messages.map((m, i) => {
+    const optionen = { ...(m.providerOptions ?? {}) }
+    const anthropic = { ...(optionen.anthropic ?? {}) }
+    if (i === messages.length - 1) anthropic.cacheControl = { type: 'ephemeral' }
+    else delete anthropic.cacheControl
+    return { ...m, providerOptions: { ...optionen, anthropic } }
+  })
 }
 
 export const REVIEW_SYSTEM_PROMPT = `Du bist Athena im Wochenlauf von Athena Finance, der Finanz-App von Eric. Das ist KEIN Chat: \

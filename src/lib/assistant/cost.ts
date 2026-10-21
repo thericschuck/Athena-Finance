@@ -17,7 +17,17 @@ export type UsageLike = {
   inputTokens?: number | null
   outputTokens?: number | null
   totalTokens?: number | null
+  /** Aufteilung von `inputTokens`; `inputTokens` enthaelt Cache-Zugriffe bereits mit. */
+  inputTokenDetails?: {
+    noCacheTokens?: number | null
+    cacheReadTokens?: number | null
+    cacheWriteTokens?: number | null
+  } | null
 }
+
+/** Anthropic: Cache-Lesen kostet 0,1x, Cache-Schreiben 1,25x des Eingabepreises. */
+const CACHE_READ_FAKTOR = 0.1
+const CACHE_WRITE_FAKTOR = 1.25
 
 export function estimateCostUsd(model: string | null, usage: UsageLike | null): number | null {
   if (!model || !usage) return null
@@ -26,7 +36,12 @@ export function estimateCostUsd(model: string | null, usage: UsageLike | null): 
   const input = usage.inputTokens ?? 0
   const output = usage.outputTokens ?? 0
   if (input === 0 && output === 0) return null
-  return (input * price.input + output * price.output) / 1_000_000
+  const lesen = usage.inputTokenDetails?.cacheReadTokens ?? 0
+  const schreiben = usage.inputTokenDetails?.cacheWriteTokens ?? 0
+  // Ohne Cache-Angaben wie bisher; mit ihnen werden gelesene und geschriebene Token zum jeweiligen Satz gerechnet.
+  const normal = Math.max(0, input - lesen - schreiben)
+  const eingabe = normal * price.input + lesen * price.input * CACHE_READ_FAKTOR + schreiben * price.input * CACHE_WRITE_FAKTOR
+  return (eingabe + output * price.output) / 1_000_000
 }
 
 export function formatUsd(value: number): string {

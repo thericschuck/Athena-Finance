@@ -20,15 +20,15 @@ import { buildTaxTools } from '@/lib/assistant/tools/tax'
 import { buildRecurringTools } from '@/lib/assistant/tools/recurring'
 import { buildCategoryTools } from '@/lib/assistant/tools/categories'
 import {
-  REVIEW_LAST_KEY, REVIEW_SETTINGS_KEY, REVIEW_SYSTEM_PROMPT, REVIEW_TYP,
-  istFaellig, leseReviewConfig, waehleBefunde, type Befund,
+  REVIEW_LAST_KEY, REVIEW_LOCK_KEY, REVIEW_SETTINGS_KEY, REVIEW_SYSTEM_PROMPT, REVIEW_TYP,
+  cacheLetzteNachricht, istFaellig, istGesperrt, leseReviewConfig, waehleBefunde, type Befund,
 } from '@/lib/assistant/review-regeln'
 
 type DB = SupabaseClient<Database>
 
 export type ReviewErgebnis =
   | { status: 'uebersprungen'; grund: string }
-  | { status: 'fertig'; befunde: number; schritte: number; kostenUsd: number | null; zusammenfassung: string }
+  | { status: 'fertig'; befunde: number; schritte: number; kostenUsd: number | null; zusammenfassung: string; abgebrochen: boolean }
 
 /**
  * Athena-Wochenlauf: ein LLM-Lauf ohne Chat-Nachricht (Schicht 4 aus docs/athenas-takt.html).
@@ -43,21 +43,32 @@ export type ReviewErgebnis =
  *
  * Läuft mit dem Service-Role-Client aus dem Cron; jedes Werkzeug filtert wie im Chat auf `userId`.
  */
+/** Ein Lauf endet nach spätestens 240 s: Vercel kappt bei 300 s, und ein gekappter Lauf würde seine Befunde verlieren. */
+const REVIEW_ZEITLIMIT_MS = 240_000
+
 export async function fuehreReviewAus(supabase: DB, userId: string, opts: { force?: boolean } = {}): Promise<ReviewErgebnis> {
   const log = createLogger(supabase, userId, null)
   const jetzt = new Date()
 
-  const [settings, cfgRow, lastRow] = await Promise.all([
+  const [settings, cfgRow, lastRow, lockRow] = await Promise.all([
     getAthenaSettings(supabase, userId),
     supabase.from('user_settings').select('value').eq('user_id', userId).eq('key', REVIEW_SETTINGS_KEY).maybeSingle(),
     supabase.from('user_settings').select('value').eq('user_id', userId).eq('key', REVIEW_LAST_KEY).maybeSingle(),
+    supabase.from('user_settings').select('value').eq('user_id', userId).eq('key', REVIEW_LOCK_KEY).maybeSingle(),
   ])
   // Günstiger als der Chat-Standard: mittlere Denktiefe, 14 Schritte. Über user_settings.athena_review änderbar.
   const cfg = leseReviewConfig(cfgRow.data?.value, { enabled: true, model: settings.model, effort: 'medium', maxSteps: 14 })
   if (!cfg.enabled) return { status: 'uebersprungen', grund: 'Wochenlauf ist in user_settings.athena_review deaktiviert.' }
+  // Auch `force` umgeht die Sperre nicht: parallele Läufe erzeugen Dubletten und kosten doppelt.
+  if (istGesperrt(lockRow.data?.value, jetzt)) return { status: 'uebersprungen', grund: 'Ein Wochenlauf läuft bereits.' }
   if (!opts.force && !istFaellig(lastRow.data?.value, jetzt)) {
     return { status: 'uebersprungen', grund: 'Der letzte Lauf liegt weniger als 5 Tage zurück.' }
   }
+
+  await supabase.from('user_settings').upsert(
+    { user_id: userId, key: REVIEW_LOCK_KEY, value: jetzt.toISOString() as unknown as Json },
+    { onConflict: 'user_id,key' },
+  )
 
   // Alte, nie angefasste Befunde archivieren, damit der Feed kein Friedhof wird.
   const vor14 = new Date(jetzt.getTime() - 14 * 86_400_000).toISOString()
@@ -104,18 +115,54 @@ export async function fuehreReviewAus(supabase: DB, userId: string, opts: { forc
   await log({ event: 'run.start', message: 'Athena-Wochenlauf', meta: { kind: 'review', model: cfg.model, effort: cfg.effort, maxSteps: cfg.maxSteps, toolCount: Object.keys(tools).length } })
   const start = Date.now()
 
+  const verbrauch = { inputTokens: 0, outputTokens: 0, inputTokenDetails: { noCacheTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 } }
+  let schritte = 0
+  let text = ''
+  let abgebrochen = false
+  let finishReason: string | undefined
+
   try {
-    const result = await generateText({
-      model: anthropic(cfg.model),
-      instructions: REVIEW_SYSTEM_PROMPT,
-      prompt: `Heute ist ${jetzt.toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' })}. Starte den Wochenlauf.`,
-      tools,
-      stopWhen: stepCountIs(cfg.maxSteps),
-      maxOutputTokens: 8_000,
-      providerOptions: supportsThinking(cfg.model)
-        ? { anthropic: { thinking: { type: 'adaptive', display: 'summarized' }, effort: cfg.effort } satisfies AnthropicProviderOptions }
-        : undefined,
-    })
+    try {
+      const result = await generateText({
+        model: anthropic(cfg.model),
+        // Cache-Haltepunkt am Ende von Werkzeugen und Systemprompt (identisch in jedem Schritt) ...
+        instructions: [{ role: 'system', content: REVIEW_SYSTEM_PROMPT, providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } } }],
+        prompt: `Heute ist ${jetzt.toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' })}. Starte den Wochenlauf.`,
+        tools,
+        stopWhen: stepCountIs(cfg.maxSteps),
+        maxOutputTokens: 8_000,
+        // ... und einer, der mit dem wachsenden Gespraech mitwandert.
+        prepareStep: ({ messages }) => ({ messages: cacheLetzteNachricht(messages) }),
+        abortSignal: AbortSignal.timeout(REVIEW_ZEITLIMIT_MS),
+        providerOptions: supportsThinking(cfg.model)
+          ? { anthropic: { thinking: { type: 'adaptive', display: 'summarized' }, effort: cfg.effort } satisfies AnthropicProviderOptions }
+          : undefined,
+        // Nach jedem Schritt: Dauer, Werkzeuge, Tokens. Ohne das ist ein langsamer Lauf eine Black Box.
+        onStepFinish: async (step) => {
+          schritte++
+          verbrauch.inputTokens += step.usage?.inputTokens ?? 0
+          verbrauch.outputTokens += step.usage?.outputTokens ?? 0
+          verbrauch.inputTokenDetails.noCacheTokens += step.usage?.inputTokenDetails?.noCacheTokens ?? 0
+          verbrauch.inputTokenDetails.cacheReadTokens += step.usage?.inputTokenDetails?.cacheReadTokens ?? 0
+          verbrauch.inputTokenDetails.cacheWriteTokens += step.usage?.inputTokenDetails?.cacheWriteTokens ?? 0
+          await log({
+            level: 'debug',
+            event: 'step.finish',
+            message: step.toolCalls.map(c => c.toolName).join(', ') || 'Antwort',
+            durationMs: Date.now() - start,
+            meta: { kind: 'review', schritt: schritte, input: step.usage?.inputTokens ?? 0, output: step.usage?.outputTokens ?? 0, cacheRead: step.usage?.inputTokenDetails?.cacheReadTokens ?? 0, cacheWrite: step.usage?.inputTokenDetails?.cacheWriteTokens ?? 0 },
+          })
+        },
+      })
+      text = result.text
+      finishReason = result.finishReason
+    } catch (e) {
+      // Zeitlimit: mit dem weitermachen, was bis dahin gemeldet wurde. Jeder andere Fehler bricht ab.
+      if (!(e instanceof Error && (e.name === 'TimeoutError' || e.name === 'AbortError'))) throw e
+      abgebrochen = true
+      finishReason = 'timeout'
+      await log({ level: 'warn', event: 'run.limit', message: `Wochenlauf nach ${REVIEW_ZEITLIMIT_MS / 1000} s abgebrochen`, meta: { kind: 'review', schritte } })
+    }
 
     const auswahl = waehleBefunde(befunde, offeneTitel)
     if (auswahl.length > 0) {
@@ -129,24 +176,30 @@ export async function fuehreReviewAus(supabase: DB, userId: string, opts: { forc
       })))
       if (error) throw new Error(error.message)
     }
-    await supabase.from('user_settings').upsert(
-      { user_id: userId, key: REVIEW_LAST_KEY, value: jetzt.toISOString() as unknown as Json },
-      { onConflict: 'user_id,key' },
-    )
+    // Ein abgebrochener Lauf zählt nicht als erledigt, damit der nächste Auslöser es erneut versucht.
+    if (!abgebrochen) {
+      await supabase.from('user_settings').upsert(
+        { user_id: userId, key: REVIEW_LAST_KEY, value: jetzt.toISOString() as unknown as Json },
+        { onConflict: 'user_id,key' },
+      )
+    }
 
-    const kostenUsd = estimateCostUsd(cfg.model, result.totalUsage)
+    const kostenUsd = estimateCostUsd(cfg.model, verbrauch)
     await log({
       event: 'run.finish',
-      message: result.text.slice(0, 200),
+      message: text.slice(0, 200),
       durationMs: Date.now() - start,
       meta: {
-        kind: 'review', steps: result.steps.length, finishReason: result.finishReason, usage: result.totalUsage,
-        model: cfg.model, gemeldet: befunde.length, angelegt: auswahl.length, kostenUsd,
+        kind: 'review', steps: schritte, finishReason, usage: verbrauch,
+        model: cfg.model, gemeldet: befunde.length, angelegt: auswahl.length, kostenUsd, abgebrochen,
       },
     })
-    return { status: 'fertig', befunde: auswahl.length, schritte: result.steps.length, kostenUsd, zusammenfassung: result.text.slice(0, 300) }
+    return { status: 'fertig', befunde: auswahl.length, schritte, kostenUsd, zusammenfassung: text.slice(0, 300), abgebrochen }
   } catch (e) {
     await log({ level: 'error', event: 'run.error', message: e instanceof Error ? e.message : String(e), durationMs: Date.now() - start, meta: { kind: 'review' } })
     throw e
+  } finally {
+    // Sperre immer lösen, auch nach Fehler oder Zeitlimit; sonst blockiert sie den nächsten Lauf bis zum Ablauf der TTL.
+    await supabase.from('user_settings').delete().eq('user_id', userId).eq('key', REVIEW_LOCK_KEY)
   }
 }

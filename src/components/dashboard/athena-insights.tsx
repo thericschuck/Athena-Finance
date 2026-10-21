@@ -23,6 +23,9 @@ const SEVERITY = {
   critical: { icon: AlertOctagon, className: 'text-destructive' },
 } as const
 
+/** Woher ein Hinweis stammt; Typen ohne Eintrag (Chat-Hinweise) bekommen keine Marke. */
+const HERKUNFT: Record<string, string> = { athena_review: 'Wochenlauf', reminder: 'Erinnerung' }
+
 /**
  * Hinweise, die Athena angelegt hat. Anders als eine Chat-Antwort überleben sie
  * das Gespräch — deshalb stehen sie hier und nicht im Chat. Weggeklickte
@@ -60,7 +63,14 @@ export function AthenaInsights({ insights }: { insights: InsightRow[] }) {
             <li key={insight.id} className="flex items-start gap-2.5">
               <Icon className={cn('mt-0.5 size-4 shrink-0', className)} />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">{insight.title}</p>
+                <p className="text-sm font-medium">
+                  {insight.title}
+                  {HERKUNFT[insight.type] && (
+                    <span className="ml-2 rounded bg-muted px-1.5 py-0.5 align-middle text-[10px] font-normal text-muted-foreground">
+                      {HERKUNFT[insight.type]}
+                    </span>
+                  )}
+                </p>
                 {insight.body && (
                   <p className="mt-0.5 text-xs text-muted-foreground">{insight.body}</p>
                 )}

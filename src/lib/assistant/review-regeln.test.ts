@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  bereinigeText, istFaellig, leseReviewConfig, waehleBefunde, REVIEW_SYSTEM_PROMPT, type Befund, type ReviewConfig,
+  bereinigeText, cacheLetzteNachricht, istFaellig, istGesperrt, leseReviewConfig, waehleBefunde, REVIEW_SYSTEM_PROMPT, type Befund, type ReviewConfig,
 } from './review-regeln.ts'
 
 const STANDARD: ReviewConfig = { enabled: true, model: 'claude-opus-5', effort: 'medium', maxSteps: 14 }
@@ -63,4 +63,28 @@ test('Prompt: nennt die Leitplanken und das einzige Ausgabewerkzeug', () => {
   for (const s of ['meldeBefund', 'untrusted_', 'Keine erfundenen Zahlen', 'Höchstens fünf', 'getInsights']) {
     assert.ok(REVIEW_SYSTEM_PROMPT.includes(s), s)
   }
+})
+
+test('Cache-Haltepunkt: nur an der letzten Nachricht, alte werden entfernt, andere Optionen bleiben', () => {
+  const msgs: { role: string; providerOptions?: Record<string, Record<string, unknown>> }[] = [
+    { role: 'user', providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' }, foo: 1 }, andere: { x: 1 } } },
+    { role: 'assistant', providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } } },
+    { role: 'tool' },
+  ]
+  const r = cacheLetzteNachricht(msgs)
+  assert.equal(r.length, 3)
+  assert.equal(r.filter(m => m.providerOptions?.anthropic?.cacheControl).length, 1)
+  assert.deepEqual(r[2].providerOptions?.anthropic?.cacheControl, { type: 'ephemeral' })
+  assert.deepEqual(r[0].providerOptions, { anthropic: { foo: 1 }, andere: { x: 1 } })
+  assert.deepEqual(cacheLetzteNachricht([]), [])
+  // Die Eingabe bleibt unverändert.
+  assert.ok(msgs[0].providerOptions?.anthropic?.cacheControl)
+})
+
+test('Sperre: nur ein frischer, lesbarer Zeitstempel sperrt; alt, kaputt oder fehlend gilt als frei', () => {
+  const jetzt = new Date('2026-10-26T06:00:00Z')
+  assert.equal(istGesperrt('2026-10-26T05:57:00Z', jetzt), true)
+  assert.equal(istGesperrt('2026-10-26T05:50:00Z', jetzt), false)
+  assert.equal(istGesperrt('kaputt', jetzt), false)
+  assert.equal(istGesperrt(undefined, jetzt), false)
 })

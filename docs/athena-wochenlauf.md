@@ -29,7 +29,28 @@ Das ist die schmale Ausnahme "B" aus der Takt-Notiz: ein Hinweis bewegt kein Gel
 - **Kein Friedhof.** Befunde, die nach 14 Tagen nicht angefasst wurden, werden archiviert.
 - **Kostenbremse.** Mindestabstand 5 Tage zwischen zwei Läufen (`user_settings.athena_review_last`); Kosten und
   Schritte stehen im System-Log (`/assistant/logs`, `meta.kind = "review"`).
+- **Keine parallelen Läufe.** Eine Sperre (`user_settings.athena_review_lock`, 6 Minuten) verhindert, dass zwei
+  Läufe denselben Stand lesen und dasselbe in anderen Worten melden. `force=1` umgeht sie nicht.
+- **Zeitlimit 240 s.** Danach wird abgebrochen und mit den bis dahin gemeldeten Befunden weitergemacht (Vercel kappt
+  bei 300 s). Ein abgebrochener Lauf zählt nicht als erledigt.
 - **Service-Role im Cron**, jedes Werkzeug filtert wie im Chat auf `userId`.
+
+## Gemessene Kosten (Probeläufe vom 2026-10-21, Sonnet 5, mittlere Denktiefe)
+
+| Lauf | Schritte | Dauer | Input / Output | Kosten |
+|---|---|---|---|---|
+| ohne Prompt-Cache | 8 | 113 s | 201.241 / 6.156 Token | **0,70 $** |
+| mit Prompt-Cache (nur Neues zu prüfen) | 4 | 86 s | 67.545 / 4.743 Token, davon 42.296 aus dem Cache gelesen | **0,18 $** |
+
+Die Schätzung beruht auf dem Listenpreis (Sonnet 5: 3 $ / 15 $ je Million Token; Cache-Lesen 0,1x, Schreiben 1,25x).
+Der Input wächst mit jedem Schritt (8.500 Token im ersten, 45.000 im achten), weil das ganze Gespräch erneut
+mitgeschickt wird; deshalb setzt der Lauf Cache-Haltepunkte auf Werkzeuge/Systemprompt und auf die jeweils letzte
+Nachricht (`cacheLetzteNachricht`). Hochgerechnet auf einen 8-Schritte-Lauf: etwa 0,30 $ statt 0,70 $. Das sind
+rund 1,2–2 $ im Monat bei wöchentlichem Takt; mit Opus 5 (5 $ / 25 $) etwa das 1,7-fache.
+
+Die wirklichen Gesamtkosten der Probeläufe lagen höher: drei Läufe auf einem hängenden lokalen Dev-Server liefen
+überlappend mit (der Server hatte ein Netzwerkproblem, `fetch failed`) und haben nachträglich Dubletten geschrieben.
+Das hat die Sperre oben zur Folge gehabt.
 
 ## Einstellen
 
