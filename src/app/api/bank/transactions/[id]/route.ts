@@ -29,7 +29,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const { data, error } = await supabase
     .from('bank_transactions')
-    .update({ category_id: categoryId })
+    .update({ category_id: categoryId, category_source: categoryId ? 'manual' : null })
     .eq('id', id)
     .eq('user_id', user.id)
     .select('id, category_id')

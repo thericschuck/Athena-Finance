@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import {
   getFinTSErrorDetails, startSync, upsertBankTransactions, upsertDepotHoldings,
-  upsertBankBalances, isScaRequiredError, stateFromError, applyLearnedCategoriesToBacklog,
+  upsertBankBalances, isScaRequiredError, stateFromError, applySuggestionsToBacklog, loadLearnedCategoryMap,
 } from '@/lib/fints'
-import { buildLearnedCategoryMap } from '@/lib/fints/categorize'
 import { loadBankClientState, saveBankClientState, markScaRequired } from '@/lib/fints/state'
 import { requireCron } from '@/lib/api/auth'
 
@@ -60,12 +59,7 @@ export async function GET(req: NextRequest) {
       .select('id, name, type, color, icon, parent_id')
       .eq('user_id', userId)
 
-    const { data: categorized } = await supabase
-      .from('bank_transactions')
-      .select('counterpart_name, category_id')
-      .eq('user_id', userId)
-      .not('category_id', 'is', null)
-    const learnedMap = buildLearnedCategoryMap(categorized ?? [])
+    const learnedMap = await loadLearnedCategoryMap(supabase, userId)
 
     const clientState = await loadBankClientState(userId)
 
@@ -82,7 +76,7 @@ export async function GET(req: NextRequest) {
     const { imported, skipped } = await upsertBankTransactions(supabase, userId, result.transactions)
     const { synced: holdingsSynced } = await upsertDepotHoldings(supabase, userId, result.holdings)
     const { synced: balancesSynced } = await upsertBankBalances(supabase, userId, result.balances)
-    const { applied: backlogCategorized } = await applyLearnedCategoriesToBacklog(supabase, userId)
+    const { applied: backlogCategorized } = await applySuggestionsToBacklog(supabase, userId)
     return NextResponse.json({
       ok: true, imported, skipped, holdingsSynced, balancesSynced,
       categorized: backlogCategorized,

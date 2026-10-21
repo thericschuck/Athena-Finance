@@ -27,7 +27,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('bank_transactions')
-    .select('id, description, counterpart_name, counterpart_iban, category_id, amount, value_date')
+    .select('id, description, counterpart_name, counterpart_iban, category_id, category_source, amount, value_date')
     .eq('user_id', user.id)
     .order('value_date', { ascending: false })
     .limit(5000)
@@ -50,7 +50,8 @@ export async function GET() {
   // transaction the user manually fixed (or an earlier suggestion they accepted) improves
   // every future suggestion for the same counterparty — not just the keyword rules.
   const learnedMap = buildLearnedCategoryMap(
-    (data ?? []).filter((tx: { category_id: string | null }) => tx.category_id),
+    // Nur Entscheidungen des Nutzers lernen, keine automatisch gesetzten Kategorien.
+    (data ?? []).filter((tx: { category_id: string | null; category_source: string | null }) => tx.category_id && tx.category_source !== 'auto'),
   )
 
   const suggestions = (data ?? [])

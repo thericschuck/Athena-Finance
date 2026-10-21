@@ -2,11 +2,10 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import {
   startSync, upsertBankTransactions, upsertDepotHoldings, upsertBankBalances,
-  applyLearnedCategoriesToBacklog, isCloudRuntime, triggerCloudBankSync,
+  applySuggestionsToBacklog, loadLearnedCategoryMap, isCloudRuntime, triggerCloudBankSync,
   scaFreeStartDate, stateFromError,
 } from '@/lib/fints'
 import { loadBankClientState, saveBankClientState } from '@/lib/fints/state'
-import { buildLearnedCategoryMap } from '@/lib/fints/categorize'
 
 export type UserBankSyncResult = {
   imported: number
@@ -62,12 +61,7 @@ export async function syncBankForUser(
       .select('id, name, type, color, icon, parent_id')
       .eq('user_id', userId)
 
-    const { data: categorized } = await supabase
-      .from('bank_transactions')
-      .select('counterpart_name, category_id')
-      .eq('user_id', userId)
-      .not('category_id', 'is', null)
-    const learnedMap = buildLearnedCategoryMap(categorized ?? [])
+    const learnedMap = await loadLearnedCategoryMap(supabase, userId)
 
     // Der gespeicherte Client-State trägt die Kundensystem-ID — er verhindert, dass jeder
     // Sync wie ein neuer Zugang behandelt wird und eine Freigabe verlangt.
@@ -82,7 +76,7 @@ export async function syncBankForUser(
     // Salden zuletzt: der Trigger fn_ensure_linked_account spiegelt jede bank_balance-Zeile
     // nach account_balances — dadurch zeigen Konten-Seite und Charts den frischen Stand.
     const { synced: balancesSynced } = await upsertBankBalances(supabase, userId, result.balances)
-    const { applied: categorizedCount } = await applyLearnedCategoriesToBacklog(supabase, userId)
+    const { applied: categorizedCount } = await applySuggestionsToBacklog(supabase, userId)
     for (const w of result.warnings ?? []) console.warn('[bank-sync]', w)
     return {
       imported, skipped, holdingsSynced, balancesSynced,

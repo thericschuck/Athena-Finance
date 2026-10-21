@@ -21,6 +21,8 @@ const RULES: CategoryRule[] = [
     patterns: [
       /\b(rewe|edeka|aldi|lidl|penny|netto|kaufland|norma|tegut|bio\s?company|denn?s|basic|dm\s?markt|drogeriemarkt|rossmann|müller|bauer-?markt)\b/i,
       /\b(supermarkt|lebensmittel|bäckerei|metzger|fleisch|obst|gemüse)\b/i,
+      // Getränkehändler und Hofläden: stehen auf dem Kontoauszug ohne Markennamen.
+      /\b(kelterei|getränke|getraenke|getränkemarkt|hofladen|metzgerei)\b/i,
     ],
   },
   {
@@ -87,7 +89,7 @@ const RULES: CategoryRule[] = [
   {
     candidates: ['Shopping'],
     patterns: [
-      /\b(amazon|zalando|about\s?you|otto|ebay|paypal|ikea|obi|bauhaus|hornbach|mediamarkt|saturn)\b/i,
+      /\b(amazon|zalando|about\s?you|otto|ebay|paypal|ikea|obi|bauhaus|hornbach|toom|hagebau|baumarkt|mediamarkt|saturn)\b/i,
       /\b(zara|h&m|primark|c&a|peek\s?&\s?cloppenburg|esprit|bonprix|tchibo)\b/i,
     ],
   },
@@ -105,7 +107,11 @@ const RULES: CategoryRule[] = [
     candidates: ['Transport'],
     patterns: [
       /\b(parkhaus|parkplatz|parkservice|parkraum|parkgebühr|parken)\b/i,
-      /\b(tankstelle|aral|shell|esso|jet\s?tankstelle|total\s?energies|agip|avia)\b/i,
+      /\b(tankstelle|aral|shell|esso|jet\s?tankstelle|total\s?energies|agip|avia|orlen|bft)\b/i,
+      // "OIL! 130 Elsenfeld" (Zahl folgt dem Namen, damit "olive oil" nicht trifft) und der
+      // regionale Mineralölhändler Schmitt + Orschler, der auf dem Auszug nur als Name steht.
+      /\boil!?\s?\d+\b/i,
+      /\bschmitt\s?\+\s?orschler\b/i,
       /\b(db\s?vertrieb|deutsche\s?bahn|flixbus|vgn|rmv|vrn|mvg|taxi|uber\s?bv|bolt\s?operations)\b/i,
       /\b(werkstatt|tüv|dekra|kfz|autohaus)\b/i,
     ],
@@ -256,4 +262,44 @@ export function suggestCategory(
     }
   }
   return null
+}
+
+/** IBAN ohne Leerzeichen und in Großbuchstaben, damit „DE12 3456" und „de123456" gleich sind. */
+export function normalizeIban(iban: string): string {
+  return iban.replace(/\s+/g, '').toUpperCase()
+}
+
+export type BacklogRow = {
+  id: string
+  counterpart_name: string | null
+  counterpart_iban: string | null
+  description: string | null
+}
+
+/**
+ * Plant, welche unkategorisierten Buchungen welche Kategorie automatisch bekommen: je Buchung der
+ * Vorschlag aus gelernter Zuordnung und Regeln (`suggestCategory`). Ergebnis: Kategorie-ID → Buchungs-IDs.
+ *
+ * Übersprungen werden Umbuchungen zwischen eigenen Konten (Gegen-IBAN gehört dem Nutzer): sie sind
+ * über die IBAN eindeutig erkannt und brauchen keine Kategorie — ein Regeltreffer auf den Namen
+ * des Empfängers würde sie sonst z. B. als „Freizeit" einsortieren.
+ *
+ * Rein, damit sie ohne Datenbank testbar ist; das Schreiben macht der Aufrufer.
+ */
+export function planBacklog(
+  rows: BacklogRow[],
+  categories: FinanceCategory[],
+  learnedMap: LearnedCategoryMap,
+  ownIbans: Set<string>,
+): Map<string, string[]> {
+  const plan = new Map<string, string[]>()
+  for (const row of rows) {
+    if (row.counterpart_iban && ownIbans.has(normalizeIban(row.counterpart_iban))) continue
+    const suggested = suggestCategory(row.counterpart_name, row.description, categories, learnedMap)
+    if (!suggested) continue
+    const ids = plan.get(suggested.id) ?? []
+    ids.push(row.id)
+    plan.set(suggested.id, ids)
+  }
+  return plan
 }

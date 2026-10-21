@@ -16,7 +16,7 @@
  * to a few minutes. There is no separate "enter TAN" step for decoupled methods.
  */
 
-import { suggestCategory, buildLearnedCategoryMap, normalizeCounterpart, type LearnedCategoryMap } from './categorize'
+import { suggestCategory, buildLearnedCategoryMap, normalizeIban, planBacklog, type BacklogRow, type LearnedCategoryMap } from './categorize'
 import {
   runSidecar,
   type SidecarAccount, type SidecarTransaction, type SidecarHolding, type SidecarBalance,
@@ -497,6 +497,8 @@ export async function upsertBankTransactions(
     counterpart_iban: tx.counterpartIban,
     counterpart_bic:  tx.counterpartBic,
     category_id:      tx.categoryId,
+    // Beim Import gesetzt = automatisch (Regel oder gelernt); ohne Kategorie bleibt die Herkunft leer.
+    category_source:  tx.categoryId ? 'auto' : null,
     raw_description:  tx.rawDescription,
     bank_reference:   tx.bankReference,
     external_id:      tx.externalId,
@@ -515,51 +517,68 @@ export async function upsertBankTransactions(
 }
 
 /**
- * Sweeps existing bank_transactions with no category and fills in ONLY the ones where the
- * counterparty is unambiguously learned from the user's own categorization history — never a
- * keyword-rule guess. A learned match re-applies a choice the user already made for this exact
- * counterparty, so it writes directly; a keyword-only suggestion still needs a human decision
- * in the review panel (getSuggestCategories), because it is a guess, not a repetition.
- *
- * Called after every sync so the backlog shrinks on its own instead of piling up in the
- * suggestions panel — see docs/athenas-takt.html.
+ * Die gelernte Zuordnung „Gegenpartei → Kategorie" aus dem, was der Nutzer selbst entschieden hat.
+ * Automatisch gesetzte Kategorien (`category_source = 'auto'`) zählen NICHT mit: sonst würde ein
+ * falscher Regeltreffer beim nächsten Sync als „gelernt" gelten und sich selbst verstärken.
+ * Altbestand ohne Herkunft (NULL) zählt wie vom Nutzer gesetzt.
  */
-export async function applyLearnedCategoriesToBacklog(
+export async function loadLearnedCategoryMap(
   supabase: SupabaseClient<Database>,
   userId: string,
-): Promise<{ applied: number }> {
-  const { data: categorized } = await supabase
+): Promise<LearnedCategoryMap> {
+  const { data } = await supabase
     .from('bank_transactions')
     .select('counterpart_name, category_id')
     .eq('user_id', userId)
     .not('category_id', 'is', null)
+    .or('category_source.is.null,category_source.neq.auto')
+  return buildLearnedCategoryMap(data ?? [])
+}
 
-  const learnedMap = buildLearnedCategoryMap(categorized ?? [])
-  if (learnedMap.size === 0) return { applied: 0 }
+/**
+ * Füllt bestehende Bankbuchungen ohne Kategorie automatisch: je Buchung der Vorschlag aus gelernter
+ * Zuordnung und Regeln (siehe `planBacklog`). Umbuchungen zwischen eigenen Konten bleiben außen vor.
+ * Es wird nie eine vorhandene Kategorie überschrieben — nur Zeilen, die beim Schreiben noch keine
+ * haben (`category_id is null`), und sie werden als `category_source = 'auto'` markiert, damit der
+ * Nutzer sie von eigenen Entscheidungen unterscheiden kann und sie nicht als „gelernt" zählen.
+ *
+ * Wird nach jedem Sync aufgerufen, damit der Rückstand von selbst schrumpft statt sich im
+ * Vorschlags-Panel zu stauen. Was keine Regel trifft (z. B. Überweisungen von Privatpersonen),
+ * bleibt bewusst unkategorisiert und liegt im Vorschlags-Panel bzw. beim Nutzer.
+ */
+export async function applySuggestionsToBacklog(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+): Promise<{ applied: number }> {
+  const [learnedMap, { data: categories }, { data: ownAccounts }, { data: uncategorized }] = await Promise.all([
+    loadLearnedCategoryMap(supabase, userId),
+    supabase.from('categories').select('id, name, type, color, icon, parent_id').eq('user_id', userId),
+    supabase.from('accounts').select('bank_iban').eq('user_id', userId).not('bank_iban', 'is', null),
+    supabase
+      .from('bank_transactions')
+      .select('id, counterpart_name, counterpart_iban, description')
+      .eq('user_id', userId)
+      .is('category_id', null),
+  ])
 
-  const { data: uncategorized } = await supabase
-    .from('bank_transactions')
-    .select('id, counterpart_name')
-    .eq('user_id', userId)
-    .is('category_id', null)
-    .not('counterpart_name', 'is', null)
-
-  const idsByCategory = new Map<string, string[]>()
-  for (const tx of (uncategorized ?? []) as { id: string; counterpart_name: string }[]) {
-    const categoryId = learnedMap.get(normalizeCounterpart(tx.counterpart_name))
-    if (!categoryId) continue
-    const ids = idsByCategory.get(categoryId) ?? []
-    ids.push(tx.id)
-    idsByCategory.set(categoryId, ids)
-  }
+  const ownIbans = new Set((ownAccounts ?? []).map(a => normalizeIban(a.bank_iban as string)))
+  const plan = planBacklog(
+    (uncategorized ?? []) as BacklogRow[],
+    (categories ?? []) as FinanceCategory[],
+    learnedMap,
+    ownIbans,
+  )
 
   let applied = 0
-  for (const [categoryId, ids] of idsByCategory) {
-    const { error } = await supabase
+  for (const [categoryId, ids] of plan) {
+    const { data, error } = await supabase
       .from('bank_transactions')
-      .update({ category_id: categoryId })
+      .update({ category_id: categoryId, category_source: 'auto' })
       .in('id', ids)
-    if (!error) applied += ids.length
+      .eq('user_id', userId)
+      .is('category_id', null)
+      .select('id')
+    if (!error) applied += data?.length ?? 0
   }
   return { applied }
 }
