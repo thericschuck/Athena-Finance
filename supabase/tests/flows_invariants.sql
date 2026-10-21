@@ -8,7 +8,8 @@
 
 with
 -- A) Unabhängige Rechnung aus den Rohtabellen (nicht über die View): alle Bankbuchungen ohne
---    Gegenkonto in eigenen Konten + manuelle income/expense ohne Anfangsbestand.
+--    Gegenkonto in eigenen Konten (oder mit einer bewusst gesetzten Einnahme-/Ausgabe-Kategorie, die die
+--    Umbuchungs-Erkennung überstimmt, Migration 20261022120000) + manuelle income/expense ohne Anfangsbestand.
 roh as (
   select m, sum(inc) inc, sum(exp) exp from (
     select date_trunc('month', bt.value_date)::date m,
@@ -17,7 +18,8 @@ roh as (
     from bank_transactions bt
     join accounts a on a.user_id = bt.user_id and a.bank_iban = bt.account_iban
     left join accounts own on own.user_id = bt.user_id and own.bank_iban = bt.counterpart_iban
-    where own.id is null
+    left join categories bc on bc.id = bt.category_id
+    where own.id is null or coalesce(bc.type, 'neutral') in ('income', 'expense')
     union all
     select date_trunc('month', t.date)::date,
            case when t.type = 'income'  then abs(coalesce(t.amount_base, t.amount * coalesce(t.fx_rate, 1))) else 0 end,
