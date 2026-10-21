@@ -1,0 +1,9 @@
+{
+  "include": ["scripts/fints", "api"],
+  "exclude": ["**/__pycache__", "scripts/fints/.venv"],
+  "venvPath": "scripts/fints",
+  "venv": ".venv",
+  "typeCheckingMode": "off",
+  "reportMissingImports": "warning",
+  "reportPossiblyUnboundVariable": "warning"
+}

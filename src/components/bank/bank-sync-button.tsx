@@ -98,18 +98,6 @@ export function BankSyncButton({ syncStatus, onSync, onSyncFull, onReset, scaSta
           Freigabefrei bis {new Date(nextDue).toLocaleDateString('de-DE')} ({daysUntil(nextDue)} Tage)
         </p>
       ) : null}
-      {/* One or more configured bank profiles failed (e.g. wrong PIN, or a
-          not-yet-working second login) — the rest of the sync still succeeded. */}
-      {syncStatus.type === 'success' && syncStatus.warnings && syncStatus.warnings.length > 0 && (
-        <div className="max-w-md text-right">
-          {syncStatus.warnings.map((w, i) => (
-            <p key={i} className="inline-flex items-start gap-1 text-xs text-warning">
-              <AlertTriangle className="size-3 shrink-0 mt-0.5" />
-              {w}
-            </p>
-          ))}
-        </div>
-      )}
     </div>
   )
 }

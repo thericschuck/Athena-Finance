@@ -132,11 +132,13 @@ export function useBankData(): UseBankDataReturn {
         return
       }
 
+      // Einzelne fehlgeschlagene Bank-Logins (z.B. falsche PIN) — der Rest des Syncs lief durch.
+      // Bewusst nur in der Konsole, nicht im UI.
+      for (const w of data.warnings ?? []) console.warn('[bank-sync]', w)
       setSyncStatus({
         type: 'success',
         imported: data.imported ?? 0,
         skipped: data.skipped ?? 0,
-        warnings: data.warnings,
       })
       // Eine erfolgreiche Freigabe verschiebt die 90-Tage-Frist — Anzeige aktualisieren.
       void loadScaStatus()

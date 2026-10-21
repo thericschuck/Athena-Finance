@@ -83,6 +83,7 @@ export async function syncBankForUser(
     // nach account_balances — dadurch zeigen Konten-Seite und Charts den frischen Stand.
     const { synced: balancesSynced } = await upsertBankBalances(supabase, userId, result.balances)
     const { applied: categorizedCount } = await applyLearnedCategoriesToBacklog(supabase, userId)
+    for (const w of result.warnings ?? []) console.warn('[bank-sync]', w)
     return {
       imported, skipped, holdingsSynced, balancesSynced,
       categorized: categorizedCount, warnings: result.warnings,

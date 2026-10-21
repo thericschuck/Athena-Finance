@@ -70,7 +70,7 @@ export interface DepotHolding {
 export type SyncStatus =
   | { type: 'idle' }
   | { type: 'loading' }
-  | { type: 'success'; imported: number; skipped: number; warnings?: string[] }
+  | { type: 'success'; imported: number; skipped: number }
   | { type: 'error'; message: string }
 
 // ── API response shapes ────────────────────────────────────────────────────────
