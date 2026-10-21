@@ -69,10 +69,17 @@ Verfahren gilt, muss der Steuerberater bestätigen.
 
 `src/lib/forecast/` (reine Funktionen, getestet) und die Seite `/finance/prognose`:
 
-- **Cashflow** (`cashflow.ts`): Median der letzten 6 abgeschlossenen Monate als Basis (Einnahmen ohne Lohn,
-  Lohn, Ausgaben), Vertragstermine auf ihrem Abbuchungstag (stecken schon in der Basis, werden nicht doppelt
-  gezählt), Tagessimulation der Liquidität. Zwei Kurven: Liquidität (jeder Abfluss zählt, auch Anlagen) und
-  Nettovermögen (Anlagen sind ein Tausch). Schulden sind noch nicht modelliert (`debts.monthly_payment` ist leer).
+- **Cashflow** (`cashflow.ts`) mit dem **Zyklusmodell** (`zyklus.ts`): lernt aus der GANZEN Historie, wie sich
+  Einnahmen und Ausgaben über den Monat (Tag im Monat) und die Woche (Wochentag) verteilen, beide Faktoren
+  abwechselnd angepasst (Backfitting), damit sie sich nicht gegenseitig verfälschen. Jüngere Tage zählen mehr; die
+  Halbwertszeit wählt ein Rolling-Origin-Backtest aus den Daten (das jüngste Gedächtnis, das höchstens 2 % schlechter
+  ist als das beste). Das Periodogramm (Fourier) ist ein Befund, kein Modellbaustein: Die Muster sind Spitzen
+  (Gehalt am 27., leere Wochenenden), keine Sinuswellen. Gehalt, Verträge und Annahmen liegen deterministisch auf
+  ihren Tagen; die bisherigen Vertragsbuchungen werden vor dem Lernen aus der Historie herausgerechnet.
+  Zwei Kurven: Liquidität (jeder Abfluss zählt, auch Anlagen) und Nettovermögen (Anlagen sind ein Tausch).
+  **Band:** 80-%-Bereich aus den echten Abweichungen des Modells (Block-Bootstrap, deterministisch).
+  Auf den echten Daten schlägt das Modell einen flachen Verlauf im Backtest kaum (Fehler etwa gleich): die
+  Höhe einzelner Großposten bestimmt den Fehler, nicht ihr Tag. Schulden sind noch nicht modelliert.
 - **Steuer** (`steuer.ts`): Ist-Stand plus Laufrate bis Jahresende, durch dieselbe Engine wie die Steuerseite;
   Basis und Szenario nebeneinander, Mehrsteuer, Rücklage pro Monat.
 - **Annahmen** (`annahmen.ts`, `user_settings.forecast_assumptions`): Ein Gehalt (`lohn`) ersetzt das Niveau ab

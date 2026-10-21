@@ -2,15 +2,15 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { getDashboardAccounts, getBalanceSums, getNetWorthSnapshotsSince } from '@/lib/data/overview'
 import { getBankBalances } from '@/lib/data/finance-accounts'
-import { getMonthlyFlows } from '@/lib/data/flows'
+import { getFlowTransactions } from '@/lib/data/flows'
 import { fetchSettingValue } from '@/lib/data/settings'
 import { computeAccountBalances } from '@/lib/finance/dashboard-calc'
 import { ladeSteuerdaten } from '@/lib/tax/laden'
-import { addMonate, monatVon, parse } from './datum'
+import { addMonate, addTage, monatVon, parse } from './datum'
 import { ANNAHMEN_KEY, leseAnnahmen, type Annahme } from './annahmen'
 import { berechnePrognose, type Prognose, type PrognoseVertrag } from './cashflow'
-import { baueHistorie, typischerLohnTag } from './historie'
-import { monatsenden, type VerlaufPunkt } from './verlauf'
+import { baueTage, typischerLohnTag } from './historie'
+import { tagesverlauf, type VerlaufPunkt } from './verlauf'
 import { berechneSteuerPrognose, laufrateAus, type SteuerPrognose } from './steuer'
 
 /**
@@ -28,7 +28,7 @@ export type PrognoseSeite = {
   stand: { liquiditaet: number; vermoegen: number | null; vermoegenStand: string | null; liquideKonten: number }
   basis: Prognose
   szenario: Prognose
-  /** Rückblick: Stand am Ende der letzten abgeschlossenen Monate (aus den Tages-Snapshots). */
+  /** Rückblick: Tageswerte der letzten Monate (aus den Tages-Snapshots). */
   verlauf: VerlaufPunkt[]
   steuer: SteuerPrognose[]
   laufrateQuelle: string
@@ -43,7 +43,7 @@ export async function ladePrognose(
   const jahr = parse(heute).y
   const hinweise: string[] = []
 
-  const [accounts, balanceSums, bankBalances, vertraegeRes, nwRes, flows, lohnRes, annahmenRoh, snapshots] = await Promise.all([
+  const [accounts, balanceSums, bankBalances, vertraegeRes, nwRes, buchungen, lohnRes, annahmenRoh, snapshots] = await Promise.all([
     getDashboardAccounts(supabase, userId),
     getBalanceSums(supabase, userId),
     getBankBalances(supabase, userId),
@@ -53,7 +53,8 @@ export async function ladePrognose(
       .eq('user_id', userId)
       .eq('is_active', true),
     supabase.from('current_net_worth').select('snapshot_date, net_worth').eq('user_id', userId).maybeSingle(),
-    getMonthlyFlows(supabase, userId, { from: addMonate(monatVon(heute), -14) + '-01' }),
+    // Die GANZE Historie: das Zyklusmodell lernt aus allem, was da ist, und gewichtet selbst.
+    getFlowTransactions(supabase, userId, { to: heute }),
     supabase
       .from('unified_transactions')
       .select('date')
@@ -63,7 +64,7 @@ export async function ladePrognose(
       .gte('date', addMonate(monatVon(heute), -8) + '-01')
       .limit(200),
     fetchSettingValue(supabase, userId, ANNAHMEN_KEY),
-    getNetWorthSnapshotsSince(supabase, userId, addMonate(monatVon(heute), -7) + '-01'),
+    getNetWorthSnapshotsSince(supabase, userId, addTage(heute, -190)),
   ])
 
   // ── Konten und Liquidität ─────────────────────────────────────────────────────────────
@@ -86,9 +87,8 @@ export async function ladePrognose(
     }))
 
   // ── Historie, Lohn-Tag, Annahmen ──────────────────────────────────────────────────────
-  const historie = baueHistorie(
-    flows.map(f => ({ month: f.month, flow_kind: f.flow_kind, income: f.income, expense: f.expense, tax_role: f.tax_role })),
-    heute,
+  const tage = baueTage(
+    buchungen.map(b => ({ date: b.date, type: b.type, amount: b.amount, flow_kind: b.flow_kind, tax_role: b.tax_role })),
   )
   const lohnTag = typischerLohnTag((lohnRes.data ?? []).map(r => String(r.date)))
   const annahmen = leseAnnahmen(annahmenRoh)
@@ -98,7 +98,7 @@ export async function ladePrognose(
     liquideKontoIds: liquide.map(a => a.id),
     liquiditaet,
     vermoegen: vermoegen ?? liquiditaet,
-    vertraege, historie, lohnTag,
+    vertraege, tage, lohnTag,
   }
   const basis = berechnePrognose({ ...gemeinsam, annahmen: [] })
   const szenario = berechnePrognose({ ...gemeinsam, annahmen })
@@ -136,7 +136,7 @@ export async function ladePrognose(
       liquideKonten: liquide.length,
     },
     basis, szenario,
-    verlauf: monatsenden(snapshots, heute, 6),
+    verlauf: tagesverlauf(snapshots, heute, 180),
     steuer: [steuerJetzt, steuerNaechstes],
     laufrateQuelle: quelle,
     annahmen,

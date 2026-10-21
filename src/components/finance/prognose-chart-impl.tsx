@@ -1,19 +1,20 @@
 'use client'
 
-import { CartesianGrid, ComposedChart, Line, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Area, CartesianGrid, ComposedChart, Line, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useSettings } from '@/components/providers/settings-context'
 import { fmtCurrency } from '@/lib/format'
 import type { ChartDaten, ChartPunkt } from '@/lib/forecast/chartdaten'
 
 /**
- * Zwei Zeitreihen mit Rückblick und Ausblick: bisheriger Verlauf (Monatsenden) als durchgezogene
- * Linie, ab „Heute" die Prognose gestrichelt. Die X-Achse ist eine echte Zeitachse (siehe
- * lib/forecast/chartdaten.ts); „Heute" verbindet beide Linien, weil der Punkt beide Werte trägt.
+ * Zwei Zeitreihen mit Rückblick und Ausblick: bisheriger Verlauf als durchgezogene Linie, ab „Heute"
+ * die Prognose gestrichelt, dazu der 80-%-Schwankungsbereich als Band. Die X-Achse ist eine echte
+ * Zeitachse (siehe lib/forecast/chartdaten.ts); „Heute" verbindet beide Linien, weil der Punkt beide
+ * Werte trägt, und das Band öffnet sich von dort.
  */
 
 const abbr = (n: number) => (Math.abs(n) >= 1000 ? `${(n / 1000).toFixed(1)}k` : n.toFixed(0))
 
-type TipEintrag = { name: string; value: number; color: string; dataKey: string; payload: ChartPunkt }
+type TipEintrag = { name: string; value: number | [number, number]; color: string; dataKey: string; payload: ChartPunkt }
 
 function Tip({ active, payload, fmt, tag }: {
   active?: boolean
@@ -23,18 +24,30 @@ function Tip({ active, payload, fmt, tag }: {
 }) {
   if (!active || !payload?.length) return null
   const punkt = payload[0].payload
-  // Am Punkt „heute" tragen Verlauf und Prognose denselben Wert — nur einmal zeigen.
-  const eintraege = payload.filter(p => p.value !== undefined && p.value !== null && !(p.dataKey === 'szenario' && punkt.ist !== undefined))
+  const istHeute = punkt.ist !== undefined && punkt.szenario !== undefined
+  const zeilen: { schluessel: string; name: string; farbe: string; text: string }[] = []
+  for (const p of payload) {
+    if (p.value === undefined || p.value === null) continue
+    if (p.dataKey === 'band') {
+      const [u, o] = p.value as [number, number]
+      if (o - u > 1) zeilen.push({ schluessel: 'band', name: '80-%-Bereich', farbe: p.color, text: `${fmt(u)} bis ${fmt(o)}` })
+      continue
+    }
+    // Am Punkt „heute" tragen Verlauf und Prognose denselben Wert — nur einmal zeigen.
+    if (p.dataKey === 'szenario' && istHeute) continue
+    if (p.dataKey === 'basis' && istHeute) continue
+    zeilen.push({ schluessel: p.dataKey, name: p.name, farbe: p.color, text: fmt(p.value as number) })
+  }
   return (
     <div className="rounded-lg border border-border bg-popover p-3 text-xs shadow-lg">
       <p className="mb-1.5 font-semibold text-popover-foreground">{tag(punkt.t)}</p>
-      {eintraege.map(p => (
-        <div key={p.dataKey} className="mt-1 flex items-center justify-between gap-4">
+      {zeilen.map(z => (
+        <div key={z.schluessel} className="mt-1 flex items-center justify-between gap-4">
           <span className="flex items-center gap-1.5 text-muted-foreground">
-            <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: p.color }} />
-            {p.dataKey === 'szenario' && punkt.ist !== undefined ? 'Heute' : p.name}
+            <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: z.farbe }} />
+            {z.name}
           </span>
-          <span className="font-medium tabular-nums text-popover-foreground">{fmt(p.value)}</span>
+          <span className="font-medium tabular-nums text-popover-foreground">{z.text}</span>
         </div>
       ))}
     </div>
@@ -58,7 +71,7 @@ function Reihe({ titel, daten, heute, ticks, mitAnnahmen, farbe, nullLinie, tief
   return (
     <div className="rounded-lg border border-border bg-card p-5">
       <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">{titel}</p>
-      <ResponsiveContainer width="100%" height={260}>
+      <ResponsiveContainer width="100%" height={280}>
         <ComposedChart data={daten} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
           <XAxis
@@ -73,14 +86,16 @@ function Reihe({ titel, daten, heute, ticks, mitAnnahmen, farbe, nullLinie, tief
             x={heute} stroke="var(--muted-foreground)" strokeOpacity={0.5}
             label={{ value: 'Heute', position: 'insideTopLeft', fontSize: 11, fill: 'var(--muted-foreground)' }}
           />
+          <Area dataKey="band" name="80-%-Bereich" stroke="none" fill={farbe} fillOpacity={0.14}
+            connectNulls isAnimationActive={false} activeDot={false} />
           {mitAnnahmen && (
             <Line dataKey="basis" name="Prognose ohne Annahmen" stroke="var(--muted-foreground)" strokeWidth={1.5}
-              strokeDasharray="3 4" dot={false} connectNulls isAnimationActive={false} />
+              strokeDasharray="3 4" dot={false} activeDot={{ r: 3 }} connectNulls isAnimationActive={false} />
           )}
-          <Line dataKey="szenario" name={mitAnnahmen ? 'Prognose mit Annahmen' : 'Prognose'} stroke={farbe} strokeWidth={2.5}
-            strokeDasharray="7 5" dot={{ r: 3, fill: farbe, strokeWidth: 0 }} connectNulls isAnimationActive={false} />
-          <Line dataKey="ist" name="Bisheriger Verlauf" stroke={farbe} strokeWidth={2.5}
-            dot={{ r: 3, fill: farbe, strokeWidth: 0 }} connectNulls isAnimationActive={false} />
+          <Line dataKey="szenario" name={mitAnnahmen ? 'Prognose mit Annahmen' : 'Prognose'} stroke={farbe} strokeWidth={2}
+            strokeDasharray="6 4" dot={false} activeDot={{ r: 4 }} connectNulls isAnimationActive={false} />
+          <Line dataKey="ist" name="Bisheriger Verlauf" stroke={farbe} strokeWidth={2.25}
+            dot={false} activeDot={{ r: 4 }} connectNulls isAnimationActive={false} />
           {tiefpunkt && (
             <ReferenceDot x={tiefpunkt.t} y={tiefpunkt.wert} r={4} fill="var(--background)" stroke={farbe} strokeWidth={2}
               label={{ value: fmt(tiefpunkt.wert), position: 'bottom', fontSize: 11, fill: 'var(--muted-foreground)' }} />
@@ -104,7 +119,7 @@ export function PrognoseChartImpl({ daten, mitAnnahmen }: { daten: ChartDaten; m
       <Reihe
         titel="Liquidität" daten={daten.liquiditaet} heute={daten.heute} ticks={daten.monatsanfaenge}
         mitAnnahmen={mitAnnahmen} farbe="var(--chart-accent)" nullLinie tiefpunkt={daten.tiefpunkt}
-        fussnote="Durchgezogen: Stand am Monatsende bisher. Gestrichelt: Prognose ab heute. Der Punkt markiert den tiefsten erwarteten Stand."
+        fussnote="Durchgezogen: bisheriger Verlauf, Tag für Tag. Gestrichelt: erwartete Kurve ab heute, mit Sprüngen am Monatsende und Pausen am Wochenende. Das Band zeigt, wo sie in 8 von 10 möglichen Verläufen liegt. Der Punkt ist der tiefste erwartete Stand."
         fmt={fmt} monat={monat} tag={tag}
       />
       <Reihe

@@ -1,13 +1,14 @@
-import { addMonate, format, monatVon, parse, tageImMonat } from './datum.ts'
+import { addMonate, monatVon, parse } from './datum.ts'
 import type { VerlaufPunkt } from './verlauf.ts'
 
 /**
  * Datenpunkte für die Prognose-Diagramme: Rückblick als durchgezogene Linie, ab „heute" gestrichelt
- * weiter. Die X-Achse ist eine echte Zeitachse (`t` = Millisekunden), damit „heute" an der richtigen
- * Stelle sitzt und die Monate nicht gleich breit erscheinen, obwohl der laufende nur Resttage hat.
+ * weiter, dazu der 80-%-Schwankungsbereich der Prognose als Band. Die X-Achse ist eine echte
+ * Zeitachse (`t` = Millisekunden), damit „heute" an der richtigen Stelle sitzt.
  *
  * Der Punkt „heute" trägt `ist` UND `szenario` (und `basis`) mit demselben Wert: dadurch schließen
- * die durchgezogene und die gestrichelte Linie nahtlos aneinander an.
+ * die durchgezogene und die gestrichelte Linie nahtlos aneinander an. Das Band beginnt dort mit
+ * Breite 0 und öffnet sich mit der Zeit.
  *
  * Reine Funktion, keine Imports außer Datums-Helfern, damit `node --test` sie direkt lädt.
  */
@@ -21,6 +22,8 @@ export type ChartPunkt = {
   szenario?: number
   /** Prognose ohne Annahmen, nur gesetzt, wenn es Annahmen gibt. */
   basis?: number
+  /** 80-%-Bereich der Prognose: [unten, oben]. */
+  band?: [number, number]
 }
 
 export type ChartDaten = {
@@ -28,20 +31,28 @@ export type ChartDaten = {
   vermoegen: ChartPunkt[]
   /** Zeitpunkt von „heute". */
   heute: number
-  /** Tiefster Stand der Liquidität im Prognosezeitraum. */
+  /** Tiefster erwarteter Stand der Liquidität im Prognosezeitraum. */
   tiefpunkt: { t: number; wert: number } | null
   /** Erste Tage der Monate im Bereich, für die Achsenbeschriftung. */
   monatsanfaenge: number[]
 }
 
-export type PrognoseMonatLite = { month: string; liquiditaetEnde: number; vermoegenEnde: number }
+export type PrognoseTagLite = {
+  datum: string
+  liquiditaet: number
+  liquiditaetUnten: number
+  liquiditaetOben: number
+  vermoegen: number
+  vermoegenUnten: number
+  vermoegenOben: number
+}
 
 export type ChartEingaben = {
   heute: string
   verlauf: VerlaufPunkt[]
   start: { liquiditaet: number; vermoegen: number }
-  szenario: PrognoseMonatLite[]
-  basis: PrognoseMonatLite[]
+  szenario: PrognoseTagLite[]
+  basis: PrognoseTagLite[]
   tiefpunkt: { betrag: number; datum: string }
   mitAnnahmen: boolean
 }
@@ -52,29 +63,25 @@ export const zeitpunkt = (datum: string): number => {
   return Date.UTC(y, m - 1, d, 12)
 }
 
-function monatsende(monat: string): string {
-  const { y, m } = parse(monat + '-01')
-  return format(y, m, tageImMonat(y, m))
-}
-
 export function baueChartDaten(e: ChartEingaben): ChartDaten {
   const heuteT = zeitpunkt(e.heute)
-  const basisNach = new Map(e.basis.map(m => [m.month, m]))
+  const basisNach = new Map(e.basis.map(t => [t.datum, t]))
 
   const reihe = (feld: 'liquiditaet' | 'vermoegen'): ChartPunkt[] => {
+    const unten = feld === 'liquiditaet' ? 'liquiditaetUnten' : 'vermoegenUnten'
+    const oben = feld === 'liquiditaet' ? 'liquiditaetOben' : 'vermoegenOben'
     const punkte: ChartPunkt[] = e.verlauf.map(v => ({ t: zeitpunkt(v.datum), datum: v.datum, ist: v[feld] }))
     const start = e.start[feld]
     punkte.push({
-      t: heuteT, datum: e.heute, ist: start, szenario: start, ...(e.mitAnnahmen ? { basis: start } : {}),
+      t: heuteT, datum: e.heute, ist: start, szenario: start, band: [start, start],
+      ...(e.mitAnnahmen ? { basis: start } : {}),
     })
-    const feldEnde = feld === 'liquiditaet' ? 'liquiditaetEnde' : 'vermoegenEnde'
-    for (const m of e.szenario) {
-      const datum = monatsende(m.month)
-      const t = zeitpunkt(datum)
-      if (t <= heuteT) continue // der Monatsletzte ist heute oder schon vorbei: der Punkt „heute" gilt
+    for (const tag of e.szenario) {
+      const t = zeitpunkt(tag.datum)
+      if (t <= heuteT) continue
       punkte.push({
-        t, datum, szenario: m[feldEnde],
-        ...(e.mitAnnahmen ? { basis: basisNach.get(m.month)?.[feldEnde] } : {}),
+        t, datum: tag.datum, szenario: tag[feld], band: [tag[unten], tag[oben]],
+        ...(e.mitAnnahmen ? { basis: basisNach.get(tag.datum)?.[feld] } : {}),
       })
     }
     return punkte.sort((a, b) => a.t - b.t)

@@ -128,10 +128,12 @@ export type FlowTransaction = {
   root_category_name: string | null
   description: string | null
   merchant: string | null
+  /** Vererbte Steuerrolle der Kategorie, null = keine. */
+  tax_role: string | null
 }
 
 const TX_COLUMNS =
-  'id, date, type, amount_eur, flow_kind, source, account_id, category_id, category_name, root_category_id, root_category_name, description, merchant'
+  'id, date, type, amount_eur, flow_kind, source, account_id, category_id, category_name, root_category_id, root_category_name, description, merchant, tax_role_effective'
 
 /**
  * Einzelne Einnahmen/Ausgaben (für Heatmap, Kalender, Sankey, Listen). Gleiche Regeln wie
@@ -178,6 +180,7 @@ export async function getFlowTransactions(supabase: Client, userId: string, scop
         root_category_name: r.root_category_name,
         description: r.description,
         merchant: r.merchant,
+        tax_role: r.tax_role_effective,
       })
     }
     if (data.length < PAGE) break

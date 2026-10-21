@@ -14,8 +14,9 @@ export function buildForecastTools(supabase: DB, userId: string) {
         'das laufende und das nächste Jahr (Gewinn, Gesamtsteuer, Mehrsteuer durch die Annahmen, ' +
         'Rücklage pro Monat, Kleinunternehmer-Status). Benutze es für Fragen wie "reicht mein Geld bis ' +
         'Dezember", "was bleibt mir im Februar", "was kostet mich das höhere Gehalt an Steuer", "wann wird es eng". ' +
-        'Es ist eine FORTSCHREIBUNG der letzten Monate plus die Annahmen, die Eric auf der Prognose-Seite ' +
-        'eingetragen hat — keine Vorhersage. Sag das, nenne den tiefsten Stand statt eines einzelnen Endwerts, ' +
+        'Es ist eine FORTSCHREIBUNG der gesamten Historie (Zyklusmodell: Monats- und Wochenrhythmus) plus die Annahmen, ' +
+        'die Eric auf der Prognose-Seite eingetragen hat — keine Vorhersage. Sag das, nenne den tiefsten Stand ' +
+        '(erwartet und in 1 von 10 Verläufen) statt eines einzelnen Endwerts, ' +
         'und nenne die Annahmen (`annahmen`), auf denen die Zahl beruht. Die Steuerzahlen sind Schätzungen.',
       inputSchema: z.object({
         monate: z.number().int().min(1).max(24).default(12).describe('Wie viele Monate vorausgeschaut wird, inklusive des laufenden.'),
@@ -27,6 +28,16 @@ export function buildForecastTools(supabase: DB, userId: string) {
           return {
             stand: d.stand,
             tiefpunkt: sz.tiefpunkt,
+            tiefpunkt_in_1_von_10_verlaeufen: sz.risikoTiefpunkt,
+            modell: {
+              gelernt_aus_tagen: sz.modell.daten.tage,
+              halbwertszeit_tage: sz.modell.halbwertszeit,
+              rueckblick_test: sz.modell.backtest
+                ? { fehler_modell: sz.modell.backtest.fehlerModell, fehler_flach: sz.modell.backtest.fehlerFlach, verbesserung_prozent: sz.modell.backtest.verbesserungPct }
+                : null,
+              muster: sz.modell.muster,
+              zyklen_tage: sz.modell.zyklen,
+            },
             monate: sz.monate.map(m => ({
               monat: m.month,
               einnahmen: m.einnahmen,

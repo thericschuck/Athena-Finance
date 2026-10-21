@@ -41,19 +41,20 @@ export default async function PrognosePage() {
   const mitAnnahmen = d.annahmen.length > 0
   const sz = d.szenario
 
-  // Rückblick (Monatsenden aus den Snapshots) durchgezogen, ab heute die Prognose gestrichelt.
+  // Rückblick (Tageswerte aus den Snapshots) durchgezogen, ab heute die Prognose gestrichelt mit Schwankungsbereich.
   const chart = baueChartDaten({
     heute,
     verlauf: d.verlauf,
     start: sz.start,
-    szenario: sz.monate,
-    basis: d.basis.monate,
+    szenario: sz.tage,
+    basis: d.basis.tage,
     tiefpunkt: sz.tiefpunkt,
     mitAnnahmen,
   })
   const in12 = sz.monate[Math.min(11, sz.monate.length - 1)]
   const monatsLabel = (m: string) => new Date(m + '-01T12:00:00').toLocaleDateString(locale, { month: 'long', year: 'numeric' })
   const warnungen = [...d.hinweise, ...sz.warnungen]
+  const m = sz.modell
 
   return (
     <div className="space-y-8 p-4 sm:p-8">
@@ -80,13 +81,13 @@ export default async function PrognosePage() {
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Kennzahlen">
         <Karte titel="Liquidität heute" wert={eur(d.stand.liquiditaet)}
           unter={`${d.stand.liquideKonten} liquide${d.stand.liquideKonten === 1 ? 's Konto' : ' Konten'} (Giro, Spar, Bargeld)`} />
-        <Karte titel="Tiefster Stand" wert={eur(sz.tiefpunkt.betrag)}
-          unter={`am ${fmtDate(sz.tiefpunkt.datum, dateFormat)}`}
+        <Karte titel="Tiefster Stand (erwartet)" wert={eur(sz.tiefpunkt.betrag)}
+          unter={`am ${fmtDate(sz.tiefpunkt.datum, dateFormat)} · in 1 von 10 Verläufen bis ${eur(sz.risikoTiefpunkt.betrag)}`}
           klasse={sz.tiefpunkt.betrag < 0 ? 'text-danger' : ''} />
         <Karte titel={`Liquidität ${in12 ? monatsLabel(in12.month) : ''}`} wert={in12 ? eur(in12.liquiditaetEnde) : '–'}
           unter={`Vermögen dann ${in12 ? eur(in12.vermoegenEnde) : '–'}`} />
         <Karte titel="Überschuss pro Monat" wert={eur(d.basis.basis.saldo)}
-          unter={`Basis: Median der letzten ${d.basis.basis.basisMonate} Monate`}
+          unter="Durchschnitt der nächsten 30 Tage laut Modell, ohne Termine und Annahmen"
           klasse={d.basis.basis.saldo < 0 ? 'text-danger' : 'text-success'} />
       </section>
 
@@ -122,14 +123,51 @@ export default async function PrognosePage() {
             </tbody>
           </table>
         </div>
-        <p className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
-          <Info className="mt-0.5 size-3.5 shrink-0" />
-          <span>
-            Basis pro Monat (Median der letzten {d.basis.basis.basisMonate} Monate): Einnahmen ohne Lohn {eur(d.basis.basis.einnahmenOhneLohn)},
-            Lohn {eur(d.basis.basis.lohn)}, Ausgaben {eur(d.basis.basis.ausgaben)} — inklusive Einzahlungen in Anlagen, denn das Geld
-            ist vom Konto weg. Verträge mit festem Termin liegen auf ihrem Tag und stecken schon in diesen Ausgaben.
-          </span>
-        </p>
+        <details className="mt-3 rounded-lg border border-border bg-card p-4 text-sm" open>
+          <summary className="flex cursor-pointer items-center gap-2 font-medium">
+            <Info className="size-4 shrink-0" /> Wie die Prognose entsteht
+          </summary>
+          <div className="mt-3 space-y-2 text-xs leading-relaxed text-muted-foreground">
+            <p>
+              Gelernt aus <strong className="text-foreground">{m.daten.tage} Tagen</strong> ({fmtDate(m.daten.von, dateFormat)} bis{' '}
+              {fmtDate(m.daten.bis, dateFormat)}): die gesamte Historie zählt.{' '}
+              {m.halbwertszeit === null
+                ? 'Alle Tage zählen gleich — im Rückblick-Test war das besser als ein kürzeres Gedächtnis.'
+                : `Jüngere Tage zählen stärker (Halbwertszeit ${m.halbwertszeit} Tage) — das hat im Rückblick-Test am besten abgeschnitten.`}{' '}
+              Das Modell wählt die Gewichtung selbst und prüft sie bei neuen Daten erneut.
+            </p>
+            {m.muster.length > 0 && (
+              <ul className="list-disc space-y-0.5 pl-4">
+                {m.muster.map((t, i) => <li key={i}>{t}</li>)}
+              </ul>
+            )}
+            {m.zyklen.length > 0 && (
+              <p>
+                Periodogramm (Fourier): auffällige Zyklen{' '}
+                {m.zyklen.map(z => `${String(z.periode).replace('.', ',')} Tage (${String(z.staerke).replace('.', ',')}× über dem Rauschniveau)`).join(', ')}.
+                Ein Jahreszyklus ist in deinen Daten nicht nachweisbar.
+              </p>
+            )}
+            {m.backtest && (
+              <p>
+                Rückblick-Test über {m.backtest.ursprunge} Ausgangspunkte (jeweils 30 Tage voraus, nur mit damals bekannten Daten):
+                mittlerer Fehler der Kurve <strong className="text-foreground">{eur(m.backtest.fehlerModell)}</strong> gegenüber{' '}
+                {eur(m.backtest.fehlerFlach)} bei einem flachen Verlauf —{' '}
+                {Math.abs(m.backtest.verbesserungPct) <= 2
+                  ? 'etwa gleich gut'
+                  : m.backtest.verbesserungPct > 0 ? `${m.backtest.verbesserungPct} % besser` : `${-m.backtest.verbesserungPct} % schlechter`}.{' '}
+                Das ist kein Mangel des Modells, sondern deiner Daten: Gehalt, Verträge und Wochenenden liegen fest auf ihren Tagen,
+                alles darüber bestimmen einzelne Großposten, deren Zeitpunkt sich nicht vorhersagen lässt. Genau dafür ist das Band da.
+              </p>
+            )}
+            <p>
+              Das Band zeigt, wo die Liquidität in 8 von 10 möglichen Verläufen liegt (aus den echten Abweichungen des Modells,
+              nicht geschätzt). Ø pro Monat: Einnahmen ohne Lohn {eur(d.basis.basis.einnahmenOhneLohn)}, Lohn {eur(d.basis.basis.lohn)},
+              Ausgaben {eur(d.basis.basis.ausgaben)} — inklusive Einzahlungen in Anlagen, denn das Geld ist vom Konto weg.
+              Verträge liegen auf ihrem Tag; ihre bisherigen Buchungen sind aus dem Muster herausgerechnet, damit sie nicht doppelt zählen.
+            </p>
+          </div>
+        </details>
       </section>
 
       {/* ── Bekannte Termine ───────────────────────────────────────────────────── */}

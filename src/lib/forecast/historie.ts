@@ -1,61 +1,49 @@
-import { addMonate, median, monatVon, parse } from './datum.ts'
-import type { HistorieMonat } from './cashflow.ts'
+import { median, parse } from './datum.ts'
+import type { TagesSumme } from './zyklus.ts'
 
 /**
- * Baut aus den Monatssummen (`monthly_flows`) die Historie, auf der die Prognose aufsetzt.
- *
- *   - Nur ABGESCHLOSSENE Monate: der laufende ist per Definition unvollständig und würde die
- *     Basis nach unten ziehen.
- *   - Monate ohne jede Buchung zwischen dem ersten und dem letzten Monat mit Daten zählen als 0
- *     (ein Monat ohne Buchungen ist eine Aussage); davor und danach gibt es keine Monate.
- *   - Lohn ist der Teil der Einnahmen mit Steuerrolle `lohn`.
+ * Aufbereitung der Historie für die Prognose: aus den Einzelbuchungen werden Tagessummen. Das
+ * Zyklusmodell (zyklus.ts) lernt aus dieser ganzen Historie, nicht aus einem Ausschnitt.
  *
  * Keine Imports außer Datums-Helfern, damit `node --test` die Datei direkt laden kann.
  */
 
-export type FlowZeile = {
-  /** Erster Tag des Monats, `YYYY-MM-DD`. */
-  month: string
+export type FlussBuchung = {
+  /** `YYYY-MM-DD` */
+  date: string
+  type: 'income' | 'expense'
+  /** Betrag in EUR, positiv. */
+  amount: number
   flow_kind: string
-  income: number
-  expense: number
+  /** Vererbte Steuerrolle der Kategorie, null = keine. */
   tax_role: string | null
 }
 
-export function baueHistorie(zeilen: FlowZeile[], heute: string, maxMonate = 12): HistorieMonat[] {
-  const aktuell = monatVon(heute)
-  const proMonat = new Map<string, HistorieMonat>()
-
-  for (const z of zeilen) {
-    const monat = monatVon(z.month)
-    if (monat >= aktuell) continue
-    if (z.flow_kind !== 'echt' && z.flow_kind !== 'anlage' && z.flow_kind !== 'forderung') continue
-    const m = proMonat.get(monat) ?? {
-      month: monat, einnahmen: 0, ausgaben: 0, einnahmenEcht: 0, ausgabenEcht: 0, lohnNetto: 0,
+/**
+ * Tagessummen aus Buchungen, die als Einnahme/Ausgabe zählen (echt, anlage, forderung). Tage ohne
+ * Buchung fehlen — das Modell füllt sie mit 0 auf. Lohn ist der Teil der `echt`-Einnahmen mit
+ * Steuerrolle `lohn` und wird getrennt modelliert. Aufsteigend nach Datum.
+ */
+export function baueTage(buchungen: FlussBuchung[]): TagesSumme[] {
+  const nachTag = new Map<string, TagesSumme>()
+  for (const b of buchungen) {
+    if (b.flow_kind !== 'echt' && b.flow_kind !== 'anlage' && b.flow_kind !== 'forderung') continue
+    const datum = b.date.slice(0, 10)
+    const t = nachTag.get(datum) ?? { datum, einnahmen: 0, ausgaben: 0, einnahmenEcht: 0, ausgabenEcht: 0, lohn: 0 }
+    const echt = b.flow_kind === 'echt'
+    if (b.type === 'income') {
+      t.einnahmen += b.amount
+      if (echt) {
+        t.einnahmenEcht += b.amount
+        if (b.tax_role === 'lohn') t.lohn += b.amount
+      }
+    } else {
+      t.ausgaben += b.amount
+      if (echt) t.ausgabenEcht += b.amount
     }
-    m.einnahmen += z.income
-    m.ausgaben += z.expense
-    if (z.flow_kind === 'echt') {
-      m.einnahmenEcht += z.income
-      m.ausgabenEcht += z.expense
-      if (z.tax_role === 'lohn') m.lohnNetto += z.income
-    }
-    proMonat.set(monat, m)
+    nachTag.set(datum, t)
   }
-
-  const monate = [...proMonat.keys()].sort()
-  if (monate.length === 0) return []
-
-  const ergebnis: HistorieMonat[] = []
-  let monat = monate[0]
-  const letzter = monate[monate.length - 1]
-  for (let i = 0; monat <= letzter && i < 240; i++, monat = addMonate(monat, 1)) {
-    const m = proMonat.get(monat) ?? {
-      month: monat, einnahmen: 0, ausgaben: 0, einnahmenEcht: 0, ausgabenEcht: 0, lohnNetto: 0,
-    }
-    ergebnis.push(m)
-  }
-  return ergebnis.slice(-maxMonate)
+  return [...nachTag.values()].sort((a, b) => a.datum.localeCompare(b.datum))
 }
 
 /** Typischer Tag des Lohneingangs (Median der Tage im Monat); null ohne Daten. */

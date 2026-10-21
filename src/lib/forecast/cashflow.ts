@@ -1,20 +1,24 @@
 import { addMonate, addTage, median, monatVon, parse, tageImMonat, tagImMonat, format } from './datum.ts'
 import { lohnImMonat, summeImMonat, type Annahme } from './annahmen.ts'
 import { termineImFenster, type TerminVertrag } from './termine.ts'
+import { baueModell, faecher, hashe, type TagesSumme, type ZyklusModell } from './zyklus.ts'
 
 /**
  * Cashflow-Prognose: wie entwickeln sich Liquidität und Vermögen in den nächsten Monaten?
  *
- * Reine Funktion, keine Datenbank. Die Methode ist bewusst einfach, damit man sie nachvollziehen
- * kann — es ist eine Fortschreibung, keine Vorhersage:
+ * Reine Funktion, keine Datenbank. Sie schreibt die Historie fort — keine Vorhersage:
  *
- *   Basis       Median der letzten abgeschlossenen Monate (robust gegen Ausreißer wie eine
- *               einmalige Zahlung). Einnahmen ohne Lohn, Lohn und Ausgaben getrennt.
- *   Bekannte    Verträge mit festem Termin liegen auf ihrem Abbuchungstag. Sie stecken schon in der
- *               Basis (die Historie enthält sie ja), deshalb wird der Rest der Basis gleichmäßig auf
- *               den Monat verteilt — nichts doppelt gezählt.
+ *   Muster      Das Zyklusmodell (zyklus.ts) lernt aus ALLER Historie, wie sich Einnahmen und
+ *               Ausgaben über den Monat und die Woche verteilen (Gehalt am 27., am Wochenende wird
+ *               nicht gebucht). Wie stark jüngere Tage zählen, wählt ein Backtest aus den Daten.
+ *   Lohn        wird getrennt behandelt: Niveau = Median der letzten Monate, Eingang am typischen Tag.
+ *               Eine Annahme „Gehalt" ersetzt das Niveau.
+ *   Verträge    liegen auf ihrem Abbuchungstag. Ihre bisherigen Buchungen werden vor dem Lernen aus der
+ *               Historie herausgerechnet, damit sie nicht doppelt zählen (einmal im Muster, einmal als
+ *               Termin).
  *   Annahmen    Änderungen, die in der Vergangenheit noch nicht stehen (siehe annahmen.ts).
- *   Lohn        kommt am typischen Eingangstag, alles andere gleichmäßig über den Monat.
+ *   Fächer      Die Tageswerte sind klumpig. Aus den echten Abweichungen des Modells wird ein
+ *               80-%-Bereich um die erwartete Kurve gerechnet (Block-Bootstrap).
  *
  * Zwei Kurven, weil sie verschiedene Fragen beantworten:
  *   Liquidität  Kontostand auf den liquiden Konten, Tag für Tag. Hier zählen alle Abflüsse, auch
@@ -32,19 +36,6 @@ export type PrognoseVertrag = TerminVertrag & {
   to_account_id: string | null
 }
 
-export type HistorieMonat = {
-  /** Abgeschlossener Monat, `YYYY-MM`. */
-  month: string
-  /** Alles, was zählt (echt + anlage + forderung). */
-  einnahmen: number
-  ausgaben: number
-  /** Nur Konsum und normale Einnahmen (`echt`). */
-  einnahmenEcht: number
-  ausgabenEcht: number
-  /** Teil der Einnahmen mit Steuerrolle `lohn` (netto). */
-  lohnNetto: number
-}
-
 export type PrognoseEingaben = {
   /** Heute, `YYYY-MM-DD`. Die Prognose beginnt am Tag danach. */
   heute: string
@@ -56,13 +47,22 @@ export type PrognoseEingaben = {
   /** Nettovermögen heute (Konten + Krypto + Depot). */
   vermoegen: number
   vertraege: PrognoseVertrag[]
-  /** Abgeschlossene Monate, aufsteigend. */
-  historie: HistorieMonat[]
+  /** Tagessummen der GANZEN Historie bis einschließlich heute. */
+  tage: TagesSumme[]
   /** Typischer Tag des Monats, an dem der Lohn eingeht. null = unbekannt (dann der 1.). */
   lohnTag: number | null
   annahmen: Annahme[]
-  /** Wie viele der jüngsten Monate die Basis bilden. Standard 6. */
-  basisMonate?: number
+}
+
+export type PrognoseTag = {
+  datum: string
+  liquiditaet: number
+  /** 80-%-Bereich um die erwartete Liquidität. */
+  liquiditaetUnten: number
+  liquiditaetOben: number
+  vermoegen: number
+  vermoegenUnten: number
+  vermoegenOben: number
 }
 
 export type PrognoseMonat = {
@@ -71,7 +71,7 @@ export type PrognoseMonat = {
   ausgaben: number
   /** Liquidität am Monatsende. */
   liquiditaetEnde: number
-  /** Tiefster Stand im Monat und der Tag, an dem er erreicht wird. */
+  /** Tiefster erwarteter Stand im Monat und der Tag, an dem er erreicht wird. */
   tiefpunkt: number
   tiefpunktDatum: string
   /** Nettovermögen am Monatsende. */
@@ -82,23 +82,33 @@ export type PrognoseMonat = {
 
 export type BekannterTermin = { datum: string; name: string; betrag: number }
 
+export type ModellInfo = Pick<ZyklusModell, 'halbwertszeit' | 'daten' | 'backtest' | 'zyklen' | 'muster' | 'hinweise'>
+
 export type Prognose = {
   monate: PrognoseMonat[]
+  /** Tageswerte der Prognose (erwartet plus 80-%-Bereich). */
+  tage: PrognoseTag[]
   start: { liquiditaet: number; vermoegen: number }
+  /** Tiefster erwarteter Stand. */
   tiefpunkt: { betrag: number; datum: string }
+  /** Tiefster Stand der unteren Bereichsgrenze: „in 1 von 10 Verläufen noch tiefer". */
+  risikoTiefpunkt: { betrag: number; datum: string }
+  /** Durchschnitt der nächsten 30 Tage, als Orientierung. */
   basis: {
     einnahmenOhneLohn: number
     lohn: number
     ausgaben: number
-    basisMonate: number
-    /** Monatlicher Überschuss der Basis (Einnahmen + Lohn − Ausgaben), ohne Annahmen. */
+    /** Monatlicher Überschuss (Einnahmen + Lohn − Ausgaben) ohne Annahmen und Termine. */
     saldo: number
   }
+  modell: ModellInfo
   termine: BekannterTermin[]
   warnungen: string[]
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100
+/** Vertragsarten, die Geld nur zwischen eigenen Töpfen verschieben (keine Ausgabe im Sinne des Vermögens). */
+const UEBERTRAG_TYPEN = new Set(['transfer', 'savings_plan', 'building_savings'])
 
 /** Liquiditätswirkung eines Vertragstermins: negativ = Abfluss vom liquiden Konto. */
 export function vertragsWirkung(v: PrognoseVertrag, liquide: Set<string>): number {
@@ -110,25 +120,64 @@ export function vertragsWirkung(v: PrognoseVertrag, liquide: Set<string>): numbe
   return 0 // zwischen zwei liquiden Konten oder zwei illiquiden: kein Effekt auf die Summe
 }
 
+/** Wirkung eines Vertragstermins auf das Nettovermögen: Überträge ändern es nicht, Abos und Einnahmen schon. */
+function vermoegensWirkung(v: PrognoseVertrag): number {
+  if (UEBERTRAG_TYPEN.has(v.type)) return 0
+  return v.type === 'income' ? v.amount : -v.amount
+}
+
+/**
+ * Rechnet die bisherigen Vertragsbuchungen aus der Historie heraus. Sie kommen später als feste
+ * Termine zurück; blieben sie im Muster, zählten sie doppelt. Nur bis zur Höhe dessen, was an dem
+ * Tag tatsächlich gebucht wurde (nie unter 0).
+ */
+export function ohneVertragsbuchungen(
+  tage: TagesSumme[], vertraege: PrognoseVertrag[], liquide: Set<string>, heute: string,
+): TagesSumme[] {
+  if (tage.length === 0 || vertraege.length === 0) return tage
+  const nachDatum = new Map(tage.map(t => [t.datum, { ...t }]))
+  const erster = tage.reduce((m, t) => (t.datum < m ? t.datum : m), tage[0].datum)
+  for (const v of vertraege) {
+    if (!(v.amount > 0)) continue
+    const wirkung = vertragsWirkung(v, liquide)
+    const vermoegen = vermoegensWirkung(v)
+    if (wirkung === 0 && vermoegen === 0) continue
+    for (const datum of termineImFenster(v, erster, heute)) {
+      const t = nachDatum.get(datum)
+      if (!t) continue
+      if (wirkung < 0) t.ausgaben = Math.max(0, t.ausgaben + wirkung)
+      else if (wirkung > 0) t.einnahmen = Math.max(0, t.einnahmen - wirkung)
+      if (vermoegen < 0) t.ausgabenEcht = Math.max(0, t.ausgabenEcht + vermoegen)
+      else if (vermoegen > 0) t.einnahmenEcht = Math.max(0, t.einnahmenEcht - vermoegen)
+    }
+  }
+  return [...nachDatum.values()]
+}
+
+/** Monatlicher Lohn aus der Historie: Median der letzten Monate mit Lohneingang. */
+export function lohnNiveau(tage: TagesSumme[], heute: string, anzahl = 6): number {
+  const aktuell = monatVon(heute)
+  const proMonat = new Map<string, number>()
+  for (const t of tage) {
+    const m = monatVon(t.datum)
+    if (m >= aktuell || !(t.lohn > 0)) continue
+    proMonat.set(m, (proMonat.get(m) ?? 0) + t.lohn)
+  }
+  const letzte = [...proMonat.entries()].sort(([a], [b]) => a.localeCompare(b)).slice(-anzahl).map(([, v]) => v)
+  return median(letzte)
+}
+
 export function berechnePrognose(e: PrognoseEingaben): Prognose {
   const warnungen: string[] = []
   const liquide = new Set(e.liquideKontoIds)
   const n = Math.max(1, Math.min(60, Math.floor(e.monate)))
 
-  // ── Basis ─────────────────────────────────────────────────────────────────────────────────
-  const basisAnzahl = e.basisMonate ?? 6
-  const basis = e.historie.slice(-basisAnzahl)
-  if (basis.length === 0) {
-    warnungen.push('Es gibt keine abgeschlossenen Monate als Grundlage — die Prognose ist leer, bis Buchungen vorliegen.')
-  } else if (basis.length < 3) {
-    warnungen.push(`Nur ${basis.length} abgeschlossene${basis.length === 1 ? 'r' : ''} Monat${basis.length === 1 ? '' : 'e'} als Grundlage — die Prognose ist sehr grob.`)
-  }
-  const lohnMonate = basis.map(m => m.lohnNetto).filter(x => x > 0)
-  const basisLohn = median(lohnMonate)
-  const basisEinnahmenOhneLohn = median(basis.map(m => m.einnahmen - m.lohnNetto))
-  const basisEinnahmenOhneLohnEcht = median(basis.map(m => m.einnahmenEcht - m.lohnNetto))
-  const basisAusgaben = median(basis.map(m => m.ausgaben))
-  const basisAusgabenEcht = median(basis.map(m => m.ausgabenEcht))
+  // ── Muster lernen (Verträge herausgerechnet) ───────────────────────────────────────────────
+  const bereinigt = ohneVertragsbuchungen(e.tage, e.vertraege, liquide, e.heute)
+  const mLiq = baueModell(bereinigt, e.heute, 'liquiditaet')
+  const mNw = baueModell(bereinigt, e.heute, 'vermoegen')
+  const basisLohn = lohnNiveau(e.tage, e.heute)
+  warnungen.push(...mLiq.hinweise)
 
   // ── Zeitraum ──────────────────────────────────────────────────────────────────────────────
   const startMonat = monatVon(e.heute)
@@ -139,25 +188,22 @@ export function berechnePrognose(e: PrognoseEingaben): Prognose {
 
   // ── Bekannte Termine ──────────────────────────────────────────────────────────────────────
   const termineRoh: { datum: string; name: string; wirkung: number }[] = []
+  const wirkungAm = new Map<string, number>()    // Liquidität
+  const vermoegenAm = new Map<string, number>()  // Nettovermögen
   for (const v of e.vertraege) {
     if (!(v.amount > 0)) continue
     const wirkung = vertragsWirkung(v, liquide)
-    if (wirkung === 0) continue
+    const vw = vermoegensWirkung(v)
+    if (wirkung === 0 && vw === 0) continue
     for (const datum of termineImFenster(v, ersterTag, endDatum)) {
-      termineRoh.push({ datum, name: v.name, wirkung })
+      if (wirkung !== 0) {
+        termineRoh.push({ datum, name: v.name, wirkung })
+        wirkungAm.set(datum, (wirkungAm.get(datum) ?? 0) + wirkung)
+      }
+      if (vw !== 0) vermoegenAm.set(datum, (vermoegenAm.get(datum) ?? 0) + vw)
     }
   }
-  const fixAb = new Map<string, number>()   // Monat -> Summe bekannter Abflüsse (positiv)
-  const fixZu = new Map<string, number>()
-  const wirkungAm = new Map<string, number>() // Datum -> Summe der Wirkungen
-  for (const t of termineRoh) {
-    const m = monatVon(t.datum)
-    if (t.wirkung < 0) fixAb.set(m, (fixAb.get(m) ?? 0) - t.wirkung)
-    else fixZu.set(m, (fixZu.get(m) ?? 0) + t.wirkung)
-    wirkungAm.set(t.datum, (wirkungAm.get(t.datum) ?? 0) + t.wirkung)
-  }
 
-  // ── Monatsweise Größen ────────────────────────────────────────────────────────────────────
   const lohnLevel = (monat: string) => {
     const a = lohnImMonat(e.annahmen, monat)
     return a ? a.betrag : basisLohn
@@ -167,86 +213,122 @@ export function berechnePrognose(e: PrognoseEingaben): Prognose {
   const zusatzAus = (monat: string) =>
     summeImMonat(e.annahmen, 'ausgabe', monat) + summeImMonat(e.annahmen, 'betriebsausgabe', monat)
 
-  // ── Tagessimulation der Liquidität ────────────────────────────────────────────────────────
-  const monate: PrognoseMonat[] = []
-  let saldo = e.liquiditaet
-  let vermoegen = e.vermoegen
-  let gesamtTief = { betrag: saldo, datum: e.heute }
+  // ── Tagessimulation ───────────────────────────────────────────────────────────────────────
+  type Zeile = { datum: string; liq: number; nw: number; ein: number; aus: number }
+  const zeilen: Zeile[] = []
+  let liq = e.liquiditaet
+  let nw = e.vermoegen
+  let basisEin = 0, basisAus = 0
 
-  for (let i = 0; i < n; i++) {
-    const monat = addMonate(startMonat, i)
-    const { y, m } = parse(monat + '-01')
-    const dim = tageImMonat(y, m)
-    const teil = i === 0
-    const ersterTagImMonat = teil ? parse(ersterTag).d : 1
-    // Heute ist der letzte Tag des Monats: der laufende Monat hat keine Resttage.
-    const monatBeginnt = teil && monatVon(ersterTag) !== monat ? dim + 1 : ersterTagImMonat
-    const resttage = Math.max(0, dim - monatBeginnt + 1)
-    if (teil && resttage === 0) continue
+  for (let datum = ersterTag, i = 0; datum <= endDatum && i < 2000; datum = addTage(datum, 1), i++) {
+    const monat = monatVon(datum)
+    const mu = mLiq.erwartet(datum)
+    const nu = mNw.erwartet(datum)
+    let tagEin = mu.einnahmen
+    let tagAus = mu.ausgaben
+    let nwEin = nu.einnahmen
+    let nwAus = nu.ausgaben
+    if (i < 30) { basisEin += mu.einnahmen; basisAus += mu.ausgaben }
 
-    const tagEin = Math.max(0, basisEinnahmenOhneLohn - (fixZu.get(monat) ?? 0)) / dim
-    const tagAus = Math.max(0, basisAusgaben - (fixAb.get(monat) ?? 0)) / dim
-    const lohnDatum = tagImMonat(monat, e.lohnTag ?? 1)
-    const zusatzTag = tagImMonat(monat, 15)
-
-    let ein = 0, aus = 0
-    let tief = { betrag: Number.POSITIVE_INFINITY, datum: monat + '-01' }
-
-    for (let d = monatBeginnt; d <= dim; d++) {
-      const datum = format(y, m, d)
-      let tagesEin = tagEin
-      let tagesAus = tagAus
-      if (datum === lohnDatum) tagesEin += lohnLevel(monat)
-      if (datum === zusatzTag) { tagesEin += zusatzEin(monat); tagesAus += zusatzAus(monat) }
-      const w = wirkungAm.get(datum) ?? 0
-      if (w > 0) tagesEin += w
-      else if (w < 0) tagesAus += -w
-
-      ein += tagesEin
-      aus += tagesAus
-      saldo += tagesEin - tagesAus
-      if (saldo < tief.betrag) tief = { betrag: saldo, datum }
+    if (datum === tagImMonat(monat, e.lohnTag ?? 1)) {
+      const l = lohnLevel(monat)
+      tagEin += l
+      nwEin += l
     }
-    if (tief.betrag < gesamtTief.betrag) gesamtTief = { betrag: tief.betrag, datum: tief.datum }
+    if (datum === tagImMonat(monat, 15)) {
+      tagEin += zusatzEin(monat); tagAus += zusatzAus(monat)
+      nwEin += zusatzEin(monat); nwAus += zusatzAus(monat)
+    }
+    const w = wirkungAm.get(datum) ?? 0
+    if (w > 0) tagEin += w
+    else if (w < 0) tagAus += -w
+    nw += (vermoegenAm.get(datum) ?? 0)
 
-    // Vermögen: nur Konsum und normale Einnahmen verändern es, Anlagen tauschen nur.
-    const anteil = resttage / dim
-    const nwEin = (basisEinnahmenOhneLohnEcht + lohnLevel(monat) + zusatzEin(monat)) * anteil
-    const nwAus = (basisAusgabenEcht + zusatzAus(monat)) * anteil
-    vermoegen += nwEin - nwAus
+    liq += tagEin - tagAus
+    nw += nwEin - nwAus
+    zeilen.push({ datum, liq, nw, ein: tagEin, aus: tagAus })
+  }
 
+  // ── Fächer: Unsicherheit aus den echten Abweichungen ───────────────────────────────────────
+  const seed = hashe(e.heute + '|' + e.tage.length)
+  const fLiq = faecher(mLiq.residuen, zeilen.length, { seed })
+  const fNw = faecher(mNw.residuen, zeilen.length, { seed: seed + 1 })
+
+  const tage: PrognoseTag[] = zeilen.map((z, k) => ({
+    datum: z.datum,
+    liquiditaet: round2(z.liq),
+    liquiditaetUnten: round2(z.liq + fLiq.unten[k]),
+    liquiditaetOben: round2(z.liq + fLiq.oben[k]),
+    vermoegen: round2(z.nw),
+    vermoegenUnten: round2(z.nw + fNw.unten[k]),
+    vermoegenOben: round2(z.nw + fNw.oben[k]),
+  }))
+
+  // ── Monatszeilen aus den Tagen ────────────────────────────────────────────────────────────
+  const monate: PrognoseMonat[] = []
+  let gesamtTief = { betrag: e.liquiditaet, datum: e.heute }
+  let risiko = { betrag: Number.POSITIVE_INFINITY, datum: ersterTag }
+  const nachMonat = new Map<string, number[]>()
+  zeilen.forEach((z, k) => {
+    const m = monatVon(z.datum)
+    const liste = nachMonat.get(m) ?? []
+    liste.push(k)
+    nachMonat.set(m, liste)
+  })
+  for (const [monat, indizes] of nachMonat) {
+    let ein = 0, aus = 0
+    let tief = { betrag: Number.POSITIVE_INFINITY, datum: zeilen[indizes[0]].datum }
+    for (const k of indizes) {
+      ein += zeilen[k].ein; aus += zeilen[k].aus
+      if (zeilen[k].liq < tief.betrag) tief = { betrag: zeilen[k].liq, datum: zeilen[k].datum }
+      if (tage[k].liquiditaetUnten < risiko.betrag) risiko = { betrag: tage[k].liquiditaetUnten, datum: zeilen[k].datum }
+    }
+    if (tief.betrag < gesamtTief.betrag) gesamtTief = tief
+    const letzter = indizes[indizes.length - 1]
     monate.push({
       month: monat,
       einnahmen: round2(ein),
       ausgaben: round2(aus),
-      liquiditaetEnde: round2(saldo),
+      liquiditaetEnde: round2(zeilen[letzter].liq),
       tiefpunkt: round2(tief.betrag),
       tiefpunktDatum: tief.datum,
-      vermoegenEnde: round2(vermoegen),
-      teilmonat: teil,
+      vermoegenEnde: round2(zeilen[letzter].nw),
+      // Der laufende Monat steht nur drin, wenn es noch Resttage gibt — dann sind es nur diese.
+      teilmonat: monat === startMonat,
     })
   }
+  if (!Number.isFinite(risiko.betrag)) risiko = { betrag: e.liquiditaet, datum: e.heute }
 
   if (gesamtTief.betrag < 0) {
     warnungen.push(
-      `Die Liquidität wird voraussichtlich am ${gesamtTief.datum} negativ (${round2(gesamtTief.betrag)} €). ` +
+      `Die Liquidität wird im erwarteten Verlauf am ${gesamtTief.datum} negativ (${round2(gesamtTief.betrag)} €). ` +
       'Das ist eine Fortschreibung deiner bisherigen Monate, keine Sicherheit — aber ein Anlass, die Abbuchungen und Einzahlungen davor anzusehen.',
     )
+  } else if (risiko.betrag < 0) {
+    warnungen.push(
+      `Im erwarteten Verlauf bleibt die Liquidität positiv, aber in etwa 1 von 10 möglichen Verläufen liegt sie bis zum ${risiko.datum} ` +
+      `unter ${round2(risiko.betrag)} €. Ein großer Einzelposten reicht dafür.`,
+    )
   }
-  if (basis.length > 0 && basisLohn === 0 && !e.annahmen.some(a => a.art === 'lohn')) {
-    warnungen.push('In den Basismonaten ist kein Lohn gebucht (Steuerrolle „lohn"). Ein erwartetes Gehalt kannst du als Annahme eintragen.')
+  if (mLiq.daten.tage > 0 && basisLohn === 0 && !e.annahmen.some(a => a.art === 'lohn')) {
+    warnungen.push('In den letzten Monaten ist kein Lohn gebucht (Steuerrolle „lohn"). Ein erwartetes Gehalt kannst du als Annahme eintragen.')
   }
 
   return {
     monate,
+    tage,
     start: { liquiditaet: round2(e.liquiditaet), vermoegen: round2(e.vermoegen) },
     tiefpunkt: { betrag: round2(gesamtTief.betrag), datum: gesamtTief.datum },
+    risikoTiefpunkt: { betrag: round2(risiko.betrag), datum: risiko.datum },
     basis: {
-      einnahmenOhneLohn: round2(basisEinnahmenOhneLohn),
+      einnahmenOhneLohn: round2(basisEin),
       lohn: round2(basisLohn),
-      ausgaben: round2(basisAusgaben),
-      basisMonate: basis.length,
-      saldo: round2(basisEinnahmenOhneLohn + basisLohn - basisAusgaben),
+      ausgaben: round2(basisAus),
+      saldo: round2(basisEin + basisLohn - basisAus),
+    },
+    modell: {
+      halbwertszeit: mLiq.halbwertszeit, daten: mLiq.daten, backtest: mLiq.backtest,
+      zyklen: mLiq.zyklen, muster: mLiq.muster, hinweise: mLiq.hinweise,
     },
     termine: termineRoh
       .sort((a, b) => a.datum.localeCompare(b.datum))
