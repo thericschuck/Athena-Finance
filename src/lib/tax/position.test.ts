@@ -193,3 +193,24 @@ test('ohne jede Lohnbuchung wird kein Brutto erfunden', () => {
   // 0 - 0 - 0 + 5000 - 36 = 4964
   assert.equal(p.zve.betrag, 4964)
 })
+
+test('Krypto-Gewinne: ohne Angabe nichts, mit Angabe im Einkommen und in der Ruecklage, ohne Doppelzaehlung', () => {
+  const basis = { ...EINGABEN, betriebseinnahmen: 30_000, betriebsausgaben: 5000, lohnNettoImJahr: 24_000, monateMitLohn: 12 }
+  const ohne = berechneSteuerposition(basis)
+  assert.deepEqual(ohne.krypto, { zuVersteuern: 0, steuer: 0 })
+
+  const mit = berechneSteuerposition({ ...basis, kryptoZuVersteuern: 4000 })
+  assert.equal(mit.krypto.zuVersteuern, 4000)
+  assert.equal(mit.zve.betrag, ohne.zve.betrag + 4000)
+  assert.ok(mit.krypto.steuer > 0)
+  // Gewinn-Steuer und Krypto-Steuer zusammen sind genau die Mehrsteuer gegenueber "ohne Gewinn, ohne Krypto".
+  const nurLohn = berechneSteuerposition({ ...basis, betriebseinnahmen: 0, betriebsausgaben: 0 })
+  // (Die ausgewiesene Einkommensteuer ist auf volle Euro gerundet, die Schichten sind es nicht.)
+  assert.ok(Math.abs(mit.gewinn_kostet.steuer + mit.krypto.steuer - (mit.steuer.einkommensteuer - nurLohn.steuer.einkommensteuer)) < 1)
+  assert.equal(mit.ruecklage.soll, Math.round((mit.gewinn_kostet.steuer + mit.krypto.steuer) * 100) / 100)
+})
+
+test('Negativer Krypto-Wert mindert das Einkommen nicht', () => {
+  const p = berechneSteuerposition({ ...EINGABEN, lohnNettoImJahr: 24_000, monateMitLohn: 12, kryptoZuVersteuern: -500 })
+  assert.equal(p.krypto.zuVersteuern, 0)
+})

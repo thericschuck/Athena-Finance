@@ -1926,6 +1926,102 @@ export type Database = {
           },
         ]
       }
+      kraken_trades: {
+        Row: {
+          base: string
+          cost: number
+          created_at: string
+          eur_kurs: number | null
+          eur_kurs_geschaetzt: boolean
+          fee: number
+          id: string
+          pair: string
+          price: number
+          quote: string
+          side: string
+          traded_at: string
+          txid: string
+          user_id: string
+          vol: number
+        }
+        Insert: {
+          base: string
+          cost: number
+          created_at?: string
+          eur_kurs?: number | null
+          eur_kurs_geschaetzt?: boolean
+          fee?: number
+          id?: string
+          pair: string
+          price: number
+          quote: string
+          side: string
+          traded_at: string
+          txid: string
+          user_id: string
+          vol: number
+        }
+        Update: {
+          base?: string
+          cost?: number
+          created_at?: string
+          eur_kurs?: number | null
+          eur_kurs_geschaetzt?: boolean
+          fee?: number
+          id?: string
+          pair?: string
+          price?: number
+          quote?: string
+          side?: string
+          traded_at?: string
+          txid?: string
+          user_id?: string
+          vol?: number
+        }
+        Relationships: []
+      }
+      kraken_ledger: {
+        Row: {
+          amount: number
+          asset: string
+          created_at: string
+          fee: number
+          id: string
+          ledger_id: string
+          occurred_at: string
+          refid: string | null
+          subtype: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          asset: string
+          created_at?: string
+          fee?: number
+          id?: string
+          ledger_id: string
+          occurred_at: string
+          refid?: string | null
+          subtype?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          asset?: string
+          created_at?: string
+          fee?: number
+          id?: string
+          ledger_id?: string
+          occurred_at?: string
+          refid?: string | null
+          subtype?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       monthly_finance_summary: {
         Row: {
           created_at: string

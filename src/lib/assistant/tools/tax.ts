@@ -24,12 +24,22 @@ export function buildTaxTools(supabase: DB, userId: string) {
       }),
       execute: async ({ jahr }) => {
         try {
-          const { eingaben, rollen, ruecklageZiel } = await ladeSteuerdaten(supabase, userId, jahr)
+          const { eingaben, rollen, ruecklageZiel, krypto, kryptoFehler } = await ladeSteuerdaten(supabase, userId, jahr)
           const position = berechneSteuerposition(eingaben)
           return {
             ...position,
             kategorie_zuordnung: rollen,
             ruecklage_sparziel: ruecklageZiel,
+            // Krypto (§ 23 EStG, nur Kraken): Saldo, was zu versteuern ist und was NICHT berechnet werden konnte.
+            krypto_veraeusserungen: krypto
+              ? {
+                  saldo_steuerpflichtig: krypto.ergebnis.saldoSteuerpflichtigEur,
+                  zu_versteuern: krypto.ergebnis.zuVersteuernEur,
+                  steuerfreier_gewinn: krypto.ergebnis.steuerfreierGewinnEur,
+                  freigrenze: krypto.freigrenzeEur,
+                  warnungen: krypto.warnungen,
+                }
+              : { fehler: kryptoFehler ?? 'nicht geladen' },
             hinweis_zur_deutung:
               'Alles unter `steuer` und `zve` ist geschätzt — die Vorsorgeaufwendungen kennt die App ' +
               'nicht genau. Der Grenzsteuersatz ist robust, weil ihn Abzüge nur verschieben, wenn sie ' +

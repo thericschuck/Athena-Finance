@@ -16,12 +16,12 @@ import {
   fetchKrakenBalances,
   fetchKrakenAssetInfo,
   fetchKrakenAssetPairs,
-  fetchKrakenTradesHistory,
   buildKrakenPriceMap,
   resolveKrakenAsset,
   type KrakenAssetPair,
 } from '@/lib/kraken'
 import { computeAverageCostBasis, type NormalizedTrade } from '@/lib/kraken/cost-basis'
+import { syncKrakenHistorie } from '@/lib/kraken/history'
 
 export type KrakenSyncResult =
   | { error: string }
@@ -138,42 +138,35 @@ export async function syncKrakenForUser(
     warnings.push(`Kein Preis gefunden für: ${unpriced.map(e => e.symbol).join(', ')}`)
   }
 
-  // 5. Trade history → average cost basis in EUR. Best-effort: a Kraken API hiccup here
-  // shouldn't fail the whole sync, it just means avg_buy_price stays whatever it already was.
+  // 5. Trade history -> stored for the tax (FIFO) and averaged into a cost basis in EUR. Best-effort: a
+  // Kraken API hiccup here shouldn't fail the whole sync, it just means avg_buy_price stays whatever it
+  // already was. `syncKrakenHistorie` is resumable (see history.ts), so a rate limit only delays the
+  // older history to the next run. The average uses everything stored, not just the newest 500 trades.
   let avgCostByCode = new Map<string, number | null>()
   try {
-    const trades = await fetchKrakenTradesHistory(apiKey, apiSecret)
+    const historie = await syncKrakenHistorie(supabase, userId, apiKey, apiSecret, assetPairs, usdPerEur)
+    warnings.push(...historie.warnungen)
     const normalized: NormalizedTrade[] = []
     let skippedNonFiatQuote = 0
-    for (const t of trades) {
-      const pairInfo = assetPairs[t.pair]
-      if (!pairInfo) continue
-      const price = parseFloat(t.price), cost = parseFloat(t.cost), vol = parseFloat(t.vol)
-      if ([price, cost, vol].some(Number.isNaN)) continue
-
-      let costEur: number | null = null
-      if (pairInfo.quote === 'ZEUR') costEur = cost
-      else if (pairInfo.quote === 'ZUSD') costEur = cost / usdPerEur
-      // Crypto-quoted trades (e.g. ETH/BTC) have no direct EUR cost — excluded from the
+    for (const t of historie.trades) {
+      // Crypto-quoted trades (e.g. ETH/BTC) have no direct EUR cost -- excluded from the
       // average on purpose, see cost-basis.ts's module comment.
-      if (costEur == null) { skippedNonFiatQuote++; continue }
-
-      normalized.push({ code: pairInfo.base, type: t.type, volume: vol, costEur, time: t.time })
+      if (t.eur_kurs == null) { skippedNonFiatQuote++; continue }
+      normalized.push({
+        code: t.base, type: t.side === 'sell' ? 'sell' : 'buy', volume: t.vol,
+        costEur: t.cost * t.eur_kurs, time: Date.parse(t.traded_at) / 1000,
+      })
     }
-    if (trades.length > 0 && normalized.length === 0) {
+    if (historie.trades.length > 0 && normalized.length === 0) {
       warnings.push(
-        skippedNonFiatQuote === trades.length
+        skippedNonFiatQuote === historie.trades.length
           ? 'Einstandspreise nicht berechnet: alle Trades liefen gegen andere Kryptowährungen, nicht EUR/USD.'
           : 'Einstandspreise nicht berechnet: Handelspaare konnten nicht zugeordnet werden.'
       )
     }
     avgCostByCode = computeAverageCostBasis(normalized)
   } catch (e) {
-    // Trade history is best-effort — sync still succeeds without fresh cost-basis data —
-    // but a permission error (missing "Query Closed Orders & Trades" API-key scope) is the
-    // single most likely reason avg_buy_price never gets filled, so surface it instead of
-    // silently leaving every asset without a cost basis.
-    warnings.push(`Einstandspreise nicht abrufbar (Kraken-API-Key-Berechtigung prüfen): ${(e as Error).message}`)
+    warnings.push(`Einstandspreise nicht abrufbar: ${(e as Error).message}`)
   }
 
   // 6. Upsert into `assets` — real DB upsert via the (user_id, exchange, symbol) unique

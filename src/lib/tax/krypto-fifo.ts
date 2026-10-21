@@ -118,6 +118,8 @@ export type FifoErgebnis = {
   jahre: JahresErgebnis[]
   /** Bestand nach allen Vorgängen (Menge und Restkosten); `wallet` ist im Gesamtverfahren null. */
   bestand: { asset: string; wallet: string | null; quantity: number; kostenEur: number }[]
+  /** Noch nicht verkaufte Lose mit dem Tag, ab dem ein Verkauf steuerfrei ist (Tag nach Ablauf der Haltefrist). */
+  offeneLose: { asset: string; wallet: string | null; anschaffungId: string; anschaffungDatum: string; quantity: number; kostenEur: number; steuerfreiAb: string }[]
   warnungen: string[]
 }
 
@@ -310,5 +312,24 @@ export function berechneKryptoFifo(
     return { asset, wallet: verfahren === 'gesamt' ? null : (wallet ?? 'default'), quantity, kostenEur: rund(kostenEur) }
   }).filter(b => b.quantity > EPS)
 
-  return { veraeusserungen: ergebnisse, jahre: jahresErgebnisse, bestand, warnungen }
+  const offeneLose = [...lose.entries()].flatMap(([key, liste]) => {
+    const [asset, wallet] = key.split(TRENNER)
+    return liste.filter(l => l.restMenge > EPS).map(l => ({
+      asset,
+      wallet: verfahren === 'gesamt' ? null : (wallet ?? 'default'),
+      anschaffungId: l.id,
+      anschaffungDatum: l.date,
+      quantity: l.restMenge,
+      kostenEur: rund(l.menge > 0 ? l.kosten * (l.restMenge / l.menge) : 0),
+      steuerfreiAb: tagNach(haltefristEnde(l.date)),
+    }))
+  }).sort((a, b) => a.steuerfreiAb.localeCompare(b.steuerfreiAb))
+
+  return { veraeusserungen: ergebnisse, jahre: jahresErgebnisse, bestand, offeneLose, warnungen }
+}
+
+/** Der Kalendertag nach `datum` (YYYY-MM-DD). */
+function tagNach(datum: string): string {
+  const { y, m, d } = parseDatum(datum)
+  return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10)
 }

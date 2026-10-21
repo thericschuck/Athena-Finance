@@ -5,6 +5,8 @@ import type { SteuerEingaben } from './position.ts'
 import { leseSteuerprofil } from './profil.ts'
 import { effektiveRollen, effektiveEuerZeilen, effektiveAnteile, wendeAnteilAn } from './rollen.ts'
 import type { EuerBuchung, EuerZeileDef } from './euer.ts'
+import { ladeKrakenSteuer } from './krypto-laden.ts'
+import type { KrakenSteuer } from './krypto-kraken.ts'
 
 type DB = SupabaseClient<Database>
 
@@ -80,6 +82,10 @@ export type LadeErgebnis = {
   rollen: { kategorie: string; rolle: string | null; summe: number }[]
   /** Name des gefundenen Ruecklage-Sparziels, falls vorhanden. */
   ruecklageZiel: { id: string; beschreibung: string; ziel: number | null } | null
+  /** Krypto-Veraeusserungen (§ 23 EStG) aus der Kraken-Historie; null, wenn sie nicht geladen werden konnte. */
+  krypto: KrakenSteuer | null
+  /** Warum `krypto` fehlt. Wird angezeigt: ohne sie wuerde die Steuer still zu niedrig ausfallen. */
+  kryptoFehler: string | null
 }
 
 /**
@@ -207,6 +213,16 @@ export async function ladeSteuerdaten(
 
   const ziel = (zieleRes.data ?? []).find(z => istRuecklageZiel(z.description, jahr)) ?? null
 
+  // Krypto-Gewinne gehoeren ins Einkommen. Scheitert das Laden, wird das gesagt (kryptoFehler) statt mit 0
+  // weiterzurechnen -- der Rest der Steuerposition bleibt trotzdem nutzbar.
+  let krypto: KrakenSteuer | null = null
+  let kryptoFehler: string | null = null
+  try {
+    krypto = await ladeKrakenSteuer(supabase, userId, jahr)
+  } catch (fehler) {
+    kryptoFehler = fehler instanceof Error ? fehler.message : 'Krypto-Daten nicht ladbar.'
+  }
+
   return {
     // Ersetzte Belege bleiben in der Datenbank, gehoeren aber nicht in die
     // aktuelle Liste -- sonst zaehlt ein korrigierter Beleg doppelt.
@@ -254,6 +270,7 @@ export async function ladeSteuerdaten(
       profil: leseSteuerprofil(profilRes.data?.value ?? null),
       umsatzVorjahr,
       ruecklageIst: ziel ? Number(ziel.current_amount ?? 0) : null,
+      kryptoZuVersteuern: krypto?.ergebnis.zuVersteuernEur ?? 0,
       unzugeordnet: Array.from(unzugeordnetMap, ([kategorie, betrag]) => ({
         kategorie,
         betrag: Math.round(betrag * 100) / 100,
@@ -273,5 +290,7 @@ export async function ladeSteuerdaten(
           ziel: ziel.target_amount === null ? null : Number(ziel.target_amount),
         }
       : null,
+    krypto,
+    kryptoFehler,
   }
 }

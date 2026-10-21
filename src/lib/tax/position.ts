@@ -52,6 +52,11 @@ export type SteuerEingaben = {
   ruecklageIst: number | null
   /** Einnahmen in Kategorien ohne steuerliche Rolle. */
   unzugeordnet: { kategorie: string; betrag: number }[]
+  /**
+   * Private Veraeusserungsgewinne mit Krypto (§ 23 EStG), die in diesem Jahr zu versteuern sind -- nach
+   * Haltefrist und Freigrenze, also schon der Betrag, der ins Einkommen fliesst. Fehlt = 0.
+   */
+  kryptoZuVersteuern?: number
 }
 
 export type Quelle = 'gerechnet' | 'geschaetzt'
@@ -89,6 +94,8 @@ export type Steuerposition = {
     abstand_laufend: number
   }
   ruecklage: { soll: number; ist: number | null; luecke: number | null }
+  /** Steuer auf die Krypto-Gewinne: Differenz zur Steuer ohne sie (inkl. Kirchensteuer). */
+  krypto: { zuVersteuern: number; steuer: number }
   unzugeordnet: { kategorie: string; betrag: number }[]
   warnungen: string[]
 }
@@ -161,7 +168,8 @@ export function berechneSteuerposition(e: SteuerEingaben): Steuerposition {
   const werbungskosten = bruttoLohn > 0 ? tarif.werbungskostenpauschale : 0
   const vorsorge = eur(bruttoLohn * (profil.vorsorgeAnteilPct / 100))
   const sonderausgaben = tarif.sonderausgabenpauschale
-  const zve = Math.max(0, eur(bruttoLohn - werbungskosten - vorsorge + gewinn - sonderausgaben))
+  const krypto = eur(Math.max(0, e.kryptoZuVersteuern ?? 0))
+  const zve = Math.max(0, eur(bruttoLohn - werbungskosten - vorsorge + gewinn + krypto - sonderausgaben))
 
   // ── Steuer ─────────────────────────────────────────────────────────────────
   const est = estFuerZvE(zve, tarif)
@@ -186,8 +194,17 @@ export function berechneSteuerposition(e: SteuerEingaben): Steuerposition {
   // Was der Gewinn wirklich kostet: die Differenz zur Steuer ohne ihn. Das ist
   // die ehrlichere Zahl als "Gewinn x Grenzsteuersatz", weil ein Gewinn oft
   // ueber eine Zonengrenze hinweg reicht.
-  const estOhneGewinn = estRoh(Math.max(0, zve - gewinn), tarif)
-  const steuerAufGewinn = eur(Math.max(0, (estRoh(zve, tarif) - estOhneGewinn) * zuschlagFaktor))
+  // Krypto liegt als oberste Schicht obenauf: erst der Gewinn, dann die Krypto-Gewinne. So ergeben beide
+  // Differenzen zusammen genau die Mehrsteuer und die Ruecklage zaehlt nichts doppelt.
+  const zveOhneKrypto = Math.max(0, zve - krypto)
+  const estOhneGewinn = estRoh(Math.max(0, zveOhneKrypto - gewinn), tarif)
+  const steuerAufGewinn = eur(Math.max(0, (estRoh(zveOhneKrypto, tarif) - estOhneGewinn) * zuschlagFaktor))
+
+  // Was die Krypto-Gewinne kosten: dieselbe Differenzrechnung, getrennt ausgewiesen, damit die Ruecklage
+  // sie mitfuehrt und sie trotzdem nicht im "Gewinn kostet" von Schuck Webdesign untergehen.
+  const steuerAufKrypto = krypto > 0
+    ? eur(Math.max(0, (estRoh(zve, tarif) - estRoh(zveOhneKrypto, tarif)) * zuschlagFaktor))
+    : 0
 
   // ── Kleinunternehmer § 19 UStG ─────────────────────────────────────────────
   // Zwei Grenzen, und die Vorjahresgrenze entscheidet, ob man im laufenden Jahr
@@ -215,7 +232,7 @@ export function berechneSteuerposition(e: SteuerEingaben): Steuerposition {
   }
 
   // ── Ruecklage ──────────────────────────────────────────────────────────────
-  const soll = steuerAufGewinn
+  const soll = eur(steuerAufGewinn + steuerAufKrypto)
   const luecke = e.ruecklageIst === null ? null : eur(Math.max(0, soll - e.ruecklageIst))
   if (e.ruecklageIst === null && soll > 0) {
     warnungen.push(
@@ -275,6 +292,7 @@ export function berechneSteuerposition(e: SteuerEingaben): Steuerposition {
       abstand_laufend: abstandLaufend,
     },
     ruecklage: { soll, ist: e.ruecklageIst, luecke },
+    krypto: { zuVersteuern: krypto, steuer: steuerAufKrypto },
     unzugeordnet: e.unzugeordnet,
     warnungen,
   }

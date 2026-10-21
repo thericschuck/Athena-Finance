@@ -11,6 +11,13 @@ const euro = (n: number) =>
 const prozent = (n: number) =>
   `${n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`
 
+const menge = (n: number) => n.toLocaleString('de-DE', { maximumFractionDigits: 6 })
+
+const datum = (iso: string) => {
+  const [j, m, t] = iso.split('-')
+  return `${t}.${m}.${j}`
+}
+
 const ROLLEN_LABEL: Record<string, string> = {
   betriebseinnahme: 'Betriebseinnahme',
   betriebsausgabe: 'Betriebsausgabe',
@@ -70,6 +77,7 @@ export default async function SteuerPage({
   const p = berechneSteuerposition(daten.eingaben)
   const ampel = AMPEL[p.kleinunternehmer.status]
   const jahre = [jahr - 1, jahr, jahr + 1]
+  const heute = new Date().toISOString().slice(0, 10)
 
   return (
     <div className="p-4 sm:p-8 space-y-6">
@@ -145,6 +153,7 @@ export default async function SteuerPage({
               ['− Werbungskostenpauschale', euro(-p.zve.abzuege.werbungskosten), ''],
               ['− Vorsorgeaufwand (pauschal)', euro(-p.zve.abzuege.vorsorge), 'geschätzt'],
               ['+ Gewinn', euro(p.betrieb.gewinn), ''],
+              ...(p.krypto.zuVersteuern > 0 ? [['+ Krypto-Gewinne (§ 23 EStG)', euro(p.krypto.zuVersteuern), 'Kraken']] : []),
               ['− Sonderausgabenpauschale', euro(-p.zve.abzuege.sonderausgaben), ''],
             ].map(([label, wert, hinweis]) => (
               <div key={label} className="flex items-baseline justify-between gap-3 px-4 py-2">
@@ -240,6 +249,132 @@ export default async function SteuerPage({
           </section>
         </div>
       </div>
+
+      {/* Krypto: eigene Einkunftsart (§ 23 EStG), deshalb eigener Abschnitt mit eigenen Einschränkungen. */}
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-sm font-semibold">Krypto-Veräußerungen {jahr} (§ 23 EStG, Kraken)</h2>
+          <p className="text-xs text-muted-foreground">
+            FIFO über die gespeicherte Kraken-Historie. Gewinne nach mehr als einem Jahr Haltedauer sind steuerfrei;
+            bleibt der Saldo der übrigen unter {euro(daten.krypto?.freigrenzeEur ?? 1000)}, ist er ebenfalls steuerfrei
+            (Freigrenze: ab dem ersten Euro darüber wird alles steuerpflichtig).
+          </p>
+        </div>
+
+        {daten.kryptoFehler && (
+          <div className="rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm">
+            Die Krypto-Daten konnten nicht geladen werden, die Steuer oben enthält sie deshalb nicht: {daten.kryptoFehler}
+          </div>
+        )}
+
+        {daten.krypto && (
+          <>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Kennzahl
+                label="Steuerpflichtiger Saldo"
+                wert={euro(daten.krypto.ergebnis.saldoSteuerpflichtigEur)}
+                fussnote="Verkäufe innerhalb der Haltefrist"
+              />
+              <Kennzahl
+                label="Davon zu versteuern"
+                wert={euro(daten.krypto.ergebnis.zuVersteuernEur)}
+                fussnote={
+                  daten.krypto.ergebnis.zuVersteuernEur > 0
+                    ? 'Über der Freigrenze: der ganze Betrag zählt'
+                    : daten.krypto.ergebnis.saldoSteuerpflichtigEur > 0
+                      ? `Noch ${euro(daten.krypto.freigrenzeEur - daten.krypto.ergebnis.saldoSteuerpflichtigEur - 0.01)} bis zur Freigrenze`
+                      : 'Kein Gewinn innerhalb der Haltefrist'
+                }
+                gross
+              />
+              <Kennzahl
+                label="Steuerfreier Gewinn"
+                wert={euro(daten.krypto.ergebnis.steuerfreierGewinnEur)}
+                fussnote="Verkäufe nach mehr als einem Jahr"
+              />
+              <Kennzahl
+                label="Steuer auf Krypto"
+                wert={euro(p.krypto.steuer)}
+                fussnote="Mehrsteuer, steckt in der Rücklage"
+              />
+            </div>
+
+            {daten.krypto.warnungen.length > 0 && (
+              <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 px-4 py-3 space-y-1.5">
+                {daten.krypto.warnungen.map(w => (
+                  <div key={w} className="flex gap-2 text-sm">
+                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                    <span>{w}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {daten.krypto.veraeusserungenImJahr.length > 0 && (
+              <div className="overflow-x-auto rounded-lg border border-border bg-card">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                      <th className="px-4 py-2 font-normal">Datum</th>
+                      <th className="px-4 py-2 font-normal">Asset</th>
+                      <th className="px-4 py-2 text-right font-normal">Menge</th>
+                      <th className="hidden px-4 py-2 text-right font-normal sm:table-cell">Erlös</th>
+                      <th className="px-4 py-2 text-right font-normal">Gewinn</th>
+                      <th className="px-4 py-2 text-right font-normal">Steuerpflichtig</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {daten.krypto.veraeusserungenImJahr.map(v => (
+                      <tr key={v.veraeusserungId}>
+                        <td className="px-4 py-2 tabular-nums">{datum(v.date)}</td>
+                        <td className="px-4 py-2">{v.asset}</td>
+                        <td className="px-4 py-2 text-right tabular-nums">{menge(v.quantity)}</td>
+                        <td className="hidden px-4 py-2 text-right tabular-nums sm:table-cell">{euro(v.erloesEur)}</td>
+                        <td className="px-4 py-2 text-right tabular-nums">{euro(v.gewinnEur)}</td>
+                        <td className="px-4 py-2 text-right tabular-nums">
+                          {euro(v.steuerpflichtigerGewinnEur)}
+                          {v.fehlmenge > 0 && <span className="ml-1 text-xs text-amber-600 dark:text-amber-400">Fehlmenge {menge(v.fehlmenge)}</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {daten.krypto.fifo.offeneLose.length > 0 && (
+              <div className="space-y-1.5">
+                <h3 className="text-xs font-semibold text-muted-foreground">Bestand: ab wann ein Verkauf steuerfrei ist</h3>
+                <div className="rounded-lg border border-border bg-card divide-y divide-border text-sm">
+                  {daten.krypto.fifo.offeneLose.slice(0, 10).map(l => (
+                    <div key={`${l.anschaffungId}-${l.wallet}-${l.quantity}`} className="flex items-baseline justify-between gap-3 px-4 py-2">
+                      <span>
+                        {menge(l.quantity)} {l.asset}
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          gekauft {datum(l.anschaffungDatum)} · Kosten {euro(l.kostenEur)}{l.wallet === 'extern' ? ' · ausgezahlt' : ''}
+                        </span>
+                      </span>
+                      <span className="tabular-nums text-muted-foreground">
+                        {l.steuerfreiAb <= heute ? 'bereits steuerfrei' : `steuerfrei ab ${datum(l.steuerfreiAb)}`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                {daten.krypto.fifo.offeneLose.length > 10 && (
+                  <p className="text-xs text-muted-foreground">Die nächsten 10 von {daten.krypto.fifo.offeneLose.length} Losen, nach Datum sortiert.</p>
+                )}
+              </div>
+            )}
+
+            <p className="text-xs text-muted-foreground">
+              Keine Steuerberatung. Offen mit dem Steuerberater: ob die Finanzverwaltung die Berechnung je Wallet
+              (BMF-Schreiben vom 06.03.2025) oder im Gesamtverfahren verlangt. Mit Kraken als einziger Wallet ist
+              das Ergebnis dasselbe.{' '}
+              <Link href="/crypto" className="underline">Kraken synchronisieren</Link>
+            </p>
+          </>
+        )}
+      </section>
 
       {/* Nicht zugeordnete Einnahmen -- der Grund, warum eine Zahl zu niedrig
           sein kann. Gehört sichtbar auf die Seite, nicht in eine Fußnote. */}
