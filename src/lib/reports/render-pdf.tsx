@@ -116,6 +116,41 @@ function ReportDocument({ data }: { data: ReportData }) {
             ))}
         </View>
 
+        {data.tax && (
+          <View style={styles.section}>
+            <Text style={styles.h2}>Steuer-Anhang {data.tax.year}</Text>
+            {[
+              ['Gewinn Schuck Webdesign', fmtEur(data.tax.profit)],
+              ['Zu versteuerndes Einkommen (geschätzt)', fmtEur(data.tax.taxableIncome)],
+              ['Einkommensteuer gesamt (geschätzt)', fmtEur(data.tax.estimatedTax)],
+              ['Grenzsteuersatz auf den nächsten Euro', `${data.tax.marginalRatePct.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`],
+              ['Steuerrücklage Soll / Ist', `${fmtEur(data.tax.reserveTarget)} / ${data.tax.reserveActual === null ? 'kein Sparziel' : fmtEur(data.tax.reserveActual)}`],
+              ...(data.tax.crypto
+                ? [
+                  ['Krypto (Kraken): steuerpflichtiger Saldo', fmtEur(data.tax.crypto.taxableBalance)],
+                  [`Krypto: zu versteuern (Freigrenze ${fmtEur(data.tax.crypto.allowance)})`, fmtEur(data.tax.crypto.toTax)],
+                  ['Krypto: steuerfreier Gewinn (Haltefrist)', fmtEur(data.tax.crypto.taxFreeGain)],
+                ]
+                : []),
+            ].map(([label, value]) => (
+              <View style={styles.row} key={label}>
+                <Text style={styles.rowLabel}>{label}</Text>
+                <Text style={styles.rowValue}>{value}</Text>
+              </View>
+            ))}
+            {data.tax.warnings.map(w => (
+              <Text key={w} style={[styles.empty, { marginTop: 4 }]}>• {w}</Text>
+            ))}
+            <Text style={[styles.empty, { marginTop: 6 }]}>Schätzung, kein Steuerbescheid und keine Steuerberatung.</Text>
+          </View>
+        )}
+        {!data.tax && data.taxError && (
+          <View style={styles.section}>
+            <Text style={styles.h2}>Steuer-Anhang</Text>
+            <Text style={styles.empty}>Der Steuer-Anhang konnte nicht erstellt werden: {data.taxError}</Text>
+          </View>
+        )}
+
         <Text style={styles.footer}>
           Automatisch erzeugt von Athena — athena-finance.de/finance/reports
         </Text>

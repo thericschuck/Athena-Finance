@@ -26,6 +26,7 @@ export function ReportsClient({ reports, reminder, suggestedYear }: Props) {
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [viewing, setViewing] = useState<ReportRow | null>(null)
+  const [includeTax, setIncludeTax] = useState(false)
 
   const monthly = reports.filter(r => r.type === 'monthly')
   const annual  = reports.filter(r => r.type === 'annual')
@@ -33,7 +34,7 @@ export function ReportsClient({ reports, reminder, suggestedYear }: Props) {
   const handleGenerateAnnual = () => {
     setError(null)
     startTransition(async () => {
-      const result = await generateAnnualReport(suggestedYear)
+      const result = await generateAnnualReport(suggestedYear, { includeTax })
       if ('error' in result) setError(result.error)
       else router.refresh()
     })
@@ -89,9 +90,18 @@ export function ReportsClient({ reports, reminder, suggestedYear }: Props) {
       <section className="space-y-2">
         <h2 className="text-sm font-semibold">Jahresreport</h2>
         <div className="rounded-lg border border-border bg-card px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
-          <p className="text-sm text-muted-foreground">
-            Fasst das ganze Jahr {suggestedYear} zusammen — vor dem Versand in Ruhe prüfbar.
-          </p>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Fasst das ganze Jahr {suggestedYear} zusammen — vor dem Versand in Ruhe prüfbar.
+            </p>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox" className="size-4"
+                checked={includeTax} onChange={e => setIncludeTax(e.target.checked)}
+              />
+              Steuer-Anhang einschließen (Gewinn, geschätzte Steuer, Rücklage, Krypto)
+            </label>
+          </div>
           <Button onClick={handleGenerateAnnual} disabled={isPending} size="sm">
             {isPending
               ? <Loader2 className="size-4 animate-spin" />

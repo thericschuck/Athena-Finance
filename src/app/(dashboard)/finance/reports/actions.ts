@@ -14,7 +14,7 @@ import { getReportForEmail, getReportPdfPath } from '@/lib/data/finance-budget'
 
 const annualArgs = z.object({
   year: z.number().int().min(2000).max(2100),
-  opts: z.object({ sendEmail: z.boolean().optional() }).optional(),
+  opts: z.object({ sendEmail: z.boolean().optional(), includeTax: z.boolean().optional() }).optional(),
 })
 
 /**
@@ -25,7 +25,7 @@ const annualArgs = z.object({
  */
 export async function generateAnnualReport(
   year: number,
-  opts?: { sendEmail?: boolean },
+  opts?: { sendEmail?: boolean; includeTax?: boolean },
 ): Promise<{ success: true; reportId: string } | { error: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -37,8 +37,8 @@ export async function generateAnnualReport(
   const title  = `Jahresreport ${period.label}`
 
   try {
-    const data      = await buildReportData(supabase, user.id, period)
-    const html      = renderReportHtml(data)
+    const data      = await buildReportData(supabase, user.id, period, { includeTax: opts?.includeTax })
+    const html     = renderReportHtml(data)
     const pdfBuffer = await renderReportPdf(data)
 
     const { id } = await persistReport(supabase, user.id, {

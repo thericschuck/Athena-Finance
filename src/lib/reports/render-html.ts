@@ -85,6 +85,28 @@ export function renderReportHtml(data: ReportData): string {
       </table>`
     : `<p style="color:#74776C;font-size:14px;margin:0;">Keine offenen Hinweise.</p>`
 
+  const t = data.tax
+  const smallBusinessLabel = { gruen: 'innerhalb der Grenzen', gelb: 'nähert sich einer Grenze', rot: 'Grenze überschritten', unbekannt: 'Vorjahr unbekannt' }
+  const taxHtml = t
+    ? `<div class="section"><h2>Steuer-Anhang ${t.year}</h2>
+        <table role="presentation" width="100%" style="border-collapse:collapse;">
+          ${row('Gewinn Schuck Webdesign', fmtEur(t.profit))}
+          ${row('Zu versteuerndes Einkommen (geschätzt)', fmtEur(t.taxableIncome))}
+          ${row('Einkommensteuer gesamt (geschätzt)', fmtEur(t.estimatedTax))}
+          ${row('Grenzsteuersatz auf den nächsten Euro', `${t.marginalRatePct.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`)}
+          ${row('Steuerrücklage Soll / Ist', `${fmtEur(t.reserveTarget)} / ${t.reserveActual === null ? 'kein Sparziel' : fmtEur(t.reserveActual)}`)}
+          ${row('Kleinunternehmer § 19 UStG', smallBusinessLabel[t.smallBusinessStatus])}
+          ${t.crypto ? row('Krypto (Kraken): steuerpflichtiger Saldo', fmtEur(t.crypto.taxableBalance)) : ''}
+          ${t.crypto ? row(`Krypto: zu versteuern (Freigrenze ${fmtEur(t.crypto.allowance)})`, fmtEur(t.crypto.toTax)) : ''}
+          ${t.crypto ? row('Krypto: steuerfreier Gewinn (Haltefrist)', fmtEur(t.crypto.taxFreeGain)) : ''}
+        </table>
+        ${t.warnings.length > 0 ? `<ul style="margin:12px 0 0;padding-left:18px;font-size:12px;color:#7A5A1E;">${t.warnings.map(w => `<li style="margin-bottom:4px;">${escapeHtml(w)}</li>`).join('')}</ul>` : ''}
+        <p style="margin:12px 0 0;font-size:12px;color:#74776C;">Schätzung, kein Steuerbescheid und keine Steuerberatung.</p>
+      </div>`
+    : data.taxError
+      ? `<div class="section"><h2>Steuer-Anhang</h2><p style="color:#9B4127;font-size:14px;margin:0;">Der Steuer-Anhang konnte nicht erstellt werden: ${escapeHtml(data.taxError)}</p></div>`
+      : ''
+
   return `<!doctype html>
 <html lang="de">
 <head>
@@ -130,6 +152,8 @@ export function renderReportHtml(data: ReportData): string {
     <h2>Offene Hinweise</h2>
     ${insightsHtml}
   </div>
+
+  ${taxHtml}
 
   <p style="margin-top:40px;font-size:12px;color:#74776C;">
     Automatisch erzeugt von Athena · <a href="https://athena-finance.de/finance/reports">In der App ansehen</a>

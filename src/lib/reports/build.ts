@@ -15,9 +15,11 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { getFlowTransactions, txToFlowRow } from '../data/flows.ts'
 import { INCLUDE_CONSUMPTION, rollupByRoot, sumFlows } from '../finance/flow-calc.ts'
+import { ladeSteuerdaten } from '../tax/laden.ts'
+import { berechneSteuerposition } from '../tax/position.ts'
 import type {
   ReportData, ReportType, ReportTotals, ReportCategoryDatum, ReportCategoryChange,
-  ReportNetWorth, ReportInsightRow,
+  ReportNetWorth, ReportInsightRow, ReportTax,
 } from './types'
 
 const MONTH_NAMES = [
@@ -166,10 +168,50 @@ async function openInsightsList(
     .map(r => ({ title: r.title, severity: r.severity, createdAt: r.created_at }))
 }
 
+/**
+ * Steuer-Anhang eines Jahres aus derselben Rechnung wie die Steuer-Seite (ladeSteuerdaten +
+ * berechneSteuerposition) — eine Umsetzung, keine zweite. Scheitert sie, steht der Grund im Report statt
+ * einer Zahl aus halben Daten.
+ */
+async function buildTaxAppendix(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  year: number,
+): Promise<{ tax?: ReportTax; taxError?: string }> {
+  try {
+    const daten = await ladeSteuerdaten(supabase, userId, year)
+    const p = berechneSteuerposition(daten.eingaben)
+    return {
+      tax: {
+        year,
+        profit: p.betrieb.gewinn,
+        taxableIncome: p.zve.betrag,
+        estimatedTax: p.steuer.gesamt,
+        marginalRatePct: p.grenzsteuersatz.naechster_euro_pct,
+        smallBusinessStatus: p.kleinunternehmer.status,
+        reserveTarget: p.ruecklage.soll,
+        reserveActual: p.ruecklage.ist,
+        crypto: daten.krypto
+          ? {
+              taxableBalance: daten.krypto.ergebnis.saldoSteuerpflichtigEur,
+              toTax: daten.krypto.ergebnis.zuVersteuernEur,
+              taxFreeGain: daten.krypto.ergebnis.steuerfreierGewinnEur,
+              allowance: daten.krypto.freigrenzeEur,
+            }
+          : null,
+        warnings: [...p.warnungen, ...(daten.krypto?.warnungen ?? []), ...(daten.kryptoFehler ? [`Krypto nicht geladen: ${daten.kryptoFehler}`] : [])].slice(0, 8),
+      },
+    }
+  } catch (err) {
+    return { taxError: err instanceof Error ? err.message : 'Steuerposition nicht berechenbar.' }
+  }
+}
+
 export async function buildReportData(
   supabase: SupabaseClient<Database>,
   userId: string,
   period: ReportPeriod,
+  opts: { includeTax?: boolean } = {},
 ): Promise<ReportData> {
   const [totals, previousTotals, categories, previousCategories, netWorth, openInsights] = await Promise.all([
     periodTotals(supabase, userId, period.periodStart, period.periodEnd),
@@ -192,6 +234,10 @@ export async function buildReportData(
     notableChanges:       notableChanges(categories, previousCategories),
     netWorth,
     openInsights,
+    // Nur im Jahresreport und nur, wenn ausdrücklich gewünscht: der Report geht auch per Mail raus.
+    ...(opts.includeTax && period.type === 'annual'
+      ? await buildTaxAppendix(supabase, userId, Number(period.periodStart.slice(0, 4)))
+      : {}),
     generatedAt:          new Date().toISOString(),
   }
 }

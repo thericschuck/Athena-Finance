@@ -33,6 +33,21 @@ export type ReportInsightRow = {
   createdAt: string
 }
 
+/** Steuer-Anhang des Jahresreports (opt-in): nur Zahlen, die die Steuer-Seite auch zeigt. */
+export type ReportTax = {
+  year:                number
+  profit:              number
+  taxableIncome:       number
+  estimatedTax:        number
+  marginalRatePct:     number
+  smallBusinessStatus: 'gruen' | 'gelb' | 'rot' | 'unbekannt'
+  reserveTarget:       number
+  reserveActual:       number | null
+  /** Krypto (§ 23 EStG, nur Kraken); null, wenn nicht ladbar. */
+  crypto: { taxableBalance: number; toTax: number; taxFreeGain: number; allowance: number } | null
+  warnings:            string[]
+}
+
 export type ReportData = {
   type:                 ReportType
   periodStart:          string
@@ -45,5 +60,9 @@ export type ReportData = {
   notableChanges:       ReportCategoryChange[]
   netWorth:             ReportNetWorth
   openInsights:         ReportInsightRow[]
+  /** Nur im Jahresreport und nur auf ausdrücklichen Wunsch (enthält persönliche Steuerzahlen). */
+  tax?:                 ReportTax
+  /** Warum der gewünschte Steuer-Anhang fehlt. */
+  taxError?:            string
   generatedAt:          string
 }
