@@ -121,6 +121,16 @@ export const ATHENA_EFFORT_OPTIONS: { value: AthenaEffort; label: string }[] = [
   { value: 'max', label: 'Maximal — teuer, nur wenn Korrektheit alles ist' },
 ]
 
+/**
+ * Adaptives Denken und die `effort`-Stufe gibt es erst ab der 4.6-Generation.
+ * Bei einem älteren/kleineren Modell (z. B. Haiku 4.5) würde die API die
+ * Parameter mit 400 ablehnen — deshalb prüfen statt blind mitschicken. Gilt für
+ * den Chat (api/assistant/route.ts) und den Wochenlauf (review.ts) gleichermaßen.
+ */
+export function supportsThinking(model: string): boolean {
+  return /^claude-(opus-(5|4-[678])|sonnet-(5|4-6)|fable-5)/.test(model)
+}
+
 export async function getAthenaSettings(supabase: DB, userId: string): Promise<AthenaSettings> {
   const { data } = await supabase
     .from('ai_settings')

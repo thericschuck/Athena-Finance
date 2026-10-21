@@ -18,7 +18,7 @@ import { createClient, getAuthUser } from '@/lib/supabase/server'
 import { buildAthenaTools } from '@/lib/assistant/tools'
 import { buildAthenaSystemPrompt, TITLE_SYSTEM_PROMPT } from '@/lib/assistant/prompts'
 import { loadAthenaContext } from '@/lib/assistant/context'
-import { getAthenaSettings } from '@/lib/assistant/settings'
+import { getAthenaSettings, supportsThinking } from '@/lib/assistant/settings'
 import { createLogger } from '@/lib/assistant/logger'
 import type { Json } from '@/types/database'
 
@@ -35,15 +35,6 @@ export const maxDuration = 300
     das ist keine Nutzerentscheidung, sondern eine Kostenoptimierung, die bei
     keiner Modellwahl anders ausfallen würde. */
 const UTILITY_MODEL = 'claude-haiku-4-5'
-
-/**
- * Adaptives Denken und die `effort`-Stufe gibt es erst ab der 4.6-Generation.
- * Bei einem älteren/kleineren Modell (z. B. Haiku 4.5) würde die API die
- * Parameter mit 400 ablehnen — deshalb hier prüfen statt blind mitschicken.
- */
-function supportsThinking(model: string): boolean {
-  return /^claude-(opus-(5|4-[678])|sonnet-(5|4-6)|fable-5)/.test(model)
-}
 
 /** Die Filter-Variante der Web-Werkzeuge setzt dieselbe Modellgeneration
     voraus; ältere Modelle bekommen die einfache Variante. */
