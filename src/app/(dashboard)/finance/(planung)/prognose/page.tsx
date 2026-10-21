@@ -5,7 +5,8 @@ import { fmtCurrency, fmtDate } from '@/lib/format'
 import { ymd } from '@/lib/period'
 import { ladePrognose } from '@/lib/forecast/laden'
 import type { SteuerPrognose } from '@/lib/forecast/steuer'
-import { PrognoseChart, type PrognosePunkt } from '@/components/finance/prognose-chart'
+import { baueChartDaten } from '@/lib/forecast/chartdaten'
+import { PrognoseChart } from '@/components/finance/prognose-chart'
 import { AnnahmenForm } from '@/components/finance/annahmen-form'
 
 export const metadata = { title: 'Prognose' }
@@ -40,14 +41,16 @@ export default async function PrognosePage() {
   const mitAnnahmen = d.annahmen.length > 0
   const sz = d.szenario
 
-  const punkte: PrognosePunkt[] = sz.monate.map(m => ({
-    month: m.month,
-    szenario: m.liquiditaetEnde,
-    basis: d.basis.monate.find(b => b.month === m.month)?.liquiditaetEnde ?? m.liquiditaetEnde,
-    tiefpunkt: m.tiefpunkt,
-    vermoegen: m.vermoegenEnde,
-    teilmonat: m.teilmonat,
-  }))
+  // Rückblick (Monatsenden aus den Snapshots) durchgezogen, ab heute die Prognose gestrichelt.
+  const chart = baueChartDaten({
+    heute,
+    verlauf: d.verlauf,
+    start: sz.start,
+    szenario: sz.monate,
+    basis: d.basis.monate,
+    tiefpunkt: sz.tiefpunkt,
+    mitAnnahmen,
+  })
   const in12 = sz.monate[Math.min(11, sz.monate.length - 1)]
   const monatsLabel = (m: string) => new Date(m + '-01T12:00:00').toLocaleDateString(locale, { month: 'long', year: 'numeric' })
   const warnungen = [...d.hinweise, ...sz.warnungen]
@@ -88,7 +91,7 @@ export default async function PrognosePage() {
       </section>
 
       {/* ── Kurven ─────────────────────────────────────────────────────────────── */}
-      <PrognoseChart daten={punkte} mitAnnahmen={mitAnnahmen} />
+      <PrognoseChart daten={chart} mitAnnahmen={mitAnnahmen} />
 
       {/* ── Monatstabelle ──────────────────────────────────────────────────────── */}
       <section aria-labelledby="monate">
@@ -167,7 +170,7 @@ export default async function PrognosePage() {
           <h2 id="annahmen" className="text-sm font-semibold">Annahmen</h2>
           <p className="mt-0.5 max-w-3xl text-xs text-muted-foreground">
             Was sich ändern wird und in der Vergangenheit noch nicht steht. Ein Gehalt <em>ersetzt</em> das bisherige ab dem
-            Monat; alles andere kommt pro Monat obendrauf. Die gestrichelte Linie oben zeigt den Verlauf ohne diese Annahmen.
+            Monat; alles andere kommt pro Monat obendrauf. Die fein gestrichelte graue Linie oben zeigt die Prognose ohne diese Annahmen.
           </p>
         </div>
         <AnnahmenForm initial={d.annahmen} ersterMonat={heute.slice(0, 7)} />
