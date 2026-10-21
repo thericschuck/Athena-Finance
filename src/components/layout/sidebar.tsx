@@ -59,7 +59,7 @@ const navItems: NavItem[] = [
       { href: '/finance/transactions', label: 'Transaktionen',
         match: ['/finance/transactions', '/finance/categories'] },
       { href: '/finance/contracts',    label: 'Planung',
-        match: ['/finance/contracts', '/finance/debts', '/finance/goals'] },
+        match: ['/finance/contracts', '/finance/debts', '/finance/goals', '/finance/prognose'] },
       // Hieß „Fixkosten" und lag auf /lebenshaltungskosten — derselbe Name, den
       // die Vertragsseite für ihre gebuchten Verpflichtungen benutzt („Fixkosten
       // nach Konto"). Zwei Nav-Punkte, ein Wort, zwei Datenmodelle: das hier

@@ -64,3 +64,19 @@ Verfahren gilt, muss der Steuerberater bestätigen.
 3. `npm test` (reine Rechenfunktionen).
 
 `monthly_finance_summary` ist Archiv und wird nicht mehr geschrieben oder gelesen.
+
+## Prognose
+
+`src/lib/forecast/` (reine Funktionen, getestet) und die Seite `/finance/prognose`:
+
+- **Cashflow** (`cashflow.ts`): Median der letzten 6 abgeschlossenen Monate als Basis (Einnahmen ohne Lohn,
+  Lohn, Ausgaben), Vertragstermine auf ihrem Abbuchungstag (stecken schon in der Basis, werden nicht doppelt
+  gezählt), Tagessimulation der Liquidität. Zwei Kurven: Liquidität (jeder Abfluss zählt, auch Anlagen) und
+  Nettovermögen (Anlagen sind ein Tausch). Schulden sind noch nicht modelliert (`debts.monthly_payment` ist leer).
+- **Steuer** (`steuer.ts`): Ist-Stand plus Laufrate bis Jahresende, durch dieselbe Engine wie die Steuerseite;
+  Basis und Szenario nebeneinander, Mehrsteuer, Rücklage pro Monat.
+- **Annahmen** (`annahmen.ts`, `user_settings.forecast_assumptions`): Ein Gehalt (`lohn`) ersetzt das Niveau ab
+  einem Monat, alles andere kommt pro Monat obendrauf.
+- Athena: Werkzeug `getForecast` (nur lesend).
+
+Eine Fortschreibung, keine Vorhersage; die Steuerzahlen sind Schätzungen.

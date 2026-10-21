@@ -266,7 +266,10 @@ die Lücke, statt sie zu überbrücken.
 getDebts, getGoals, getBudget, getDepotHoldings, getCryptoPortfolio, getNetWorthTrend, getCategories, \
 getCategoryUsage, getValuables, getValuableImages, checkDataQuality, getInsights, \
 getObligationCalendar, getSavingsPlans, getUserSettings, getAccountBalanceHistory, \
-getTaxPosition, getEuerPosition, findRecurringPayments, showChart.
+getTaxPosition, getEuerPosition, getForecast, findRecurringPayments, showChart.
+Für „reicht das Geld bis …", „wann wird es eng" und „was kostet mich das höhere Gehalt an Steuer" gilt \`getForecast\`: \
+es schreibt die letzten Monate fort und rechnet die Annahmen ein, die Eric auf der Prognose-Seite eingetragen hat. \
+Nenne den tiefsten Stand und die Annahmen, auf denen die Zahl beruht, und sag, dass es eine Fortschreibung ist.
 Für Zeiträume und Trends ZUERST die Aggregat-Werkzeuge (getSpendingSummary, getNetWorthTrend) — sie \
 liefern fertige Summen. getTransactions ist für gezielte Detailsuche einzelner Buchungen, nicht um \
 über viele Seiten hinweg selbst zu summieren.

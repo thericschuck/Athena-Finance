@@ -12,6 +12,7 @@ import { buildSavingsPlanTools } from '@/lib/assistant/tools/savings-plans'
 import { buildUserSettingsTools } from '@/lib/assistant/tools/user-settings'
 import { buildAccountHistoryTools } from '@/lib/assistant/tools/account-history'
 import { buildTaxTools } from '@/lib/assistant/tools/tax'
+import { buildForecastTools } from '@/lib/assistant/tools/forecast'
 import { buildRecurringTools } from '@/lib/assistant/tools/recurring'
 import { buildCategoryTools } from '@/lib/assistant/tools/categories'
 import { buildChartTools } from '@/lib/assistant/tools/chart'
@@ -48,6 +49,7 @@ export function buildAthenaTools(supabase: DB, userId: string, options: AthenaTo
     ...buildAccountTools(supabase, userId),
     ...buildTransactionTools(supabase, userId),
     ...buildPlanningTools(supabase, userId),
+    ...buildForecastTools(supabase, userId),
     ...buildPortfolioTools(supabase, userId),
     ...buildDataQualityTools(supabase, userId),
     ...buildInsightTools(supabase, userId),
