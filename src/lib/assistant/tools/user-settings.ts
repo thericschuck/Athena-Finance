@@ -17,7 +17,7 @@ export function buildUserSettingsTools(supabase: DB, userId: string) {
         // Positivliste statt Ausschlussliste: eine neue reine UI-Einstellung
         // landet damit nicht automatisch im Prompt.
         const RELEVANT = [
-          'analyse_default_accounts', 'analyse_default_period', 'analyse_default_heatmap_mode',
+          'analyse_default_accounts', 'analyse_default_period', 'analyse_default_heatmap_mode', 'flow_default_include',
           'monthly_budget', 'default_tax_rate', 'crypto_source', 'kraken_last_sync',
           'last_rebalancing', 'portfolio_allocations', 'default_asset_class', 'default_timeframe',
           'risk_per_trade_pct', 'max_open_trades',

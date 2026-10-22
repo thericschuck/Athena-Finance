@@ -16,7 +16,7 @@ import { getSettings }          from '@/lib/settings'
 import { getActiveAccountOptions } from '@/lib/data/overview'
 import { getFlowTransactions, getMonthlyFlows, txToFlowRow, type FlowTransaction } from '@/lib/data/flows'
 import {
-  INCLUDE_ALL, includeFromParam, monthlySeries, rollupByRoot, UNCATEGORIZED,
+  FLOW_DEFAULT_KEY, INCLUDE_ALL, flowDefaultFrom, includeFromParam, monthlySeries, rollupByRoot, UNCATEGORIZED,
   type FlowInclude, type MonthSummary,
 } from '@/lib/finance/flow-calc'
 import { monthsForPeriod, parsePeriod, periodCutoff, ymd } from '@/lib/period'
@@ -239,7 +239,7 @@ export default async function AnalysePage({
   // Der Cutoff kommt aus lib/period statt aus einer eigenen Rechnung. `null` heißt
   // ausdrücklich: nicht nach Datum filtern („Alles").
   const cutoff = periodCutoff(period)
-  const include: FlowInclude = includeFromParam(rawAnlage)
+  const include: FlowInclude = includeFromParam(rawAnlage, flowDefaultFrom(settings[FLOW_DEFAULT_KEY]))
 
   // Kalender: die GESAMTE Historie bis Ende des nächsten Monats. Früher stand hier ein 3-Monats-Fenster, obwohl man im
   // Kalender beliebig weit zurückblättern konnte: ältere Monate waren leer, als gäbe es dort keine Buchungen.

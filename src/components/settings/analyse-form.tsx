@@ -98,6 +98,25 @@ export function AnalyseForm({
           </select>
         </div>
 
+        {/* Anlagen und Forderungen */}
+        <div className="space-y-1.5">
+          <label htmlFor="flow_default_include" className="text-sm font-medium">Anlagen &amp; Forderungen</label>
+          <select
+            id="flow_default_include"
+            name="flow_default_include"
+            defaultValue={initialSettings.flow_default_include === 'konsum' ? 'konsum' : 'alle'}
+            className={selectCls}
+          >
+            <option value="alle">In Einnahmen und Ausgaben eingerechnet</option>
+            <option value="konsum">Nur Konsum (ohne Anlagen und Forderungen)</option>
+          </select>
+          <p className="max-w-md text-xs text-muted-foreground">
+            Anlagen sind Krypto, Depot, Bauspar und Sparkonto; Forderungen verliehenes und zurückgezahltes Geld. Der Standard gilt für Analyse,
+            Banking, die Finanzanalyse im Dashboard und die Reports. In Analyse und Banking lässt er sich mit dem Schalter oben pro Ansicht
+            überschreiben. Die Sparquote rechnet immer nur ohne Anlagen.
+          </p>
+        </div>
+
         {/* Konten */}
         <div className="space-y-1.5">
           <p className="text-sm font-medium">Standard-Kontenauswahl</p>

@@ -1,25 +1,29 @@
 'use client'
 
 import { useUrlFilters } from '@/components/providers/url-filters'
+import { useSettings } from '@/components/providers/settings-context'
 import { INCLUDE_PARAM } from '@/lib/finance/flow-calc'
 import { cn } from '@/lib/utils'
 
 /**
  * Schaltet in den Auswertungen Anlagen (Krypto, Depot, Bauspar) und Forderungen/Schulden
- * dazu oder weg. Standard ist AN (seit 2026-10-22): alles, was Geld bewegt, ist eingerechnet. Aus (`anlage=0`) ist die
- * reine Konsum-Sicht, in der eine Krypto-Einzahlung nicht als Ausgabe erscheint. Der Zustand liegt in der URL, damit er
- * verlinkbar ist und beim Neuladen bleibt; der Standard braucht keinen Parameter.
+ * dazu oder weg. Der Standard kommt aus den Einstellungen (Analyse -> „Anlagen & Forderungen", ohne Einstellung AN): alles, was
+ * Geld bewegt, ist eingerechnet. Aus ist die reine Konsum-Sicht, in der eine Krypto-Einzahlung nicht als Ausgabe erscheint.
+ * Nur eine Abweichung vom Standard steht in der URL (`anlage=1` / `anlage=0`), damit sie verlinkbar ist und beim Neuladen bleibt.
  */
 export function FlowKindToggle({ className }: { className?: string }) {
   const filters = useUrlFilters()
-  const on = filters.get(INCLUDE_PARAM) !== '0'
+  const { flowDefault } = useSettings()
+  const defaultOn = flowDefault === 'alle'
+  const param = filters.get(INCLUDE_PARAM)
+  const on = param === '1' ? true : param === '0' ? false : defaultOn
 
   return (
     <button
       type="button"
       role="switch"
       aria-checked={on}
-      onClick={() => filters.set(INCLUDE_PARAM, on ? '0' : null)}
+      onClick={() => { const next = !on; filters.set(INCLUDE_PARAM, next === defaultOn ? null : next ? '1' : '0') }}
       title="Krypto, Depot, Bauspar und verliehenes Geld mit in Einnahmen/Ausgaben rechnen"
       className={cn(
         'inline-flex items-center gap-2 rounded-lg bg-muted/60 px-2.5 py-1 text-xs font-medium',

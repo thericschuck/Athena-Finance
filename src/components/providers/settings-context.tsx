@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo } from 'react'
 import type { SettingsMap } from '@/lib/settings'
+import { FLOW_DEFAULT_KEY, flowDefaultFrom, type FlowDefault } from '@/lib/finance/flow-calc'
 
 export type UserSettings = {
   locale:        string
@@ -10,6 +11,8 @@ export type UserSettings = {
   compactTables: boolean
   primaryColor:  string | null
   themePreset:   string | null
+  /** Standard der Auswertungen: Anlage und Forderungen eingerechnet (alle) oder nur Konsum. */
+  flowDefault:   FlowDefault
 }
 
 const SettingsContext = createContext<UserSettings>({
@@ -19,6 +22,7 @@ const SettingsContext = createContext<UserSettings>({
   compactTables: false,
   primaryColor:  null,
   themePreset:   null,
+  flowDefault:   'alle',
 })
 
 export function useSettings(): UserSettings {
@@ -45,6 +49,7 @@ export function SettingsProvider({
   const primaryColor  = (settings.primary_color as string) ?? null
   // Nie gewählt (Key fehlt) → Athena Light. Ein explizit gespeichertes `null`
   // bedeutet „Eigene Farbe (kein Preset)" und bleibt erhalten.
+  const flowDefault   = flowDefaultFrom(settings[FLOW_DEFAULT_KEY])
   const themePreset   = settings.theme_preset === undefined
     ? DEFAULT_PRESET
     : ((settings.theme_preset as string) ?? null)
@@ -82,8 +87,8 @@ export function SettingsProvider({
   }, [themePreset, primaryColor, compactTables])
 
   const value = useMemo(
-    () => ({ locale, dateFormat, currency, compactTables, primaryColor, themePreset }),
-    [locale, dateFormat, currency, compactTables, primaryColor, themePreset],
+    () => ({ locale, dateFormat, currency, compactTables, primaryColor, themePreset, flowDefault }),
+    [locale, dateFormat, currency, compactTables, primaryColor, themePreset, flowDefault],
   )
 
   return (

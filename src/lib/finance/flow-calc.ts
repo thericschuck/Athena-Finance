@@ -229,11 +229,28 @@ export function monthlyCategorySeries(
 }
 
 /**
- * URL-Parameter der Auswertungs-Seiten (Analyse, Banking). Standard ist seit 2026-10-22 „alles": Anlage und Forderungen sind
- * eingerechnet. `anlage=0` schaltet auf die reine Konsum-Sicht (nur `echt`).
+ * Standard der Auswertungen (Analyse, Banking, Finanzanalyse im Dashboard, Reports), einstellbar unter Einstellungen -> Analyse
+ * (`user_settings.flow_default_include`). Ohne Einstellung gilt „alle": Anlage und Forderungen sind eingerechnet.
+ */
+export const FLOW_DEFAULT_KEY = 'flow_default_include'
+export type FlowDefault = 'alle' | 'konsum'
+
+export function flowDefaultFrom(value: unknown): FlowDefault {
+  return value === 'konsum' ? 'konsum' : 'alle'
+}
+
+export function includeForDefault(standard: FlowDefault): FlowInclude {
+  return standard === 'konsum' ? INCLUDE_CONSUMPTION : INCLUDE_ALL
+}
+
+/**
+ * URL-Parameter `anlage` der Auswertungs-Seiten überschreibt den Standard je Ansicht: `1` = alles, `0` = nur Konsum (`echt`).
+ * Ohne Parameter gilt `standard`.
  */
 export const INCLUDE_PARAM = 'anlage'
 
-export function includeFromParam(value: string | null | undefined): FlowInclude {
-  return value === '0' ? INCLUDE_CONSUMPTION : INCLUDE_ALL
+export function includeFromParam(value: string | null | undefined, standard: FlowDefault = 'alle'): FlowInclude {
+  if (value === '0') return INCLUDE_CONSUMPTION
+  if (value === '1') return INCLUDE_ALL
+  return includeForDefault(standard)
 }

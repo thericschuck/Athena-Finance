@@ -110,7 +110,8 @@ function BankAnalyse() {
 
   // Auswertungs-Zeilen aus monthly_flows (nur Bankbuchungen). Alle Arten kommen an; ob
   // Anlagen und Forderungen mitzählen, entscheidet der Schalter (URL-Parameter `anlage`).
-  const include = includeFromParam(searchParams.get(INCLUDE_PARAM))
+  const { flowDefault } = useSettings()
+  const include = includeFromParam(searchParams.get(INCLUDE_PARAM), flowDefault)
   const [flowRows, setFlowRows] = useState<(FlowRow & { month: string; account_id: string | null })[]>([])
   const [flowsLoaded, setFlowsLoaded] = useState(false)
   useEffect(() => {

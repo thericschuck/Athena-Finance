@@ -26,7 +26,7 @@ import {
 } from '@/lib/finance/dashboard-calc'
 import { getMonthlyFlows } from '@/lib/data/flows'
 import {
-  INCLUDE_ALL, INCLUDE_CONSUMPTION, monthlyCategorySeries, monthlySeries, sumFlows,
+  FLOW_DEFAULT_KEY, INCLUDE_ALL, flowDefaultFrom, includeForDefault, monthlyCategorySeries, monthlySeries, sumFlows,
 } from '@/lib/finance/flow-calc'
 
 // ─── Shared card ──────────────────────────────────────────────────────────────
@@ -140,12 +140,14 @@ export default async function DashboardPage() {
   const { income: monthIncome, expense: monthExpense, net: monthNet } = monthTotals
   const monthConsumption = monthTotals.echt.expense
 
-  // Finanzanalyse: Konsum-Sicht (ohne Anlage/Forderung), gleiche Zahlen wie die Analyse-Seite.
+  // Finanzanalyse: gleiche Sicht wie die Analyse-Seite ohne URL-Parameter, also der Standard aus den Einstellungen
+  // (Analyse -> „Anlagen & Forderungen"; ohne Einstellung: alles eingerechnet).
+  const analyseInclude = includeForDefault(flowDefaultFrom(settings[FLOW_DEFAULT_KEY]))
   // Bis einschließlich laufender Monat: vordatierte Buchungen in der Zukunft gehören nicht in „letzte N Monate".
-  const analyticsSummaries = monthlySeries(flowRows, INCLUDE_CONSUMPTION).filter(m => m.month <= monthStart).map(m => ({
+  const analyticsSummaries = monthlySeries(flowRows, analyseInclude).filter(m => m.month <= monthStart).map(m => ({
     month: m.month, total_income: m.income, total_expenses: m.expense, net_balance: m.net,
   }))
-  const categorySeries = monthlyCategorySeries(flowRows.filter(r => r.month <= monthStart), INCLUDE_CONSUMPTION)
+  const categorySeries = monthlyCategorySeries(flowRows.filter(r => r.month <= monthStart), analyseInclude)
 
   // ── Crypto portfolio ──────────────────────────────────────────────────────
   const cryptoVals = await getLatestAssetValuations(supabase, cryptoAssetsRaw.map(a => a.id))

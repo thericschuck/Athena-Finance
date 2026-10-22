@@ -6,15 +6,15 @@
  * docs/athenas-takt.html, Abschnitt III).
  *
  * Einnahmen/Ausgaben kommen aus derselben Datenschicht wie Dashboard und Analyse
- * (lib/data/flows) und zählen in der Konsum-Sicht (nur `flow_kind = 'echt'`): Anlagen und
- * Forderungen sind Vermögensverschiebungen und verzerren sonst die Cashflow-Zahl des
- * Berichts. Umbuchungen zwischen eigenen Konten fehlen grundsätzlich. Das Nettovermögen kommt direkt aus `net_worth_snapshots.net_worth`,
+ * (lib/data/flows) und folgen demselben Standard wie Analyse und Dashboard
+ * (`user_settings.flow_default_include`: alle, oder nur Konsum = `flow_kind = 'echt'`).
+ * Umbuchungen zwischen eigenen Konten fehlen grundsätzlich. Das Nettovermögen kommt direkt aus `net_worth_snapshots.net_worth`,
  * derselben Kernzahl wie auf dem Dashboard (siehe Memory networth_definition).
  */
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { getFlowTransactions, txToFlowRow } from '../data/flows.ts'
-import { INCLUDE_CONSUMPTION, rollupByRoot, sumFlows } from '../finance/flow-calc.ts'
+import { FLOW_DEFAULT_KEY, flowDefaultFrom, includeForDefault, rollupByRoot, sumFlows, type FlowInclude } from '../finance/flow-calc.ts'
 import { ladeSteuerdaten } from '../tax/laden.ts'
 import { berechneSteuerposition } from '../tax/position.ts'
 import type {
@@ -78,26 +78,37 @@ export function yearPeriod(year: number): ReportPeriod {
   }
 }
 
+/**
+ * Welche Arten in den Report zählen: der Standard aus den Einstellungen (Analyse -> „Anlagen & Forderungen"), ohne Einstellung
+ * alles. Gleiche Sicht wie Analyse und Dashboard, damit der Report dieselben Zahlen nennt.
+ */
+async function reportInclude(supabase: SupabaseClient<Database>, userId: string): Promise<FlowInclude> {
+  const { data } = await supabase.from('user_settings').select('value').eq('user_id', userId).eq('key', FLOW_DEFAULT_KEY).maybeSingle()
+  return includeForDefault(flowDefaultFrom(data?.value))
+}
+
 async function periodTotals(
   supabase: SupabaseClient<Database>,
   userId: string,
   start: string,
   end: string,
+  include: FlowInclude,
 ): Promise<ReportTotals> {
-  const txns = await getFlowTransactions(supabase, userId, { from: start, to: end, include: INCLUDE_CONSUMPTION })
-  const t = sumFlows(txns.map(txToFlowRow), INCLUDE_CONSUMPTION)
+  const txns = await getFlowTransactions(supabase, userId, { from: start, to: end, include })
+  const t = sumFlows(txns.map(txToFlowRow), include)
   return { income: round2(t.income), expenses: round2(t.expense), net: round2(t.net) }
 }
 
-/** Ausgaben je Hauptkategorie (Konsum-Sicht), größte zuerst. */
+/** Ausgaben je Hauptkategorie, größte zuerst. */
 async function categoryBreakdown(
   supabase: SupabaseClient<Database>,
   userId: string,
   start: string,
   end: string,
+  include: FlowInclude,
 ): Promise<ReportCategoryDatum[]> {
-  const txns = await getFlowTransactions(supabase, userId, { from: start, to: end, include: INCLUDE_CONSUMPTION })
-  return rollupByRoot(txns.map(txToFlowRow), INCLUDE_CONSUMPTION, 'expense')
+  const txns = await getFlowTransactions(supabase, userId, { from: start, to: end, include })
+  return rollupByRoot(txns.map(txToFlowRow), include, 'expense')
     .map(c => ({ name: c.name, amount: round2(c.expense) }))
 }
 
@@ -213,11 +224,12 @@ export async function buildReportData(
   period: ReportPeriod,
   opts: { includeTax?: boolean } = {},
 ): Promise<ReportData> {
+  const include = await reportInclude(supabase, userId)
   const [totals, previousTotals, categories, previousCategories, netWorth, openInsights] = await Promise.all([
-    periodTotals(supabase, userId, period.periodStart, period.periodEnd),
-    periodTotals(supabase, userId, period.previousPeriodStart, period.previousPeriodEnd),
-    categoryBreakdown(supabase, userId, period.periodStart, period.periodEnd),
-    categoryBreakdown(supabase, userId, period.previousPeriodStart, period.previousPeriodEnd),
+    periodTotals(supabase, userId, period.periodStart, period.periodEnd, include),
+    periodTotals(supabase, userId, period.previousPeriodStart, period.previousPeriodEnd, include),
+    categoryBreakdown(supabase, userId, period.periodStart, period.periodEnd, include),
+    categoryBreakdown(supabase, userId, period.previousPeriodStart, period.previousPeriodEnd, include),
     netWorthDelta(supabase, userId, period.periodStart, period.periodEnd),
     openInsightsList(supabase, userId),
   ])

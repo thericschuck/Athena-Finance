@@ -28,9 +28,10 @@ TypeScript: `src/lib/data/flows.ts` (Lesen, seitenweise) und `src/lib/finance/fl
 | `anfangsbestand` | „Alter Kontostand" | **nein** |
 
 Darstellung: Kacheln zeigen alles, was zählt, mit „davon Anlage/Forderung". Die Auswertungsseiten (Analyse, Banking) starten seit
-2026-10-22 mit **allem** (Anlage und Forderung eingerechnet); der Schalter `anlage=0` (URL) schaltet auf die reine Konsum-Sicht
-(nur `echt`) um (`FlowKindToggle`, `includeFromParam`). Das Dashboard und die Reports rechnen weiter Konsum. **Die Sparquote rechnet
-immer nur auf `echt`.**
+2026-10-22 mit **allem** (Anlage und Forderung eingerechnet). Der Standard ist unter Einstellungen -> Analyse -> „Anlagen & Forderungen"
+einstellbar (`user_settings.flow_default_include`: `alle` oder `konsum`) und gilt für Analyse, Banking, die Finanzanalyse im Dashboard
+und die Reports (`flowDefaultFrom`, `includeFromParam`). Der Schalter in Analyse und Banking überschreibt ihn je Ansicht; nur eine
+Abweichung steht in der URL (`anlage=1` alles, `anlage=0` nur `echt`). **Die Sparquote rechnet immer nur auf `echt`.**
 
 Kontostände sind eine andere Frage: dort zählt jede Buchung, auch die Umbuchung
 (`signed_amount`, `account_balance_sums_*`, `bank_balance`).

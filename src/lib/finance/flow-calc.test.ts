@@ -112,13 +112,23 @@ test('monthlyCategorySeries: Top-N Hauptkategorien, Rest als Sonstige, Anlage au
   assert.deepEqual(s.months[1].values, { Weitere: 15 })
 })
 
-test('includeFromParam: Standard ist alles, nur "0" schaltet auf Konsum', async () => {
-  const { includeFromParam } = await import('./flow-calc.ts')
+test('includeFromParam: ohne Parameter gilt der Standard, "1" und "0" überschreiben ihn', async () => {
+  const { includeFromParam, flowDefaultFrom, includeForDefault } = await import('./flow-calc.ts')
+  // Standard "alle" (auch ohne Einstellung)
   assert.deepEqual(includeFromParam(null), INCLUDE_ALL)
   assert.deepEqual(includeFromParam(undefined), INCLUDE_ALL)
-  assert.deepEqual(includeFromParam('1'), INCLUDE_ALL)
-  assert.deepEqual(includeFromParam('0'), INCLUDE_CONSUMPTION)
   assert.deepEqual(includeFromParam('true'), INCLUDE_ALL)
+  assert.deepEqual(includeFromParam('0'), INCLUDE_CONSUMPTION)
+  assert.deepEqual(includeFromParam('1'), INCLUDE_ALL)
+  // Standard "konsum": ohne Parameter Konsum, "1" holt alles dazu
+  assert.deepEqual(includeFromParam(null, 'konsum'), INCLUDE_CONSUMPTION)
+  assert.deepEqual(includeFromParam('1', 'konsum'), INCLUDE_ALL)
+  assert.deepEqual(includeFromParam('0', 'alle'), INCLUDE_CONSUMPTION)
+  // Einstellung lesen: nur "konsum" ändert etwas, Müll fällt auf "alle"
+  assert.equal(flowDefaultFrom('konsum'), 'konsum')
+  for (const v of ['alle', undefined, null, 'quatsch', 5]) assert.equal(flowDefaultFrom(v), 'alle')
+  assert.deepEqual(includeForDefault('konsum'), INCLUDE_CONSUMPTION)
+  assert.deepEqual(includeForDefault('alle'), INCLUDE_ALL)
 })
 
 test('monthlySeries: Monat mit nur Anlage-Zeilen entfällt in der Konsum-Sicht', async () => {

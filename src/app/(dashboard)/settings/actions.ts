@@ -47,6 +47,8 @@ const financeSchema = z.object({
 const analyseSchema = z.object({
   analyse_default_period: optText(20),
   analyse_default_heatmap_mode: optText(40),
+  // Standard der Auswertungen: Anlage und Forderungen eingerechnet (alle) oder nur Konsum.
+  flow_default_include: z.enum(['alle', 'konsum']).catch('alle'),
   analyse_default_accounts: z.preprocess(
     v => (v === undefined ? [] : Array.isArray(v) ? v : [v]),
     z.array(uuid).max(200),
@@ -228,11 +230,13 @@ export async function saveAnalyseDefaults(
   const { error } = await upsertSettings(supabase, user.id, {
     analyse_default_period:       parsed.data.analyse_default_period,
     analyse_default_heatmap_mode: parsed.data.analyse_default_heatmap_mode,
+    flow_default_include:         parsed.data.flow_default_include,
     analyse_default_accounts:     parsed.data.analyse_default_accounts,
   })
 
   if (error) return { error: error.message }
-  revalidatePath('/analyse')
+  // Der Standard wirkt auf Analyse, Banking, Dashboard und Reports.
+  revalidatePath('/', 'layout')
   REVALIDATE()
   return { success: true }
 }
