@@ -14,7 +14,7 @@ export const contractActions = {
       name: z.string().min(1).max(200),
       provider: z.string().max(200).nullish(),
       type: z.string().min(1).describe('z. B. subscription, insurance, rent, utility'),
-      frequency: z.enum(['monthly', 'quarterly', 'yearly', 'weekly', 'once']),
+      frequency: z.enum(['monthly', 'quarterly', 'yearly', 'weekly']),
       amount: z.number(),
       currency: z.string().length(3).default('EUR'),
       startDate: z.string().describe('ISO-Datum YYYY-MM-DD'),
