@@ -239,3 +239,91 @@ test('ein einzelnes langes Wort dagegen schon', () => {
   assert.equal(k.length, 1)
   assert.equal(k[0].betrag, 13.99)
 })
+
+// ── Karte/PayPal, nutzungsabhängige Abos, Betrags-Cluster, nächster Termin ──────────────────
+
+import { naechsterTermin } from './wiederkehrend.ts'
+
+/** Kartenzahlung wie bei der DZ Bank: Gegenpartei ist der Abwickler, der Händler steht im Verwendungszweck. */
+const karte = (haendler: string, betrag: number, datum: string, kat = 'Abo'): WiederkehrBuchung => {
+  const [j, m, t] = datum.split('-')
+  return {
+    id: `k-${++n}`, datum, betrag,
+    beschreibung: `${haendler}/Musterstrasse 1/STADT/US ${t}.${m}.${j} / 14:43 OrtszeitMGST/PPSG Zahlung 23,80 USD`,
+    merchant: 'DZ BANK AG', konto_id: 'konto-1', kategorie_id: 'kat-1', kategorie_name: kat,
+  }
+}
+
+test('Karten-Abos: der Händler aus dem Verwendungszweck trennt, was die Gegenpartei DZ BANK vermischt', () => {
+  const monate = ['2026-05', '2026-06', '2026-07', '2026-08']
+  const k = erkenneWiederkehrend([
+    ...monate.map(m => karte('VERCEL INC.', -21.5, `${m}-05`)),
+    ...monate.map(m => karte('FIGMA INC', -23.8, `${m}-29`)),
+    karte('STARBUCKS', -4.5, '2026-06-11'),
+  ], [], '2026-09-01')
+  assert.deepEqual(k.map(x => x.bezeichnung).sort(), ['Figma Inc', 'Vercel Inc'])
+  assert.ok(k.every(x => x.ueber_abwickler && x.frequenz === 'monthly'))
+})
+
+test('Nutzungsabhängiges Abo: schwankender Betrag, aber fester Tag und Rhythmus ist ein Kandidat mit Spanne', () => {
+  const betraege = [22.35, 36.56, 44, 47.91, 49.1]
+  const monate = ['2026-05', '2026-06', '2026-07', '2026-08', '2026-09']
+  const k = erkenneWiederkehrend(monate.map((m, i) => karte('SUPABASE', -betraege[i], `${m}-${i % 2 ? '24' : '23'}`)), [], '2026-10-01')
+  assert.equal(k.length, 1)
+  assert.equal(k[0].betrag_variabel, true)
+  assert.equal(k[0].betrag, 44)
+  assert.deepEqual([k[0].betrag_min, k[0].betrag_max], [22.35, 49.1])
+  assert.equal(k[0].konfidenz, 'mittel')
+  assert.equal(k[0].tag_im_monat, 23)
+})
+
+test('Schwankende Beträge OHNE festen Tag bleiben Einkäufe, auch bei monatlichem Abstand', () => {
+  const k = erkenneWiederkehrend([
+    buchung('REWE Markt', -42.13, '2026-05-03'), buchung('REWE Markt', -87.55, '2026-06-17'),
+    buchung('REWE Markt', -21.09, '2026-07-02'), buchung('REWE Markt', -63.4, '2026-08-26'),
+    buchung('REWE Markt', -30.2, '2026-09-11'),
+  ], [], '2026-10-01')
+  assert.equal(k.length, 0)
+})
+
+test('Ein Abo mit einer einmaligen Zusatzbuchung bleibt ein Abo (Betrags-Cluster)', () => {
+  const k = erkenneWiederkehrend([
+    ...['2026-03', '2026-04', '2026-05', '2026-06', '2026-07'].map(m => karte('ANTHROPIC: CLAUDE TEAM', -126.44, `${m}-23`)),
+    karte('ANTHROPIC: CLAUDE TEAM', -22.87, '2026-03-27'),
+  ], [], '2026-08-01')
+  assert.equal(k.length, 1)
+  assert.equal(k[0].betrag, 126.44)
+  assert.equal(k[0].anzahl, 5)
+  assert.match(k[0].begruendung, /1 weitere Buchung/)
+})
+
+test('Ein Abo zwischen vielen Einkäufen beim selben Händler wird über den Betrag gefunden (Amazon Prime)', () => {
+  const amazon = (betrag: number, datum: string): WiederkehrBuchung =>
+    ({ ...buchung('AMZNPrime DE', betrag, datum), merchant: 'AMAZON EU S.A R.L., NIEDERLASSUNG DEUTSCHLAND' })
+  const k = erkenneWiederkehrend([
+    amazon(-8.99, '2026-05-16'), amazon(-34.5, '2026-05-20'), amazon(-8.99, '2026-06-16'), amazon(-12.3, '2026-06-02'),
+    amazon(-8.99, '2026-07-16'), amazon(-61.0, '2026-07-21'), amazon(-8.99, '2026-08-16'), amazon(-19.99, '2026-08-05'),
+  ], [], '2026-09-01')
+  assert.equal(k.length, 1)
+  assert.equal(k[0].betrag, 8.99)
+  assert.equal(k[0].tag_im_monat, 16)
+})
+
+test('Bei nutzungsabhängigen Abos zählt für "hat Vertrag" der Name, nicht der Betrag', () => {
+  const monate = ['2026-05', '2026-06', '2026-07', '2026-08']
+  const buchungen = monate.map((m, i) => karte('SUPABASE', -(22 + i * 9), `${m}-23`))
+  const mitVertrag = erkenneWiederkehrend(buchungen, [{ name: 'Supabase Pro', betrag: 25, aktiv: true }], '2026-09-01')
+  assert.equal(mitVertrag[0].hat_vertrag, true)
+})
+
+test('Nächster Termin: im Rhythmus weiterzählen, Februar klemmen, Überfälliges markieren', () => {
+  // Monatlich am 31.: nach dem 31.01. kommt der 28.02.
+  assert.deepEqual(naechsterTermin('2026-01-31', 'monthly', 30, 31, '2026-02-10'), { datum: '2026-02-28', ueberfaellig: false })
+  // Letzte Buchung weit zurück: auf den ersten Termin springen, der nicht mehr als 5 Tage zurückliegt
+  assert.deepEqual(naechsterTermin('2026-03-05', 'monthly', 30, 5, '2026-06-20'), { datum: '2026-07-05', ueberfaellig: false })
+  // Termin vor 2 Tagen: noch erwartet, aber überfällig
+  assert.deepEqual(naechsterTermin('2026-05-05', 'monthly', 30, 5, '2026-06-07'), { datum: '2026-06-05', ueberfaellig: true })
+  assert.equal(naechsterTermin('2025-11-10', 'yearly', 365, null, '2026-10-22').datum, '2026-11-10')
+  assert.equal(naechsterTermin('2026-10-01', 'weekly', 7, null, '2026-10-22').datum, '2026-10-22')
+  assert.equal(naechsterTermin('2026-07-15', 'quarterly', 91, null, '2026-10-20').datum, '2026-10-15')
+})

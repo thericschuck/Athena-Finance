@@ -72,6 +72,7 @@ import re
 import sys
 import time
 import traceback
+from typing import NoReturn
 from decimal import Decimal
 
 # ── Polling configuration for decoupled (app-confirmation) SCA ──────────────────
@@ -226,7 +227,7 @@ def marker(msg):
     print(f"@@{msg}", file=sys.stderr, flush=True)
 
 
-def fail(code, message):
+def fail(code, message) -> NoReturn:
     """Print a JSON error body to stdout and exit 1."""
     print(json.dumps({"ok": False, "error": message, "code": code}))
     sys.stdout.flush()
@@ -600,6 +601,16 @@ def serialize_transaction(bank_label, acc, txn):
     }
 
 
+# Ergebnis je direkt abgefragtem Extra-Konto (FINTS_EXTRA_ACCOUNTS), kompakt und für die UI gedacht:
+# der Nutzer sieht unter dem Sync-Knopf, was die Bank zu jedem Konto geantwortet hat, ohne im
+# Dev-Server-Log suchen zu müssen. Wird am Ende an `warnings` gehängt.
+PROBE_REPORT = []
+
+
+def probe_note(num, part, text):
+    PROBE_REPORT.append(f"Extra-Konto {num} · {part}: {text}")
+
+
 def sync_one_bank(profile, start_date, end_date, args, client_classes, prev_state=None):
     """Runs the full FinTS dialog for a single bank profile and returns
     (accounts, transactions, balances, holdings, state_blob) — the four lists each
@@ -870,7 +881,10 @@ def sync_one_bank(profile, start_date, end_date, args, client_classes, prev_stat
                     # A refused HKSAL still returns an object; only .amount tells us apart.
                     log(f"[fints] [{label}] {probe_label}: Saldo abgelehnt — die Bank hat keinen "
                         f"Betrag geliefert (siehe die 9xxx-Meldung oben). Nichts gespeichert.")
-                    probe_denied = not info_entry
+                    # Nur bei IBANs: ein Depot (Kontonummer) hat keinen Saldo — seine Bestandsabfrage
+                    # (HKWPD) muss trotz abgelehntem Saldo noch laufen dürfen.
+                    probe_denied = (not info_entry) and is_iban
+                    probe_note(num, "Saldo", "abgelehnt (Bank liefert keinen Betrag, siehe 9xxx im Log)")
                 else:
                     entry = serialize_balance(label, probe_acc, bal)
                     entry["accountName"] = probe_label
@@ -883,8 +897,10 @@ def sync_one_bank(profile, start_date, end_date, args, client_classes, prev_stat
                     balances_out.append(entry)
                     log(f"[fints] [{label}] {probe_label}: Saldo erfolgreich abgerufen "
                         f"({entry.get('bookedBalance')} {entry.get('currency')}) — wird gespeichert.")
+                    probe_note(num, "Saldo", f"OK ({entry.get('bookedBalance')} {entry.get('currency')})")
             except Exception as exc:  # noqa: BLE001
                 log(f"[fints] [{label}] {probe_label}: get_balance() fehlgeschlagen: {exc}")
+                probe_note(num, "Saldo", f"Fehler {type(exc).__name__}: {str(exc)[:120]}")
                 log(f"[fints] [{label}] {probe_label}: Traceback:\n{traceback.format_exc()}")
 
             # Only worth asking for a Depotaufstellung where the bank itself reports support.
@@ -895,6 +911,7 @@ def sync_one_bank(profile, start_date, end_date, args, client_classes, prev_stat
             if probe_denied:
                 log(f"[fints] [{label}] {probe_label}: gehört nicht zu diesem Login (Saldo abgelehnt, "
                     f"nicht in HIUPD) — Depot-/Umsatzabfrage übersprungen.")
+                probe_note(num, "Rest", "übersprungen (IBAN gehört nicht zu diesem Login)")
                 continue
 
             supports_holdings = True
@@ -910,20 +927,26 @@ def sync_one_bank(profile, start_date, end_date, args, client_classes, prev_stat
                             holdings_out.append(serialize_holding(label, probe_label, num, h))
                         log(f"[fints] [{label}] {probe_label}: Depot-Bestand erfolgreich "
                             f"({len(raw_holdings)} Position(en)) — wird gespeichert.")
+                        probe_note(num, "Depot", f"OK ({len(raw_holdings)} Positionen)")
                     else:
                         log(f"[fints] [{label}] {probe_label}: get_holdings() lief durch, aber keine Positionen zurückgegeben.")
+                        probe_note(num, "Depot", "keine Positionen (Bank hat abgelehnt oder Depot ist leer)")
                 except Exception as exc:  # noqa: BLE001
                     log(f"[fints] [{label}] {probe_label}: get_holdings() fehlgeschlagen: {exc}")
+                    probe_note(num, "Depot", f"Fehler {type(exc).__name__}: {str(exc)[:120]}")
                     log(f"[fints] [{label}] {probe_label}: Traceback:\n{traceback.format_exc()}")
             else:
                 log(f"[fints] [{label}] {probe_label}: get_holdings() übersprungen "
                     f"(Bank meldet keine Depot-Unterstützung für dieses Konto).")
+                probe_note(num, "Depot", "übersprungen (Bank meldet keine Depot-Unterstützung)")
 
             if not args.no_txns:
                 try:
                     txns = list(settle_transactions(
                         client, client.get_transactions(probe_acc, start_date, end_date), NeedTANResponse,
                     ))
+                    probe_note(num, "Umsätze", f"{len(txns)} Buchung(en) geliefert" if txns
+                               else "keine Buchungen — bei abgelehntem Saldo heißt das: kein Zugriff, nicht: leeres Konto")
                     if is_iban:
                         for txn in txns:
                             transactions_out.append(serialize_transaction(label, probe_acc, txn))
@@ -934,6 +957,7 @@ def sync_one_bank(profile, start_date, end_date, args, client_classes, prev_stat
                             f"({len(txns)} Buchung(en)) — NICHT gespeichert (bank_transactions braucht eine IBAN).")
                 except Exception as exc:  # noqa: BLE001
                     log(f"[fints] [{label}] {probe_label}: get_transactions() fehlgeschlagen: {exc}")
+                    probe_note(num, "Umsätze", f"Fehler {type(exc).__name__}: {str(exc)[:120]}")
                     log(f"[fints] [{label}] {probe_label}: Traceback:\n{traceback.format_exc()}")
 
     # deconstruct() must run after the dialog is closed — python-fints documents the
@@ -1043,6 +1067,7 @@ def main():
             warnings.append(msg)
 
     write_state_file(args.state_file, state)
+    warnings.extend(PROBE_REPORT)
 
     # Only hard-fail if EVERY configured bank failed — one bad profile (e.g. a
     # not-yet-working Union Investment login) shouldn't take down the rest.

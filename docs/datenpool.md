@@ -122,3 +122,12 @@ Sie darf erst gelöscht werden, wenn man den Rollback nicht mehr braucht.
 - Athena: Werkzeug `getForecast` (nur lesend).
 
 Eine Fortschreibung, keine Vorhersage; die Steuerzahlen sind Schätzungen.
+
+## Vertragsvorschläge (Planung → Verträge)
+
+Die Seite zeigt über den Verträgen "Erkannte wiederkehrende Kosten": Ausgaben, die sich in den letzten ~20 Monaten regelmäßig wiederholen und zu denen es noch keinen Vertrag gibt. Gerechnet wird über alle Konten und Zahlwege (Karte und PayPal inklusive) mit `erkenneWiederkehrend` (`src/lib/finance/wiederkehrend.ts`), unabhängig von der Kategorie "Abos". Pro Vorschlag: Betrag (bei Nutzungsabrechnung mit Spanne), Rhythmus, üblicher Tag, nächster erwarteter Termin (oder "erwartet seit", wenn überfällig) und Jahreskosten.
+
+- "Vertrag anlegen" erzeugt per `vertragsEntwurf` (`vertragsvorschlag.ts`) einen normalen Vertrag; Name kommt aus der Abo-Unterkategorie, falls vorhanden.
+- "Ausblenden" speichert den Schlüssel in `user_settings` (`vertrags_vorschlaege_ausgeblendet`); "wieder anzeigen" leert die Liste.
+- Nicht vorgeschlagen: beendete Serien, Einnahmen, Überweisungen auf eigene Konten, Sparpläne und Bausparen.
+- Die Berechnung ist in `try/catch` gekapselt: Fehler dort legen die Vertragsseite nicht lahm.

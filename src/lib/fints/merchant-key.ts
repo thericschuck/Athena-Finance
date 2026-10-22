@@ -52,3 +52,23 @@ export function extrahiereHaendler(beschreibung: string | null | undefined): str
   }
   return null
 }
+
+/** "VERCEL INC." -> "Vercel Inc.": nur wenn der Text komplett groß geschrieben ist, sonst unverändert. */
+function schoenerName(roh: string): string {
+  const t = roh.replace(/\s+/g, ' ').replace(/[.,;:\s]+$/g, '').trim()
+  if (t !== t.toUpperCase()) return t
+  return t.toLowerCase().replace(/(^|[\s.\-/])(\p{L})/gu, (_m, vor: string, buchstabe: string) => vor + buchstabe.toUpperCase())
+}
+
+/**
+ * Der Händlername zum Anzeigen (mit Groß-/Kleinschreibung des Belegs), wenn der Händler im Verwendungszweck steht (PayPal, Karte);
+ * sonst null. Gegenstück zu `extrahiereHaendler`, das den Lernschlüssel liefert.
+ */
+export function haendlerName(beschreibung: string | null | undefined): string | null {
+  if (!extrahiereHaendler(beschreibung)) return null
+  const text = (beschreibung ?? '').replace(/\s+/g, ' ').trim()
+  const pp = PAYPAL.exec(text)
+  if (pp) return schoenerName(pp[1])
+  const karte = KARTE.exec(text)
+  return karte ? schoenerName(karte[1]) : null
+}

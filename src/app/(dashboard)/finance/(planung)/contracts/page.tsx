@@ -17,6 +17,8 @@ import {
 } from '@/lib/data/finance-planning'
 import { getAccountNames } from '@/lib/data/finance-accounts'
 import { getCategoryNames } from '@/lib/data/finance-transactions'
+import { ladeVertragsVorschlaege } from '@/lib/data/vertragsvorschlaege'
+import { VertragsVorschlaege } from '@/components/finance/vertrags-vorschlaege'
 
 // ─── Date utilities ───────────────────────────────────────────────────────────
 function nextBillingDate(startDate: string, frequency: string, billingDay?: number | null): Date {
@@ -107,12 +109,14 @@ const FREQ_LABEL = Object.fromEntries(FREQUENCIES.map(f => [f.value, f.label]))
 export default async function ContractsPage() {
   const { supabase, user } = await requireAuthUser()
 
-  const [all, accs, categories, savingsPlans, settings] = await Promise.all([
+  const [all, accs, categories, savingsPlans, settings, vorschlagsDaten] = await Promise.all([
     getContracts(supabase, user!.id),
     getAccountNames(supabase, user!.id),
     getCategoryNames(supabase, user!.id),
     getSavingsPlansForContracts(supabase, user!.id),
     getSettings(user!.id),
+    // Die Vorschläge sind eine Zugabe: scheitert ihre Berechnung, bleibt die Seite benutzbar.
+    ladeVertragsVorschlaege(supabase, user!.id).catch(() => ({ vorschlaege: [], ausgeblendet: 0 })),
   ])
 
   const locale = (settings.number_format as string) ?? 'de-DE'
@@ -162,6 +166,9 @@ export default async function ContractsPage() {
         </div>
         <AddContractDialog accounts={accs} categories={categories ?? []} />
       </div>
+
+      {/* Aus den Buchungen erkannte wiederkehrende Kosten ohne Vertrag */}
+      <VertragsVorschlaege vorschlaege={vorschlagsDaten.vorschlaege} ausgeblendet={vorschlagsDaten.ausgeblendet} />
 
       {/* Per-account breakdown */}
       {accountBreakdown.length > 0 && (
