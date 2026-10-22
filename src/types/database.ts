@@ -701,6 +701,7 @@ export type Database = {
           bank_reference: string | null
           category: string | null
           category_id: string | null
+          ai_category_id: string | null
           category_source: string | null
           counterpart_bic: string | null
           counterpart_iban: string | null
@@ -723,6 +724,7 @@ export type Database = {
           bank_reference?: string | null
           category?: string | null
           category_id?: string | null
+          ai_category_id?: string | null
           category_source?: string | null
           counterpart_bic?: string | null
           counterpart_iban?: string | null
@@ -745,6 +747,7 @@ export type Database = {
           bank_reference?: string | null
           category?: string | null
           category_id?: string | null
+          ai_category_id?: string | null
           category_source?: string | null
           counterpart_bic?: string | null
           counterpart_iban?: string | null

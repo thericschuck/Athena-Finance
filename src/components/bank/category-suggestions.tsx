@@ -18,7 +18,7 @@ import {
   SheetDescription,
   SheetFooter,
 } from '@/components/ui/sheet'
-import { normalizeCounterpart } from '@/lib/fints/categorize'
+import { lernSchluessel } from '@/lib/fints/categorize'
 import type { CategorySuggestion, FinanceCategory, SuggestCategoriesResponse } from '@/types/bank'
 
 interface Props {
@@ -51,11 +51,16 @@ function categoryLabel(c: { icon: string | null; name: string }): string {
 function groupSuggestions(suggestions: CategorySuggestion[], kind: GroupKind): Group[] {
   const groups = new Map<string, Group>()
   for (const s of suggestions) {
-    const base = s.counterpart_name ? normalizeCounterpart(s.counterpart_name) : `__single__${s.id}`
+    // Händler aus dem Verwendungszweck bei PayPal/Karte (siehe merchant-key.ts), sonst die Gegenpartei.
+    const base = lernSchluessel(s.counterpart_name, s.description) ?? `__single__${s.id}`
     const key = `${kind}:${base}`
     const existing = groups.get(key)
+    const haendler = base.startsWith('h:') ? base.slice(2) : null
+    const label = haendler
+      ? (s.counterpart_name ? `${s.counterpart_name} · ${haendler}` : haendler)
+      : (s.counterpart_name ?? s.description ?? '—')
     if (existing) existing.items.push(s)
-    else groups.set(key, { key, label: s.counterpart_name ?? s.description ?? '—', items: [s], kind })
+    else groups.set(key, { key, label, items: [s], kind })
   }
   return [...groups.values()].sort((a, b) => b.items.length - a.items.length)
 }

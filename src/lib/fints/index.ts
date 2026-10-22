@@ -231,7 +231,7 @@ function mapTransaction(tx: SidecarTransaction, categories: FinanceCategory[], l
     counterpartName: tx.counterpartName ?? null,
     counterpartIban: tx.counterpartIban ?? null,
     counterpartBic:  tx.counterpartBic ?? null,
-    categoryId:     suggestCategory(tx.counterpartName, desc, categories, learnedMap)?.id ?? null,
+    categoryId:     suggestCategory(tx.counterpartName, desc, categories, learnedMap, amount)?.id ?? null,
     rawDescription: desc,
     bankReference,
     externalId:     buildExternalId(iban, bankReference, valueDate, amount, desc),
@@ -528,10 +528,11 @@ export async function loadLearnedCategoryMap(
 ): Promise<LearnedCategoryMap> {
   const { data } = await supabase
     .from('bank_transactions')
-    .select('counterpart_name, category_id')
+    .select('counterpart_name, description, amount, category_id')
     .eq('user_id', userId)
     .not('category_id', 'is', null)
-    .or('category_source.is.null,category_source.neq.auto')
+    // Nur Entscheidungen des Nutzers: weder Regeltreffer ('auto') noch KI-Vorschläge ('ai') lernen sich selbst an.
+    .or('category_source.is.null,category_source.eq.manual')
   return buildLearnedCategoryMap(data ?? [])
 }
 
@@ -556,7 +557,7 @@ export async function applySuggestionsToBacklog(
     supabase.from('accounts').select('bank_iban').eq('user_id', userId).not('bank_iban', 'is', null),
     supabase
       .from('bank_transactions')
-      .select('id, counterpart_name, counterpart_iban, description')
+      .select('id, counterpart_name, counterpart_iban, description, amount')
       .eq('user_id', userId)
       .is('category_id', null),
   ])

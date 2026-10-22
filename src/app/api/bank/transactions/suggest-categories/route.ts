@@ -51,13 +51,13 @@ export async function GET() {
   // every future suggestion for the same counterparty — not just the keyword rules.
   const learnedMap = buildLearnedCategoryMap(
     // Nur Entscheidungen des Nutzers lernen, keine automatisch gesetzten Kategorien.
-    (data ?? []).filter((tx: { category_id: string | null; category_source: string | null }) => tx.category_id && tx.category_source !== 'auto'),
+    (data ?? []).filter((tx: { category_id: string | null; category_source: string | null }) => tx.category_id && tx.category_source !== 'auto' && tx.category_source !== 'ai'),
   )
 
   const suggestions = (data ?? [])
     .filter((tx: { counterpart_iban: string | null }) => !tx.counterpart_iban || !ownIbans.has(normIban(tx.counterpart_iban)))
     .map((tx: { id: string; description: string | null; counterpart_name: string | null; category_id: string | null; amount: number; value_date: string }) => {
-      const suggested = suggestCategory(tx.counterpart_name, tx.description, categories ?? [], learnedMap)
+      const suggested = suggestCategory(tx.counterpart_name, tx.description, categories ?? [], learnedMap, tx.amount)
       return suggested && suggested.id !== tx.category_id
         ? {
             id: tx.id,

@@ -1,6 +1,7 @@
 {
   "crons": [
     { "path": "/api/bank-sync", "schedule": "0 */6 * * *" },
+    { "path": "/api/cron/categorize", "schedule": "20 */6 * * *" },
     { "path": "/api/cron/kraken-sync", "schedule": "30 */6 * * *" },
     { "path": "/api/cron/monthly-report", "schedule": "0 6 1 * *" },
     { "path": "/api/cron/reminders", "schedule": "0 7 * * *" },

@@ -8,6 +8,7 @@
 // don't exist yet, it stays silent instead of forcing a wrong category — create the matching
 // category under /finance/categories and the same rule starts suggesting for it immediately.
 import type { FinanceCategory } from '@/types/bank'
+import { extrahiereHaendler } from './merchant-key.ts'
 
 interface CategoryRule {
   /** Candidate real category names, tried in priority order. */
@@ -89,7 +90,7 @@ const RULES: CategoryRule[] = [
   {
     candidates: ['Shopping'],
     patterns: [
-      /\b(amazon|zalando|about\s?you|otto|ebay|paypal|ikea|obi|bauhaus|hornbach|toom|hagebau|baumarkt|mediamarkt|saturn)\b/i,
+      /\b(amazon|zalando|about\s?you|otto|ebay|ikea|obi|bauhaus|hornbach|toom|hagebau|baumarkt|mediamarkt|saturn)\b/i,
       /\b(zara|h&m|primark|c&a|peek\s?&\s?cloppenburg|esprit|bonprix|tchibo)\b/i,
     ],
   },
@@ -160,6 +161,13 @@ const RULES: CategoryRule[] = [
     ],
   },
   {
+    // Vor der Depot-Regel, deren Muster "dividende" ebenfalls enthält: eine Dividende ist eine Einnahme
+    // (Kategorie "Kapitalerträge"), kein Depot-Vorgang. Gibt es die Kategorie nicht, fällt die Buchung wie bisher
+    // an die Depot-Regel weiter.
+    candidates: ['Kapitalerträge', 'Kapitalertraege', 'Dividenden'],
+    patterns: [/\b(dividende|ausschüttung|ausschuettung|kapitalertrag)\b/i],
+  },
+  {
     candidates: ['Depot', 'Sparkonto'],
     patterns: [/\b(sparplan|festgeld|tagesgeld|fonds|etf|aktien|wertpapier|dividende|trade\s?republic|comdirect|ing\s?diba|scalable\s?capital)\b/i],
   },
@@ -197,39 +205,106 @@ export function normalizeCounterpart(name: string): string {
   return name.trim().toLowerCase().replace(/\s+/g, ' ')
 }
 
-/** counterparty (normalized) → most-picked category id, learned from the user's own history. */
+/**
+ * Gelernte Zuordnung aus dem, was der Nutzer selbst entschieden hat. Schlüssel, vom Allgemeinen zum Besonderen:
+ *   `<gegenpartei>`            Gegenpartei normalisiert ("rewe markt gmbh") -> häufigste Kategorie
+ *   `<gegenpartei>|in` / `|out`  dasselbe, getrennt nach Richtung (Ein- und Auszahlung beim selben Institut)
+ *   `<gegenpartei>#<betrag>`   fester Betrag, nur wenn mindestens zweimal und stets gleich entschieden
+ *                              (Abos und Raten: "Amazon Prime 8,99 €" ist nicht "Amazon 23,40 €")
+ * und jeweils dasselbe mit `h:<händler>` statt der Gegenpartei, wenn der Händler im Verwendungszweck steht.
+ */
 export type LearnedCategoryMap = Map<string, string>
+
+/** Ab so vielen verschiedenen Kategorien ohne klare Mehrheit ist eine Gegenpartei kein Händler, sondern ein Abwickler. */
+const ABWICKLER_MIN_KATEGORIEN = 3
+const ABWICKLER_MAX_MEHRHEIT = 0.6
+/** Ein fester Betrag zählt erst ab so vielen übereinstimmenden Entscheidungen. */
+const BETRAG_MIN_TREFFER = 2
+
+type LernZeile = { counterpart_name: string | null; category_id: string | null; description?: string | null; amount?: number | string | null }
+
+/** Alle Schlüssel einer Buchung, spezifischste zuerst. */
+function schluesselFuer(basis: string, betrag: number | null): string[] {
+  if (betrag === null || betrag === 0) return [basis]
+  const richtung = betrag > 0 ? 'in' : 'out'
+  return [`${basis}#${betrag.toFixed(2)}`, `${basis}|${richtung}`, basis]
+}
+
+function alsZahl(v: number | string | null | undefined): number | null {
+  if (v === null || v === undefined || v === '') return null
+  const n = Number(v)
+  return Number.isFinite(n) ? n : null
+}
 
 /**
  * Learns "this counterparty is always category X" from transactions the user has already
  * categorized (manually or by accepting a suggestion) — e.g. once a "Rewe" purchase is set
  * to Lebensmittel, every future Rewe transaction is suggested that same category even before
  * any keyword rule would fire, and it overrides a rule that would have guessed differently.
+ *
+ * Schutzmaßnahmen gegen den Fehler, der Alipay-Käufe in "Claude / Anthropic" einsortierte:
+ *  - Steht der Händler im Verwendungszweck (PayPal, Karte), lernt die Buchung unter `h:<händler>`.
+ *  - Verteilt sich eine Gegenpartei auf mindestens drei Kategorien ohne klare Mehrheit (die DZ BANK stand bei
+ *    63 Buchungen in 15), wird sie NICHT gelernt: dort sagt die Gegenpartei nichts über die Kategorie.
+ *  - Richtung und fester Betrag trennen, was derselbe Name vermischt (Einzahlung/Auszahlung, Abo/Einkauf).
  */
-export function buildLearnedCategoryMap(
-  rows: { counterpart_name: string | null; category_id: string | null }[],
-): LearnedCategoryMap {
+export function buildLearnedCategoryMap(rows: LernZeile[]): LearnedCategoryMap {
   const counts = new Map<string, Map<string, number>>()
-  for (const row of rows) {
-    if (!row.counterpart_name || !row.category_id) continue
-    const key = normalizeCounterpart(row.counterpart_name)
-    if (!key) continue
+  const zaehle = (key: string, categoryId: string) => {
     const perCategory = counts.get(key) ?? new Map<string, number>()
-    perCategory.set(row.category_id, (perCategory.get(row.category_id) ?? 0) + 1)
+    perCategory.set(categoryId, (perCategory.get(categoryId) ?? 0) + 1)
     counts.set(key, perCategory)
+  }
+  for (const row of rows) {
+    if (!row.category_id) continue
+    const betrag = alsZahl(row.amount)
+    const haendler = extrahiereHaendler(row.description)
+    if (haendler) {
+      // Der Händler steht im Verwendungszweck, die Gegenpartei ist nur der Abwickler (DZ BANK, PayPal): sie lernt hier nichts.
+      for (const k of schluesselFuer(`h:${haendler}`, betrag)) zaehle(k, row.category_id)
+      continue
+    }
+    if (!row.counterpart_name) continue
+    // Ein Zahlungsabwickler sagt auch ohne erkennbaren Händler nichts über die Kategorie ("PayPal" ist alles Mögliche).
+    if (ABWICKLER.test(row.counterpart_name)) continue
+    const key = normalizeCounterpart(row.counterpart_name)
+    if (key) for (const k of schluesselFuer(key, betrag)) zaehle(k, row.category_id)
   }
 
   const learned: LearnedCategoryMap = new Map()
   for (const [key, perCategory] of counts) {
     let bestId: string | null = null
     let bestCount = 0
+    let total = 0
     for (const [categoryId, count] of perCategory) {
+      total += count
       if (count > bestCount) { bestId = categoryId; bestCount = count }
     }
-    if (bestId) learned.set(key, bestId)
+    if (!bestId) continue
+    if (key.includes('#')) {
+      // Fester Betrag: nur bei Einigkeit und mindestens zwei Treffern.
+      if (perCategory.size > 1 || bestCount < BETRAG_MIN_TREFFER) continue
+    } else if (!key.startsWith('h:') && perCategory.size >= ABWICKLER_MIN_KATEGORIEN && bestCount / total < ABWICKLER_MAX_MEHRHEIT) {
+      continue
+    }
+    learned.set(key, bestId)
   }
   return learned
 }
+
+/** Der Schlüssel, unter dem eine Buchung gruppiert wird: Händler aus dem Verwendungszweck, sonst die Gegenpartei. */
+export function lernSchluessel(counterpartName: string | null | undefined, description: string | null | undefined): string | null {
+  const haendler = extrahiereHaendler(description)
+  if (haendler) return `h:${haendler}`
+  const gegenpartei = counterpartName ? normalizeCounterpart(counterpartName) : ''
+  return gegenpartei || null
+}
+
+/**
+ * Zahlungsabwickler: ihr Name sagt nichts über die Art der Zahlung. Regeln dürfen auf ihnen nicht feuern, sonst wird
+ * jede PayPal-Zahlung zum "Shopping" (40 falsche Treffer in den eigenen Daten).
+ */
+const ABWICKLER = /\b(paypal|dz\s?bank|klarna|stripe|payone|adyen|sumup|concardis|worldline|ratepay)\b/i
 
 /**
  * Suggests a real Finance category for a transaction: first from what the user has already
@@ -242,22 +317,34 @@ export function suggestCategory(
   description: string | null | undefined,
   categories: FinanceCategory[],
   learnedMap?: LearnedCategoryMap,
+  amount?: number | string | null,
 ): FinanceCategory | null {
-  if (counterpartName && learnedMap) {
-    const learnedId = learnedMap.get(normalizeCounterpart(counterpartName))
-    if (learnedId) {
-      const learned = categories.find(c => c.id === learnedId)
-      if (learned) return learned
+  const haendler = extrahiereHaendler(description)
+  if (learnedMap) {
+    // Erst der Händler aus dem Verwendungszweck, dann die Gegenpartei; jeweils vom festen Betrag zur Gegenpartei allein.
+    const betrag = alsZahl(amount)
+    const bases = [
+      haendler ? `h:${haendler}` : null,
+      counterpartName && !ABWICKLER.test(counterpartName) ? normalizeCounterpart(counterpartName) : null,
+    ].filter((k): k is string => !!k)
+    for (const base of bases) {
+      for (const key of schluesselFuer(base, betrag)) {
+        const learnedId = learnedMap.get(key)
+        const learned = learnedId ? categories.find(c => c.id === learnedId) : undefined
+        if (learned) return learned
+      }
     }
   }
 
-  const text = `${counterpartName ?? ''} ${description ?? ''}`.toLowerCase()
+  // Regeln: bei einem Abwickler nur auf Händler und Verwendungszweck, nie auf den Namen des Abwicklers.
+  const name = counterpartName && ABWICKLER.test(counterpartName) ? '' : counterpartName ?? ''
+  const text = `${name} ${haendler ?? ''} ${description ?? ''}`.toLowerCase()
   if (!text.trim()) return null
 
   for (const rule of RULES) {
     if (!rule.patterns.some(p => p.test(text))) continue
-    for (const name of rule.candidates) {
-      const match = pickCategoryByName(name, categories)
+    for (const candidate of rule.candidates) {
+      const match = pickCategoryByName(candidate, categories)
       if (match) return match
     }
   }
@@ -274,6 +361,7 @@ export type BacklogRow = {
   counterpart_name: string | null
   counterpart_iban: string | null
   description: string | null
+  amount?: number | string | null
 }
 
 /**
@@ -295,7 +383,7 @@ export function planBacklog(
   const plan = new Map<string, string[]>()
   for (const row of rows) {
     if (row.counterpart_iban && ownIbans.has(normalizeIban(row.counterpart_iban))) continue
-    const suggested = suggestCategory(row.counterpart_name, row.description, categories, learnedMap)
+    const suggested = suggestCategory(row.counterpart_name, row.description, categories, learnedMap, row.amount)
     if (!suggested) continue
     const ids = plan.get(suggested.id) ?? []
     ids.push(row.id)
