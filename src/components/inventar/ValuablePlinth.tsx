@@ -34,11 +34,18 @@ export function ValuablePlinth({
   id,
   /** Farbe der Wertstufe (`wertstufe(...).border`). Trägt Kapitell und Fries. */
   akzent,
+  prunk = false,
   children,
   className,
 }: {
   id: string
   akzent: string
+  /**
+   * Nur Sammlerstücke bekommen Kannelur und Mäander-Fries. Vorher trug jede Kachel das volle
+   * Ornament, und im Raster aus zwanzig Karten war es Rauschen statt Auszeichnung — jetzt ist
+   * der Schmuck selbst die Stufe.
+   */
+  prunk?: boolean
   children: React.ReactNode
   className?: string
 }) {
@@ -63,6 +70,7 @@ export function ValuablePlinth({
     >
       {/* Steinfläche + Kannelur in einem Element, damit nur eine Schicht über der
           Kartenfläche liegt. */}
+      {prunk && (
       <span
         aria-hidden
         className="absolute inset-0 opacity-70 transition-opacity duration-300 group-hover:opacity-100"
@@ -84,12 +92,13 @@ export function ValuablePlinth({
           WebkitMaskImage: 'linear-gradient(to bottom, black 55%, transparent)',
         }}
       />
+      )}
 
       {/* Kapitell. Die Wertstufe bestimmt die Farbe, und weil `basis` auf `var(--border)`
           liegt, ergibt sich daraus von selbst eine Steigerung: ein Alltagsgegenstand bekommt
           einen schlichten Sockel, ein Sammlerstück einen goldenen Fries. */}
       <span aria-hidden className="absolute inset-x-0 top-0">
-        {istAthena ? (
+        {istAthena && prunk ? (
           <span className="block opacity-60 transition-opacity duration-300 group-hover:opacity-100">
             <MeanderFrieze id={id} color={akzent} opacity={0.85} scale={0.55} />
           </span>
@@ -105,33 +114,5 @@ export function ValuablePlinth({
 
       <div className="relative">{children}</div>
     </div>
-  )
-}
-
-/**
- * Vitrinen-Ecken — vier Winkel in den Kartenecken, die beim Überfahren aufleuchten.
- *
- * Der Griff, mit dem eine Schauvitrine gebaut ist: Rahmenprofile treffen sich in den Ecken.
- * Ständig sichtbar wären sie in einem Raster aus zwanzig Kacheln Unruhe, deshalb erscheinen
- * sie nur unter dem Zeiger — dann markieren sie die Kachel, auf die man zeigt, ohne dass
- * sich etwas an ihrer Größe ändert.
- *
- * Liegt über allem (`z-20`), aber ohne Klickfläche: die Ecken sind Dekor, nicht Bedienung.
- */
-export function ShowcaseCorners({ akzent }: { akzent: string }) {
-  return (
-    <span
-      aria-hidden
-      className="pointer-events-none absolute inset-0 z-20 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-    >
-      {[
-        'left-1.5 top-1.5 border-l border-t',
-        'right-1.5 top-1.5 border-r border-t',
-        'left-1.5 bottom-1.5 border-b border-l',
-        'right-1.5 bottom-1.5 border-b border-r',
-      ].map(ecke => (
-        <span key={ecke} className={cn('absolute size-2.5', ecke)} style={{ borderColor: akzent }} />
-      ))}
-    </span>
   )
 }

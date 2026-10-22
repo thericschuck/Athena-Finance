@@ -245,6 +245,47 @@ export function haltedauerLabel(gekauftAm: string | null): string | null {
   return rest === 0 ? `${jahre} J.` : `${jahre} J. ${rest} Mon.`
 }
 
+// ── Register-Vollständigkeit ──────────────────────────────────────────────────
+
+/**
+ * Wie vollständig ein Eintrag als Register ist. Die Seite ist ein Register und kein
+ * Preisticker — also zählt, was im Schadens- oder Verkaufsfall gebraucht wird: Foto,
+ * Seriennummer, Kaufdatum, Kaufpreis, Box, Papiere. Die Versicherung zählt nur, wenn der
+ * Gegenstand überhaupt eine Wertstufe über „Basis" hat; für Kleinkram wäre „unversichert"
+ * kein Mangel.
+ */
+export interface Vollstaendigkeit {
+  /** 0–100. */
+  prozent: number
+  /** Was fehlt, in Anzeigereihenfolge. */
+  fehlt: string[]
+}
+
+export function vollstaendigkeit(v: Valuable): Vollstaendigkeit {
+  const pruefungen: [boolean, string][] = [
+    [v.bild_anzahl > 0, 'Foto'],
+    [!!v.seriennummer, 'Seriennummer'],
+    [!!v.gekauft_am, 'Kaufdatum'],
+    [v.kaufpreis != null, 'Kaufpreis'],
+    [v.box_vorhanden, 'Box'],
+    [v.papiere_vorhanden, 'Papiere'],
+  ]
+  if (wertstufe(v.aktueller_wert).key !== 'basis') pruefungen.push([v.versichert, 'Versicherung'])
+  const fehlt = pruefungen.filter(([ok]) => !ok).map(([, label]) => label)
+  return {
+    prozent: Math.round(((pruefungen.length - fehlt.length) / pruefungen.length) * 100),
+    fehlt,
+  }
+}
+
+/** Alter der letzten Bewertung in Monaten, oder null ohne Bewertungsdatum. */
+export function wertAlterMonate(v: Valuable): number | null {
+  return haltedauerMonate(v.wert_stand)
+}
+
+/** Ab wann ein Wert als veraltet gilt. */
+export const WERT_VERALTET_MONATE = 12
+
 /**
  * Summe der Sammlung. `nurVermoegen` spiegelt denselben Filter wie fn_valuables_total in
  * der DB — damit die Zahl auf der Inventarseite zur Zahl im Net Worth passt.

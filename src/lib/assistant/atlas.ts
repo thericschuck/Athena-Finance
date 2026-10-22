@@ -233,7 +233,10 @@ export const APP_ATLAS: AtlasSection[] = [
         shows:
           'Wertgegenstände (Uhren, Schmuck, Lederwaren) mit Provenienz, Schätzwert und Artwork. ' +
           'Bewusst NICHT Teil des Vermögensverlaufs',
-        tools: ['getValuables', 'getValuableImages', 'generateValuableArtwork'],
+        tools: [
+          'getValuables', 'getValuableImages', 'getValuableGaps', 'generateValuableArtwork',
+          'addValuableValuation', 'markValuableSold',
+        ],
       },
       {
         route: '/assistant',

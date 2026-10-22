@@ -54,6 +54,98 @@ export function buildInventoryTools(supabase: DB, userId: string) {
       },
     }),
 
+    getValuableGaps: tool({
+      description:
+        'Lücken im Inventar-Register: Stücke ohne Seriennummer, Papiere, Box oder Versicherung, ' +
+        'Bewertungen, die älter als 12 Monate sind (oder ganz fehlen), und die Summe des ' +
+        'versicherten gegenüber dem unversicherten Bestandswert. Reine Abfrage über die aktiven ' +
+        'Stücke (verkaufte zählen nicht). Einstieg für „was fehlt in meinem Register", „was ist ' +
+        'unversichert" und „welche Werte sollte ich neu schätzen" — danach getValuables für ' +
+        'Details und addValuation zum Nachtragen eines Werts.',
+      inputSchema: z.object({
+        kategorie: z
+          .string()
+          .optional()
+          .describe(`Einer von: ${KATEGORIEN.map((k) => k.key).join(', ')}. Leer = alles.`),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(ROW_CAP)
+          .default(25)
+          .describe('Wie viele Stücke je Lückenliste höchstens aufgeführt werden (die Zählungen sind vollständig).'),
+      }),
+      execute: async ({ kategorie, limit }) => {
+        let q = supabase
+          .from('valuables_current')
+          .select('id, name, kategorie, marke, modell, seriennummer, box_vorhanden, papiere_vorhanden, versichert, aktueller_wert, wert_stand, waehrung')
+          .eq('user_id', userId)
+          .eq('is_active', true)
+          .order('sort_order')
+          .limit(ROW_CAP)
+        if (kategorie) q = q.eq('kategorie', kategorie)
+
+        const { data, error } = await q
+        if (error) return { error: error.message }
+
+        const rows = (data ?? []) as {
+          id: string
+          name: string
+          kategorie: string
+          marke: string | null
+          modell: string | null
+          seriennummer: string | null
+          box_vorhanden: boolean
+          papiere_vorhanden: boolean
+          versichert: boolean
+          aktueller_wert: number | null
+          wert_stand: string | null
+          waehrung: string
+        }[]
+
+        const grenze = new Date()
+        grenze.setFullYear(grenze.getFullYear() - 1)
+        const stichtag = grenze.toISOString().split('T')[0]
+
+        // Nur das Nötigste je Stück: die Liste soll auf einen Blick zeigen, WELCHES Stück
+        // fehlt, nicht das ganze Register noch einmal ausschreiben.
+        const kurz = (r: (typeof rows)[number]) => ({
+          id: r.id,
+          name: r.name,
+          kategorie: r.kategorie,
+          aktuellerWert: r.aktueller_wert,
+          wertStand: r.wert_stand,
+        })
+        const liste = (treffer: typeof rows) => ({
+          anzahl: treffer.length,
+          stuecke: treffer.slice(0, Math.min(limit, ROW_CAP)).map((r) => untrust(kurz(r), ['name'])),
+        })
+
+        const summe = (xs: typeof rows) => xs.reduce((s, r) => s + (r.aktueller_wert ?? 0), 0)
+        const versichert = rows.filter((r) => r.versichert)
+        const unversichert = rows.filter((r) => !r.versichert)
+
+        return {
+          anzahlGeprueft: rows.length,
+          // Bei genau ROW_CAP Zeilen ist der Bestand womöglich größer als das, was gelesen wurde.
+          abgeschnitten: rows.length >= ROW_CAP,
+          ohneSeriennummer: liste(rows.filter((r) => !r.seriennummer?.trim())),
+          ohnePapiere: liste(rows.filter((r) => !r.papiere_vorhanden)),
+          ohneBox: liste(rows.filter((r) => !r.box_vorhanden)),
+          unversichert: liste(unversichert),
+          // Ohne jeden Wert ODER Stand vor mehr als 12 Monaten.
+          bewertungVeraltet: liste(rows.filter((r) => !r.wert_stand || r.wert_stand < stichtag)),
+          versicherungsdeckung: {
+            versichertSumme: summe(versichert),
+            unversichertSumme: summe(unversichert),
+            versichertAnzahl: versichert.length,
+            unversichertAnzahl: unversichert.length,
+            hinweis: 'Summen sind Schätzwerte (aktueller_wert) in der Währung der Stücke, ohne Umrechnung.',
+          },
+        }
+      },
+    }),
+
     getValuableImages: tool({
       description:
         'Die Bilder EINES Gegenstands: welche Fotos es gibt (mögliche Vorlagen), welches Artwork ' +

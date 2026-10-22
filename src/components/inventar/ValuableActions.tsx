@@ -10,6 +10,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { ValuableForm } from './ValuableForm'
+import { ValuableSaleButton } from './ValuableSaleButton'
 import { deleteValuable } from '@/app/(dashboard)/inventar/actions'
 import type { ValuableWithImage } from '@/lib/valuables'
 
@@ -35,6 +36,8 @@ export function ValuableActions({ item }: { item: ValuableWithImage }) {
           }
         />
 
+        <ValuableSaleButton id={item.id} name={item.name} kaufpreis={item.kaufpreis} />
+
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-danger">
@@ -47,8 +50,8 @@ export function ValuableActions({ item }: { item: ValuableWithImage }) {
               <AlertDialogTitle>&bdquo;{item.name}&ldquo; löschen?</AlertDialogTitle>
               <AlertDialogDescription>
                 Entfernt den Gegenstand samt Wertverlauf und allen Bildern endgültig. Wenn du
-                das Stück verkauft hast, trag stattdessen im Bearbeiten-Dialog ein
-                Verkaufsdatum ein — dann bleibt die Historie erhalten.
+                das Stück verkauft hast, nutze stattdessen &bdquo;Verkauf&ldquo; — dann bleibt die
+                Historie erhalten und der Gewinn wird festgehalten.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

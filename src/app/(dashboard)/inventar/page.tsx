@@ -2,9 +2,13 @@ import { getAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency } from '@/lib/format'
 import { InventoryClient } from '@/components/inventar/InventoryClient'
-import { gesamtwert, type ValuableImage, type ValuableWithImage } from '@/lib/valuables'
+import {
+  gesamtwert, KATEGORIEN, wertAlterMonate, WERT_VERALTET_MONATE,
+  type ValuableImage, type ValuableWithImage,
+} from '@/lib/valuables'
 import { Gem } from 'lucide-react'
-import { getActiveValuables, getValuableImages } from '@/lib/data/inventar'
+import { getActiveValuables, getSoldValuables, getValuableImages } from '@/lib/data/inventar'
+import { SoldList } from '@/components/inventar/SoldList'
 import { signierteBildUrls } from '@/lib/inventar/bildurls'
 
 /**
@@ -22,8 +26,9 @@ export default async function InventarPage() {
   const { supabase, user } = await getAuthUser()
   if (!user) return null
 
-  const [items, bilder, settings] = await Promise.all([
+  const [items, verkauft, bilder, settings] = await Promise.all([
     getActiveValuables(supabase, user.id),
+    getSoldValuables(supabase, user.id),
     getValuableImages(supabase, user.id),
     getSettings(user.id),
   ])
@@ -72,6 +77,26 @@ export default async function InventarPage() {
   const bwWert = bewertbar.reduce((s, v) => s + (v.aktueller_wert ?? 0), 0)
   const bwKauf = bewertbar.reduce((s, v) => s + (v.kaufpreis ?? 0), 0)
   const rendite = bwKauf > 0 ? ((bwWert - bwKauf) / bwKauf) * 100 : null
+
+  // Versicherung und Verteilung beziehen sich auf dieselbe Summe wie der Sammlungswert.
+  const gezaehlt = items.filter(v => v.im_vermoegen)
+  const gesamt = gezaehlt.reduce((s, v) => s + (v.aktueller_wert ?? 0), 0)
+  const versichertWert = gezaehlt.filter(v => v.versichert).reduce((s, v) => s + (v.aktueller_wert ?? 0), 0)
+  const unversichertTeuer = gezaehlt.filter(v => !v.versichert && (v.aktueller_wert ?? 0) >= 1000)
+  const verteilung = KATEGORIEN
+    .map(k => ({
+      key: k.key,
+      label: k.label,
+      wert: gezaehlt.filter(v => v.kategorie === k.key).reduce((s, v) => s + (v.aktueller_wert ?? 0), 0),
+    }))
+    .filter(k => k.wert > 0)
+    .map(k => ({ ...k, anteil: gesamt > 0 ? (k.wert / gesamt) * 100 : 0 }))
+    .sort((a, b) => b.wert - a.wert)
+  const mitRendite = items.filter(v => v.rendite_prozent != null && v.rendite_prozent !== 0)
+  const nachRendite = [...mitRendite].sort((a, b) => (b.rendite_prozent ?? 0) - (a.rendite_prozent ?? 0))
+  const gewinner = nachRendite[0] ?? null
+  const verlierer = nachRendite.length > 1 ? nachRendite[nachRendite.length - 1] : null
+  const veraltetAnzahl = items.filter(v => (wertAlterMonate(v) ?? 0) >= WERT_VERALTET_MONATE).length
 
   const ohneWert = items.filter(v => v.aktueller_wert == null).length
   const fmtEur = (n: number) => fmtCurrency(n, 'EUR', locale, { fractionDigits: 0 })
@@ -133,7 +158,74 @@ export default async function InventarPage() {
         </div>
       </div>
 
+      {/* Auswertung: Versicherung, Verteilung, Gewinner und Verlierer. Erst ab zwei Stücken —
+          bei einem einzigen wäre jede Verteilung 100 %. */}
+      {items.length > 1 && (
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-lg border border-border bg-card px-4 py-3">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Versicherung</p>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-success"
+                style={{ width: `${gesamt > 0 ? (versichertWert / gesamt) * 100 : 0}%` }}
+              />
+            </div>
+            <p className="mt-2 text-sm tabular-nums">
+              <span className="font-semibold">{fmtEur(versichertWert)}</span>
+              <span className="text-muted-foreground"> von {fmtEur(gesamt)} versichert</span>
+            </p>
+            {unversichertTeuer.length > 0 && (
+              <p className="mt-1 text-[11px] text-danger">
+                {unversichertTeuer.length} {unversichertTeuer.length === 1 ? 'Stück' : 'Stücke'} ab 1.000 € ohne Versicherung
+              </p>
+            )}
+          </div>
+
+          <div className="rounded-lg border border-border bg-card px-4 py-3">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Verteilung</p>
+            <ul className="mt-2 space-y-1.5">
+              {verteilung.slice(0, 4).map(v => (
+                <li key={v.key} className="text-xs">
+                  <div className="flex justify-between gap-2">
+                    <span className="truncate text-muted-foreground">{v.label}</span>
+                    <span className="tabular-nums">{Math.round(v.anteil)} %</span>
+                  </div>
+                  <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full bg-foreground/40" style={{ width: `${v.anteil}%` }} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-lg border border-border bg-card px-4 py-3">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Bewegung</p>
+            {gewinner && verlierer ? (
+              <ul className="mt-2 space-y-2 text-xs">
+                {[gewinner, verlierer].filter((v, i, a) => a.indexOf(v) === i).map(v => (
+                  <li key={v.id} className="flex items-baseline justify-between gap-2">
+                    <span className="truncate">{v.name}</span>
+                    <span className={`shrink-0 font-medium tabular-nums ${(v.rendite_prozent ?? 0) >= 0 ? 'text-success' : 'text-danger'}`}>
+                      {(v.rendite_prozent ?? 0) >= 0 ? '+' : ''}{v.rendite_prozent} %
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-xs text-muted-foreground">Noch keine Wertentwicklung.</p>
+            )}
+            {veraltetAnzahl > 0 && (
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                {veraltetAnzahl} {veraltetAnzahl === 1 ? 'Wert' : 'Werte'} seit über einem Jahr nicht aktualisiert
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       <InventoryClient items={itemsMitBild} locale={locale} />
+
+      <SoldList items={verkauft} locale={locale} />
     </div>
   )
 }

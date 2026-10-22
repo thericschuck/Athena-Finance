@@ -1,7 +1,10 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Gem, Plus, ShieldCheck, Package, FileText, MapPin, ChevronLeft, ChevronRight } from 'lucide-react'
+import {
+  Gem, Plus, ShieldCheck, Package, FileText, MapPin, ChevronLeft, ChevronRight,
+  Search, LayoutGrid, List, Clock, X,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
@@ -11,19 +14,61 @@ import { ValuableIcon } from './ValuableIcon'
 import { ValuableForm } from './ValuableForm'
 import { ValuableActions } from './ValuableActions'
 import { ValuableMedia } from './ValuableMedia'
-import { ShowcaseCorners, ValuablePlinth } from './ValuablePlinth'
+import { ValuablePlinth } from './ValuablePlinth'
+import { ValuableList } from './ValuableList'
+import dynamic from 'next/dynamic'
+import { ValuableDocuments } from './ValuableDocuments'
 import {
   KATEGORIEN, kategorieLabel, wertstufe, zustandLabel, haltedauerLabel,
+  vollstaendigkeit, wertAlterMonate, WERT_VERALTET_MONATE,
   type ValuableWithImage,
 } from '@/lib/valuables'
+
+// Recharts wiegt mehr als der Rest der Seite zusammen und wird erst im Detail-Panel
+// gebraucht — also nachladen, statt es jedem Seitenaufruf mitzugeben.
+const ValuableHistory = dynamic(
+  () => import('./ValuableHistory').then(m => m.ValuableHistory),
+  { ssr: false, loading: () => <div className="h-28 animate-pulse rounded-lg bg-muted/40" /> },
+)
 
 interface Props {
   items: ValuableWithImage[]
   locale: string
 }
 
+type Sortierung = 'manuell' | 'wert' | 'rendite' | 'gekauft' | 'name' | 'neu'
+
+const SORTIERUNGEN: { key: Sortierung; label: string }[] = [
+  { key: 'manuell', label: 'Reihenfolge' },
+  { key: 'wert',    label: 'Wert' },
+  { key: 'rendite', label: 'Entwicklung' },
+  { key: 'gekauft', label: 'Kaufdatum' },
+  { key: 'name',    label: 'Name' },
+  { key: 'neu',     label: 'Zuletzt geändert' },
+]
+
+/** Fehlende Zahlen und Daten wandern ans Ende, egal in welche Richtung sortiert wird. */
+function vergleiche(a: ValuableWithImage, b: ValuableWithImage, s: Sortierung): number {
+  const zahl = (x: number | null, y: number | null) =>
+    x == null ? (y == null ? 0 : 1) : y == null ? -1 : y - x
+  switch (s) {
+    case 'wert':    return zahl(a.aktueller_wert, b.aktueller_wert)
+    case 'rendite': return zahl(a.rendite_prozent, b.rendite_prozent)
+    case 'gekauft': return zahl(
+      a.gekauft_am ? Date.parse(a.gekauft_am) : null,
+      b.gekauft_am ? Date.parse(b.gekauft_am) : null,
+    )
+    case 'name':    return a.name.localeCompare(b.name, 'de')
+    case 'neu':     return Date.parse(b.updated_at) - Date.parse(a.updated_at)
+    default:        return a.sort_order - b.sort_order
+  }
+}
+
 export function InventoryClient({ items, locale }: Props) {
   const [kategorie, setKategorie] = useState<string | null>(null)
+  const [suche, setSuche] = useState('')
+  const [sortierung, setSortierung] = useState<Sortierung>('manuell')
+  const [ansicht, setAnsicht] = useState<'kacheln' | 'liste'>('kacheln')
   // Nur die ID merken, nicht das Objekt.
   //
   // Vorher lag hier eine KOPIE des Gegenstands. Nach einem `router.refresh()` — also nach
@@ -47,10 +92,17 @@ export function InventoryClient({ items, locale }: Props) {
     return KATEGORIEN.filter(k => anzahl.has(k.key)).map(k => ({ ...k, n: anzahl.get(k.key)! }))
   }, [items])
 
-  const sichtbar = useMemo(
-    () => (kategorie ? items.filter(i => i.kategorie === kategorie) : items),
-    [items, kategorie],
-  )
+  const sichtbar = useMemo(() => {
+    const q = suche.trim().toLowerCase()
+    const treffer = items.filter(i => {
+      if (kategorie && i.kategorie !== kategorie) return false
+      if (!q) return true
+      return [i.name, i.marke, i.modell, i.referenz, i.seriennummer, i.lagerort]
+        .some(f => f?.toLowerCase().includes(q))
+    })
+    // `sort` ist stabil — gleiche Werte behalten ihre Reihenfolge aus der DB.
+    return [...treffer].sort((a, b) => vergleiche(a, b, sortierung))
+  }, [items, kategorie, suche, sortierung])
 
   return (
     <div className="space-y-4">
@@ -84,9 +136,67 @@ export function InventoryClient({ items, locale }: Props) {
         />
       </div>
 
+      {/* Suche, Sortierung, Ansicht. Erst ab zwei Stücken: bei einem einzigen wäre die
+          Leiste Dekoration. */}
+      {items.length > 1 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative min-w-0 flex-1 sm:max-w-xs">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              value={suche}
+              onChange={e => setSuche(e.target.value)}
+              placeholder="Name, Marke, Seriennummer …"
+              aria-label="Inventar durchsuchen"
+              className="h-8 w-full rounded-md border border-border bg-transparent pl-8 pr-7 text-sm outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-ring"
+            />
+            {suche && (
+              <button
+                type="button"
+                onClick={() => setSuche('')}
+                aria-label="Suche leeren"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
+          <select
+            value={sortierung}
+            onChange={e => setSortierung(e.target.value as Sortierung)}
+            aria-label="Sortieren nach"
+            className="h-8 rounded-md border border-border bg-transparent px-2 text-xs text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {SORTIERUNGEN.map(o => (
+              <option key={o.key} value={o.key} className="bg-background text-foreground">
+                {o.key === 'manuell' ? o.label : `Nach ${o.label}`}
+              </option>
+            ))}
+          </select>
+          <div className="ml-auto flex rounded-md border border-border p-0.5" role="group" aria-label="Ansicht">
+            {([['kacheln', LayoutGrid, 'Kacheln'], ['liste', List, 'Liste']] as const).map(([k, Icon, label]) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setAnsicht(k)}
+                aria-pressed={ansicht === k}
+                aria-label={label}
+                className={`rounded p-1.5 transition-colors ${
+                  ansicht === k ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Icon className="size-3.5" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Vitrine */}
       {sichtbar.length === 0 ? (
         <LeereVitrine hatObjekte={items.length > 0} />
+      ) : ansicht === 'liste' ? (
+        <ValuableList items={sichtbar} eur={eur} onOpen={setOffenId} />
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
           {sichtbar.map(item => (
@@ -127,6 +237,13 @@ function Karte({
   onOpen: () => void
 }) {
   const stufe = wertstufe(item.aktueller_wert)
+  // Erst ab „Wertvoll" trägt die Kachel die Stufenfarbe — darunter ist der Rahmen eine
+  // Haarlinie, damit die Auszeichnung etwas bedeutet.
+  const ausgezeichnet = stufe.key === 'wertvoll' || stufe.key === 'sammlerstueck'
+  const prunk = stufe.key === 'sammlerstueck'
+  const reg = vollstaendigkeit(item)
+  const alter = wertAlterMonate(item)
+  const veraltet = alter !== null && alter >= WERT_VERALTET_MONATE
 
   // Blättern direkt in der Vitrine, ohne das Detail zu öffnen. Nur Bilder mit URL — eine
   // abgelaufene Signatur wäre sonst eine leere Position im Karussell.
@@ -150,8 +267,8 @@ function Karte({
 
   return (
     <div
-      className="group relative overflow-hidden rounded-xl border bg-card p-3 text-left transition-all duration-200 hover:-translate-y-0.5 focus-within:ring-2 focus-within:ring-ring"
-      style={{ borderColor: stufe.border }}
+      className="group relative overflow-hidden rounded-xl border bg-card p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-within:ring-2 focus-within:ring-ring"
+      style={{ borderColor: ausgezeichnet ? stufe.border : 'var(--border)' }}
     >
       <button
         type="button"
@@ -163,8 +280,8 @@ function Karte({
       {/* Sockel. `pointer-events-none`, damit Klicks auf die Fläche darunter durchgehen —
           die Blätter-Pfeile holen sich ihre Klickbarkeit einzeln zurück. */}
       <div
-        className="pointer-events-none relative aspect-square overflow-hidden rounded-lg"
-        style={{ background: `radial-gradient(120% 80% at 50% 100%, ${stufe.glow}, transparent 70%)` }}
+        className="pointer-events-none relative aspect-[4/5] overflow-hidden rounded-lg bg-muted/30"
+        style={prunk ? { background: `radial-gradient(120% 80% at 50% 100%, ${stufe.glow}, transparent 70%)` } : undefined}
       >
         {/* Die Hover-Vergrösserung sitzt auf dem Rahmen, nicht auf dem Bild: die Bilder
             tragen ihre eigene Transformation für den Wechsel, und zwei `transform` auf
@@ -265,7 +382,7 @@ function Karte({
 
       {/* Sockel mit Beschriftung. Er lässt Klicks durch (siehe ValuablePlinth) — sie
           gehören der flächigen Schaltfläche darunter, die die Kachel öffnet. */}
-      <ValuablePlinth id={`fries-${item.id}`} akzent={stufe.border}>
+      <ValuablePlinth id={`fries-${item.id}`} akzent={stufe.border} prunk={prunk}>
         <div className="space-y-0.5">
           <p className="truncate text-sm font-medium text-foreground">{item.name}</p>
           <p className="truncate text-xs text-muted-foreground">
@@ -274,7 +391,7 @@ function Karte({
         </div>
 
         <div className="mt-2 flex items-baseline justify-between gap-2">
-          <span className="text-sm font-semibold tabular-nums">
+          <span className="text-lg font-semibold leading-none tabular-nums tracking-tight">
             {item.aktueller_wert != null ? eur(item.aktueller_wert) : '—'}
           </span>
           {/* Null Prozent wird nicht angezeigt: frisch angelegt ist der aktuelle Wert der
@@ -292,23 +409,44 @@ function Karte({
         </div>
 
         {/* Statusmarken. Nur was zutrifft — leere Plätze wären nur Rauschen. */}
-        {(item.versichert || !item.im_vermoegen) && (
-          <div className="mt-2 flex items-center gap-1.5">
-            {item.versichert && (
-              <span title="Versichert" className="text-muted-foreground">
-                <ShieldCheck className="size-3.5" />
+        <div className="mt-2 flex items-center gap-1.5">
+          {ausgezeichnet && (
+            <span
+              className="rounded-full border px-1.5 py-0.5 text-[10px] font-medium text-foreground/80"
+              style={{ borderColor: stufe.border }}
+            >
+              {stufe.label}
+            </span>
+          )}
+          {item.versichert && (
+            <span title="Versichert" className="text-muted-foreground">
+              <ShieldCheck className="size-3.5" />
+            </span>
+          )}
+          {veraltet && (
+            <span title={`Wert seit ${alter} Monaten nicht aktualisiert`} className="text-muted-foreground">
+              <Clock className="size-3.5" />
+            </span>
+          )}
+          {!item.im_vermoegen && (
+            <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+              nicht in Summe
+            </span>
+          )}
+          {/* Register-Vollständigkeit: ein Strich, sichtbar erst, wenn etwas fehlt. */}
+          {reg.fehlt.length > 0 && (
+            <span
+              title={`Fehlt: ${reg.fehlt.join(', ')}`}
+              className="ml-auto flex items-center gap-1 text-[10px] tabular-nums text-muted-foreground"
+            >
+              <span className="h-1 w-8 overflow-hidden rounded-full bg-muted">
+                <span className="block h-full rounded-full bg-foreground/40" style={{ width: `${reg.prozent}%` }} />
               </span>
-            )}
-            {!item.im_vermoegen && (
-              <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                nicht in Summe
-              </span>
-            )}
-          </div>
-        )}
+              {reg.prozent} %
+            </span>
+          )}
+        </div>
       </ValuablePlinth>
-
-      <ShowcaseCorners akzent={stufe.border} />
     </div>
   )
 }
@@ -369,6 +507,14 @@ function Detail({
           )}
         </div>
 
+        <ValuableHistory
+          valuableId={item.id}
+          kaufpreis={item.kaufpreis}
+          gekauftAm={item.gekauft_am}
+          locale={locale}
+          refreshKey={`${item.aktueller_wert}-${item.wert_stand}`}
+        />
+
         {/* Ausstattung — die Frage, die beim Wiederverkauf als Erstes kommt. */}
         <div className="flex flex-wrap gap-2">
           <Marke an={item.box_vorhanden} icon={<Package className="size-3.5" />} label="Box" />
@@ -395,6 +541,8 @@ function Detail({
             {item.versicherungsnummer && <Zeile label="Police" value={item.versicherungsnummer} mono />}
           </div>
         )}
+
+        <ValuableDocuments valuableId={item.id} />
 
         {item.notizen && (
           <div className="rounded-lg border border-border bg-muted/20 p-3">

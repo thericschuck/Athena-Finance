@@ -25,7 +25,190 @@ async function valuableName(id: string, ctx: ActionContext): Promise<string> {
   return bezeichnung && bezeichnung !== row.name ? `${row.name} (${bezeichnung})` : row.name
 }
 
+const eur = (n: number) => n.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })
+const datum = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString('de-DE')
+const heuteIso = () => new Date().toISOString().split('T')[0]
+
 export const inventoryActions = {
+  // ── Inventar: Bewertung ────────────────────────────────────────────────────
+  //
+  // Dieselbe Schreibweise wie addValuation in der Inventar-Seite: Upsert auf
+  // (valuable_id, bewertet_am), Quelle `schaetzung`. Ein zweiter Wert am selben Tag
+  // ersetzt den ersten — das steht deshalb auf der Karte.
+  addValuableValuation: defineAction({
+    label: 'Bewertung eintragen',
+    description:
+      'Trägt eine neue Bewertung (Schätzwert) für ein Stück aus dem Inventar ein. Sie wird ein ' +
+      'weiterer Punkt im Wertverlauf, der aktuelle Wert ist der jüngste Eintrag bis heute. ' +
+      'Vorher getValuables oder getValuableGaps aufrufen, um die id zu bekommen. Existiert für ' +
+      'dasselbe Datum schon eine Bewertung, wird sie ersetzt. Nenne nur Werte, die Eric dir ' +
+      'gesagt hat — schätze nicht selbst.',
+    schema: z.object({
+      valuableId: z.string().uuid(),
+      wert: z.number().min(0).max(1e12).describe('Wert in EUR'),
+      bewertetAm: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .nullish()
+        .describe('YYYY-MM-DD, leer = heute'),
+      notiz: z.string().max(1000).nullish(),
+    }),
+    validate: async (input, ctx) => {
+      const { data: item } = await ctx.supabase
+        .from('valuables')
+        .select('id')
+        .eq('id', input.valuableId)
+        .eq('user_id', ctx.userId)
+        .maybeSingle()
+      if (!item) return 'Gegenstand nicht gefunden'
+      if (input.bewertetAm && Number.isNaN(new Date(`${input.bewertetAm}T12:00:00`).getTime())) {
+        return 'Datum ist ungültig'
+      }
+      return null
+    },
+    summarize: async (input, ctx) => {
+      const name = await valuableName(input.valuableId, ctx)
+      return `Bewertung für „${name}" eintragen — ${eur(input.wert)} zum ${datum(input.bewertetAm ?? heuteIso())}`
+    },
+    details: async (input, ctx) => {
+      const am = input.bewertetAm ?? heuteIso()
+      const rows: ActionDetail[] = [
+        { label: 'Gegenstand', value: await valuableName(input.valuableId, ctx) },
+      ]
+
+      const { data: letzte } = await ctx.supabase
+        .from('valuable_valuations')
+        .select('wert, bewertet_am')
+        .eq('valuable_id', input.valuableId)
+        .eq('user_id', ctx.userId)
+        .lte('bewertet_am', am)
+        .order('bewertet_am', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      const bisher = letzte as { wert: number; bewertet_am: string } | null
+
+      rows.push({
+        label: 'Wert',
+        value: bisher ? `${eur(Number(bisher.wert))} → ${eur(input.wert)}` : eur(input.wert),
+        hint: bisher ? `bisher: Stand ${datum(bisher.bewertet_am)}` : 'erste Bewertung dieses Stücks',
+      })
+      rows.push({
+        label: 'Stichtag',
+        value: datum(am),
+        ...(bisher?.bewertet_am === am ? { hint: 'ersetzt die Bewertung desselben Tages' } : {}),
+      })
+      if (input.notiz?.trim()) rows.push({ label: 'Notiz', value: input.notiz.trim() })
+      return rows
+    },
+    execute: async (input, ctx) => {
+      const bewertetAm = input.bewertetAm ?? heuteIso()
+      const { error } = await ctx.supabase.from('valuable_valuations').upsert(
+        {
+          valuable_id: input.valuableId,
+          user_id: ctx.userId,
+          wert: input.wert,
+          bewertet_am: bewertetAm,
+          quelle: 'schaetzung',
+          notiz: input.notiz?.trim() || null,
+        } as never,
+        { onConflict: 'valuable_id,bewertet_am' },
+      )
+      if (error) throw new Error(error.message)
+      return { valuableId: input.valuableId, wert: input.wert, bewertetAm }
+    },
+  }),
+
+  // ── Inventar: Verkauf ──────────────────────────────────────────────────────
+  //
+  // Wie updateValuable in der Inventar-Seite: ein gesetztes Verkaufsdatum nimmt das Stück
+  // aus der Vitrine und aus der Summe (is_active = false), Zeile und Wertverlauf bleiben.
+  markValuableSold: defineAction({
+    label: 'Stück als verkauft markieren',
+    description:
+      'Markiert ein Stück aus dem Inventar als verkauft: Verkaufsdatum und Verkaufspreis werden ' +
+      'gesetzt, das Stück verschwindet aus Vitrine und Sammlungssumme. Zeile und Wertverlauf ' +
+      'bleiben erhalten. Vorher getValuables aufrufen, um die id zu bekommen. Datum und Preis ' +
+      'müssen von Eric stammen — rate sie nicht.',
+    schema: z.object({
+      valuableId: z.string().uuid(),
+      verkauftAm: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .nullish()
+        .describe('YYYY-MM-DD, leer = heute'),
+      verkaufspreis: z.number().min(0).max(1e12).describe('Erlös in EUR'),
+    }),
+    validate: async (input, ctx) => {
+      const { data } = await ctx.supabase
+        .from('valuables')
+        .select('verkauft_am')
+        .eq('id', input.valuableId)
+        .eq('user_id', ctx.userId)
+        .maybeSingle()
+      if (!data) return 'Gegenstand nicht gefunden'
+      const bisher = (data as { verkauft_am: string | null }).verkauft_am
+      if (bisher) return `Das Stück ist bereits als verkauft markiert (${datum(bisher)})`
+      if (input.verkauftAm && Number.isNaN(new Date(`${input.verkauftAm}T12:00:00`).getTime())) {
+        return 'Datum ist ungültig'
+      }
+      return null
+    },
+    summarize: async (input, ctx) => {
+      const name = await valuableName(input.valuableId, ctx)
+      return `„${name}" als verkauft markieren — ${eur(input.verkaufspreis)} am ${datum(input.verkauftAm ?? heuteIso())}`
+    },
+    details: async (input, ctx) => {
+      const rows: ActionDetail[] = [
+        { label: 'Gegenstand', value: await valuableName(input.valuableId, ctx) },
+        { label: 'Verkauft am', value: datum(input.verkauftAm ?? heuteIso()) },
+      ]
+
+      const { data } = await ctx.supabase
+        .from('valuables_current')
+        .select('kaufpreis, aktueller_wert')
+        .eq('id', input.valuableId)
+        .eq('user_id', ctx.userId)
+        .maybeSingle()
+      const ref = data as { kaufpreis: number | null; aktueller_wert: number | null } | null
+      const kauf = ref?.kaufpreis ?? null
+
+      rows.push({
+        label: 'Verkaufspreis',
+        value: eur(input.verkaufspreis),
+        ...(ref?.aktueller_wert != null ? { hint: `zuletzt geschätzt: ${eur(Number(ref.aktueller_wert))}` } : {}),
+      })
+      if (kauf !== null) {
+        const diff = input.verkaufspreis - Number(kauf)
+        rows.push({
+          label: 'Ergebnis zum Kaufpreis',
+          value: `${diff >= 0 ? '+' : ''}${eur(diff)}`,
+          hint: `Kaufpreis ${eur(Number(kauf))}`,
+        })
+      }
+      rows.push({
+        label: 'Folge',
+        value: 'verlässt Vitrine und Sammlungssumme',
+        hint: 'die Zeile samt Wertverlauf bleibt erhalten',
+      })
+      return rows
+    },
+    execute: async (input, ctx) => {
+      const verkauftAm = input.verkauftAm ?? heuteIso()
+      const { error } = await ctx.supabase
+        .from('valuables')
+        .update({
+          verkauft_am: verkauftAm,
+          verkaufspreis: input.verkaufspreis,
+          is_active: false,
+          updated_at: new Date().toISOString(),
+        } as never)
+        .eq('id', input.valuableId)
+        .eq('user_id', ctx.userId)
+      if (error) throw new Error(error.message)
+      return { valuableId: input.valuableId, verkauftAm, verkaufspreis: input.verkaufspreis }
+    },
+  }),
+
   // ── Inventar: Artwork ──────────────────────────────────────────────────────
   //
   // Die einzige Aktion, die Geld nach draußen ausgibt (ein Bildlauf bei OpenAI) und die
