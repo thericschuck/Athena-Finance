@@ -17,6 +17,7 @@ import {
   createValuable, updateValuable, type ValuableActionState,
 } from '@/app/(dashboard)/inventar/actions'
 import { KATEGORIEN, ZUSTAENDE, type Valuable } from '@/lib/valuables'
+import { NUTZUNGEN, WERTMODI } from '@/lib/inventar/wertmodell'
 
 interface Props {
   trigger: React.ReactNode
@@ -29,6 +30,8 @@ export function ValuableForm({ trigger, item }: Props) {
   const [open, setOpen] = useState(false)
   const [kategorie, setKategorie] = useState(item?.kategorie ?? 'uhr')
   const [zustand, setZustand] = useState(item?.zustand ?? 'gut')
+  const [nutzung, setNutzung] = useState(item?.nutzung ?? 'regelmaessig')
+  const [wertmodus, setWertmodus] = useState(item?.wertmodus ?? 'nutzung')
 
   // Ein Kaufdatum in der Zukunft ist fast immer ein vertipptes Jahr (2026 statt 2025). Es
   // bleibt erlaubt — man kann etwas vorbestellt haben —, aber es wird angezeigt: unbemerkt
@@ -63,6 +66,8 @@ export function ValuableForm({ trigger, item }: Props) {
           {/* Radix-Select schreibt nichts ins Formular — die Auswahl reist als Hidden mit. */}
           <input type="hidden" name="kategorie" value={kategorie} />
           <input type="hidden" name="zustand" value={zustand} />
+          <input type="hidden" name="nutzung" value={nutzung} />
+          <input type="hidden" name="wertmodus" value={wertmodus} />
 
           {/* ── Was ist es ─────────────────────────────────────────────────── */}
           <div className="space-y-1.5">
@@ -93,6 +98,32 @@ export function ValuableForm({ trigger, item }: Props) {
                 <SelectContent>
                   {ZUSTAENDE.map(z => (
                     <SelectItem key={z.key} value={z.key}>{z.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Nutzung und Wertmodus steuern die Wertverlauf-Schaetzung. */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Nutzung</Label>
+              <Select value={nutzung} onValueChange={setNutzung}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {NUTZUNGEN.map(n => (
+                    <SelectItem key={n.key} value={n.key}>{n.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Wertverlauf</Label>
+              <Select value={wertmodus} onValueChange={setWertmodus}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {WERTMODI.map(m => (
+                    <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

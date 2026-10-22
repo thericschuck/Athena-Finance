@@ -15,7 +15,8 @@ interface Props {
   refreshKey?: string
 }
 
-type Punkt = { t: number; wert: number; label: string }
+/** `geschaetzt`: vom Wertmodell erzeugt (quelle `modell`), keine Handeingabe. */
+type Punkt = { t: number; wert: number; label: string; geschaetzt: boolean }
 
 const STALE_MONTHS = 12
 
@@ -53,10 +54,12 @@ export function ValuableHistory({ valuableId, kaufpreis, gekauftAm, locale, refr
 
   const punkte = useMemo<Punkt[]>(() => {
     if (!rows) return []
-    const liste: Punkt[] = rows.map((r) => ({ t: tag(r.bewertet_am), wert: r.wert, label: r.bewertet_am }))
+    const liste: Punkt[] = rows.map((r) => ({
+      t: tag(r.bewertet_am), wert: r.wert, label: r.bewertet_am, geschaetzt: r.quelle === 'modell',
+    }))
     // Kaufpreis als Startpunkt, sofern Kaufdatum bekannt und nicht schon eine Bewertung am selben Tag
     if (kaufpreis !== null && gekauftAm && !liste.some((p) => p.t === tag(gekauftAm))) {
-      liste.push({ t: tag(gekauftAm), wert: kaufpreis, label: gekauftAm })
+      liste.push({ t: tag(gekauftAm), wert: kaufpreis, label: gekauftAm, geschaetzt: false })
     }
     return liste.sort((a, b) => a.t - b.t)
   }, [rows, kaufpreis, gekauftAm])
@@ -72,7 +75,10 @@ export function ValuableHistory({ valuableId, kaufpreis, gekauftAm, locale, refr
   }
 
   const letzte = rows[rows.length - 1]
-  const monate = monateSeit(letzte.bewertet_am)
+  const hatModell = rows.some((r) => r.quelle === 'modell')
+  // Veraltet ist, was seit Monaten niemand BEWERTET hat — Modellpunkte zaehlen nicht.
+  const letzteHand = [...rows].reverse().find((r) => r.quelle !== 'modell') ?? letzte
+  const monate = monateSeit(letzteHand.bewertet_am)
   const veraltet = monate > STALE_MONTHS
   const euro = (n: number) => fmtCurrency(n, 'EUR', locale)
 
@@ -109,19 +115,37 @@ export function ValuableHistory({ valuableId, kaufpreis, gekauftAm, locale, refr
               <Tooltip
                 contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
                 labelFormatter={(t) => datumFmt.format(Number(t))}
-                formatter={(v) => [euro(Number(v)), 'Wert']}
+                formatter={(v, _n, item) => [
+                  euro(Number(v)),
+                  (item?.payload as Punkt | undefined)?.geschaetzt ? 'Wert (geschätzt)' : 'Wert',
+                ]}
               />
               <Line
                 type="monotone"
                 dataKey="wert"
                 stroke="var(--chart-accent)"
                 strokeWidth={2}
-                dot={{ r: 3, fill: 'var(--card)', stroke: 'var(--chart-accent)', strokeWidth: 2 }}
+                // Handeingaben als Punkt, Modellwerte nur als Linie: die Punkte sind das,
+                // was jemand bestaetigt hat.
+                dot={(p: { cx?: number; cy?: number; payload?: Punkt; index?: number }) =>
+                  p.payload?.geschaetzt || p.cx === undefined || p.cy === undefined ? (
+                    <g key={p.index} />
+                  ) : (
+                    <circle
+                      key={p.index} cx={p.cx} cy={p.cy} r={3}
+                      fill="var(--card)" stroke="var(--chart-accent)" strokeWidth={2}
+                    />
+                  )}
                 isAnimationActive={false}
               />
             </LineChart>
           </ResponsiveContainer>
         </div>
+      )}
+      {hatModell && (
+        <p className="text-[11px] text-muted-foreground">
+          Verlauf nach Nutzung geschätzt · Punkte = eigene Bewertungen
+        </p>
       )}
       {veraltet && (
         <p className="text-xs text-amber-600 dark:text-amber-400">Wert seit {monate} Monaten nicht aktualisiert</p>

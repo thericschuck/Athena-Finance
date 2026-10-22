@@ -9,6 +9,7 @@ import {
 import { Gem } from 'lucide-react'
 import { getActiveValuables, getDocumentCounts, getSoldValuables, getValuableImages } from '@/lib/data/inventar'
 import { SoldList } from '@/components/inventar/SoldList'
+import { VerlaufSchaetzenButton } from '@/components/inventar/VerlaufSchaetzenButton'
 import { signierteBildUrls } from '@/lib/inventar/bildurls'
 
 /**
@@ -118,6 +119,7 @@ export default async function InventarPage() {
             der Zweck.
           </p>
         </div>
+        {items.length > 0 && <VerlaufSchaetzenButton />}
       </div>
 
       {/* Kennzahlen. Der Hinweis zum Net Worth steht bewusst direkt an der Summe: sonst

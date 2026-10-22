@@ -45,6 +45,10 @@ export interface Valuable {
   hauptbild_pfad: string | null
   bild_anzahl: number
   foto_anzahl: number
+  /** Wie oft das Stueck benutzt wird (`nie` | `selten` | `regelmaessig` | `taeglich`). */
+  nutzung: string
+  /** `nutzung` = Wertverlauf wird geschaetzt, `stabil` = Sammlerstueck, kein Modell. */
+  wertmodus: string
 }
 
 /** Eine Zeile aus `valuable_images`, angereichert um die signierte URL. */

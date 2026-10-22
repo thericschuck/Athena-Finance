@@ -4,6 +4,7 @@ import { getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { parseCsvAmount } from '@/lib/csv'
 import { vergisseBildUrl } from '@/lib/inventar/bildurls'
+import { NUTZUNGEN, WERTMODI } from '@/lib/inventar/wertmodell'
 import { z } from 'zod'
 import { parseForm, parseInput, issueMessage } from '@/lib/api/validate'
 import { idField, uuid, isoDate, money, MAX_AMOUNT, optDate, optText } from '@/lib/api/schemas'
@@ -93,7 +94,15 @@ function felder(formData: FormData) {
     im_vermoegen:        schalter(formData, 'im_vermoegen'),
     verkauft_am:         text(formData, 'verkauft_am'),
     verkaufspreis:       zahl(formData, 'verkaufspreis'),
+    nutzung:             auswahl(formData, 'nutzung', NUTZUNGEN.map(n => n.key), 'regelmaessig'),
+    wertmodus:           auswahl(formData, 'wertmodus', WERTMODI.map(m => m.key), 'nutzung'),
   }
+}
+
+/** Nur bekannte Schluessel durchlassen; die DB lehnt alles andere per CHECK ohnehin ab. */
+function auswahl<T extends string>(formData: FormData, key: string, erlaubt: readonly T[], fallback: T): T {
+  const v = text(formData, key)
+  return erlaubt.find(e => e === v) ?? fallback
 }
 
 // ── Anlegen ───────────────────────────────────────────────────────────────────

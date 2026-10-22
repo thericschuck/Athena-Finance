@@ -25,7 +25,7 @@ const VALUABLE_COLUMNS = [
   'papiere_vorhanden', 'lagerort', 'versichert', 'versicherungsnummer', 'notizen',
   'im_vermoegen', 'verkauft_am', 'verkaufspreis', 'is_active', 'sort_order',
   'created_at', 'updated_at', 'aktueller_wert', 'wert_stand', 'wert_quelle',
-  'rendite_prozent', 'hauptbild_pfad', 'bild_anzahl', 'foto_anzahl',
+  'rendite_prozent', 'hauptbild_pfad', 'bild_anzahl', 'foto_anzahl', 'nutzung', 'wertmodus',
 ].join(', ')
 
 /**
