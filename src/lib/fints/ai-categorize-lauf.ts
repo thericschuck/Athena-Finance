@@ -22,6 +22,8 @@ export type KiLaufErgebnis =
       modell: string
       kandidaten: number
       angewandt: number
+      /** Zuordnungen mit Sicherheit "mittel": nicht gesetzt, aber als Vorschlag gemerkt (Vorschlags-Panel, Transaktionsliste). */
+      vorschlaege: number
       verworfen: number
       kostenUsd: number | null
       abgebrochen: boolean
@@ -65,6 +67,10 @@ export async function kategorisiereMitKi(supabase: DB, userId: string, opts: { t
     .select('id, counterpart_name, counterpart_iban, description, amount')
     .eq('user_id', userId)
     .is('category_id', null)
+    // Schon beurteilt: mit Vorschlag der KI, oder erst vor Kurzem geprüft und unsicher geblieben. Die Prüfung wiederholt
+    // sich nach 3 Tagen, weil inzwischen neue Entscheidungen von dir als Beispiele dazugekommen sein können.
+    .is('ai_category_id', null)
+    .or(`ai_checked_at.is.null,ai_checked_at.lt.${new Date(Date.now() - 3 * 86_400_000).toISOString()}`)
     .order('value_date', { ascending: false })
     .limit(cfg.maxProLauf * 2)
   if (offenFehler) throw new Error(offenFehler.message)
@@ -84,7 +90,7 @@ export async function kategorisiereMitKi(supabase: DB, userId: string, opts: { t
   }
 
   if (kandidaten.length === 0) {
-    return { status: 'fertig', modell: cfg.model, kandidaten: 0, angewandt: 0, verworfen: 0, kostenUsd: 0, abgebrochen: false, trockenlauf: !!opts.trockenlauf, bilanz, beispiele: [] }
+    return { status: 'fertig', modell: cfg.model, kandidaten: 0, angewandt: 0, vorschlaege: 0, verworfen: 0, kostenUsd: 0, abgebrochen: false, trockenlauf: !!opts.trockenlauf, bilanz, beispiele: [] }
   }
 
   // Beispiele: nur Entscheidungen des Nutzers (nicht Regel- oder KI-Treffer), damit die KI nicht von sich selbst lernt.
@@ -108,7 +114,8 @@ export async function kategorisiereMitKi(supabase: DB, userId: string, opts: { t
   const start = Date.now()
   const signal = AbortSignal.timeout(ZEITLIMIT_MS)
   const verbrauch = { inputTokens: 0, outputTokens: 0 }
-  const zuordnungen: { id: string; categoryId: string }[] = []
+  const zuordnungen: { id: string; categoryId: string; sicherheit: 'hoch' | 'mittel' }[] = []
+  const gepruefte: string[] = []
   let verworfen = 0
   let abgebrochen = false
 
@@ -117,11 +124,12 @@ export async function kategorisiereMitKi(supabase: DB, userId: string, opts: { t
       if (signal.aborted) { abgebrochen = true; break }
       const stapel = kandidaten.slice(i, i + cfg.stapel)
       try {
-        const res = await klassifiziereStapel({ model: cfg.model, stapel, optionen, beispiele, korrekturen, mindestens: cfg.mindestens, abortSignal: signal })
+        const res = await klassifiziereStapel({ model: cfg.model, stapel, optionen, beispiele, korrekturen, mindestens: 'mittel', abortSignal: signal })
         verbrauch.inputTokens += res.usage.inputTokens
         verbrauch.outputTokens += res.usage.outputTokens
         verworfen += res.verworfen
-        zuordnungen.push(...res.zuordnungen.map(z => ({ id: z.id, categoryId: z.categoryId })))
+        zuordnungen.push(...res.zuordnungen.map(z => ({ id: z.id, categoryId: z.categoryId, sicherheit: z.sicherheit === 'hoch' ? 'hoch' as const : 'mittel' as const })))
+        gepruefte.push(...stapel.map(b => b.id))
       } catch (e) {
         if (e instanceof Error && (e.name === 'TimeoutError' || e.name === 'AbortError')) { abgebrochen = true; break }
         throw e
@@ -129,26 +137,41 @@ export async function kategorisiereMitKi(supabase: DB, userId: string, opts: { t
     }
 
     let angewandt = 0
+    // "hoch" wird gesetzt (bei mindestens = 'mittel' auch "mittel"); der Rest bleibt als Vorschlag stehen.
+    const setzen = zuordnungen.filter(z => z.sicherheit === 'hoch' || cfg.mindestens === 'mittel')
+    const vorschlaege = zuordnungen.filter(z => !setzen.includes(z))
     if (!opts.trockenlauf) {
       const nachKategorie = new Map<string, string[]>()
-      for (const z of zuordnungen) nachKategorie.set(z.categoryId, [...(nachKategorie.get(z.categoryId) ?? []), z.id])
+      for (const z of setzen) nachKategorie.set(z.categoryId, [...(nachKategorie.get(z.categoryId) ?? []), z.id])
       for (const [categoryId, ids] of nachKategorie) {
         const { data, error } = await supabase.from('bank_transactions')
           .update({ category_id: categoryId, category_source: 'ai', ai_category_id: categoryId })
           .in('id', ids).eq('user_id', userId).is('category_id', null).select('id')
         if (!error) angewandt += data?.length ?? 0
       }
+      // Vorschläge: nur merken, die Buchung bleibt unkategorisiert.
+      const vorNachKategorie = new Map<string, string[]>()
+      for (const z of vorschlaege) vorNachKategorie.set(z.categoryId, [...(vorNachKategorie.get(z.categoryId) ?? []), z.id])
+      for (const [categoryId, ids] of vorNachKategorie) {
+        await supabase.from('bank_transactions').update({ ai_category_id: categoryId })
+          .in('id', ids).eq('user_id', userId).is('category_id', null)
+      }
+      // Alle geprüften Buchungen bekommen den Zeitstempel, auch die ohne Ergebnis.
+      if (gepruefte.length > 0) {
+        await supabase.from('bank_transactions').update({ ai_checked_at: new Date().toISOString() })
+          .in('id', gepruefte).eq('user_id', userId).is('category_id', null)
+      }
     }
 
     const kostenUsd = estimateCostUsd(cfg.model, verbrauch)
     await log({
       event: 'run.finish', message: `KI-Kategorisierung: ${opts.trockenlauf ? 'Trockenlauf, ' : ''}${zuordnungen.length} Zuordnungen`, durationMs: Date.now() - start,
-      meta: { kind: 'categorize', model: cfg.model, usage: verbrauch, kostenUsd, kandidaten: kandidaten.length, zugeordnet: zuordnungen.length, angewandt, verworfen, abgebrochen, bilanz } as unknown as Record<string, Json>,
+      meta: { kind: 'categorize', model: cfg.model, usage: verbrauch, kostenUsd, kandidaten: kandidaten.length, zugeordnet: zuordnungen.length, angewandt, vorschlaege: vorschlaege.length, verworfen, abgebrochen, bilanz } as unknown as Record<string, Json>,
     })
 
     const byId = new Map(kandidaten.map(k => [k.id, k]))
     return {
-      status: 'fertig', modell: cfg.model, kandidaten: kandidaten.length, angewandt, verworfen, kostenUsd, abgebrochen, trockenlauf: !!opts.trockenlauf, bilanz,
+      status: 'fertig', modell: cfg.model, kandidaten: kandidaten.length, angewandt, vorschlaege: vorschlaege.length, verworfen, kostenUsd, abgebrochen, trockenlauf: !!opts.trockenlauf, bilanz,
       beispiele: opts.trockenlauf
         ? zuordnungen.slice(0, 40).map(z => {
             const b = byId.get(z.id)!

@@ -27,7 +27,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('bank_transactions')
-    .select('id, description, counterpart_name, counterpart_iban, category_id, category_source, amount, value_date')
+    .select('id, description, counterpart_name, counterpart_iban, category_id, category_source, ai_category_id, amount, value_date')
     .eq('user_id', user.id)
     .order('value_date', { ascending: false })
     .limit(5000)
@@ -54,11 +54,15 @@ export async function GET() {
     (data ?? []).filter((tx: { category_id: string | null; category_source: string | null }) => tx.category_id && tx.category_source !== 'auto' && tx.category_source !== 'ai'),
   )
 
-  const suggestions = (data ?? [])
+  type Zeile = { id: string; description: string | null; counterpart_name: string | null; category_id: string | null; ai_category_id: string | null; amount: number; value_date: string }
+  const suggestions = (data ?? [] as Zeile[])
     .filter((tx: { counterpart_iban: string | null }) => !tx.counterpart_iban || !ownIbans.has(normIban(tx.counterpart_iban)))
-    .map((tx: { id: string; description: string | null; counterpart_name: string | null; category_id: string | null; amount: number; value_date: string }) => {
+    .map((tx: Zeile) => {
       const suggested = suggestCategory(tx.counterpart_name, tx.description, categories ?? [], learnedMap, tx.amount)
-      return suggested && suggested.id !== tx.category_id
+      // Regeln und Gelerntes zuerst; wo sie schweigen, gilt bei offenen Buchungen der (unsichere) Vorschlag der KI.
+      const ki = !suggested && !tx.category_id && tx.ai_category_id ? categoriesById.get(tx.ai_category_id) ?? null : null
+      const vorschlag = suggested ?? ki
+      return vorschlag && vorschlag.id !== tx.category_id
         ? {
             id: tx.id,
             description: tx.description,
@@ -66,7 +70,8 @@ export async function GET() {
             amount: tx.amount,
             value_date: tx.value_date,
             current_category: tx.category_id ? categoriesById.get(tx.category_id) ?? null : null,
-            suggested_category: suggested,
+            suggested_category: vorschlag,
+            ...(ki ? { ki: true } : {}),
           }
         : null
     })

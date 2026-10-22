@@ -61,9 +61,21 @@ meist echte Mehrdeutigkeiten (PayPal ohne Händler: „marbis" oder „Freizeit"
 `user_settings.ai_categorization` (JSON, alles optional): `{ "enabled": true, "model": "claude-haiku-4-5", "mindestens": "hoch", "maxProLauf": 60, "stapel": 15 }`.
 Ausschalten: `{ "enabled": false }`. Probelauf ohne Schreiben: `GET /api/cron/categorize?dry=1` mit `Authorization: Bearer <CRON_SECRET>`.
 
+## KI-Marke und Vorschläge in der Oberfläche
+
+- **Transaktionsliste** (und Konto-Detail): neben der Kategorie steht **„KI"** (von der KI gesetzt) bzw. **„Regel"** (automatisch,
+  Regel oder Gelerntes). Ändert du die Kategorie, verschwindet die Marke: es ist jetzt deine Entscheidung.
+- **KI-Vorschläge** (Sicherheit „mittel", trifft nur etwa jede zweite Buchung) werden NICHT gesetzt, sondern gemerkt
+  (`ai_category_id`, Buchung bleibt offen). Sie erscheinen als gestrichelter Knopf **„KI: Kategorie ✓"** direkt in der Zeile (ein Klick
+  übernimmt) und im Vorschlags-Panel mit „KI"-Marke. Der Sammelknopf „Alle übernehmen" nimmt sie bewusst nicht mit.
+- Unsichere Buchungen werden nicht alle sechs Stunden neu abgefragt: `ai_checked_at` sperrt sie drei Tage lang.
+
+**Fehler dabei gefunden und behoben:** Die Kategorie-Auswahl in der Transaktionsliste (und Athenas bestätigte Kategorisierung) setzte nur
+`category_id`, nicht `category_source`. Korrekturen dort wären nie als deine Entscheidung gezählt worden (und bei KI/Regel-Zeilen auch nicht als
+Korrektur erkannt). Jetzt setzen beide `category_source = 'manual'`.
+
 ## Offen
 
-- In der Transaktionsliste ist nicht markiert, welche Kategorie von der KI stammt (nur `category_source = 'ai'` in der Datenbank).
-- „Mittel"-Vorschläge könnten im Vorschlags-Panel erscheinen, statt zu verfallen.
 - Der Python-Cloud-Sync setzt weiterhin kein `category_id`; die Zuordnung geschieht erst im Cron danach.
 - Alipay-Käufe in China ordnet nur ein Mensch zu (die Kategorie „OtherRetail" sagt nichts); einmal je Händler zuordnen, dann lernt es das System.
+- Die Trefferquote der KI (bestätigt vs. korrigiert) steht nur im Cron-Ergebnis (`bilanz`), nicht in der Oberfläche.

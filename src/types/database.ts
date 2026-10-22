@@ -702,6 +702,7 @@ export type Database = {
           category: string | null
           category_id: string | null
           ai_category_id: string | null
+          ai_checked_at: string | null
           category_source: string | null
           counterpart_bic: string | null
           counterpart_iban: string | null
@@ -725,6 +726,7 @@ export type Database = {
           category?: string | null
           category_id?: string | null
           ai_category_id?: string | null
+          ai_checked_at?: string | null
           category_source?: string | null
           counterpart_bic?: string | null
           counterpart_iban?: string | null
@@ -748,6 +750,7 @@ export type Database = {
           category?: string | null
           category_id?: string | null
           ai_category_id?: string | null
+          ai_checked_at?: string | null
           category_source?: string | null
           counterpart_bic?: string | null
           counterpart_iban?: string | null
@@ -3752,6 +3755,8 @@ export type Database = {
           amount_base: number | null
           amount_eur: number | null
           booked_date: string | null
+          category_source: string | null
+          ai_category_id: string | null
           category_color: string | null
           category_id: string | null
           category_name: string | null

@@ -35,6 +35,8 @@ interface Group {
   label: string
   items: CategorySuggestion[]
   kind: GroupKind
+  /** Vorschlag der KI (unsicher, "mittel"): wird vom Sammelknopf nicht mit übernommen. */
+  ki: boolean
 }
 
 function categoryLabel(c: { icon: string | null; name: string }): string {
@@ -60,7 +62,7 @@ function groupSuggestions(suggestions: CategorySuggestion[], kind: GroupKind): G
       ? (s.counterpart_name ? `${s.counterpart_name} · ${haendler}` : haendler)
       : (s.counterpart_name ?? s.description ?? '—')
     if (existing) existing.items.push(s)
-    else groups.set(key, { key, label, items: [s], kind })
+    else groups.set(key, { key, label, items: [s], kind, ki: !!s.ki })
   }
   return [...groups.values()].sort((a, b) => b.items.length - a.items.length)
 }
@@ -107,6 +109,9 @@ export function CategorySuggestions({ categories, onAccept }: Props) {
 
   const { neue, aenderungen } = useMemo(() => buildGroups(suggestions), [suggestions])
   const neueCount = useMemo(() => neue.reduce((n, g) => n + g.items.length, 0), [neue])
+  // Der Sammelknopf übernimmt nur sichere Vorschläge (Regeln, Gelerntes); KI-Vorschläge bleiben zur Einzelprüfung stehen.
+  const sichere = useMemo(() => neue.filter(g => !g.ki), [neue])
+  const sichereCount = useMemo(() => sichere.reduce((n, g) => n + g.items.length, 0), [sichere])
 
   const loadSuggestions = async () => {
     setIsLoading(true)
@@ -158,12 +163,12 @@ export function CategorySuggestions({ categories, onAccept }: Props) {
     setIsApplyingAll(true)
     try {
       await Promise.all(
-        neue.flatMap(g => {
+        sichere.flatMap(g => {
           const categoryId = resolvedCategoryId(g)
           return g.items.map(item => onAccept(item.id, categoryId))
         }),
       )
-      const ids = new Set(neue.flatMap(g => g.items.map(i => i.id)))
+      const ids = new Set(sichere.flatMap(g => g.items.map(i => i.id)))
       setSuggestions(prev => prev.filter(s => !ids.has(s.id)))
     } finally {
       setIsApplyingAll(false)
@@ -225,6 +230,14 @@ export function CategorySuggestions({ categories, onAccept }: Props) {
             >
               <div className="flex items-center gap-1.5">
                 <p className="text-xs font-medium truncate flex-1 min-w-0">{g.label}</p>
+                {g.ki && (
+                  <span
+                    title="Vorschlag der KI, nicht sicher (trifft etwa jede zweite Buchung). Bitte prüfen."
+                    className="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+                  >
+                    KI
+                  </span>
+                )}
                 {g.items.length > 1 && (
                   <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                     {g.items.length}×
@@ -285,7 +298,7 @@ export function CategorySuggestions({ categories, onAccept }: Props) {
           ))}
         </div>
 
-        {neueCount > 0 && (
+        {sichereCount > 0 && (
           <SheetFooter>
             {/* Fasst ausschliesslich die unkategorisierten an. Die Änderungsvorschläge
                 bleiben nach dem Klick stehen — sie sollen eine bewusste Entscheidung
@@ -294,7 +307,7 @@ export function CategorySuggestions({ categories, onAccept }: Props) {
               {isApplyingAll
                 ? <Loader2 className="size-4 animate-spin" />
                 : <Check className="size-4" />}
-              Alle {neueCount} ohne Kategorie übernehmen ({neue.length} Gruppen)
+              Alle {sichereCount} ohne Kategorie übernehmen ({sichere.length} Gruppen{sichere.length < neue.length ? ', ohne KI-Vorschläge' : ''})
             </Button>
           </SheetFooter>
         )}

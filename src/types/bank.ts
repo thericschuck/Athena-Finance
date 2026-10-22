@@ -123,6 +123,8 @@ export interface CategorySuggestion {
   value_date: string
   current_category: FinanceCategory | null   // null if uncategorized
   suggested_category: FinanceCategory        // always different from current_category
+  /** Der Vorschlag stammt von der KI (Sicherheit "mittel"), nicht aus Regeln oder deinen früheren Entscheidungen. */
+  ki?: boolean
 }
 
 export interface SuggestCategoriesResponse {

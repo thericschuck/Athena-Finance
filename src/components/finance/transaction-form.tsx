@@ -682,6 +682,9 @@ export function TransactionCategorySelect({
     description?: string | null
     merchant?: string | null
     type?: string
+    /** Herkunft der Kategorie (auto / ai / manual) und Vorschlag der KI, nur bei Bankbuchungen. */
+    category_source?: string | null
+    ai_category_id?: string | null
   }
   categories: Category[]
   debts?: Debt[]
@@ -710,8 +713,19 @@ export function TransactionCategorySelect({
     })
   }
 
+  // Herkunft nur zeigen, solange sie stimmt: nach deiner Änderung in dieser Sitzung ist es deine Entscheidung.
+  const unveraendert = categoryId === (tx.category_id ?? NO_CATEGORY)
+  const herkunft = unveraendert && tx.category_id
+    ? (tx.category_source === 'ai' ? 'ai' : tx.category_source === 'auto' ? 'auto' : null)
+    : null
+  // Offene Buchung mit Vorschlag der KI: ein Klick übernimmt ihn (zählt dann als deine Entscheidung).
+  const kiVorschlag = categoryId === NO_CATEGORY && tx.ai_category_id
+    ? categories.find(c => c.id === tx.ai_category_id) ?? null
+    : null
+
   return (
     <>
+      <div className="flex flex-wrap items-center gap-1.5">
       <Select value={categoryId} onValueChange={handleChange}>
         <SelectTrigger
           size="sm"
@@ -728,6 +742,33 @@ export function TransactionCategorySelect({
           <CategorySelectOptions categories={categories} />
         </SelectContent>
       </Select>
+      {herkunft === 'ai' && (
+        <span
+          title="Von der KI zugeordnet. Stimmt es nicht, ändere die Kategorie: daraus lernt das System."
+          className="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+        >
+          KI
+        </span>
+      )}
+      {herkunft === 'auto' && (
+        <span
+          title="Automatisch zugeordnet (Regel oder gelernt aus deinen früheren Entscheidungen)."
+          className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+        >
+          Regel
+        </span>
+      )}
+      {kiVorschlag && (
+        <button
+          type="button"
+          onClick={() => handleChange(kiVorschlag.id)}
+          title="Vorschlag der KI übernehmen"
+          className="shrink-0 rounded-full border border-dashed border-primary/50 px-2 py-0.5 text-[10px] font-medium text-primary transition-colors hover:bg-primary/10"
+        >
+          KI: {categoryLabel(kiVorschlag)} ✓
+        </button>
+      )}
+      </div>
       {justChanged && schuldenCategoryId && categoryId === schuldenCategoryId && (
         <div className="mt-1.5 max-w-xs">
           <DebtSuggestion

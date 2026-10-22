@@ -1,4 +1,4 @@
-import { getAuthUser } from '@/lib/supabase/server'
+import { requireAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency, fmtDate } from '@/lib/format'
 import { notFound } from 'next/navigation'
@@ -81,7 +81,7 @@ interface PageProps {
 
 export default async function AccountDetailPage({ params, searchParams }: PageProps) {
   const [{ id }, sp, { supabase, user }] = await Promise.all([
-    params, searchParams, getAuthUser(),
+    params, searchParams, requireAuthUser(),
   ])
   const { period: rawPeriod, q, cat, txtype, sort, month } = sp
   const period: Period = parsePeriod(rawPeriod)
@@ -451,7 +451,7 @@ function TransactionRow({ tx, accounts, categories, locale, dateFormat }: { tx: 
       <td className="px-4 py-3 text-muted-foreground tabular-nums">{formatDate(tx.date, dateFormat)}</td>
       <td className="px-4 py-3">
         <TransactionCategorySelect
-          tx={{ id: tx.id, category_id: tx.category_id, source: tx.source }}
+          tx={{ id: tx.id, category_id: tx.category_id, source: tx.source, category_source: tx.category_source, ai_category_id: tx.ai_category_id }}
           categories={categories}
         />
       </td>

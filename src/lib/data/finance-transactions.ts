@@ -25,6 +25,10 @@ export type UnifiedTxRow = {
   signed_amount: number
   /** echt | anlage | forderung | umbuchung | anfangsbestand — siehe unified_transactions. */
   flow_kind: string
+  /** Woher die Kategorie einer Bankbuchung stammt: auto (Regel/Gelerntes), ai (KI), manual (du); sonst null. */
+  category_source: string | null
+  /** Vorschlag der KI; bei offenen Buchungen der Vorschlag, bei gesetzten der ursprüngliche KI-Wert. */
+  ai_category_id: string | null
 }
 
 /** Zeile der globalen Transaktionsliste (zusätzlich Konto-Name/-Farbe für die Tabelle). */
@@ -49,7 +53,7 @@ export type TransactionListFilters = {
 }
 
 const UNIFIED_BASE_COLUMNS =
-  'id, account_id, category_id, date, type, amount, currency, description, merchant, transfer_to, source, signed_amount, flow_kind'
+  'id, account_id, category_id, date, type, amount, currency, description, merchant, transfer_to, source, signed_amount, flow_kind, category_source, ai_category_id'
 const TRANSACTION_LIST_COLUMNS = `${UNIFIED_BASE_COLUMNS}, account_name, account_color`
 const ACCOUNT_TRANSACTION_COLUMNS = `${UNIFIED_BASE_COLUMNS}, category_name, category_color`
 

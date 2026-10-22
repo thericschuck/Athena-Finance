@@ -70,9 +70,11 @@ export const transactionActions = {
       }
       let updated = 0
       for (const [table, ids] of byTable) {
-        const { data, error } = await ctx.supabase
-          .from(table)
-          .update({ category_id: categoryId })
+        // Von Eric bestätigt: bei Bankbuchungen zählt das als seine Entscheidung (siehe fints/categorize.ts).
+        const update = table === 'bank_transactions'
+          ? ctx.supabase.from(table).update({ category_id: categoryId, category_source: 'manual' })
+          : ctx.supabase.from(table).update({ category_id: categoryId })
+        const { data, error } = await update
           .eq('user_id', ctx.userId)
           .in('id', ids)
           .select('id')

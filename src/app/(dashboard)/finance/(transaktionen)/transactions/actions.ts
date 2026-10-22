@@ -142,10 +142,12 @@ export async function updateTransactionCategory(
   const p = parseInput(updateCategoryArgs, { id, categoryId, source })
   if (!p.ok) return { error: issueMessage(p) }
 
-  const table = source === 'bank_sync' ? 'bank_transactions' : 'transactions'
-  const { error } = await supabase
-    .from(table)
-    .update({ category_id: categoryId })
+  // Bei Bankbuchungen ist das eine Entscheidung des Nutzers: `category_source = 'manual'`. Nur so lernt das System
+  // daraus (Regel- und KI-Treffer zählen nicht) und erkennt eine Korrektur eines KI-Vorschlags.
+  const query = source === 'bank_sync'
+    ? supabase.from('bank_transactions').update({ category_id: categoryId, category_source: categoryId ? 'manual' : null })
+    : supabase.from('transactions').update({ category_id: categoryId })
+  const { error } = await query
     .eq('id', id)
     .eq('user_id', user.id)
 
