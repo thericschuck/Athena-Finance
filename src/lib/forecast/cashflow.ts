@@ -167,16 +167,52 @@ export function lohnNiveau(tage: TagesSumme[], heute: string, anzahl = 6): numbe
   return median(letzte)
 }
 
-export function berechnePrognose(e: PrognoseEingaben): Prognose {
+/** Was das Lernen aus der Historie liefert. Hängt NICHT von den Annahmen ab, lässt sich also für Basis und Szenario teilen. */
+export type GelernteModelle = {
+  mLiq: ZyklusModell
+  mNw: ZyklusModell
+  basisLohn: number
+  /** Fächer je (Reihe, Tage, Seed): die Bootstrap-Rechnung ist deterministisch und kostet pro Aufruf spürbar Zeit. */
+  faecherCache: Map<string, { unten: number[]; oben: number[] }>
+}
+
+/**
+ * Zuletzt gelernte Modelle dieses Prozesses, nach EXAKTEM Eingabetext. Das Lernen kostet 2–3 s und hängt nur von Buchungen, Verträgen,
+ * liquiden Konten und dem heutigen Tag ab, nicht von den Annahmen: wer auf der Prognose-Seite Annahmen ändert oder neu lädt,
+ * bekommt dieselben Modelle zurück. Der Schlüssel ist der vollständige Text (keine Prüfsumme), eine Verwechslung ist damit ausgeschlossen;
+ * höchstens `MODELL_CACHE_MAX` Einträge, der älteste fliegt zuerst raus.
+ */
+const MODELL_CACHE_MAX = 6
+const modellCache = new Map<string, GelernteModelle>()
+
+export function lerneModelle(e: Pick<PrognoseEingaben, 'tage' | 'vertraege' | 'liquideKontoIds' | 'heute'>): GelernteModelle {
+  const schluessel = JSON.stringify([e.heute, [...e.liquideKontoIds].sort(), e.vertraege, e.tage])
+  const bekannt = modellCache.get(schluessel)
+  if (bekannt) return bekannt
+
+  const bereinigt = ohneVertragsbuchungen(e.tage, e.vertraege, new Set(e.liquideKontoIds), e.heute)
+  const modelle: GelernteModelle = {
+    mLiq: baueModell(bereinigt, e.heute, 'liquiditaet'),
+    mNw: baueModell(bereinigt, e.heute, 'vermoegen'),
+    basisLohn: lohnNiveau(e.tage, e.heute),
+    faecherCache: new Map(),
+  }
+  modellCache.set(schluessel, modelle)
+  if (modellCache.size > MODELL_CACHE_MAX) modellCache.delete(modellCache.keys().next().value as string)
+  return modelle
+}
+
+/**
+ * `gelernt`: bereits gelernte Modelle (siehe `lerneModelle`). Ohne Angabe wird hier gelernt. Wer Basis UND Szenario rechnet, lernt
+ * einmal und gibt dieselben Modelle an beide Aufrufe: das Lernen (Backtest über alle Halbwertszeiten) ist der teure Teil.
+ */
+export function berechnePrognose(e: PrognoseEingaben, gelernt?: GelernteModelle): Prognose {
   const warnungen: string[] = []
   const liquide = new Set(e.liquideKontoIds)
   const n = Math.max(1, Math.min(60, Math.floor(e.monate)))
 
   // ── Muster lernen (Verträge herausgerechnet) ───────────────────────────────────────────────
-  const bereinigt = ohneVertragsbuchungen(e.tage, e.vertraege, liquide, e.heute)
-  const mLiq = baueModell(bereinigt, e.heute, 'liquiditaet')
-  const mNw = baueModell(bereinigt, e.heute, 'vermoegen')
-  const basisLohn = lohnNiveau(e.tage, e.heute)
+  const { mLiq, mNw, basisLohn, faecherCache } = gelernt ?? lerneModelle(e)
   warnungen.push(...mLiq.hinweise)
 
   // ── Zeitraum ──────────────────────────────────────────────────────────────────────────────
@@ -251,8 +287,14 @@ export function berechnePrognose(e: PrognoseEingaben): Prognose {
 
   // ── Fächer: Unsicherheit aus den echten Abweichungen ───────────────────────────────────────
   const seed = hashe(e.heute + '|' + e.tage.length)
-  const fLiq = faecher(mLiq.residuen, zeilen.length, { seed })
-  const fNw = faecher(mNw.residuen, zeilen.length, { seed: seed + 1 })
+  const memo = (reihe: 'liq' | 'nw', residuen: number[], s: number) => {
+    const key = `${reihe}|${zeilen.length}|${s}`
+    let f = faecherCache.get(key)
+    if (!f) { f = faecher(residuen, zeilen.length, { seed: s }); faecherCache.set(key, f) }
+    return f
+  }
+  const fLiq = memo('liq', mLiq.residuen, seed)
+  const fNw = memo('nw', mNw.residuen, seed + 1)
 
   const tage: PrognoseTag[] = zeilen.map((z, k) => ({
     datum: z.datum,

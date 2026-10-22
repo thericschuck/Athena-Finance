@@ -101,6 +101,8 @@ export function tagesReihe(
 
 type Anpassung = {
   erwartet: (datum: string) => { einnahmen: number; ausgaben: number }
+  /** Wie `erwartet`, aber mit Tag im Monat und Wochentag (Montag = 0) statt eines Datums-Strings. Für Schleifen über viele Tage. */
+  erwartetAn: (tagImMonat: number, wochentag: number) => { einnahmen: number; ausgaben: number }
 }
 
 type Profil = { q: number[]; f: number[]; mittel: number }
@@ -128,8 +130,9 @@ function profilVon(
     for (let i = 0; i < o; i++) { s[dom[i]] += (reihe[i] / f[wd[i]]) * g[i]; n[dom[i]] += g[i] }
     const roh = new Array(32).fill(mittel)
     for (let d = 1; d <= 31; d++) {
+      // Tag davor, Tag, Tag danach (rund um den Monatswechsel); Summationsreihenfolge wie bisher.
       let ss = 0, c = 0
-      for (const dd of [d - 1, d, d + 1]) {
+      for (let dd = d - 1; dd <= d + 1; dd++) {
         const x = dd < 1 ? 31 : dd > 31 ? 1 : dd
         ss += s[x]; c += n[x]
       }
@@ -159,11 +162,10 @@ function passeAn(
   for (let i = 0; i < o; i++) g[i] = h === null ? 1 : Math.pow(0.5, (o - i) / h)
   const pE = profilVon(ein, dom, wd, g, o, schrumpf)
   const pA = profilVon(aus, dom, wd, g, o, schrumpf)
+  const erwartetAn = (d: number, w: number) => ({ einnahmen: pE.q[d] * pE.f[w], ausgaben: pA.q[d] * pA.f[w] })
   return {
-    erwartet: datum => {
-      const d = tagImMonat(datum), w = wochentag(datum)
-      return { einnahmen: pE.q[d] * pE.f[w], ausgaben: pA.q[d] * pA.f[w] }
-    },
+    erwartet: datum => erwartetAn(tagImMonat(datum), wochentag(datum)),
+    erwartetAn,
   }
 }
 
@@ -250,7 +252,8 @@ export function baueModell(
       let summe = 0
       for (const o of ursprunge) {
         const a = passeAn(ein, aus, dom, wd, o, h, schrumpf)
-        summe += pfadFehler(i => { const d = addTage(start, i); const e = a.erwartet(d); return e.einnahmen - e.ausgaben }, netto, o, horizont)
+        // Index statt Datum: o + k < N, Tag im Monat und Wochentag stehen schon in dom/wd (spart Millionen Datums-Strings).
+        summe += pfadFehler(i => { const e = a.erwartetAn(dom[i], wd[i]); return e.einnahmen - e.ausgaben }, netto, o, horizont)
       }
       return { halbwertszeit: h, fehler: summe / ursprunge.length }
     })
@@ -287,7 +290,7 @@ export function baueModell(
   // ── Endgültige Anpassung auf alle Daten, Residuen für den Fächer ───────────────────────────
   const a = passeAn(ein, aus, dom, wd, N, halbwertszeit, schrumpf)
   const residuen = netto.map((x, i) => {
-    const e = a.erwartet(addTage(start, i))
+    const e = a.erwartetAn(dom[i], wd[i])
     return x - (e.einnahmen - e.ausgaben)
   })
 
@@ -295,10 +298,9 @@ export function baueModell(
   const muster: string[] = []
   let gesamtE = 0, spaetE = 0, gesamtA = 0, weA = 0
   for (let i = 0; i < N; i++) {
-    const dat = addTage(start, i)
     gesamtE += ein[i]; gesamtA += aus[i]
-    if (tagImMonat(dat) >= 21) spaetE += ein[i]
-    if (wochentag(dat) >= 5) weA += aus[i]
+    if (dom[i] >= 21) spaetE += ein[i]
+    if (wd[i] >= 5) weA += aus[i]
   }
   if (gesamtE > 0 && spaetE / gesamtE >= 0.5) {
     muster.push(`${prozent(spaetE / gesamtE)} der Einnahmen (ohne Lohn) kommen im letzten Monatsdrittel (ab dem 21.).`)

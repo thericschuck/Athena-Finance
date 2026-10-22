@@ -5,10 +5,10 @@ import { getBankBalances } from '@/lib/data/finance-accounts'
 import { getFlowTransactions } from '@/lib/data/flows'
 import { fetchSettingValue } from '@/lib/data/settings'
 import { computeAccountBalances } from '@/lib/finance/dashboard-calc'
-import { ladeSteuerdaten } from '@/lib/tax/laden'
+import { ladeSteuerdaten, neuerSteuerCache } from '@/lib/tax/laden'
 import { addMonate, addTage, monatVon, parse } from './datum'
 import { ANNAHMEN_KEY, leseAnnahmen, type Annahme } from './annahmen'
-import { berechnePrognose, type Prognose, type PrognoseVertrag } from './cashflow'
+import { berechnePrognose, lerneModelle, type Prognose, type PrognoseVertrag } from './cashflow'
 import { baueTage, typischerLohnTag } from './historie'
 import { erkenneEinmalposten, leseUeberschreibung, UEBERSCHREIBUNG_KEY, type EinmalKandidat } from './einmalig'
 import { tagesverlauf, type VerlaufPunkt } from './verlauf'
@@ -116,14 +116,18 @@ export async function ladePrognose(
     vermoegen: vermoegen ?? liquiditaet,
     vertraege, tage, lohnTag,
   }
-  const basis = berechnePrognose({ ...gemeinsam, annahmen: [] })
-  const szenario = berechnePrognose({ ...gemeinsam, annahmen })
+  // Lernen einmal (teuer), dann Basis und Szenario daraus rechnen: das Modell hängt nicht von den Annahmen ab.
+  const gelernt = lerneModelle(gemeinsam)
+  const basis = berechnePrognose({ ...gemeinsam, annahmen: [] }, gelernt)
+  const szenario = berechnePrognose({ ...gemeinsam, annahmen }, gelernt)
 
   // ── Steuer: laufendes und nächstes Jahr ───────────────────────────────────────────────
+  // Ein gemeinsamer Zwischenspeicher: die drei Jahre überlappen (Vorjahre, Kraken-Historie) und werden so je einmal geladen.
+  const steuerCache = neuerSteuerCache()
   const [aktuell, vorjahr, naechstes] = await Promise.all([
-    ladeSteuerdaten(supabase, userId, jahr),
-    ladeSteuerdaten(supabase, userId, jahr - 1),
-    ladeSteuerdaten(supabase, userId, jahr + 1),
+    ladeSteuerdaten(supabase, userId, jahr, steuerCache),
+    ladeSteuerdaten(supabase, userId, jahr - 1, steuerCache),
+    ladeSteuerdaten(supabase, userId, jahr + 1, steuerCache),
   ])
   const { rate, quelle } = laufrateAus(
     aktuell.eingaben,

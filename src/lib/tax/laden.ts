@@ -5,7 +5,7 @@ import type { SteuerEingaben } from './position.ts'
 import { leseSteuerprofil } from './profil.ts'
 import { effektiveRollen, effektiveEuerZeilen, effektiveAnteile, wendeAnteilAn } from './rollen.ts'
 import type { EuerBuchung, EuerZeileDef } from './euer.ts'
-import { ladeKrakenSteuer } from './krypto-laden.ts'
+import { ladeKrakenRoh, ladeKrakenSteuer, type KrakenRoh } from './krypto-laden.ts'
 import type { KrakenSteuer } from './krypto-kraken.ts'
 
 type DB = SupabaseClient<Database>
@@ -95,11 +95,38 @@ export type LadeErgebnis = {
  * Steuer-Seite benutzt wird.
  */
 
+/**
+ * Gemeinsamer Zwischenspeicher für mehrere Aufrufe von `ladeSteuerdaten` im selben Vorgang (die Prognose lädt drei Jahre auf einmal):
+ * Jahresbuchungen und Kraken-Historie werden dann je einmal geladen statt je Aufruf. Lebt nur so lange wie der Vorgang.
+ */
+export type SteuerLadeCache = {
+  buchungen: Map<number, ReturnType<typeof buchungenImJahr>>
+  krypto: Promise<KrakenRoh> | null
+}
+
+export function neuerSteuerCache(): SteuerLadeCache {
+  return { buchungen: new Map(), krypto: null }
+}
+
 export async function ladeSteuerdaten(
   supabase: DB,
   userId: string,
   jahr: number,
+  cache: SteuerLadeCache = neuerSteuerCache(),
 ): Promise<LadeErgebnis> {
+  const holeBuchungen = (j: number) => {
+    let p = cache.buchungen.get(j)
+    if (!p) { p = buchungenImJahr(supabase, userId, j); cache.buchungen.set(j, p) }
+    return p
+  }
+  // Alles, was nicht voneinander abhängt, startet JETZT und läuft gleichzeitig: Basisdaten, Buchungen von Jahr und Vorjahr und die
+  // Kraken-Historie. Vorher folgte jedes auf das vorige (drei bis vier Wartezeiten hintereinander).
+  const buchungenP = Promise.all([holeBuchungen(jahr), holeBuchungen(jahr - 1)])
+  const kryptoRohP = (cache.krypto ??= ladeKrakenRoh(supabase, userId))
+  // Schlägt das Laden fehl, wird der Fehler unten (kryptoFehler) behandelt; bis dahin soll er nicht als unbehandelt gelten.
+  kryptoRohP.catch(() => undefined)
+  buchungenP.catch(() => undefined)
+
   const [tarifeRes, kategorienRes, profilRes, zieleRes, euerRes, belegeRes] = await Promise.all([
     supabase.from('tax_tariffs').select('jahr, grundfreibetrag, zone2_bis, zone2_faktor, zone2_konstante, zone3_bis, zone3_faktor, zone3_konstante, zone3_sockel, zone4_bis, zone4_satz, zone4_abzug, zone5_satz, zone5_abzug, werbungskostenpauschale, sonderausgabenpauschale, soli_freigrenze, kleinunternehmer_vorjahr, kleinunternehmer_laufend, quelle, geprueft_am').order('jahr', { ascending: true }),
     supabase.from('categories').select('id, name, parent_id, tax_role, type, business_share').eq('user_id', userId),
@@ -140,10 +167,7 @@ export async function ladeSteuerdaten(
   const nameMap = new Map(kategorien.map(k => [k.id, k.name]))
   const typMap = new Map(kategorien.map(k => [k.id, k.type]))
 
-  const [buchungen, buchungenVorjahr] = await Promise.all([
-    buchungenImJahr(supabase, userId, jahr),
-    buchungenImJahr(supabase, userId, jahr - 1),
-  ])
+  const [buchungen, buchungenVorjahr] = await buchungenP
 
   // Betrieblicher Anteil gemischt genutzter Ausgaben (categories.business_share): steuerlich zaehlt
   // nur der betriebliche Teil. Wirkt hier, an EINER Stelle, damit EUER und Steuerposition
@@ -218,7 +242,7 @@ export async function ladeSteuerdaten(
   let krypto: KrakenSteuer | null = null
   let kryptoFehler: string | null = null
   try {
-    krypto = await ladeKrakenSteuer(supabase, userId, jahr)
+    krypto = await ladeKrakenSteuer(supabase, userId, jahr, await kryptoRohP)
   } catch (fehler) {
     kryptoFehler = fehler instanceof Error ? fehler.message : 'Krypto-Daten nicht ladbar.'
   }
