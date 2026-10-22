@@ -27,9 +27,10 @@ TypeScript: `src/lib/data/flows.ts` (Lesen, seitenweise) und `src/lib/finance/fl
 | `umbuchung` | zwischen eigenen Konten (Gegen-IBAN) oder manueller Transfer | **nein** |
 | `anfangsbestand` | „Alter Kontostand" | **nein** |
 
-Darstellung: Kacheln zeigen alles, was zählt, mit „davon Anlage/Forderung". Diagramme starten in der
-Konsum-Sicht (nur `echt`); der Schalter `anlage=1` (URL) rechnet Anlage und Forderung dazu
-(`FlowKindToggle`, `includeFromParam`). **Die Sparquote rechnet immer nur auf `echt`.**
+Darstellung: Kacheln zeigen alles, was zählt, mit „davon Anlage/Forderung". Die Auswertungsseiten (Analyse, Banking) starten seit
+2026-10-22 mit **allem** (Anlage und Forderung eingerechnet); der Schalter `anlage=0` (URL) schaltet auf die reine Konsum-Sicht
+(nur `echt`) um (`FlowKindToggle`, `includeFromParam`). Das Dashboard und die Reports rechnen weiter Konsum. **Die Sparquote rechnet
+immer nur auf `echt`.**
 
 Kontostände sind eine andere Frage: dort zählt jede Buchung, auch die Umbuchung
 (`signed_amount`, `account_balance_sums_*`, `bank_balance`).

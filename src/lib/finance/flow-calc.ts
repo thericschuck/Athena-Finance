@@ -228,9 +228,12 @@ export function monthlyCategorySeries(
   }
 }
 
-/** URL-Parameter `anlage=1` schaltet Anlage und Forderungen dazu; ohne ihn gilt die Konsum-Sicht. */
+/**
+ * URL-Parameter der Auswertungs-Seiten (Analyse, Banking). Standard ist seit 2026-10-22 „alles": Anlage und Forderungen sind
+ * eingerechnet. `anlage=0` schaltet auf die reine Konsum-Sicht (nur `echt`).
+ */
 export const INCLUDE_PARAM = 'anlage'
 
 export function includeFromParam(value: string | null | undefined): FlowInclude {
-  return value === '1' ? INCLUDE_ALL : INCLUDE_CONSUMPTION
+  return value === '0' ? INCLUDE_CONSUMPTION : INCLUDE_ALL
 }

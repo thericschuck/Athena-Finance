@@ -112,12 +112,13 @@ test('monthlyCategorySeries: Top-N Hauptkategorien, Rest als Sonstige, Anlage au
   assert.deepEqual(s.months[1].values, { Weitere: 15 })
 })
 
-test('includeFromParam: nur "1" schaltet Anlage/Forderung dazu', async () => {
+test('includeFromParam: Standard ist alles, nur "0" schaltet auf Konsum', async () => {
   const { includeFromParam } = await import('./flow-calc.ts')
+  assert.deepEqual(includeFromParam(null), INCLUDE_ALL)
+  assert.deepEqual(includeFromParam(undefined), INCLUDE_ALL)
   assert.deepEqual(includeFromParam('1'), INCLUDE_ALL)
-  assert.deepEqual(includeFromParam(null), INCLUDE_CONSUMPTION)
   assert.deepEqual(includeFromParam('0'), INCLUDE_CONSUMPTION)
-  assert.deepEqual(includeFromParam('true'), INCLUDE_CONSUMPTION)
+  assert.deepEqual(includeFromParam('true'), INCLUDE_ALL)
 })
 
 test('monthlySeries: Monat mit nur Anlage-Zeilen entfällt in der Konsum-Sicht', async () => {
