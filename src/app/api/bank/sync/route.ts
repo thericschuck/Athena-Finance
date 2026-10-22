@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/supabase/server'
-import { getFinTSErrorDetails, isCloudRuntime, triggerCloudBankSync } from '@/lib/fints'
+import { applySuggestionsToBacklog, getFinTSErrorDetails, isCloudRuntime, triggerCloudBankSync } from '@/lib/fints'
 import { syncBankForUser } from '@/lib/fints/user-sync'
 
 // The sidecar drives the whole dialog (incl. waiting for a decoupled app approval),
@@ -45,7 +45,11 @@ export async function POST(request: Request) {
       if (result.scaRequired) {
         return NextResponse.json({ error: result.message ?? 'Freigabe in der App erforderlich.' }, { status: 409 })
       }
-      return NextResponse.json({ imported: result.imported, skipped: result.skipped })
+      // Der Cloud-Sync speichert nur Buchungen und setzt nie eine Kategorie. Die schnelle Stufe (Regeln und Gelerntes) läuft deshalb
+      // gleich hier; die KI-Stufe übernimmt /api/cron/categorize kurz danach (sie braucht mehr Zeit als dieser Request übrig hat).
+      let categorized = 0
+      try { categorized = (await applySuggestionsToBacklog(supabase, user.id)).applied } catch { /* Sync gelungen, Kategorisierung holt der Cron nach */ }
+      return NextResponse.json({ imported: result.imported, skipped: result.skipped, categorized })
     } catch (err) {
       return NextResponse.json({
         error: err instanceof Error ? err.message : 'Cloud-Sync fehlgeschlagen',

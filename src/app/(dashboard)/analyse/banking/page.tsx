@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { CreditCard, Check, ArrowUpRight, X } from 'lucide-react'
 import { useBankData } from '@/lib/hooks/use-bank-data'
 import { BankTransactionsView } from '@/components/bank/bank-transactions-view'
+import { BankSyncButton } from '@/components/bank/bank-sync-button'
 import { BankCategoryChart } from '@/components/bank/bank-category-chart'
 import { BankTrendChart } from '@/components/bank/bank-trend-chart'
 import { BankBalanceChart } from '@/components/bank/bank-balance-chart'
@@ -23,9 +24,12 @@ import type { BankTransaction } from '@/types/bank'
  * Auswertung der Bankdaten über alle Konten hinweg — Unterpunkt von Analyse.
  *
  * Lag vorher unter `/bank/auswertung`, als Banking noch ein eigener Hauptpunkt war. Der
- * Sync sitzt jetzt im Kopf von Finance/Konten (siehe BankSyncPanel), und was hier übrig
+ * Der Sync sitzt im Kopf von Finance/Konten (siehe BankSyncPanel) und zusätzlich hier, und was hier sonst übrig
  * ist, ist eine Auswertung — also gehört sie neben die andere. Die alte URL leitet weiter
  * (next.config.ts).
+ *
+ * Auch hier gibt es den Sync-Knopf (BankSyncButton), derselbe wie unter Finance/Konten; nach einem Sync lädt die Seite Salden, Buchungen
+ * und Monatssummen neu.
  *
  * Der Unterschied zur Übersicht unter `/analyse` ist der Ausschnitt, und der ist der Grund,
  * warum es beide gibt: dort zählen Bankbuchungen UND manuelle Einträge, hier nur die
@@ -74,6 +78,11 @@ function BankAnalyse() {
     loadBalances,
     loadCategories,
     updateCategory,
+    syncStatus,
+    startSync,
+    resetSync,
+    scaStatus,
+    loadScaStatus,
   } = useBankData()
 
   // Zeitraum in der URL statt in lokalem State: sonst fällt die Auswahl beim Neuladen und
@@ -114,6 +123,8 @@ function BankAnalyse() {
   const include = includeFromParam(searchParams.get(INCLUDE_PARAM), flowDefault)
   const [flowRows, setFlowRows] = useState<(FlowRow & { month: string; account_id: string | null })[]>([])
   const [flowsLoaded, setFlowsLoaded] = useState(false)
+  // Zählt hoch, wenn ein Sync fertig ist: die Monatssummen kommen über eine eigene Route und müssen dann neu geholt werden.
+  const [flowsVersion, setFlowsVersion] = useState(0)
   useEffect(() => {
     let cancelled = false
     fetch('/api/finance/flows?source=bank_sync')
@@ -123,7 +134,7 @@ function BankAnalyse() {
       })
       .catch(() => { if (!cancelled) setFlowsLoaded(true) })
     return () => { cancelled = true }
-  }, [])
+  }, [flowsVersion])
   const [txnFilters, setTxnFilters] = useState<{ q?: string; categoryId?: string }>({})
 
   const handleFilter = useCallback((params: { q?: string; categoryId?: string }) => {
@@ -139,6 +150,21 @@ function BankAnalyse() {
     loadCategories()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    loadScaStatus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Nach einem erfolgreichen Sync alles neu laden, was auf dieser Seite steht: Salden, Buchungsliste (mit den aktuellen
+  // Filtern) und die Monatssummen. Der Sync selbst (Knopf oben) ist derselbe wie unter Finance -> Konten.
+  useEffect(() => {
+    if (syncStatus.type !== 'success') return
+    loadBalances()
+    loadTransactions({ iban: selectedIban, ...txnFilters })
+    setFlowsVersion(v => v + 1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncStatus])
 
   useEffect(() => {
     loadTransactions({ iban: selectedIban, ...txnFilters })
@@ -234,11 +260,21 @@ function BankAnalyse() {
             Konto.
           </p>
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Zeitraum
-          </span>
-          <PeriodSelector value={period} onSelect={setPeriod} options={BANK_PERIODS} />
+        <div className="flex items-start gap-4 flex-wrap justify-end">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Zeitraum
+            </span>
+            <PeriodSelector value={period} onSelect={setPeriod} options={BANK_PERIODS} />
+          </div>
+          {/* Derselbe FinTS-Sync wie unter Finance -> Konten (gleiche Routen, gleicher Freigabe-Hinweis). */}
+          <BankSyncButton
+            syncStatus={syncStatus}
+            onSync={() => startSync()}
+            onSyncFull={() => startSync(undefined, undefined, { fullHistory: true })}
+            onReset={resetSync}
+            scaStatus={scaStatus}
+          />
         </div>
       </div>
 
