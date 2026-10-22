@@ -1,4 +1,4 @@
-import { getAuthUser } from '@/lib/supabase/server'
+import { requireAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency, fmtDate } from '@/lib/format'
 import { getDebts, type DebtRow as Debt } from '@/lib/data/finance-planning'
@@ -25,7 +25,7 @@ export default async function DebtsPage({ searchParams }: PageProps) {
   const { all } = await searchParams
   const showAll = all === '1'
 
-  const { supabase, user } = await getAuthUser()
+  const { supabase, user } = await requireAuthUser()
 
   const settings = await getSettings(user!.id)
   const locale = (settings.number_format as string) ?? 'de-DE'

@@ -1,4 +1,4 @@
-import { getAuthUser } from '@/lib/supabase/server'
+import { requireAuthUser } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { TrendingUp, TrendingDown, AlertCircle, Clock, Minus, ArrowUpRight, ArrowDownRight, Gem } from 'lucide-react'
 import { CryptoWidget } from '@/components/dashboard/crypto-widget'
@@ -64,7 +64,7 @@ function SectionHeader({ title, count, href, linkLabel = 'Alle ansehen' }: {
 }
 
 export default async function DashboardPage() {
-  const { supabase, user } = await getAuthUser()
+  const { supabase, user } = await requireAuthUser()
 
   const settings      = await getSettings(user!.id)
   const locale        = (settings.number_format  as string) ?? 'de-DE'

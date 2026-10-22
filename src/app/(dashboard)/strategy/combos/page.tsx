@@ -1,4 +1,4 @@
-import { getAuthUser } from '@/lib/supabase/server'
+import { requireAuthUser } from '@/lib/supabase/server'
 import { CheckCircle2, XCircle, CircleDashed } from 'lucide-react'
 import { getIndicatorOptions, getCombosWithIndicators } from '@/lib/data/strategy'
 import { AddComboDialog, EditComboDialog, DeleteComboButton } from '@/components/strategy/combo-form'
@@ -38,7 +38,7 @@ function GuardIcon({ passes }: { passes: boolean | null }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default async function CombosPage() {
-  const { supabase, user } = await getAuthUser()
+  const { supabase, user } = await requireAuthUser()
 
   const [indicatorOptions, combos] = await Promise.all([
     getIndicatorOptions(supabase, user!.id),

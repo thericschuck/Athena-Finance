@@ -1,4 +1,4 @@
-import { getAuthUser } from '@/lib/supabase/server'
+import { requireAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { fmtDate as fmtDateLib } from '@/lib/format'
 import { PortfolioOverview } from '@/components/crypto/portfolio-overview'
@@ -19,7 +19,7 @@ export default async function CryptoPage({
 }: {
   searchParams: Promise<{ p?: string }>
 }) {
-  const [{ p: portfolioParam }, { supabase, user }] = await Promise.all([searchParams, getAuthUser()])
+  const [{ p: portfolioParam }, { supabase, user }] = await Promise.all([searchParams, requireAuthUser()])
 
   const oneYearAgo = (() => {
     const d = new Date(); d.setFullYear(d.getFullYear() - 1); return d.toISOString().split('T')[0]

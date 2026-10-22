@@ -1,11 +1,11 @@
-import { getAuthUser } from '@/lib/supabase/server'
+import { requireAuthUser } from '@/lib/supabase/server'
 import { getRebalancingTargets, getLastRebalancing } from '@/app/(dashboard)/crypto/actions'
 import { RebalancingCalculator } from '@/components/crypto/rebalancing-calculator'
 import { getCryptoAssetsWithPrice } from '@/lib/data/crypto'
 import { fetchKrakenTradeableAssets, fetchKrakenAssetPairs, buildKrakenPriceMap } from '@/lib/kraken'
 
 export default async function RebalancingPage() {
-  const { supabase, user } = await getAuthUser()
+  const { supabase, user } = await requireAuthUser()
   const userId = user!.id
 
   // Load assets + latest valuations

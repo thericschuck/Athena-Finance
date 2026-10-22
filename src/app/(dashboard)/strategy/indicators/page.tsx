@@ -1,4 +1,4 @@
-import { getAuthUser } from '@/lib/supabase/server'
+import { requireAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import {
   getIndicators, getPerformanceForIndicators, getIndicatorFilterOptions,
@@ -28,7 +28,7 @@ export default async function IndicatorsPage({
   const filterAuthor = params.author
   const onlyAllowed  = params.allowed === '1'
 
-  const { supabase, user } = await getAuthUser()
+  const { supabase, user } = await requireAuthUser()
 
   const settings = await getSettings(user!.id)
   const defaultAssetClass = (settings.default_asset_class as string) ?? 'major'

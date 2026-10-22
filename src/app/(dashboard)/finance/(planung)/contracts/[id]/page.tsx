@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { getAuthUser } from '@/lib/supabase/server'
+import { requireAuthUser } from '@/lib/supabase/server'
 import { getContract } from '@/lib/data/finance-planning'
 import { getAccountNames } from '@/lib/data/finance-accounts'
 import { getCategoryNames, getContractTransactions } from '@/lib/data/finance-transactions'
@@ -23,7 +23,7 @@ const FREQ_LABEL   = Object.fromEntries(FREQUENCIES.map(f => [f.value, f.label])
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default async function ContractDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const [{ id }, { supabase, user }] = await Promise.all([params, getAuthUser()])
+  const [{ id }, { supabase, user }] = await Promise.all([params, requireAuthUser()])
 
   const [contract, txs, accs, cats, settings] = await Promise.all([
     getContract(supabase, user!.id, id),

@@ -1,4 +1,4 @@
-import { getAuthUser } from '@/lib/supabase/server'
+import { requireAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import {
   getIndicatorInfos, getPerformanceFiltered,
@@ -26,7 +26,7 @@ export default async function TestsPage({
   const minPf  = params.min_pf  ? parseFloat(params.min_pf)  : null
   const minWr  = params.min_wr  ? parseFloat(params.min_wr)  : null
 
-  const { supabase, user } = await getAuthUser()
+  const { supabase, user } = await requireAuthUser()
 
   const settings = await getSettings(user!.id)
   const defaultAssetClass = (settings.default_asset_class as string) ?? 'major'

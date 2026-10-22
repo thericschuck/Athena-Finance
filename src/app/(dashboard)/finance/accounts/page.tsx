@@ -1,4 +1,4 @@
-import { getAuthUser } from '@/lib/supabase/server'
+import { requireAuthUser } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Landmark } from 'lucide-react'
 import { AddAccountDialog, EditAccountDialog, DeleteAccountButton } from '@/components/finance/account-form'
@@ -50,7 +50,7 @@ export default async function AccountsPage({
 }) {
   const [{ period: rawPeriod }, { supabase, user }] = await Promise.all([
     searchParams,
-    getAuthUser(),
+    requireAuthUser(),
   ])
 
   const period: Period = parsePeriod(rawPeriod)

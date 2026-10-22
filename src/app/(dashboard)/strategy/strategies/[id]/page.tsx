@@ -1,4 +1,4 @@
-import { getAuthUser } from '@/lib/supabase/server'
+import { requireAuthUser } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, CheckCircle2, XCircle, Minus, ExternalLink } from 'lucide-react'
@@ -53,7 +53,7 @@ export default async function StrategyDetailPage({
 }) {
   const { id } = await params
 
-  const { supabase, user } = await getAuthUser()
+  const { supabase, user } = await requireAuthUser()
 
   // Parallel data fetching
   const [

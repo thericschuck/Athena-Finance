@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getAuthUser } from '@/lib/supabase/server'
+import { requireAuthUser } from '@/lib/supabase/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import {
@@ -330,7 +330,7 @@ export default async function HistoryPage({
   const from = page * PAGE_SIZE
   const to   = from + PAGE_SIZE - 1
 
-  const { supabase, user } = await getAuthUser()
+  const { supabase, user } = await requireAuthUser()
   const uid = user!.id
 
   const settings = await getSettings(uid)

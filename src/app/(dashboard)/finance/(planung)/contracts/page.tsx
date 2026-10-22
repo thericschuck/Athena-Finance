@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getAuthUser } from '@/lib/supabase/server'
+import { requireAuthUser } from '@/lib/supabase/server'
 import {
   AddContractDialog,
   EditContractDialog,
@@ -105,7 +105,7 @@ const FREQ_LABEL = Object.fromEntries(FREQUENCIES.map(f => [f.value, f.label]))
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default async function ContractsPage() {
-  const { supabase, user } = await getAuthUser()
+  const { supabase, user } = await requireAuthUser()
 
   const [all, accs, categories, savingsPlans, settings] = await Promise.all([
     getContracts(supabase, user!.id),

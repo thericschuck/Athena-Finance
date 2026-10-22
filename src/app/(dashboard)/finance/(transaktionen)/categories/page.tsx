@@ -1,4 +1,4 @@
-import { getAuthUser } from '@/lib/supabase/server'
+import { requireAuthUser } from '@/lib/supabase/server'
 import {
   getCategories,
   getEuerZeilenForCategories,
@@ -32,7 +32,7 @@ function buildTree(categories: Category[]): CategoryNode[] {
 }
 
 export default async function CategoriesPage() {
-  const { supabase, user } = await getAuthUser()
+  const { supabase, user } = await requireAuthUser()
 
   const [flat, settings, alleEuer] = await Promise.all([
     getCategories(supabase, user!.id),

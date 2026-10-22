@@ -1,4 +1,4 @@
-import { getAuthUser } from '@/lib/supabase/server'
+import { requireAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency, fmtDate } from '@/lib/format'
 import { getSavingsGoals, type SavingsGoalRow as Goal } from '@/lib/data/finance-planning'
@@ -89,7 +89,7 @@ const STATUS_ICON: Record<string, React.ReactNode> = {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default async function GoalsPage() {
-  const { supabase, user } = await getAuthUser()
+  const { supabase, user } = await requireAuthUser()
 
   const [all, settings] = await Promise.all([
     getSavingsGoals(supabase, user!.id),
