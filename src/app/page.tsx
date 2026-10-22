@@ -1,6 +1,4 @@
 import type { Metadata } from 'next'
-import { getAuthUser } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 import { LandingContent } from '@/components/landing/LandingContent'
 import { JsonLd } from '@/components/seo/json-ld'
 import { SITE, abs } from '@/lib/seo'
@@ -87,9 +85,11 @@ const STRUCTURED_DATA = {
   ],
 }
 
-export default async function LandingPage() {
-  const { user } = await getAuthUser()
-  if (user) redirect('/dashboard')
+/**
+ * Öffentlich und statisch: kein Auth-Aufruf in der Seite. Die Weiterleitung eingeloggter Nutzer zum Dashboard macht der Proxy
+ * (src/proxy.ts), dadurch wird die Startseite vorgerendert und von Vercels CDN ausgeliefert statt bei jedem Besuch gerechnet.
+ */
+export default function LandingPage() {
   return (
     <>
       <JsonLd data={STRUCTURED_DATA} />

@@ -4,9 +4,13 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function proxy(request: NextRequest) {
   // Public routes — skip session check entirely
   const { pathname } = request.nextUrl
+  // Die Startseite ist öffentlich und statisch (kein Auth-Aufruf in der Seite selbst). Wer eingeloggt ist, wird HIER zum Dashboard
+  // weitergeleitet; ohne Sitzungs-Cookie geht die Anfrage sofort durch, ohne Aufruf bei Supabase.
+  const istStartseite = pathname === '/'
+  const hatSitzungsCookie = request.cookies.getAll().some(c => c.name.startsWith('sb-') && c.name.includes('auth-token'))
+  if (istStartseite && !hatSitzungsCookie) return NextResponse.next()
   if (
     pathname.startsWith('/api/cron/') ||
-    pathname === '/' ||
     pathname === '/login' ||
     pathname.startsWith('/auth/') ||
     // Öffentliche Prototyp-/Rechtsseiten ohne Login — sonst greift dieselbe
@@ -40,11 +44,30 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  // Refresh session – must not run logic between createServerClient and getUser()
-  const { error } = await supabase.auth.getUser()
+  // Sitzung auffrischen und prüfen. `getClaims()` verifiziert das Token lokal (JWKS, ES256) statt bei jedem Seitenaufruf den
+  // Auth-Server zu fragen, und erneuert abgelaufene Tokens über das Refresh-Token (setAll oben schreibt die neuen Cookies).
+  // Zwischen createServerClient und diesem Aufruf darf keine Logik stehen.
+  let hatClaims = false
+  let authError: { code?: string; status?: number } | null = null
+  try {
+    const { data, error } = await supabase.auth.getClaims()
+    hatClaims = !!data?.claims
+    authError = error
+  } catch {
+    // Netzaussetzer beim Abruf der Schlüssel: nicht abmelden, die Seiten prüfen die Sitzung selbst (requireAuthUser).
+    return supabaseResponse
+  }
 
-  // Invalid refresh token → clear session and redirect to login
-  if (error?.code === 'refresh_token_not_found' || error?.status === 400) {
+  // Startseite: Eingeloggte gehen zum Dashboard (mit den frisch gesetzten Cookies), alle anderen sehen die Seite.
+  if (istStartseite) {
+    if (!hatClaims) return supabaseResponse
+    const zumDashboard = NextResponse.redirect(new URL('/dashboard', request.url))
+    supabaseResponse.cookies.getAll().forEach(c => zumDashboard.cookies.set(c))
+    return zumDashboard
+  }
+
+  // Ungültiges Refresh-Token oder gar keine Sitzung: Cookies löschen und zum Login.
+  if (authError?.code === 'refresh_token_not_found' || authError?.status === 400 || (!hatClaims && !authError)) {
     await supabase.auth.signOut()
     const url = request.nextUrl.clone()
     url.pathname = '/login'
