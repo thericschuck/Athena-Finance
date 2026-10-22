@@ -7,7 +7,7 @@ import {
   type ValuableImage, type ValuableWithImage,
 } from '@/lib/valuables'
 import { Gem } from 'lucide-react'
-import { getActiveValuables, getSoldValuables, getValuableImages } from '@/lib/data/inventar'
+import { getActiveValuables, getDocumentCounts, getSoldValuables, getValuableImages } from '@/lib/data/inventar'
 import { SoldList } from '@/components/inventar/SoldList'
 import { signierteBildUrls } from '@/lib/inventar/bildurls'
 
@@ -26,9 +26,10 @@ export default async function InventarPage() {
   const { supabase, user } = await getAuthUser()
   if (!user) return null
 
-  const [items, verkauft, bilder, settings] = await Promise.all([
+  const [items, verkauft, dokumente, bilder, settings] = await Promise.all([
     getActiveValuables(supabase, user.id),
     getSoldValuables(supabase, user.id),
+    getDocumentCounts(supabase, user.id),
     getValuableImages(supabase, user.id),
     getSettings(user.id),
   ])
@@ -67,6 +68,7 @@ export default async function InventarPage() {
     ...i,
     anzeige_url: i.hauptbild_pfad ? signedByPath.get(i.hauptbild_pfad) ?? null : null,
     bilder: bilderByItem.get(i.id) ?? [],
+    dokument_anzahl: dokumente.get(i.id) ?? 0,
   }))
 
   const summe = gesamtwert(items, true)

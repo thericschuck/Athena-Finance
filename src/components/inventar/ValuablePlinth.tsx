@@ -53,7 +53,7 @@ export function ValuablePlinth({
   const istAthena = themePreset === 'athena' || themePreset === 'athena-dark'
 
   return (
-    // `-mx-3 -mb-3`: der Sockel läuft bis an die Kanten der Kachel (die trägt `p-3`). Ein
+    // `-mx-3.5 -mb-3.5`: der Sockel läuft bis an die Kanten der Kachel (die trägt `p-3.5`). Ein
     // Block mit Rand um sich herum wäre eine Karte in der Karte, kein Sockel.
     //
     // `pointer-events-none` auf dem Sockel und nicht auf den Textblöcken darin: die Kachel
@@ -64,7 +64,7 @@ export function ValuablePlinth({
     // Blätter-Pfeile im Bild darüber.
     <div
       className={cn(
-        'pointer-events-none relative z-10 -mx-3 -mb-3 mt-3 px-3 pb-3 pt-3',
+        'pointer-events-none relative z-10 -mx-3.5 -mb-3.5 mt-3.5 px-3.5 pb-3.5 pt-3',
         className,
       )}
     >

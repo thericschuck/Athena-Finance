@@ -77,6 +77,8 @@ export type ValuableWithImage = Valuable & {
   anzeige_url: string | null
   /** Alle Bilder des Gegenstands, Hauptbild zuerst. */
   bilder: ValuableImage[]
+  /** Hochgeladene Dokumente (Belege, Zertifikate, Policen). */
+  dokument_anzahl: number
 }
 
 export interface Valuation {

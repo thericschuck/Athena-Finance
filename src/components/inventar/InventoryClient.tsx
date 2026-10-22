@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import {
   Gem, Plus, ShieldCheck, Package, FileText, MapPin, ChevronLeft, ChevronRight,
-  Search, LayoutGrid, List, Clock, X,
+  Search, LayoutGrid, List, Clock, X, Paperclip,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -198,7 +198,7 @@ export function InventoryClient({ items, locale }: Props) {
       ) : ansicht === 'liste' ? (
         <ValuableList items={sichtbar} eur={eur} onOpen={setOffenId} />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
           {sichtbar.map(item => (
             <Karte key={item.id} item={item} eur={eur} onOpen={() => setOffenId(item.id)} />
           ))}
@@ -267,7 +267,7 @@ function Karte({
 
   return (
     <div
-      className="group relative overflow-hidden rounded-xl border bg-card p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-within:ring-2 focus-within:ring-ring"
+      className="group relative overflow-hidden rounded-2xl border bg-card p-3.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-within:ring-2 focus-within:ring-ring"
       style={{ borderColor: ausgezeichnet ? stufe.border : 'var(--border)' }}
     >
       <button
@@ -280,7 +280,7 @@ function Karte({
       {/* Sockel. `pointer-events-none`, damit Klicks auf die Fläche darunter durchgehen —
           die Blätter-Pfeile holen sich ihre Klickbarkeit einzeln zurück. */}
       <div
-        className="pointer-events-none relative aspect-[4/5] overflow-hidden rounded-lg bg-muted/30"
+        className="pointer-events-none relative aspect-[4/5] overflow-hidden rounded-xl bg-muted/30 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_5%,transparent)]"
         style={prunk ? { background: `radial-gradient(120% 80% at 50% 100%, ${stufe.glow}, transparent 70%)` } : undefined}
       >
         {/* Die Hover-Vergrösserung sitzt auf dem Rahmen, nicht auf dem Bild: die Bilder
@@ -423,6 +423,19 @@ function Karte({
               <ShieldCheck className="size-3.5" />
             </span>
           )}
+          <span
+            title={
+              item.dokument_anzahl > 0
+                ? `${item.dokument_anzahl} ${item.dokument_anzahl === 1 ? 'Beleg' : 'Belege'} hinterlegt`
+                : 'Noch kein Beleg — im Detail hochladen'
+            }
+            className={`flex items-center gap-0.5 text-[10px] tabular-nums ${
+              item.dokument_anzahl > 0 ? 'text-muted-foreground' : 'text-muted-foreground/40'
+            }`}
+          >
+            <Paperclip className="size-3.5" />
+            {item.dokument_anzahl > 0 && item.dokument_anzahl}
+          </span>
           {veraltet && (
             <span title={`Wert seit ${alter} Monaten nicht aktualisiert`} className="text-muted-foreground">
               <Clock className="size-3.5" />
@@ -507,6 +520,17 @@ function Detail({
           )}
         </div>
 
+        {/* Ausstattung — die Frage, die beim Wiederverkauf als Erstes kommt. */}
+        <div className="flex flex-wrap gap-2">
+          <Marke an={item.box_vorhanden} icon={<Package className="size-3.5" />} label="Box" />
+          <Marke an={item.papiere_vorhanden} icon={<FileText className="size-3.5" />} label="Papiere" />
+          <Marke an={item.versichert} icon={<ShieldCheck className="size-3.5" />} label="Versichert" />
+        </div>
+
+        {/* Belege direkt unter Box und Papiere — wer „Papiere fehlen" liest, soll sie hier
+            gleich hochladen können. */}
+        <ValuableDocuments valuableId={item.id} />
+
         <ValuableHistory
           valuableId={item.id}
           kaufpreis={item.kaufpreis}
@@ -514,13 +538,6 @@ function Detail({
           locale={locale}
           refreshKey={`${item.aktueller_wert}-${item.wert_stand}`}
         />
-
-        {/* Ausstattung — die Frage, die beim Wiederverkauf als Erstes kommt. */}
-        <div className="flex flex-wrap gap-2">
-          <Marke an={item.box_vorhanden} icon={<Package className="size-3.5" />} label="Box" />
-          <Marke an={item.papiere_vorhanden} icon={<FileText className="size-3.5" />} label="Papiere" />
-          <Marke an={item.versichert} icon={<ShieldCheck className="size-3.5" />} label="Versichert" />
-        </div>
 
         {/* Register — der eigentliche Zweck der Seite. */}
         {(item.seriennummer || item.lagerort || item.kaufquelle || item.versicherungsnummer) && (
@@ -541,8 +558,6 @@ function Detail({
             {item.versicherungsnummer && <Zeile label="Police" value={item.versicherungsnummer} mono />}
           </div>
         )}
-
-        <ValuableDocuments valuableId={item.id} />
 
         {item.notizen && (
           <div className="rounded-lg border border-border bg-muted/20 p-3">

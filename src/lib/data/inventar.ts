@@ -59,6 +59,24 @@ export async function getSoldValuables(supabase: DB, userId: string): Promise<Va
 }
 
 /**
+ * Anzahl Dokumente je Gegenstand — für die Büroklammer auf der Kachel. Nur die Spalte
+ * `valuable_id` wird gelesen, nicht die Zeilen mit Pfaden und Namen.
+ * `database.ts` kennt die Tabelle noch nicht (Typen werden nicht von Hand gepflegt), daher
+ * der Cast wie in document-actions.ts.
+ */
+export async function getDocumentCounts(supabase: DB, userId: string): Promise<Map<string, number>> {
+  const { data } = await supabase
+    .from('valuable_documents' as never)
+    .select('valuable_id')
+    .eq('user_id', userId)
+  const counts = new Map<string, number>()
+  for (const r of (data ?? []) as unknown as { valuable_id: string }[]) {
+    counts.set(r.valuable_id, (counts.get(r.valuable_id) ?? 0) + 1)
+  }
+  return counts
+}
+
+/**
  * Alle Bilder des Users. Hauptbild zuerst, danach das Neueste — dieselbe Reihenfolge wie
  * in der View, damit Galerie und angezeigtes Hauptbild nicht auseinanderlaufen.
  * Unbegrenzt (Kandidat für Paginierung bei großen Sammlungen).
