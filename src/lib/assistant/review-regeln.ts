@@ -123,9 +123,12 @@ type MitOptionen = { providerOptions?: Record<string, Record<string, unknown>> }
  */
 export function cacheLetzteNachricht<M extends MitOptionen>(messages: M[]): M[] {
   return messages.map((m, i) => {
+    const letzte = i === messages.length - 1
+    // Nachrichten ohne Haltepunkt, die keinen bekommen, bleiben unverändert (kein leeres providerOptions an jeder Nachricht).
+    if (!letzte && m.providerOptions?.anthropic?.cacheControl === undefined) return m
     const optionen = { ...(m.providerOptions ?? {}) }
     const anthropic = { ...(optionen.anthropic ?? {}) }
-    if (i === messages.length - 1) anthropic.cacheControl = { type: 'ephemeral' }
+    if (letzte) anthropic.cacheControl = { type: 'ephemeral' }
     else delete anthropic.cacheControl
     return { ...m, providerOptions: { ...optionen, anthropic } }
   })

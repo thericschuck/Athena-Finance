@@ -110,7 +110,7 @@ export async function syncKrakenForUser(
 
   const codesToPrice = entries.filter(e => e.code !== 'ZEUR').map(e => e.code)
   const { pricesEur: krakenPrices, unresolved, usdPerEur } =
-    await buildKrakenPriceMap(codesToPrice, assetPairs).catch(() => ({
+    await buildKrakenPriceMap(codesToPrice, assetPairs, { fresh: true }).catch(() => ({
       pricesEur: {} as Record<string, number>, unresolved: codesToPrice, usdPerEur: 1,
     }))
 
@@ -118,7 +118,7 @@ export async function syncKrakenForUser(
     entries.filter(e => unresolved.includes(e.code) && e.coingeckoId).map(e => e.coingeckoId!)
   )]
   const coingeckoPrices = fallbackIds.length > 0
-    ? await getPrices(fallbackIds).catch(() => ({} as Record<string, number>))
+    ? await getPrices(fallbackIds, { fresh: true }).catch(() => ({} as Record<string, number>))
     : {}
 
   const priced = entries.map(e => {

@@ -125,7 +125,7 @@ export async function createAsset(
     const isFiat = coinType === 'fiat'
     const prices = isFiat
       ? { [coingeckoId]: FIAT_EUR_PRICES[coingeckoId] ?? 1 }
-      : await getPrices([coingeckoId])
+      : await getPrices([coingeckoId], { fresh: true })
     const price  = prices[coingeckoId]
     if (price != null) {
       await supabase.from('asset_valuations').insert({
@@ -264,7 +264,7 @@ export async function updateAssetPrices(
   if (!argP.ok) return { updated: 0, errors: [issueMessage(argP)] }
 
   const uniqueIds = [...new Set(assets.map(a => a.coingecko_id))]
-  const prices    = await getPrices(uniqueIds)
+  const prices    = await getPrices(uniqueIds, { fresh: true })
   const today     = new Date().toISOString().split('T')[0]
 
   const errors: string[]   = []
@@ -326,7 +326,7 @@ export async function refreshPrices(): Promise<{ error?: string; updated?: numbe
   let prices: Record<string, number>
   try {
     const coinIds = [...new Set(assets.map(a => a.symbol!.toLowerCase()))]
-    prices = await getPrices(coinIds)
+    prices = await getPrices(coinIds, { fresh: true })
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'CoinGecko API nicht erreichbar' }
   }

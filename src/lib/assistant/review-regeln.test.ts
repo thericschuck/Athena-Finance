@@ -88,3 +88,20 @@ test('Sperre: nur ein frischer, lesbarer Zeitstempel sperrt; alt, kaputt oder fe
   assert.equal(istGesperrt('kaputt', jetzt), false)
   assert.equal(istGesperrt(undefined, jetzt), false)
 })
+
+test('Cache-Haltepunkt: Nachrichten ohne Optionen bleiben dieselben Objekte, nur die letzte bekommt einen', () => {
+  const a = { role: 'user' }
+  const b = { role: 'assistant' }
+  const c = { role: 'user' }
+  const r = cacheLetzteNachricht([a, b, c] as { role: string; providerOptions?: Record<string, Record<string, unknown>> }[])
+  assert.equal(r[0], a)
+  assert.equal(r[1], b)
+  assert.notEqual(r[2], c)
+  assert.deepEqual(r[2].providerOptions, { anthropic: { cacheControl: { type: 'ephemeral' } } })
+  // Über mehrere Schritte (Ergebnis wird weitergereicht und wächst): immer genau ein Haltepunkt.
+  let liste = r
+  for (let i = 0; i < 6; i++) {
+    liste = cacheLetzteNachricht([...liste, { role: 'assistant' }, { role: 'tool' }])
+    assert.equal(liste.filter(m => m.providerOptions?.anthropic?.cacheControl).length, 1)
+  }
+})

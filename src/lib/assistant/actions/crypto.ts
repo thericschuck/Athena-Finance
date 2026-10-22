@@ -79,7 +79,7 @@ async function buildFreshRebalancePlan(supabase: DB, userId: string) {
     .map((t) => codeByCgId.get(t.coingecko_id))
     .filter((c): c is string => !!c)
 
-  const { pricesEur, usdPerEur } = await buildKrakenPriceMap(missingCodes, assetPairs).catch(
+  const { pricesEur, usdPerEur } = await buildKrakenPriceMap(missingCodes, assetPairs, { fresh: true }).catch(
     () => ({ pricesEur: {} as Record<string, number>, unresolved: [] as string[], usdPerEur: 1 }),
   )
   const livePrices: Record<string, number> = {}

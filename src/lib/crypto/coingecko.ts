@@ -1,4 +1,5 @@
 import { FIAT_EUR_PRICES } from '@/lib/crypto/coin-registry'
+import { preisFetchOptionen, type PreisAbruf } from '@/lib/crypto/preis-cache'
 
 const BASE = 'https://api.coingecko.com/api/v3'
 const BATCH_SIZE = 25
@@ -7,9 +8,13 @@ const BATCH_SIZE = 25
  * Fetch EUR prices for a list of CoinGecko IDs.
  * Fiat symbols (eur, usd, chf, gbp) are resolved locally without an API call.
  * Requests are split into batches of 25 to avoid silent truncation by CoinGecko's free API.
+ *
+ * Standardmäßig bis zu 30 s alt (Data Cache, siehe preis-cache.ts); `{ fresh: true }` für alles, was einen
+ * aktuellen Kurs braucht (Sync, Rebalancing, vom Nutzer ausgelöste Aktualisierung).
  */
 export async function getPrices(
-  coingeckoIds: string[]
+  coingeckoIds: string[],
+  opts?: PreisAbruf,
 ): Promise<Record<string, number>> {
   if (coingeckoIds.length === 0) return {}
 
@@ -38,7 +43,7 @@ export async function getPrices(
     if (i > 0) await new Promise(r => setTimeout(r, 600)) // respect rate limit between batches
     const res = await fetch(
       `${BASE}/simple/price?ids=${chunks[i].join(',')}&vs_currencies=eur`,
-      { cache: 'no-store' }
+      preisFetchOptionen(opts),
     )
     if (!res.ok) throw new Error(`CoinGecko error: ${res.status} ${res.statusText}`)
     const data: Record<string, { eur: number }> = await res.json()
@@ -51,11 +56,11 @@ export async function getPrices(
 }
 
 /** Returns the current EUR→USD exchange rate (e.g. 1.08). Falls back to 1.08 on error. */
-export async function getEurUsdRate(): Promise<number> {
+export async function getEurUsdRate(opts?: PreisAbruf): Promise<number> {
   try {
     const res = await fetch(
       `${BASE}/simple/price?ids=bitcoin&vs_currencies=eur,usd`,
-      { cache: 'no-store' }
+      preisFetchOptionen(opts),
     )
     if (!res.ok) return 1.08
     const data: Record<string, { eur?: number; usd?: number }> = await res.json()

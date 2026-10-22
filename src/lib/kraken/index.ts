@@ -4,6 +4,7 @@
  */
 import { createHash, createHmac } from 'crypto'
 import { getEurUsdRate } from '@/lib/crypto/coingecko'
+import { preisFetchOptionen, type PreisAbruf } from '@/lib/crypto/preis-cache'
 import { findBySymbol } from '@/lib/crypto/coin-registry'
 import { KRAKEN_TO_SYMBOL, krakenCodeToSymbol } from './symbols'
 
@@ -210,11 +211,12 @@ export async function fetchKrakenTradeableAssets(): Promise<KrakenTradeableAsset
 }
 
 // ─── Ticker (public) ───────────────────────────────────────────────────────────
-async function fetchTickerBatch(pairs: string[], assetClass?: 'tokenized_asset'): Promise<Record<string, number>> {
+async function fetchTickerBatch(pairs: string[], assetClass?: 'tokenized_asset', opts?: PreisAbruf): Promise<Record<string, number>> {
   if (pairs.length === 0) return {}
   const qs = new URLSearchParams({ pair: pairs.join(',') })
   if (assetClass) qs.set('asset_class', assetClass)
-  const res  = await fetch(`${KRAKEN_API}/0/public/Ticker?${qs}`, { cache: 'no-store' })
+  // Öffentlicher Endpunkt: standardmäßig kurz gecacht, `fresh` für Sync und Rebalancing (siehe crypto/preis-cache.ts).
+  const res  = await fetch(`${KRAKEN_API}/0/public/Ticker?${qs}`, preisFetchOptionen(opts))
   const json = await res.json() as { error: string[]; result?: Record<string, { c: [string, string] }> }
   if (json.error?.length) throw new Error(json.error.join(', '))
 
@@ -238,14 +240,15 @@ async function fetchTickerBatch(pairs: string[], assetClass?: 'tokenized_asset')
 export async function fetchKrakenTickers(
   pairs: string[],
   assetPairs: Record<string, KrakenAssetPair> = {},
+  opts?: PreisAbruf,
 ): Promise<Record<string, number>> {
   if (pairs.length === 0) return {}
   const tokenized = pairs.filter(p => assetPairs[p]?.aclass_base === 'tokenized_asset')
   const standard  = pairs.filter(p => assetPairs[p]?.aclass_base !== 'tokenized_asset')
 
   const [standardResult, tokenizedResult] = await Promise.all([
-    fetchTickerBatch(standard).catch(() => ({} as Record<string, number>)),
-    fetchTickerBatch(tokenized, 'tokenized_asset').catch(() => ({} as Record<string, number>)),
+    fetchTickerBatch(standard, undefined, opts).catch(() => ({} as Record<string, number>)),
+    fetchTickerBatch(tokenized, 'tokenized_asset', opts).catch(() => ({} as Record<string, number>)),
   ])
   return { ...standardResult, ...tokenizedResult }
 }
@@ -366,6 +369,8 @@ export interface KrakenPriceResult {
 export async function buildKrakenPriceMap(
   codes: string[],
   assetPairs: Record<string, KrakenAssetPair>,
+  /** `{ fresh: true }`, wenn der Kurs für eine Bewertung oder Order dient (Sync, Rebalancing); sonst bis zu 30 s alt. */
+  opts?: PreisAbruf,
 ): Promise<KrakenPriceResult> {
   const eurPairByCode = new Map<string, string>()
   const usdPairByCode = new Map<string, string>()
@@ -388,13 +393,13 @@ export async function buildKrakenPriceMap(
   }
   if (fxPairName) pairsToFetch.add(fxPairName)
 
-  const tickers = pairsToFetch.size > 0 ? await fetchKrakenTickers([...pairsToFetch], assetPairs) : {}
+  const tickers = pairsToFetch.size > 0 ? await fetchKrakenTickers([...pairsToFetch], assetPairs, opts) : {}
 
   let usdPerEur: number | null = null
   if (fxPairName && tickers[fxPairName] != null) {
     usdPerEur = fxIsUsdBase ? 1 / tickers[fxPairName] : tickers[fxPairName]
   }
-  if (usdPerEur == null) usdPerEur = await getEurUsdRate() // CoinGecko-derived fallback, never throws
+  if (usdPerEur == null) usdPerEur = await getEurUsdRate(opts) // CoinGecko-derived fallback, never throws
 
   const pricesEur: Record<string, number> = {}
   const unresolved: string[] = []

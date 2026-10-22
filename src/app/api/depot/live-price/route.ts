@@ -38,5 +38,9 @@ export async function GET(req: NextRequest) {
     price:     cache.price,
     fetchedAt: cache.fetched_at,
     isLive:    ageMinutes < 20,   // < 20 Min = frisch genug für LIVE-Badge
+  }, {
+    // Nur im Browser dieses Nutzers (`private`), nie in einem geteilten Cache. Der Cron schreibt den Preis ohnehin nur alle
+    // 15 Minuten, ein Minuten-Cache im Browser spart also Aufrufe (Wechsel zwischen Depots, Neuladen), ohne etwas zu verzögern.
+    headers: { 'Cache-Control': 'private, max-age=60, stale-while-revalidate=120' },
   })
 }
