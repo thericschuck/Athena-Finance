@@ -36,6 +36,10 @@ export interface CashflowEvent {
   type:   'income' | 'expense'
   label:  string
   amount: number
+  /** `flow_kind` der Buchung: echt, anlage oder forderung. */
+  kind:   string
+  /** Zählt in die Tagessummen (Konsum, oder Anlage/Forderung bei eingeschaltetem Schalter). Sonst nur grau gelistet. */
+  zaehlt: boolean
 }
 
 export interface MonthlyComparison {

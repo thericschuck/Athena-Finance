@@ -376,7 +376,7 @@ export function buildMockCashflowEvents(): CashflowEvent[] {
   const y = now.getFullYear()
   const m = String(now.getMonth() + 1).padStart(2, '0')
   const mk = (day: number, type: 'income' | 'expense', label: string, amount: number): CashflowEvent => ({
-    date: `${y}-${m}-${String(day).padStart(2, '0')}`, type, label, amount,
+    date: `${y}-${m}-${String(day).padStart(2, '0')}`, type, label, amount, kind: 'echt', zaehlt: true,
   })
   return [
     mk(1, 'income', 'Gehalt', 3800),

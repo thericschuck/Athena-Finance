@@ -144,12 +144,15 @@ function buildSankey(txns: FlowTransaction[]): SankeyData {
   return { nodes, links: links.filter(l => l.value > 0) }
 }
 
-function buildCashflow(txns: FlowTransaction[]): CashflowEvent[] {
+function buildCashflow(txns: FlowTransaction[], include: FlowInclude): CashflowEvent[] {
   return txns.map(t => ({
     date:   t.date,
     type:   t.type,
     label:  t.category_name ?? t.description ?? t.merchant ?? 'Transaktion',
     amount: t.amount,
+    kind:   t.flow_kind,
+    // Wie die Charts: Anlage und Forderung zählen nur, wenn der Schalter oben sie einrechnet.
+    zaehlt: t.flow_kind === 'echt' || (t.flow_kind === 'anlage' && include.anlage) || (t.flow_kind === 'forderung' && include.forderung),
   }))
 }
 
@@ -238,9 +241,9 @@ export default async function AnalysePage({
   const cutoff = periodCutoff(period)
   const include: FlowInclude = includeFromParam(rawAnlage)
 
-  // Current + adjacent months for calendar (3-month window so user can navigate)
+  // Kalender: die GESAMTE Historie bis Ende des nächsten Monats. Früher stand hier ein 3-Monats-Fenster, obwohl man im
+  // Kalender beliebig weit zurückblättern konnte: ältere Monate waren leer, als gäbe es dort keine Buchungen.
   const now = new Date()
-  const calStart = ymd(new Date(now.getFullYear(), now.getMonth() - 1, 1))
   const calEnd   = ymd(new Date(now.getFullYear(), now.getMonth() + 2, 0))
   // Trailing 24-month window für Monatsvergleich und KDE-Verteilung, unabhängig von `period`:
   // die Verteilung braucht bis zu 24 abgeschlossene Monate. monthsForPeriod schneidet den
@@ -271,8 +274,9 @@ export default async function AnalysePage({
   const [txns, calTxns, monthlyRows] = await Promise.all([
     // Buchungen im Zeitraum (Heatmap, Kategorien, Sankey)
     getFlowTransactions(supabase, user.id, { from: cutoff, accountIds: accountFilter, include }),
-    // Kalender: 3-Monats-Fenster, unabhängig vom Zeitraum
-    getFlowTransactions(supabase, user.id, { from: calStart, to: calEnd, accountIds: accountFilter, include }),
+    // Kalender: alles, unabhängig vom Zeitraum und vom Schalter (Anlage/Forderung kommen mit, sind aber grau markiert,
+    // wenn der Schalter sie ausblendet)
+    getFlowTransactions(supabase, user.id, { to: calEnd, accountIds: accountFilter, include: INCLUDE_ALL }),
     // Monatssummen (Monatsvergleich + Verteilung), mit und ohne Konten-Filter aus derselben View
     getMonthlyFlows(supabase, user.id, { from: monthlyCutoff, accountIds: accountFilter, include }),
   ])
@@ -311,7 +315,7 @@ export default async function AnalysePage({
             {/* Geldfluss + Cashflow-Kalender */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <GeldflussChart data={buildSankey(txns)} />
-              <CashflowKalender events={buildCashflow(calTxns)} />
+              <CashflowKalender events={buildCashflow(calTxns, include)} />
             </div>
 
             {/* Monatlicher Vergleich + Kategorien */}

@@ -53,35 +53,55 @@ export function CashflowKalender({ events }: Props) {
     }
   }
 
+  // Blättern nur dort, wo es Daten gibt: vom ersten Monat mit Buchungen bis zum Monat nach dem letzten bzw. heutigen.
+  const monatIndex = (y: number, m: number) => y * 12 + m
+  const dataMonths = events.map(e => monatIndex(Number(e.date.slice(0, 4)), Number(e.date.slice(5, 7)) - 1))
+  const ersterMonat = dataMonths.length > 0 ? Math.min(...dataMonths) : monatIndex(today.getFullYear(), today.getMonth())
+  const letzterMonat = Math.max(monatIndex(today.getFullYear(), today.getMonth() + 1), ...dataMonths)
+  const aktuell = monatIndex(year, month)
+  const canPrev = aktuell > ersterMonat
+  const canNext = aktuell < letzterMonat
+
   const prev = () => {
+    if (!canPrev) return
     setPopup(null)
     month === 0 ? (setYear(y => y - 1), setMonth(11)) : setMonth(m => m - 1)
   }
   const next = () => {
+    if (!canNext) return
     setPopup(null)
     month === 11 ? (setYear(y => y + 1), setMonth(0)) : setMonth(m => m + 1)
   }
+  const heute = () => { setPopup(null); setYear(today.getFullYear()); setMonth(today.getMonth()) }
 
   const isToday = (day: number) =>
     day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
 
   const popupEvs    = popup ? (byDay.get(popup.day) ?? []) : []
-  const popupIncome  = popupEvs.filter(e => e.type === 'income').reduce((s, e) => s + e.amount, 0)
-  const popupExpense = popupEvs.filter(e => e.type === 'expense').reduce((s, e) => s + e.amount, 0)
+  const popupIncome  = popupEvs.filter(e => e.zaehlt && e.type === 'income').reduce((s, e) => s + e.amount, 0)
+  const popupExpense = popupEvs.filter(e => e.zaehlt && e.type === 'expense').reduce((s, e) => s + e.amount, 0)
 
   const tipEvs     = tip ? (byDay.get(tip.day) ?? []) : []
-  const tipIncome  = tipEvs.filter(e => e.type === 'income').reduce((s, e) => s + e.amount, 0)
-  const tipExpense = tipEvs.filter(e => e.type === 'expense').reduce((s, e) => s + e.amount, 0)
+  const tipIncome  = tipEvs.filter(e => e.zaehlt && e.type === 'income').reduce((s, e) => s + e.amount, 0)
+  const tipExpense = tipEvs.filter(e => e.zaehlt && e.type === 'expense').reduce((s, e) => s + e.amount, 0)
+  const tipAusgeblendet = tipEvs.filter(e => !e.zaehlt).length
 
   return (
     <div className="bg-card border border-border rounded-xl p-5">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
-        <button onClick={prev} aria-label="Vorheriger Monat" className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
+        <button onClick={prev} disabled={!canPrev} aria-label="Vorheriger Monat" className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:hover:bg-transparent">
           <ChevronLeft className="size-4" />
         </button>
-        <h2 className="text-sm font-semibold text-foreground">{MONTH_NAMES[month]} {year}</h2>
-        <button onClick={next} aria-label="Nächster Monat" className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-foreground">{MONTH_NAMES[month]} {year}</h2>
+          {aktuell !== monatIndex(today.getFullYear(), today.getMonth()) && (
+            <button onClick={heute} className="rounded-md border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
+              Heute
+            </button>
+          )}
+        </div>
+        <button onClick={next} disabled={!canNext} aria-label="Nächster Monat" className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:hover:bg-transparent">
           <ChevronRight className="size-4" />
         </button>
       </div>
@@ -104,8 +124,9 @@ export function CashflowKalender({ events }: Props) {
           const isSelected = valid && popup?.day === day
           const hasEvs  = evs.length > 0
           const isWeekend = i % 7 >= 5
-          const inc = evs.filter(e => e.type === 'income').reduce((s, e) => s + e.amount, 0)
-          const exp = evs.filter(e => e.type === 'expense').reduce((s, e) => s + e.amount, 0)
+          const inc = evs.filter(e => e.zaehlt && e.type === 'income').reduce((s, e) => s + e.amount, 0)
+          const exp = evs.filter(e => e.zaehlt && e.type === 'expense').reduce((s, e) => s + e.amount, 0)
+          const ausgeblendet = evs.filter(e => !e.zaehlt).length
 
           const activateDay = (target: HTMLDivElement) => {
             if (!valid || !hasEvs) return
@@ -172,8 +193,8 @@ export function CashflowKalender({ events }: Props) {
                           </span>
                         </div>
                       )}
-                      {evs.length > 2 && (
-                        <div className="text-[9px] text-muted-foreground/50 leading-tight">+{evs.length - 2}</div>
+                      {ausgeblendet > 0 && (
+                        <div className="text-[9px] text-muted-foreground/60 leading-tight">+{ausgeblendet} Anlage</div>
                       )}
                     </div>
                   )}
@@ -207,14 +228,19 @@ export function CashflowKalender({ events }: Props) {
 
           {/* Events list */}
           <div className="px-3.5 py-2.5 space-y-2 max-h-52 overflow-y-auto">
-            {popupEvs.map(ev => (
-              <div key={`${ev.date}_${ev.type}_${ev.label}_${ev.amount}`} className="flex items-center justify-between gap-2">
+            {popupEvs.map((ev, i) => (
+              <div key={`${ev.date}_${ev.type}_${ev.label}_${ev.amount}_${i}`} className={`flex items-center justify-between gap-2 ${ev.zaehlt ? '' : 'opacity-55'}`}>
                 <div className="flex items-center gap-2 min-w-0">
                   {ev.type === 'income'
                     ? <ArrowUpRight className="size-3.5 text-(--chart-income) shrink-0" />
                     : <ArrowDownLeft className="size-3.5 text-(--chart-expense) shrink-0" />
                   }
                   <span className="text-xs text-popover-foreground truncate">{ev.label}</span>
+                  {!ev.zaehlt && (
+                    <span className="shrink-0 rounded bg-muted px-1 text-[9px] text-muted-foreground">
+                      {ev.kind === 'forderung' ? 'Forderung' : 'Anlage'}
+                    </span>
+                  )}
                 </div>
                 <span className={`text-xs font-semibold tabular-nums shrink-0 ${
                   ev.type === 'income' ? 'text-(--chart-income)' : 'text-(--chart-expense)'
@@ -257,8 +283,14 @@ export function CashflowKalender({ events }: Props) {
           {tipIncome  > 0 && <p className="text-(--chart-income) tabular-nums">+{fmtAmt(tipIncome)} €</p>}
           {tipExpense > 0 && <p className="text-(--chart-expense) tabular-nums">−{fmtAmt(tipExpense)} €</p>}
           <p className="text-muted-foreground/70 mt-0.5">{tipEvs.length} Transaktion{tipEvs.length > 1 ? 'en' : ''}</p>
+          {tipAusgeblendet > 0 && <p className="text-muted-foreground/60">davon {tipAusgeblendet} Anlage/Forderung (nicht eingerechnet)</p>}
         </div>
       )}
+
+      <p className="mt-4 text-[10px] leading-snug text-muted-foreground/70">
+        Alle Buchungen seit Beginn der Aufzeichnung. Anlage (Krypto, Depot, Bauspar) und Forderungen sind grau, solange sie oben
+        nicht eingerechnet sind. Umbuchungen zwischen eigenen Konten fehlen bewusst.
+      </p>
     </div>
   )
 }
