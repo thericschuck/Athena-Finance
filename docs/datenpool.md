@@ -65,7 +65,33 @@ Verfahren gilt, muss der Steuerberater bestätigen.
    `MATERIALIZED`-CTE (Migration 20261021180000).
 3. `npm test` (reine Rechenfunktionen).
 
+## Kontostand-Historie (`balance_series`)
+
+`account_balances` hat pro Konto und Tag eine Zeile (2026-10: 18.324 Zeilen, 6 Konten x 3.054 Tage seit 2018), der Stand ändert sich aber
+selten. Die App liest sie deshalb über die DB-Funktion `balance_series(p_account_id, p_from)` (Migration 20261023100000): sie liefert
+**Läufe** (`von`, `bis`, `balance`) für aufeinanderfolgende Tage mit gleichem Stand, im Beispiel 386 statt 18.324 Zeilen. Der Code
+rekonstruiert daraus mit `expandiereLaeufe` (`src/lib/account-history-runs.ts`) exakt die Tageszeilen von früher, denn Sparkline und Chart verteilen
+ihre Punkte nach Index. Verlustfrei: ein Lauf endet bei jeder Änderung des Stands und bei jeder Lücke über einen Tag. Aufrufer:
+`fetchBalanceHistory` (Konten-Seite, Konto-Detail, Athena-Werkzeug `getAccountBalanceHistory`). Eine Anfrage statt 3-5 nacheinander; die Konten-Seite
+startet sie in derselben `Promise.all`-Welle wie die übrigen Abfragen. Gemessen unter RLS: 50 ms für alle Konten statt rund 300 ms für das reine
+Lesen der Tageszeilen. `security invoker`, fester `search_path`, nur `authenticated` darf ausführen. Die 1.000-Zeilen-Grenze von PostgREST gilt auch
+hier; `fetchBalanceHistory` blättert deshalb weiter, falls die Läufe einmal darüber wachsen.
+
 `monthly_finance_summary` ist Archiv und wird nicht mehr geschrieben oder gelesen.
+
+## RLS-Policies
+
+**Regel: in jeder Policy `(select auth.uid())`, nie blankes `auth.uid()`** (ebenso `auth.jwt()`, `auth.role()`). Blank wertet Postgres den Aufruf für
+jede Zeile neu aus; in Klammern mit `select` einmal je Abfrage (im Plan als InitPlan). Der Supabase-Advisor meldet Verstöße als `auth_rls_initplan`.
+Migration 20261023110000 hat 119 Policies auf 73 Tabellen umgestellt (Advisor: 119 -> 0); `account_balances` fragt die eigenen Konten per
+`account_id in (select id from accounts where user_id = (select auth.uid()))` ab. Neue Policies direkt so schreiben.
+
+Gemessen (unter `authenticated`, je Abfrage): bei 720 Buchungen kein Gewinn (`account_balances` 8,2 -> 8,1 ms, `unified_transactions` 15,1 -> 16,5 ms, `bank_transactions`
+0,35 -> 0,69 ms, weil der Planer bei so kleinen Tabellen den Seq Scan wählt). Der Nutzen liegt im Wachstum: der Filter ist nicht mehr pro Zeile.
+Wer die Rechte prüfen will: als fremde `sub` und als `anon` liefern `bank_transactions`, `transactions`, `categories`, `account_balances`, `accounts`, `user_settings` und `insights` 0 Zeilen.
+
+Rollback: `supabase/rollbacks/20261023110000_rls_initplan.down.sql` stellt alle Policies exakt aus `public._rls_policy_backup_20261023` wieder her und löscht die Tabelle.
+Sie darf erst gelöscht werden, wenn man den Rollback nicht mehr braucht.
 
 ## Prognose
 
