@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { berechneKiBilanz, type KiBilanz, type KiZeile } from '@/lib/fints/ai-bilanz'
 
 type DB = SupabaseClient<Database>
 
@@ -213,4 +214,25 @@ export async function getEuerZeilenForCategories(supabase: DB): Promise<EuerZeil
     .order('jahr', { ascending: false })
     .order('zeile', { ascending: true })
   return data ?? []
+}
+
+/**
+ * Trefferquote der KI-Kategorisierung (siehe lib/fints/ai-bilanz.ts). Seitenweise gelesen, weil PostgREST bei 1.000
+ * Zeilen still kappt; gelesen werden nur Zeilen, zu denen die KI überhaupt etwas gesagt hat.
+ */
+export async function getKiBilanz(supabase: DB, userId: string): Promise<KiBilanz> {
+  const zeilen: KiZeile[] = []
+  for (let seite = 0; seite < 20; seite++) {
+    const { data, error } = await supabase
+      .from('bank_transactions')
+      .select('category_id, category_source, ai_category_id')
+      .eq('user_id', userId)
+      .not('ai_category_id', 'is', null)
+      .order('id', { ascending: true })
+      .range(seite * 1000, seite * 1000 + 999)
+    if (error || !data) break
+    zeilen.push(...data)
+    if (data.length < 1000) break
+  }
+  return berechneKiBilanz(zeilen)
 }

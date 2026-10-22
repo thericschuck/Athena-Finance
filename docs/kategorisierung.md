@@ -74,8 +74,14 @@ Ausschalten: `{ "enabled": false }`. Probelauf ohne Schreiben: `GET /api/cron/ca
 `category_id`, nicht `category_source`. Korrekturen dort wären nie als deine Entscheidung gezählt worden (und bei KI/Regel-Zeilen auch nicht als
 Korrektur erkannt). Jetzt setzen beide `category_source = 'manual'`.
 
+## Trefferquote
+
+Auf der Transaktionsseite unter der Überschrift: „KI-Kategorisierung: Trefferquote 75 % (3 bestätigt, 1 korrigiert) · 1 ungeprüft · 2 offene
+Vorschläge". Berechnet aus `ai_category_id` (was die KI gesagt hat) gegen `category_id`/`category_source` (was du entschieden hast, `lib/fints/ai-bilanz.ts`).
+**Bestätigt** = du hast einen Vorschlag übernommen, **korrigiert** = du hast eine andere Kategorie gewählt. **Ungeprüft** = von der KI gesetzt, nicht angefasst; das
+zählt nicht als Treffer, denn „nicht korrigiert" heißt nicht „gesehen". Die Quote wird also erst aussagekräftig, wenn du Vorschläge übernimmst oder KI-Zuordnungen korrigierst.
+
 ## Offen
 
 - Der Python-Cloud-Sync setzt weiterhin kein `category_id`; die Zuordnung geschieht erst im Cron danach.
 - Alipay-Käufe in China ordnet nur ein Mensch zu (die Kategorie „OtherRetail" sagt nichts); einmal je Händler zuordnen, dann lernt es das System.
-- Die Trefferquote der KI (bestätigt vs. korrigiert) steht nur im Cron-Ergebnis (`bilanz`), nicht in der Oberfläche.

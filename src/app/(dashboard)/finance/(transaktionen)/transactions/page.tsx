@@ -7,6 +7,7 @@ import { Database } from '@/types/database'
 import {
   getTransactionsPage,
   getCategoryOptions,
+  getKiBilanz,
   type CategoryOptionRow as Category,
   type TransactionListRow as UnifiedRow,
 } from '@/lib/data/finance-transactions'
@@ -72,13 +73,14 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
   const [filters, { supabase, user }] = await Promise.all([searchParams, requireAuthUser()])
 
   // Load accounts + categories for dropdowns and filter bar
-  const [accounts, categories, debts, settings] = await Promise.all([
+  const [accounts, categories, debts, settings, kiBilanz] = await Promise.all([
     getActiveAccountOptions(supabase, user!.id),
     getCategoryOptions(supabase, user!.id),
     // Fuer den Schulden-Vorschlag (DebtSuggestion) -- nur aktive, abgeschlossene Schulden
     // sind kein sinnvolles Ziel mehr fuer eine neue Zahlung.
     getActiveDebts(supabase, user!.id),
     getSettings(user!.id),
+    getKiBilanz(supabase, user!.id),
   ])
 
   const locale = (settings.number_format as string) ?? 'de-DE'
@@ -122,6 +124,20 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
             {total} {total === 1 ? 'Eintrag' : 'Einträge'}
             {hasFilters && ' (gefiltert)'}
           </p>
+          {/* Trefferquote der KI: nur, was du entschieden hast. Ungeprüft gesetzte Zuordnungen zählen nicht als Treffer. */}
+          {(kiBilanz.stichprobe > 0 || kiBilanz.ungeprueft > 0 || kiBilanz.offeneVorschlaege > 0) && (
+            <p
+              className="mt-0.5 text-xs text-muted-foreground"
+              title="Treffer = du hast einen KI-Vorschlag übernommen. Korrigiert = du hast eine andere Kategorie gewählt. Ungeprüft = von der KI gesetzt, nicht angefasst (zählt nicht als Treffer)."
+            >
+              KI-Kategorisierung:{' '}
+              {kiBilanz.quote !== null
+                ? <>Trefferquote <span className="font-medium text-foreground">{kiBilanz.quote} %</span> ({kiBilanz.bestaetigt} bestätigt, {kiBilanz.korrigiert} korrigiert)</>
+                : 'noch nichts von dir entschieden'}
+              {kiBilanz.ungeprueft > 0 && ` · ${kiBilanz.ungeprueft} ungeprüft`}
+              {kiBilanz.offeneVorschlaege > 0 && ` · ${kiBilanz.offeneVorschlaege} offene Vorschläge`}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {/* Kategorie-Vorschläge für frisch gesyncte Bankbuchungen. Lag vorher auf der
