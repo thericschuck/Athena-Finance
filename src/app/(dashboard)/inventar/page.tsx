@@ -7,7 +7,7 @@ import {
   type ValuableImage, type ValuableWithImage,
 } from '@/lib/valuables'
 import { Gem } from 'lucide-react'
-import { getActiveValuables, getDocumentCounts, getSoldValuables, getValuableImages } from '@/lib/data/inventar'
+import { getActiveValuables, getDocumentCounts, getHandBewertungsstaende, getSoldValuables, getValuableImages } from '@/lib/data/inventar'
 import { SoldList } from '@/components/inventar/SoldList'
 import { VerlaufSchaetzenButton } from '@/components/inventar/VerlaufSchaetzenButton'
 import { signierteBildUrls } from '@/lib/inventar/bildurls'
@@ -27,14 +27,16 @@ export default async function InventarPage() {
   const { supabase, user } = await getAuthUser()
   if (!user) return null
 
-  const [items, verkauft, dokumente, bilder, settings] = await Promise.all([
+  const [aktive, verkauft, dokumente, handStaende, bilder, settings] = await Promise.all([
     getActiveValuables(supabase, user.id),
     getSoldValuables(supabase, user.id),
     getDocumentCounts(supabase, user.id),
+    getHandBewertungsstaende(supabase, user.id),
     getValuableImages(supabase, user.id),
     getSettings(user.id),
   ])
 
+  const items = aktive.map(v => ({ ...v, hand_wert_stand: handStaende.get(v.id) ?? null }))
   const locale = (settings.number_format as string) ?? 'de-DE'
   // Der Bucket ist privat — ohne signierte URL liefert Storage 400. Alle Pfade in EINEM
   // Aufruf signieren (bei 30 Objekten mit je vier Bildern wären es sonst 120 Round-Trips),

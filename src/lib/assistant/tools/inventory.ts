@@ -1,6 +1,7 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { KATEGORIEN } from '@/lib/valuables'
+import { getHandBewertungsstaende } from '@/lib/data/inventar'
 import { ROW_CAP, untrust, type DB } from '@/lib/assistant/tools/shared'
 
 export function buildInventoryTools(supabase: DB, userId: string) {
@@ -103,6 +104,9 @@ export function buildInventoryTools(supabase: DB, userId: string) {
           waehrung: string
         }[]
 
+        // Stand der letzten HANDEINGABE: Modellpunkte (quelle `modell`) schreiben taeglich
+        // einen neuen Stand und liessen jeden Wert aktuell aussehen.
+        const handStand = await getHandBewertungsstaende(supabase, userId)
         const grenze = new Date()
         grenze.setFullYear(grenze.getFullYear() - 1)
         const stichtag = grenze.toISOString().split('T')[0]
@@ -114,7 +118,7 @@ export function buildInventoryTools(supabase: DB, userId: string) {
           name: r.name,
           kategorie: r.kategorie,
           aktuellerWert: r.aktueller_wert,
-          wertStand: r.wert_stand,
+          wertStand: handStand.get(r.id) ?? r.wert_stand,
         })
         const liste = (treffer: typeof rows) => ({
           anzahl: treffer.length,
@@ -134,7 +138,10 @@ export function buildInventoryTools(supabase: DB, userId: string) {
           ohneBox: liste(rows.filter((r) => !r.box_vorhanden)),
           unversichert: liste(unversichert),
           // Ohne jeden Wert ODER Stand vor mehr als 12 Monaten.
-          bewertungVeraltet: liste(rows.filter((r) => !r.wert_stand || r.wert_stand < stichtag)),
+          bewertungVeraltet: liste(rows.filter((r) => {
+            const stand = handStand.get(r.id) ?? r.wert_stand
+            return !stand || stand < stichtag
+          })),
           versicherungsdeckung: {
             versichertSumme: summe(versichert),
             unversichertSumme: summe(unversichert),

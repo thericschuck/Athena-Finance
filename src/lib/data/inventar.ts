@@ -59,6 +59,27 @@ export async function getSoldValuables(supabase: DB, userId: string): Promise<Va
 }
 
 /**
+ * Datum der letzten Handeingabe je Gegenstand (alle Bewertungen ausser `quelle = 'modell'`,
+ * nicht in der Zukunft). Die View liefert nur den juengsten Stand, und der ist mit dem
+ * Wertmodell fast immer „heute".
+ */
+export async function getHandBewertungsstaende(supabase: DB, userId: string): Promise<Map<string, string>> {
+  const heute = new Date().toISOString().split('T')[0]
+  const { data } = await supabase
+    .from('valuable_valuations')
+    .select('valuable_id, bewertet_am')
+    .eq('user_id', userId)
+    .neq('quelle', 'modell')
+    .lte('bewertet_am', heute)
+  const stand = new Map<string, string>()
+  for (const r of (data ?? []) as { valuable_id: string; bewertet_am: string }[]) {
+    const bisher = stand.get(r.valuable_id)
+    if (!bisher || r.bewertet_am > bisher) stand.set(r.valuable_id, r.bewertet_am)
+  }
+  return stand
+}
+
+/**
  * Anzahl Dokumente je Gegenstand — für die Büroklammer auf der Kachel. Nur die Spalte
  * `valuable_id` wird gelesen, nicht die Zeilen mit Pfaden und Namen.
  * `database.ts` kennt die Tabelle noch nicht (Typen werden nicht von Hand gepflegt), daher

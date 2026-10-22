@@ -49,6 +49,8 @@ export interface Valuable {
   nutzung: string
   /** `nutzung` = Wertverlauf wird geschaetzt, `stabil` = Sammlerstueck, kein Modell. */
   wertmodus: string
+  /** Datum der letzten HANDEINGABE (alles ausser `modell`). Von der Seite ergaenzt, nicht aus der View. */
+  hand_wert_stand?: string | null
 }
 
 /** Eine Zeile aus `valuable_images`, angereichert um die signierte URL. */
@@ -286,7 +288,9 @@ export function vollstaendigkeit(v: Valuable): Vollstaendigkeit {
 
 /** Alter der letzten Bewertung in Monaten, oder null ohne Bewertungsdatum. */
 export function wertAlterMonate(v: Valuable): number | null {
-  return haltedauerMonate(v.wert_stand)
+  // Modellpunkte zaehlen nicht: sie schreiben jeden Tag einen neuen Stand und hielten jeden
+  // Wert ewig „frisch", obwohl ihn seit Monaten niemand bewertet hat.
+  return haltedauerMonate(v.hand_wert_stand ?? v.wert_stand)
 }
 
 /** Ab wann ein Wert als veraltet gilt. */
