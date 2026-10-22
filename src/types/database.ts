@@ -3825,6 +3825,10 @@ export type Database = {
       }
     }
     Functions: {
+      balance_series: {
+        Args: { p_account_id?: string; p_from?: string }
+        Returns: { account_id: string; von: string; bis: string; balance: number }[]
+      }
       check_combo_guard: { Args: { p_combo_id: string }; Returns: undefined }
       fn_asset_price_eur: {
         Args: {

@@ -56,23 +56,21 @@ export default async function AccountsPage({
   const period: Period = parsePeriod(rawPeriod)
   const cutoff = periodCutoff(period)
 
-  const [accounts, transactions, bankBalances, settings, depots] = await Promise.all([
+  // Die Saldenhistorie (fuer die Sparklines) laeuft in derselben Welle wie die uebrigen Abfragen statt danach: sie haengt nicht von
+  // deren Ergebnis ab. Frueher eine zweite, sequentielle Runde (Begruendung samt Zahlen in `fetchBalanceHistory`).
+  const [accounts, transactions, bankBalances, settings, depots, history] = await Promise.all([
     getAccounts(supabase, user!.id),
     getManualBalanceSums(supabase, user!.id),
     getBankBalances(supabase, user!.id),
     getSettings(user!.id),
     getDepotsSummaries(),
+    fetchBalanceHistory(supabase, { from: cutoff }),
   ])
 
   const locale = (settings.number_format as string) ?? 'de-DE'
 
-  // Verlauf je Konto für die Sparklines. Eigene Query statt eines Joins über `accounts`,
-  // weil die Zeilenzahl hier vom Zeitraum abhängt und nicht von der Kontenzahl — bei
-  // „Alles" reicht ein Konto (Geschäftsanteile) bis 2018 zurück. Seitenweise, weil das
-  // die 1.000-Zeilen-Grenze von PostgREST sonst still am jüngsten Ende abschneidet
-  // (Begründung samt Zahlen in `fetchBalanceHistory`).
-  const history = await fetchBalanceHistory(supabase, { from: cutoff })
-
+  // Verlauf je Konto für die Sparklines (Zeilenzahl haengt vom Zeitraum ab, nicht von der Kontenzahl: bei „Alles" reicht
+  // ein Konto, Geschäftsanteile, bis 2018 zurück). Siehe die Abfrage oben.
   const historyMap = new Map<string, AccountHistory>()
   for (const row of history) {
     const entry = historyMap.get(row.account_id)
