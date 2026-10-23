@@ -48,7 +48,12 @@ export async function POST(request: Request) {
       // Der Cloud-Sync speichert nur Buchungen und setzt nie eine Kategorie. Die schnelle Stufe (Regeln und Gelerntes) läuft deshalb
       // gleich hier; die KI-Stufe übernimmt /api/cron/categorize kurz danach (sie braucht mehr Zeit als dieser Request übrig hat).
       let categorized = 0
-      try { categorized = (await applySuggestionsToBacklog(supabase, user.id)).applied } catch { /* Sync gelungen, Kategorisierung holt der Cron nach */ }
+      try {
+        categorized = (await applySuggestionsToBacklog(supabase, user.id)).applied
+      } catch (err) {
+        // Sync gelungen, Kategorisierung holt der Cron nach.
+        console.warn('[bank-sync] Kategorisierung nach Cloud-Sync fehlgeschlagen:', err)
+      }
       return NextResponse.json({ imported: result.imported, skipped: result.skipped, categorized })
     } catch (err) {
       return NextResponse.json({

@@ -47,7 +47,15 @@ export async function syncBankForUser(
     if (result.scaRequired) {
       throw new BankScaRequiredError(result.message ?? 'Freigabe in der App erforderlich.')
     }
-    return { imported: result.imported, skipped: result.skipped, balancesSynced: result.balances }
+    // Der Cloud-Sync speichert nur Buchungen und setzt nie eine Kategorie. Die schnelle Stufe (Regeln und Gelerntes)
+    // läuft deshalb hier; die KI-Stufe übernimmt /api/cron/categorize.
+    let categorized = 0
+    try {
+      categorized = (await applySuggestionsToBacklog(supabase, userId)).applied
+    } catch (err) {
+      console.warn('[bank-sync] Kategorisierung nach Cloud-Sync fehlgeschlagen:', err)
+    }
+    return { imported: result.imported, skipped: result.skipped, balancesSynced: result.balances, categorized }
   }
 
   // Routine: innerhalb der 90-Tage-Ausnahme (keine Freigabe nötig). Volle Historie liegt

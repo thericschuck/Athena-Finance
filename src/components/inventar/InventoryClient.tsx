@@ -245,6 +245,12 @@ function Karte({
   const alter = wertAlterMonate(item)
   const veraltet = alter !== null && alter >= WERT_VERALTET_MONATE
 
+  // Das Bild fuellt die Flaeche bis an die Kartenkante. Variante „Bild als aufgelegte Karte
+  // mit Rand" wurde im Vergleich verworfen: die sichtbare Bildkante liess es in der Kachel
+  // haengen. Der Zuschnitt (`object-cover`) kappt dafuer bei ungeschickten Formaten den Rand.
+  const bildKlasse =
+    'absolute inset-0 size-full object-cover will-change-[opacity,transform] motion-safe:transition-[opacity,transform] motion-safe:duration-500 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)]'
+
   // Blättern direkt in der Vitrine, ohne das Detail zu öffnen. Nur Bilder mit URL — eine
   // abgelaufene Signatur wäre sonst eine leere Position im Karussell.
   const bilder = useMemo(() => item.bilder.filter(b => b.url), [item.bilder])
@@ -303,12 +309,6 @@ function Karte({
           ].join(','),
         }}
       >
-        {/* Bodenschatten: der Gegenstand steht auf etwas, er schwebt nicht im Bild. */}
-        <span
-          aria-hidden
-          className="absolute bottom-[11%] left-1/2 h-3 w-3/5 -translate-x-1/2 rounded-[50%] bg-foreground/20 blur-md transition-all duration-300 group-hover:w-1/2 group-hover:bg-foreground/30"
-        />
-
         {/* Die Hover-Vergrösserung sitzt auf dem Rahmen, nicht auf dem Bild: die Bilder
             tragen ihre eigene Transformation für den Wechsel, und zwei `transform` auf
             demselben Element würden sich gegenseitig überschreiben. */}
@@ -333,7 +333,7 @@ function Karte({
                   aria-hidden={i !== sicher}
                   loading={i === 0 ? undefined : 'lazy'}
                   decoding="async"
-                  className="absolute inset-0 size-full object-contain px-6 pb-10 pt-7 drop-shadow-[0_10px_12px_rgba(0,0,0,0.22)] will-change-[opacity,transform] motion-safe:transition-[opacity,transform] motion-safe:duration-500 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)]"
+                  className={bildKlasse}
                   style={{
                     // Nachbarn warten seitlich in Blätterrichtung und leicht verkleinert —
                     // das macht aus dem Überblenden eine erkennbare Bewegung, ohne dass
@@ -355,7 +355,7 @@ function Karte({
               alt={item.name}
               loading="lazy"
               decoding="async"
-              className="absolute inset-0 size-full object-contain px-6 pb-10 pt-7 drop-shadow-[0_10px_12px_rgba(0,0,0,0.22)]"
+              className={bildKlasse}
             />
           ) : (
             <ValuableIcon

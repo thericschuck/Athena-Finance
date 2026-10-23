@@ -301,7 +301,7 @@ export default async function AccountDetailPage({ params, searchParams }: PagePr
             <Metric label="Einnahmen" value={`+${formatCurrency(income, currency, locale)}`} className="text-success" />
             <Metric label="Ausgaben"  value={`−${formatCurrency(expense, currency, locale)}`} className="text-danger" />
             <Metric
-              label="Netto"
+              label="Netto im Zeitraum"
               value={`${net >= 0 ? '+' : '−'}${formatCurrency(Math.abs(net), currency, locale)}`}
               className={net >= 0 ? 'text-success' : 'text-danger'}
             />
