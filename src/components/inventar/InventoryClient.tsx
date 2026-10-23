@@ -290,10 +290,16 @@ function Karte({
 
       {/* Sockel. `pointer-events-none`, damit Klicks auf die Fläche darunter durchgehen —
           die Blätter-Pfeile holen sich ihre Klickbarkeit einzeln zurück. */}
+      <div className="p-3 pb-0">
       <div
-        className="pointer-events-none relative aspect-[4/5] overflow-hidden"
+        className="pointer-events-none relative aspect-[4/5] overflow-hidden rounded-xl border"
         style={{
-          // Randlos bis an die Kartenkante: das Bild stand vorher als Kasten im Kasten.
+          // Das Bild haengt nicht lose in der Karte, sondern sitzt im Passepartout: Rahmen in
+          // der Stufenfarbe (sonst ein heller Strich), innen eine zweite feine Linie und ein
+          // leichter Innenschatten, damit die Flaeche eingelassen wirkt.
+          borderColor: ausgezeichnet ? stufe.border : 'color-mix(in srgb, var(--foreground) 14%, transparent)',
+          boxShadow:
+            'inset 0 1px 0 color-mix(in srgb, var(--background) 60%, transparent), inset 0 -22px 30px -26px color-mix(in srgb, var(--foreground) 35%, transparent), 0 1px 2px color-mix(in srgb, var(--foreground) 8%, transparent)',
           // Hintergrund = Vitrinenrueckwand: oben ein Strahler, unten die Stufenfarbe als
           // Schimmer, darunter die Kartenflaeche.
           background: [
@@ -303,6 +309,17 @@ function Karte({
           ].join(','),
         }}
       >
+        {/* Zweite, feinere Rahmenlinie innen — das Passepartout. */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-1.5 z-10 rounded-lg border"
+          style={{
+            borderColor: ausgezeichnet
+              ? 'color-mix(in srgb, ' + stufe.border + ' 45%, transparent)'
+              : 'color-mix(in srgb, var(--foreground) 7%, transparent)',
+          }}
+        />
+
         {/* Bodenschatten: der Gegenstand steht auf etwas, er schwebt nicht im Bild. */}
         <span
           aria-hidden
@@ -412,12 +429,13 @@ function Karte({
         {/* Stufe als Plakette im Bild, nicht als Zeile im Text. */}
         {ausgezeichnet && (
           <span
-            className="absolute left-3 top-3 z-10 rounded-full border bg-background/60 px-2 py-0.5 text-[10px] font-medium tracking-wide text-foreground/90 backdrop-blur-sm"
+            className="absolute left-3.5 top-3.5 z-20 rounded-full border bg-background/60 px-2 py-0.5 text-[10px] font-medium tracking-wide text-foreground/90 backdrop-blur-sm"
             style={{ borderColor: stufe.border }}
           >
             {stufe.label}
           </span>
         )}
+      </div>
       </div>
 
       {/* Sockel mit Beschriftung. Er lässt Klicks durch (siehe ValuablePlinth) — sie
