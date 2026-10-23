@@ -25,6 +25,9 @@ interface Props {
   categories: FinanceCategory[]
   /** Apply one accepted suggestion — pass useBankData's updateCategory (already optimistic). */
   onAccept: (id: string, categoryId: string) => Promise<void>
+  /** Knopftext und Zusatzklassen — die Bankdaten-Seite zeigt ihn kompakt in einer schmalen Zeile. */
+  label?: string
+  className?: string
 }
 
 /** `neu` = bisher ohne Kategorie. `aenderung` = es steht schon eine drin. */
@@ -96,7 +99,7 @@ function bisherLabels(g: Group): string {
   return namen.join(', ')
 }
 
-export function CategorySuggestions({ categories, onAccept }: Props) {
+export function CategorySuggestions({ categories, onAccept, label = 'Kategorien vorschlagen', className }: Props) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -177,9 +180,9 @@ export function CategorySuggestions({ categories, onAccept }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <Button variant="outline" size="sm" onClick={() => handleOpenChange(true)}>
+      <Button variant="outline" size="sm" className={className} onClick={() => handleOpenChange(true)}>
         <Wand2 className="size-4" />
-        Kategorien vorschlagen
+        {label}
       </Button>
 
       <SheetContent side="right" className="w-full sm:max-w-md">

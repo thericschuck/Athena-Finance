@@ -6,22 +6,25 @@ import { Tags } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CategorySuggestions } from '@/components/bank/category-suggestions'
 import { useUrlFilters } from '@/components/providers/url-filters'
-import { fmtCurrency, fmtDate } from '@/lib/format'
 import { normIban } from '@/lib/bank/scope'
 import type { BankAbschnittProps } from '@/lib/bank/typen'
 
 /**
- * Hinweiskarte „N Buchungen warten auf eine Kategorie" — nur sichtbar, wenn es welche gibt.
+ * Schmale Hinweiszeile „N Buchungen ohne Kategorie" — nur sichtbar, wenn es welche gibt.
+ * Eine Zeile statt Karte mit Beispielen: die Seite ist lang genug, und die Beispiele stehen
+ * nach „Anzeigen" ohnehin in der Buchungsliste.
  *
  * Gezaehlt wird ueber ALLE Buchungen (nicht nur Zeitraum/Konto): eine unkategorisierte Buchung
  * bleibt offen, egal welcher Filter gerade gesetzt ist. Umbuchungen zwischen eigenen Konten
  * (Gegen-IBAN gehoert dem Nutzer) zaehlen nicht — sie brauchen keine Kategorie, die
  * Auswertung rechnet sie ohnehin heraus (gleiche Regel wie fints/categorize.ts).
  *
- * Vorschlaege: bestehendes Panel (Regeln, Gelerntes, KI) im Seitenfenster; es laedt erst beim
- * Oeffnen ueber /api/bank/transactions/suggest-categories. Uebernommene Vorschlaege werden per
- * PATCH gespeichert; danach laedt die Seite einmal neu (gebuendelt, ein Sammelklick schickt
- * viele Antworten), damit die Karte schrumpft.
+ * Vorschlaege: bestehendes Panel (Regeln, Gelerntes, KI) als Seitenfenster UEBER dem Inhalt;
+ * es laedt erst beim Oeffnen ueber /api/bank/transactions/suggest-categories. Uebernommene
+ * Vorschlaege werden per PATCH gespeichert; danach laedt die Seite einmal neu (gebuendelt,
+ * ein Sammelklick schickt viele Antworten), damit die Zahl schrumpft.
+ *
+ * Hoehe, Radius und Schrift passen zu BankDatenzustand (beide stehen direkt untereinander).
  */
 export function BankOffeneKategorien({ daten }: BankAbschnittProps) {
   const { get, set } = useUrlFilters()
@@ -39,7 +42,6 @@ export function BankOffeneKategorien({ daten }: BankAbschnittProps) {
   if (offene.length === 0) return null
 
   const filterAktiv = get('kat') === 'offen'
-  const neueste = offene.slice(0, 3)
 
   const uebernehmen = async (id: string, categoryId: string) => {
     const res = await fetch(`/api/bank/transactions/${id}`, {
@@ -52,43 +54,26 @@ export function BankOffeneKategorien({ daten }: BankAbschnittProps) {
     timer.current = setTimeout(() => router.refresh(), 600)
   }
 
+  const anzeigen = () => {
+    if (filterAktiv) { set('kat', null); return }
+    set('kat', 'offen')
+    // Die Liste steht weiter unten; der Filter rendert serverseitig neu, der Anker bleibt stehen.
+    setTimeout(() => document.getElementById('bank-buchungen-titel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 250)
+  }
+
   return (
     <section
       aria-label="Buchungen ohne Kategorie"
-      className="rounded-lg border border-primary/40 bg-primary/5 p-4"
+      className="flex min-h-10 min-w-0 items-center gap-2 rounded-lg border border-primary/40 bg-primary/5 px-3 py-1 text-xs sm:text-[13px]"
     >
-      <div className="flex flex-wrap items-center gap-3">
-        <Tags className="size-5 shrink-0 text-primary" />
-        <h2 className="min-w-0 flex-1 text-sm font-semibold">
-          {offene.length} {offene.length === 1 ? 'Buchung wartet' : 'Buchungen warten'} auf eine Kategorie
-        </h2>
-        <div className="flex flex-wrap items-center gap-2">
-          <CategorySuggestions categories={daten.categories} onAccept={uebernehmen} />
-          <Button
-            size="sm"
-            variant={filterAktiv ? 'outline' : 'default'}
-            onClick={() => set('kat', filterAktiv ? null : 'offen')}
-          >
-            {filterAktiv ? 'Filter aufheben' : 'Alle anzeigen'}
-          </Button>
-        </div>
-      </div>
-
-      <ul className="mt-3 divide-y divide-border/50 text-sm">
-        {neueste.map(t => (
-          <li key={t.id} className="flex items-baseline gap-3 py-1.5">
-            <span className="w-20 shrink-0 text-xs text-muted-foreground tabular-nums">
-              {fmtDate(t.value_date, daten.dateFormat)}
-            </span>
-            <span className="min-w-0 flex-1 truncate">
-              {t.counterpart_name || t.description || 'Buchung'}
-            </span>
-            <span className={`shrink-0 tabular-nums ${t.amount >= 0 ? 'text-emerald-600 dark:text-emerald-400' : ''}`}>
-              {fmtCurrency(t.amount, t.currency || 'EUR', daten.locale, { fractionDigits: 2 })}
-            </span>
-          </li>
-        ))}
-      </ul>
+      <Tags className="size-4 shrink-0 text-primary" />
+      <span className="min-w-0 flex-1 truncate font-medium">
+        {offene.length} {offene.length === 1 ? 'Buchung' : 'Buchungen'} ohne Kategorie
+      </span>
+      <Button size="sm" variant="outline" className="h-7 shrink-0 px-2 text-xs" onClick={anzeigen}>
+        {filterAktiv ? 'Filter aufheben' : 'Anzeigen'}
+      </Button>
+      <CategorySuggestions categories={daten.categories} onAccept={uebernehmen} label="Vorschläge" className="h-7 shrink-0 px-2 text-xs" />
     </section>
   )
 }

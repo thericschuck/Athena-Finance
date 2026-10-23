@@ -1,55 +1,44 @@
-import {
-  Skeleton,
-  SkeletonChart,
-  SkeletonStatCards,
-  SkeletonTable,
-  SkeletonToolbar,
-} from '@/components/ui/skeleton'
+import { Skeleton, SkeletonChart, SkeletonTable } from '@/components/ui/skeleton'
 
 /**
- * Ladezustand der Route, formgleich mit der fertigen Seite (page.tsx ist jetzt eine
- * Server-Komponente: es gibt nur noch EINEN Ladezustand, keinen zweiten im Browser):
- * Kennzahlen, Kontokarten, Gesamtverlauf und Kontoverläufe, Filterleiste, Trend + Kategorien,
- * Gegenparteien + feste Kosten, Buchungstabelle — die Reihenfolge folgt der Seite.
+ * Ladezustand der Route, formgleich mit der fertigen Seite: Titel und Filter in einer Zeile,
+ * schmale Zeilen (Zustand, Kennzahlen, offene Kategorien, Konten), Ansichts-Tabs mit dem
+ * Gesamtverlauf, Trend + Kategorien, zuletzt die Buchungsliste.
  */
 export default function Loading() {
   return (
-    <div className="p-4 sm:p-8 space-y-8 animate-in fade-in duration-150">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-2">
-          <Skeleton className="h-7 w-40" />
-          <Skeleton className="h-3.5 w-56" />
-          <Skeleton className="h-3 w-80" />
-        </div>
-        <div className="flex gap-2">
-          <Skeleton className="h-9 w-36 rounded-md" />
-          <Skeleton className="h-9 w-28 rounded-md" />
+    <div className="space-y-4 p-4 sm:p-6 animate-in fade-in duration-150">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <Skeleton className="h-8 w-36" />
+        <div className="flex items-center gap-3 overflow-hidden">
+          <Skeleton className="h-9 w-32 shrink-0 rounded-md" />
+          <Skeleton className="h-9 w-36 shrink-0 rounded-md" />
+          <Skeleton className="h-9 w-28 shrink-0 rounded-md" />
         </div>
       </div>
 
-      <SkeletonStatCards count={4} />
-      <SkeletonStatCards count={3} />
-
-      <SkeletonChart variant="area" height={220} />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <Skeleton className="h-10 w-full rounded-lg" />
+      <Skeleton className="h-16 w-full rounded-lg" />
+      <Skeleton className="h-10 w-full rounded-lg" />
+      <div className="flex gap-3 overflow-hidden">
         {Array.from({ length: 3 }).map((_, i) => (
-          <SkeletonChart key={i} variant="area" height={180} />
+          <Skeleton key={i} className="h-[72px] w-56 shrink-0 rounded-lg" />
         ))}
       </div>
 
-      <SkeletonToolbar pills={4} />
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <SkeletonChart variant="bars" height={220} legend />
-        <SkeletonChart variant="hbars" height={220} />
+      <div className="flex gap-1">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-10 w-24 rounded-full" />
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <SkeletonChart variant="hbars" height={220} />
-        <SkeletonChart variant="hbars" height={220} />
+      <SkeletonChart variant="area" height={240} />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <SkeletonChart variant="bars" height={240} legend />
+        <SkeletonChart variant="hbars" height={240} />
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className="flex gap-2">
           <Skeleton className="h-8 flex-1 rounded-md" />
           <Skeleton className="h-8 w-40 rounded-md" />

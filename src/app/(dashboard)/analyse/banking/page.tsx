@@ -8,7 +8,8 @@ import { UrlFiltersProvider, FilterPending } from '@/components/providers/url-fi
 import { BankZeitraum } from '@/components/bank/BankZeitraum'
 import { BankSyncInsel } from '@/components/bank/BankSyncInsel'
 import { BankTrend } from '@/components/bank/BankTrend'
-import { BankFilterChips, type FilterChip } from '@/components/bank/BankFilterChips'
+import { BankFilterChips } from '@/components/bank/BankFilterChips'
+import { AnalyseTabs, type AnalyseTab } from '@/components/analyse/AnalyseTabs'
 import { BankBalanceChart } from '@/components/bank/bank-balance-chart'
 import { BankKennzahlen } from '@/components/bank/BankKennzahlen'
 import { BankKontokarten } from '@/components/bank/BankKontokarten'
@@ -66,91 +67,98 @@ export default async function BankAnalysePage({
     daten.transactions.some(t => normIban(t.account_iban) === normIban(b.account_iban)),
   )
 
-  const monatsName = daten.monat
-    ? new Date(Number(daten.monat.slice(0, 4)), Number(daten.monat.slice(5, 7)) - 1, 1)
-        .toLocaleDateString(daten.locale, { month: 'long', year: 'numeric' })
-    : null
-  const kontoName = daten.konto
-    ? daten.balances.find(b => normIban(b.account_iban) === normIban(daten.konto!))?.account_name ?? daten.konto
-    : null
-  const katName = daten.kat === 'offen'
-    ? 'Ohne Kategorie'
-    : daten.kat ? daten.categories.find(c => c.id === daten.kat)?.name ?? 'Kategorie' : null
-  const chips: FilterChip[] = [
-    ...(monatsName ? [{ key: 'month' as const, label: `Nur ${monatsName}` }] : []),
-    ...(kontoName ? [{ key: 'konto' as const, label: `Konto: ${kontoName}` }] : []),
-    ...(daten.partei ? [{ key: 'partei' as const, label: `Gegenpartei: ${daten.partei}` }] : []),
-    ...(katName ? [{ key: 'kat' as const, label: `Kategorie: ${katName}` }] : []),
+  // Drei Ansichten statt zehn Karten untereinander (wie die Analyse-Seite). Die Buchungsliste
+  // steht darunter, nicht in einem Tab: sie ist das Ziel jedes Klicks in den Auswertungen.
+  const tabs: AnalyseTab[] = [
+    {
+      key: 'ueberblick',
+      label: 'Überblick',
+      inhalt: (
+        <>
+          <BankGesamtverlauf {...props} />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 [&>*]:min-w-0">
+            <BankTrend months={trendMonate} selectedMonth={daten.monat} />
+            <BankKategorien {...props} />
+          </div>
+          <p className="text-xs text-muted-foreground/80">
+            Auswertungen zählen wie Dashboard und Analyse (ohne Umbuchungen, Anlagen und Forderungen
+            mit dem Schalter). Kontoverlauf und Buchungsliste zeigen alle Bankbuchungen.
+          </p>
+        </>
+      ),
+    },
+    {
+      key: 'auswertung',
+      label: 'Auswertung',
+      inhalt: (
+        <>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 [&>*]:min-w-0">
+            <BankGegenparteien {...props} />
+            <BankFesteKosten {...props} />
+          </div>
+          <BankMuster {...props} />
+        </>
+      ),
+    },
+    {
+      key: 'konten',
+      label: 'Konten',
+      inhalt: kontenMitVerlauf.length > 0 ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
+          {kontenMitVerlauf.map(b => (
+            <BankBalanceChart
+              key={b.account_iban}
+              accountName={b.account_name ?? b.account_iban}
+              currentBalance={b.booked_balance}
+              transactions={daten.transactions.filter(t => normIban(t.account_iban) === normIban(b.account_iban))}
+              from={daten.cutoff ?? undefined}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="py-8 text-center text-sm text-muted-foreground">Keine Kontoverläufe vorhanden.</p>
+      ),
+    },
   ]
 
   return (
-    // Zeitraum, Konto und Monat schreiben in die URL und lösen ein Server-Rendering aus.
-    // Der Provider markiert den Klick sofort und blendet über <FilterPending> die alten
-    // Zahlen ab, bis die neuen da sind.
-    <UrlFiltersProvider replace>
-      <div className="space-y-8 p-4 sm:p-8">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Bankdaten</h1>
-            <p className="mt-0.5 max-w-xl text-sm text-muted-foreground">
-              Alle Bankkonten auf den gesyncten Bankbuchungen — ohne manuelle Buchungen. Ein Klick
-              auf eine Kontokarte beschränkt alles darunter auf dieses Konto.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-start justify-end gap-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Zeitraum</span>
-              <BankZeitraum current={daten.periode} />
-            </div>
+    // Zeitraum, Konto und Monat schreiben in die URL und lösen ein Server-Rendering aus. Der
+    // Provider markiert den Klick sofort und blendet über <FilterPending> die alten Zahlen ab,
+    // bis die neuen da sind. Gegenpartei, Kategorie und die gewählte Ansicht (`localKeys`) wirken
+    // nur im Browser: sie setzen die URL ohne Server-Rendering, ein Klick lädt also nichts neu.
+    <UrlFiltersProvider replace localKeys="partei,kat,ansicht">
+      {/* `min-w-0 max-w-full overflow-x-clip`: ein breiter Chart oder eine scrollbare Leiste darf die
+          SEITE nie seitlich verschiebbar machen (Handy). */}
+      <div className="min-w-0 max-w-full space-y-4 overflow-x-clip p-4 sm:p-6">
+        {/* Titel links, Filter und Sync rechts in einer Zeile; auf dem Handy darunter, waagerecht
+            scrollbar statt mehrzeilig umgebrochen. */}
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <h1 className="text-2xl font-semibold tracking-tight">Bankdaten</h1>
+          <div className="-mx-4 flex w-[calc(100%+2rem)] items-center gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:w-auto sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <FlowKindToggle />
+            <BankZeitraum current={daten.periode} />
             <BankSyncInsel />
           </div>
         </div>
 
-        <FilterPending className="space-y-8">
-          <div className="space-y-8">
+        <FilterPending className="space-y-4">
+          <div className="space-y-4">
+            {/* Schmale Zeilen oben: Zustand, Kennzahlen, offene Kategorien, Konten. */}
             <BankDatenzustand {...props} />
             <BankKennzahlen {...props} />
             <BankOffeneKategorien {...props} />
             <BankKontokarten {...props} />
 
-            <BankGesamtverlauf {...props} />
-            {kontenMitVerlauf.length > 0 && (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {kontenMitVerlauf.map(b => (
-                  <BankBalanceChart
-                    key={b.account_iban}
-                    accountName={b.account_name ?? b.account_iban}
-                    currentBalance={b.booked_balance}
-                    transactions={daten.transactions.filter(t => normIban(t.account_iban) === normIban(b.account_iban))}
-                    from={daten.cutoff ?? undefined}
-                  />
-                ))}
-              </div>
-            )}
+            <AnalyseTabs tabs={tabs} />
 
-            <div className="flex flex-wrap items-center gap-3">
-              <BankFilterChips chips={chips} />
-              <FlowKindToggle />
-              <p className="text-xs text-muted-foreground/70">
-                Die Auswertungen zählen wie Dashboard und Analyse: ohne Umbuchungen zwischen eigenen
-                Konten, Anlagen und Forderungen nur mit dem Schalter. Im Kontostandsverlauf und in
-                der Buchungsliste stehen alle Bankbuchungen.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <BankTrend months={trendMonate} selectedMonth={daten.monat} />
-              <BankKategorien {...props} />
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <BankGegenparteien {...props} />
-              <BankFesteKosten {...props} />
-            </div>
-
-            <BankMuster {...props} />
-
-            <BankBuchungen {...props} />
+            <section id="buchungen" className="scroll-mt-4 space-y-3">
+              <BankFilterChips
+                kategorien={daten.categories.map(c => ({ id: c.id, name: c.name }))}
+                konten={daten.balances.map(b => ({ iban: b.account_iban, name: b.account_name ?? b.account_iban }))}
+                locale={daten.locale}
+              />
+              <BankBuchungen {...props} />
+            </section>
           </div>
         </FilterPending>
       </div>
