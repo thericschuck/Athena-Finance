@@ -83,7 +83,7 @@ export default async function AnalysePage({
           {/* Der Geldfluss bekommt eine volle Zeile: in einer halben Spalte ist die Karte
               schmaler als 600 px und zeigte dann auch am Desktop die Liste statt des Sankeys. */}
           <GeldflussChartUrl data={buildSankey(daten.txns)} />
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 [&>*]:min-w-0">
             <AnalyseKategorien {...props} />
             <AnalyseGegenparteien {...props} />
           </div>
@@ -101,13 +101,13 @@ export default async function AnalysePage({
       label: 'Monat',
       inhalt: (
         <>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 [&>*]:min-w-0">
             <AnalyseTempo {...props} />
             <Suspense fallback={<SkeletonChart variant="bars" height={220} />}>
               <AnalyseBudget {...props} />
             </Suspense>
           </div>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 [&>*]:min-w-0">
             <Suspense fallback={<SkeletonChart variant="bars" height={320} />}>
               <AnalyseKalender {...props} />
             </Suspense>
@@ -138,7 +138,10 @@ export default async function AnalysePage({
     // Gegenpartei und die gewählte Ansicht (`localKeys`) wirken nur im Browser: sie setzen die
     // URL ohne Server-Rendering, ein Klick lädt also nichts neu.
     <UrlFiltersProvider replace localKeys="kat,tag,partei,ansicht">
-      <div className="space-y-4 p-4 sm:p-6">
+      {/* `min-w-0 max-w-full overflow-x-clip`: ein breiter Chart oder eine scrollbare Leiste darf die
+          SEITE nie seitlich verschiebbar machen (Handy). Gitterzellen haben sonst `min-width: auto`
+          und wachsen mit ihrem breitesten Inhalt über den Bildschirm hinaus. */}
+      <div className="min-w-0 max-w-full space-y-4 overflow-x-clip p-4 sm:p-6">
         {/* Titel links, Filter rechts in derselben Zeile; auf dem Handy darunter, waagerecht
             scrollbar statt mehrzeilig umgebrochen. */}
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">

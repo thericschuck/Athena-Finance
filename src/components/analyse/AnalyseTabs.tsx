@@ -36,7 +36,7 @@ export function AnalyseTabs({ tabs }: { tabs: AnalyseTab[] }) {
   }, [aktiv, besucht])
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <div
         role="tablist"
         aria-label="Ansicht"
@@ -72,7 +72,7 @@ export function AnalyseTabs({ tabs }: { tabs: AnalyseTab[] }) {
           id={`analyse-panel-${t.key}`}
           aria-labelledby={`analyse-tab-${t.key}`}
           hidden={t.key !== aktiv}
-          className="space-y-4"
+          className="min-w-0 space-y-4"
         >
           {(t.key === aktiv || besucht.has(t.key)) && t.inhalt}
         </div>
