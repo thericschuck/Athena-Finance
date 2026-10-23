@@ -7,7 +7,9 @@ import {
   type ValuableImage, type ValuableWithImage,
 } from '@/lib/valuables'
 import { Gem } from 'lucide-react'
-import { getActiveValuables, getDocumentCounts, getHandBewertungsstaende, getSoldValuables, getValuableImages } from '@/lib/data/inventar'
+import { getActiveValuables, getDocumentCounts, getHandBewertungsstaende, getSammlungsRohdaten, getSoldValuables, getValuableImages } from '@/lib/data/inventar'
+import { SammlungsChartLazy } from '@/components/inventar/SammlungsChartLazy'
+import { sammlungsverlauf } from '@/lib/inventar/sammlungsverlauf'
 import { SoldList } from '@/components/inventar/SoldList'
 import { VerlaufSchaetzenButton } from '@/components/inventar/VerlaufSchaetzenButton'
 import { signierteBildUrls } from '@/lib/inventar/bildurls'
@@ -27,11 +29,12 @@ export default async function InventarPage() {
   const { supabase, user } = await getAuthUser()
   if (!user) return null
 
-  const [aktive, verkauft, dokumente, handStaende, bilder, settings] = await Promise.all([
+  const [aktive, verkauft, dokumente, handStaende, rohdaten, bilder, settings] = await Promise.all([
     getActiveValuables(supabase, user.id),
     getSoldValuables(supabase, user.id),
     getDocumentCounts(supabase, user.id),
     getHandBewertungsstaende(supabase, user.id),
+    getSammlungsRohdaten(supabase, user.id),
     getValuableImages(supabase, user.id),
     getSettings(user.id),
   ])
@@ -103,6 +106,8 @@ export default async function InventarPage() {
   const verlierer = nachRendite.length > 1 ? nachRendite[nachRendite.length - 1] : null
   const veraltetAnzahl = items.filter(v => (wertAlterMonate(v) ?? 0) >= WERT_VERALTET_MONATE).length
 
+  const verlauf = sammlungsverlauf(rohdaten.stuecke, rohdaten.bewertungen, new Date().toISOString().split('T')[0])
+
   const ohneWert = items.filter(v => v.aktueller_wert == null).length
   const fmtEur = (n: number) => fmtCurrency(n, 'EUR', locale, { fractionDigits: 0 })
 
@@ -163,6 +168,8 @@ export default async function InventarPage() {
           </div>
         </div>
       </div>
+
+      {verlauf.length > 1 && <SammlungsChartLazy punkte={verlauf} locale={locale} />}
 
       {/* Auswertung: Versicherung, Verteilung, Gewinner und Verlierer. Erst ab zwei Stücken —
           bei einem einzigen wäre jede Verteilung 100 %. */}

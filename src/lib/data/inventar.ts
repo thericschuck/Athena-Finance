@@ -80,6 +80,44 @@ export async function getHandBewertungsstaende(supabase: DB, userId: string): Pr
 }
 
 /**
+ * Rohdaten fuer den Sammlungsverlauf: ALLE Stuecke (auch verkaufte, sie zaehlen vor dem
+ * Verkauf mit) und alle Bewertungen. Seitenweise gelesen, weil PostgREST pro Antwort nur
+ * 1000 Zeilen liefert und das Wertmodell woechentlich einen Punkt je Stueck schreibt.
+ */
+export async function getSammlungsRohdaten(supabase: DB, userId: string) {
+  const { data: stuecke } = await supabase
+    .from('valuables')
+    .select('id, im_vermoegen, kaufpreis, gekauft_am, verkauft_am')
+    .eq('user_id', userId)
+
+  const bewertungen: { valuable_id: string; bewertet_am: string; wert: number }[] = []
+  const SEITE = 1000
+  for (let von = 0; ; von += SEITE) {
+    const { data } = await supabase
+      .from('valuable_valuations')
+      .select('valuable_id, bewertet_am, wert')
+      .eq('user_id', userId)
+      .order('bewertet_am', { ascending: true })
+      .order('valuable_id', { ascending: true })
+      .range(von, von + SEITE - 1)
+    const zeilen = (data ?? []) as { valuable_id: string; bewertet_am: string; wert: number }[]
+    bewertungen.push(...zeilen)
+    if (zeilen.length < SEITE) break
+  }
+
+  return {
+    stuecke: (stuecke ?? []) as unknown as {
+      id: string
+      im_vermoegen: boolean
+      kaufpreis: number | null
+      gekauft_am: string | null
+      verkauft_am: string | null
+    }[],
+    bewertungen,
+  }
+}
+
+/**
  * Anzahl Dokumente je Gegenstand — für die Büroklammer auf der Kachel. Nur die Spalte
  * `valuable_id` wird gelesen, nicht die Zeilen mit Pfaden und Namen.
  * `database.ts` kennt die Tabelle noch nicht (Typen werden nicht von Hand gepflegt), daher
