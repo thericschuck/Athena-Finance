@@ -27,7 +27,7 @@ export function AnalysePeriodSelector({ current }: Props) {
           // stuende ein Filter aktiv, dessen Balken nirgends mehr zu sehen ist.
           onClick={() => filters.setMany({ period: p, monat: null, tag: null })}
           aria-pressed={active === p}
-          className={`px-2.5 py-1 text-xs rounded font-medium transition-all duration-150 ${
+          className={`px-3 py-2 sm:px-2.5 sm:py-1 text-xs rounded font-medium transition-all duration-150 ${
             active === p
               ? 'bg-foreground text-background scale-105'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted'

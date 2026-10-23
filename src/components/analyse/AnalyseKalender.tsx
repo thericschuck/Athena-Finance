@@ -27,5 +27,5 @@ export async function AnalyseKalender({ daten }: AnalyseAbschnittProps) {
     accountIds: daten.kontoIds.length > 0 ? daten.kontoIds : undefined,
     include: INCLUDE_ALL,
   })
-  return <CashflowKalenderUrl events={buildCashflow(buchungen, daten.include)} />
+  return <CashflowKalenderUrl events={buildCashflow(buchungen, daten.include)} heute={daten.heute} />
 }

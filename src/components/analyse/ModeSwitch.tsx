@@ -29,7 +29,7 @@ export function ModeSwitch<T extends string>({ value, options, onChange }: {
           onClick={() => onChange(o.value)}
           // 11 px und mehr Polster: auf dem Handy ist das ein Tippziel, kein Mauszeiger-Ziel
           // (vorher 10 px Schrift bei 4 px Höhenpolster).
-          className={`px-3 py-1.5 text-[11px] rounded font-medium transition-all duration-150 sm:px-2.5 sm:py-1 ${
+          className={`px-3 py-2 text-[11px] rounded font-medium transition-all duration-150 sm:px-2.5 sm:py-1 ${
             value === o.value
               ? 'bg-foreground text-background scale-105'
               : 'text-muted-foreground hover:text-foreground hover:bg-accent'

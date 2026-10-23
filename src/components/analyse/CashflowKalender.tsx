@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { ChevronLeft, ChevronRight, ArrowDownLeft, ArrowUpRight, X } from 'lucide-react'
 import type { CashflowEvent } from '@/lib/analyseData'
 import { kurzBetrag } from '@/lib/analyse/geldfluss'
@@ -8,6 +8,8 @@ import { useClampedPosition } from '@/lib/hooks/use-clamped-position'
 
 interface Props {
   events: CashflowEvent[]
+  /** Heutiges Datum (YYYY-MM-DD) vom Server; ohne: Uhr des Geraets. */
+  heute?: string
   /**
    * Setzt (`YYYY-MM-DD`) bzw. hebt auf (`null`) den Tagesfilter der Buchungsliste. Fehlt er
    * (Landingpage, kein UrlFiltersProvider), zeigt der Kalender nur Details und bietet keinen
@@ -55,8 +57,13 @@ function useSchmal(): boolean {
   )
 }
 
-export function CashflowKalender({ events, onTag, aktiverTag }: Props) {
-  const today = new Date()
+export function CashflowKalender({ events, onTag, aktiverTag, heute: heuteDatum }: Props) {
+  // `heute` vom Server (deutsche Zeit): mit der Geraeteuhr rechneten Server und Browser nachts
+  // mit verschiedenen Tagen (Hydration-Fehler). Ohne (Landingpage-Demo): Uhr des Geraets.
+  const today = useMemo(() => {
+    if (heuteDatum) return new Date(Number(heuteDatum.slice(0, 4)), Number(heuteDatum.slice(5, 7)) - 1, Number(heuteDatum.slice(8, 10)))
+    return new Date()
+  }, [heuteDatum])
   const [year,  setYear]  = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
   const [popup, setPopup] = useState<PopupState | null>(null)
@@ -87,15 +94,20 @@ export function CashflowKalender({ events, onTag, aktiverTag }: Props) {
   const cells  = Math.ceil((days + offset) / 7) * 7
 
   // Group events by day
-  const byDay = new Map<number, CashflowEvent[]>()
-  for (const ev of events) {
-    const d = new Date(ev.date + 'T00:00:00')
-    if (d.getFullYear() === year && d.getMonth() === month) {
-      const day = d.getDate()
-      if (!byDay.has(day)) byDay.set(day, [])
-      byDay.get(day)!.push(ev)
+  // Nur bei Daten- oder Monatswechsel neu: der Hover setzt bei jeder Mausbewegung State und
+  // rechnete sonst jedes Mal ueber die ganze Historie.
+  const byDay = useMemo(() => {
+    const m = new Map<number, CashflowEvent[]>()
+    for (const ev of events) {
+      const d = new Date(ev.date + 'T00:00:00')
+      if (d.getFullYear() === year && d.getMonth() === month) {
+        const day = d.getDate()
+        if (!m.has(day)) m.set(day, [])
+        m.get(day)!.push(ev)
+      }
     }
-  }
+    return m
+  }, [events, year, month])
 
   // Monatssummen für den Kopf: zählen nur, was auch die Tageszellen zählen (`zaehlt`).
   let monatEin = 0
@@ -111,9 +123,21 @@ export function CashflowKalender({ events, onTag, aktiverTag }: Props) {
 
   // Blättern nur dort, wo es Daten gibt: vom ersten Monat mit Buchungen bis zum Monat nach dem letzten bzw. heutigen.
   const monatIndex = (y: number, m: number) => y * 12 + m
-  const dataMonths = events.map(e => monatIndex(Number(e.date.slice(0, 4)), Number(e.date.slice(5, 7)) - 1))
-  const ersterMonat = dataMonths.length > 0 ? Math.min(...dataMonths) : monatIndex(today.getFullYear(), today.getMonth())
-  const letzterMonat = Math.max(monatIndex(today.getFullYear(), today.getMonth() + 1), ...dataMonths)
+  // Ohne Spread (`Math.min(...liste)` wirft ab ~125.000 Eintraegen) und nur bei Datenwechsel.
+  const heuteIndex = monatIndex(today.getFullYear(), today.getMonth())
+  const { ersterMonat, letzterMonat } = useMemo(() => {
+    let min = Infinity
+    let max = -Infinity
+    for (const e of events) {
+      const i = monatIndex(Number(e.date.slice(0, 4)), Number(e.date.slice(5, 7)) - 1)
+      if (i < min) min = i
+      if (i > max) max = i
+    }
+    return {
+      ersterMonat: min === Infinity ? heuteIndex : min,
+      letzterMonat: Math.max(heuteIndex + 1, max),
+    }
+  }, [events, heuteIndex])
   const aktuell = monatIndex(year, month)
   const canPrev = aktuell > ersterMonat
   const canNext = aktuell < letzterMonat

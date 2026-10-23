@@ -101,7 +101,7 @@ export function AnalyseAccountSelector({ accounts, selected }: Props) {
       <PopoverTrigger asChild>
         <button
           type="button"
-          className={`flex h-9 items-center gap-2 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs transition-colors hover:bg-muted/50 ${filters.pending ? 'opacity-60' : ''}`}
+          className={`flex h-10 sm:h-9 items-center gap-2 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs transition-colors hover:bg-muted/50 ${filters.pending ? 'opacity-60' : ''}`}
         >
           <span className="text-muted-foreground">Konten</span>
           <span className="font-medium max-w-[140px] truncate">{triggerLabel}</span>
@@ -113,7 +113,7 @@ export function AnalyseAccountSelector({ accounts, selected }: Props) {
         <button
           type="button"
           onClick={() => push([])}
-          className={`flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent ${
+          className={`flex min-h-10 sm:min-h-0 w-full items-center justify-between rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent ${
             isAll ? 'font-medium text-foreground' : 'text-muted-foreground'
           }`}
         >
@@ -131,7 +131,7 @@ export function AnalyseAccountSelector({ accounts, selected }: Props) {
 
             return (
               <div key={groupKey}>
-                <label className="flex items-center gap-2 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground cursor-pointer select-none">
+                <label className="flex min-h-10 sm:min-h-0 items-center gap-2 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground cursor-pointer select-none">
                   <Checkbox
                     checked={groupChecked ? true : groupPartial ? 'indeterminate' : false}
                     onCheckedChange={() => toggleGroup(groupKey)}
@@ -143,7 +143,7 @@ export function AnalyseAccountSelector({ accounts, selected }: Props) {
                   {group.accounts.map(a => (
                     <label
                       key={a.id}
-                      className="flex items-center gap-2 rounded-sm px-2 py-1.5 pl-6 text-sm transition-colors hover:bg-accent cursor-pointer select-none"
+                      className="flex min-h-10 sm:min-h-0 items-center gap-2 rounded-sm px-2 py-1.5 pl-6 text-sm transition-colors hover:bg-accent cursor-pointer select-none"
                     >
                       <Checkbox
                         checked={selectedSet.has(a.id)}

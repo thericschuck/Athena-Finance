@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ArrowDown, ChevronDown } from 'lucide-react'
 import type { SankeyData } from '@/lib/analyseData'
 import { zuFlussListe, type FlussZeile } from '@/lib/analyse/geldfluss'
+import { useSettings } from '@/components/providers/settings-context'
 import { farbeFuer, fmtAnteil, fmtEuro, fmtEuroGenau, FARBE_EINNAHMEN, FARBE_ANLAGE } from './GeldflussFarben'
 
 /**
@@ -34,6 +35,7 @@ interface Props {
 }
 
 export function GeldflussListe({ data, onKategorie, aktiveKategorie }: Props) {
+  const { locale } = useSettings()
   const liste = zuFlussListe(data)
   const bezugText = liste.bezug === 'einnahmen' ? 'der Einnahmen' : 'der Ausgaben'
   const sparQuote = liste.summeEinnahmen > 0 ? liste.saldo / liste.summeEinnahmen : null
@@ -60,7 +62,7 @@ export function GeldflussListe({ data, onKategorie, aktiveKategorie }: Props) {
           <ArrowDown className="size-4 shrink-0 text-muted-foreground" aria-hidden />
           Einnahmen
         </span>
-        <span className="text-sm font-semibold tabular-nums text-foreground">{fmtEuro(liste.summeEinnahmen)}</span>
+        <span className="text-sm font-semibold tabular-nums text-foreground">{fmtEuro(liste.summeEinnahmen, locale)}</span>
       </div>
 
       {liste.ausgaben.length > 0 && (
@@ -79,11 +81,12 @@ export function GeldflussListe({ data, onKategorie, aktiveKategorie }: Props) {
 function Block({ titel, summe, summeFarbe, children }: {
   titel: string; summe: number; summeFarbe: string; children: React.ReactNode
 }) {
+  const { locale } = useSettings()
   return (
     <section aria-label={titel}>
       <div className="mb-1 flex items-baseline justify-between gap-2">
         <h3 className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{titel}</h3>
-        <span className="text-xs font-medium tabular-nums" style={{ color: summeFarbe }}>{fmtEuro(summe)}</span>
+        <span className="text-xs font-medium tabular-nums" style={{ color: summeFarbe }}>{fmtEuro(summe, locale)}</span>
       </div>
       <ul className="divide-y divide-border/60">{children}</ul>
     </section>
@@ -96,6 +99,7 @@ function Zeile({ zeile, bezugText, onKategorie, aktiveKategorie }: {
   onKategorie?: (id: string | null) => void
   aktiveKategorie?: string | null
 }) {
+  const { locale } = useSettings()
   const [offen, setOffen] = useState(false)
   const farbe = farbeFuer(zeile.art, zeile.rang)
   const aktiv = !!zeile.kategorieId && zeile.kategorieId === aktiveKategorie
@@ -117,7 +121,7 @@ function Zeile({ zeile, bezugText, onKategorie, aktiveKategorie }: {
             {aktiv && <span className="shrink-0 rounded bg-muted px-1 text-[11px] text-muted-foreground">Filter</span>}
           </span>
           <span className="flex shrink-0 items-baseline gap-2">
-            <span className="text-sm font-medium tabular-nums text-foreground">{fmtEuro(zeile.betrag)}</span>
+            <span className="text-sm font-medium tabular-nums text-foreground">{fmtEuro(zeile.betrag, locale)}</span>
             <span className="w-10 text-right text-xs tabular-nums text-muted-foreground">{fmtAnteil(zeile.anteil)}</span>
           </span>
         </span>
@@ -145,14 +149,14 @@ function Zeile({ zeile, bezugText, onKategorie, aktiveKategorie }: {
         <div className="mb-2 space-y-2 rounded-lg bg-muted/40 p-2.5 text-xs">
           <p className="break-words font-medium text-foreground">{zeile.name}</p>
           <p className="tabular-nums text-muted-foreground">
-            {fmtEuroGenau(zeile.betrag)} · {fmtAnteil(zeile.anteil)} {bezugText}
+            {fmtEuroGenau(zeile.betrag, locale)} · {fmtAnteil(zeile.anteil)} {bezugText}
           </p>
           {zeile.enthalten && zeile.enthalten.length > 0 && (
             <ul className="space-y-1">
               {zeile.enthalten.slice(0, 8).map(e => (
                 <li key={e.name} className="flex justify-between gap-2 text-muted-foreground">
                   <span className="min-w-0 truncate">{e.name}</span>
-                  <span className="shrink-0 tabular-nums">{fmtEuro(e.betrag)}</span>
+                  <span className="shrink-0 tabular-nums">{fmtEuro(e.betrag, locale)}</span>
                 </li>
               ))}
               {zeile.enthalten.length > 8 && (
@@ -176,6 +180,7 @@ function Zeile({ zeile, bezugText, onKategorie, aktiveKategorie }: {
 }
 
 function Saldo({ saldo, quote }: { saldo: number; quote: number | null }) {
+  const { locale } = useSettings()
   // Unter 1 € ist es Rundungsstaub, keine Aussage wert.
   if (Math.abs(saldo) < 1) return null
   const plus = saldo > 0
@@ -197,7 +202,7 @@ function Saldo({ saldo, quote }: { saldo: number; quote: number | null }) {
         )}
       </span>
       <span className="shrink-0 text-sm font-semibold tabular-nums" style={{ color: farbe }}>
-        {plus ? '+' : '−'}{fmtEuro(Math.abs(saldo))}
+        {plus ? '+' : '−'}{fmtEuro(Math.abs(saldo), locale)}
       </span>
     </div>
   )

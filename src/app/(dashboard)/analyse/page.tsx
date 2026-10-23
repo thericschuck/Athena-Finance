@@ -109,7 +109,7 @@ export default async function AnalysePage({
               </Suspense>
             </div>
 
-            <AusgabenHeatmap data={buildHeatmap(daten.txns)} initialMode={heatmapModus} />
+            <AusgabenHeatmap data={buildHeatmap(daten.txns)} initialMode={heatmapModus} heute={daten.heute} />
 
             {/* Der Geldfluss bekommt eine volle Zeile: in einer halben Spalte ist die Karte
                 schmaler als 600 px und zeigte dann auch am Desktop die Liste statt des Sankeys. */}

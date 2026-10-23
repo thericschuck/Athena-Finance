@@ -47,6 +47,7 @@ export function fmtAnteil(anteil: number): string {
   return p < 1 ? '<1 %' : `${Math.round(p)} %`
 }
 
-export const fmtEuro = (n: number) => `${Math.round(n).toLocaleString('de-DE')} €`
-export const fmtEuroGenau = (n: number) =>
-  `${n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
+// `locale` kommt aus den Einstellungen (useSettings). Fest 'de-DE' ignorierte die Zahlenformat-Wahl.
+export const fmtEuro = (n: number, locale = 'de-DE') => `${Math.round(n).toLocaleString(locale)} €`
+export const fmtEuroGenau = (n: number, locale = 'de-DE') =>
+  `${n.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`

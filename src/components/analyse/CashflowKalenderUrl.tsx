@@ -10,7 +10,7 @@ import { zumAbschnitt } from './zum-abschnitt'
  * Kalender der Analyse-Seite, verdrahtet mit dem Tagesfilter (`tag`) in der URL. Eigene Hülle,
  * weil der Kalender auch auf der Landingpage läuft, wo es keinen `UrlFiltersProvider` gibt.
  */
-export function CashflowKalenderUrl({ events }: { events: CashflowEvent[] }) {
+export function CashflowKalenderUrl({ events, heute }: { events: CashflowEvent[]; heute?: string }) {
   const filter = useUrlFilters()
   const setze = filter.set
 
@@ -19,5 +19,5 @@ export function CashflowKalenderUrl({ events }: { events: CashflowEvent[] }) {
     if (tag) zumAbschnitt('buchungen')
   }, [setze])
 
-  return <CashflowKalender events={events} onTag={onTag} aktiverTag={filter.get('tag')} />
+  return <CashflowKalender events={events} onTag={onTag} aktiverTag={filter.get('tag')} heute={heute} />
 }

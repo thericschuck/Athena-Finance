@@ -5,6 +5,7 @@ import { Sankey, Tooltip, ResponsiveContainer } from 'recharts'
 import type { SankeyArt, SankeyData } from '@/lib/analyseData'
 import { normalisiereSankey, zuFlussListe } from '@/lib/analyse/geldfluss'
 import { GeldflussListe } from './GeldflussListe'
+import { useSettings } from '@/components/providers/settings-context'
 import { farbeFuer, fmtAnteil, fmtEuro, FARBE_EINNAHMEN } from './GeldflussFarben'
 
 interface Props {
@@ -175,6 +176,7 @@ function SankeyTooltip({ active, payload, basis }: {
   payload?: { payload?: SankeyTooltipItem }[]
   basis: number
 }) {
+  const { locale } = useSettings()
   if (!active || !payload?.length) return null
   const item = payload[0]?.payload
   if (!item) return null
@@ -192,7 +194,7 @@ function SankeyTooltip({ active, payload, basis }: {
         <span className="mt-0.5 size-2.5 shrink-0 rounded-sm" style={{ background: farbeFuer(art, rang) }} />
         <p className="min-w-0 break-words font-medium">{titel}</p>
       </div>
-      <p className="mt-1 text-sm font-semibold tabular-nums">{fmtEuro(betrag)}</p>
+      <p className="mt-1 text-sm font-semibold tabular-nums">{fmtEuro(betrag, locale)}</p>
       {zeigeAnteil && (
         <p className="tabular-nums text-muted-foreground">{fmtAnteil(betrag / basis)} der Einnahmen</p>
       )}
@@ -201,7 +203,7 @@ function SankeyTooltip({ active, payload, basis }: {
           {item.enthalten.slice(0, 5).map(e => (
             <li key={e.name} className="flex justify-between gap-3">
               <span className="truncate">{e.name}</span>
-              <span className="shrink-0 tabular-nums">{fmtEuro(e.betrag)}</span>
+              <span className="shrink-0 tabular-nums">{fmtEuro(e.betrag, locale)}</span>
             </li>
           ))}
           {item.enthalten.length > 5 && <li>+ {item.enthalten.length - 5} weitere</li>}
@@ -216,6 +218,7 @@ function SankeyTooltip({ active, payload, basis }: {
  * Beträgen — dadurch sind auch abgeschnittene Labels nachlesbar. Klickbar wie die Balken.
  */
 function Legende({ data, onKategorie, aktiveKategorie }: Props) {
+  const { locale } = useSettings()
   const liste = zuFlussListe(data)
   const gruppen = [
     { titel: 'Einnahmen', zeilen: liste.einnahmen, bezug: liste.summeEinnahmen },
@@ -240,12 +243,12 @@ function Legende({ data, onKategorie, aktiveKategorie }: Props) {
             const cls = `inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 text-xs ${aktiv ? 'bg-accent font-medium' : ''}`
             return klickbar ? (
               <button
-                key={z.index} type="button" title={`${z.name}: ${fmtEuro(z.betrag)}`}
+                key={z.index} type="button" title={`${z.name}: ${fmtEuro(z.betrag, locale)}`}
                 onClick={() => onKategorie?.(aktiv ? null : (z.kategorieId ?? null))}
                 className={`${cls} transition-colors hover:bg-accent`}
               >{inhalt}</button>
             ) : (
-              <span key={z.index} title={`${z.name}: ${fmtEuro(z.betrag)}`} className={cls}>{inhalt}</span>
+              <span key={z.index} title={`${z.name}: ${fmtEuro(z.betrag, locale)}`} className={cls}>{inhalt}</span>
             )
           })}
         </div>
@@ -295,7 +298,9 @@ export function GeldflussChart({ data: roh, onKategorie, aktiveKategorie }: Prop
       <h2 className="mb-4 text-sm font-medium text-foreground">Geldfluss</h2>
       <div ref={messRef}>
         {breite === null ? (
-          <div style={{ height: 240 }} aria-hidden />
+          // Gleiche Hoehe wie das Skeleton (388) und das Sankey: sonst springt die Karte erst auf 240,
+          // dann auf die Messung.
+          <div style={{ height: 388 }} aria-hidden />
         ) : schmal ? (
           <GeldflussListe data={data} onKategorie={onKategorie} aktiveKategorie={aktiveKategorie} />
         ) : (

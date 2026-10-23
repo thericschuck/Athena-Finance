@@ -7,7 +7,16 @@ import { useOptionalUrlFilters } from '@/components/providers/url-filters'
 import { baueRaster, hatBetrag, zellenIndex, type HeatmapZelle } from '@/lib/analyse/heatmap'
 import { ModeSwitch, ANALYSE_MODE_OPTIONS } from './ModeSwitch'
 
-interface Props { data: HeatmapDay[]; initialMode?: Mode }
+interface Props {
+  data: HeatmapDay[]
+  initialMode?: Mode
+  /**
+   * Heutiges Datum (YYYY-MM-DD, deutsche Zeit) vom Server. Ohne: Uhr des Geraets. Mit der Uhr
+   * rechneten Server (UTC) und Browser nachts zwischen 0 und 2 Uhr mit verschiedenen Tagen —
+   * ein Hydration-Fehler. Die Landingpage-Demo kommt ohne aus.
+   */
+  heute?: string
+}
 
 // Der Typ liegt jetzt bei den geteilten Analyse-Typen, weil Heatmap UND
 // Verteilungs-Karte auf denselben drei Sichten umschalten. Das Alias bleibt,
@@ -75,7 +84,7 @@ function TagesZeilen({ zelle, mode }: { zelle: HeatmapZelle; mode: Mode }) {
 
 interface TipState { zelle: HeatmapZelle; x: number; y: number }
 
-export function AusgabenHeatmap({ data, initialMode = 'ausgaben' }: Props) {
+export function AusgabenHeatmap({ data, initialMode = 'ausgaben', heute }: Props) {
   const [mode, setMode] = useState<Mode>(initialMode)
   const [tip, setTip]   = useState<TipState | null>(null)
   const { ref: tipRef, style: tipStyle } = useClampedPosition(tip ? { x: tip.x, y: tip.y } : null)
@@ -86,7 +95,7 @@ export function AusgabenHeatmap({ data, initialMode = 'ausgaben' }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [linksMehr, setLinksMehr] = useState(false)
 
-  const { wochen, monatsMarken } = useMemo(() => baueRaster(data, heuteLokal()), [data])
+  const { wochen, monatsMarken } = useMemo(() => baueRaster(data, heute ?? heuteLokal()), [data, heute])
   const nachTag = useMemo(() => {
     const m = new Map<string, HeatmapZelle>()
     for (const w of wochen) for (const z of w) if (z) m.set(z.date, z)
