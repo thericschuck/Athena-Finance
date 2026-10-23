@@ -1,72 +1,47 @@
 import { Skeleton, SkeletonChart } from '@/components/ui/skeleton'
 
-function CardSkeleton({ pairs = 2 }: { pairs?: number }) {
-  return (
-    <div className="rounded-lg border border-border bg-card p-5 space-y-3">
-      <Skeleton className="h-3 w-28" />
-      <Skeleton className="h-9 w-40" />
-      <div className="grid grid-cols-2 gap-x-6 gap-y-2.5 pt-1">
-        {Array.from({ length: pairs * 2 }).map((_, i) => (
-          <div key={i} className="space-y-1.5">
-            <Skeleton className="h-2.5 w-20" />
-            <Skeleton className="h-3.5 w-24" />
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
+/**
+ * Ladezustand der Route, formgleich mit dem fertigen Dashboard: Titel, schmale Kennzahlenleiste,
+ * Hinweis- und Zustandszeile, Verlauf mit „Als Nächstes", Monat/Ausblick/Aufteilung, je eine
+ * Reihe Konten und Anlagen, Sparziele und Fixkosten. Abstände wie dort (`p-4 sm:p-6`, `space-y-4`).
+ */
 export default function Loading() {
   return (
-    <div className="p-6 lg:p-8 space-y-8 mx-auto w-full max-w-[1600px] animate-in fade-in duration-150">
-      <div className="space-y-2">
-        <Skeleton className="h-7 w-40" />
-        <Skeleton className="h-3.5 w-64" />
+    <div className="mx-auto w-full max-w-[1600px] space-y-4 p-4 sm:p-6 animate-in fade-in duration-150">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <Skeleton className="h-8 w-36" />
+        <Skeleton className="h-4 w-56" />
       </div>
 
-      {/* Row 1: Net Worth + Monat + Crypto */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <CardSkeleton />
-        <CardSkeleton />
-        <CardSkeleton />
-      </div>
+      <Skeleton className="h-16 w-full rounded-lg" />
+      <Skeleton className="h-11 w-full rounded-lg" />
+      <Skeleton className="h-10 w-full rounded-lg" />
 
-      {/* Row 2: Verlauf + Verteilung */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <SkeletonChart variant="area" height={220} className="lg:col-span-2" />
-        <SkeletonChart variant="donut" height={220} />
+        <SkeletonChart variant="area" height={320} className="lg:col-span-2" />
+        <SkeletonChart variant="hbars" height={320} />
       </div>
 
-      {/* Konten-Kacheln */}
-      <div className="space-y-3">
-        <Skeleton className="h-4 w-32" />
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="space-y-2 rounded-lg border border-border bg-card p-4">
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="h-6 w-28" />
-              <Skeleton className="h-2.5 w-32" />
-            </div>
-          ))}
-        </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <SkeletonChart variant="hbars" height={240} />
+        <SkeletonChart variant="area" height={240} />
+        <SkeletonChart variant="donut" height={240} />
       </div>
 
-      {/* Untere Spalten */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="space-y-3">
-            <Skeleton className="h-4 w-28" />
-            <div className="space-y-2 rounded-lg border border-border bg-card p-4">
-              {Array.from({ length: 5 }).map((_, r) => (
-                <div key={r} className="flex items-center justify-between gap-3 py-1.5">
-                  <Skeleton className="h-3.5 w-2/5" />
-                  <Skeleton className="h-3.5 w-16" />
-                </div>
-              ))}
-            </div>
+      {Array.from({ length: 2 }).map((_, r) => (
+        <div key={r} className="space-y-2">
+          <Skeleton className="h-4 w-28" />
+          <div className="flex gap-3 overflow-hidden">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-[72px] w-56 shrink-0 rounded-lg" />
+            ))}
           </div>
-        ))}
+        </div>
+      ))}
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <SkeletonChart variant="hbars" height={220} />
+        <SkeletonChart variant="hbars" height={220} />
       </div>
     </div>
   )

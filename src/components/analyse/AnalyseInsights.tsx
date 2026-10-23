@@ -36,6 +36,16 @@ const LAUF_PX_PRO_SEKUNDE = 28
 const PAUSE_NACH_EINGRIFF_MS = 2000
 /** Abstand zwischen den Chips (`gap-2`); wird für die exakte Schleifenlänge gebraucht. */
 const CHIP_ABSTAND = 8
+/** Breite der Detailkarte am Desktop (26rem); mobil und in schmalen Zeilen die volle Zeilenbreite. */
+const KARTE_BREITE = 416
+const KARTE_AB_BREITE = '(min-width: 768px)'
+
+interface KartePos {
+  left: number
+  breite: number
+  /** Mitte des Chips, relativ zur Karte (für das kleine Dreieck). */
+  pfeil: number
+}
 
 const PUNKT: Record<HinweisTon, { farbe: string; label: string }> = {
   positiv: { farbe: 'bg-emerald-500', label: 'Positiv' },
@@ -60,6 +70,8 @@ export function AnalyseInsights({ daten }: AnalyseAbschnittProps) {
   const reduziert = useSyncExternalStore(abonniereReduziert, reduziertJetzt, () => true)
   const [breit, setBreit] = useState(false)
   const laeuft = !reduziert && breit
+  const [kartePos, setKartePos] = useState<KartePos | null>(null)
+  const chipRef = useRef<HTMLElement | null>(null)
   const pause = useRef({ hover: false, fokus: false, karte: false, beruehrt: false, bis: 0 })
   const wurzel = useRef<HTMLDivElement>(null)
   const reihe = useRef<HTMLUListElement>(null)
@@ -142,6 +154,39 @@ export function AnalyseInsights({ daten }: AnalyseAbschnittProps) {
     frame = requestAnimationFrame(schritt)
     return () => cancelAnimationFrame(frame)
   }, [laeuft, hinweise])
+
+  // Karte unter den angeklickten Chip setzen, auf die Zeile geklemmt. Mobil volle Zeilenbreite.
+  function messeKarte() {
+    const chip = chipRef.current
+    const box = wurzel.current
+    if (!chip || !box) return
+    const c = chip.getBoundingClientRect()
+    const b = box.getBoundingClientRect()
+    const breite = window.matchMedia(KARTE_AB_BREITE).matches ? Math.min(KARTE_BREITE, b.width) : b.width
+    const left = Math.min(Math.max(0, c.left - b.left), Math.max(0, b.width - breite))
+    const mitte = c.left + c.width / 2 - b.left - left
+    setKartePos({ left, breite, pfeil: Math.min(Math.max(16, mitte), breite - 16) })
+  }
+  function umschalten(key: string, chip: HTMLElement) {
+    if (offen === key) {
+      setOffen(null)
+      return
+    }
+    chipRef.current = chip
+    messeKarte()
+    setOffen(key)
+  }
+  // Bei Größenänderung oder Scrollen der Reihe neu messen, solange die Karte offen ist.
+  useEffect(() => {
+    if (!offen) return
+    const el = reihe.current
+    window.addEventListener('resize', messeKarte)
+    el?.addEventListener('scroll', messeKarte)
+    return () => {
+      window.removeEventListener('resize', messeKarte)
+      el?.removeEventListener('scroll', messeKarte)
+    }
+  }, [offen])
 
   // Escape und Klick daneben schließen die Detailkarte.
   useEffect(() => {
@@ -242,7 +287,7 @@ export function AnalyseInsights({ daten }: AnalyseAbschnittProps) {
                     tabIndex={zweite ? -1 : undefined}
                     aria-expanded={zweite ? undefined : auf}
                     aria-controls={auf && !zweite ? kartenId : undefined}
-                    onClick={() => setOffen(auf ? null : h.key)}
+                    onClick={ev => umschalten(h.key, ev.currentTarget)}
                     className={cn(
                       'inline-flex h-10 max-w-[24rem] items-center gap-2 rounded-full border border-border bg-card px-3 text-xs',
                       'transition-colors hover:bg-muted/50 active:bg-muted',
@@ -298,13 +343,19 @@ export function AnalyseInsights({ daten }: AnalyseAbschnittProps) {
         </div>
       </div>
 
-      {aktiv && (
+      {aktiv && kartePos && (
         <div
           id={kartenId}
           role="group"
           aria-label={aktiv.titel}
-          className="absolute inset-x-0 top-full z-30 mt-1 rounded-lg border border-border bg-card p-3 shadow-lg md:left-auto md:w-[26rem] md:max-w-full"
+          style={{ left: kartePos.left, width: kartePos.breite }}
+          className="absolute top-full z-30 mt-2 rounded-lg border border-border bg-card p-3 shadow-lg"
         >
+          <span
+            aria-hidden
+            style={{ left: kartePos.pfeil - 6 }}
+            className="absolute -top-1.5 size-3 rotate-45 border-l border-t border-border bg-card"
+          />
           <p className="flex items-start gap-2 text-sm font-medium leading-snug">
             <span className={cn('mt-1.5 size-2 shrink-0 rounded-full', PUNKT[aktiv.ton].farbe)} aria-hidden />
             {aktiv.titel}

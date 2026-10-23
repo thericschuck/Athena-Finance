@@ -61,7 +61,9 @@ export function AnalyseKennzahlInfo({
       className={className}
       onMouseEnter={oeffnen}
       onMouseLeave={schliessen}
-      onFocus={oeffnen}
+      // Nur Tastaturfokus oeffnet: ein Tipp fokussiert das Element ebenfalls, und der folgende Klick
+      // schlisse die Karte sofort wieder.
+      onFocus={e => { if (e.currentTarget.matches(':focus-visible')) oeffnen() }}
       onBlur={schliessen}
       onClick={() => (pos ? schliessen() : oeffnen())}
     >

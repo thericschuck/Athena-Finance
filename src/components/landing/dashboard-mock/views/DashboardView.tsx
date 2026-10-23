@@ -209,10 +209,14 @@ export function DashboardView({ run }: { run: boolean }) {
         </div>
         <div className="mock-sm-hide" style={{ minHeight: 0, overflow: 'hidden' }}>
           <PortfolioDonut
-            kontenTotal={NET_WORTH_BUCKETS.konten}
-            investmentTotal={NET_WORTH_BUCKETS.investment}
-            depotTotal={NET_WORTH_BUCKETS.depot}
-            cryptoTotal={NET_WORTH_BUCKETS.crypto}
+            posten={[
+              { key: 'konten', label: 'Konten', value: NET_WORTH_BUCKETS.konten, art: 'konto' },
+              { key: 'anteile', label: 'Geschäftsanteile', value: NET_WORTH_BUCKETS.investment, art: 'konto' },
+              { key: 'depot', label: 'Depot', value: NET_WORTH_BUCKETS.depot, art: 'depot' },
+              { key: 'krypto', label: 'Krypto', value: NET_WORTH_BUCKETS.crypto, art: 'krypto' },
+            ]}
+            total={NET_WORTH_BUCKETS.konten + NET_WORTH_BUCKETS.investment + NET_WORTH_BUCKETS.depot + NET_WORTH_BUCKETS.crypto}
+            minus={0}
             locale="de-DE"
           />
         </div>

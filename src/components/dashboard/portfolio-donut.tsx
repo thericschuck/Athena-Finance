@@ -1,116 +1,147 @@
 'use client'
 
-import { PieChart, Pie, Cell, Tooltip } from 'recharts'
+import { useState } from 'react'
 import { fmtCurrency } from '@/lib/format'
+import { ringSegmente, type Posten } from '@/lib/dashboard/aufteilung'
 
 /**
- * Die Ringe sind genau die Bausteine des Nettovermögens — dieselben vier, die die
- * Net-Worth-Kachel untereinander auflistet, in derselben Reihenfolge.
+ * Aufteilung des Vermögens als Ring, jeder Posten mit seinem Namen (Konto, Depot, Krypto) statt
+ * einer Sammelposition „Konten".
  *
- * Vorher war „Sparziele" ein fünfter Ring. Damit summierte die Mitte des Rings
- * 15.158,61 € gegen 13.548,61 € in der Kachel daneben: die 1.610 € des Sparziels
- * „China Reise" liegen auf dem Girokonto und waren im Ring doppelt drin. Sparziele
- * sind per Entscheidung vom 2026-09-02 kein Vermögensposten (siehe Kommentar zu
- * `netWorth` in dashboard/page.tsx), also gehören sie hier nicht rein.
+ * Reines SVG statt Recharts: der alte Ring zeigte beim Überfahren einen Recharts-Tooltip nur mit
+ * dem Betrag und ohne Namen („was ist das?"), saß in einer 144-px-Fläche und wurde dort
+ * abgeschnitten. Jetzt wandert die Auskunft in die MITTE des Rings: Name, Betrag und Anteil des
+ * Postens unter dem Zeiger (oder Fokus/Antippen), alle anderen Segmente treten zurück. Ring und
+ * Legende teilen sich den Zustand — wer über eine Legendenzeile fährt, sieht das Segment, und
+ * umgekehrt. Das funktioniert auch per Tippen und Tastatur.
+ *
+ * Die Mitte zeigt ohne Auswahl die Summe der Posten. Konten im Minus kann ein Ring nicht zeigen;
+ * sie stehen darunter, damit die Summe nicht stillschweigend von der Net-Worth-Zahl abweicht.
  */
-const SLICES = [
-  { key: 'Konten',          color: 'var(--chart-cat-1)' },
-  { key: 'Geschäftsanteile', color: 'var(--chart-cat-4)' },
-  { key: 'Depot',           color: 'var(--chart-cat-2)' },
-  { key: 'Krypto',          color: 'var(--chart-cat-3)' },
-]
+
+const FARBEN = [1, 2, 3, 4, 5, 6].map(n => `var(--chart-cat-${n})`)
+const farbe = (i: number) => FARBEN[i % FARBEN.length]
+
+const GROESSE = 168
+const MITTE = GROESSE / 2
+const RADIUS = 66
+const STRICH = 22
+const UMFANG = 2 * Math.PI * RADIUS
+/** Lücke zwischen den Segmenten in Bogenlänge (px). */
+const LUECKE = 2
+
+const ART_LABEL: Record<Posten['art'], string> = { konto: 'Konto', depot: 'Depot', krypto: 'Krypto' }
 
 type Props = {
-  /** Giro, Spar, Cash, Bausparer — ohne Geschäftsanteile. */
-  kontenTotal:     number
-  investmentTotal: number
-  depotTotal:      number
-  cryptoTotal:     number
-  locale:          string
+  posten: Posten[]
+  total: number
+  /** Summe der Konten im Minus und Kreditkonten (≤ 0), nicht im Ring. */
+  minus: number
+  locale: string
 }
 
-export function PortfolioDonut({
-  kontenTotal, investmentTotal, depotTotal, cryptoTotal, locale,
-}: Props) {
+export function PortfolioDonut({ posten, total, minus, locale }: Props) {
+  const [aktiv, setAktiv] = useState<string | null>(null)
   const fmt = (n: number) => fmtCurrency(n, 'EUR', locale)
+  if (total <= 0 || posten.length === 0) return null
 
-  const data = [
-    { ...SLICES[0], value: kontenTotal     },
-    { ...SLICES[1], value: investmentTotal },
-    { ...SLICES[2], value: depotTotal      },
-    { ...SLICES[3], value: cryptoTotal     },
-  ].filter(d => d.value > 0)
-
-  // Die Mitte zeigt die Summe der Ringe. Weil die Ringe jetzt genau die
-  // Net-Worth-Bausteine sind, ist das dieselbe Zahl wie in der Kachel — und kann
-  // nicht mehr auseinanderlaufen, ohne dass ein Ring fehlt.
-  const total = data.reduce((s, d) => s + d.value, 0)
-  if (total <= 0) return null
+  const segmente = ringSegmente(posten)
+  const gewaehlt = posten.find(p => p.key === aktiv) ?? null
+  const prozent = (v: number) => {
+    const p = (v / total) * 100
+    return `${p.toLocaleString(locale, { maximumFractionDigits: p < 10 ? 1 : 0 })} %`
+  }
+  // Antippen schaltet um (kein Hover auf dem Handy); Fahren/Fokus setzt nur.
+  const umschalten = (key: string) => setAktiv(a => (a === key ? null : key))
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5">
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-4">Portfolio-Verteilung</p>
+    <div className="rounded-lg border border-border bg-card p-4 sm:p-5">
+      <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Aufteilung</p>
 
-      <div className="flex flex-col items-center gap-5">
-        {/* Donut */}
-        <div className="relative w-36 h-36 shrink-0">
-          <PieChart width={144} height={144}>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                innerRadius={42}
-                outerRadius={64}
-                paddingAngle={2}
-                dataKey="value"
-                strokeWidth={0}
-                startAngle={90}
-                endAngle={-270}
-              >
-                {data.map((d) => <Cell key={d.key} fill={d.color} />)}
-              </Pie>
-              <Tooltip
-                formatter={(val: number | undefined) => [fmt(val ?? 0), '' as const]}
-                // `color` muss mit: contentStyle setzte nur den Hintergrund, und
-                // recharts schreibt die Textfarbe als Inline-Style auf den Eintrag.
-                // Im dunklen Theme stand damit dunkler Text auf --card, also
-                // schwarz auf schwarz.
-                contentStyle={{
-                  background: 'var(--popover)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  color: 'var(--popover-foreground)',
-                }}
-                itemStyle={{ color: 'var(--popover-foreground)' }}
-                labelStyle={{ display: 'none' }}
-              />
-            </PieChart>
-          {/* Center label */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <p className="text-[10px] text-muted-foreground">Gesamt</p>
-            <p className="text-sm font-bold tabular-nums leading-tight">
-              {total >= 100_000
-                ? `${(total / 1000).toFixed(0)}k`
-                : fmt(total).replace(' €', '€')}
-            </p>
+      <div className="flex flex-col items-center gap-4">
+        <div className="relative shrink-0" style={{ width: GROESSE, height: GROESSE }}>
+          <svg
+            width={GROESSE} height={GROESSE} viewBox={`0 0 ${GROESSE} ${GROESSE}`}
+            role="img" aria-label={`Aufteilung: ${posten.map(p => `${p.label} ${prozent(p.value)}`).join(', ')}`}
+            className="-rotate-90"
+            onMouseLeave={() => setAktiv(null)}
+          >
+            {/* Spur: zeigt den Ring auch dort, wo ein Segment zurücktritt. */}
+            <circle cx={MITTE} cy={MITTE} r={RADIUS} fill="none" stroke="var(--border)" strokeWidth={STRICH} opacity={0.35} />
+            {posten.map((p, i) => {
+              const s = segmente[i]
+              const laenge = Math.max(0, s.anteil * UMFANG - (posten.length > 1 ? LUECKE : 0))
+              const an = aktiv === null || aktiv === p.key
+              return (
+                <circle
+                  key={p.key}
+                  cx={MITTE} cy={MITTE} r={RADIUS} fill="none"
+                  stroke={farbe(i)} strokeWidth={aktiv === p.key ? STRICH + 4 : STRICH}
+                  strokeDasharray={`${laenge} ${UMFANG - laenge}`}
+                  strokeDashoffset={-s.start * UMFANG}
+                  opacity={an ? 1 : 0.28}
+                  className="cursor-pointer transition-[opacity,stroke-width] duration-150 focus-visible:outline-none"
+                  tabIndex={0}
+                  aria-label={`${p.label}: ${fmt(p.value)}, ${prozent(p.value)}`}
+                  onMouseEnter={() => setAktiv(p.key)}
+                  onFocus={() => setAktiv(p.key)}
+                  onBlur={() => setAktiv(null)}
+                  onClick={() => umschalten(p.key)}
+                />
+              )
+            })}
+          </svg>
+
+          {/* Mitte: ohne Auswahl die Summe, sonst der Posten unter dem Zeiger. */}
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-9 text-center">
+            {gewaehlt ? (
+              <>
+                <p className="line-clamp-2 text-[11px] font-medium leading-tight text-foreground">{gewaehlt.label}</p>
+                <p className="mt-0.5 text-sm font-bold tabular-nums leading-tight">{fmt(gewaehlt.value)}</p>
+                <p className="text-[10px] tabular-nums text-muted-foreground">
+                  {prozent(gewaehlt.value)} · {ART_LABEL[gewaehlt.art]}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-[10px] text-muted-foreground">Gesamt</p>
+                <p className="text-sm font-bold tabular-nums leading-tight">
+                  {total >= 100_000 ? `${(total / 1000).toFixed(0)}k` : fmt(total).replace(' €', '€')}
+                </p>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Legend */}
-        <div className="w-full space-y-2">
-          {data.map(item => {
-            const pct = Math.round((item.value / total) * 100)
-            return (
-              <div key={item.key} className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                <span className="text-xs text-muted-foreground flex-1">{item.key}</span>
-                <span className="text-xs font-medium tabular-nums text-muted-foreground">{pct}%</span>
-                <span className="text-xs font-semibold tabular-nums">{fmt(item.value)}</span>
-              </div>
-            )
-          })}
-        </div>
+        <ul className="w-full space-y-0.5" onMouseLeave={() => setAktiv(null)}>
+          {posten.map((p, i) => (
+            <li key={p.key}>
+              <button
+                type="button"
+                onMouseEnter={() => setAktiv(p.key)}
+                onFocus={() => setAktiv(p.key)}
+                onBlur={() => setAktiv(null)}
+                onClick={() => umschalten(p.key)}
+                aria-pressed={aktiv === p.key}
+                className={`flex min-h-9 w-full items-center gap-2 rounded-md px-1.5 text-left transition-colors hover:bg-muted/50 ${
+                  aktiv === p.key ? 'bg-muted/60' : ''
+                }`}
+              >
+                <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: farbe(i) }} aria-hidden />
+                <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{p.label}</span>
+                <span className="text-xs tabular-nums text-muted-foreground">{prozent(p.value)}</span>
+                <span className="w-20 text-right text-xs font-semibold tabular-nums">{fmt(p.value)}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        {minus < 0 && (
+          <p className="w-full border-t border-border pt-2 text-xs text-muted-foreground">
+            Nicht im Ring: Konten im Minus{' '}
+            <span className="font-medium tabular-nums text-danger">−{fmt(Math.abs(minus))}</span>
+          </p>
+        )}
       </div>
     </div>
   )
