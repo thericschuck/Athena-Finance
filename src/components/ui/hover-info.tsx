@@ -36,8 +36,8 @@ export function HoverInfo({
         )}
       >
         <span className="block font-medium">{titel}</span>
-        {zeilen.map(([k, v]) => (
-          <span key={k} className="mt-1 flex items-baseline justify-between gap-3">
+        {zeilen.map(([k, v], i) => (
+          <span key={`${k}-${i}`} className="mt-1 flex items-baseline justify-between gap-3">
             <span className="text-muted-foreground">{k}</span>
             <span className="font-semibold tabular-nums">{v}</span>
           </span>

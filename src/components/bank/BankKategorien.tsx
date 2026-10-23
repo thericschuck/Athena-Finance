@@ -82,8 +82,8 @@ function HoverInfo({
         className="pointer-events-none invisible absolute left-0 top-full z-30 mt-2 w-64 rounded-lg border border-border bg-popover p-3 text-xs font-normal text-foreground opacity-0 shadow-lg transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
       >
         <span className="block font-medium">{titel}</span>
-        {zeilen.map(([k, v]) => (
-          <span key={k} className="mt-1 flex items-baseline justify-between gap-3">
+        {zeilen.map(([k, v], i) => (
+          <span key={`${k}-${i}`} className="mt-1 flex items-baseline justify-between gap-3">
             <span className="text-muted-foreground">{k}</span>
             <span className="font-semibold tabular-nums">{v}</span>
           </span>
