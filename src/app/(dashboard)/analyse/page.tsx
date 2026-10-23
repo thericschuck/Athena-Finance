@@ -11,6 +11,7 @@ import { AnalysePeriodSelector } from '@/components/analyse/AnalysePeriodSelecto
 import { AnalyseAccountSelector } from '@/components/analyse/AnalyseAccountSelector'
 import { AnalyseVergleichWahl } from '@/components/analyse/AnalyseVergleichWahl'
 import { AnalyseFilterChips } from '@/components/analyse/AnalyseFilterChips'
+import { AnalyseTabs, type AnalyseTab } from '@/components/analyse/AnalyseTabs'
 import { AnalyseKennzahlen } from '@/components/analyse/AnalyseKennzahlen'
 import { AnalyseInsights } from '@/components/analyse/AnalyseInsights'
 import { AnalyseTempo } from '@/components/analyse/AnalyseTempo'
@@ -71,18 +72,78 @@ export default async function AnalysePage({
   const aktuellerMonat = daten.heute.slice(0, 7)
   const serie = monthlySeries(daten.monatsZeilen, daten.include)
 
+  // Drei Ansichten statt zehn Karten untereinander. Die Buchungsliste steht darunter, nicht in
+  // einem Tab: sie ist das Ziel jedes Klicks in den Charts.
+  const tabs: AnalyseTab[] = [
+    {
+      key: 'ueberblick',
+      label: 'Überblick',
+      inhalt: (
+        <>
+          {/* Der Geldfluss bekommt eine volle Zeile: in einer halben Spalte ist die Karte
+              schmaler als 600 px und zeigte dann auch am Desktop die Liste statt des Sankeys. */}
+          <GeldflussChartUrl data={buildSankey(daten.txns)} />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <AnalyseKategorien {...props} />
+            <AnalyseGegenparteien {...props} />
+          </div>
+          {daten.include.anlage && (
+            <p className="text-xs text-muted-foreground">
+              Anlagen (Krypto, Depot, Bauspar) und Forderungen sind in Einnahmen und Ausgaben
+              eingerechnet. Die Sparquote rechnet weiterhin ohne sie.
+            </p>
+          )}
+        </>
+      ),
+    },
+    {
+      key: 'monat',
+      label: 'Monat',
+      inhalt: (
+        <>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <AnalyseTempo {...props} />
+            <Suspense fallback={<SkeletonChart variant="bars" height={220} />}>
+              <AnalyseBudget {...props} />
+            </Suspense>
+          </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <Suspense fallback={<SkeletonChart variant="bars" height={320} />}>
+              <AnalyseKalender {...props} />
+            </Suspense>
+            <MonatsVergleich data={buildMonthlyComparison(serie, aktuellerMonat, monthsForPeriod(daten.periode))} />
+          </div>
+        </>
+      ),
+    },
+    {
+      key: 'muster',
+      label: 'Muster',
+      inhalt: (
+        <>
+          <AusgabenHeatmap data={buildHeatmap(daten.txns)} initialMode={heatmapModus} heute={daten.heute} />
+          {/* Verteilung — eigene, kategorieunabhängige Sicht auf die Monatssummen, deshalb immer
+              über den vollen 24-Monats-Horizont statt der `period`-Auswahl (der Konten-Filter
+              greift dagegen schon). */}
+          <MonatsVerteilung history={buildMonthSeries(serie, aktuellerMonat)} current={currentMonthTotals(serie, aktuellerMonat)} />
+        </>
+      ),
+    },
+  ]
+
   return (
     // Zeitraum-, Konten- und Monatswahl schreiben in die URL und lösen ein Server-Rendering aus. Der
     // Provider markiert den Klick sofort in der Leiste (optimistisch) und blendet über
-    // <FilterPending> die Charts ab, solange die neuen Zahlen unterwegs sind. Kategorie, Tag und
-    // Gegenpartei (`localKeys`) filtern nur die Buchungsliste im Browser: sie setzen die URL ohne
-    // Server-Rendering, ein Klick lädt also nichts neu.
-    <UrlFiltersProvider replace localKeys="kat,tag,partei">
-      <div className="space-y-6 p-4 sm:p-8">
-        <div className="space-y-3">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Analyse</h1>
-          {/* Auf dem Handy waagerecht scrollbar statt dreizeilig umgebrochen. */}
-          <div className="-mx-4 flex items-center gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
+    // <FilterPending> die Charts ab, solange die neuen Zahlen unterwegs sind. Kategorie, Tag,
+    // Gegenpartei und die gewählte Ansicht (`localKeys`) wirken nur im Browser: sie setzen die
+    // URL ohne Server-Rendering, ein Klick lädt also nichts neu.
+    <UrlFiltersProvider replace localKeys="kat,tag,partei,ansicht">
+      <div className="space-y-4 p-4 sm:p-6">
+        {/* Titel links, Filter rechts in derselben Zeile; auf dem Handy darunter, waagerecht
+            scrollbar statt mehrzeilig umgebrochen. */}
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <h1 className="text-2xl font-semibold tracking-tight">Analyse</h1>
+          <div className="-mx-4 flex w-[calc(100%+2rem)] items-center gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:w-auto sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <FlowKindToggle />
             <AnalyseAccountSelector accounts={daten.konten} selected={daten.kontoIds} />
             <AnalysePeriodSelector current={daten.periode} />
@@ -90,47 +151,13 @@ export default async function AnalysePage({
           </div>
         </div>
 
-        {daten.include.anlage && (
-          <p className="-mt-2 text-xs text-muted-foreground">
-            Anlagen (Krypto, Depot, Bauspar) und Forderungen sind in Einnahmen und Ausgaben
-            eingerechnet. Die Sparquote rechnet weiterhin ohne sie.
-          </p>
-        )}
-
-        <FilterPending className="space-y-6">
-          <div className="space-y-6">
+        <FilterPending className="space-y-4">
+          <div className="space-y-4">
+            {/* Zwei schmale Zeilen: Kennzahlen und Auffälligkeiten. */}
             <AnalyseKennzahlen {...props} />
             <AnalyseInsights {...props} />
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <AnalyseTempo {...props} />
-              <Suspense fallback={<SkeletonChart variant="bars" height={220} />}>
-                <AnalyseBudget {...props} />
-              </Suspense>
-            </div>
-
-            <AusgabenHeatmap data={buildHeatmap(daten.txns)} initialMode={heatmapModus} heute={daten.heute} />
-
-            {/* Der Geldfluss bekommt eine volle Zeile: in einer halben Spalte ist die Karte
-                schmaler als 600 px und zeigte dann auch am Desktop die Liste statt des Sankeys. */}
-            <GeldflussChartUrl data={buildSankey(daten.txns)} />
-
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <Suspense fallback={<SkeletonChart variant="bars" height={320} />}>
-                <AnalyseKalender {...props} />
-              </Suspense>
-              <MonatsVergleich data={buildMonthlyComparison(serie, aktuellerMonat, monthsForPeriod(daten.periode))} />
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <AnalyseKategorien {...props} />
-              <AnalyseGegenparteien {...props} />
-            </div>
-
-            {/* Verteilung — eigene, kategorieunabhängige Sicht auf die Monatssummen, deshalb
-                immer über den vollen 24-Monats-Horizont statt der `period`-Auswahl (der
-                Konten-Filter greift dagegen schon). */}
-            <MonatsVerteilung history={buildMonthSeries(serie, aktuellerMonat)} current={currentMonthTotals(serie, aktuellerMonat)} />
+            <AnalyseTabs tabs={tabs} />
 
             <section id="buchungen" className="scroll-mt-4 space-y-3">
               <AnalyseFilterChips kategorien={daten.categories.map(c => ({ id: c.id, name: c.name }))} locale={daten.locale} />
