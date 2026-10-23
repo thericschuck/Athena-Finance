@@ -1,11 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { ChevronLeft, ChevronRight, ArrowDownLeft, ArrowUpRight, X } from 'lucide-react'
 import type { CashflowEvent } from '@/lib/analyseData'
+import { kurzBetrag } from '@/lib/analyse/geldfluss'
 import { useClampedPosition } from '@/lib/hooks/use-clamped-position'
 
-interface Props { events: CashflowEvent[] }
+interface Props {
+  events: CashflowEvent[]
+  /**
+   * Setzt (`YYYY-MM-DD`) bzw. hebt auf (`null`) den Tagesfilter der Buchungsliste. Fehlt er
+   * (Landingpage, kein UrlFiltersProvider), zeigt der Kalender nur Details und bietet keinen
+   * „Buchungen anzeigen"-Knopf an.
+   */
+  onTag?: (tag: string | null) => void
+  /** Aktuell gefilterter Tag — wird im Raster markiert. */
+  aktiverTag?: string | null
+}
 
 const WEEKDAYS    = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
 const MONTH_NAMES = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember']
@@ -18,25 +29,58 @@ function firstDayOffset(y: number, m: number) {
 function fmtAmt(n: number) {
   return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
+const fmtGanz = (n: number) => Math.round(n).toLocaleString('de-DE')
+const iso = (y: number, m: number, d: number) =>
+  `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 
 interface PopupState { day: number; x: number; y: number }
 interface TipState  { day: number; x: number; y: number }
 
-export function CashflowKalender({ events }: Props) {
+/**
+ * Unter 640 px (Tailwind `sm`): Tippen öffnet die Tagesliste UNTER dem Raster statt eines
+ * schwebenden Popups. Ein `position: fixed` Popup mit 240 px Breite über einer 42-px-Zelle
+ * verdeckt auf dem Handy das halbe Raster und wird vom Daumen gleich mit verdeckt.
+ * Per matchMedia statt Tailwind-Klassen, weil sich hier nicht nur das Aussehen, sondern der
+ * gerenderte Baum unterscheidet (Popup/Hover-Karte entfallen).
+ */
+function useSchmal(): boolean {
+  return useSyncExternalStore(
+    (cb) => {
+      const m = window.matchMedia('(max-width: 639px)')
+      m.addEventListener('change', cb)
+      return () => m.removeEventListener('change', cb)
+    },
+    () => window.matchMedia('(max-width: 639px)').matches,
+    () => false,
+  )
+}
+
+export function CashflowKalender({ events, onTag, aktiverTag }: Props) {
   const today = new Date()
   const [year,  setYear]  = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
   const [popup, setPopup] = useState<PopupState | null>(null)
   const [tip,   setTip]   = useState<TipState | null>(null)
+  const schmal = useSchmal()
+  const panelRef = useRef<HTMLDivElement>(null)
 
   const { ref: popupRef, style: popupPos } = useClampedPosition(
-    popup ? { x: popup.x, y: popup.y } : null,
+    popup && !schmal ? { x: popup.x, y: popup.y } : null,
     { alignX: 'center', alignY: 'above', gapY: 8 },
   )
   const { ref: tipRef, style: tipPos } = useClampedPosition(
     tip ? { x: tip.x, y: tip.y } : null,
     { alignX: 'center', alignY: 'above', gapY: 8 },
   )
+
+  // Auf dem Handy liegt die Tagesliste unter dem Raster — nach dem Tippen ins Bild holen,
+  // sonst sieht man nicht, dass überhaupt etwas passiert ist.
+  const gewaehlterTag = popup?.day
+  useEffect(() => {
+    if (schmal && gewaehlterTag !== undefined) {
+      panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
+  }, [schmal, gewaehlterTag])
 
   const days   = daysInMonth(year, month)
   const offset = firstDayOffset(year, month)
@@ -53,6 +97,18 @@ export function CashflowKalender({ events }: Props) {
     }
   }
 
+  // Monatssummen für den Kopf: zählen nur, was auch die Tageszellen zählen (`zaehlt`).
+  let monatEin = 0
+  let monatAus = 0
+  for (const evs of byDay.values()) {
+    for (const e of evs) {
+      if (!e.zaehlt) continue
+      if (e.type === 'income') monatEin += e.amount
+      else monatAus += e.amount
+    }
+  }
+  const monatSaldo = monatEin - monatAus
+
   // Blättern nur dort, wo es Daten gibt: vom ersten Monat mit Buchungen bis zum Monat nach dem letzten bzw. heutigen.
   const monatIndex = (y: number, m: number) => y * 12 + m
   const dataMonths = events.map(e => monatIndex(Number(e.date.slice(0, 4)), Number(e.date.slice(5, 7)) - 1))
@@ -65,63 +121,87 @@ export function CashflowKalender({ events }: Props) {
   const prev = () => {
     if (!canPrev) return
     setPopup(null)
-    month === 0 ? (setYear(y => y - 1), setMonth(11)) : setMonth(m => m - 1)
+    if (month === 0) { setYear(y => y - 1); setMonth(11) } else setMonth(m => m - 1)
   }
   const next = () => {
     if (!canNext) return
     setPopup(null)
-    month === 11 ? (setYear(y => y + 1), setMonth(0)) : setMonth(m => m + 1)
+    if (month === 11) { setYear(y => y + 1); setMonth(0) } else setMonth(m => m + 1)
   }
   const heute = () => { setPopup(null); setYear(today.getFullYear()); setMonth(today.getMonth()) }
 
   const isToday = (day: number) =>
     day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
 
-  const popupEvs    = popup ? (byDay.get(popup.day) ?? []) : []
-  const popupIncome  = popupEvs.filter(e => e.zaehlt && e.type === 'income').reduce((s, e) => s + e.amount, 0)
-  const popupExpense = popupEvs.filter(e => e.zaehlt && e.type === 'expense').reduce((s, e) => s + e.amount, 0)
+  const popupEvs = popup ? (byDay.get(popup.day) ?? []) : []
 
   const tipEvs     = tip ? (byDay.get(tip.day) ?? []) : []
   const tipIncome  = tipEvs.filter(e => e.zaehlt && e.type === 'income').reduce((s, e) => s + e.amount, 0)
   const tipExpense = tipEvs.filter(e => e.zaehlt && e.type === 'expense').reduce((s, e) => s + e.amount, 0)
   const tipAusgeblendet = tipEvs.filter(e => !e.zaehlt).length
 
+  const pfeil = 'flex size-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent sm:size-9'
+
+  const detail = popup && popupEvs.length > 0 ? (
+    <TagesDetail
+      titel={`${popup.day}. ${MONTH_NAMES[month]} ${year}`}
+      evs={popupEvs}
+      onClose={() => setPopup(null)}
+      tag={iso(year, month, popup.day)}
+      aktiverTag={aktiverTag}
+      onTag={onTag}
+      gross={schmal}
+    />
+  ) : null
+
   return (
-    <div className="bg-card border border-border rounded-xl p-5">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-5">
-        <button onClick={prev} disabled={!canPrev} aria-label="Vorheriger Monat" className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:hover:bg-transparent">
-          <ChevronLeft className="size-4" />
-        </button>
-        <div className="flex items-center gap-2">
-          <h2 className="text-sm font-semibold text-foreground">{MONTH_NAMES[month]} {year}</h2>
-          {aktuell !== monatIndex(today.getFullYear(), today.getMonth()) && (
-            <button onClick={heute} className="rounded-md border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
-              Heute
-            </button>
-          )}
+    <div className="rounded-xl border border-border bg-card p-3 sm:p-5">
+      {/* Header: Pfeile 44 px (Daumen), Monat in der Mitte, Monatssummen darunter */}
+      <div className="mb-3 sm:mb-4">
+        <div className="flex items-center justify-between">
+          <button onClick={prev} disabled={!canPrev} aria-label="Vorheriger Monat" className={pfeil}>
+            <ChevronLeft className="size-5 sm:size-4" />
+          </button>
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-foreground">{MONTH_NAMES[month]} {year}</h2>
+            {aktuell !== monatIndex(today.getFullYear(), today.getMonth()) && (
+              <button onClick={heute} className="min-h-7 rounded-md border border-border px-2 text-[11px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+                Heute
+              </button>
+            )}
+          </div>
+          <button onClick={next} disabled={!canNext} aria-label="Nächster Monat" className={pfeil}>
+            <ChevronRight className="size-5 sm:size-4" />
+          </button>
         </div>
-        <button onClick={next} disabled={!canNext} aria-label="Nächster Monat" className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:hover:bg-transparent">
-          <ChevronRight className="size-4" />
-        </button>
+        {(monatEin > 0 || monatAus > 0) && (
+          <p className="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 text-xs tabular-nums">
+            <span className="text-(--chart-income)">+{fmtGanz(monatEin)} €</span>
+            <span className="text-(--chart-expense)">−{fmtGanz(monatAus)} €</span>
+            <span className={`font-semibold ${monatSaldo >= 0 ? 'text-(--chart-income)' : 'text-(--chart-expense)'}`}>
+              Saldo {monatSaldo >= 0 ? '+' : '−'}{fmtGanz(Math.abs(monatSaldo))} €
+            </span>
+          </p>
+        )}
       </div>
 
       {/* Weekday labels */}
-      <div className="grid grid-cols-7 mb-1">
+      <div className="mb-1 grid grid-cols-7">
         {WEEKDAYS.map((d, i) => (
-          <div key={d} className={`text-center text-[10px] font-medium py-1.5 ${
-            i >= 5 ? 'text-muted-foreground/50' : 'text-muted-foreground'
+          <div key={d} className={`py-1.5 text-center text-[11px] font-medium ${
+            i >= 5 ? 'text-muted-foreground/60' : 'text-muted-foreground'
           }`}>{d}</div>
         ))}
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-0.75">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-0.75">
         {Array.from({ length: cells }, (_, i) => {
           const day     = i - offset + 1
           const valid   = day >= 1 && day <= days
           const evs     = valid ? (byDay.get(day) ?? []) : []
           const isSelected = valid && popup?.day === day
+          const istFilter = valid && !!aktiverTag && aktiverTag === iso(year, month, day)
           const hasEvs  = evs.length > 0
           const isWeekend = i % 7 >= 5
           const inc = evs.filter(e => e.zaehlt && e.type === 'income').reduce((s, e) => s + e.amount, 0)
@@ -144,6 +224,7 @@ export function CashflowKalender({ events }: Props) {
               key={i}
               role={valid && hasEvs ? 'button' : undefined}
               tabIndex={valid && hasEvs ? 0 : undefined}
+              aria-pressed={valid && hasEvs ? isSelected : undefined}
               aria-label={valid && hasEvs ? `${day}. ${MONTH_NAMES[month]}, ${evs.length} Transaktion${evs.length > 1 ? 'en' : ''}` : undefined}
               onClick={e => activateDay(e.currentTarget)}
               onKeyDown={e => {
@@ -153,48 +234,53 @@ export function CashflowKalender({ events }: Props) {
                 }
               }}
               onMouseEnter={e => {
-                if (!valid || !hasEvs || isSelected) return
+                if (schmal || !valid || !hasEvs || isSelected) return
                 const r = e.currentTarget.getBoundingClientRect()
                 setTip({ day, x: r.left + r.width / 2, y: r.top })
               }}
               onMouseLeave={() => setTip(null)}
-              className={`rounded-lg text-xs transition-all duration-100 ${
+              className={`min-h-12 min-w-0 rounded-md p-0.5 text-xs transition-all duration-100 sm:min-h-14.5 sm:rounded-lg sm:p-1.5 ${
                 !valid ? 'invisible' :
                 isSelected ? 'bg-accent ring-1 ring-(--chart-accent)/40 cursor-pointer' :
                 hasEvs ? `cursor-pointer hover:bg-accent ${isWeekend ? 'bg-muted/35' : 'bg-muted/20'}` :
                 isWeekend ? 'bg-muted/35' : 'bg-muted/20'
-              }`}
-              style={{ minHeight: '58px', padding: '6px' }}
+              } ${istFilter ? 'ring-2 ring-(--chart-accent)' : ''}`}
             >
               {valid && (
                 <>
-                  <div className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-medium mb-1 ${
-                    isToday(day) ? 'bg-(--chart-accent) text-background font-bold' :
+                  <div className={`mb-0.5 flex size-5 items-center justify-center rounded-full text-[11px] font-medium sm:mb-1 ${
+                    isToday(day) ? 'bg-(--chart-accent) font-bold text-background' :
                     isSelected   ? 'text-foreground' :
-                    isWeekend    ? 'text-muted-foreground/50' : 'text-muted-foreground'
+                    isWeekend    ? 'text-muted-foreground/60' : 'text-muted-foreground'
                   }`}>
                     {day}
                   </div>
                   {hasEvs && (
-                    <div className="space-y-0.75">
+                    <div className="space-y-px sm:space-y-0.75">
                       {inc > 0 && (
                         <div className="flex items-center gap-0.75">
-                          <div className="w-0.75 h-0.75 rounded-full bg-(--chart-income) shrink-0" />
-                          <span className="text-[9px] text-(--chart-income) font-medium truncate leading-tight tabular-nums">
-                            +{inc % 1 === 0 ? inc : inc.toFixed(0)}€
+                          <div className="hidden size-0.75 shrink-0 rounded-full bg-(--chart-income) sm:block" />
+                          <span className="truncate text-[10px] font-medium leading-tight tabular-nums text-(--chart-income)">
+                            {/* Handy: 1,2k statt 1.234 — die Zelle ist nur ~42 px breit. */}
+                            <span className="sm:hidden">+{kurzBetrag(inc)}</span>
+                            <span className="hidden sm:inline">+{fmtGanz(inc)}€</span>
                           </span>
                         </div>
                       )}
                       {exp > 0 && (
                         <div className="flex items-center gap-0.75">
-                          <div className="w-0.75 h-0.75 rounded-full bg-(--chart-expense) shrink-0" />
-                          <span className="text-[9px] text-(--chart-expense) font-medium truncate leading-tight tabular-nums">
-                            −{exp % 1 === 0 ? exp : exp.toFixed(0)}€
+                          <div className="hidden size-0.75 shrink-0 rounded-full bg-(--chart-expense) sm:block" />
+                          <span className="truncate text-[10px] font-medium leading-tight tabular-nums text-(--chart-expense)">
+                            <span className="sm:hidden">−{kurzBetrag(exp)}</span>
+                            <span className="hidden sm:inline">−{fmtGanz(exp)}€</span>
                           </span>
                         </div>
                       )}
                       {ausgeblendet > 0 && (
-                        <div className="text-[9px] text-muted-foreground/60 leading-tight">+{ausgeblendet} Anlage</div>
+                        <div className="text-[10px] leading-tight text-muted-foreground/70">
+                          <span className="sm:hidden">+{ausgeblendet}</span>
+                          <span className="hidden sm:inline">+{ausgeblendet} Anlage</span>
+                        </div>
                       )}
                     </div>
                   )}
@@ -205,92 +291,133 @@ export function CashflowKalender({ events }: Props) {
         })}
       </div>
 
-      {/* Click popup — appears above the clicked day cell (flips below / clamps near edges) */}
-      {popup && popupEvs.length > 0 && (
+      {/* Handy: Tagesliste unter dem Raster */}
+      {schmal && detail && (
+        <div ref={panelRef} className="mt-3 rounded-xl border border-border bg-popover">
+          {detail}
+        </div>
+      )}
+
+      {/* Desktop: Click popup — appears above the clicked day cell (flips below / clamps near edges) */}
+      {!schmal && detail && (
         <div
           ref={popupRef}
-          className="fixed z-50 rounded-xl border border-border bg-popover shadow-2xl w-60"
+          className="fixed z-50 w-60 rounded-xl border border-border bg-popover shadow-2xl"
           style={popupPos}
         >
-          {/* Popup header */}
-          <div className="flex items-center justify-between px-3.5 pt-3 pb-2.5 border-b border-border">
-            <p className="text-xs font-semibold text-popover-foreground">
-              {popup.day}. {MONTH_NAMES[month]} {year}
-            </p>
-            <button
-              onClick={() => setPopup(null)}
-              aria-label="Schließen"
-              className="text-muted-foreground hover:text-foreground transition-colors ml-2 shrink-0"
-            >
-              <X className="size-3.5" />
-            </button>
-          </div>
-
-          {/* Events list */}
-          <div className="px-3.5 py-2.5 space-y-2 max-h-52 overflow-y-auto">
-            {popupEvs.map((ev, i) => (
-              <div key={`${ev.date}_${ev.type}_${ev.label}_${ev.amount}_${i}`} className={`flex items-center justify-between gap-2 ${ev.zaehlt ? '' : 'opacity-55'}`}>
-                <div className="flex items-center gap-2 min-w-0">
-                  {ev.type === 'income'
-                    ? <ArrowUpRight className="size-3.5 text-(--chart-income) shrink-0" />
-                    : <ArrowDownLeft className="size-3.5 text-(--chart-expense) shrink-0" />
-                  }
-                  <span className="text-xs text-popover-foreground truncate">{ev.label}</span>
-                  {!ev.zaehlt && (
-                    <span className="shrink-0 rounded bg-muted px-1 text-[9px] text-muted-foreground">
-                      {ev.kind === 'forderung' ? 'Forderung' : 'Anlage'}
-                    </span>
-                  )}
-                </div>
-                <span className={`text-xs font-semibold tabular-nums shrink-0 ${
-                  ev.type === 'income' ? 'text-(--chart-income)' : 'text-(--chart-expense)'
-                }`}>
-                  {ev.type === 'income' ? '+' : '−'}{fmtAmt(ev.amount)} €
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Day summary */}
-          {(popupIncome > 0 || popupExpense > 0) && (
-            <div className="px-3.5 pt-2 pb-3 border-t border-border flex items-center justify-between gap-2">
-              {popupIncome > 0 && (
-                <span className="text-[10px] text-(--chart-income) font-semibold tabular-nums">+{fmtAmt(popupIncome)} €</span>
-              )}
-              {popupExpense > 0 && (
-                <span className="text-[10px] text-(--chart-expense) font-semibold tabular-nums">−{fmtAmt(popupExpense)} €</span>
-              )}
-              {popupIncome > 0 && popupExpense > 0 && (
-                <span className={`text-[10px] font-bold ml-auto tabular-nums ${
-                  popupIncome - popupExpense >= 0 ? 'text-(--chart-income)' : 'text-(--chart-expense)'
-                }`}>
-                  Netto: {popupIncome - popupExpense >= 0 ? '+' : '−'}{fmtAmt(Math.abs(popupIncome - popupExpense))} €
-                </span>
-              )}
-            </div>
-          )}
+          {detail}
         </div>
       )}
 
-      {/* Hover tooltip */}
-      {tip && tipEvs.length > 0 && popup?.day !== tip.day && (
+      {/* Hover tooltip (nur mit Maus) */}
+      {!schmal && tip && tipEvs.length > 0 && popup?.day !== tip.day && (
         <div
           ref={tipRef}
-          className="fixed z-40 pointer-events-none rounded-lg border border-border bg-popover p-2.5 shadow-xl text-xs"
+          className="pointer-events-none fixed z-40 rounded-lg border border-border bg-popover p-2.5 text-xs shadow-xl"
           style={tipPos}
         >
-          <p className="text-muted-foreground mb-1 font-medium">{tip.day}. {MONTH_NAMES[month]}</p>
+          <p className="mb-1 font-medium text-muted-foreground">{tip.day}. {MONTH_NAMES[month]}</p>
           {tipIncome  > 0 && <p className="text-(--chart-income) tabular-nums">+{fmtAmt(tipIncome)} €</p>}
           {tipExpense > 0 && <p className="text-(--chart-expense) tabular-nums">−{fmtAmt(tipExpense)} €</p>}
-          <p className="text-muted-foreground/70 mt-0.5">{tipEvs.length} Transaktion{tipEvs.length > 1 ? 'en' : ''}</p>
-          {tipAusgeblendet > 0 && <p className="text-muted-foreground/60">davon {tipAusgeblendet} Anlage/Forderung (nicht eingerechnet)</p>}
+          <p className="mt-0.5 text-muted-foreground/70">{tipEvs.length} Transaktion{tipEvs.length > 1 ? 'en' : ''}</p>
+          {tipAusgeblendet > 0 && <p className="text-muted-foreground/70">davon {tipAusgeblendet} Anlage/Forderung (nicht eingerechnet)</p>}
         </div>
       )}
 
-      <p className="mt-4 text-[10px] leading-snug text-muted-foreground/70">
+      <p className="mt-4 text-[11px] leading-snug text-muted-foreground/80">
         Alle Buchungen seit Beginn der Aufzeichnung. Anlage (Krypto, Depot, Bauspar) und Forderungen sind grau, solange sie oben
         nicht eingerechnet sind. Umbuchungen zwischen eigenen Konten fehlen bewusst.
       </p>
     </div>
+  )
+}
+
+/**
+ * Inhalt von Popup (Desktop) und Tagesliste (Handy): Kopf mit Datum, Buchungen, Tagessumme und —
+ * wenn die Seite es unterstützt — der Knopf, der die Buchungsliste unten auf diesen Tag filtert.
+ *
+ * Der Filter wird bewusst NICHT schon beim Antippen des Tages gesetzt: jedes Setzen lädt die
+ * Seite serverseitig neu und blendet die Charts ab. Wer nur durch den Kalender blättert und Tage
+ * ansieht, würde bei jedem Tipp den Bildschirm flackern sehen.
+ */
+function TagesDetail({ titel, evs, onClose, tag, aktiverTag, onTag, gross }: {
+  titel: string
+  evs: CashflowEvent[]
+  onClose: () => void
+  tag: string
+  aktiverTag?: string | null
+  onTag?: (tag: string | null) => void
+  gross: boolean
+}) {
+  const income  = evs.filter(e => e.zaehlt && e.type === 'income').reduce((s, e) => s + e.amount, 0)
+  const expense = evs.filter(e => e.zaehlt && e.type === 'expense').reduce((s, e) => s + e.amount, 0)
+  const aktiv = aktiverTag === tag
+
+  return (
+    <>
+      <div className="flex items-center justify-between border-b border-border px-3.5 pb-2.5 pt-3">
+        <p className="text-xs font-semibold text-popover-foreground">{titel}</p>
+        <button
+          onClick={onClose}
+          aria-label="Schließen"
+          className="-my-2 -mr-2.5 ml-2 flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <X className="size-4" />
+        </button>
+      </div>
+
+      <div className={`space-y-2 overflow-y-auto px-3.5 py-2.5 ${gross ? 'max-h-72' : 'max-h-52'}`}>
+        {evs.map((ev, i) => (
+          <div key={`${ev.date}_${ev.type}_${ev.label}_${ev.amount}_${i}`} className={`flex items-center justify-between gap-2 ${ev.zaehlt ? '' : 'opacity-55'}`}>
+            <div className="flex min-w-0 items-center gap-2">
+              {ev.type === 'income'
+                ? <ArrowUpRight className="size-3.5 shrink-0 text-(--chart-income)" />
+                : <ArrowDownLeft className="size-3.5 shrink-0 text-(--chart-expense)" />
+              }
+              <span className="truncate text-xs text-popover-foreground">{ev.label}</span>
+              {!ev.zaehlt && (
+                <span className="shrink-0 rounded bg-muted px-1 text-[10px] text-muted-foreground">
+                  {ev.kind === 'forderung' ? 'Forderung' : 'Anlage'}
+                </span>
+              )}
+            </div>
+            <span className={`shrink-0 text-xs font-semibold tabular-nums ${
+              ev.type === 'income' ? 'text-(--chart-income)' : 'text-(--chart-expense)'
+            }`}>
+              {ev.type === 'income' ? '+' : '−'}{fmtAmt(ev.amount)} €
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {(income > 0 || expense > 0) && (
+        <div className="flex items-center justify-between gap-2 border-t border-border px-3.5 pb-3 pt-2">
+          {income > 0 && (
+            <span className="text-[11px] font-semibold tabular-nums text-(--chart-income)">+{fmtAmt(income)} €</span>
+          )}
+          {expense > 0 && (
+            <span className="text-[11px] font-semibold tabular-nums text-(--chart-expense)">−{fmtAmt(expense)} €</span>
+          )}
+          {income > 0 && expense > 0 && (
+            <span className={`ml-auto text-[11px] font-bold tabular-nums ${
+              income - expense >= 0 ? 'text-(--chart-income)' : 'text-(--chart-expense)'
+            }`}>
+              Netto: {income - expense >= 0 ? '+' : '−'}{fmtAmt(Math.abs(income - expense))} €
+            </span>
+          )}
+        </div>
+      )}
+
+      {onTag && (
+        <div className="border-t border-border p-2.5">
+          <button
+            onClick={() => onTag(aktiv ? null : tag)}
+            className="flex min-h-11 w-full items-center justify-center rounded-lg border border-border text-xs font-medium text-popover-foreground transition-colors hover:bg-accent sm:min-h-9"
+          >
+            {aktiv ? 'Filter aufheben' : 'Buchungen dieses Tages anzeigen'}
+          </button>
+        </div>
+      )}
+    </>
   )
 }

@@ -23,7 +23,9 @@ export function AnalysePeriodSelector({ current }: Props) {
       {PERIODS.map(p => (
         <button
           key={p}
-          onClick={() => filters.set('period', p)}
+          // Ein anderer Zeitraum hebt Monat und Tag auf: sie koennen im neuen Fenster fehlen, und dann
+          // stuende ein Filter aktiv, dessen Balken nirgends mehr zu sehen ist.
+          onClick={() => filters.setMany({ period: p, monat: null, tag: null })}
           aria-pressed={active === p}
           className={`px-2.5 py-1 text-xs rounded font-medium transition-all duration-150 ${
             active === p

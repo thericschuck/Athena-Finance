@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useCallback, useContext, useMemo, useOptimistic, useTransition } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useOptimistic, useRef, useState, useTransition } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Refreshing } from '@/components/ui/refreshing'
 
@@ -52,6 +52,15 @@ interface Options {
    * etwas ANDERES ändert".
    */
   resetKeys?: string
+  /**
+   * Parameter, die nur im Browser ausgewertet werden und den Server nichts angehen (z. B. die
+   * Drill-down-Filter der Analyse-Seite: die Buchungsliste filtert lokal). Ändert ein Aufruf NUR
+   * solche Schlüssel, wird die URL per `history.replaceState` geschrieben — ohne Server-Rendering
+   * und ohne dass die Seite neu lädt. Next.js hängt `useSearchParams` an die History-API, die URL
+   * bleibt also teilbar und der Zurück-Knopf unverändert. Ändert ein Aufruf auch nur einen
+   * anderen Schlüssel, gilt der normale Weg. Kommagetrennt: `"kat,tag,partei"`.
+   */
+  localKeys?: string
 }
 
 const UrlFiltersContext = createContext<UrlFilters | null>(null)
@@ -61,6 +70,7 @@ export function UrlFiltersProvider({
   replace = false,
   scroll = false,
   resetKeys,
+  localKeys,
 }: Options & { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -69,16 +79,40 @@ export function UrlFiltersProvider({
   const [pending, startTransition] = useTransition()
   const [optimisticQuery, setOptimisticQuery] = useOptimistic(searchParams.toString())
 
+  // Rein lokale Schluessel: sofort sichtbarer Wert (Override) und die jeweils neueste Query als
+  // Ref — zwei schnelle Klicks hintereinander duerfen sich nicht gegenseitig ueberschreiben,
+  // solange Next die History-Aenderung noch nicht in `searchParams` gespiegelt hat.
+  const lokaleSchluessel = useMemo(() => new Set(localKeys?.split(',').filter(Boolean) ?? []), [localKeys])
+  const [lokal, setLokal] = useState<Record<string, string | null>>({})
+  const queryRef = useRef(optimisticQuery)
+  useEffect(() => { queryRef.current = optimisticQuery }, [optimisticQuery])
+
   const apply = useCallback(
     (mutate: (params: URLSearchParams) => void, touched: string[] = []) => {
-      const next = new URLSearchParams(optimisticQuery)
+      const basis = queryRef.current
+      const next = new URLSearchParams(basis)
       mutate(next)
       for (const key of resetKeys?.split(',').filter(Boolean) ?? []) {
         if (!touched.includes(key)) next.delete(key)
       }
 
       const query = next.toString()
-      if (query === optimisticQuery) return
+      if (query === basis) return
+
+      // Nur lokale Schluessel geaendert: kein Server-Roundtrip.
+      if (lokaleSchluessel.size > 0) {
+        const alt = new URLSearchParams(basis)
+        const geaendert = [...new Set([...alt.keys(), ...next.keys()])].filter(k => alt.get(k) !== next.get(k))
+        if (geaendert.length > 0 && geaendert.every(k => lokaleSchluessel.has(k))) {
+          queryRef.current = query
+          setLokal(prev => ({ ...prev, ...Object.fromEntries(geaendert.map(k => [k, next.get(k)])) }))
+          window.history.replaceState(null, '', query ? `${pathname}?${query}` : pathname)
+          return
+        }
+      }
+      // Normale Navigation: die URL traegt die lokalen Werte bereits, Overrides werden unnoetig.
+      queryRef.current = query
+      setLokal({})
 
       startTransition(() => {
         setOptimisticQuery(query)
@@ -87,13 +121,13 @@ export function UrlFiltersProvider({
         else router.push(url, { scroll })
       })
     },
-    [optimisticQuery, pathname, replace, scroll, resetKeys, router, setOptimisticQuery],
+    [pathname, replace, scroll, resetKeys, router, setOptimisticQuery, lokaleSchluessel],
   )
 
   const value = useMemo<UrlFilters>(
     () => ({
       pending,
-      get: key => new URLSearchParams(optimisticQuery).get(key),
+      get: key => (key in lokal ? lokal[key] : new URLSearchParams(optimisticQuery).get(key)),
       set: (key, val) =>
         apply(
           params => {
@@ -117,10 +151,19 @@ export function UrlFiltersProvider({
           for (const key of [...params.keys()]) params.delete(key)
         }),
     }),
-    [apply, optimisticQuery, pending],
+    [apply, optimisticQuery, pending, lokal],
   )
 
   return <UrlFiltersContext.Provider value={value}>{children}</UrlFiltersContext.Provider>
+}
+
+/**
+ * Wie `useUrlFilters`, liefert aber `null` ohne Provider statt zu werfen. Für Komponenten, die
+ * auch außerhalb einer filterbaren Seite laufen (die Landingpage zeigt dieselben Charts als
+ * Demo): dort gibt es keine URL-Filter, und der Chart bleibt einfach nicht anklickbar.
+ */
+export function useOptionalUrlFilters(): UrlFilters | null {
+  return useContext(UrlFiltersContext)
 }
 
 export function useUrlFilters(): UrlFilters {

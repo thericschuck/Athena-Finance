@@ -1,11 +1,16 @@
 'use client'
 
+import { useLayoutEffect, useRef, type CSSProperties } from 'react'
 import {
   ComposedChart, Bar, Line, ReferenceLine,
   XAxis, YAxis, CartesianGrid, Tooltip, Cell,
   ResponsiveContainer,
 } from 'recharts'
 import type { MonthlyComparison } from '@/lib/analyseData'
+import { useOptionalUrlFilters } from '@/components/providers/url-filters'
+import {
+  balkenDeckkraft, mindestBreite, monatKlartext, naechsteMonatsauswahl,
+} from '@/lib/analyse/vergleichsdaten'
 
 interface Props { data: MonthlyComparison[] }
 
@@ -25,10 +30,13 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   const row = payload[0]?.payload
   if (!row) return null
 
+  // Reihenfolge Einnahmen, Ausgaben, Sparquote — dieselbe wie Legende und Balken (links nach
+  // rechts) im Kopf der Karte; beide Stellen ändern sich nur gemeinsam.
   return (
     <div className="rounded-lg border border-border bg-popover p-3 shadow-xl text-xs min-w-37">
       <p className="font-semibold text-popover-foreground mb-2">
-        {label}
+        {/* Mit `key` der volle Monat samt Jahr: das Kurzlabel „Mär" ist über 24 Monate doppelt. */}
+        {row.key ? monatKlartext(row.key) : label}
         {row.laufend && <span className="ml-1.5 font-normal text-muted-foreground">· läuft noch</span>}
       </p>
       <div className="space-y-1">
@@ -51,17 +59,17 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
           </span>
         </div>
         {row.sparquote == null && (
-          <p className="text-[10px] text-muted-foreground pt-0.5">
+          <p className="text-[11px] text-muted-foreground pt-0.5">
             Keine Einnahmen in diesem Monat — Quote nicht definiert
           </p>
         )}
         {row.clamped && (
-          <p className="text-[10px] text-muted-foreground pt-0.5">
+          <p className="text-[11px] text-muted-foreground pt-0.5">
             Liegt außerhalb der Achse — Punkt am Rand gekappt
           </p>
         )}
         {row.laufend && (
-          <p className="text-[10px] text-muted-foreground pt-0.5">
+          <p className="text-[11px] text-muted-foreground pt-0.5">
             Monat noch nicht abgeschlossen — Werte ändern sich noch
           </p>
         )}
@@ -120,6 +128,18 @@ function SparquoteDot({ cx, cy, payload }: { cx?: number; cy?: number; payload?:
 
 export function MonatsVergleich({ data }: Props) {
   const rows = toRows(data, PCT_DOMAIN)
+  // Optional: dasselbe Diagramm laeuft als Demo auf der Landingpage, ohne Provider — dort nicht anklickbar.
+  const filters = useOptionalUrlFilters()
+  const gewaehlt = filters?.get('monat') ?? null
+  const waehlbar = rows.some(r => r.key)
+
+  // Auf schmalen Bildschirmen scrollt der Chart waagerecht (Mindestbreite je Monat); der
+  // Start liegt rechts, weil dort die neuesten Monate stehen.
+  const scrollRef = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const el = scrollRef.current
+    if (el) el.scrollLeft = el.scrollWidth
+  }, [])
   // Der laufende Monat haengt separat dran (siehe withLaufendemMonat in AnalysePage) — die
   // Unterschrift zaehlt nur die wirklich abgeschlossenen Monate, der laufende wird im Chart
   // selbst (abgeschwaechte Balken, "läuft noch" im Tooltip) als unvollstaendig markiert.
@@ -127,16 +147,24 @@ export function MonatsVergleich({ data }: Props) {
   const hatLaufenden = data.some(d => d.laufend)
 
   return (
-    <div className="bg-card border border-border rounded-xl p-5">
-      <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
+    <div className="bg-card border border-border rounded-xl p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-x-3 gap-y-2 flex-wrap mb-4">
         <div>
           <h2 className="text-sm font-medium text-foreground">Monatlicher Vergleich</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             {abgeschlossen === 1 ? 'Letzter abgeschlossener Monat' : `Letzte ${abgeschlossen} abgeschlossene Monate`}
             {hatLaufenden && ' + laufender Monat'}
           </p>
+          {waehlbar && (
+            <p className="text-[11px] text-muted-foreground/80 mt-0.5">
+              {gewaehlt
+                ? <>Nur {monatKlartext(gewaehlt)} in der Buchungsliste · Balken nochmal antippen hebt auf</>
+                : <>Monat antippen, um seine Buchungen unten zu sehen</>}
+              <span className="sm:hidden"> · seitlich wischen für ältere Monate</span>
+            </p>
+          )}
         </div>
-        <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
+        <div className="flex items-center gap-x-4 gap-y-1 flex-wrap text-[11px] text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <span className="inline-block w-2.5 h-2.5 rounded-sm bg-(--chart-income) opacity-80" />
             Einnahmen
@@ -152,14 +180,35 @@ export function MonatsVergleich({ data }: Props) {
         </div>
       </div>
 
+      <div ref={scrollRef} className="overflow-x-auto overscroll-x-contain">
+      <div className="min-w-(--mw) sm:min-w-0" style={{ '--mw': `${mindestBreite(rows.length)}px` } as CSSProperties}>
       <ResponsiveContainer width="100%" height={280}>
-        <ComposedChart data={rows} margin={{ top: 4, right: 40, left: 0, bottom: 0 }}>
+        <ComposedChart
+          data={rows}
+          margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
+          // Auf dem Chart statt auf den Balken: trifft die ganze Spalte, auch die Lücke
+          // zwischen den Balken. Auf Touch fehlt beim Tippen oft der Tooltip-Zustand
+          // (activeLabel leer) — dann über den Index nachschlagen, wie in BankTrendChart.
+          onClick={waehlbar
+            ? (state: { activeTooltipIndex?: number | string | null }) => {
+                const idx = state?.activeTooltipIndex
+                const key = typeof idx === 'number' ? rows[idx]?.key : typeof idx === 'string' ? rows[Number(idx)]?.key : undefined
+                const naechste = naechsteMonatsauswahl(key, gewaehlt)
+                if (naechste !== undefined) filters?.set('monat', naechste)
+              }
+            : undefined}
+          style={waehlbar ? { cursor: 'pointer' } : undefined}
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
           <XAxis
             dataKey="month"
             tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
             axisLine={false}
             tickLine={false}
+            // Überlappende Beschriftungen auslassen statt zu stapeln; die Monate stehen
+            // vollständig im Tooltip.
+            interval="preserveStartEnd"
+            minTickGap={6}
           />
           <YAxis
             yAxisId="eur"
@@ -200,7 +249,7 @@ export function MonatsVergleich({ data }: Props) {
             maxBarSize={28}
           >
             {rows.map((r, i) => (
-              <Cell key={i} fillOpacity={r.laufend ? 0.35 : 0.75} />
+              <Cell key={i} fillOpacity={balkenDeckkraft(!!r.laufend, r.key, gewaehlt)} />
             ))}
           </Bar>
           <Bar
@@ -211,7 +260,7 @@ export function MonatsVergleich({ data }: Props) {
             maxBarSize={28}
           >
             {rows.map((r, i) => (
-              <Cell key={i} fillOpacity={r.laufend ? 0.35 : 0.75} />
+              <Cell key={i} fillOpacity={balkenDeckkraft(!!r.laufend, r.key, gewaehlt)} />
             ))}
           </Bar>
           {/* Nulllinie der Sparquote, jetzt fest auf halber Kartenhöhe: darunter ist mehr
@@ -229,7 +278,7 @@ export function MonatsVergleich({ data }: Props) {
             label={{
               value: '0 % Sparquote',
               position: 'insideTopRight',
-              fontSize: 9,
+              fontSize: 11,
               fill: 'var(--muted-foreground)',
             }}
           />
@@ -246,6 +295,8 @@ export function MonatsVergleich({ data }: Props) {
           />
         </ComposedChart>
       </ResponsiveContainer>
+      </div>
+      </div>
     </div>
   )
 }

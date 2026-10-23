@@ -34,14 +34,27 @@ export function parsePeriod(value: unknown, fallback: Period = DEFAULT_PERIOD): 
  * Datum vergleicht, würde bei `'2000-01-01'` Buchungen von 1998 stillschweigend ausblenden.
  * `null` zwingt dazu, den Fall „kein Filter" explizit zu behandeln.
  */
+/**
+ * Verschiebt um Monate und kappt aufs Monatsende: `setMonth` allein machte aus dem 31.05. minus
+ * 3 Monate den 03.03. (28.02. + Überlauf) und verkürzte jeden Zeitraum an Monatsenden um Tage;
+ * aus dem 29.02. minus 1 Jahr wurde der 01.03.
+ */
+function addMonthsClamped(d: Date, delta: number): void {
+  const tag = d.getDate()
+  d.setDate(1)
+  d.setMonth(d.getMonth() + delta)
+  const letzter = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+  d.setDate(Math.min(tag, letzter))
+}
+
 export function periodCutoff(period: Period, today = new Date()): string | null {
   const d = new Date(today)
   switch (period) {
     case '1W':  d.setDate(d.getDate() - 7);          break
-    case '1M':  d.setMonth(d.getMonth() - 1);        break
-    case '3M':  d.setMonth(d.getMonth() - 3);        break
-    case '6M':  d.setMonth(d.getMonth() - 6);        break
-    case '1J':  d.setFullYear(d.getFullYear() - 1);  break
+    case '1M':  addMonthsClamped(d, -1);             break
+    case '3M':  addMonthsClamped(d, -3);             break
+    case '6M':  addMonthsClamped(d, -6);             break
+    case '1J':  addMonthsClamped(d, -12);            break
     case 'Alles': return null
   }
   // Lokale Kalenderteile, nicht toISOString(): das rechnet erst nach UTC um und würde

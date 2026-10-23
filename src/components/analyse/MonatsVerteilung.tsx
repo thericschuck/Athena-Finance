@@ -9,6 +9,7 @@ import { useSettings } from '@/components/providers/settings-context'
 import { fmtCurrency } from '@/lib/format'
 import { kdeDensityAt, computePercentileRank } from '@/lib/kde'
 import type { AnalyseMode, MonthSeries, MonthTotals } from '@/lib/analyseData'
+import { kernaussage, lageImVerlauf } from '@/lib/analyse/verteilung'
 import { ModeSwitch, ANALYSE_MODE_OPTIONS } from './ModeSwitch'
 
 /** Unter dieser Monatszahl ist eine Verteilung nicht verlässlich genug — lieber
@@ -344,6 +345,8 @@ function MarkerDot({ cx, cy, color, fmt, value, align, label, variant = 'current
     <g
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      // Auf Touch gibt es kein Hover: Tippen blendet den Betrag ein und wieder aus.
+      onClick={() => setHover(h => !h)}
       style={{ cursor: 'pointer' }}
     >
       {/* Unsichtbarer, großzügiger Hit-Bereich — der sichtbare Punkt allein ist zu klein,
@@ -377,6 +380,9 @@ export function MonatsVerteilung({ history, current }: Props) {
   // die Frage, die die Karte beantworten soll — Ausgaben und Einnahmen einzeln
   // sind der Blick dahinter.
   const [mode, setMode] = useState<AnalyseMode>('guv')
+  // Mittelwert, Modus, σ und z-Wert sind die Feinheiten der Karte: sie stehen auf Wunsch
+  // dabei, statt Chart und Legende dauerhaft zu füllen (siehe Kernaussage oben).
+  const [details, setDetails] = useState(false)
   const values       = history[mode]
   const currentValue = current?.[mode] ?? null
   const color        = COLOR[mode]
@@ -393,7 +399,7 @@ export function MonatsVerteilung({ history, current }: Props) {
 
   if (!vert) {
     return (
-      <div className="bg-card border border-border rounded-xl p-5">
+      <div className="bg-card border border-border rounded-xl p-4 sm:p-5">
         <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
           <h2 className="text-sm font-medium text-foreground">{TITLE[mode]}</h2>
           <ModeSwitch value={mode} options={ANALYSE_MODE_OPTIONS} onChange={setMode} />
@@ -420,7 +426,10 @@ export function MonatsVerteilung({ history, current }: Props) {
   // ausgabenstarker. Als Farbe die des Modus, nicht --destructive: das ist in
   // jedem Theme byte-identisch mit --chart-expense und wäre von der Verteilung
   // selbst nicht zu unterscheiden.
-  const striking = percentile != null && (percentile >= 75 || percentile <= 25)
+  const striking = percentile != null && lageImVerlauf(percentile) !== 'mitte'
+  const satz = kernaussage({
+    anzahlMonate: values.length, median: med, aktuell: currentValue, percentile, darunter: countBelow,
+  }, fmt)
 
   // Ausrichtung der Wertblase relativ zum Punkt, damit sie am Rand der Zeichenfläche nicht
   // abgeschnitten wird — für alle vier Marker (laufender Monat, Median, Mittelwert, Modus)
@@ -484,31 +493,25 @@ export function MonatsVerteilung({ history, current }: Props) {
   }
 
   return (
-    <div className="bg-card border border-border rounded-xl p-5">
-      <div className="flex items-start justify-between gap-3 flex-wrap mb-1">
+    <div className="bg-card border border-border rounded-xl p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
         <h2 className="text-sm font-medium text-foreground">{TITLE[mode]}</h2>
         <ModeSwitch value={mode} options={ANALYSE_MODE_OPTIONS} onChange={setMode} />
       </div>
 
-      <div className="flex items-baseline justify-between gap-3 flex-wrap mb-3">
-        <p className="text-xs text-muted-foreground">
-          Monate je Betragsklasse · monatliche {NOUN[mode]}, letzte {values.length} abgeschlossene Monate
-        </p>
-        {percentile != null && countBelow != null && (
-          <p
-            className="text-xs font-semibold tabular-nums"
-            style={{ color: striking ? color : 'var(--muted-foreground)' }}
-          >
-            Dieser Monat {fmt(currentValue!)} · {percentile}. Perzentil
-            <span className="font-normal"> — höher als in {countBelow} von {values.length} Monaten</span>
-            {/* z-Score direkt neben dem Perzentil statt unten in der Legende: er ist wie das
-                Perzentil eine Aussage über DIESEN Monat (wie viele Standardabweichungen vom
-                Mittelwert entfernt), σ selbst (die Streuung der ganzen Verteilung) steht
-                unten bei Median/Mittelwert/Modus. */}
-            {zScore != null && <span className="font-normal"> · z {fmtZ(zScore)}</span>}
-          </p>
-        )}
-      </div>
+      {/* Die Kernaussage als ein Satz. Perzentil, z-Wert und die übrigen Lagemaße standen
+          vorher alle gleichzeitig da (vier Linien, vier Punkte, sieben Legendeneinträge);
+          wer sie braucht, klappt sie unten auf. Auffällige Monate (oberes/unteres Viertel)
+          tragen die Farbe der Ansicht. */}
+      <p
+        className="text-sm font-medium tabular-nums mb-1"
+        style={{ color: striking ? color : 'var(--foreground)' }}
+      >
+        {satz}
+      </p>
+      <p className="text-xs text-muted-foreground mb-3">
+        Monate je Betragsklasse · monatliche {NOUN[mode]}, letzte {values.length} abgeschlossene Monate
+      </p>
 
       <ResponsiveContainer width="100%" height={215}>
         {/* right: 8 reichte nicht für den Hover-Punkt des laufenden Monats — liegt der
@@ -550,7 +553,10 @@ export function MonatsVerteilung({ history, current }: Props) {
             allowDataOverflow
             ticks={ticks}
             tickFormatter={compact}
-            tick={{ fontSize: 10, fill: 'var(--muted-foreground)', className: 'tabular-nums' }}
+            tick={{ fontSize: 11, fill: 'var(--muted-foreground)', className: 'tabular-nums' }}
+            // Auf 360 px passen nicht fünf „−2,3k"-Marken; überlappende lässt recharts aus.
+            interval="preserveStartEnd"
+            minTickGap={8}
             axisLine={false}
             tickLine={false}
           />
@@ -562,7 +568,7 @@ export function MonatsVerteilung({ history, current }: Props) {
           <YAxis
             allowDecimals={false}
             domain={[0, (max: number) => Math.ceil(max) + 1]}
-            tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
+            tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
             axisLine={false}
             tickLine={false}
           />
@@ -642,30 +648,35 @@ export function MonatsVerteilung({ history, current }: Props) {
               />
             )}
           />
-          <ReferenceDot
-            xAxisId="betrag"
-            x={avg}
-            y={avgY}
-            shape={(props: { cx?: number; cy?: number }) => (
-              <MarkerDot
-                cx={props.cx} cy={props.cy}
-                color="var(--muted-foreground)" fmt={fmt} value={avg}
-                align={alignFor(avg)} label="Mittelwert" variant="stat"
-              />
-            )}
-          />
-          <ReferenceDot
-            xAxisId="betrag"
-            x={modusPunkt.x}
-            y={modusPunkt.y}
-            shape={(props: { cx?: number; cy?: number }) => (
-              <MarkerDot
-                cx={props.cx} cy={props.cy}
-                color="var(--muted-foreground)" fmt={fmt} value={modus}
-                align={alignFor(modus)} label="Modus" variant="stat"
-              />
-            )}
-          />
+          {/* Mittelwert und Modus nur in der Detailansicht (siehe `details`). */}
+          {details && (
+            <ReferenceDot
+              xAxisId="betrag"
+              x={avg}
+              y={avgY}
+              shape={(props: { cx?: number; cy?: number }) => (
+                <MarkerDot
+                  cx={props.cx} cy={props.cy}
+                  color="var(--muted-foreground)" fmt={fmt} value={avg}
+                  align={alignFor(avg)} label="Mittelwert" variant="stat"
+                />
+              )}
+            />
+          )}
+          {details && (
+            <ReferenceDot
+              xAxisId="betrag"
+              x={modusPunkt.x}
+              y={modusPunkt.y}
+              shape={(props: { cx?: number; cy?: number }) => (
+                <MarkerDot
+                  cx={props.cx} cy={props.cy}
+                  color="var(--muted-foreground)" fmt={fmt} value={modus}
+                  align={alignFor(modus)} label="Modus" variant="stat"
+                />
+              )}
+            />
+          )}
           {/* Median auf dem exakten Betrag, nicht mehr auf der Klassenmitte. Ohne
               Beschriftung oben: die stand direkt im Scheitel der (goldenen) Dichtekurve
               und wirkte dadurch wie ein Teil davon, obwohl beide nichts miteinander zu tun
@@ -682,27 +693,31 @@ export function MonatsVerteilung({ history, current }: Props) {
               unterschieden werden sie über das Strichmuster, genau wie in der Legende
               darunter. Faellt bei einer symmetrischen Verteilung mit dem Median zusammen,
               bei Erics schiefen Daten liegen sie sichtbar auseinander. */}
-          <ReferenceLine
-            xAxisId="betrag"
-            x={avg}
-            stroke="var(--muted-foreground)"
-            strokeDasharray="1 3"
-          />
+          {details && (
+            <ReferenceLine
+              xAxisId="betrag"
+              x={avg}
+              stroke="var(--muted-foreground)"
+              strokeDasharray="1 3"
+            />
+          )}
           {/* Modus als dritte Linie — sitzt per Definition (modeFromKurve) exakt auf dem
               Scheitel der goldenen Kurve und macht daher optisch kaum etwas Neues sichtbar.
               Trotzdem eine eigene Linie statt nur "der Scheitel ist der Modus" im Kopf: erst
               damit stehen alle drei Lagemaße nebeneinander in derselben Legende und lassen
               sich auf einen Blick vergleichen, ohne die Kurve selbst abzulesen. */}
-          <ReferenceLine
-            xAxisId="betrag"
-            x={modus}
-            stroke="var(--muted-foreground)"
-            strokeDasharray="6 2 1 2"
-          />
+          {details && (
+            <ReferenceLine
+              xAxisId="betrag"
+              x={modus}
+              stroke="var(--muted-foreground)"
+              strokeDasharray="6 2 1 2"
+            />
+          )}
         </ComposedChart>
       </ResponsiveContainer>
 
-      <div className="flex items-center gap-4 mt-1 text-[10px] text-muted-foreground flex-wrap">
+      <div className="flex items-center gap-x-4 gap-y-1 mt-1 text-[11px] text-muted-foreground flex-wrap">
         <span className="flex items-center gap-1.5">
           <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: color, opacity: 0.75 }} />
           Monate je Klasse
@@ -715,27 +730,23 @@ export function MonatsVerteilung({ history, current }: Props) {
           <span className="inline-block w-4 border-t-[2.5px] border-dashed border-muted-foreground" />
           Median {fmt(med)}
         </span>
-        <span className="flex items-center gap-1.5 tabular-nums">
-          <span className="inline-block w-4 border-t-[2.5px] border-dotted border-muted-foreground" />
-          Mittelwert {fmt(avg)}
-        </span>
-        <span className="flex items-center gap-1.5 tabular-nums">
-          {/* Kein Tailwind-Randstil trifft "6 2 1 2" (Strich-Punkt) — daher als Inline-SVG,
-              damit die Legende exakt das Muster der ReferenceLine zeigt statt einer
-              Näherung. */}
-          <svg width="16" height="3" className="shrink-0">
-            <line x1="0" y1="1.5" x2="16" y2="1.5" stroke="var(--muted-foreground)" strokeWidth="2.5" strokeDasharray="6 2 1 2" />
-          </svg>
-          Modus {fmt(modus)}
-        </span>
-        {/* Kein Punkt/keine Linie im Chart dafür — σ ist keine Stelle auf der Achse, sondern
-            eine Spannweite, und deshalb hier reiner Text statt eines vierten Markers. Der
-            z-Score (wie viele σ der laufende Monat vom Mittelwert entfernt ist) steht
-            stattdessen oben neben dem Perzentil, weil er wie das Perzentil eine Aussage über
-            DIESEN Monat ist, nicht über die Verteilung insgesamt. */}
-        <span className="flex items-center gap-1.5 tabular-nums">
-          σ {fmt(sd)}
-        </span>
+        {details && (
+          <span className="flex items-center gap-1.5 tabular-nums">
+            <span className="inline-block w-4 border-t-[2.5px] border-dotted border-muted-foreground" />
+            Mittelwert {fmt(avg)}
+          </span>
+        )}
+        {details && (
+          <span className="flex items-center gap-1.5 tabular-nums">
+            {/* Kein Tailwind-Randstil trifft "6 2 1 2" (Strich-Punkt) — daher als Inline-SVG,
+                damit die Legende exakt das Muster der ReferenceLine zeigt statt einer
+                Näherung. */}
+            <svg width="16" height="3" className="shrink-0">
+              <line x1="0" y1="1.5" x2="16" y2="1.5" stroke="var(--muted-foreground)" strokeWidth="2.5" strokeDasharray="6 2 1 2" />
+            </svg>
+            Modus {fmt(modus)}
+          </span>
+        )}
         {currentValue != null && (
           <span className="flex items-center gap-1.5">
             {/* Punkt auf der Kurve + umrandeter Balken meinen denselben Monat — ein
@@ -748,6 +759,43 @@ export function MonatsVerteilung({ history, current }: Props) {
           </span>
         )}
       </div>
+
+      {/* Details einklappbar. Nichts davon fehlt: Perzentil und z-Wert (Aussagen über DIESEN
+          Monat), σ (Streuung der Verteilung) sowie Mittelwert und Modus als Linie + Punkt im
+          Chart. Mittelwert liegt bei rechtsschiefen Daten (wenige teure Monate) über dem Median,
+          der Modus (Scheitel der Kurve) darunter — beides zusammen zeigt die Schiefe. */}
+      <button
+        type="button"
+        aria-expanded={details}
+        onClick={() => setDetails(d => !d)}
+        className="mt-2 -ml-2 rounded px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+      >
+        {details ? 'Details ausblenden' : 'Details: Mittelwert, Modus, Streuung'}
+      </button>
+      {details && (
+        <dl className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] tabular-nums sm:grid-cols-4">
+          <div>
+            <dt className="text-muted-foreground">Mittelwert</dt>
+            <dd className="font-medium text-foreground">{fmt(avg)}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">Modus (Kurvenscheitel)</dt>
+            <dd className="font-medium text-foreground">{fmt(modus)}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">Streuung σ</dt>
+            <dd className="font-medium text-foreground">{fmt(sd)}</dd>
+          </div>
+          {percentile != null && (
+            <div>
+              <dt className="text-muted-foreground">Dieser Monat</dt>
+              <dd className="font-medium text-foreground">
+                {percentile}. Perzentil{zScore != null && <> · z {fmtZ(zScore)}</>}
+              </dd>
+            </div>
+          )}
+        </dl>
+      )}
     </div>
   )
 }

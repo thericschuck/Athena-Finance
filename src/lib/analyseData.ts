@@ -6,7 +6,32 @@ export interface HeatmapDay {
   income: number  // Einnahmen in €
 }
 
-export interface SankeyNodeDatum { name: string }
+/** Rolle eines Knotens im Geldfluss: bestimmt Farbe, Position und Klickverhalten. */
+export type SankeyArt =
+  | 'quelle'      // Einnahmenquelle (links)
+  | 'einnahmen'   // Mittelknoten
+  | 'ausgabe'     // Ausgabenkategorie (rechts)
+  | 'weitere'     // Sammelknoten für die kleinen Posten einer Seite
+  | 'anlage'      // Anlagen (Krypto, Depot, Bauspar) — eigener, erkennbarer Fluss
+  | 'ueberschuss' // übrig geblieben (rechts)
+  | 'defizit'     // mehr ausgegeben als eingenommen (links, speist den Mittelknoten)
+
+export interface SankeyNodeDatum {
+  name: string
+  /**
+   * Alles Folgende ist optional, weil die Demodaten der Landingpage nur Namen kennen
+   * (`normalisiereSankey` in lib/analyse/geldfluss.ts leitet die Rolle dann aus der Position ab).
+   */
+  art?: SankeyArt
+  /** Haupt-Kategorie-ID für den Drill-down (`kat` in der URL); `'offen'` = ohne Kategorie. */
+  kategorieId?: string
+  /** Position innerhalb der Seite (0 = größter Posten) — wählt den Farbton. */
+  rang?: number
+  /** Echter Betrag in EUR (`value` im Layout kann bei Ausgaben gestaucht sein). */
+  betrag?: number
+  /** Bei einem Sammelknoten: was darin steckt, absteigend. */
+  enthalten?: { name: string; betrag: number }[]
+}
 export interface SankeyLinkDatum {
   source: number
   target: number
@@ -44,6 +69,13 @@ export interface CashflowEvent {
 
 export interface MonthlyComparison {
   month:     string
+  /**
+   * `YYYY-MM` — der Monat, den `month` (nur ein Kurzlabel wie „Mär", über 24 Monate nicht
+   * eindeutig) beschriftet. MonatsVergleich setzt damit den URL-Filter `monat`. Optional,
+   * weil die Demodaten der Landingpage keinen Filter haben; ohne `key` ist der Balken nicht
+   * anklickbar.
+   */
+  key?:      string
   einnahmen: number
   ausgaben:  number
   /**
