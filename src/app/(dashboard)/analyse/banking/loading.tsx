@@ -7,12 +7,10 @@ import {
 } from '@/components/ui/skeleton'
 
 /**
- * Bewusst formgleich mit dem Ladezustand, den `page.tsx` selbst rendert: erst greift diese
- * Datei (Route-Übergang), danach die Client-Seite (Daten-Fetch). Wenn beide dieselbe
- * Silhouette zeigen, sieht der Wechsel wie ein durchgehender Ladevorgang aus.
- *
- * Kontokarten, drei Saldenverläufe, Zeitraum-Leiste, Trend + Kategorien, Buchungstabelle —
- * die Reihenfolge folgt der Seite.
+ * Ladezustand der Route, formgleich mit der fertigen Seite (page.tsx ist jetzt eine
+ * Server-Komponente: es gibt nur noch EINEN Ladezustand, keinen zweiten im Browser):
+ * Kennzahlen, Kontokarten, Gesamtverlauf und Kontoverläufe, Filterleiste, Trend + Kategorien,
+ * Gegenparteien + feste Kosten, Buchungstabelle — die Reihenfolge folgt der Seite.
  */
 export default function Loading() {
   return (
@@ -29,8 +27,10 @@ export default function Loading() {
         </div>
       </div>
 
+      <SkeletonStatCards count={4} />
       <SkeletonStatCards count={3} />
 
+      <SkeletonChart variant="area" height={220} />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <SkeletonChart key={i} variant="area" height={180} />
@@ -41,6 +41,11 @@ export default function Loading() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <SkeletonChart variant="bars" height={220} legend />
+        <SkeletonChart variant="hbars" height={220} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <SkeletonChart variant="hbars" height={220} />
         <SkeletonChart variant="hbars" height={220} />
       </div>
 

@@ -40,7 +40,8 @@ export function vertragsTyp(k: Pick<Kandidat, 'bezeichnung' | 'kategorie_name' |
   if (/miete|warmmiete|kaltmiete/.test(text)) return 'rental'
   if (/strom|gas|wasser|stadtwerke|internet|telekom|vodafone|o2|kernenergie/.test(text)) return 'utility'
   if (/kredit|darlehen|tilgung/.test(text)) return 'loan'
-  if (/sparplan|etf|depot/.test(text)) return 'savings_plan'
+  // Mit Wortgrenze: ohne sie traf etf auch in Netflix, das dann als Sparplan galt.
+  if (/sparplan|\betf\b|depot/.test(text)) return 'savings_plan'
   if (k.kategorie_wurzel && ABO_WURZEL.test(k.kategorie_wurzel)) return 'subscription'
   return 'subscription'
 }

@@ -27,6 +27,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { id } = p.data
   const categoryId = b.data.category_id
 
+  // Der Fremdschluessel prueft nur, dass die Kategorie EXISTIERT, nicht wem sie gehoert.
+  if (categoryId) {
+    const { data: kat } = await supabase
+      .from('categories').select('id').eq('id', categoryId).eq('user_id', user.id).maybeSingle()
+    if (!kat) return NextResponse.json({ error: 'Kategorie nicht gefunden' }, { status: 404 })
+  }
+
   const { data, error } = await supabase
     .from('bank_transactions')
     .update({ category_id: categoryId, category_source: categoryId ? 'manual' : null })

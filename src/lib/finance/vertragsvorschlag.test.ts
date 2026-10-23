@@ -19,6 +19,9 @@ test('Name: Abo-Unterkategorie mit Anbieternamen schlägt den Beleg-Text, Sammel
 test('Typ: Bausparen, Versicherung, Miete, Versorger werden erkannt, sonst Abonnement', () => {
   assert.equal(vertragsTyp(k({ bezeichnung: 'Bausparkasse Schwäbisch Hall AG', kategorie_name: '20.000 €', kategorie_wurzel: 'Bausparverträge' })), 'building_savings')
   assert.equal(vertragsTyp(k({ bezeichnung: 'Allianz Versicherung' })), 'insurance')
+  // Wortgrenze: etf steckt auch in Netflix, das ist kein Sparplan.
+  assert.notEqual(vertragsTyp(k({ bezeichnung: 'Netflix International', kategorie_name: 'Netflix', kategorie_wurzel: 'Abo' })), 'savings_plan')
+  assert.equal(vertragsTyp(k({ bezeichnung: 'ETF Sparplan MSCI World', kategorie_name: 'ETF', kategorie_wurzel: 'Depot' })), 'savings_plan')
   assert.equal(vertragsTyp(k({ bezeichnung: 'Wohnung Miete Oktober' })), 'rental')
   assert.equal(vertragsTyp(k({ bezeichnung: 'SP KERNENERGIE GMBH' })), 'utility')
   assert.equal(vertragsTyp(k()), 'subscription')
