@@ -264,8 +264,19 @@ export function veraenderungProzent(aktuell: number, vorher: number): number | n
 // ── Muster ───────────────────────────────────────────────────────────────────
 
 export const WOCHENTAGE = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'] as const
-/** Unter dieser Zahl Ausgabenbuchungen sagt eine Verteilung nichts aus. */
+export type MusterRichtung = 'ausgaben' | 'einnahmen'
+
+/**
+ * Unter dieser Zahl Buchungen sagt eine Verteilung nichts aus. Einnahmen sind seltener (ein Lohn
+ * im Monat, ein paar Rechnungen) und bekommen deshalb eine niedrigere Schwelle; mit 30 haette der
+ * Einnahmenmuster-Schalter fast immer „zu wenig Daten" gezeigt.
+ */
 export const MUSTER_MIN_BUCHUNGEN = 30
+export const MUSTER_MIN_EINNAHMEN = 12
+
+export function musterMindestens(richtung: MusterRichtung): number {
+  return richtung === 'einnahmen' ? MUSTER_MIN_EINNAHMEN : MUSTER_MIN_BUCHUNGEN
+}
 
 export interface Muster {
   anzahl: number
@@ -280,7 +291,11 @@ export interface Muster {
   hinweise: string[]
 }
 
-export function berechneMuster(buchungen: BankTransaction[], eigeneIbans: readonly string[]): Muster {
+export function berechneMuster(
+  buchungen: BankTransaction[], eigeneIbans: readonly string[], richtung: MusterRichtung = 'ausgaben',
+): Muster {
+  const ausgaben = richtung === 'ausgaben'
+  const nomen = ausgaben ? 'Ausgaben' : 'Einnahmen'
   const eigene = new Set(eigeneIbans.map(normIban))
   const m: Muster = {
     anzahl: 0, summe: 0, genug: false,
@@ -289,8 +304,8 @@ export function berechneMuster(buchungen: BankTransaction[], eigeneIbans: readon
     hinweise: [],
   }
   for (const t of buchungen) {
-    if (t.amount >= 0 || istUmbuchung(t, eigene)) continue
-    const betrag = -t.amount
+    if ((ausgaben ? t.amount >= 0 : t.amount <= 0) || istUmbuchung(t, eigene)) continue
+    const betrag = Math.abs(t.amount)
     const [y, mo, tag] = t.value_date.slice(0, 10).split('-').map(Number)
     if (!y || !mo || !tag) continue
     const wt = (new Date(Date.UTC(y, mo - 1, tag)).getUTCDay() + 6) % 7
@@ -301,7 +316,7 @@ export function berechneMuster(buchungen: BankTransaction[], eigeneIbans: readon
     m.summe += betrag
     m.anzahl += 1
   }
-  m.genug = m.anzahl >= MUSTER_MIN_BUCHUNGEN
+  m.genug = m.anzahl >= musterMindestens(richtung)
   if (!m.genug || m.summe <= 0) return m
 
   const anteil = (arr: number[], von: number, bis: number) =>
@@ -309,15 +324,15 @@ export function berechneMuster(buchungen: BankTransaction[], eigeneIbans: readon
   const pct = (x: number) => `${Math.round(x * 100)} %`
 
   const anfang = anteil(m.tagSumme, 1, 5)
-  if (anfang > 0.5) m.hinweise.push(`Mehr als die Hälfte der Ausgaben (${pct(anfang)}) fällt auf den 1. bis 5. des Monats.`)
+  if (anfang > 0.5) m.hinweise.push(`Mehr als die Hälfte der ${nomen} (${pct(anfang)}) fällt auf den 1. bis 5. des Monats.`)
   const ende = anteil(m.tagSumme, 26, 31)
-  if (ende > 0.4) m.hinweise.push(`${pct(ende)} der Ausgaben fallen auf den 26. bis Monatsende.`)
+  if (ende > 0.4) m.hinweise.push(`${pct(ende)} der ${nomen} fallen auf den 26. bis Monatsende.`)
 
   // Wochentag: bei gleichmaessiger Verteilung waeren es 14 %; ab gut anderthalbfach lohnt ein Hinweis.
   const top = m.wochentagSumme.reduce((b, v, i) => (v > m.wochentagSumme[b] ? i : b), 0)
   const topAnteil = m.wochentagSumme[top] / m.summe
-  if (topAnteil >= 0.25) m.hinweise.push(`${WOCHENTAGE[top]} ist mit ${pct(topAnteil)} der Ausgaben der stärkste Wochentag.`)
+  if (topAnteil >= 0.25) m.hinweise.push(`${WOCHENTAGE[top]} ist mit ${pct(topAnteil)} der ${nomen} der stärkste Wochentag.`)
   const wochenende = (m.wochentagSumme[5] + m.wochentagSumme[6]) / m.summe
-  if (wochenende >= 0.4) m.hinweise.push(`${pct(wochenende)} der Ausgaben fallen auf das Wochenende.`)
+  if (wochenende >= 0.4) m.hinweise.push(`${pct(wochenende)} der ${nomen} fallen auf das Wochenende.`)
   return m
 }

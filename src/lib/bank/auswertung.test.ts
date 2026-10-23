@@ -88,6 +88,20 @@ test('Vorperiode: nur mit ausreichend alten Daten', () => {
   assert.equal(veraenderungProzent(5, 0), null)
 })
 
+test('Muster Einnahmen: eigene Schwelle, nur positive Buchungen, Hinweistext mit Einnahmen', () => {
+  const lohn = Array.from({ length: 12 }, () => tx({ amount: 2500, value_date: '2026-09-02' }))
+  const ausgabe = tx({ amount: -40, value_date: '2026-09-03' })
+  const m = berechneMuster([...lohn, ausgabe], [], 'einnahmen')
+  assert.equal(m.genug, true)
+  assert.equal(m.anzahl, 12)
+  assert.equal(m.summe, 30000)
+  assert.ok(m.hinweise[0].includes('Einnahmen'))
+  // Dieselben Buchungen als Ausgaben: nur die eine negative zaehlt, zu wenig fuer ein Muster.
+  const a = berechneMuster([...lohn, ausgabe], [], 'ausgaben')
+  assert.equal(a.anzahl, 1)
+  assert.equal(a.genug, false)
+})
+
 test('Muster: zu wenig Daten, dann Hinweis auf den Monatsanfang', () => {
   assert.equal(berechneMuster([tx({ amount: -5, value_date: '2026-10-02' })], []).genug, false)
   const viele = Array.from({ length: 40 }, (_, i) =>
