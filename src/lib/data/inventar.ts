@@ -87,7 +87,7 @@ export async function getHandBewertungsstaende(supabase: DB, userId: string): Pr
 export async function getSammlungsRohdaten(supabase: DB, userId: string) {
   const { data: stuecke } = await supabase
     .from('valuables')
-    .select('id, im_vermoegen, kaufpreis, gekauft_am, verkauft_am')
+    .select('id, kategorie, im_vermoegen, kaufpreis, gekauft_am, verkauft_am')
     .eq('user_id', userId)
 
   const bewertungen: { valuable_id: string; bewertet_am: string; wert: number }[] = []
@@ -108,6 +108,7 @@ export async function getSammlungsRohdaten(supabase: DB, userId: string) {
   return {
     stuecke: (stuecke ?? []) as unknown as {
       id: string
+      kategorie: string
       im_vermoegen: boolean
       kaufpreis: number | null
       gekauft_am: string | null

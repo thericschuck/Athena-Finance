@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { sammlungsverlauf, type VerlaufBewertung, type VerlaufStueck } from './sammlungsverlauf.ts'
 
 const stueck = (id: string, extra: Partial<VerlaufStueck> = {}): VerlaufStueck => ({
-  id, im_vermoegen: true, kaufpreis: null, gekauft_am: null, verkauft_am: null, ...extra,
+  id, kategorie: 'uhr', im_vermoegen: true, kaufpreis: null, gekauft_am: null, verkauft_am: null, ...extra,
 })
 const bew = (valuable_id: string, bewertet_am: string, wert: number): VerlaufBewertung => ({ valuable_id, bewertet_am, wert })
 
@@ -54,6 +54,16 @@ test('Eingekauft wächst mit dem Kaufdatum', () => {
     '2026-02-01',
   )
   assert.deepEqual(p.map(x => x.eingekauft), [80, 80])
+})
+
+test('Kategorien summieren sich zum Gesamtwert', () => {
+  const p = sammlungsverlauf(
+    [stueck('a', { kategorie: 'uhr' }), stueck('b', { kategorie: 'schmuck' }), stueck('c', { kategorie: 'uhr' })],
+    [bew('a', '2026-01-01', 100), bew('b', '2026-01-01', 40), bew('c', '2026-01-01', 10)],
+    '2026-01-01',
+  )
+  assert.deepEqual(p[0].kategorien, { uhr: 110, schmuck: 40 })
+  assert.equal(Object.values(p[0].kategorien).reduce((s, n) => s + n, 0), p[0].wert)
 })
 
 test('Ohne jede Bewertung gibt es keine Punkte', () => {

@@ -12,6 +12,7 @@
 
 export interface VerlaufStueck {
   id: string
+  kategorie: string
   im_vermoegen: boolean
   kaufpreis: number | null
   gekauft_am: string | null
@@ -32,6 +33,8 @@ export interface Sammlungspunkt {
   eingekauft: number
   /** Anzahl Stücke, die zu diesem Stichtag zählen. */
   stuecke: number
+  /** Wert je Kategorie; die Summe ergibt `wert`. */
+  kategorien: Record<string, number>
 }
 
 export function sammlungsverlauf(
@@ -65,6 +68,7 @@ export function sammlungsverlauf(
     let wert = 0
     let eingekauft = 0
     let anzahl = 0
+    const kategorien: Record<string, number> = {}
     for (const s of zaehlt) {
       if (s.verkauft_am && tag >= s.verkauft_am) continue
       const l = je.get(s.id)
@@ -73,13 +77,15 @@ export function sammlungsverlauf(
       if (l) for (const b of l) { if (b.bewertet_am <= tag) aktuell = b; else break }
       if (aktuell) {
         wert += Number(aktuell.wert)
+        kategorien[s.kategorie] = (kategorien[s.kategorie] ?? 0) + Number(aktuell.wert)
         anzahl++
       }
       if (s.kaufpreis != null && s.gekauft_am && s.gekauft_am <= tag) eingekauft += Number(s.kaufpreis)
     }
     // Tage, an denen noch gar nichts bewertet war, sind kein Datenpunkt.
     if (anzahl === 0) continue
-    punkte.push({ datum: tag, wert: Math.round(wert * 100) / 100, eingekauft, stuecke: anzahl })
+    for (const k of Object.keys(kategorien)) kategorien[k] = Math.round(kategorien[k] * 100) / 100
+    punkte.push({ datum: tag, wert: Math.round(wert * 100) / 100, eingekauft, stuecke: anzahl, kategorien })
   }
   return punkte
 }

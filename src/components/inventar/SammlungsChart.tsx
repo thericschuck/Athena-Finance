@@ -5,6 +5,7 @@ import {
   Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
 import { fmtCurrency } from '@/lib/format'
+import { kategorieLabel } from '@/lib/valuables'
 import type { Sammlungspunkt } from '@/lib/inventar/sammlungsverlauf'
 
 /**
@@ -20,10 +21,18 @@ const ZEITRAEUME = [
 
 type Zeitraum = typeof ZEITRAEUME[number]['key']
 
+type Ansicht = 'gesamt' | 'kategorie'
+
+/** Themefarben fuer Kategorien (`--chart-cat-1…6`). Die sechste gehoert zu „Weitere". */
+const MAX_KATEGORIEN = 5
+const WEITERE = 'weitere'
+const kategorieFarbe = (i: number) => `var(--chart-cat-${i + 1})`
+
 const tag = (iso: string) => new Date(`${iso}T00:00:00Z`).getTime()
 
 export default function SammlungsChart({ punkte, locale }: { punkte: Sammlungspunkt[]; locale: string }) {
   const [zeitraum, setZeitraum] = useState<Zeitraum>('max')
+  const [ansicht, setAnsicht] = useState<Ansicht>('gesamt')
   const euro = (n: number) => fmtCurrency(n, 'EUR', locale, { fractionDigits: 0 })
 
   const daten = useMemo(() => {
@@ -40,6 +49,35 @@ export default function SammlungsChart({ punkte, locale }: { punkte: Sammlungspu
     }
     return liste.map(p => ({ ...p, t: tag(p.datum) }))
   }, [punkte, zeitraum])
+
+  // Kategorien nach ihrem heutigen Wert, groesste zuerst (unterste Schicht). Mehr als fuenf
+  // werden zu „Weitere" zusammengefasst — sechs Farben sind lesbar, dreizehn nicht.
+  const schichten = useMemo(() => {
+    const heute = punkte[punkte.length - 1]?.kategorien ?? {}
+    const alle = new Set<string>()
+    for (const p of punkte) for (const k of Object.keys(p.kategorien)) alle.add(k)
+    const sortiert = [...alle].sort((a, b) => (heute[b] ?? 0) - (heute[a] ?? 0))
+    const oben = sortiert.slice(0, MAX_KATEGORIEN)
+    const rest = sortiert.slice(MAX_KATEGORIEN)
+    return {
+      keys: rest.length > 0 ? [...oben, WEITERE] : oben,
+      rest: new Set(rest),
+    }
+  }, [punkte])
+
+  const geschichtet = useMemo(
+    () =>
+      daten.map(p => {
+        const zeile: Record<string, number> = {}
+        for (const [k, v] of Object.entries(p.kategorien)) {
+          const key = schichten.rest.has(k) ? WEITERE : k
+          zeile[key] = (zeile[key] ?? 0) + v
+        }
+        return { ...p, ...zeile }
+      }),
+    [daten, schichten],
+  )
+  const schichtLabel = (k: string) => (k === WEITERE ? 'Weitere' : kategorieLabel(k))
 
   const datumFmt = useMemo(
     () => new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'short', year: '2-digit', timeZone: 'UTC' }),
@@ -69,6 +107,22 @@ export default function SammlungsChart({ punkte, locale }: { punkte: Sammlungspu
           </p>
         </div>
 
+        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex rounded-md border border-border p-0.5" role="group" aria-label="Darstellung">
+          {([['gesamt', 'Gesamt'], ['kategorie', 'Nach Kategorie']] as const).map(([k, label]) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setAnsicht(k)}
+              aria-pressed={ansicht === k}
+              className={`rounded px-2 py-1 text-xs transition-colors ${
+                ansicht === k ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <div className="flex rounded-md border border-border p-0.5" role="group" aria-label="Zeitraum">
           {ZEITRAEUME.map(z => (
             <button
@@ -84,11 +138,12 @@ export default function SammlungsChart({ punkte, locale }: { punkte: Sammlungspu
             </button>
           ))}
         </div>
+        </div>
       </div>
 
       <div className="mt-3 h-44 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={daten} margin={{ top: 6, right: 8, bottom: 0, left: 0 }}>
+          <ComposedChart data={ansicht === 'kategorie' ? geschichtet : daten} margin={{ top: 6, right: 8, bottom: 0, left: 0 }}>
             <defs>
               <linearGradient id="sammlung-fuellung" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="var(--chart-accent)" stopOpacity={0.28} />
@@ -118,17 +173,37 @@ export default function SammlungsChart({ punkte, locale }: { punkte: Sammlungspu
             <Tooltip
               contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
               labelFormatter={t => datumFmt.format(Number(t))}
-              formatter={(v, name) => [euro(Number(v)), name === 'wert' ? 'Wert' : 'Eingekauft']}
+              formatter={(v, name) => [
+                euro(Number(v)),
+                name === 'wert' ? 'Wert' : name === 'eingekauft' ? 'Eingekauft' : schichtLabel(String(name)),
+              ]}
             />
-            <Area
-              type="monotone"
-              dataKey="wert"
-              stroke="var(--chart-accent)"
-              strokeWidth={2}
-              fill="url(#sammlung-fuellung)"
-              dot={false}
-              isAnimationActive={false}
-            />
+            {ansicht === 'gesamt' ? (
+              <Area
+                type="monotone"
+                dataKey="wert"
+                stroke="var(--chart-accent)"
+                strokeWidth={2}
+                fill="url(#sammlung-fuellung)"
+                dot={false}
+                isAnimationActive={false}
+              />
+            ) : (
+              schichten.keys.map((k, i) => (
+                <Area
+                  key={k}
+                  type="monotone"
+                  dataKey={k}
+                  stackId="kategorie"
+                  stroke={kategorieFarbe(i)}
+                  strokeWidth={1.5}
+                  fill={kategorieFarbe(i)}
+                  fillOpacity={0.35}
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              ))
+            )}
             {/* Stufenlinie: die Kaufsumme aendert sich nur an Kauftagen, nicht dazwischen. */}
             <Line
               type="stepAfter"
@@ -143,9 +218,24 @@ export default function SammlungsChart({ punkte, locale }: { punkte: Sammlungspu
         </ResponsiveContainer>
       </div>
 
-      <p className="mt-1 text-[11px] text-muted-foreground">
-        Durchgezogen: geschätzter Wert · gestrichelt: Summe der Kaufpreise
-      </p>
+      {ansicht === 'kategorie' ? (
+        <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+          {schichten.keys.map((k, i) => (
+            <li key={k} className="flex items-center gap-1.5">
+              <span className="size-2 rounded-sm" style={{ background: kategorieFarbe(i) }} />
+              {schichtLabel(k)}
+            </li>
+          ))}
+          <li className="flex items-center gap-1.5">
+            <span className="h-0 w-3 border-t border-dashed border-muted-foreground" />
+            Summe der Kaufpreise
+          </li>
+        </ul>
+      ) : (
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          Durchgezogen: geschätzter Wert · gestrichelt: Summe der Kaufpreise
+        </p>
+      )}
     </div>
   )
 }
