@@ -7,6 +7,7 @@ import {
 } from 'recharts'
 import { AlertTriangle, TrendingUp, Minus } from 'lucide-react'
 import { fmtCurrency } from '@/lib/format'
+import { anzeigeReihenfolge, tooltipSortierer } from '@/lib/chart-reihenfolge'
 import type { CategoryMonthSeries } from '@/lib/finance/flow-calc'
 
 export type Summary = {
@@ -178,6 +179,9 @@ function CategoryChart({ series, locale }: { series: CategoryMonthSeries; locale
   }
 
   const cats = series.categories
+  // Gestapelt: die zuletzt gezeichnete Kategorie liegt oben. Chips und Tooltip führen sie
+  // in der Reihenfolge, in der man sie im Balken sieht (oben zuerst).
+  const reihenfolge = anzeigeReihenfolge(cats)
   const colorFor = (cat: string) => catColor(cats.indexOf(cat), cat === series.otherKey)
   const data = series.months.slice(-6).map(m => ({
     label: monthLabel(m.month, locale),
@@ -188,7 +192,7 @@ function CategoryChart({ series, locale }: { series: CategoryMonthSeries; locale
     <Card>
       <SectionTitle>Ausgaben nach Hauptkategorie</SectionTitle>
       <div className="flex flex-wrap gap-1.5 mb-3">
-        {cats.map(cat => (
+        {reihenfolge.map(cat => (
           <button
             key={cat}
             onClick={() => toggle(cat)}
@@ -219,6 +223,7 @@ function CategoryChart({ series, locale }: { series: CategoryMonthSeries; locale
             <ReTooltip
               content={<ChartTooltip fmt={fmt} />}
               cursor={{ fill: 'var(--muted)', fillOpacity: 0.4 }}
+              itemSorter={tooltipSortierer(reihenfolge)}
             />
             {cats.filter(cat => !hidden.has(cat)).map(cat => (
               <Bar key={cat} dataKey={cat} stackId="a" fill={colorFor(cat)} fillOpacity={0.85} maxBarSize={36} />

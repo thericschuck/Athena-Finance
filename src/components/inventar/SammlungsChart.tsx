@@ -6,6 +6,7 @@ import {
 } from 'recharts'
 import { fmtCurrency } from '@/lib/format'
 import { kategorieLabel } from '@/lib/valuables'
+import { anzeigeReihenfolge, tooltipSortierer } from '@/lib/chart-reihenfolge'
 import type { Sammlungspunkt } from '@/lib/inventar/sammlungsverlauf'
 
 /**
@@ -77,6 +78,9 @@ export default function SammlungsChart({ punkte, locale }: { punkte: Sammlungspu
       }),
     [daten, schichten],
   )
+  // Gestapelt: die zuletzt gezeichnete Kategorie liegt oben. Legende und Tooltip führen sie
+  // oben zuerst; die Kaufpreis-Linie (Hilfslinie) kommt dahinter.
+  const reihenfolge = useMemo(() => anzeigeReihenfolge(schichten.keys), [schichten])
   const schichtLabel = (k: string) => (k === WEITERE ? 'Weitere' : kategorieLabel(k))
 
   const datumFmt = useMemo(
@@ -179,6 +183,7 @@ export default function SammlungsChart({ punkte, locale }: { punkte: Sammlungspu
             <Tooltip
               contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
               labelFormatter={t => datumFmt.format(Number(t))}
+              itemSorter={tooltipSortierer(reihenfolge)}
               formatter={(v, name) => [
                 euro(Number(v)),
                 name === 'wert' ? 'Wert' : name === 'eingekauft' ? 'Eingekauft' : schichtLabel(String(name)),
@@ -226,9 +231,9 @@ export default function SammlungsChart({ punkte, locale }: { punkte: Sammlungspu
 
       {ansicht === 'kategorie' ? (
         <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
-          {schichten.keys.map((k, i) => (
+          {reihenfolge.map(k => (
             <li key={k} className="flex items-center gap-1.5">
-              <span className="size-2 rounded-sm" style={{ background: kategorieFarbe(i) }} />
+              <span className="size-2 rounded-sm" style={{ background: kategorieFarbe(schichten.keys.indexOf(k)) }} />
               {schichtLabel(k)}
             </li>
           ))}

@@ -10,6 +10,7 @@ import {
 } from 'recharts'
 import { useSettings } from '@/components/providers/settings-context'
 import { fmtCurrency } from '@/lib/format'
+import { anzeigeReihenfolge, tooltipSortierer } from '@/lib/chart-reihenfolge'
 
 // Theme-Kategorienpalette (siehe --chart-cat-* in globals.css) statt fixer
 // Hex-Werte — zieht pro aktivem Dashboard-Theme mit, statt überall Aurums
@@ -70,6 +71,9 @@ export function PortfolioAreaChart({
   tickInterval: number
   height?: number | `${number}%`
 }) {
+  // Gestapelt: die zuletzt gezeichnete Fläche liegt oben. Legende und Tooltip führen sie
+  // in der Reihenfolge, in der man sie im Chart sieht (oben zuerst).
+  const reihenfolge = anzeigeReihenfolge(visiblePortfolios)
   return (
     <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
@@ -103,10 +107,11 @@ export function PortfolioAreaChart({
           axisLine={false}
           width={52}
         />
-        <Tooltip content={<CustomTooltip />} />
+        <Tooltip content={<CustomTooltip />} itemSorter={tooltipSortierer(reihenfolge)} />
         {visiblePortfolios.length > 1 && (
           <Legend
             wrapperStyle={{ fontSize: '12px', paddingTop: '12px', opacity: 0.7 }}
+            itemSorter={item => reihenfolge.indexOf(String(item.dataKey ?? item.value))}
           />
         )}
 

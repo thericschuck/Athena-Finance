@@ -3,6 +3,7 @@
 import { Area, CartesianGrid, ComposedChart, Line, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useSettings } from '@/components/providers/settings-context'
 import { fmtCurrency } from '@/lib/format'
+import { tooltipSortierer } from '@/lib/chart-reihenfolge'
 import type { ChartDaten, ChartPunkt } from '@/lib/forecast/chartdaten'
 
 /**
@@ -11,6 +12,9 @@ import type { ChartDaten, ChartPunkt } from '@/lib/forecast/chartdaten'
  * Zeitachse (siehe lib/forecast/chartdaten.ts); „Heute" verbindet beide Linien, weil der Punkt beide
  * Werte trägt, und das Band öffnet sich von dort.
  */
+
+// Hauptserien zuerst (Verlauf, Prognose), Hilfslinien und Band dahinter.
+const TIP_REIHENFOLGE = ['ist', 'szenario', 'basis', 'band']
 
 const abbr = (n: number) => (Math.abs(n) >= 1000 ? `${(n / 1000).toFixed(1)}k` : n.toFixed(0))
 
@@ -80,7 +84,7 @@ function Reihe({ titel, daten, heute, ticks, mitAnnahmen, farbe, nullLinie, tief
             tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false}
           />
           <YAxis tickFormatter={abbr} tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} domain={['auto', 'auto']} />
-          <Tooltip content={<Tip fmt={fmt} tag={tag} />} />
+          <Tooltip content={<Tip fmt={fmt} tag={tag} />} itemSorter={tooltipSortierer(TIP_REIHENFOLGE)} />
           {nullLinie && <ReferenceLine y={0} stroke="var(--chart-expense)" strokeDasharray="4 4" />}
           <ReferenceLine
             x={heute} stroke="var(--muted-foreground)" strokeOpacity={0.5}

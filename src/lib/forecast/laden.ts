@@ -41,14 +41,28 @@ export type PrognoseSeite = {
   hinweise: string[]
 }
 
-export async function ladePrognose(
+/**
+ * Alles, was die Cashflow-/Vermögensprognose braucht, ohne Steuer und Rückblick: Daten laden,
+ * Modelle einmal lernen, Basis und Szenario rechnen. Eigene Funktion, damit andere Seiten (der
+ * Vermögensverlauf) dieselbe Prognose benutzen können, ohne die Steuerberechnung mitzuladen.
+ */
+export type PrognoseBasis = {
+  stand: PrognoseSeite['stand']
+  basis: Prognose
+  szenario: Prognose
+  annahmen: Annahme[]
+  einmalposten: EinmalKandidat[]
+  ausgeschlossen: number
+  hinweise: string[]
+}
+
+export async function ladePrognoseBasis(
   supabase: DB, userId: string, heute: string, opts: { monate?: number } = {},
-): Promise<PrognoseSeite> {
+): Promise<PrognoseBasis> {
   const monate = opts.monate ?? 18
-  const jahr = parse(heute).y
   const hinweise: string[] = []
 
-  const [accounts, balanceSums, bankBalances, vertraegeRes, nwRes, buchungen, lohnRes, annahmenRoh, snapshots, ueRoh] = await Promise.all([
+  const [accounts, balanceSums, bankBalances, vertraegeRes, nwRes, buchungen, lohnRes, annahmenRoh, ueRoh] = await Promise.all([
     getDashboardAccounts(supabase, userId),
     getBalanceSums(supabase, userId),
     getBankBalances(supabase, userId),
@@ -69,7 +83,6 @@ export async function ladePrognose(
       .gte('date', addMonate(monatVon(heute), -8) + '-01')
       .limit(200),
     fetchSettingValue(supabase, userId, ANNAHMEN_KEY),
-    getNetWorthSnapshotsSince(supabase, userId, addTage(heute, -190)),
     fetchSettingValue(supabase, userId, UEBERSCHREIBUNG_KEY),
   ])
 
@@ -121,6 +134,31 @@ export async function ladePrognose(
   const basis = berechnePrognose({ ...gemeinsam, annahmen: [] }, gelernt)
   const szenario = berechnePrognose({ ...gemeinsam, annahmen }, gelernt)
 
+  return {
+    stand: {
+      liquiditaet: Math.round(liquiditaet * 100) / 100,
+      vermoegen,
+      vermoegenStand: nwRes.data?.snapshot_date ? String(nwRes.data.snapshot_date) : null,
+      liquideKonten: liquide.length,
+    },
+    basis, szenario, annahmen,
+    einmalposten: einmal.kandidaten,
+    ausgeschlossen: einmal.ausgeschlossen.size,
+    hinweise,
+  }
+}
+
+export async function ladePrognose(
+  supabase: DB, userId: string, heute: string, opts: { monate?: number } = {},
+): Promise<PrognoseSeite> {
+  const jahr = parse(heute).y
+  // Rückblick und Cashflow-Prognose sind unabhängig und laufen gleichzeitig.
+  const [b, snapshots] = await Promise.all([
+    ladePrognoseBasis(supabase, userId, heute, opts),
+    getNetWorthSnapshotsSince(supabase, userId, addTage(heute, -190)),
+  ])
+  const { basis, szenario, annahmen } = b
+
   // ── Steuer: laufendes und nächstes Jahr ───────────────────────────────────────────────
   // Ein gemeinsamer Zwischenspeicher: die drei Jahre überlappen (Vorjahre, Kraken-Historie) und werden so je einmal geladen.
   const steuerCache = neuerSteuerCache()
@@ -149,19 +187,14 @@ export async function ladePrognose(
 
   return {
     heute,
-    stand: {
-      liquiditaet: Math.round(liquiditaet * 100) / 100,
-      vermoegen,
-      vermoegenStand: nwRes.data?.snapshot_date ? String(nwRes.data.snapshot_date) : null,
-      liquideKonten: liquide.length,
-    },
+    stand: b.stand,
     basis, szenario,
     verlauf: tagesverlauf(snapshots, heute, 180),
     steuer: [steuerJetzt, steuerNaechstes],
     laufrateQuelle: quelle,
     annahmen,
-    einmalposten: einmal.kandidaten,
-    ausgeschlossen: einmal.ausgeschlossen.size,
-    hinweise,
+    einmalposten: b.einmalposten,
+    ausgeschlossen: b.ausgeschlossen,
+    hinweise: b.hinweise,
   }
 }
