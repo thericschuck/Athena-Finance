@@ -88,8 +88,14 @@ export default function SammlungsChart({ punkte, locale }: { punkte: Sammlungspu
 
   const erster = daten[0]
   const letzter = daten[daten.length - 1]
-  const delta = letzter.wert - erster.wert
-  const prozent = erster.wert > 0 ? (delta / erster.wert) * 100 : null
+  // Entwicklung um Zukaeufe bereinigt: ohne das waere „+530 %" nur der Effekt, dass die
+  // Kurve mit EINEM Stueck beginnt und spaeter weitere dazukommen. Gerechnet wird der
+  // Wertzuwachs abzueglich dessen, was seitdem dazugekauft wurde, bezogen auf das
+  // eingesetzte Kapital (Startwert plus Zukaeufe).
+  const zukauf = letzter.eingekauft - erster.eingekauft
+  const delta = letzter.wert - erster.wert - zukauf
+  const basis = erster.wert + zukauf
+  const prozent = basis > 0 ? (delta / basis) * 100 : null
 
   return (
     <div className="rounded-lg border border-border bg-card px-5 py-4">
@@ -180,7 +186,7 @@ export default function SammlungsChart({ punkte, locale }: { punkte: Sammlungspu
             />
             {ansicht === 'gesamt' ? (
               <Area
-                type="monotone"
+                type="stepAfter"
                 dataKey="wert"
                 stroke="var(--chart-accent)"
                 strokeWidth={2}
@@ -192,7 +198,7 @@ export default function SammlungsChart({ punkte, locale }: { punkte: Sammlungspu
               schichten.keys.map((k, i) => (
                 <Area
                   key={k}
-                  type="monotone"
+                  type="stepAfter"
                   dataKey={k}
                   stackId="kategorie"
                   stroke={kategorieFarbe(i)}

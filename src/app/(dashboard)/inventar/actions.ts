@@ -190,6 +190,23 @@ export async function updateValuable(
 
   if (error) return { error: error.message }
 
+  // Die Kaufbewertung folgt Kaufdatum und Kaufpreis. Vorher blieb sie beim Datum stehen, das
+  // beim Anlegen galt: wer ein vertipptes Kaufdatum korrigierte (Prada: 2026 statt 2025),
+  // behielt eine Bewertung in der Zukunft, und der Sammlungsverlauf zeigte das Stück erst ab
+  // der naechsten Handeingabe — waehrend die Kaufsummen-Linie es schon fuehrte.
+  //
+  // Ein Konflikt mit `unique (valuable_id, bewertet_am)` (am Zieltag existiert schon eine
+  // andere Bewertung) wird bewusst ignoriert: die Kaufbewertung bleibt dann, wo sie ist, und
+  // das Speichern scheitert nicht an einem Verlaufsdetail.
+  if (f.gekauft_am && f.kaufpreis !== null) {
+    await supabase
+      .from('valuable_valuations')
+      .update({ bewertet_am: f.gekauft_am, wert: f.kaufpreis } as never)
+      .eq('valuable_id', id)
+      .eq('user_id', user.id)
+      .eq('quelle', 'kauf')
+  }
+
   // Ein im Formular geänderter Wert wird als Bewertung von HEUTE geschrieben, nicht als
   // Korrektur der letzten — sonst verlöre der Verlauf genau die Bewegung, die er zeigen soll.
   //
