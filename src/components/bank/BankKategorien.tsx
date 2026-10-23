@@ -66,10 +66,40 @@ function Delta({
   )
 }
 
+/**
+ * Erklaerung beim Ueberfahren statt des nackten Browser-Tooltips: Titel, ein paar Zahlen und
+ * ein Satz, was die Zahl ist. Rein ueber CSS (`group-hover` und `group-focus-within`), damit sie
+ * auch per Tastatur erreichbar ist (der Inhalt ist fokussierbar).
+ */
+function HoverInfo({
+  titel, zeilen, text, children,
+}: { titel: string; zeilen: [string, string][]; text: string; children: React.ReactNode }) {
+  return (
+    <span className="group relative inline-flex cursor-help items-baseline" tabIndex={0}>
+      <span className="underline decoration-dotted decoration-muted-foreground/40 underline-offset-4">{children}</span>
+      <span
+        role="tooltip"
+        className="pointer-events-none invisible absolute left-0 top-full z-30 mt-2 w-64 rounded-lg border border-border bg-popover p-3 text-xs font-normal text-foreground opacity-0 shadow-lg transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+      >
+        <span className="block font-medium">{titel}</span>
+        {zeilen.map(([k, v]) => (
+          <span key={k} className="mt-1 flex items-baseline justify-between gap-3">
+            <span className="text-muted-foreground">{k}</span>
+            <span className="font-semibold tabular-nums">{v}</span>
+          </span>
+        ))}
+        <span className="mt-2 block leading-snug text-muted-foreground">{text}</span>
+      </span>
+    </span>
+  )
+}
+
 export function BankKategorien({ daten, scope }: BankAbschnittProps) {
   const [modus, setModus] = useState<KategorienModus>('ausgaben')
   const [offen, setOffen] = useState<string | null>(null)
   const [weitereOffen, setWeitereOffen] = useState(false)
+  // Segment oder Zeile unter dem Zeiger: markiert beides gemeinsam (Balken <-> Liste).
+  const [hoverKey, setHoverKey] = useState<string | null>(null)
   const filters = useUrlFilters()
   const aktiveKat = filters.get('kat')
   const { locale } = daten
@@ -128,18 +158,38 @@ export function BankKategorien({ daten, scope }: BankAbschnittProps) {
         </p>
         {ansicht.anzahl > 0 && (
           <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <span className="text-2xl font-semibold tabular-nums">{euro(ansicht.total)}</span>
+            <HoverInfo
+              titel={`${modus === 'ausgaben' ? 'Ausgaben' : 'Einnahmen'} gesamt`}
+              zeilen={[
+                ['Summe', euro(ansicht.total, 2)],
+                ['Kategorien', String(ansicht.anzahl)],
+              ]}
+              text={`Summe aller ${modus === 'ausgaben' ? 'Ausgaben' : 'Einnahmen'} der Hauptkategorien im gewählten Zeitraum${
+                daten.konto ? ' und Konto' : ''}${daten.monat ? ' (ein Monat)' : ''}. ${
+                daten.include.anlage || daten.include.forderung
+                  ? 'Anlagen und Forderungen zählen mit, solange der Schalter an ist.'
+                  : 'Anlagen und Forderungen sind ausgeblendet.'}`}
+            >
+              <span className="text-2xl font-semibold tabular-nums">{euro(ansicht.total)}</span>
+            </HoverInfo>
             <span className="text-xs text-muted-foreground">
               {ansicht.anzahl} {ansicht.anzahl === 1 ? 'Kategorie' : 'Kategorien'}
             </span>
             {hatVergleich && (
-              <span
-                className="inline-flex items-center gap-1 text-xs text-muted-foreground"
-                title="Vergleich mit der Vorperiode gleicher Laenge (Monatsebene). Der laufende Monat ist noch nicht voll."
+              <HoverInfo
+                titel="Vergleich mit der Vorperiode"
+                zeilen={[
+                  ['Jetzt', euro(ansicht.total, 2)],
+                  ['Vorperiode', euro(ansicht.vorTotal ?? 0, 2)],
+                  ['Differenz', `${ansicht.total - (ansicht.vorTotal ?? 0) >= 0 ? '+' : '−'}${euro(Math.abs(ansicht.total - (ansicht.vorTotal ?? 0)), 2)}`],
+                ]}
+                text="Die Vorperiode ist gleich lang und liegt direkt davor (auf Monatsebene). Der laufende Monat ist noch nicht voll, der Vergleich fällt dann zu niedrig aus."
               >
-                <Delta pct={ansicht.deltaPct} modus={modus} locale={locale} />
-                zur Vorperiode ({euro(ansicht.vorTotal ?? 0)})
-              </span>
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <Delta pct={ansicht.deltaPct} modus={modus} locale={locale} />
+                  zur Vorperiode ({euro(ansicht.vorTotal ?? 0)})
+                </span>
+              </HoverInfo>
             )}
           </div>
         )}
@@ -161,11 +211,27 @@ export function BankKategorien({ daten, scope }: BankAbschnittProps) {
 
   // Segmente des Balkens: dieselbe Reihenfolge wie die Liste, „Weitere" am Ende.
   const segmente = [
-    ...ansicht.zeilen.map(z => ({ key: z.schluessel, name: z.name, anteil: z.anteil, farbe: farbeVon.get(z.schluessel)! })),
+    ...ansicht.zeilen.map(z => ({
+      key: z.schluessel, name: z.name, anteil: z.anteil, farbe: farbeVon.get(z.schluessel)!,
+      betrag: z.betrag, deltaPct: z.deltaPct, vorBetrag: z.vorBetrag,
+      unter: z.kinder.filter(k => !k.direkt).length, namen: [] as string[],
+    })),
     ...(ansicht.weitere.length > 0
-      ? [{ key: WEITERE_KEY, name: 'Weitere', anteil: ansicht.weitereBetrag / ansicht.total, farbe: FARBE_WEITERE }]
+      ? [{
+          key: WEITERE_KEY, name: `Weitere (${ansicht.weitere.length})`, anteil: ansicht.weitereBetrag / ansicht.total,
+          farbe: FARBE_WEITERE, betrag: ansicht.weitereBetrag, deltaPct: ansicht.weitereDeltaPct, vorBetrag: null as number | null,
+          unter: 0, namen: ansicht.weitere.map(w => w.name),
+        }]
       : []),
   ]
+  // Mittelpunkt jedes Segments in Prozent der Balkenbreite, fuer die Position der Hover-Karte.
+  let summeVorher = 0
+  const mitte = new Map(segmente.map(s => {
+    const m = (summeVorher + s.anteil / 2) * 100
+    summeVorher += s.anteil
+    return [s.key, Math.min(88, Math.max(12, m))] as const
+  }))
+  const hoverSegment = segmente.find(s => s.key === hoverKey) ?? null
 
   const buchungenKnopf = (z: { id: string | null; name: string }) => {
     const wert = z.id ?? 'offen'
@@ -237,7 +303,12 @@ export function BankKategorien({ daten, scope }: BankAbschnittProps) {
 
     const rahmen = z.ohneKategorie ? 'bg-danger/5 ring-1 ring-danger/30' : ''
     return (
-      <li key={z.schluessel} className={`rounded-md ${rahmen}`}>
+      <li
+        key={z.schluessel}
+        className={`rounded-md transition-colors ${rahmen} ${hoverKey === z.schluessel ? 'bg-accent/40' : ''}`}
+        onMouseEnter={() => !klein && setHoverKey(z.schluessel)}
+        onMouseLeave={() => setHoverKey(null)}
+      >
         <div className="flex items-center gap-1">
           {aufklappbar ? (
             <button
@@ -289,21 +360,67 @@ export function BankKategorien({ daten, scope }: BankAbschnittProps) {
     <section aria-label="Kategorien" className="rounded-lg border border-border bg-card p-4 sm:p-5">
       {kopf}
 
-      <div
-        role="img"
-        aria-label={`Anteile: ${segmente.map(s => `${s.name} ${prozent(s.anteil, locale)}`).join(', ')}`}
-        className="flex h-7 gap-0.5 overflow-hidden rounded-md"
-      >
-        {segmente.map(s => (
+      {/* Aussen `relative`, innen `overflow-hidden`: die Hover-Karte ragt ueber den Balken hinaus
+          und wuerde im abgerundeten Balken selbst abgeschnitten. */}
+      <div className="relative">
+        {hoverSegment && (
           <div
-            key={s.key}
-            title={`${s.name}: ${prozent(s.anteil, locale)}`}
-            className="flex min-w-[3px] items-center justify-center overflow-hidden text-[10px] font-semibold text-white"
-            style={{ width: `${s.anteil * 100}%`, background: s.farbe }}
+            role="tooltip"
+            className="pointer-events-none absolute bottom-full z-30 mb-2 w-60 -translate-x-1/2 rounded-lg border border-border bg-popover p-3 text-xs shadow-lg"
+            style={{ left: `${mitte.get(hoverSegment.key)}%` }}
           >
-            {s.anteil >= 0.08 && <span className="drop-shadow-sm">{prozent(s.anteil, locale)}</span>}
+            <p className="flex items-center gap-2 font-medium text-foreground">
+              <span className="size-2.5 shrink-0 rounded-full" style={{ background: hoverSegment.farbe }} aria-hidden />
+              <span className="truncate">{hoverSegment.name}</span>
+            </p>
+            <p className="mt-1.5 flex items-baseline justify-between gap-3">
+              <span className="text-muted-foreground">{modus === 'ausgaben' ? 'Ausgaben' : 'Einnahmen'}</span>
+              <span className="font-semibold tabular-nums">{euro(hoverSegment.betrag, 2)}</span>
+            </p>
+            <p className="flex items-baseline justify-between gap-3">
+              <span className="text-muted-foreground">Anteil am Gesamten</span>
+              <span className="font-semibold tabular-nums">{prozent(hoverSegment.anteil, locale)}</span>
+            </p>
+            {hatVergleich && (
+              <p className="flex items-center justify-between gap-3">
+                <span className="text-muted-foreground">Vorperiode</span>
+                <span className="inline-flex items-center gap-1.5 tabular-nums">
+                  {hoverSegment.vorBetrag !== null && <span>{euro(hoverSegment.vorBetrag, 0)}</span>}
+                  <Delta pct={hoverSegment.deltaPct} modus={modus} locale={locale} />
+                </span>
+              </p>
+            )}
+            {hoverSegment.unter > 0 && (
+              <p className="mt-1 text-muted-foreground">
+                {hoverSegment.unter} {hoverSegment.unter === 1 ? 'Unterkategorie' : 'Unterkategorien'}
+              </p>
+            )}
+            {hoverSegment.namen.length > 0 && (
+              <p className="mt-1 text-muted-foreground">
+                {hoverSegment.namen.slice(0, 5).join(', ')}{hoverSegment.namen.length > 5 ? ' …' : ''}
+              </p>
+            )}
           </div>
-        ))}
+        )}
+        <div
+          role="img"
+          aria-label={`Anteile: ${segmente.map(s => `${s.name} ${prozent(s.anteil, locale)}`).join(', ')}`}
+          className="flex h-7 gap-0.5 overflow-hidden rounded-md"
+          onMouseLeave={() => setHoverKey(null)}
+        >
+          {segmente.map(s => (
+            <div
+              key={s.key}
+              onMouseEnter={() => setHoverKey(s.key)}
+              className={`flex min-w-[3px] items-center justify-center overflow-hidden text-[10px] font-semibold text-white transition-opacity ${
+                hoverKey && hoverKey !== s.key ? 'opacity-40' : ''
+              }`}
+              style={{ width: `${s.anteil * 100}%`, background: s.farbe }}
+            >
+              {s.anteil >= 0.08 && <span className="drop-shadow-sm">{prozent(s.anteil, locale)}</span>}
+            </div>
+          ))}
+        </div>
       </div>
 
       <ul className="mt-3 divide-y divide-border/50">

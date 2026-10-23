@@ -68,7 +68,10 @@ export function BankTrendChart({ months, selectedMonth, onSelectMonth }: Props) 
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5">
+    // `flex h-full flex-col`: Die Karte steht neben der Kategorien-Karte und wird von der
+    // Rasterzeile auf deren Hoehe gestreckt. Mit fester Chart-Hoehe (220 px) blieb darunter ein
+    // leerer Streifen; jetzt waechst der Chart mit (mindestens 220 px).
+    <div className="flex h-full flex-col rounded-lg border border-border bg-card p-5">
       {/* Header carries both the legend and the period's totals — folds what used to be a
           separate "Summary strip" of two full-width boxes into this one line. */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
@@ -103,7 +106,8 @@ export function BankTrendChart({ months, selectedMonth, onSelectMonth }: Props) 
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={220}>
+      <div className="min-h-[220px] flex-1">
+      <ResponsiveContainer width="100%" height="100%">
         <ComposedChart
           data={data}
           margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
@@ -203,6 +207,7 @@ export function BankTrendChart({ months, selectedMonth, onSelectMonth }: Props) 
           />
         </ComposedChart>
       </ResponsiveContainer>
+      </div>
     </div>
   )
 }
