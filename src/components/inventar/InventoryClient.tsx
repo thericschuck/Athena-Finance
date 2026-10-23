@@ -267,8 +267,19 @@ function Karte({
 
   return (
     <div
-      className="group relative overflow-hidden rounded-2xl border bg-card p-3.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-within:ring-2 focus-within:ring-ring"
-      style={{ borderColor: ausgezeichnet ? stufe.border : 'var(--border)' }}
+      className="group relative overflow-hidden rounded-2xl border bg-card text-left transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_14px_32px_-14px_var(--tier)] focus-within:ring-2 focus-within:ring-ring"
+      style={{
+        borderColor: ausgezeichnet ? stufe.border : 'var(--border)',
+        // Schattenfarbe beim Anheben: Stufenfarbe, sonst ein neutrales Grau.
+        '--tier': ausgezeichnet ? stufe.border : 'color-mix(in srgb, var(--foreground) 30%, transparent)',
+      } as React.CSSProperties}
+      onPointerMove={e => {
+        // Das Licht folgt dem Zeiger. Direkt als CSS-Variable gesetzt, nicht als State: ein
+        // Re-Render pro Mausbewegung waere fuer einen Schimmer zu teuer.
+        const r = e.currentTarget.getBoundingClientRect()
+        e.currentTarget.style.setProperty('--mx', `${e.clientX - r.left}px`)
+        e.currentTarget.style.setProperty('--my', `${e.clientY - r.top}px`)
+      }}
     >
       <button
         type="button"
@@ -280,13 +291,28 @@ function Karte({
       {/* Sockel. `pointer-events-none`, damit Klicks auf die Fläche darunter durchgehen —
           die Blätter-Pfeile holen sich ihre Klickbarkeit einzeln zurück. */}
       <div
-        className="pointer-events-none relative aspect-[4/5] overflow-hidden rounded-xl bg-muted/30 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_5%,transparent)]"
-        style={prunk ? { background: `radial-gradient(120% 80% at 50% 100%, ${stufe.glow}, transparent 70%)` } : undefined}
+        className="pointer-events-none relative aspect-[4/5] overflow-hidden"
+        style={{
+          // Randlos bis an die Kartenkante: das Bild stand vorher als Kasten im Kasten.
+          // Hintergrund = Vitrinenrueckwand: oben ein Strahler, unten die Stufenfarbe als
+          // Schimmer, darunter die Kartenflaeche.
+          background: [
+            'radial-gradient(70% 55% at 50% 22%, color-mix(in srgb, var(--foreground) 9%, transparent), transparent 75%)',
+            `radial-gradient(90% 45% at 50% 108%, ${prunk || ausgezeichnet ? stufe.glow : 'color-mix(in srgb, var(--foreground) 5%, transparent)'}, transparent 70%)`,
+            'color-mix(in srgb, var(--muted) 45%, var(--card))',
+          ].join(','),
+        }}
       >
+        {/* Bodenschatten: der Gegenstand steht auf etwas, er schwebt nicht im Bild. */}
+        <span
+          aria-hidden
+          className="absolute bottom-[11%] left-1/2 h-3 w-3/5 -translate-x-1/2 rounded-[50%] bg-foreground/20 blur-md transition-all duration-300 group-hover:w-1/2 group-hover:bg-foreground/30"
+        />
+
         {/* Die Hover-Vergrösserung sitzt auf dem Rahmen, nicht auf dem Bild: die Bilder
             tragen ihre eigene Transformation für den Wechsel, und zwei `transform` auf
             demselben Element würden sich gegenseitig überschreiben. */}
-        <div className="absolute inset-0 transition-transform duration-300 group-hover:scale-[1.04]">
+        <div className="absolute inset-0 transition-transform duration-500 ease-out group-hover:-translate-y-1 group-hover:scale-[1.05]">
           {bilder.length > 0 ? (
             // Alle Bilder liegen übereinander und werden über Deckkraft und Versatz
             // ein- und ausgeblendet. Sie erst beim Blättern zu laden hiesse, bei jedem
@@ -307,7 +333,7 @@ function Karte({
                   aria-hidden={i !== sicher}
                   loading={i === 0 ? undefined : 'lazy'}
                   decoding="async"
-                  className="absolute inset-0 size-full object-contain p-2 will-change-[opacity,transform] motion-safe:transition-[opacity,transform] motion-safe:duration-500 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)]"
+                  className="absolute inset-0 size-full object-contain px-6 pb-10 pt-7 drop-shadow-[0_10px_12px_rgba(0,0,0,0.22)] will-change-[opacity,transform] motion-safe:transition-[opacity,transform] motion-safe:duration-500 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)]"
                   style={{
                     // Nachbarn warten seitlich in Blätterrichtung und leicht verkleinert —
                     // das macht aus dem Überblenden eine erkennbare Bewegung, ohne dass
@@ -329,12 +355,12 @@ function Karte({
               alt={item.name}
               loading="lazy"
               decoding="async"
-              className="absolute inset-0 size-full object-contain p-2"
+              className="absolute inset-0 size-full object-contain px-6 pb-10 pt-7 drop-shadow-[0_10px_12px_rgba(0,0,0,0.22)]"
             />
           ) : (
             <ValuableIcon
               kategorie={item.kategorie}
-              className="absolute inset-0 m-auto size-1/2 text-muted-foreground/50"
+              className="absolute inset-0 m-auto size-1/3 text-muted-foreground/40"
             />
           )}
         </div>
@@ -373,11 +399,25 @@ function Karte({
           </>
         )}
 
-        {/* Sheen — ein schräger Lichtstreifen, der beim Hover einmal durchläuft. */}
+        {/* Zeigerlicht — ein weicher Lichtkegel, der dem Mauszeiger folgt. */}
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-y-0 -left-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-foreground/10 to-transparent transition-all duration-700 ease-out group-hover:left-[150%]"
+          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          style={{
+            background:
+              'radial-gradient(200px circle at var(--mx, 50%) var(--my, 30%), color-mix(in srgb, var(--foreground) 11%, transparent), transparent 70%)',
+          }}
         />
+
+        {/* Stufe als Plakette im Bild, nicht als Zeile im Text. */}
+        {ausgezeichnet && (
+          <span
+            className="absolute left-3 top-3 z-10 rounded-full border bg-background/60 px-2 py-0.5 text-[10px] font-medium tracking-wide text-foreground/90 backdrop-blur-sm"
+            style={{ borderColor: stufe.border }}
+          >
+            {stufe.label}
+          </span>
+        )}
       </div>
 
       {/* Sockel mit Beschriftung. Er lässt Klicks durch (siehe ValuablePlinth) — sie
@@ -410,14 +450,6 @@ function Karte({
 
         {/* Statusmarken. Nur was zutrifft — leere Plätze wären nur Rauschen. */}
         <div className="mt-2 flex items-center gap-1.5">
-          {ausgezeichnet && (
-            <span
-              className="rounded-full border px-1.5 py-0.5 text-[10px] font-medium text-foreground/80"
-              style={{ borderColor: stufe.border }}
-            >
-              {stufe.label}
-            </span>
-          )}
           {item.versichert && (
             <span title="Versichert" className="text-muted-foreground">
               <ShieldCheck className="size-3.5" />
