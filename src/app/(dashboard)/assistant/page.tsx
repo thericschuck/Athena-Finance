@@ -1,7 +1,14 @@
 import { getAuthUser } from '@/lib/supabase/server'
 import { AthenaChat } from '@/components/assistant/AthenaChat'
 import { SessionList } from '@/components/assistant/SessionList'
-import { ladeSessionZustand, listeSessions, type SessionZustand } from '@/lib/assistant/sessions'
+import { SessionLeiste } from '@/components/assistant/SessionLeiste'
+import {
+  ladeSessionKosten,
+  ladeSessionZustand,
+  listeSessions,
+  type SessionKosten,
+  type SessionZustand,
+} from '@/lib/assistant/sessions'
 
 // Sessions und Nachrichten ändern sich bei jedem Chat-Zug — statisches Caching
 // würde hier immer die vorletzte Konversation zeigen.
@@ -19,11 +26,14 @@ export default async function AthenaChatPage({
   if (!user) return null
 
   // Beides parallel: die Session-Liste hängt nicht am Verlauf der offenen Session.
-  const [sessions, zustand] = await Promise.all([
+  const [sessions, zustand, kosten] = await Promise.all([
     listeSessions(supabase, user.id),
     activeId
       ? ladeSessionZustand(supabase, user.id, activeId)
       : Promise.resolve(undefined as SessionZustand | undefined),
+    activeId
+      ? ladeSessionKosten(supabase, user.id, activeId)
+      : Promise.resolve(undefined as SessionKosten | undefined),
   ])
 
   return (
@@ -31,7 +41,12 @@ export default async function AthenaChatPage({
       <aside className="hidden min-h-0 rounded-lg border border-border lg:block">
         <SessionList sessions={sessions} activeId={activeId} />
       </aside>
-      <div className="min-h-0 overflow-hidden rounded-lg border border-border">
+      <div className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-border">
+        <SessionLeiste
+          sessions={sessions}
+          activeId={activeId}
+          kosten={kosten && kosten.laeufe > 0 ? kosten : null}
+        />
         <AthenaChat
           // Der Key erzwingt beim Wechsel der Session einen frischen Mount —
           // der Chat übernimmt `initialMessages` sonst nur beim ersten Rendern.
@@ -41,6 +56,7 @@ export default async function AthenaChatPage({
           actionStatuses={zustand?.actionStatuses}
           actionResults={zustand?.actionResults}
           backdrop
+          className="flex-1"
         />
       </div>
     </div>

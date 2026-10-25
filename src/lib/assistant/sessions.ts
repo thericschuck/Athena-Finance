@@ -2,6 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { UIMessage } from 'ai'
 import type { Database } from '@/types/database'
 import type { PendingActionStatus } from '@/components/assistant/PendingActionCard'
+import { berlinTagNummer } from '@/lib/assistant/session-gruppen'
+import { estimateCostUsd, type UsageLike } from '@/lib/assistant/cost'
 
 /**
  * Sessions lesen und wiederherstellen — der gemeinsame Kern.
@@ -41,14 +43,17 @@ export type SessionZustand = {
 /** Datumsangabe in der Session-Liste. Nah dran relativ, weiter weg als Datum. */
 export function relativeDay(iso: string): string {
   const date = new Date(iso)
-  const today = new Date()
-  const days = Math.floor(
-    (today.setHours(0, 0, 0, 0) - new Date(iso).setHours(0, 0, 0, 0)) / 86_400_000,
-  )
-  if (days === 0) return 'Heute'
+  // Berliner Kalendertage, nicht lokale: gleiches Ergebnis auf Server (UTC) und im Browser.
+  const days = berlinTagNummer(new Date()) - berlinTagNummer(date)
+  if (days <= 0) return 'Heute'
   if (days === 1) return 'Gestern'
   if (days < 7) return `vor ${days} Tagen`
-  return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })
+  return date.toLocaleDateString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+    timeZone: 'Europe/Berlin',
+  })
 }
 
 /**
@@ -141,4 +146,26 @@ export async function ladeSessionZustand(
       (pending ?? []).filter((p) => p.result != null).map((p) => [p.id, p.result]),
     ),
   }
+}
+
+/** Geschätzte Kosten und Anzahl der Läufe einer Session, aus den `run.finish`-Logs. */
+export type SessionKosten = { usd: number; laeufe: number }
+
+export async function ladeSessionKosten(
+  supabase: DB,
+  userId: string,
+  conversationId: string,
+): Promise<SessionKosten> {
+  const { data } = await supabase
+    .from('ai_logs')
+    .select('meta')
+    .eq('user_id', userId)
+    .eq('conversation_id', conversationId)
+    .eq('event', 'run.finish')
+  const laeufe = data ?? []
+  const usd = laeufe.reduce((summe, row) => {
+    const meta = row.meta as { model?: string; usage?: UsageLike } | null
+    return summe + (estimateCostUsd(meta?.model ?? null, meta?.usage ?? null) ?? 0)
+  }, 0)
+  return { usd, laeufe: laeufe.length }
 }

@@ -1,14 +1,20 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Brain, Plus, Trash2, Pencil, Bot, User } from 'lucide-react'
+import { Brain, Trash2, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { upsertMemory, deleteMemory } from '@/app/(dashboard)/assistant/actions'
+import { VerwaltungKopf } from '@/components/assistant/verwaltung/VerwaltungKopf'
+import { FormKarte } from '@/components/assistant/verwaltung/FormKarte'
+import { EintragAktionen, AKTION_KLASSE } from '@/components/assistant/verwaltung/EintragAktionen'
+import { Herkunft } from '@/components/assistant/verwaltung/Herkunft'
+import { chipKlasse, LABEL_KLASSE } from '@/components/assistant/verwaltung/chip'
 
 export type MemoryRow = {
   id: string
@@ -22,7 +28,7 @@ export type MemoryRow = {
 /** Siehe AthenaSettingsForm: `bg-background` statt `bg-transparent`, sonst
     rendert das native Options-Popup hellen Text auf weißem Grund. */
 const selectCls =
-  'h-9 w-full rounded-md border border-input bg-background px-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring'
+  'h-10 w-full rounded-md border border-input bg-background px-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring'
 
 const CATEGORY_LABELS: Record<string, string> = {
   general: 'Allgemein',
@@ -32,11 +38,16 @@ const CATEGORY_LABELS: Record<string, string> = {
   constraint: 'Randbedingung',
 }
 
+const INFO =
+  'Was Athena dauerhaft über dich weiß. Diese Einträge stehen bei jeder Session im Kontext — Athena legt sie selbst an, du kannst sie jederzeit korrigieren oder löschen. Bearbeitete Einträge gelten danach als deine Vorgabe und wiegen für Athena schwerer als ihre eigenen Notizen.'
+
 export function MemoryManager({ memories }: { memories: MemoryRow[] }) {
   const router = useRouter()
   const [editing, setEditing] = useState<MemoryRow | null>(null)
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [suche, setSuche] = useState('')
+  const [kategorie, setKategorie] = useState<string>('all')
   const [isPending, startTransition] = useTransition()
 
   function submit(formData: FormData) {
@@ -53,31 +64,44 @@ export function MemoryManager({ memories }: { memories: MemoryRow[] }) {
     })
   }
 
+  function schliessen() {
+    setEditing(null)
+    setCreating(false)
+    setError(null)
+  }
+
   const showForm = creating || editing !== null
 
+  const sichtbar = useMemo(() => {
+    const q = suche.trim().toLowerCase()
+    return memories.filter((m) => {
+      if (kategorie !== 'all' && m.category !== kategorie) return false
+      if (!q) return true
+      return m.key.toLowerCase().includes(q) || m.content.toLowerCase().includes(q)
+    })
+  }, [memories, suche, kategorie])
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-4">
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Was Athena dauerhaft über dich weiß. Diese Einträge stehen bei jeder Session im Kontext —
-          Athena legt sie selbst an, du kannst sie jederzeit korrigieren oder löschen. Bearbeitete
-          Einträge gelten danach als deine Vorgabe und wiegen für Athena schwerer als ihre eigenen
-          Notizen.
-        </p>
-        <Button
-          size="sm"
-          onClick={() => {
-            setEditing(null)
-            setCreating(true)
-          }}
-        >
-          <Plus className="size-3.5" />
-          Neu
-        </Button>
-      </div>
+    <div className="flex flex-col gap-3">
+      <VerwaltungKopf
+        suche={suche}
+        onSuche={setSuche}
+        platzhalter="Im Speicher suchen"
+        info={INFO}
+        onNeu={() => {
+          setEditing(null)
+          setCreating(true)
+        }}
+      />
 
       {showForm && (
-        <form action={submit} className="rounded-lg border border-border p-4">
+        <FormKarte
+          key={editing?.id ?? 'neu'}
+          action={submit}
+          fehler={error}
+          pending={isPending}
+          onAbbrechen={schliessen}
+        >
           <input type="hidden" name="id" value={editing?.id ?? ''} />
           <div className="grid gap-3 sm:grid-cols-[minmax(0,14rem)_minmax(0,10rem)]">
             <div className="flex flex-col gap-1.5">
@@ -89,10 +113,11 @@ export function MemoryManager({ memories }: { memories: MemoryRow[] }) {
                 // Ein bestehender Key ist der Schlüssel des Eintrags — ihn zu
                 // ändern würde einen zweiten anlegen statt diesen umzubenennen.
                 readOnly={!!editing}
+                autoFocus={!editing}
                 placeholder="sparziel-umzug"
                 pattern="[a-z0-9\-]+"
                 required
-                className={cn(editing && 'opacity-60')}
+                className={cn('h-10', editing && 'opacity-60')}
               />
             </div>
             <div className="flex flex-col gap-1.5">
@@ -117,30 +142,29 @@ export function MemoryManager({ memories }: { memories: MemoryRow[] }) {
               id="content"
               name="content"
               defaultValue={editing?.content}
+              autoFocus={!!editing}
               placeholder="Ein Fakt pro Eintrag, in einem Satz."
               rows={3}
               required
             />
           </div>
-          {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
-          <div className="mt-3 flex gap-2">
-            <Button type="submit" size="sm" disabled={isPending}>
-              Speichern
-            </Button>
-            <Button
+        </FormKarte>
+      )}
+
+      {memories.length > 0 && (
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Kategorie filtern">
+          {[['all', 'Alle'], ...Object.entries(CATEGORY_LABELS)].map(([value, label]) => (
+            <button
+              key={value}
               type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setEditing(null)
-                setCreating(false)
-                setError(null)
-              }}
+              aria-pressed={kategorie === value}
+              onClick={() => setKategorie(value)}
+              className={chipKlasse(kategorie === value)}
             >
-              Abbrechen
-            </Button>
-          </div>
-        </form>
+              {label}
+            </button>
+          ))}
+        </div>
       )}
 
       {memories.length === 0 && !showForm && (
@@ -152,54 +176,71 @@ export function MemoryManager({ memories }: { memories: MemoryRow[] }) {
         </div>
       )}
 
+      {memories.length > 0 && sichtbar.length === 0 && (
+        <p className="py-6 text-center text-sm text-muted-foreground">Keine Treffer.</p>
+      )}
+
       <ul className="flex flex-col gap-2">
-        {memories.map((memory) => (
+        {sichtbar.map((memory) => (
           <li
             key={memory.id}
-            className="group flex items-start gap-3 rounded-lg border border-border px-3 py-2.5"
+            className="group flex items-start gap-3 rounded-lg border border-border py-2 pl-3 pr-1 md:pr-2"
           >
-            <span
-              className="mt-0.5 shrink-0 text-muted-foreground"
-              title={memory.source === 'user' ? 'Von dir vorgegeben' : 'Von Athena gemerkt'}
-            >
-              {memory.source === 'user' ? <User className="size-4" /> : <Bot className="size-4" />}
+            <span className="mt-2 flex">
+              <Herkunft
+                vonMensch={memory.source === 'user'}
+                titel={memory.source === 'user' ? 'Von dir vorgegeben' : 'Von Athena gemerkt'}
+                text={
+                  memory.source === 'user'
+                    ? 'Gilt als deine Vorgabe und wiegt für Athena schwerer.'
+                    : 'Athena hat sich das im Gespräch selbst notiert.'
+                }
+              />
             </span>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 py-1.5">
               <div className="flex flex-wrap items-baseline gap-2">
-                <code className="font-mono text-xs text-muted-foreground">{memory.key}</code>
-                <span className="rounded-full bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                <code className="break-all font-mono text-xs text-muted-foreground">{memory.key}</code>
+                <span className={LABEL_KLASSE}>
                   {CATEGORY_LABELS[memory.category] ?? memory.category}
                 </span>
               </div>
-              <p className="mt-0.5 text-sm">{memory.content}</p>
+              <p className="mt-0.5 break-words text-sm">{memory.content}</p>
             </div>
-            <div className="flex shrink-0 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+            <EintragAktionen>
               <Button
-                size="icon-xs"
+                size="icon"
                 variant="ghost"
+                className={AKTION_KLASSE}
                 aria-label="Bearbeiten"
                 onClick={() => {
                   setCreating(false)
+                  setError(null)
                   setEditing(memory)
                 }}
               >
-                <Pencil className="size-3" />
+                <Pencil className="size-4" />
               </Button>
-              <Button
-                size="icon-xs"
-                variant="ghost"
-                aria-label="Löschen"
-                disabled={isPending}
-                onClick={() =>
+              <ConfirmDialog
+                title="Eintrag löschen?"
+                description={`„${memory.key}" wird aus dem Speicher entfernt. Athena weiß das danach nicht mehr.`}
+                onConfirm={() =>
                   startTransition(async () => {
                     await deleteMemory(memory.id)
                     router.refresh()
                   })
                 }
               >
-                <Trash2 className="size-3" />
-              </Button>
-            </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className={AKTION_KLASSE}
+                  aria-label="Löschen"
+                  disabled={isPending}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </ConfirmDialog>
+            </EintragAktionen>
           </li>
         ))}
       </ul>

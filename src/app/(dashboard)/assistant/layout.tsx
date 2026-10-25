@@ -1,18 +1,17 @@
 import { AthenaAvatar } from '@/components/assistant/AthenaAvatar'
 import { AthenaNav } from '@/components/assistant/AthenaNav'
 
+/**
+ * Eine Kopfzeile: Medaillon, Name, Reiter. Der frühere Untertitel ist entfallen — er stand über
+ * dem Chat und kostete am Handy eine ganze Zeile, die der Verlauf besser brauchen kann.
+ */
 export default function AthenaLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-full min-h-0 flex-col p-4 sm:p-8">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <AthenaAvatar size={44} />
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Athena</h1>
-            <p className="text-sm text-muted-foreground">
-              Dein Finanz-Agent — liest, recherchiert, merkt sich, schlägt vor.
-            </p>
-          </div>
+    <div className="flex h-full min-h-0 flex-col gap-3 p-4 sm:p-8">
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2.5">
+          <AthenaAvatar size={32} />
+          <h1 className="text-lg font-semibold tracking-tight sm:text-xl">Athena</h1>
         </div>
         <AthenaNav />
       </div>

@@ -27,7 +27,7 @@ export function ClearLogsButton() {
         })
       }
     >
-      <Button size="sm" variant="ghost" disabled={isPending}>
+      <Button variant="ghost" className="h-10" disabled={isPending}>
         {isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
         Älter als {KEEP_DAYS} Tage löschen
       </Button>

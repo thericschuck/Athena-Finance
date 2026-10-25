@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { MessageSquare, Pin, PinOff, Plus, Trash2, Pencil, Check, X } from 'lucide-react'
+import { MessageSquare, Pin, PinOff, Plus, Trash2, Pencil, Check, X, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Input } from '@/components/ui/input'
@@ -14,10 +14,14 @@ import {
   togglePinConversation,
 } from '@/app/(dashboard)/assistant/actions'
 import { relativeDay, type SessionSummary } from '@/lib/assistant/sessions'
+import { filtereSessions, gruppiereSessions } from '@/lib/assistant/session-gruppen'
 
 // Typ und Datumsformat liegen in `lib/assistant/sessions` — dieselbe Liste erscheint auch
 // im schwebenden Sheet, und dort ohne diese Komponente.
 export type { SessionSummary }
+
+/** Ab so vielen Sessions lohnt sich das Suchfeld. */
+const SUCHE_AB = 6
 
 export function SessionList({
   sessions,
@@ -29,7 +33,14 @@ export function SessionList({
   const router = useRouter()
   const [editing, setEditing] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
+  const [suche, setSuche] = useState('')
   const [isPending, startTransition] = useTransition()
+
+  const mitSuche = sessions.length >= SUCHE_AB
+  const gruppen = useMemo(
+    () => gruppiereSessions(mitSuche ? filtereSessions(sessions, suche) : sessions),
+    [sessions, suche, mitSuche],
+  )
 
   function commitRename(id: string) {
     const title = draft.trim()
@@ -67,107 +78,157 @@ export function SessionList({
         </Button>
       </div>
 
+      {mitSuche && (
+        <div className="relative border-b border-border px-1.5 py-1.5">
+          <Search
+            aria-hidden
+            className="pointer-events-none absolute left-3.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            type="search"
+            value={suche}
+            onChange={(e) => setSuche(e.target.value)}
+            placeholder="Suchen…"
+            aria-label="Sessions durchsuchen"
+            className="h-7 pl-7 text-xs"
+          />
+        </div>
+      )}
+
       <div className="min-h-0 flex-1 overflow-y-auto p-1.5">
         {sessions.length === 0 && (
           <p className="px-2 py-3 text-xs text-muted-foreground">Noch keine Sessions.</p>
         )}
+        {sessions.length > 0 && gruppen.length === 0 && (
+          <p className="px-2 py-3 text-xs text-muted-foreground">Keine Treffer.</p>
+        )}
 
-        {sessions.map((session) => {
-          const isActive = session.id === activeId
-          if (editing === session.id) {
-            return (
-              <div key={session.id} className="flex items-center gap-1 p-1">
-                <Input
-                  autoFocus
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') commitRename(session.id)
-                    if (e.key === 'Escape') setEditing(null)
-                  }}
-                  className="h-7 text-xs"
-                />
-                <Button size="icon-xs" variant="ghost" onClick={() => commitRename(session.id)}>
-                  <Check className="size-3.5" />
-                </Button>
-                <Button size="icon-xs" variant="ghost" onClick={() => setEditing(null)}>
-                  <X className="size-3.5" />
-                </Button>
-              </div>
-            )
-          }
+        {gruppen.map((gruppe) => (
+          <section key={gruppe.key} aria-label={gruppe.label}>
+            <h3 className="px-2 pb-0.5 pt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              {gruppe.label}
+            </h3>
+            {gruppe.sessions.map((session) => {
+              const isActive = session.id === activeId
+              if (editing === session.id) {
+                return (
+                  <div key={session.id} className="flex items-center gap-1 p-1">
+                    <Input
+                      autoFocus
+                      value={draft}
+                      aria-label="Neuer Titel"
+                      onChange={(e) => setDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') commitRename(session.id)
+                        if (e.key === 'Escape') setEditing(null)
+                      }}
+                      className="h-7 min-w-0 text-xs"
+                    />
+                    <Button
+                      size="icon-xs"
+                      variant="ghost"
+                      aria-label="Titel speichern"
+                      onClick={() => commitRename(session.id)}
+                    >
+                      <Check className="size-3.5" />
+                    </Button>
+                    <Button
+                      size="icon-xs"
+                      variant="ghost"
+                      aria-label="Abbrechen"
+                      onClick={() => setEditing(null)}
+                    >
+                      <X className="size-3.5" />
+                    </Button>
+                  </div>
+                )
+              }
 
-          return (
-            <div
-              key={session.id}
-              className={cn(
-                'group flex items-center gap-1 rounded-md px-2 py-1.5 transition-colors',
-                isActive ? 'bg-accent' : 'hover:bg-accent/50',
-              )}
-            >
-              <Link
-                href={`/assistant?s=${session.id}`}
-                className="flex min-w-0 flex-1 flex-col gap-0.5"
-              >
-                <span className="flex items-center gap-1.5 truncate text-sm">
-                  {session.pinned ? (
-                    <Pin className="size-3 shrink-0 text-primary" />
-                  ) : (
-                    <MessageSquare className="size-3 shrink-0 text-muted-foreground" />
+              return (
+                <div
+                  key={session.id}
+                  className={cn(
+                    'group flex items-center gap-1 rounded-md px-2 py-1.5 transition-colors',
+                    isActive ? 'bg-accent' : 'hover:bg-accent/50',
                   )}
-                  <span className="truncate">{session.title ?? 'Ohne Titel'}</span>
-                </span>
-                <span className="pl-4.5 text-[11px] text-muted-foreground">
-                  {relativeDay(session.updatedAt)} · {session.messageCount} Nachr.
-                </span>
-              </Link>
+                >
+                  <Link
+                    href={`/assistant?s=${session.id}`}
+                    aria-current={isActive ? 'page' : undefined}
+                    className="flex min-w-0 flex-1 flex-col gap-0.5"
+                  >
+                    <span className="flex items-center gap-1.5 truncate text-sm">
+                      {session.pinned ? (
+                        <Pin className="size-3 shrink-0 text-primary" />
+                      ) : (
+                        <MessageSquare className="size-3 shrink-0 text-muted-foreground" />
+                      )}
+                      <span className="truncate">{session.title ?? 'Ohne Titel'}</span>
+                    </span>
+                    <span className="truncate pl-4.5 text-[11px] text-muted-foreground">
+                      {relativeDay(session.updatedAt)} · {session.messageCount} Nachr.
+                    </span>
+                  </Link>
 
-              <div className="flex shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
-                <Button
-                  size="icon-xs"
-                  variant="ghost"
-                  aria-label={session.pinned ? 'Loslösen' : 'Anheften'}
-                  disabled={isPending}
-                  onClick={() =>
-                    startTransition(async () => {
-                      await togglePinConversation(session.id, !session.pinned)
-                      router.refresh()
-                    })
-                  }
-                >
-                  {session.pinned ? <PinOff className="size-3" /> : <Pin className="size-3" />}
-                </Button>
-                <Button
-                  size="icon-xs"
-                  variant="ghost"
-                  aria-label="Umbenennen"
-                  onClick={() => {
-                    setDraft(session.title ?? '')
-                    setEditing(session.id)
-                  }}
-                >
-                  <Pencil className="size-3" />
-                </Button>
-                <ConfirmDialog
-                  title="Session löschen?"
-                  description={`„${session.title ?? 'Ohne Titel'}" wird mitsamt allen Nachrichten und Vorschlägen daraus entfernt. Das lässt sich nicht zurückholen.`}
-                  onConfirm={() =>
-                    startTransition(async () => {
-                      await deleteConversation(session.id)
-                      // Beim Löschen der offenen Session zurück auf einen leeren Chat.
-                      if (isActive) router.push('/assistant')
-                      else router.refresh()
-                    })
-                  }
-                >
-                  <Button size="icon-xs" variant="ghost" aria-label="Löschen" disabled={isPending}>
-                    <Trash2 className="size-3" />
-                  </Button>
-                </ConfirmDialog>
-              </div>
-            </div>
-          )
-        })}
+                  {/* Die Leiste mit dem Wechsler deckt das Handy ab; hier zählt Kompaktheit.
+                      Trotzdem Projektmuster: ohne Hover (Touch) bleiben die Aktionen sichtbar,
+                      mit Tastatur-Fokus ebenfalls. */}
+                  <div className="flex shrink-0 opacity-100 transition-opacity focus-within:opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                    <Button
+                      size="icon-xs"
+                      variant="ghost"
+                      className="size-10 md:size-6"
+                      aria-label={session.pinned ? 'Loslösen' : 'Anheften'}
+                      disabled={isPending}
+                      onClick={() =>
+                        startTransition(async () => {
+                          await togglePinConversation(session.id, !session.pinned)
+                          router.refresh()
+                        })
+                      }
+                    >
+                      {session.pinned ? <PinOff className="size-3" /> : <Pin className="size-3" />}
+                    </Button>
+                    <Button
+                      size="icon-xs"
+                      variant="ghost"
+                      className="size-10 md:size-6"
+                      aria-label="Umbenennen"
+                      onClick={() => {
+                        setDraft(session.title ?? '')
+                        setEditing(session.id)
+                      }}
+                    >
+                      <Pencil className="size-3" />
+                    </Button>
+                    <ConfirmDialog
+                      title="Session löschen?"
+                      description={`„${session.title ?? 'Ohne Titel'}" wird mitsamt allen Nachrichten und Vorschlägen daraus entfernt. Das lässt sich nicht zurückholen.`}
+                      onConfirm={() =>
+                        startTransition(async () => {
+                          await deleteConversation(session.id)
+                          // Beim Löschen der offenen Session zurück auf einen leeren Chat.
+                          if (isActive) router.push('/assistant')
+                          else router.refresh()
+                        })
+                      }
+                    >
+                      <Button
+                        size="icon-xs"
+                        variant="ghost"
+                        className="size-10 md:size-6"
+                        aria-label="Löschen"
+                        disabled={isPending}
+                      >
+                        <Trash2 className="size-3" />
+                      </Button>
+                    </ConfirmDialog>
+                  </div>
+                </div>
+              )
+            })}
+          </section>
+        ))}
       </div>
     </div>
   )

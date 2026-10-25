@@ -11,11 +11,11 @@ export default async function AthenaSettingsPage() {
 
   const settings = await getAthenaSettings(supabase, user.id)
 
-  // Kein `overflow-y-auto` mehr um das Formular: ab lg fuellt es die Hoehe und
-  // scrollt nur in seiner linken Spalte bzw. im Textfeld. Ein Scroll-Container
-  // hier wuerde die Hoehenbegrenzung aufheben und alles wieder lang machen.
+  // Der Wrapper scrollt im verfügbaren Raum (Eltern-Container ist `min-h-0
+  // flex-1`); das Formular ist einfach ein normal hoher Block. Die Speicherleiste
+  // haftet darin unten – bewusst ohne Padding am Wrapper, das ließe unter der Leiste einen Streifen stehen.
   return (
-    <div className="h-full min-h-0">
+    <div className="h-full overflow-y-auto">
       {/* Die Vorlagentexte kommen als Props aus der Server-Komponente, nicht
           per Import im Client: so landen die ~8 KB Vorlagentext nur im Bundle
           dieser einen Seite. */}

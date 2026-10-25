@@ -1,10 +1,14 @@
 import Link from 'next/link'
 import { getAuthUser } from '@/lib/supabase/server'
-import { cn } from '@/lib/utils'
 import { estimateCostUsd, formatUsd, type UsageLike } from '@/lib/assistant/cost'
 import { ClearLogsButton } from '@/components/assistant/ClearLogsButton'
+import { LogKennzahlen } from '@/components/assistant/logs/LogKennzahlen'
+import { LogZeile } from '@/components/assistant/logs/LogZeile'
+import { chipKlasse } from '@/components/assistant/verwaltung/chip'
 
 export const dynamic = 'force-dynamic'
+
+const LOG_LIMIT = 300
 
 const LEVEL_FILTERS = [
   { value: 'all', label: 'Alle' },
@@ -34,15 +38,10 @@ const EVENT_LABELS: Record<string, string> = {
   'web.search': 'Web-Recherche',
 }
 
-const LEVEL_STYLES: Record<string, string> = {
-  debug: 'bg-muted text-muted-foreground',
-  info: 'bg-muted text-muted-foreground',
-  warn: 'bg-warning/15 text-warning',
-  error: 'bg-destructive/15 text-destructive',
-}
-
+/** Immer in deutscher Zeit: auf dem Server (Vercel) läuft die Zeitzone sonst auf UTC. */
 function timestamp(iso: string): string {
   return new Date(iso).toLocaleString('de-DE', {
+    timeZone: 'Europe/Berlin',
     day: '2-digit',
     month: '2-digit',
     hour: '2-digit',
@@ -64,7 +63,7 @@ export default async function AthenaLogsPage({
     .select('id, level, event, message, meta, duration_ms, created_at, conversation_id')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
-    .limit(300)
+    .limit(LOG_LIMIT)
   if (level !== 'all') query = query.eq('level', level)
 
   const { data: logs } = await query
@@ -88,94 +87,62 @@ export default async function AthenaLogsPage({
     ? Math.round(runs.reduce((s, r) => s + (r.duration_ms ?? 0), 0) / runs.length / 100) / 10
     : null
 
-  return (
-    <div className="flex h-full min-h-0 flex-col gap-4">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Läufe (24 h)" value={String(runs.length)} />
-        <Stat label="Fehler (24 h)" value={String(errors)} tone={errors > 0 ? 'bad' : undefined} />
-        <Stat label="Kosten (24 h, geschätzt)" value={formatUsd(totalCost)} />
-        <Stat label="Ø Dauer" value={avgDuration !== null ? `${avgDuration} s` : '—'} />
-      </div>
+  const zeilen = logs ?? []
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex gap-1 rounded-lg border border-border p-1">
-          {LEVEL_FILTERS.map((filter) => (
-            <Link
-              key={filter.value}
-              href={filter.value === 'all' ? '/assistant/logs' : `/assistant/logs?level=${filter.value}`}
-              className={cn(
-                'rounded-md px-2.5 py-1 text-sm transition-colors',
-                level === filter.value
-                  ? 'bg-accent font-medium text-foreground'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {filter.label}
-            </Link>
-          ))}
+  return (
+    <div className="flex h-full flex-col gap-3 overflow-y-auto pb-6">
+      <LogKennzahlen
+        zellen={[
+          { titel: 'Läufe 24 h', wert: String(runs.length) },
+          { titel: 'Fehler 24 h', wert: String(errors), schlecht: errors > 0 },
+          { titel: 'Kosten ≈', wert: formatUsd(totalCost) },
+          { titel: 'Ø Dauer', wert: avgDuration !== null ? `${avgDuration} s` : '—' },
+        ]}
+      />
+
+      <div className="flex flex-wrap items-center gap-2">
+        {LEVEL_FILTERS.map((filter) => (
+          <Link
+            key={filter.value}
+            href={filter.value === 'all' ? '/assistant/logs' : `/assistant/logs?level=${filter.value}`}
+            aria-current={level === filter.value ? 'true' : undefined}
+            className={chipKlasse(level === filter.value)}
+          >
+            {filter.label}
+          </Link>
+        ))}
+        <div className="ml-auto">
+          <ClearLogsButton />
         </div>
-        <ClearLogsButton />
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-border">
-        {(logs ?? []).length === 0 ? (
-          <p className="p-8 text-center text-sm text-muted-foreground">Keine Einträge.</p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {(logs ?? []).map((log) => (
-              <li key={log.id} className="px-3 py-2 text-sm">
-                <details>
-                  <summary className="flex cursor-pointer select-none flex-wrap items-center gap-2">
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {timestamp(log.created_at)}
-                    </span>
-                    <span
-                      className={cn(
-                        'rounded px-1.5 py-0.5 text-[11px] font-medium',
-                        LEVEL_STYLES[log.level] ?? LEVEL_STYLES.info,
-                      )}
-                    >
-                      {EVENT_LABELS[log.event] ?? log.event}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate text-muted-foreground">
-                      {log.message}
-                    </span>
-                    {log.duration_ms !== null && (
-                      <span className="shrink-0 font-mono text-xs text-muted-foreground">
-                        {(log.duration_ms / 1000).toFixed(1)} s
-                      </span>
-                    )}
-                    {log.conversation_id && (
-                      <Link
-                        href={`/assistant?s=${log.conversation_id}`}
-                        className="shrink-0 text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
-                      >
-                        Session
-                      </Link>
-                    )}
-                  </summary>
-                  {log.meta != null && (
-                    <pre className="mt-2 max-h-64 overflow-auto rounded bg-muted p-2 font-mono text-[11px] leading-relaxed">
-                      {JSON.stringify(log.meta, null, 2)}
-                    </pre>
-                  )}
-                </details>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  )
-}
+      {zeilen.length === 0 ? (
+        <p className="rounded-lg border border-border p-8 text-center text-sm text-muted-foreground">
+          Keine Einträge.
+        </p>
+      ) : (
+        <ul className="divide-y divide-border rounded-lg border border-border">
+          {zeilen.map((log) => (
+            <LogZeile
+              key={log.id}
+              log={{
+                id: log.id,
+                level: log.level,
+                eventLabel: EVENT_LABELS[log.event] ?? log.event,
+                message: log.message ?? '',
+                meta: log.meta,
+                durationMs: log.duration_ms,
+                zeit: timestamp(log.created_at),
+                conversationId: log.conversation_id,
+              }}
+            />
+          ))}
+        </ul>
+      )}
 
-function Stat({ label, value, tone }: { label: string; value: string; tone?: 'bad' }) {
-  return (
-    <div className="rounded-lg border border-border px-3 py-2">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={cn('mt-0.5 text-lg font-semibold', tone === 'bad' && 'text-destructive')}>
-        {value}
-      </p>
+      {zeilen.length >= LOG_LIMIT && (
+        <p className="text-center text-xs text-muted-foreground">Letzte {LOG_LIMIT} Einträge</p>
+      )}
     </div>
   )
 }

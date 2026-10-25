@@ -11,7 +11,7 @@ import {
   getToolName,
   type UIMessage,
 } from 'ai'
-import { Brain, Check, ChevronDown, ChevronUp, Globe, Loader2, Send, Square, Wrench } from 'lucide-react'
+import { ArrowDown, Brain, Check, ChevronDown, ChevronUp, Globe, Loader2, Send, Square } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -27,43 +27,20 @@ import { AthenaChart, type ChartSpec } from '@/components/assistant/AthenaChart'
 import type { ActionDetail } from '@/lib/assistant/actions'
 import { ATHENA_MODELS, ATHENA_EFFORT_OPTIONS, type AthenaEffort } from '@/lib/assistant/settings'
 import { useAthenaChatSettings } from '@/components/providers/athena-settings-context'
+import { ToolTrace } from '@/components/assistant/chat/ToolTrace'
+import { MessageActions } from '@/components/assistant/chat/MessageActions'
+import { EmptyState } from '@/components/assistant/chat/EmptyState'
 
-/** Werkzeugnamen, hinter denen im UI ein sprechendes Label statt des rohen
-    Bezeichners stehen soll. Alles, was hier fehlt, wird als Code angezeigt —
-    besser ein unbekannter Name als ein falsch geratenes Label. */
-const TOOL_LABELS: Record<string, string> = {
-  getAccounts: 'Konten gelesen',
-  getTransactions: 'Buchungen gelesen',
-  getSpendingSummary: 'Ausgaben zusammengefasst',
-  getContracts: 'Verträge gelesen',
-  getDebts: 'Schulden gelesen',
-  getGoals: 'Sparziele gelesen',
-  getBudget: 'Fixkosten gelesen',
-  getDepotHoldings: 'Depot gelesen',
-  getCryptoPortfolio: 'Krypto-Portfolio gelesen',
-  getNetWorthTrend: 'Vermögensverlauf gelesen',
-  getCategories: 'Kategorien gelesen',
-  getCategoryUsage: 'Kategorie-Nutzung geprüft',
-  checkDataQuality: 'Datenqualität geprüft',
-  getInsights: 'Hinweise gelesen',
-  getObligationCalendar: 'Verpflichtungen geprüft',
-  getSavingsPlans: 'Sparpläne gelesen',
-  showChart: 'Chart erstellt',
-  getUserSettings: 'Einstellungen gelesen',
-  getAccountBalanceHistory: 'Konto-Verlauf gelesen',
-  getTaxPosition: 'Steuerposition gerechnet',
-  getEuerPosition: 'Anlage EÜR gerechnet',
-  findRecurringPayments: 'Wiederkehrendes gesucht',
-  remember: 'Fakt gespeichert',
-  searchMemory: 'Speicher durchsucht',
-  forget: 'Fakt gelöscht',
-  searchKnowledge: 'Wissensbasis durchsucht',
-  saveKnowledge: 'Wissenseintrag angelegt',
-  web_search: 'Web durchsucht',
-  web_fetch: 'Webseite gelesen',
+/** Athena-Avatar neben Antworten: am Handy kleiner (24), ab sm 28 — er soll
+    auch dort die Zuordnung zeigen, ohne der Blase viel Breite zu nehmen. */
+function ResponsiveAvatar({ thinking }: { thinking: boolean }) {
+  return (
+    <>
+      <AthenaAvatar size={24} thinking={thinking} className="mt-0.5 shrink-0 sm:hidden" />
+      <AthenaAvatar size={28} thinking={thinking} className="mt-0.5 hidden shrink-0 sm:inline-flex" />
+    </>
+  )
 }
-
-const WEB_TOOLS = new Set(['web_search', 'web_fetch'])
 
 /** `isToolUIPart` erfasst beide Varianten: statisch deklarierte Werkzeuge und
     die `dynamic-tool`-Form. Beide tragen `state`/`output`, mehr braucht die
@@ -120,52 +97,6 @@ function asDetails(value: unknown): ActionDetail[] {
       },
     ]
   })
-}
-
-/** Aufklappbare Werkzeug-Spur: was Athena in diesem Zug getan hat. */
-function ToolTrace({ parts }: { parts: UIMessage['parts'] }) {
-  const toolParts = parts.filter(isToolUIPart)
-  if (toolParts.length === 0) return null
-
-  const usedWeb = toolParts.some((p) => WEB_TOOLS.has(getToolName(p)))
-
-  return (
-    <details className="mt-2 text-xs text-muted-foreground">
-      <summary className="flex cursor-pointer select-none items-center gap-1.5 transition-colors hover:text-foreground">
-        <Wrench className="size-3" />
-        {toolParts.length} Schritt{toolParts.length === 1 ? '' : 'e'}
-        {usedWeb && (
-          <span className="flex items-center gap-1 text-primary">
-            <Globe className="size-3" /> Web
-          </span>
-        )}
-      </summary>
-      <ol className="mt-1.5 space-y-1 border-l border-border pl-3">
-        {toolParts.map((part) => {
-          const name = getToolName(part)
-          return (
-            <li key={part.toolCallId} className="flex items-center gap-1.5">
-              <span
-                className={cn(
-                  'size-1.5 shrink-0 rounded-full',
-                  part.state === 'output-available' && 'bg-success',
-                  part.state === 'output-error' && 'bg-destructive',
-                  (part.state === 'input-streaming' || part.state === 'input-available') &&
-                    'animate-pulse bg-warning',
-                )}
-              />
-              {TOOL_LABELS[name] ? (
-                <span>{TOOL_LABELS[name]}</span>
-              ) : (
-                <code className="font-mono">{name}</code>
-              )}
-              {part.state === 'output-error' && <span className="text-destructive">Fehler</span>}
-            </li>
-          )
-        })}
-      </ol>
-    </details>
-  )
 }
 
 /** Höhe des Denk-Fensters während des Streamens, in px.
@@ -368,7 +299,7 @@ function ModelEffortPicker() {
         <button
           type="button"
           aria-label={`Modell ${shortModelLabel(model)}, Denktiefe ${shortEffortLabel(effort)} — ändern`}
-          className="flex h-7 items-center gap-2 rounded-full border border-border/70 px-2.5 text-xs text-muted-foreground transition-colors hover:border-border hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
+          className="flex h-7 items-center gap-2 rounded-full border border-border/70 px-2.5 max-sm:h-10 text-xs text-muted-foreground transition-colors hover:border-border hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
         >
           <span className="font-medium">{shortModelLabel(model)}</span>
           <EffortMeter level={effortIndex} />
@@ -525,9 +456,9 @@ const MessageBubble = memo(function MessageBubble({
   )
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="group/msg flex flex-col gap-2">
       {message.role === 'user' ? (
-        <div className="max-w-[85%] self-end whitespace-pre-wrap rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground">
+        <div className="max-w-[85%] self-end whitespace-pre-wrap [overflow-wrap:anywhere] rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground">
           {text}
         </div>
       ) : (
@@ -536,24 +467,24 @@ const MessageBubble = memo(function MessageBubble({
         // Unterschied zwischen rechtsbündiger Blase und grauer
         // Fläche liest man im langen Verlauf sonst nur mit Mühe.
         <div className="flex w-full gap-2.5">
-          <AthenaAvatar
-            size={28}
-            thinking={isLast && busy}
-            className="mt-0.5 hidden sm:inline-flex"
-          />
-          {/* Antworten nehmen die volle Restbreite. Eine Blase, die
-              sich an den Inhalt anpasst, wächst beim Streamen mit
-              jedem Wort auch in die Breite — der Text springt dann
-              Zeile für Zeile hin und her. Feste Breite: nur die Höhe
-              wächst. */}
-          <div className="min-w-0 flex-1 rounded-lg bg-muted px-3 py-2 text-sm text-foreground">
-            <ReasoningTrace parts={message.parts} streaming={isLast && busy} />
-            <MarkdownLite>{text}</MarkdownLite>
-            {charts.map((spec, i) => (
-              <AthenaChart key={i} spec={spec} />
-            ))}
-            <Sources parts={message.parts} />
-            <ToolTrace parts={message.parts} />
+          <ResponsiveAvatar thinking={isLast && busy} />
+          <div className="min-w-0 flex-1">
+            {/* Antworten nehmen die volle Restbreite. Eine Blase, die
+                sich an den Inhalt anpasst, wächst beim Streamen mit
+                jedem Wort auch in die Breite — der Text springt dann
+                Zeile für Zeile hin und her. Feste Breite: nur die Höhe
+                wächst. `overflow-wrap:anywhere`: lange Wörter/URLs weiten
+                die Blase auch bei 360 px nicht auf. */}
+            <div className="min-w-0 rounded-lg bg-muted px-3 py-2 text-sm text-foreground [overflow-wrap:anywhere]">
+              <ReasoningTrace parts={message.parts} streaming={isLast && busy} />
+              <MarkdownLite>{text}</MarkdownLite>
+              {charts.map((spec, i) => (
+                <AthenaChart key={i} spec={spec} />
+              ))}
+              <Sources parts={message.parts} />
+              <ToolTrace parts={message.parts} />
+            </div>
+            {!(isLast && busy) && <MessageActions text={text} alwaysVisible={isLast} />}
           </div>
         </div>
       )}
@@ -620,7 +551,6 @@ export function AthenaChat({
   const [instanz] = useState(() => chat ?? erzeugeChat(conversationId, initialMessages))
   const { messages, sendMessage, status, error, stop } = useChat({ chat: instanz })
   const [input, setInput] = useState('')
-  const bottomRef = useRef<HTMLDivElement>(null)
   // Die Seite, von der aus gefragt wird, geht als Kontext mit (siehe
   // atlas.ts: describeCurrentRoute). Pro NACHRICHT, nicht pro Session — das
   // schwebende Sheet bleibt beim Navigieren offen, die Route darunter wechselt.
@@ -645,20 +575,66 @@ export function AthenaChat({
    */
   const vorherigerStatus = useRef(status)
   useEffect(() => {
-    if (vorherigerStatus.current !== 'ready' && status === 'ready') {
-      router.refresh()
-    }
+    const fertig = vorherigerStatus.current !== 'ready' && status === 'ready'
     vorherigerStatus.current = status
+    if (!fertig) return
+    router.refresh()
+    // Zweiter Abruf kurz danach: das `run.finish`-Log (Kosten in der Session-Leiste) schreibt
+    // der Server erst in `onFinish`, evtl. nach dem Stream-Ende — der erste Abruf kann es
+    // noch nicht sehen.
+    const spaeter = setTimeout(() => router.refresh(), 2500)
+    return () => clearTimeout(spaeter)
   }, [status, router])
 
-  // Nur auf die ANZAHL der Nachrichten hören, nicht auf ihren Inhalt: bei
-  // `[messages]` feuert der Effekt bei jedem gestreamten Wort und startet die
-  // weiche Scroll-Animation jedes Mal neu — das ruckelt sichtbar. So wird
-  // einmal pro neuer Nachricht gescrollt; während des Streamens hält der
-  // wachsende Text den Blick ohnehin am unteren Rand.
+  // Der Scroll-Viewport gehört Radix (`data-slot="scroll-area-viewport"`) und
+  // ist von hier nicht direkt erreichbar — über ein Element im Inhalt und
+  // closest() kommt man hin.
+  const contentRef = useRef<HTMLDivElement>(null)
+  const viewportRef = useRef<HTMLElement | null>(null)
+  // Steht der Nutzer unten? Nur dann läuft der Verlauf beim Streamen mit; wer
+  // hochgescrollt hat, um Früheres zu lesen, wird nicht wieder nach unten
+  // gerissen. Als Ref UND State: der Ref für Effekte ohne Neu-Abo, der State
+  // für den „Nach unten"-Knopf.
+  const pinnedRef = useRef(true)
+  const [pinned, setPinned] = useState(true)
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages.length])
+    const viewport = contentRef.current?.closest<HTMLElement>('[data-slot="scroll-area-viewport"]')
+    if (!viewport) return
+    viewportRef.current = viewport
+    function onScroll() {
+      if (!viewport) return
+      const distanceToBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight
+      const unten = distanceToBottom <= SCROLL_EDGE_PX
+      pinnedRef.current = unten
+      setPinned(unten)
+    }
+    viewport.addEventListener('scroll', onScroll, { passive: true })
+    return () => viewport.removeEventListener('scroll', onScroll)
+  }, [])
+
+  function nachUnten(smooth = false) {
+    const viewport = viewportRef.current
+    if (!viewport) return
+    viewport.scrollTo({ top: viewport.scrollHeight, behavior: smooth ? 'smooth' : 'auto' })
+  }
+
+  // Bei einer neuen Nachricht nach unten, wenn man unten steht oder selbst
+  // gerade gesendet hat. Ohne Animation: eine laufende weiche Animation würde
+  // Scroll-Ereignisse mit Abstand > 0 feuern und das „unten"-Merken kippen.
+  useEffect(() => {
+    if (pinnedRef.current || messages.at(-1)?.role === 'user') {
+      pinnedRef.current = true
+      nachUnten()
+    }
+  }, [messages.length]) // eslint-disable-line react-hooks/exhaustive-deps -- nachUnten liest nur Refs
+
+  // Beim Streamen mitlaufen, aber nur wenn der Nutzer unten steht.
+  useEffect(() => {
+    // Auch beim Übergang in 'ready': dann erscheint die Aktionszeile unter der Antwort und der
+    // Gedankengang klappt zusammen — wer unten klebt, soll nicht darunter hängen bleiben.
+    if ((status === 'streaming' || status === 'ready') && pinnedRef.current) nachUnten()
+  }, [messages, status])
 
   const busy = status === 'submitted' || status === 'streaming'
 
@@ -673,9 +649,12 @@ export function AthenaChat({
     <div className={cn('relative flex h-full min-h-0 flex-col', className)}>
       {backdrop && <AthenaBackdrop />}
 
-      <ScrollArea className="min-h-0 flex-1">
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-4">
-          {messages.length === 0 && <EmptyState onPick={frage} />}
+      {/* Wrapper statt direkter Flex-Höhe: der „Nach unten"-Knopf liegt
+          absolut über dem Verlauf, knapp über dem Eingabefeld. */}
+      <div className="relative min-h-0 flex-1">
+      <ScrollArea className="absolute inset-0">
+        <div ref={contentRef} className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-4 p-4">
+          {messages.length === 0 && <EmptyState pathname={pathname} onPick={frage} />}
 
           {messages.map((message, index) => (
             <MessageBubble
@@ -690,7 +669,7 @@ export function AthenaChat({
 
           {status === 'submitted' && (
             <div className="flex gap-2.5">
-              <AthenaAvatar size={28} thinking className="mt-0.5 hidden sm:inline-flex" />
+              <ResponsiveAvatar thinking />
               <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
                 <Loader2 className="size-3.5 animate-spin" />
                 Athena arbeitet…
@@ -703,9 +682,22 @@ export function AthenaChat({
               {error.message || 'Etwas ist schiefgelaufen.'}
             </p>
           )}
-          <div ref={bottomRef} />
         </div>
       </ScrollArea>
+
+      {!pinned && messages.length > 0 && (
+        <Button
+          type="button"
+          size="icon-lg"
+          variant="outline"
+          onClick={() => nachUnten(true)}
+          aria-label="Nach unten"
+          className="absolute bottom-3 right-3 rounded-full bg-background shadow-md"
+        >
+          <ArrowDown className="size-4" />
+        </Button>
+      )}
+      </div>
 
       {/* `bg-background` am Formular: die Statue im Hintergrund reicht bis zur
           Unterkante der Fläche und würde sonst blass hinter dem Eingabefeld
@@ -732,61 +724,22 @@ export function AthenaChat({
               }
             }}
             placeholder="Frag Athena…"
-            className="max-h-48 min-h-9 resize-none border-0 bg-transparent px-3 pb-0 pt-2.5 shadow-none focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent"
+            className="max-h-48 min-h-9 resize-none text-base md:text-sm border-0 bg-transparent px-3 pb-0 pt-2.5 shadow-none focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent"
           />
           <div className="flex items-center justify-between gap-2 p-2">
             <ModelEffortPicker />
             {busy ? (
-              <Button type="button" size="icon-sm" variant="outline" onClick={stop} aria-label="Abbrechen">
+              <Button type="button" size="icon-sm" variant="outline" onClick={stop} aria-label="Abbrechen" className="max-sm:size-10">
                 <Square className="size-3.5" />
               </Button>
             ) : (
-              <Button type="submit" size="icon-sm" disabled={!input.trim()} aria-label="Senden">
+              <Button type="submit" size="icon-sm" disabled={!input.trim()} aria-label="Senden" className="max-sm:size-10">
                 <Send className="size-3.5" />
               </Button>
             )}
           </div>
         </div>
       </form>
-    </div>
-  )
-}
-
-const STARTERS = [
-  'Wie hat sich mein Vermögen die letzten 6 Monate entwickelt?',
-  'Welche Abos zahle ich, die ich kaum nutze?',
-  'Kann ich mir im Herbst etwas für 3.000 € leisten?',
-  'Finde unkategorisierte Buchungen und schlag Kategorien vor',
-]
-
-function EmptyState({ onPick }: { onPick: (q: string) => void }) {
-  return (
-    <div className="flex flex-col items-center gap-4 py-10 text-center">
-      {/* Das Medaillon groß, bevor der erste Zug läuft: der leere Chat ist die
-          einzige Stelle, an der Platz dafür ist, und danach steht dasselbe
-          Gesicht klein an jeder Antwort. */}
-      <AthenaAvatar size={72} />
-
-      <div className="space-y-1.5">
-        <p className="text-base font-medium text-foreground">Athena</p>
-        <p className="mx-auto max-w-md text-sm text-muted-foreground">
-          Liest deine Finanzdaten, merkt sich, was dauerhaft gilt, recherchiert bei Bedarf im Web
-          und schlägt Änderungen vor — ausgeführt wird nur, was du bestätigst.
-        </p>
-      </div>
-
-      <div className="flex flex-wrap justify-center gap-2">
-        {STARTERS.map((q) => (
-          <button
-            key={q}
-            type="button"
-            onClick={() => onPick(q)}
-            className="rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-          >
-            {q}
-          </button>
-        ))}
-      </div>
     </div>
   )
 }

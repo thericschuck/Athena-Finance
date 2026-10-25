@@ -13,11 +13,23 @@ const TABS = [
   { href: '/assistant/settings', label: 'Einstellungen', icon: SlidersHorizontal },
 ]
 
+/**
+ * Reiter in der Kopfzeile. Am Handy nur Symbole (der aktive Reiter behält sein Wort), damit alle
+ * fünf ohne Umbruch in eine Zeile passen; ab `sm` mit Beschriftung. Tap-Ziel mindestens 40 px.
+ */
 export function AthenaNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="flex flex-wrap gap-1 rounded-lg border border-border p-1">
+    <nav
+      aria-label="Athena"
+      className="-mr-4 min-w-0 flex-1 overflow-x-auto pr-4 sm:mr-0 sm:pr-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
+      {/* `ml-auto` statt `justify-end` am scrollenden Container: bei `justify-end` läuft ein
+          Überstand nach LINKS und ist dort nicht erreichbar (scrollLeft kann nicht negativ
+          werden). Der Auto-Rand schiebt die Reiter nach rechts, solange Platz ist, und fällt
+          bei Überlauf auf 0 – dann scrollt die Leiste normal von links. */}
+      <div className="ml-auto flex w-max gap-1">
       {TABS.map((tab) => {
         // Exakter Vergleich für den Chat-Tab: `startsWith` würde ihn auf jeder
         // Unterseite mit-aktivieren.
@@ -26,18 +38,21 @@ export function AthenaNav() {
           <Link
             key={tab.href}
             href={tab.href}
+            aria-label={tab.label}
+            aria-current={active ? 'page' : undefined}
             className={cn(
-              'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm transition-colors',
+              'flex min-h-10 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors',
               active
-                ? 'bg-accent font-medium text-foreground'
-                : 'text-muted-foreground hover:text-foreground',
+                ? 'border-foreground bg-foreground text-background'
+                : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground',
             )}
           >
-            <tab.icon className="size-3.5" />
-            {tab.label}
+            <tab.icon className="size-4" />
+            <span className={cn(!active && 'hidden sm:inline')}>{tab.label}</span>
           </Link>
         )
       })}
+      </div>
     </nav>
   )
 }

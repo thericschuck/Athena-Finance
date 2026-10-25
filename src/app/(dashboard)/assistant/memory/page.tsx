@@ -14,7 +14,7 @@ export default async function AthenaMemoryPage() {
     .order('updated_at', { ascending: false })
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full overflow-y-auto pb-6">
       <MemoryManager memories={(data ?? []) as MemoryRow[]} />
     </div>
   )
