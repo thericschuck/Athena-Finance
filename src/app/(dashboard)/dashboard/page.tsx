@@ -82,26 +82,41 @@ export default async function DashboardPage() {
         </Suspense>
       </div>
 
+      {/* Drei Spalten, die die Hoehe der Aufteilung (acht Legendenzeilen) teilen. Monat und
+          Ausblick sind kompakt und stehen oben; darunter fuellen Konten und Sparziele den Rest
+          der Spalte (flex-1, intern scrollbar) — statt dass die Karten gestreckt werden und
+          unter ihrem Inhalt leer bleiben. */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
-        <DashMonat {...props} />
-        <Suspense fallback={<SkeletonChart variant="area" height={240} />}>
-          <DashAusblick {...props} />
-        </Suspense>
+        <div className="flex flex-col gap-4">
+          <DashMonat {...props} />
+          <div className="flex min-h-0 flex-1 flex-col [&>*]:min-h-0 [&>*]:flex-1">
+            <DashKonten {...props} />
+          </div>
+        </div>
+        <div className="flex flex-col gap-4">
+          <Suspense fallback={<SkeletonChart variant="area" height={280} />}>
+            <DashAusblick {...props} />
+          </Suspense>
+          <div className="flex min-h-0 flex-1 flex-col [&>*]:min-h-0 [&>*]:flex-1">
+            <DashSparziele {...props} />
+          </div>
+        </div>
         {/* Jedes Konto, jedes Depot und Krypto als eigener Posten: dieselben Bausteine wie in der
             Net-Worth-Kennzahl, nur aufgeschluesselt (lib/dashboard/aufteilung.ts). */}
-        <PortfolioDonut
-          posten={aufteilung.posten}
-          total={aufteilung.total}
-          minus={aufteilung.minus}
-          locale={kern.locale}
-        />
+        <div className="md:col-span-2 lg:col-span-1">
+          <PortfolioDonut
+            posten={aufteilung.posten}
+            total={aufteilung.total}
+            minus={aufteilung.minus}
+            locale={kern.locale}
+          />
+        </div>
       </div>
 
-      <DashKonten {...props} />
-      <DashAnlagen {...props} />
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 [&>*]:min-w-0">
-        <DashSparziele {...props} />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 [&>*]:min-w-0">
+        <div className="lg:col-span-2">
+          <DashAnlagen {...props} />
+        </div>
         <FixedCostsWidget
           totalMonthly={kern.fixkosten.total}
           contracts={kern.fixkosten.vertraege}

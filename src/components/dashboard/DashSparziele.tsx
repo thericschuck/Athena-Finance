@@ -7,7 +7,7 @@ import type { DashAbschnittProps } from '@/lib/dashboard/typen'
 const MAX_SICHTBAR = 4
 
 /**
- * Sparziele als schlanke Liste: je Ziel eine 56-px-Zeile (Beschreibung, Balken, "x von y" und
+ * Sparziele als schlanke Liste: je Ziel eine Zeile (min. 56 px; die Liste scrollt intern und die Karte fuellt die Restspalte) (Beschreibung, Balken, "x von y" und
  * "noch z"). Erreichte Ziele haben einen gruenen Balken. Die Kopfzeile folgt der Typografie der
  * anderen Dashboard-Karten (text-sm semibold, Zaehler text-xs gedimmt). Der Leerzustand hat die
  * Hoehe der Fixkosten-Karte daneben (~220 px), damit das Raster nicht springt.
@@ -20,7 +20,7 @@ export function DashSparziele({ kern }: DashAbschnittProps) {
   const rest = sparziele.length - sichtbar.length
 
   return (
-    <div className="flex min-h-[220px] flex-col rounded-lg border border-border bg-card p-4">
+    <div className="flex h-full min-h-[220px] min-w-0 flex-col rounded-lg border border-border bg-card p-4">
       <div className="mb-2 flex items-baseline justify-between gap-3">
         <h2 className="text-sm font-semibold">
           Sparziele
@@ -42,7 +42,7 @@ export function DashSparziele({ kern }: DashAbschnittProps) {
           <p className="text-sm">Noch keine Sparziele</p>
         </div>
       ) : (
-        <ul className="divide-y divide-border">
+        <ul className="min-h-0 flex-1 divide-y divide-border overflow-y-auto overscroll-contain">
           {sichtbar.map(z => {
             const erreicht = z.target > 0 && z.current >= z.target
             const prozent = z.target > 0 ? Math.min(100, Math.max(0, (z.current / z.target) * 100)) : 0
@@ -51,7 +51,7 @@ export function DashSparziele({ kern }: DashAbschnittProps) {
               <li key={z.id}>
                 <Link
                   href="/finance/goals"
-                  className="flex h-14 flex-col justify-center gap-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex min-h-14 flex-col justify-center py-1.5 gap-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <span className="truncate text-sm">{z.description}</span>
                   <span

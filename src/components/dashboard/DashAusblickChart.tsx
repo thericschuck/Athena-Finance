@@ -51,7 +51,7 @@ export default function DashAusblickChart({ punkte, heute, locale, dateFormat }:
   const achsenFmt = new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'short', timeZone: 'UTC' })
 
   return (
-    <div className="flex min-h-[260px] flex-col rounded-lg border border-border bg-card p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-center justify-between gap-2">
         <p className="truncate text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           Ausblick Liquidität
@@ -79,7 +79,7 @@ export default function DashAusblickChart({ punkte, heute, locale, dateFormat }:
         <span className="min-w-0">{ausblickSatz(tp, stufe, euro, datum)}</span>
       </p>
 
-      <div className="mt-2 h-32 w-full min-w-0 flex-1">
+      <div className="mt-2 h-44 w-full min-w-0">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={daten} margin={{ top: 14, right: 12, bottom: 0, left: 0 }}>
             <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
@@ -87,10 +87,10 @@ export default function DashAusblickChart({ punkte, heute, locale, dateFormat }:
               dataKey="t" type="number" scale="time" domain={['dataMin', 'dataMax']}
               tickFormatter={(t: number) => achsenFmt.format(t)}
               tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
-              axisLine={false} tickLine={false} minTickGap={36}
+              axisLine={false} tickLine={false} tickCount={4} minTickGap={50}
             />
             <YAxis
-              width={44} domain={['auto', 'auto']} tickCount={3}
+              width={44} domain={['auto', 'auto']} tickCount={4}
               tickFormatter={(v: number) => (Math.abs(v) >= 1000 ? `${Math.round(v / 100) / 10}k` : String(v))}
               tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
               axisLine={false} tickLine={false}
@@ -118,7 +118,7 @@ export default function DashAusblickChart({ punkte, heute, locale, dateFormat }:
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+      <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
         <span className="min-w-0 truncate">Linie: erwartet · Fläche: 80-%-Bereich</span>
         <Link
           href="/finance/prognose"

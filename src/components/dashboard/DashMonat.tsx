@@ -9,7 +9,7 @@ const BALKEN: Record<BudgetTon, string> = { gut: 'bg-success', warnung: 'bg-warn
 const TEXT: Record<BudgetTon, string> = { gut: 'text-success', warnung: 'text-warning', schlecht: 'text-danger' }
 
 /**
- * Kompakte Monatskarte (eine Spalte im Dreierraster, ~240 px hoch): Monatsname, Netto in
+ * Kompakte Monatskarte (oben in Spalte 1, so hoch wie ihr Inhalt, ohne Mindesthoehe): Monatsname, Netto in
  * text-2xl mit Pfeil, darunter Einnahmen | Ausgaben | Sparquote. Die Aufschluesselung nach
  * Konsum / Anlage / Forderung steckt in einer Erklaerungskarte (Hover, Fokus, Tippen) statt in
  * einer grossen Liste. Der Budgetbalken (Konsum gegen Monatsbudget) ist einzeilig.
@@ -37,9 +37,9 @@ export function DashMonat({ kern }: DashAbschnittProps) {
 
   if (monat.leer) {
     return (
-      <div className="flex min-h-[240px] flex-col rounded-lg border border-border bg-card p-4">
+      <div className="rounded-lg border border-border bg-card p-4">
         {kopf}
-        <p className="flex flex-1 items-center justify-center text-sm text-muted-foreground/70">
+        <p className="py-4 text-center text-sm text-muted-foreground/70">
           Noch keine Buchungen in diesem Monat
         </p>
       </div>
@@ -50,7 +50,7 @@ export function DashMonat({ kern }: DashAbschnittProps) {
   const nettoFarbe = vz === 'plus' ? 'text-success' : vz === 'minus' ? 'text-danger' : 'text-muted-foreground'
 
   return (
-    <div className="flex min-h-[240px] flex-col rounded-lg border border-border bg-card p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
       {kopf}
 
       <div className="mt-3">
@@ -79,35 +79,38 @@ export function DashMonat({ kern }: DashAbschnittProps) {
           ['Forderung', netto(monat.forderung)],
         ]}
         text="Je Bereich Einnahmen und Ausgaben des Monats (Konsum, Anlage, Forderung). Anlage und Forderung sind Vermögensumschichtungen, kein Verbrauch; nur Konsum zählt für Budget und Sparquote."
-        className="mt-3 flex min-h-10 cursor-help items-center rounded-md text-[11px] tabular-nums text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="mt-1 flex min-h-10 cursor-help items-center rounded-md text-[11px] tabular-nums text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <span className="truncate">
           Konsum {euro(monat.echt.expense)} · Anlage {euro(monat.anlage.expense)} · Forderung {euro(monat.forderung.expense)}
         </span>
       </AnalyseKennzahlInfo>
 
-      <div className="mt-auto pt-2">
-        {budget ? (
-          <div className="flex items-center gap-2 text-[11px] tabular-nums text-muted-foreground">
-            <span className="shrink-0">Budget</span>
-            <span
-              role="progressbar"
-              aria-valuenow={Math.round(budget.prozent)}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={`Budget zu ${Math.round(budget.prozent)} Prozent verbraucht`}
-              className="block h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted"
-            >
-              <span className={`block h-full rounded-full ${BALKEN[budget.ton]}`} style={{ width: `${budget.balken}%` }} />
-            </span>
-            <span className={`shrink-0 font-medium ${TEXT[budget.ton]}`}>
-              {budget.rest >= 0 ? `noch ${euro(budget.rest)}` : `${euro(-budget.rest)} drüber`}
-            </span>
-          </div>
-        ) : (
-          <p className="text-[11px] text-muted-foreground/70">Kein Monatsbudget gesetzt</p>
-        )}
-      </div>
+      {budget ? (
+        <div className="mt-1 flex items-center gap-2 text-[11px] tabular-nums text-muted-foreground">
+          <span className="shrink-0">Budget</span>
+          <span
+            role="progressbar"
+            aria-valuenow={Math.round(budget.prozent)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`Budget zu ${Math.round(budget.prozent)} Prozent verbraucht`}
+            className="block h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted"
+          >
+            <span className={`block h-full rounded-full ${BALKEN[budget.ton]}`} style={{ width: `${budget.balken}%` }} />
+          </span>
+          <span className={`shrink-0 font-medium ${TEXT[budget.ton]}`}>
+            {budget.rest >= 0 ? `noch ${euro(budget.rest)}` : `${euro(-budget.rest)} drüber`}
+          </span>
+        </div>
+      ) : (
+        <Link
+          href="/settings"
+          className="mt-0.5 inline-flex min-h-10 items-center text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          Budget festlegen
+        </Link>
+      )}
     </div>
   )
 }

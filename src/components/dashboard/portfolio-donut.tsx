@@ -22,10 +22,10 @@ import { ringSegmente, type Posten } from '@/lib/dashboard/aufteilung'
 const FARBEN = [1, 2, 3, 4, 5, 6].map(n => `var(--chart-cat-${n})`)
 const farbe = (i: number) => FARBEN[i % FARBEN.length]
 
-const GROESSE = 168
+const GROESSE = 152
 const MITTE = GROESSE / 2
-const RADIUS = 66
-const STRICH = 22
+const RADIUS = 60
+const STRICH = 20
 const UMFANG = 2 * Math.PI * RADIUS
 /** Lücke zwischen den Segmenten in Bogenlänge (px). */
 const LUECKE = 2
@@ -55,7 +55,7 @@ export function PortfolioDonut({ posten, total, minus, locale }: Props) {
   const umschalten = (key: string) => setAktiv(a => (a === key ? null : key))
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4 sm:p-5">
+    <div className="h-full rounded-lg border border-border bg-card p-4 sm:p-5">
       <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Aufteilung</p>
 
       <div className="flex flex-col items-center gap-4">
@@ -123,7 +123,7 @@ export function PortfolioDonut({ posten, total, minus, locale }: Props) {
                 onBlur={() => setAktiv(null)}
                 onClick={() => umschalten(p.key)}
                 aria-pressed={aktiv === p.key}
-                className={`flex min-h-9 w-full items-center gap-2 rounded-md px-1.5 text-left transition-colors hover:bg-muted/50 ${
+                className={`flex min-h-8 w-full items-center gap-2 rounded-md px-1.5 text-left transition-colors hover:bg-muted/50 ${
                   aktiv === p.key ? 'bg-muted/60' : ''
                 }`}
               >

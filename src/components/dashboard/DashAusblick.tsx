@@ -22,7 +22,7 @@ export async function DashAusblick({ kern }: DashAbschnittProps) {
   // Ohne Prognose (Berechnung fehlgeschlagen) oder mit zu wenig Tagen: schmale Karte statt Loch.
   if (punkte.length < 2) {
     return (
-      <div className="flex min-h-[240px] flex-col justify-between rounded-lg border border-border bg-card p-4">
+      <div className="flex flex-col gap-1 rounded-lg border border-border bg-card p-4">
         <div>
           <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Ausblick Liquidität</p>
           <p className="mt-2 text-sm font-medium">Ausblick nicht verfügbar</p>

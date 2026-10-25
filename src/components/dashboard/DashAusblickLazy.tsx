@@ -7,5 +7,5 @@ import dynamic from 'next/dynamic'
 // Hülle. Das Skelett hat die Höhe der fertigen Karte, damit nichts springt.
 export const DashAusblickLazy = dynamic(() => import('./DashAusblickChart'), {
   ssr: false,
-  loading: () => <div className="min-h-[260px] animate-pulse rounded-lg border border-border bg-muted/30" />,
+  loading: () => <div className="h-[290px] animate-pulse rounded-lg border border-border bg-muted/30" />,
 })
