@@ -4,12 +4,12 @@ import type { Database } from '@/types/database'
 type DB = SupabaseClient<Database>
 
 /** Spalten, die Konten-Liste, Detailseite und Konto-Formulare tatsächlich lesen. */
-const ACCOUNT_COLUMNS = 'id, name, type, institution, currency, color, iban, bank_iban, is_active'
+const ACCOUNT_COLUMNS = 'id, name, type, institution, currency, color, iban, bank_iban, is_active, sort_order'
 
 /** Konto für Anzeige und Bearbeiten-Dialog (ohne user_id/Zeitstempel/sort_order). */
 export type AccountRow = Pick<
   Database['public']['Tables']['accounts']['Row'],
-  'id' | 'name' | 'type' | 'institution' | 'currency' | 'color' | 'iban' | 'bank_iban' | 'is_active'
+  'id' | 'name' | 'type' | 'institution' | 'currency' | 'color' | 'iban' | 'bank_iban' | 'is_active' | 'sort_order'
 >
 
 /** Auswahl-Konto (Verträge): id + name. */
@@ -79,7 +79,40 @@ export async function getManualBalanceSums(supabase: DB, userId: string) {
 export async function getBankBalances(supabase: DB, userId: string) {
   const { data } = await supabase
     .from('bank_balance')
-    .select('account_iban, booked_balance')
+    .select('account_iban, booked_balance, fetched_at')
     .eq('user_id', userId)
   return data ?? []
+}
+
+/**
+ * Summe ALLER Buchungen je Konto (manuell und Bank, View account_balance_sums_unified) — nur zum
+ * Abgleich mit dem Bank-Saldo, nicht als Kontostand: bei Bankkonten liefert FinTS nur ein Zeitfenster.
+ */
+export async function getUnifiedBalanceSums(supabase: DB, userId: string) {
+  const { data } = await supabase
+    .from('account_balance_sums_unified')
+    .select('account_id, balance')
+    .eq('user_id', userId)
+  return (data ?? []) as { account_id: string; balance: number }[]
+}
+
+/**
+ * Datum der letzten Buchung je Konto, für die angegebenen Konten (YYYY-MM-DD). Gedacht für manuelle
+ * Konten mit wenigen Buchungen — für ein Bankkonto mit tausenden Zeilen wäre das die falsche Abfrage
+ * (dort gibt `bank_balance.fetched_at` die Frische an).
+ */
+export async function getLetzteBuchungen(supabase: DB, userId: string, accountIds: string[]) {
+  const aus = new Map<string, string>()
+  if (accountIds.length === 0) return aus
+  const { data } = await supabase
+    .from('unified_transactions')
+    .select('account_id, date')
+    .eq('user_id', userId)
+    .in('account_id', accountIds)
+    .order('date', { ascending: false })
+    .limit(1000)
+  for (const r of data ?? []) {
+    if (r.account_id && r.date && !aus.has(r.account_id)) aus.set(r.account_id, r.date)
+  }
+  return aus
 }

@@ -53,8 +53,9 @@ export function AccountTxToolbar({ categories, usedCategoryIds, shown, total }: 
     return () => clearTimeout(id)
   }, [draft, filters])
 
+  // Mobil 40 px hoch und 16 px Schrift (iOS zoomt kleinere Felder beim Fokus heran).
   const fieldClass =
-    'h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground ' +
+    'h-10 rounded-md border border-border bg-background px-2 text-base text-foreground sm:h-8 sm:text-xs ' +
     'focus:outline-none focus:ring-1 focus:ring-ring'
 
   // Eine Kategorieliste mit allen 40 Kategorien ist auf einem einzelnen Konto unbrauchbar —
@@ -67,13 +68,13 @@ export function AccountTxToolbar({ categories, usedCategoryIds, shown, total }: 
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <Search className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
           <input
             type="search"
             aria-label="Buchungen durchsuchen"
             placeholder="Beschreibung, Empfänger …"
-            className={`${fieldClass} w-56 pl-7 pr-7`}
+            className={`${fieldClass} w-full pl-8 pr-9 sm:w-56 sm:pl-7 sm:pr-7`}
             value={draft}
             onChange={e => setDraft(e.target.value)}
           />
@@ -82,9 +83,9 @@ export function AccountTxToolbar({ categories, usedCategoryIds, shown, total }: 
               type="button"
               aria-label="Suche leeren"
               onClick={() => setDraft('')}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute right-0 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center text-muted-foreground hover:text-foreground sm:right-1.5 sm:size-auto"
             >
-              <X className="size-3.5" />
+              <X className="size-4 sm:size-3.5" />
             </button>
           )}
         </div>
@@ -92,7 +93,7 @@ export function AccountTxToolbar({ categories, usedCategoryIds, shown, total }: 
         {relevant.length > 1 && (
           <select
             aria-label="Kategorie"
-            className={fieldClass}
+            className={`${fieldClass} min-w-0 flex-1 sm:flex-none`}
             value={filters.get('cat') ?? ''}
             onChange={e => filters.set('cat', e.target.value || null)}
           >
@@ -106,12 +107,25 @@ export function AccountTxToolbar({ categories, usedCategoryIds, shown, total }: 
 
         <select
           aria-label="Typ"
-          className={fieldClass}
+          className={`${fieldClass} min-w-0 flex-1 sm:flex-none`}
           value={filters.get('txtype') ?? ''}
           onChange={e => filters.set('txtype', e.target.value || null)}
         >
           <option value="">Alle Typen</option>
           {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+        </select>
+
+        {/* Die Spaltenköpfe mit Sortierung gibt es nur ab md; mobil sortiert dieses Feld. */}
+        <select
+          aria-label="Sortierung"
+          className={`${fieldClass} min-w-0 flex-1 md:hidden`}
+          value={filters.get('sort') ?? 'date-desc'}
+          onChange={e => filters.set('sort', e.target.value === 'date-desc' ? null : e.target.value)}
+        >
+          <option value="date-desc">Neueste zuerst</option>
+          <option value="date-asc">Älteste zuerst</option>
+          <option value="amount-desc">Größter Betrag</option>
+          <option value="amount-asc">Kleinster Betrag</option>
         </select>
 
         {active && (
@@ -122,7 +136,7 @@ export function AccountTxToolbar({ categories, usedCategoryIds, shown, total }: 
               lastPushed.current = ''
               filters.setMany({ q: null, cat: null, txtype: null })
             }}
-            className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="h-10 px-2 text-sm text-muted-foreground transition-colors hover:text-foreground sm:h-8 sm:text-xs"
           >
             Zurücksetzen
           </button>
@@ -166,13 +180,14 @@ export function SortableHeader({
     ? `${field}-${direction === 'desc' ? 'asc' : 'desc'}`
     : `${field}-desc`
 
+  // Zelle eines Div-Rasters (die Buchungsliste ist mobil eine Kartenliste, keine Tabelle).
   return (
-    <th className={`px-4 py-3 font-medium text-muted-foreground ${align === 'right' ? 'text-right' : 'text-left'} ${className}`}>
+    <div role="columnheader" className={`${align === 'right' ? 'text-right' : 'text-left'} ${className}`}>
       <button
         type="button"
         onClick={() => filters.set('sort', next === 'date-desc' ? null : next)}
         aria-label={`Nach ${label} sortieren`}
-        className={`inline-flex items-center gap-1 hover:text-foreground transition-colors ${
+        className={`inline-flex items-center gap-1 font-medium text-muted-foreground transition-colors hover:text-foreground ${
           isActive ? 'text-foreground' : ''
         } ${align === 'right' ? 'flex-row-reverse' : ''}`}
       >
@@ -181,7 +196,7 @@ export function SortableHeader({
           {isActive && direction === 'asc' ? '↑' : '↓'}
         </span>
       </button>
-    </th>
+    </div>
   )
 }
 
@@ -197,7 +212,7 @@ export function MonthChip({ label }: { label: string }) {
     <button
       type="button"
       onClick={() => filters.set('month', null)}
-      className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-foreground hover:bg-primary/15 transition-colors"
+      className="inline-flex items-center gap-1.5 min-h-8 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-foreground hover:bg-primary/15 transition-colors"
     >
       Nur {label}
       <X className="size-3" />
