@@ -106,6 +106,7 @@ export type Database = {
           created_at: string
           id: string
           pinned: boolean
+          project_id: string | null
           title: string | null
           updated_at: string
           user_id: string
@@ -115,6 +116,7 @@ export type Database = {
           created_at?: string
           id?: string
           pinned?: boolean
+          project_id?: string | null
           title?: string | null
           updated_at?: string
           user_id: string
@@ -124,11 +126,74 @@ export type Database = {
           created_at?: string
           id?: string
           pinned?: boolean
+          project_id?: string | null
           title?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ai_conversations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "ai_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_files: {
+        Row: {
+          auszug: string | null
+          conversation_id: string | null
+          created_at: string
+          groesse: number
+          id: string
+          media_type: string
+          name: string
+          pfad: string
+          project_id: string | null
+          user_id: string
+        }
+        Insert: {
+          auszug?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          groesse?: number
+          id?: string
+          media_type: string
+          name: string
+          pfad: string
+          project_id?: string | null
+          user_id: string
+        }
+        Update: {
+          auszug?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          groesse?: number
+          id?: string
+          media_type?: string
+          name?: string
+          pfad?: string
+          project_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_files_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_files_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "ai_projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ai_knowledge: {
         Row: {
@@ -373,6 +438,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ai_projects: {
+        Row: {
+          created_at: string
+          id: string
+          instructions: string
+          name: string
+          pinned: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          instructions?: string
+          name: string
+          pinned?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          instructions?: string
+          name?: string
+          pinned?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       ai_settings: {
         Row: {

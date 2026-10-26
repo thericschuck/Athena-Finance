@@ -21,6 +21,15 @@ import { loadAthenaContext } from '@/lib/assistant/context'
 import { getAthenaSettings, supportsThinking } from '@/lib/assistant/settings'
 import { cacheLetzteNachricht } from '@/lib/assistant/review-regeln'
 import { createLogger } from '@/lib/assistant/logger'
+import { bereinigeMentions } from '@/lib/assistant/mentions'
+import { mentionBlock } from '@/lib/assistant/mention-daten'
+import { projektKontext } from '@/lib/assistant/projekte'
+import {
+  bereinigeNachrichten,
+  dateiTeile,
+  loeseDateienAuf,
+  mentionsAusNachricht,
+} from '@/lib/assistant/datei-aufloesen'
 import type { Json } from '@/types/database'
 
 // Node statt Edge: braucht den vollen Supabase-Server-Client (Cookies, RLS-
@@ -73,8 +82,15 @@ export async function POST(request: NextRequest) {
         Hinweis fuer den Prompt (siehe atlas.ts), nie ein Zugriffsrecht: welche
         Daten Athena lesen darf, entscheiden allein RLS und der Werkzeuggürtel. */
     route?: string
+    /** @-Bezüge der letzten Nachricht (Typ, ID, Label) — wird gegen die Datenbank geprüft. */
+    mentions?: unknown
+    /** Nur beim Anlegen eines neuen Chats: das Projekt, in dem er entsteht. */
+    projectId?: string
+    /** „Neu generieren“: die letzte Antwort wird ersetzt, die Nutzernachricht nicht erneut gespeichert. */
+    regenerate?: boolean
   }
-  const uiMessages = body.messages ?? []
+  // Vom Client Kommendes wird zuerst zurechtgestutzt: nur `storage:`-Dateien, nur Bezüge als Metadaten.
+  const uiMessages = bereinigeNachrichten(body.messages ?? [])
   // Auf einen Pfad eingegrenzt, bevor er in den Prompt geht: der Client ist
   // vertrauenswuerdig, aber ein Freitextfeld aus dem Request im System-Prompt
   // waere eine offene Tuer fuer Prompt-Injection. Alles, was nicht wie eine
@@ -108,32 +124,49 @@ export async function POST(request: NextRequest) {
   // ── Konversation ────────────────────────────────────────────────────────────
   let conversationId = body.conversationId
   let isNewConversation = false
+  // Das Projekt eines Chats steht in der Zeile (nicht im Request): `body.projectId` zählt nur beim
+  // Anlegen und nur, wenn das Projekt dem Nutzer gehört.
+  let projectId: string | null = null
+  let neuesProjekt: string | null = null
+  if (typeof body.projectId === 'string') {
+    const { data: projekt } = await supabase
+      .from('ai_projects')
+      .select('id')
+      .eq('id', body.projectId)
+      .eq('user_id', user.id)
+      .maybeSingle()
+    neuesProjekt = projekt?.id ?? null
+  }
   if (conversationId) {
     // Der Client erzeugt die ID selbst (neue Session) oder schickt die einer
     // geladenen Session mit. `ignoreDuplicates` macht den Insert im zweiten
     // Fall zum No-Op statt zum Fehler.
     const { data: existing } = await supabase
       .from('ai_conversations')
-      .select('id')
+      .select('id, project_id')
       .eq('id', conversationId)
       .eq('user_id', user.id)
       .maybeSingle()
     if (!existing) {
       const { error } = await supabase
         .from('ai_conversations')
-        .insert({ id: conversationId, user_id: user.id })
+        .insert({ id: conversationId, user_id: user.id, project_id: neuesProjekt })
       if (error) return new Response('Konnte Konversation nicht anlegen', { status: 500 })
       isNewConversation = true
+      projectId = neuesProjekt
+    } else {
+      projectId = existing.project_id
     }
   } else {
     const { data: conv, error } = await supabase
       .from('ai_conversations')
-      .insert({ user_id: user.id })
+      .insert({ user_id: user.id, project_id: neuesProjekt })
       .select('id')
       .single()
     if (error || !conv) return new Response('Konnte Konversation nicht anlegen', { status: 500 })
     conversationId = conv.id
     isNewConversation = true
+    projectId = neuesProjekt
   }
   // Erneutes const-Binding, damit TypeScript die Variable in den unten
   // definierten Closures (onStepFinish/onFinish) nicht als möglicherweise
@@ -146,7 +179,13 @@ export async function POST(request: NextRequest) {
   // ── Nutzer-Nachricht persistieren ───────────────────────────────────────────
   const lastMessage = uiMessages[uiMessages.length - 1]
   const lastUserText = lastMessage?.role === 'user' ? extractText(lastMessage.parts) : ''
-  if (lastMessage?.role === 'user') {
+  // Nur Dateien, kein Text: der Titel entsteht dann aus den Dateinamen statt gar nicht.
+  const titelQuelle = lastUserText || dateiTeile(lastMessage, user.id).map((d) => d.name).join(', ')
+  const regenerate = body.regenerate === true && lastMessage?.role === 'user'
+  // Bei „Neu generieren“ wird die Nutzernachricht nicht erneut gespeichert; die ersetzte Antwort wird
+  // erst GELÖSCHT, wenn der neue Lauf sicher startet (siehe unten, ersetzeLetzteAntwort).
+  if (regenerate) {
+  } else if (lastMessage?.role === 'user') {
     await supabase.from('ai_messages').insert({
       user_id: user.id,
       conversation_id: activeConversationId,
@@ -176,11 +215,68 @@ export async function POST(request: NextRequest) {
   }
   const assistantMessageId = assistantMessage.id
 
-  // ── Kontext & Werkzeuge ─────────────────────────────────────────────────────
-  const context = await loadAthenaContext(supabase, user.id, {
-    memoryEnabled: settings.memoryEnabled,
-  })
-  const systemBlocks = buildAthenaSystemPrompt(context, settings, new Date(), currentRoute)
+  // ── Kontext, Bezüge, Projekt, Dateien ───────────────────────────────────────
+  // Alles, was fehlschlagen kann (Datei laden, Bezüge, Projekt): scheitert es, räumt der Catch die
+  // Platzhalter-Zeile ab, damit keine leere Antwort im Verlauf zurückbleibt — und bei „Neu
+  // generieren“ ist die alte Antwort dann noch da.
+  const bezuegeListe = bereinigeMentions(body.mentions)
+  const mentions =
+    bezuegeListe.length > 0
+      ? bezuegeListe
+      : regenerate
+        ? bereinigeMentions(mentionsAusNachricht(lastMessage))
+        : []
+
+  let context!: Awaited<ReturnType<typeof loadAthenaContext>>
+  let systemBlocks!: ReturnType<typeof buildAthenaSystemPrompt>
+  let modelMessages!: Awaited<ReturnType<typeof convertToModelMessages>>
+  try {
+    context = await loadAthenaContext(supabase, user.id, { memoryEnabled: settings.memoryEnabled })
+    const [projektAbschnitt, bezuege] = await Promise.all([
+      projectId ? projektKontext(supabase, user.id, projectId) : Promise.resolve(null),
+      mentionBlock(supabase, user.id, mentions),
+    ])
+    systemBlocks = buildAthenaSystemPrompt(context, settings, new Date(), currentRoute, {
+      projekt: projektAbschnitt,
+      bezuege,
+    })
+
+    // Storage-Verweise -> Bytes bzw. Text (siehe datei-aufloesen.ts). Persistiert wird weiter die
+    // schlanke Fassung `uiMessages`; nur das Modell bekommt die aufgelöste.
+    const aufgeloest = await loeseDateienAuf(supabase, user.id, uiMessages)
+    modelMessages = await convertToModelMessages(aufgeloest.messages)
+
+    // Dateien der neuen Nachricht in `ai_files` verbuchen (Aufräumen beim Löschen der Session).
+    // Hier und nicht beim Hochladen: bei einem frischen Chat gibt es die Konversation erst jetzt.
+    const neueDateien = dateiTeile(lastMessage, user.id).filter((d) => aufgeloest.groessen.has(d.pfad))
+    if (neueDateien.length > 0) {
+      const { data: vorhanden } = await supabase
+        .from('ai_files')
+        .select('pfad')
+        .eq('user_id', user.id)
+        .in('pfad', neueDateien.map((d) => d.pfad))
+      const bekannt = new Set((vorhanden ?? []).map((v) => v.pfad))
+      const zeilen = neueDateien
+        .filter((d) => !bekannt.has(d.pfad))
+        .map((d) => ({
+          user_id: user.id,
+          conversation_id: activeConversationId,
+          pfad: d.pfad,
+          name: d.name,
+          media_type: d.mediaType,
+          groesse: aufgeloest.groessen.get(d.pfad) ?? 0,
+        }))
+      if (zeilen.length > 0) await supabase.from('ai_files').insert(zeilen)
+    }
+  } catch (err) {
+    await supabase.from('ai_messages').delete().eq('id', assistantMessageId).eq('user_id', user.id)
+    const meldung = err instanceof Error ? err.message : String(err)
+    await log({ level: 'error', event: 'run.error', message: meldung, durationMs: Date.now() - startedAt })
+    return new Response(`Anfrage konnte nicht vorbereitet werden: ${meldung}`, { status: 500 })
+  }
+
+  // Der neue Lauf startet: erst jetzt verschwindet die ersetzte Antwort.
+  if (regenerate) await ersetzeLetzteAntwort(supabase, user.id, activeConversationId, assistantMessageId)
 
   const tools: ToolSet = {
     ...buildAthenaTools(supabase, user.id, {
@@ -192,8 +288,6 @@ export async function POST(request: NextRequest) {
     }),
     ...(settings.webResearch ? webTools(settings.model) : {}),
   }
-
-  const modelMessages = await convertToModelMessages(uiMessages)
 
   /**
    * Der System-Prompt als DREI Bloecke mit zwei Cache-Breakpoints.
@@ -235,7 +329,7 @@ export async function POST(request: NextRequest) {
 
   await log({
     event: 'run.start',
-    message: lastUserText.slice(0, 200),
+    message: titelQuelle.slice(0, 200),
     meta: {
       model: settings.model,
       effort: settings.effort,
@@ -361,8 +455,8 @@ export async function POST(request: NextRequest) {
 
       // Titel erst am Ende: hier steht fest, dass der Lauf überhaupt zu einer
       // Antwort geführt hat, und der Titel blockiert den Stream nicht.
-      if (isNewConversation && lastUserText) {
-        await titleConversation(supabase, activeConversationId, user.id, lastUserText)
+      if (isNewConversation && titelQuelle) {
+        await titleConversation(supabase, activeConversationId, user.id, titelQuelle)
       }
     },
   })
@@ -420,5 +514,52 @@ async function titleConversation(
       .eq('user_id', userId)
   } catch (err) {
     console.error('[athena] Titelvergabe fehlgeschlagen', err)
+  }
+}
+
+/**
+ * „Neu generieren“: ersetzt die Antwort(en) NACH der letzten Nutzernachricht, außer dem neuen
+ * Platzhalter. Zeilen mit offenen oder entschiedenen Vorschlägen (`ai_pending_actions`) bleiben — der
+ * Vorschlag wäre sonst ohne Antwort-Zeile weiter freigebbar. Werkzeugaufrufe hängen per Cascade an
+ * der Antwort-Zeile. Beschränkt auf „nach der letzten Nutzerzeile“, damit ein Doppelklick oder ein
+ * zweiter Tab nicht die Antwort eines früheren Zuges löscht.
+ */
+async function ersetzeLetzteAntwort(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  conversationId: string,
+  behalteId: string,
+) {
+  const { data: letzteNutzer } = await supabase
+    .from('ai_messages')
+    .select('created_at')
+    .eq('user_id', userId)
+    .eq('conversation_id', conversationId)
+    .eq('role', 'user')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (!letzteNutzer) return
+
+  const { data: alte } = await supabase
+    .from('ai_messages')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('conversation_id', conversationId)
+    .eq('role', 'assistant')
+    .gt('created_at', letzteNutzer.created_at)
+    .neq('id', behalteId)
+  const ids = (alte ?? []).map((a) => a.id)
+  if (ids.length === 0) return
+
+  const { data: mitVorschlag } = await supabase
+    .from('ai_pending_actions')
+    .select('message_id')
+    .eq('user_id', userId)
+    .in('message_id', ids)
+  const geschuetzt = new Set((mitVorschlag ?? []).map((p) => p.message_id))
+  const loeschen = ids.filter((id) => !geschuetzt.has(id))
+  if (loeschen.length > 0) {
+    await supabase.from('ai_messages').delete().eq('user_id', userId).in('id', loeschen)
   }
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Chat, useChat } from '@ai-sdk/react'
 import {
@@ -11,7 +11,7 @@ import {
   getToolName,
   type UIMessage,
 } from 'ai'
-import { ArrowDown, Brain, Check, ChevronDown, ChevronUp, Globe, Loader2, Send, Square } from 'lucide-react'
+import { ArrowDown, Brain, Check, ChevronDown, ChevronUp, Globe, Loader2, Paperclip, Send, Square } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -30,6 +30,30 @@ import { useAthenaChatSettings } from '@/components/providers/athena-settings-co
 import { ToolTrace } from '@/components/assistant/chat/ToolTrace'
 import { MessageActions } from '@/components/assistant/chat/MessageActions'
 import { EmptyState } from '@/components/assistant/chat/EmptyState'
+import { useAnhaenge } from '@/components/assistant/chat/useAnhaenge'
+import { AnhangChips } from '@/components/assistant/chat/AnhangChips'
+import { NachrichtenAnhaenge } from '@/components/assistant/chat/NachrichtenAnhaenge'
+import {
+  MentionMenu,
+  MENTION_LISTBOX_ID,
+  mentionOptionId,
+} from '@/components/assistant/chat/MentionMenu'
+import { DATEI_ACCEPT } from '@/lib/assistant/dateien'
+import { ladeMentionAuswahl } from '@/app/(dashboard)/assistant/datei-actions'
+import {
+  MENTION_TYPEN,
+  filtereMentionOptionen,
+  type Mention,
+  type MentionOption,
+} from '@/lib/assistant/mentions'
+import {
+  MENTION_META_SCHLUESSEL,
+  aktivesToken,
+  gueltigeMentions,
+  mentionLabelsAus,
+  setzeMention,
+  zerlegeMentions,
+} from '@/lib/assistant/mention-eingabe'
 
 /** Athena-Avatar neben Antworten: am Handy kleiner (24), ab sm 28 — er soll
     auch dort die Zuordnung zeigen, ohne der Blase viel Breite zu nehmen. */
@@ -427,12 +451,15 @@ const MessageBubble = memo(function MessageBubble({
   busy,
   actionStatuses,
   actionResults,
+  onRegenerate,
 }: {
   message: UIMessage
   isLast: boolean
   busy: boolean
   actionStatuses?: Record<string, PendingActionStatus>
   actionResults?: Record<string, unknown>
+  /** Nur an der letzten Antwort gesetzt (stabile Referenz, damit `memo` greift). */
+  onRegenerate?: () => void
 }) {
   const proposals = useMemo(
     () =>
@@ -454,12 +481,36 @@ const MessageBubble = memo(function MessageBubble({
     () => message.parts.filter(isTextUIPart).map((p) => p.text).join('\n'),
     [message.parts],
   )
+  // Segmente mit hervorgehobenen @-Bezügen (nur Nutzernachrichten).
+  const segmente = useMemo(() => {
+    if (message.role !== 'user') return null
+    const labels = message.parts
+      .filter(isTextUIPart)
+      .flatMap((p) => mentionLabelsAus(p.providerMetadata))
+    return zerlegeMentions(text, labels)
+  }, [message.role, message.parts, text])
 
   return (
     <div className="group/msg flex flex-col gap-2">
       {message.role === 'user' ? (
-        <div className="max-w-[85%] self-end whitespace-pre-wrap [overflow-wrap:anywhere] rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground">
-          {text}
+        <div className="flex max-w-[85%] flex-col items-end gap-1.5 self-end">
+          <NachrichtenAnhaenge parts={message.parts} />
+          {text && (
+            <div className="whitespace-pre-wrap [overflow-wrap:anywhere] rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground">
+              {(segmente ?? [{ text, mention: false }]).map((seg, i) =>
+                seg.mention ? (
+                  <span
+                    key={i}
+                    className="rounded bg-primary-foreground/20 px-1 font-medium underline decoration-primary-foreground/40 underline-offset-2"
+                  >
+                    {seg.text}
+                  </span>
+                ) : (
+                  <span key={i}>{seg.text}</span>
+                ),
+              )}
+            </div>
+          )}
         </div>
       ) : (
         // Athena bekommt ein Gesicht in der linken Spalte: das
@@ -484,7 +535,14 @@ const MessageBubble = memo(function MessageBubble({
               <Sources parts={message.parts} />
               <ToolTrace parts={message.parts} />
             </div>
-            {!(isLast && busy) && <MessageActions text={text} alwaysVisible={isLast} />}
+            {!(isLast && busy) && (
+              <MessageActions
+                text={text}
+                alwaysVisible={isLast}
+                // Keine neue Antwort auf einen Vorschlag: die Karte kann schon entschieden sein.
+                onRegenerate={isLast && proposals.length === 0 ? onRegenerate : undefined}
+              />
+            )}
           </div>
         </div>
       )}
@@ -524,6 +582,8 @@ export function AthenaChat({
   actionStatuses,
   actionResults,
   backdrop = false,
+  projectId,
+  initialInput,
   className,
 }: {
   /** Von außen gehaltene Chat-Instanz (siehe `erzeugeChat`). Ist sie gesetzt, gilt sie —
@@ -541,6 +601,12 @@ export function AthenaChat({
   /** Statue als stiller Hintergrund. Nur auf der vollen Seite sinnvoll - im
       schmalen Sheet stuende sie hinter dem Text statt neben ihm. */
   backdrop?: boolean
+  /** Nur für neue Chats in einem Projekt: geht in den Body jeder Nachricht (die Route
+      verwendet ihn nur beim Anlegen der Konversation). */
+  projectId?: string
+  /** Vorbelegter, editierbarer Prompt (z. B. aus einem Dashboard-Hinweis). Wird nur beim Mount
+      übernommen und nie automatisch gesendet. */
+  initialInput?: string
   className?: string
 }) {
   // Einmal beim Mount festhalten, nicht bei jedem Rendern neu ableiten: `initialMessages`
@@ -549,8 +615,8 @@ export function AthenaChat({
   // Wechsel der Session mountet stattdessen neu — auf der Seite über den Key, im Sheet
   // über den Key auf der Chat-ID.
   const [instanz] = useState(() => chat ?? erzeugeChat(conversationId, initialMessages))
-  const { messages, sendMessage, status, error, stop } = useChat({ chat: instanz })
-  const [input, setInput] = useState('')
+  const { messages, sendMessage, regenerate, status, error, stop } = useChat({ chat: instanz })
+  const [input, setInput] = useState(initialInput ?? '')
   // Die Seite, von der aus gefragt wird, geht als Kontext mit (siehe
   // atlas.ts: describeCurrentRoute). Pro NACHRICHT, nicht pro Session — das
   // schwebende Sheet bleibt beim Navigieren offen, die Route darunter wechselt.
@@ -559,8 +625,14 @@ export function AthenaChat({
 
   /** Eine Nachricht abschicken, immer mit der aktuellen Route im Gepaeck. */
   function frage(text: string) {
-    sendMessage({ text }, { body: { route: pathname } })
+    sendMessage({ text }, { body: { route: pathname, projectId } })
   }
+
+  /** Letzte Antwort ersetzen. Stabil (useCallback), damit die gemerkte Nachricht nicht
+      bei jedem Token neu rendert. */
+  const regenerieren = useCallback(() => {
+    void regenerate({ body: { route: pathname, regenerate: true, projectId } })
+  }, [regenerate, pathname, projectId])
 
   /**
    * Sobald eine Antwort fertig ist, die Seite (Server Component) neu laden —
@@ -638,16 +710,163 @@ export function AthenaChat({
 
   const busy = status === 'submitted' || status === 'streaming'
 
+  // ── Anhänge ────────────────────────────────────────────────────────────────
+  const anhang = useAnhaenge(instanz.id)
+  const dateiRef = useRef<HTMLInputElement>(null)
+  const [ziehen, setZiehen] = useState(false)
+  const ziehZaehler = useRef(0)
+
+  function dateienWaehlen(liste: FileList | File[] | null) {
+    const dateien = liste ? Array.from(liste) : []
+    if (dateien.length) anhang.hinzufuegen(dateien)
+  }
+
+  const hatDateien = (e: React.DragEvent) => Array.from(e.dataTransfer.types).includes('Files')
+
+  // ── @-Bezüge ───────────────────────────────────────────────────────────────
+  const textRef = useRef<HTMLTextAreaElement>(null)
+  // Vorbelegter Prompt: Cursor ans Ende, Fokus aber nur mit Maus/Trackpad — am Handy würde die
+  // Tastatur den Entwurf sofort verdecken, und Athena soll erst nach einem bewussten Tipp senden.
+  useEffect(() => {
+    const feld = textRef.current
+    if (!initialInput || !feld || !window.matchMedia('(pointer: fine)').matches) return
+    feld.focus()
+    feld.setSelectionRange(initialInput.length, initialInput.length)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- nur beim Mount
+  const [cursor, setCursor] = useState(initialInput?.length ?? 0)
+  const [gewaehlt, setGewaehlt] = useState<Mention[]>([])
+  const [optionen, setOptionen] = useState<MentionOption[] | null>(null)
+  const [optionenLaedt, setOptionenLaedt] = useState(false)
+  const [aktiv, setAktiv] = useState(0)
+  // Start des Tokens, dessen Menü mit Escape geschlossen wurde.
+  const [geschlossen, setGeschlossen] = useState<number | null>(null)
+  const neuerCursor = useRef<number | null>(null)
+
+  const token = useMemo(() => aktivesToken(input, cursor), [input, cursor])
+  const treffer = useMemo(() => {
+    if (!token || !optionen) return []
+    const gefiltert = filtereMentionOptionen(optionen, token.suche)
+    // Nach Gruppen sortieren (stabil): Anzeigereihenfolge = Reihenfolge für die Tastatur.
+    return [...gefiltert].sort(
+      (a, b) => MENTION_TYPEN.indexOf(a.typ) - MENTION_TYPEN.indexOf(b.typ),
+    )
+  }, [token, optionen])
+  const menuOffen =
+    token !== null && geschlossen !== token.start && (optionenLaedt || treffer.length > 0)
+  const aktivIndex = Math.min(aktiv, Math.max(0, treffer.length - 1))
+
+  /** Erst beim ersten `@` laden; ein Fehler wird still geschluckt und beim nächsten `@` erneut versucht. */
+  function ladeOptionen() {
+    if (optionen !== null || optionenLaedt) return
+    setOptionenLaedt(true)
+    ladeMentionAuswahl()
+      .then((liste) => setOptionen(liste))
+      .catch(() => setOptionen(null))
+      .finally(() => setOptionenLaedt(false))
+  }
+
+  function eingabeGeaendert(wert: string, pos: number) {
+    setInput(wert)
+    setCursor(pos)
+    setAktiv(0)
+    const t = aktivesToken(wert, pos)
+    if (!t) setGeschlossen(null)
+    else ladeOptionen()
+  }
+
+  function waehleMention(option: MentionOption) {
+    if (!token) return
+    const neu = setzeMention(input, token, option.label)
+    neuerCursor.current = neu.cursor
+    setInput(neu.text)
+    setCursor(neu.cursor)
+    setGewaehlt((alt) =>
+      alt.some((m) => m.typ === option.typ && m.id === option.id)
+        ? alt
+        : [...alt, { typ: option.typ, id: option.id, label: option.label }],
+    )
+    setGeschlossen(null)
+  }
+
+  // Cursor nach dem Einsetzen hinter die Auswahl setzen (der Wert wird erst nach dem Rendern übernommen).
+  useEffect(() => {
+    if (neuerCursor.current === null || !textRef.current) return
+    const pos = neuerCursor.current
+    neuerCursor.current = null
+    textRef.current.focus()
+    textRef.current.setSelectionRange(pos, pos)
+  }, [input])
+
+  const kannSenden =
+    !busy && !anhang.laedt && (input.trim().length > 0 || anhang.anzahlFertig > 0)
+
   function submit() {
+    if (!kannSenden) return
     const text = input.trim()
-    if (!text || busy) return
-    frage(text)
+    const files = anhang.dateiTeile()
+    const mentions = gueltigeMentions(text, gewaehlt)
+    const optionenBody = { body: { route: pathname, mentions, projectId } }
+    if (mentions.length > 0) {
+      // Die Labels hängen am Textteil, damit die Hervorhebung nach einem Neuladen noch weiß, wie
+      // weit ein „@Girokonto DKB“ reicht (siehe mention-eingabe.ts). Das Modell sieht sie nicht.
+      void sendMessage(
+        {
+          parts: [
+            {
+              type: 'text',
+              text,
+              providerMetadata: {
+                [MENTION_META_SCHLUESSEL]: { mentions: mentions.map((m) => ({ typ: m.typ, id: m.id, label: m.label })) },
+              },
+            },
+            ...files,
+          ],
+        },
+        optionenBody,
+      )
+    } else if (files.length > 0) {
+      void sendMessage(text ? { text, files } : { files }, optionenBody)
+    } else {
+      void sendMessage({ text }, optionenBody)
+    }
     setInput('')
+    setCursor(0)
+    setGewaehlt([])
+    setGeschlossen(null)
+    anhang.leere()
   }
 
   return (
-    <div className={cn('relative flex h-full min-h-0 flex-col', className)}>
+    <div
+      className={cn('relative flex h-full min-h-0 flex-col', className)}
+      onDragEnter={(e) => {
+        if (!hatDateien(e)) return
+        ziehZaehler.current += 1
+        setZiehen(true)
+      }}
+      onDragOver={(e) => {
+        // Ohne preventDefault wird die Fläche kein Ablageziel.
+        if (hatDateien(e)) e.preventDefault()
+      }}
+      onDragLeave={(e) => {
+        if (!hatDateien(e)) return
+        ziehZaehler.current = Math.max(0, ziehZaehler.current - 1)
+        if (ziehZaehler.current === 0) setZiehen(false)
+      }}
+      onDrop={(e) => {
+        if (!hatDateien(e)) return
+        e.preventDefault()
+        ziehZaehler.current = 0
+        setZiehen(false)
+        dateienWaehlen(e.dataTransfer.files)
+      }}
+    >
       {backdrop && <AthenaBackdrop />}
+      {ziehen && (
+        <div className="pointer-events-none absolute inset-2 z-30 flex items-center justify-center rounded-xl border-2 border-dashed border-primary/60 bg-background/80 text-sm font-medium text-foreground">
+          Datei hier ablegen
+        </div>
+      )}
 
       {/* Wrapper statt direkter Flex-Höhe: der „Nach unten"-Knopf liegt
           absolut über dem Verlauf, knapp über dem Eingabefeld. */}
@@ -664,6 +883,7 @@ export function AthenaChat({
               busy={busy}
               actionStatuses={actionStatuses}
               actionResults={actionResults}
+              onRegenerate={index === messages.length - 1 ? regenerieren : undefined}
             />
           ))}
 
@@ -713,30 +933,122 @@ export function AthenaChat({
             gehört zur Nachricht, die gerade getippt wird, und stand als
             eigene Zeile darüber wie ein losgelöstes Formular im Raum. Der
             Fokusring sitzt deshalb auf dem Container, nicht auf dem Feld. */}
-        <div className="mx-auto w-full max-w-3xl rounded-xl border border-input bg-card shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                submit()
-              }
-            }}
-            placeholder="Frag Athena…"
-            className="max-h-48 min-h-9 resize-none text-base md:text-sm border-0 bg-transparent px-3 pb-0 pt-2.5 shadow-none focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent"
-          />
-          <div className="flex items-center justify-between gap-2 p-2">
-            <ModelEffortPicker />
-            {busy ? (
-              <Button type="button" size="icon-sm" variant="outline" onClick={stop} aria-label="Abbrechen" className="max-sm:size-10">
-                <Square className="size-3.5" />
-              </Button>
-            ) : (
-              <Button type="submit" size="icon-sm" disabled={!input.trim()} aria-label="Senden" className="max-sm:size-10">
-                <Send className="size-3.5" />
-              </Button>
+        <div className="relative mx-auto w-full max-w-3xl">
+          {menuOffen && (
+            <MentionMenu
+              optionen={treffer}
+              aktiv={aktivIndex}
+              laedt={optionenLaedt}
+              onWaehlen={waehleMention}
+              onHover={setAktiv}
+            />
+          )}
+          <div className="rounded-xl border border-input bg-card shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
+            <AnhangChips anhaenge={anhang.anhaenge} onEntfernen={anhang.entferne} />
+            {anhang.hinweis && (
+              <p role="status" className="px-3 pt-2 text-xs text-destructive [overflow-wrap:anywhere]">
+                {anhang.hinweis}
+              </p>
             )}
+            <Textarea
+              ref={textRef}
+              value={input}
+              onChange={(e) => eingabeGeaendert(e.target.value, e.target.selectionStart)}
+              onSelect={(e) => setCursor(e.currentTarget.selectionStart)}
+              onPaste={(e) => {
+                // Nur Dateien abfangen (Screenshots); normaler Text läuft wie gewohnt.
+                const bilder = Array.from(e.clipboardData.files).filter((f) => f.type.startsWith('image/'))
+                if (bilder.length === 0) return
+                e.preventDefault()
+                anhang.hinzufuegen(bilder)
+              }}
+              onKeyDown={(e) => {
+                if (e.nativeEvent.isComposing) return
+                if (menuOffen) {
+                  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    if (treffer.length === 0) return
+                    e.preventDefault()
+                    const n = treffer.length
+                    setAktiv((aktivIndex + (e.key === 'ArrowDown' ? 1 : n - 1)) % n)
+                    return
+                  }
+                  if (e.key === 'Escape') {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    if (token) setGeschlossen(token.start)
+                    return
+                  }
+                  // Mit Treffern wählt Enter/Tab einen aus und sendet nie. Ohne Treffer (Liste lädt
+                  // noch oder nichts passt) soll Enter nicht stumm verschluckt werden.
+                  if ((e.key === 'Enter' || e.key === 'Tab') && treffer.length > 0) {
+                    e.preventDefault()
+                    if (treffer[aktivIndex]) waehleMention(treffer[aktivIndex])
+                    return
+                  }
+                }
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  submit()
+                }
+              }}
+              placeholder="Frag Athena…"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded={menuOffen}
+              aria-controls={menuOffen ? MENTION_LISTBOX_ID : undefined}
+              aria-activedescendant={menuOffen && treffer.length > 0 ? mentionOptionId(aktivIndex) : undefined}
+              className="max-h-48 min-h-9 resize-none text-base md:text-sm border-0 bg-transparent px-3 pb-0 pt-2.5 shadow-none focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent"
+            />
+            <div className="flex items-center justify-between gap-2 p-2">
+              <div className="flex min-w-0 items-center gap-1.5">
+                <input
+                  ref={dateiRef}
+                  type="file"
+                  multiple
+                  hidden
+                  accept={DATEI_ACCEPT}
+                  onChange={(e) => {
+                    dateienWaehlen(e.target.files)
+                    // Gleiche Datei nach dem Entfernen erneut wählbar machen.
+                    e.target.value = ''
+                  }}
+                />
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="ghost"
+                  onClick={() => dateiRef.current?.click()}
+                  aria-label="Datei anhängen"
+                  title="Datei anhängen (PDF, Bild, CSV/Text)"
+                  className="max-sm:size-10 shrink-0 text-muted-foreground"
+                >
+                  <Paperclip className="size-4" />
+                </Button>
+                <ModelEffortPicker />
+              </div>
+              <div className="flex min-w-0 items-center gap-2">
+                {anhang.laedt && (
+                  <span role="status" className="min-w-0 truncate text-xs text-muted-foreground">
+                    Lädt hoch…
+                  </span>
+                )}
+                {busy ? (
+                  <Button type="button" size="icon-sm" variant="outline" onClick={stop} aria-label="Abbrechen" className="max-sm:size-10 shrink-0">
+                    <Square className="size-3.5" />
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    size="icon-sm"
+                    disabled={!kannSenden}
+                    aria-label={anhang.laedt ? 'Senden — Dateien werden noch hochgeladen' : 'Senden'}
+                    className="max-sm:size-10 shrink-0"
+                  >
+                    <Send className="size-3.5" />
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </form>

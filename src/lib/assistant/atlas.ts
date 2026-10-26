@@ -244,7 +244,7 @@ export const APP_ATLAS: AtlasSection[] = [
         shows:
           'dein eigener Bereich: Chat, Kontext-Speicher, Wissensbasis, System-Log und deine ' +
           'Einstellungen (Modell, Denkstufe, Web-Recherche, Tageslimit)',
-        tools: ['remember', 'forget', 'searchMemory', 'searchKnowledge', 'saveKnowledge'],
+        tools: ['remember', 'forget', 'searchMemory', 'searchKnowledge', 'saveKnowledge', 'readAttachment'],
         blind: 'das System-Log (`ai_logs`) und deine eigenen Kosten pro Lauf',
       },
       {

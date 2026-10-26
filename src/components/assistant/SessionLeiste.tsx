@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronsUpDown, MessageSquare, Pin, PinOff, Plus, Search, Trash2 } from 'lucide-react'
+import { ChevronsUpDown, FolderKanban, MessageSquare, Pin, PinOff, Plus, Search, Trash2 } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,12 +35,18 @@ export function SessionLeiste({
   sessions,
   activeId,
   kosten,
+  projekt,
+  projekte,
 }: {
   sessions: SessionSummary[]
   /** `undefined` = frischer Chat ohne `?s=`. */
   activeId?: string
   /** `null`, solange die Session noch keinen abgeschlossenen Lauf hat (oder neu ist). */
   kosten: { usd: number; laeufe: number } | null
+  /** Projekt der offenen Session bzw. des neuen Chats; `null`/fehlend = allgemeiner Chat. */
+  projekt?: { id: string; name: string } | null
+  /** Für die Projektnamen im Wechsler. */
+  projekte?: { id: string; name: string }[]
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -52,6 +58,7 @@ export function SessionLeiste({
   const [isPending, startTransition] = useTransition()
 
   const aktiv = sessions.find((s) => s.id === activeId)
+  const projektName = useMemo(() => new Map((projekte ?? []).map((p) => [p.id, p.name])), [projekte])
   const mitSuche = sessions.length >= SUCHE_AB
   const gruppen = useMemo(
     () => gruppiereSessions(mitSuche ? filtereSessions(sessions, suche) : sessions),
@@ -77,6 +84,16 @@ export function SessionLeiste({
 
   return (
     <div className="flex min-w-0 items-center gap-1.5 border-b border-border px-3 py-1 sm:gap-2">
+      {projekt ? (
+        <Link
+          href={`/assistant/projekte/${projekt.id}`}
+          aria-label={`Projekt ${projekt.name} öffnen`}
+          className="inline-flex min-h-10 max-w-[7.5rem] shrink-0 items-center gap-1 rounded-full border border-border px-2.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:min-h-7 sm:max-w-[12rem]"
+        >
+          <FolderKanban aria-hidden className="size-3 shrink-0" />
+          <span className="truncate">{projekt.name}</span>
+        </Link>
+      ) : null}
       <h2 className="min-w-0 flex-1 truncate text-sm font-medium">
         {aktiv?.title ?? 'Neuer Chat'}
       </h2>
@@ -169,6 +186,9 @@ export function SessionLeiste({
                         </span>
                         <span className="truncate pl-4.5 text-[11px] text-muted-foreground">
                           {relativeDay(session.updatedAt)} · {session.messageCount} Nachr.
+                          {session.projectId && projektName.get(session.projectId)
+                            ? ` · ${projektName.get(session.projectId)}`
+                            : ''}
                         </span>
                       </Link>
                       <Button
@@ -228,7 +248,7 @@ export function SessionLeiste({
           // Mit einer neuen UUID pro Klick ist jede „Neu"-Navigation ein Ziel,
           // das es vorher nicht gab — und `key={activeId}` in page.tsx
           // erzwingt zuverlässig einen frischen Chat.
-          router.push(`/assistant?s=${crypto.randomUUID()}`)
+          router.push(`/assistant?s=${crypto.randomUUID()}${projekt ? `&p=${projekt.id}` : ''}`)
         }
       >
         <Plus className="size-4" />

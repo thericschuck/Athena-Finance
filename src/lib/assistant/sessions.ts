@@ -29,6 +29,8 @@ export type SessionSummary = {
   pinned: boolean
   updatedAt: string
   messageCount: number
+  /** Projekt, zu dem der Chat gehört; `null` = allgemeiner Chat. */
+  projectId: string | null
 }
 
 /** Alles, was ein Chat braucht, um eine gespeicherte Session weiterzuführen. */
@@ -63,12 +65,20 @@ export function relativeDay(iso: string): string {
  * PostgREST liefert `count` pro Relation mit, und eine View dafür wäre mehr Migration als
  * Nutzen.
  */
-export async function listeSessions(supabase: DB, userId: string): Promise<SessionSummary[]> {
-  const { data } = await supabase
+export async function listeSessions(
+  supabase: DB,
+  userId: string,
+  /** Nur Chats dieses Projekts (`'ohne'` = nur allgemeine Chats). */
+  projekt?: string,
+): Promise<SessionSummary[]> {
+  let abfrage = supabase
     .from('ai_conversations')
-    .select('id, title, pinned, updated_at, ai_messages(count)')
+    .select('id, title, pinned, updated_at, project_id, ai_messages(count)')
     .eq('user_id', userId)
     .is('archived_at', null)
+  if (projekt === 'ohne') abfrage = abfrage.is('project_id', null)
+  else if (projekt) abfrage = abfrage.eq('project_id', projekt)
+  const { data } = await abfrage
     .order('pinned', { ascending: false })
     .order('updated_at', { ascending: false })
     .limit(SESSION_LIMIT)
@@ -78,6 +88,7 @@ export async function listeSessions(supabase: DB, userId: string): Promise<Sessi
     title: c.title,
     pinned: c.pinned,
     updatedAt: c.updated_at,
+    projectId: c.project_id,
     messageCount: (c.ai_messages as unknown as { count: number }[] | null)?.[0]?.count ?? 0,
   }))
 }

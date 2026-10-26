@@ -38,6 +38,7 @@ const TOOL_LABELS: Record<string, string> = {
   searchMemory: 'Speicher durchsucht',
   forget: 'Fakt gelöscht',
   searchKnowledge: 'Wissensbasis durchsucht',
+  readAttachment: 'Datei gelesen',
   saveKnowledge: 'Wissenseintrag angelegt',
   web_search: 'Web durchsucht',
   web_fetch: 'Webseite gelesen',

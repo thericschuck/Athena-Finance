@@ -19,6 +19,7 @@ import { buildChartTools } from '@/lib/assistant/tools/chart'
 import { buildMemoryTools } from '@/lib/assistant/tools/memory'
 import { buildInventoryTools } from '@/lib/assistant/tools/inventory'
 import { buildProposalTools } from '@/lib/assistant/tools/proposals'
+import { buildAttachmentTools } from '@/lib/assistant/tools/attachments'
 
 export type { AthenaToolOptions } from '@/lib/assistant/tools/shared'
 
@@ -63,6 +64,7 @@ export function buildAthenaTools(supabase: DB, userId: string, options: AthenaTo
     ...buildChartTools(),
     ...buildMemoryTools(supabase, userId, options),
     ...buildInventoryTools(supabase, userId),
+    ...buildAttachmentTools(supabase, userId, options),
 
     // ── Schreibende Aktionen: nur Vorschläge ──────────────────────────────────
     ...buildProposalTools(supabase, userId, options),

@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { getAuthUser } from '@/lib/supabase/server'
 import { estimateCostUsd, formatUsd, type UsageLike } from '@/lib/assistant/cost'
+import { aggregiereKosten, type KostenZeile } from '@/lib/assistant/kosten'
+import { KostenAnsicht } from '@/components/assistant/kosten/KostenAnsicht'
 import { ClearLogsButton } from '@/components/assistant/ClearLogsButton'
 import { LogKennzahlen } from '@/components/assistant/logs/LogKennzahlen'
 import { LogZeile } from '@/components/assistant/logs/LogZeile'
@@ -50,13 +52,102 @@ function timestamp(iso: string): string {
   })
 }
 
+const ANSICHTEN = [
+  { value: 'protokoll', label: 'Protokoll', href: '/assistant/logs' },
+  { value: 'kosten', label: 'Kosten', href: '/assistant/logs?ansicht=kosten' },
+] as const
+
+const SEITE = 1000 // PostgREST liefert höchstens 1000 Zeilen je Abfrage
+const MAX_SEITEN = 20
+
+type AuthClient = NonNullable<Awaited<ReturnType<typeof getAuthUser>>['supabase']>
+
+/**
+ * Kosten-Zeilen der letzten Tage: Chat-Antworten aus `ai_messages` (bleiben beim Löschen alter
+ * Logs erhalten) plus automatische Läufe aus `ai_logs` (nur so weit, wie die Logs reichen).
+ * Chat-Läufe stehen auch in ai_logs (kind fehlt) und werden dort bewusst NICHT gezählt.
+ */
+async function ladeKostenZeilen(supabase: AuthClient, userId: string, seit: string): Promise<KostenZeile[]> {
+  const zeilen: KostenZeile[] = []
+
+  for (let seite = 0; seite < MAX_SEITEN; seite++) {
+    const { data } = await supabase
+      .from('ai_messages')
+      .select('created_at, model, usage')
+      .eq('user_id', userId)
+      .eq('role', 'assistant')
+      .not('usage', 'is', null)
+      .gte('created_at', seit)
+      .order('created_at', { ascending: true })
+      .order('id', { ascending: true })
+      .range(seite * SEITE, (seite + 1) * SEITE - 1)
+    for (const r of data ?? []) {
+      zeilen.push({ zeit: r.created_at, model: r.model, usage: r.usage as UsageLike | null, quelle: 'chat' })
+    }
+    if ((data?.length ?? 0) < SEITE) break
+  }
+
+  for (let seite = 0; seite < MAX_SEITEN; seite++) {
+    const { data } = await supabase
+      .from('ai_logs')
+      .select('created_at, meta')
+      .eq('user_id', userId)
+      .eq('event', 'run.finish')
+      .in('meta->>kind', ['review', 'categorize'])
+      .gte('created_at', seit)
+      .order('created_at', { ascending: true })
+      .order('id', { ascending: true })
+      .range(seite * SEITE, (seite + 1) * SEITE - 1)
+    for (const r of data ?? []) {
+      const meta = r.meta as { model?: string; usage?: UsageLike } | null
+      zeilen.push({ zeit: r.created_at, model: meta?.model ?? null, usage: meta?.usage ?? null, quelle: 'auto' })
+    }
+    if ((data?.length ?? 0) < SEITE) break
+  }
+
+  return zeilen
+}
+
+function AnsichtWahl({ aktiv }: { aktiv: string }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {ANSICHTEN.map((a) => (
+        <Link
+          key={a.value}
+          href={a.href}
+          aria-current={aktiv === a.value ? 'true' : undefined}
+          className={chipKlasse(aktiv === a.value)}
+        >
+          {a.label}
+        </Link>
+      ))}
+    </div>
+  )
+}
+
 export default async function AthenaLogsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ level?: string }>
+  searchParams: Promise<{ level?: string; ansicht?: string; tage?: string }>
 }) {
-  const [{ level = 'all' }, { supabase, user }] = await Promise.all([searchParams, getAuthUser()])
+  const [{ level = 'all', ansicht, tage: tageParam }, { supabase, user }] = await Promise.all([
+    searchParams,
+    getAuthUser(),
+  ])
   if (!user) return null
+
+  if (ansicht === 'kosten') {
+    const tage = tageParam === '90' ? 90 : 30
+    // 91 Tage zurück deckt auch die Berliner Tagesgrenze des ältesten Tags ab.
+    const seit = new Date(Date.now() - (tage + 1) * 86_400_000).toISOString()
+    const zeilen = await ladeKostenZeilen(supabase, user.id, seit)
+    return (
+      <div className="flex h-full flex-col gap-3 overflow-y-auto pb-6">
+        <AnsichtWahl aktiv="kosten" />
+        <KostenAnsicht auswertung={aggregiereKosten(zeilen, tage)} tage={tage} />
+      </div>
+    )
+  }
 
   let query = supabase
     .from('ai_logs')
@@ -91,6 +182,7 @@ export default async function AthenaLogsPage({
 
   return (
     <div className="flex h-full flex-col gap-3 overflow-y-auto pb-6">
+      <AnsichtWahl aktiv="protokoll" />
       <LogKennzahlen
         zellen={[
           { titel: 'Läufe 24 h', wert: String(runs.length) },

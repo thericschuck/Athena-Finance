@@ -2,11 +2,12 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { MessageSquare, Brain, BookOpen, ScrollText, SlidersHorizontal } from 'lucide-react'
+import { MessageSquare, FolderKanban, Brain, BookOpen, ScrollText, SlidersHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const TABS = [
   { href: '/assistant', label: 'Chat', icon: MessageSquare },
+  { href: '/assistant/projekte', label: 'Projekte', icon: FolderKanban },
   { href: '/assistant/memory', label: 'Speicher', icon: Brain },
   { href: '/assistant/knowledge', label: 'Wissen', icon: BookOpen },
   { href: '/assistant/logs', label: 'Logs', icon: ScrollText },

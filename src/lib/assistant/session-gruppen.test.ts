@@ -4,7 +4,7 @@ import { filtereSessions, gruppiereSessions } from './session-gruppen.ts'
 import type { SessionSummary } from './sessions.ts'
 
 function s(id: string, title: string | null, updatedAt: string, pinned = false): SessionSummary {
-  return { id, title, pinned, updatedAt, messageCount: 2 }
+  return { id, title, pinned, updatedAt, messageCount: 2, projectId: null }
 }
 
 // Mittag lokaler Zeit, damit die Zeitzone des Testrechners keinen Tag verschiebt.

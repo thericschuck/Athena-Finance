@@ -214,7 +214,8 @@ export function DashHinweise({ insights }: { insights: DashboardKern['insights']
           {aktiv.body && <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{aktiv.body}</p>}
           <div className="mt-2 flex items-center justify-between gap-2">
             <Link
-              href="/assistant"
+              // Der Hinweis geht mit: die Chat-Seite lädt ihn und legt einen fertigen Prompt ins Eingabefeld.
+              href={`/assistant?hinweis=${aktiv.id}`}
               className="inline-flex min-h-10 items-center gap-1 rounded-md px-1 text-xs font-medium hover:underline"
             >
               Im Chat

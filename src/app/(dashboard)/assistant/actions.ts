@@ -12,6 +12,7 @@ import {
 } from '@/lib/assistant/settings'
 import { PERSONA_TEMPLATES } from '@/lib/assistant/prompts'
 import { logAi } from '@/lib/assistant/logger'
+import { entferneChatDateien } from '@/lib/assistant/datei-speicher'
 import {
   ladeSessionZustand,
   listeSessions,
@@ -93,6 +94,10 @@ export async function deleteConversation(id: string): Promise<ActionState> {
   // Log VOR dem Löschen: ai_logs.conversation_id ist `on delete set null`, die
   // Zeile bliebe sonst ohne jeden Bezug zurück.
   await logAi(ctx.supabase, ctx.user.id, { event: 'session.delete', conversationId: id })
+
+  // Hochgeladene Dateien zuerst aus dem Bucket nehmen: die Zeilen in `ai_files` verschwinden per
+  // Cascade mit der Konversation, danach wären die Pfade nicht mehr auffindbar.
+  await entferneChatDateien(ctx.supabase, ctx.user.id, id)
 
   const { error } = await ctx.supabase
     .from('ai_conversations')

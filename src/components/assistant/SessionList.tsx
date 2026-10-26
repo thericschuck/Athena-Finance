@@ -20,21 +20,47 @@ import { filtereSessions, gruppiereSessions } from '@/lib/assistant/session-grup
 // im schwebenden Sheet, und dort ohne diese Komponente.
 export type { SessionSummary }
 
+/** Filter-Link; die offene Session bleibt dabei erhalten (ein Filterklick schließt keinen Chat). */
+function chipHref(wert: string | null, activeId?: string): string {
+  const teile: string[] = []
+  if (activeId) teile.push(`s=${activeId}`)
+  if (wert) teile.push(`projekt=${wert}`)
+  return teile.length > 0 ? `/assistant?${teile.join('&')}` : '/assistant'
+}
+
 /** Ab so vielen Sessions lohnt sich das Suchfeld. */
 const SUCHE_AB = 6
 
 export function SessionList({
   sessions,
   activeId,
+  projekte,
+  projektFilter,
 }: {
   sessions: SessionSummary[]
   activeId?: string
+  /** Projekte des Nutzers: Filterchips und Projektnamen in den Zeilen. */
+  projekte?: { id: string; name: string }[]
+  /** Wert des URL-Parameters `projekt`: eine Projekt-ID oder `'ohne'`. */
+  projektFilter?: string
 }) {
   const router = useRouter()
   const [editing, setEditing] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const [suche, setSuche] = useState('')
   const [isPending, startTransition] = useTransition()
+
+  const projektName = useMemo(() => new Map((projekte ?? []).map((p) => [p.id, p.name])), [projekte])
+  const chips = useMemo(
+    () => [
+      { wert: null, label: 'Alle' },
+      { wert: 'ohne', label: 'Allgemein' },
+      ...(projekte ?? []).map((p) => ({ wert: p.id, label: p.name })),
+    ],
+    [projekte],
+  )
+  // „Neu“ bei aktivem Projektfilter startet den Chat gleich im Projekt.
+  const neuesProjekt = projektFilter && projektName.has(projektFilter) ? projektFilter : null
 
   const mitSuche = sessions.length >= SUCHE_AB
   const gruppen = useMemo(
@@ -71,12 +97,40 @@ export function SessionList({
             // Mit einer neuen UUID pro Klick ist jede „+"-Navigation ein Ziel,
             // das es vorher nicht gab — und `key={activeId}` in page.tsx
             // erzwingt zuverlässig einen frischen Chat.
-            router.push(`/assistant?s=${crypto.randomUUID()}`)
+            router.push(
+              `/assistant?s=${crypto.randomUUID()}${neuesProjekt ? `&p=${neuesProjekt}` : ''}`,
+            )
           }
         >
           <Plus className="size-3.5" />
         </Button>
       </div>
+
+      {projekte && projekte.length > 0 && (
+        <nav
+          aria-label="Nach Projekt filtern"
+          className="flex gap-1.5 overflow-x-auto border-b border-border px-1.5 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {chips.map((chip) => {
+            const aktiv = (projektFilter ?? null) === chip.wert
+            return (
+              <Link
+                key={chip.wert ?? 'alle'}
+                href={chipHref(chip.wert, activeId)}
+                aria-current={aktiv ? 'true' : undefined}
+                className={cn(
+                  'inline-flex min-h-9 max-w-40 shrink-0 items-center rounded-full border px-3 text-xs font-medium whitespace-nowrap transition-colors',
+                  aktiv
+                    ? 'border-foreground bg-foreground text-background'
+                    : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground',
+                )}
+              >
+                <span className="truncate">{chip.label}</span>
+              </Link>
+            )
+          })}
+        </nav>
+      )}
 
       {mitSuche && (
         <div className="relative border-b border-border px-1.5 py-1.5">
@@ -167,6 +221,9 @@ export function SessionList({
                     </span>
                     <span className="truncate pl-4.5 text-[11px] text-muted-foreground">
                       {relativeDay(session.updatedAt)} · {session.messageCount} Nachr.
+                      {session.projectId && projektName.get(session.projectId)
+                        ? ` · ${projektName.get(session.projectId)}`
+                        : ''}
                     </span>
                   </Link>
 
