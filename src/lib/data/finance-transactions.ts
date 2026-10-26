@@ -1,6 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { berechneKiBilanz, type KiBilanz, type KiZeile } from '@/lib/fints/ai-bilanz'
+import { OHNE_KATEGORIE, type TransaktionsFilter } from '@/lib/transaktionen/filter'
+import { summiereTreffer, type TrefferSummen } from '@/lib/transaktionen/berechnen'
 
 type DB = SupabaseClient<Database>
 
@@ -44,19 +46,75 @@ export type AccountTransactionRow = UnifiedTxRow & {
   category_color: string | null
 }
 
-export type TransactionListFilters = {
-  type?: string
-  account?: string
-  category?: string
-  from?: string
-  to?: string
-  q?: string
+/** Filter der Transaktionen-Liste — geprüft in `parseFilter` (lib/transaktionen/filter.ts). */
+export type TransactionListFilters = TransaktionsFilter
+
+/**
+ * Methoden, die `wendeFilterAn` auf dem Abfrage-Builder braucht. Als Methodensignaturen (bivariant)
+ * deklariert, damit der typisierte Builder von supabase-js hineinpasst, ohne `any`.
+ */
+interface FilterBuilder<Q> {
+  eq(spalte: string, wert: string): Q
+  gte(spalte: string, wert: string | number): Q
+  lte(spalte: string, wert: string | number): Q
+  is(spalte: string, wert: null): Q
+  in(spalte: string, werte: string[]): Q
+  or(ausdruck: string): Q
+}
+
+/**
+ * Wendet die Filter auf eine Abfrage der View `unified_transactions` an. EINE Stelle für Liste, Summe
+ * und Export: sonst zeigt die Liste etwas anderes, als die Summe darüber addiert oder der Export schreibt.
+ */
+export function wendeFilterAn<Q extends FilterBuilder<Q>>(query: Q, f: TransaktionsFilter, kategorieIds?: string[]): Q {
+  let q = query
+  if (f.type) q = q.eq('type', f.type)
+  if (f.art) q = q.eq('flow_kind', f.art)
+  if (f.account) q = q.eq('account_id', f.account)
+  if (f.category === OHNE_KATEGORIE) q = q.is('category_id', null)
+  else if (f.category) {
+    // Eine Hauptkategorie umfasst ihre Unterkategorien (wie der Rollup auf den übrigen Seiten);
+    // die IDs löst `kategorieIdsFuer` vorher auf.
+    q = kategorieIds && kategorieIds.length > 0 ? q.in('category_id', kategorieIds) : q.eq('category_id', f.category)
+  }
+  if (f.from) q = q.gte('date', f.from)
+  if (f.to) q = q.lte('date', f.to)
+  if (f.min !== undefined) q = q.gte('amount', f.min)
+  if (f.max !== undefined) q = q.lte('amount', f.max)
+  if (f.q) {
+    // Kommas, Klammern und Platzhalter trennen in PostgREST die or()-Bedingungen bzw. suchen mit —
+    // unmaskiert würde ein Suchbegriff mit diesen Zeichen die Query zerlegen statt gefiltert zu werden.
+    const term = f.q.replace(/[,()*%_\\]/g, ' ').trim()
+    if (term) q = q.or(`description.ilike.%${term}%,merchant.ilike.%${term}%`)
+  }
+  return q
 }
 
 const UNIFIED_BASE_COLUMNS =
   'id, account_id, category_id, date, type, amount, currency, description, merchant, transfer_to, source, signed_amount, flow_kind, category_source, ai_category_id'
 const TRANSACTION_LIST_COLUMNS = `${UNIFIED_BASE_COLUMNS}, account_name, account_color`
 const ACCOUNT_TRANSACTION_COLUMNS = `${UNIFIED_BASE_COLUMNS}, category_name, category_color`
+
+/**
+ * Die gewählte Kategorie samt allen Unterkategorien (aus der View `category_tree`: `root_id` ist die
+ * oberste Kategorie des Astes). Ohne Kategorie-Filter oder bei „ohne Kategorie“: `undefined`. Bei einem
+ * Fehler bleibt es bei der Kategorie selbst — lieber zu eng gefiltert als eine fremde Auswahl.
+ */
+export async function kategorieIdsFuer(
+  supabase: DB,
+  userId: string,
+  f: TransaktionsFilter,
+): Promise<string[] | undefined> {
+  if (!f.category || f.category === OHNE_KATEGORIE) return undefined
+  const { data, error } = await supabase
+    .from('category_tree')
+    .select('id')
+    .eq('user_id', userId)
+    .or(`id.eq.${f.category},root_id.eq.${f.category}`)
+  if (error || !data || data.length === 0) return [f.category]
+  const ids = data.map((r) => r.id).filter((id): id is string => Boolean(id))
+  return ids.includes(f.category) ? ids : [...ids, f.category]
+}
 
 /**
  * Eine Seite der Transaktionsliste (gefiltert, serverseitig paginiert) samt Gesamtzahl.
@@ -70,26 +128,24 @@ export async function getTransactionsPage(
 ): Promise<{ rows: TransactionListRow[]; count: number | null; error: { message: string } | null }> {
   const { filters, page, pageSize } = opts
 
-  let query = supabase
-    .from('unified_transactions')
-    .select(TRANSACTION_LIST_COLUMNS, { count: 'exact' })
-    .eq('user_id', userId)
-    .order('date', { ascending: false })
-    // Zweites Sortierkriterium: `date` ist ein Datum, kein Zeitstempel. Ohne eindeutige
-    // Ordnung (`id`) wäre die Seiteneinteilung nicht stabil (Buchung auf zwei Seiten / auf keiner).
-    .order('id', { ascending: false })
+  const [feld, richtung] = filters.sort.split('-')
+  const aufsteigend = richtung === 'asc'
+  const kategorieIds = await kategorieIdsFuer(supabase, userId, filters)
 
-  if (filters.type) query = query.eq('type', filters.type)
-  if (filters.account) query = query.eq('account_id', filters.account)
-  if (filters.category) query = query.eq('category_id', filters.category)
-  if (filters.from) query = query.gte('date', filters.from)
-  if (filters.to) query = query.lte('date', filters.to)
-  if (filters.q) {
-    // Kommas und Klammern trennen in PostgREST die or()-Bedingungen — unmaskiert würde ein
-    // Suchbegriff mit diesen Zeichen die Query zerlegen statt gefiltert zu werden.
-    const term = filters.q.replace(/[,()*]/g, ' ').trim()
-    if (term) query = query.or(`description.ilike.%${term}%,merchant.ilike.%${term}%`)
-  }
+  // Zweites Sortierkriterium: `date` ist ein Datum, kein Zeitstempel. Ohne eindeutige Ordnung (`id`)
+  // wäre die Seiteneinteilung nicht stabil (Buchung auf zwei Seiten / auf keiner). Nach Betrag zuerst
+  // der Betrag, dann das Datum — gleiche Beträge erscheinen in zeitlicher Reihenfolge.
+  let query = wendeFilterAn(
+    supabase
+      .from('unified_transactions')
+      .select(TRANSACTION_LIST_COLUMNS, { count: 'exact' })
+      .eq('user_id', userId),
+    filters,
+    kategorieIds,
+  )
+  if (feld === 'amount') query = query.order('amount', { ascending: aufsteigend }).order('date', { ascending: false })
+  else query = query.order('date', { ascending: aufsteigend })
+  query = query.order('id', { ascending: aufsteigend })
 
   const von = (page - 1) * pageSize
   const { data, count, error } = await query.range(von, von + pageSize - 1)
@@ -99,6 +155,46 @@ export async function getTransactionsPage(
     count,
     error,
   }
+}
+
+/**
+ * Summen über ALLE Treffer eines Filters (nicht nur die angezeigte Seite). Liest nur die vier Spalten,
+ * die die Summe braucht, seitenweise (PostgREST kappt eine Antwort still bei 1.000 Zeilen).
+ *
+ * Gedeckelt bei 20.000 Zeilen: bei dieser Größenordnung wäre eine Summe in der Datenbank (RPC) die
+ * richtige Lösung; `gekappt` sagt der Seite, dass die Summe dann unvollständig ist.
+ */
+const SUMMEN_SEITE = 1000
+const SUMMEN_MAX_SEITEN = 20
+
+export async function getTransactionsSummary(
+  supabase: DB,
+  userId: string,
+  filters: TransaktionsFilter,
+): Promise<TrefferSummen & { gekappt: boolean }> {
+  const zeilen: { type: string; flow_kind: string; amount: number; signed_amount: number }[] = []
+  let gekappt = false
+  const kategorieIds = await kategorieIdsFuer(supabase, userId, filters)
+  for (let seite = 0; seite < SUMMEN_MAX_SEITEN; seite++) {
+    const { data, error } = await wendeFilterAn(
+      supabase.from('unified_transactions').select('type, flow_kind, amount, signed_amount').eq('user_id', userId),
+      filters,
+      kategorieIds,
+    )
+      .order('date', { ascending: false })
+      .order('id', { ascending: false })
+      .range(seite * SUMMEN_SEITE, seite * SUMMEN_SEITE + SUMMEN_SEITE - 1)
+    // Ein Fehler auf einer späteren Seite heißt: die Summe ist unvollständig — nicht stillschweigend zu niedrig.
+    if (error) {
+      gekappt = true
+      break
+    }
+    if (!data || data.length === 0) break
+    zeilen.push(...(data as unknown as typeof zeilen))
+    if (data.length < SUMMEN_SEITE) break
+    if (seite === SUMMEN_MAX_SEITEN - 1) gekappt = true
+  }
+  return { ...summiereTreffer(zeilen), gekappt }
 }
 
 /**

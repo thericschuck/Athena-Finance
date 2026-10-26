@@ -1,10 +1,16 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { Search, X } from 'lucide-react'
+import { useState } from 'react'
 import { useUrlFilters } from '@/components/providers/url-filters'
-import { groupCategoriesByParent } from '@/lib/finance/category-groups'
 import { Database } from '@/types/database'
+import { AktiveFilter } from '@/components/transaktionen/filter/AktiveFilter'
+import { FilterSheet } from '@/components/transaktionen/filter/FilterSheet'
+import { SuchFeld } from '@/components/transaktionen/filter/SuchFeld'
+import { ZeitraumChips } from '@/components/transaktionen/filter/ZeitraumChips'
+import {
+  AUSWAHL_FILTER_KEYS, AuswahlFelder, STANDARD_SORT, istArt, istSort, istTyp,
+  type AuswahlKey, type AuswahlWerte,
+} from '@/components/transaktionen/filter/felder'
 
 type Account = Pick<Database['public']['Tables']['accounts']['Row'], 'id' | 'name' | 'color'>
 type Category = Pick<Database['public']['Tables']['categories']['Row'], 'id' | 'name' | 'parent_id'>
@@ -12,160 +18,64 @@ type Category = Pick<Database['public']['Tables']['categories']['Row'], 'id' | '
 interface TransactionFiltersProps {
   accounts: Account[]
   categories: Category[]
+  /** Berliner Datum (YYYY-MM-DD), Bezug der Zeitraum-Voreinstellungen. */
+  heute: string
 }
 
-const TYPES = [
-  { value: 'expense', label: 'Ausgabe' },
-  { value: 'income', label: 'Einnahme' },
-  { value: 'transfer', label: 'Transfer' },
-  { value: 'investment', label: 'Investition' },
-]
-
-const KEYS = ['type', 'account', 'category', 'from', 'to', 'q'] as const
-
-/** Wartezeit nach dem letzten Tastendruck, bevor gesucht wird. */
-const SEARCH_DEBOUNCE_MS = 350
-
-export function TransactionFilters({ accounts, categories }: TransactionFiltersProps) {
-  // Die Selects sind kontrolliert: ihr Wert kommt aus dem Filter-Context, nicht direkt aus
-  // `useSearchParams()`. Sonst sprang die Auswahl beim Ändern kurz auf den alten Wert
-  // zurück, bis der Server geantwortet hatte.
+/**
+ * Filterleiste der Transaktionen. Muss in einem `<UrlFiltersProvider replace resetKeys="page">` stehen.
+ *
+ * Desktop: Zeile 1 Suche + Zeitraum-Chips, Zeile 2 die Auswahlfelder (wirken sofort).
+ * Handy: Suche + „Filter (n)“, darunter die scrollbare Chip-Reihe; die Auswahlfelder liegen im Sheet.
+ * Darunter die aktiven Filter als Chips. Jede Änderung ist genau eine Server-Navigation.
+ */
+export function TransactionFilters({ accounts, categories, heute }: TransactionFiltersProps) {
   const filters = useUrlFilters()
+  // Beim Zurücksetzen das Suchfeld neu aufbauen: ein noch wartender Tippentwurf soll nicht danach
+  // doch noch die Suche setzen.
+  const [suchNr, setSuchNr] = useState(0)
 
-  // Die Suche schreibt wie die anderen Filter in die URL, aber nicht bei jedem Tastendruck:
-  // jede Aenderung loest ein Server-Rendering aus. Deshalb ein lokaler Entwurf, der erst
-  // nach einer Tippause uebernommen wird.
-  const urlQuery = filters.get('q') ?? ''
-  const [draft, setDraft] = useState(urlQuery)
-  const lastPushed = useRef(urlQuery)
+  const typ = filters.get('type')
+  const art = filters.get('art')
+  const sort = filters.get('sort')
+  const werte: AuswahlWerte = {
+    type: istTyp(typ) ? typ : '',
+    art: istArt(art) ? art : '',
+    account: filters.get('account') ?? '',
+    category: filters.get('category') ?? '',
+    min: filters.get('min') ?? '',
+    max: filters.get('max') ?? '',
+    sort: istSort(sort) ? sort : STANDARD_SORT,
+  }
+  const anzahl = AUSWAHL_FILTER_KEYS.filter(k => Boolean(filters.get(k))).length
 
-  // Aenderungen von aussen (Zuruecksetzen, Zurueck-Button) ins Eingabefeld spiegeln —
-  // aber nicht die, die wir gerade selbst ausgeloest haben.
-  useEffect(() => {
-    if (urlQuery !== lastPushed.current) {
-      lastPushed.current = urlQuery
-      setDraft(urlQuery)
-    }
-  }, [urlQuery])
-
-  useEffect(() => {
-    if (draft === lastPushed.current) return
-    const id = setTimeout(() => {
-      lastPushed.current = draft
-      filters.set('q', draft || null)
-    }, SEARCH_DEBOUNCE_MS)
-    return () => clearTimeout(id)
-  }, [draft, filters])
-
-  const selectClass =
-    'h-8 rounded-md border border-border bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring'
-
-  const hasFilters = KEYS.some(k => filters.get(k))
+  function aendern(key: AuswahlKey, wert: string) {
+    if (key === 'sort') filters.set('sort', wert === STANDARD_SORT ? null : wert)
+    else filters.set(key, wert || null)
+  }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {/* Suche */}
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-        <input
-          type="search"
-          aria-label="Suche"
-          placeholder="Beschreibung, Empfänger …"
-          className={`${selectClass} w-52 pl-7 pr-7`}
-          value={draft}
-          onChange={e => setDraft(e.target.value)}
-        />
-        {draft && (
-          <button
-            type="button"
-            aria-label="Suche leeren"
-            onClick={() => setDraft('')}
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-          >
-            <X className="size-3.5" />
-          </button>
-        )}
+    <div className="space-y-2">
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
+        <div className="flex items-center gap-2 md:contents">
+          <SuchFeld key={suchNr} className="flex-1 md:w-64 md:flex-none" />
+          <div className="md:hidden">
+            <FilterSheet accounts={accounts} categories={categories} anzahl={anzahl} />
+          </div>
+        </div>
+        <ZeitraumChips heute={heute} className="md:min-w-0 md:flex-1" />
       </div>
 
-      {/* Typ */}
-      <select
-        aria-label="Typ"
-        className={selectClass}
-        value={filters.get('type') ?? ''}
-        onChange={(e) => filters.set('type', e.target.value)}
-      >
-        <option value="">Alle Typen</option>
-        {TYPES.map((t) => (
-          <option key={t.value} value={t.value}>
-            {t.label}
-          </option>
-        ))}
-      </select>
-
-      {/* Konto */}
-      <select
-        aria-label="Konto"
-        className={selectClass}
-        value={filters.get('account') ?? ''}
-        onChange={(e) => filters.set('account', e.target.value)}
-      >
-        <option value="">Alle Konten</option>
-        {accounts.map((a) => (
-          <option key={a.id} value={a.id}>
-            {a.name}
-          </option>
-        ))}
-      </select>
-
-      {/* Kategorie */}
-      <select
-        aria-label="Kategorie"
-        className={selectClass}
-        value={filters.get('category') ?? ''}
-        onChange={(e) => filters.set('category', e.target.value)}
-      >
-        <option value="">Alle Kategorien</option>
-        {/* Nach Hauptkategorie gruppiert -- bei 30+ Kategorien war die Reihenfolge sonst
-            praktisch zufaellig (fast alle haben sort_order = 0). */}
-        {groupCategoriesByParent(categories).map(({ parent, children }) => (
-          <optgroup key={parent.id} label={parent.name}>
-            <option value={parent.id}>{parent.name}</option>
-            {children.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </optgroup>
-        ))}
-      </select>
-
-      {/* Von */}
-      <input
-        type="date"
-        aria-label="Von"
-        className={selectClass}
-        value={filters.get('from') ?? ''}
-        onChange={(e) => filters.set('from', e.target.value)}
+      <AuswahlFelder
+        className="hidden flex-wrap items-center gap-2 md:flex"
+        werte={werte}
+        onAendern={aendern}
+        accounts={accounts}
+        categories={categories}
+        betragVerzoegert
       />
 
-      {/* Bis */}
-      <input
-        type="date"
-        aria-label="Bis"
-        className={selectClass}
-        value={filters.get('to') ?? ''}
-        onChange={(e) => filters.set('to', e.target.value)}
-      />
-
-      {/* Reset */}
-      {hasFilters && (
-        <button
-          onClick={() => filters.clear()}
-          className="h-8 px-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Zurücksetzen
-        </button>
-      )}
+      <AktiveFilter accounts={accounts} categories={categories} heute={heute} onAlleZuruecksetzen={() => setSuchNr(n => n + 1)} />
     </div>
   )
 }

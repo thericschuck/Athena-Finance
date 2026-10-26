@@ -1,8 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { getAuthUser } from '@/lib/supabase/server'
-import { z } from 'zod'
-import { parseQuery } from '@/lib/api/validate'
-import { uuid } from '@/lib/api/schemas'
+import { parseFilter } from '@/lib/transaktionen/filter'
+import { kategorieIdsFuer, wendeFilterAn } from '@/lib/data/finance-transactions'
 import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvValue, formatCsvAmount } from '@/lib/csv'
 
 /**
@@ -21,9 +20,22 @@ import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvValue, formatCsvAmount } from
  * Datum, und der Import-Parser versteht ohnehin beide Schreibweisen.
  */
 
-const querySchema = z.object({
-  account_id: z.preprocess(v => (v === '' ? undefined : v), uuid.optional()),
-})
+/**
+ * Filter wie auf der Transaktionen-Seite (Typ, Art, Konto, Kategorie, Zeitraum, Suche, Betrag, Sortierung):
+ * der Export schreibt, was die Liste zeigt — gleiche Prüfung (`parseFilter`), gleiche Abfrage
+ * (`wendeFilterAn`). Der alte Parameter `account_id` (Export-Link des Konto-Details) gilt als `account`.
+ */
+const PAGE = 1000
+
+/**
+ * Excel führt Zellen aus, die mit `=`, `+`, `-` oder `@` beginnen, als Formel aus. Empfängernamen und
+ * Verwendungszwecke stammen von der Bank bzw. von Dritten — ein Apostroph davor macht daraus Text.
+ * Nur für Textfelder, nie für den Betrag (der ist eine Zahl und soll eine bleiben).
+ */
+function schuetzeFormel(wert: string | null): string | null {
+  return wert !== null && /^[=+\-@\t\r]/.test(wert) ? `'${wert}` : wert
+}
+const MAX_PAGES = 100
 
 const CSV_HEADERS = ['datum', 'betrag', 'beschreibung', 'haendler', 'kategorie', 'konto', 'waehrung']
 
@@ -34,31 +46,51 @@ export async function GET(req: NextRequest) {
     return new Response('Unauthorized', { status: 401 })
   }
 
-  const q = parseQuery(req, querySchema)
-  if (q.response) return q.response
-  const accountId = q.data.account_id
+  const params = Object.fromEntries(req.nextUrl.searchParams.entries())
+  const filter = parseFilter(params)
 
   // unified_transactions (see migration 20260821010000) merges in FinTS-synced bank
   // transactions for linked accounts, so an export includes those alongside manual entries.
-  let query = supabase
-    .from('unified_transactions')
-    .select('date, amount, type, description, merchant, currency, account_name, category_name')
-    .eq('user_id', user.id)
-    .order('date', { ascending: false })
+  // Seitenweise: PostgREST kappt eine Antwort still bei 1.000 Zeilen — ein Export mit mehr
+  // Buchungen war sonst stillschweigend unvollständig.
+  const [feld, richtung] = filter.sort.split('-')
+  const aufsteigend = richtung === 'asc'
+  const kategorieIds = await kategorieIdsFuer(supabase, user.id, filter)
+  const transactions: {
+    date: string | null
+    amount: number | null
+    signed_amount: number | null
+    type: string | null
+    description: string | null
+    merchant: string | null
+    currency: string | null
+    account_name: string | null
+    category_name: string | null
+  }[] = []
 
-  if (accountId) {
-    query = query.eq('account_id', accountId)
-  }
+  for (let seite = 0; seite < MAX_PAGES; seite++) {
+    let query = wendeFilterAn(
+      supabase
+        .from('unified_transactions')
+        .select('date, amount, signed_amount, type, description, merchant, currency, account_name, category_name')
+        .eq('user_id', user.id),
+      filter,
+      kategorieIds,
+    )
+    if (feld === 'amount') query = query.order('amount', { ascending: aufsteigend }).order('date', { ascending: false })
+    else query = query.order('date', { ascending: aufsteigend })
+    query = query.order('id', { ascending: aufsteigend })
 
-  const { data: transactions, error } = await query
-
-  if (error) {
-    return new Response('Error fetching transactions', { status: 500 })
+    const { data, error } = await query.range(seite * PAGE, seite * PAGE + PAGE - 1)
+    if (error) return new Response('Error fetching transactions', { status: 500 })
+    if (!data || data.length === 0) break
+    transactions.push(...data)
+    if (data.length < PAGE) break
   }
 
   const lines: string[] = [CSV_HEADERS.join(CSV_SEPARATOR)]
 
-  for (const tx of transactions ?? []) {
+  for (const tx of transactions) {
     if (tx.amount == null || tx.type == null) continue
 
     let amount: number
@@ -67,16 +99,18 @@ export async function GET(req: NextRequest) {
     } else if (tx.type === 'income') {
       amount = Math.abs(tx.amount)
     } else {
-      amount = tx.amount
+      // Umbuchung: das Vorzeichen der Buchung (Abgang negativ). Mit dem Betrag allein würde ein Reimport den
+      // Abgang als Zugang buchen.
+      amount = tx.signed_amount ?? tx.amount
     }
 
     const row = [
       escapeCsvValue(tx.date),
       formatCsvAmount(amount),
-      escapeCsvValue(tx.description),
-      escapeCsvValue(tx.merchant),
-      escapeCsvValue(tx.category_name),
-      escapeCsvValue(tx.account_name),
+      escapeCsvValue(schuetzeFormel(tx.description)),
+      escapeCsvValue(schuetzeFormel(tx.merchant)),
+      escapeCsvValue(schuetzeFormel(tx.category_name)),
+      escapeCsvValue(schuetzeFormel(tx.account_name)),
       escapeCsvValue(tx.currency),
     ]
     lines.push(row.join(CSV_SEPARATOR))
