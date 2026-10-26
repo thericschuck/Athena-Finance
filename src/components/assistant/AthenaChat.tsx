@@ -871,7 +871,10 @@ export function AthenaChat({
       {/* Wrapper statt direkter Flex-Höhe: der „Nach unten"-Knopf liegt
           absolut über dem Verlauf, knapp über dem Eingabefeld. */}
       <div className="relative min-h-0 flex-1">
-      <ScrollArea className="absolute inset-0">
+      {/* `h-full`, NICHT `absolute inset-0`: Radix setzt auf den Wurzel-Container inline `position: relative`,
+          das schlägt jede Klasse. Mit `absolute inset-0` blieb der Bereich in der Seite, wuchs auf die volle
+          Inhaltshöhe und scrollte nie (nur noch die letzten Nachrichten waren zu sehen). */}
+      <ScrollArea className="h-full">
         <div ref={contentRef} className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-4 p-4">
           {messages.length === 0 && <EmptyState pathname={pathname} onPick={frage} />}
 
