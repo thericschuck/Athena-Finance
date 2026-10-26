@@ -638,6 +638,8 @@ export interface CloudSyncResult {
   scaRequired?: boolean
   /** Human-readable explanation when scaRequired is set. */
   message?: string
+  /** Teilfehler, die der Lauf überstanden hat (z. B. ein Umsatzabruf, der scheiterte). */
+  warnings?: string[]
 }
 
 /** True when running as a Vercel Function (Vercel sets this automatically). */
@@ -668,7 +670,7 @@ export async function triggerCloudBankSync(
   })
   const body = await res.json().catch(() => ({})) as {
     ok?: boolean; imported?: number; skipped?: number; balances?: number
-    error?: string; skippedReason?: string; message?: string
+    error?: string; skippedReason?: string; message?: string; warnings?: string[]
   }
   if (!res.ok || body.ok === false) {
     throw new Error(body.error ?? `Cloud-Sync fehlgeschlagen (HTTP ${res.status})`)
@@ -679,5 +681,6 @@ export async function triggerCloudBankSync(
     balances: body.balances ?? 0,
     scaRequired: body.skippedReason === 'sca_required',
     message: body.message,
+    warnings: body.warnings ?? [],
   }
 }

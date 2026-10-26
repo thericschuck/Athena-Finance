@@ -19,6 +19,8 @@ import { getAccountNames } from '@/lib/data/finance-accounts'
 import { getCategoryNames } from '@/lib/data/finance-transactions'
 import { ladeVertragsVorschlaege } from '@/lib/data/vertragsvorschlaege'
 import { VertragsVorschlaege } from '@/components/finance/vertrags-vorschlaege'
+import { ladeVertragsAbgleich } from '@/lib/data/vertrag-abgleich'
+import type { Abgleich } from '@/lib/forecast/vertrag-abgleich'
 
 // ─── Date utilities ───────────────────────────────────────────────────────────
 function nextBillingDate(startDate: string, frequency: string, billingDay?: number | null): Date {
@@ -109,7 +111,7 @@ const FREQ_LABEL = Object.fromEntries(FREQUENCIES.map(f => [f.value, f.label]))
 export default async function ContractsPage() {
   const { supabase, user } = await requireAuthUser()
 
-  const [all, accs, categories, savingsPlans, settings, vorschlagsDaten] = await Promise.all([
+  const [all, accs, categories, savingsPlans, settings, vorschlagsDaten, abgleiche] = await Promise.all([
     getContracts(supabase, user!.id),
     getAccountNames(supabase, user!.id),
     getCategoryNames(supabase, user!.id),
@@ -117,7 +119,11 @@ export default async function ContractsPage() {
     getSettings(user!.id),
     // Die Vorschläge sind eine Zugabe: scheitert ihre Berechnung, bleibt die Seite benutzbar.
     ladeVertragsVorschlaege(supabase, user!.id).catch(() => ({ vorschlaege: [], ausgeblendet: 0 })),
+    // Ebenfalls eine Zugabe: ohne Abgleich fehlt nur die Statusmarke an der Zeile.
+    ladeVertragsAbgleich(supabase, user!.id).catch(() => []),
   ])
+  const abgleichVon = new Map(abgleiche.map(a => [a.vertrag.id, a.abgleich]))
+  const offeneZahl = abgleiche.filter(a => a.abgleich.status === 'offen').length
 
   const locale = (settings.number_format as string) ?? 'de-DE'
   const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
@@ -162,6 +168,12 @@ export default async function ContractsPage() {
                 {warningCount} Kündigungswarnung{warningCount > 1 ? 'en' : ''}
               </span>
             )}
+            {offeneZahl > 0 && (
+              <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                <AlertTriangle className="size-3" />
+                {offeneZahl} Abbuchung{offeneZahl > 1 ? 'en' : ''} nicht eingegangen
+              </span>
+            )}
           </p>
         </div>
         <AddContractDialog accounts={accs} categories={categories ?? []} />
@@ -202,6 +214,7 @@ export default async function ContractsPage() {
                 categories={categories ?? []}
                 locale={locale}
                 dateFormat={dateFormat}
+                abgleichVon={abgleichVon}
               />
             )
           )}
@@ -234,7 +247,7 @@ export default async function ContractsPage() {
 
 // ─── Group ────────────────────────────────────────────────────────────────────
 function ContractGroup({
-  title, contracts, accounts, categories, locale, dateFormat,
+  title, contracts, accounts, categories, locale, dateFormat, abgleichVon,
 }: {
   title: string
   contracts: Contract[]
@@ -242,6 +255,7 @@ function ContractGroup({
   categories: { id: string; name: string }[]
   locale: string
   dateFormat: string
+  abgleichVon: Map<string, Abgleich>
 }) {
   return (
     <section className="space-y-2">
@@ -255,7 +269,7 @@ function ContractGroup({
         <table className="w-full text-sm">
           <tbody className="divide-y divide-border">
             {contracts.map(c => (
-              <ContractRow key={c.id} contract={c} accounts={accounts} categories={categories} locale={locale} dateFormat={dateFormat} />
+              <ContractRow key={c.id} contract={c} accounts={accounts} categories={categories} locale={locale} dateFormat={dateFormat} abgleich={abgleichVon.get(c.id)} />
             ))}
           </tbody>
         </table>
@@ -266,13 +280,14 @@ function ContractGroup({
 
 // ─── Row ──────────────────────────────────────────────────────────────────────
 function ContractRow({
-  contract: c, accounts, categories, locale, dateFormat,
+  contract: c, accounts, categories, locale, dateFormat, abgleich,
 }: {
   contract: Contract
   accounts: { id: string; name: string }[]
   categories: { id: string; name: string }[]
   locale: string
   dateFormat: string
+  abgleich?: Abgleich
 }) {
   const expired    = isNoticeExpired(c)
   const nextDate   = c.is_active ? nextBillingDate(c.start_date, c.frequency, c.billing_day) : null
@@ -315,6 +330,13 @@ function ContractRow({
         </div>
         {nextDate && (
           <p className="text-xs text-muted-foreground mt-0.5">Nächste Zahlung: {fmtDate(nextDate, dateFormat)}</p>
+        )}
+        {c.is_active && abgleich && (
+          <p className={`text-xs mt-0.5 ${abgleich.status === 'offen' ? 'font-medium text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}`}>
+            {abgleich.status === 'eingegangen' && `Zahlung vom ${fmtDate(new Date(abgleich.buchungDatum ?? abgleich.termin), dateFormat)} eingegangen`}
+            {abgleich.status === 'erwartet' && `Zahlung vom ${fmtDate(new Date(abgleich.termin), dateFormat)} noch nicht gebucht`}
+            {abgleich.status === 'offen' && `Zahlung vom ${fmtDate(new Date(abgleich.termin), dateFormat)} nicht eingegangen – Bank-Sync prüfen`}
+          </p>
         )}
       </td>
 

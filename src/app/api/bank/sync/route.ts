@@ -54,7 +54,7 @@ export async function POST(request: Request) {
         // Sync gelungen, Kategorisierung holt der Cron nach.
         console.warn('[bank-sync] Kategorisierung nach Cloud-Sync fehlgeschlagen:', err)
       }
-      return NextResponse.json({ imported: result.imported, skipped: result.skipped, categorized })
+      return NextResponse.json({ imported: result.imported, skipped: result.skipped, categorized, warnings: result.warnings ?? [] })
     } catch (err) {
       return NextResponse.json({
         error: err instanceof Error ? err.message : 'Cloud-Sync fehlgeschlagen',

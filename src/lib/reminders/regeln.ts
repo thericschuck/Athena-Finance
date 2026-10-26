@@ -33,6 +33,8 @@ export type ErinnerungsEingabe = {
     notice_days: number | null
     auto_renews: boolean | null
   }[]
+  /** Verträge, zu deren letztem Termin keine passende Buchung eingegangen ist (Status `offen`). */
+  offeneVertragsbuchungen: { id: string; name: string; termin: string; betrag: number }[]
   steuer: {
     jahr: number
     ruecklage: { soll: number; ist: number | null; luecke: number | null }
@@ -86,6 +88,16 @@ export function erzeugeErinnerungen(e: ErinnerungsEingabe): Erinnerung[] {
       severity: tage <= 7 ? 'warning' : 'info',
       title: tage === 0 ? `Heute letzter Kündigungstag: ${v.name}` : `Kündigungsfrist „${v.name}" endet in ${tage} ${tage === 1 ? 'Tag' : 'Tagen'}`,
       body: `Letzter Kündigungstag ist der ${datum(letzter)}. Ohne Kündigung verlängert sich der Vertrag über den ${datum(v.end_date)} hinaus.`,
+    })
+  }
+
+  // ── Vertragsbuchungen: Verträge buchen nichts selbst, sie melden nur, was auf dem Konto fehlt ───────
+  for (const v of e.offeneVertragsbuchungen) {
+    out.push({
+      key: `vertrag-offen:${v.id}:${v.termin}`,
+      severity: 'warning',
+      title: `„${v.name}": Abbuchung vom ${datum(v.termin)} fehlt`,
+      body: `Erwartet wurden ${euro(v.betrag)}, auf dem Konto ist keine passende Buchung eingegangen. Prüfe den Bank-Sync oder ob das Abo gekündigt oder der Betrag geändert wurde (Finance → Verträge & Abos).`,
     })
   }
 

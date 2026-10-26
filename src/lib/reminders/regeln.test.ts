@@ -7,6 +7,7 @@ type Krypto = NonNullable<NonNullable<ErinnerungsEingabe['steuer']>['krypto']>
 const LEER: ErinnerungsEingabe = {
   heute: '2026-10-22',
   vertraege: [],
+  offeneVertragsbuchungen: [],
   steuer: null,
   unkategorisiert: 0,
   kraken: { hatKraken: false, letzterSync: null },
@@ -21,6 +22,17 @@ const STEUER = {
 test('Ohne Anlass entsteht nichts', () => {
   assert.deepEqual(erzeugeErinnerungen(LEER), [])
   assert.deepEqual(erzeugeErinnerungen({ ...LEER, steuer: STEUER }), [])
+})
+
+test('Fehlende Vertragsbuchung: eine Warnung je Vertrag und Termin, mit stabilem Schlüssel', () => {
+  const r = erzeugeErinnerungen({
+    ...LEER,
+    offeneVertragsbuchungen: [{ id: 'v1', name: 'Supabase', termin: '2026-10-24', betrag: 44 }],
+  })
+  assert.equal(r.length, 1)
+  assert.equal(r[0].key, 'vertrag-offen:v1:2026-10-24')
+  assert.equal(r[0].severity, 'warning')
+  assert.match(r[0].title, /Supabase.*24\.10\.2026/)
 })
 
 test('Kündigungsfrist: nur bei automatischer Verlängerung, im Fenster von 21 Tagen, Warnung ab 7 Tagen', () => {

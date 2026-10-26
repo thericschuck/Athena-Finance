@@ -355,6 +355,7 @@ def run_sync(allow_sca=False, full_history=False):
 
     txn_rows = []
     bal_rows = []
+    warnings = []
 
     try:
         with client:
@@ -387,7 +388,14 @@ def run_sync(allow_sca=False, full_history=False):
 
                 try:
                     txns = settle(client, client.get_transactions(acc, start_date, None), allow_sca, sca_state)
-                except Exception:
+                except ScaRequired:
+                    raise
+                except Exception as exc:  # noqa: BLE001
+                    # Nicht still überspringen: sonst meldet der Lauf "ok, 0 neu" und ein kaputter
+                    # Umsatzabruf sieht aus wie ein ruhiges Wochenende.
+                    warning = f"Umsatzabruf für {acc.iban} fehlgeschlagen: {type(exc).__name__}: {exc}"
+                    print(f"[fints] {warning}")
+                    warnings.append(warning)
                     continue
 
                 for txn in txns:
@@ -465,6 +473,7 @@ def run_sync(allow_sca=False, full_history=False):
     return {
         "ok": True, "imported": imported, "skipped": skipped, "balances": len(bal_rows),
         "scaPerformed": sca_state["sca_performed"],
+        "warnings": warnings,
     }
 
 

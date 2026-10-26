@@ -55,7 +55,7 @@ export async function syncBankForUser(
     } catch (err) {
       console.warn('[bank-sync] Kategorisierung nach Cloud-Sync fehlgeschlagen:', err)
     }
-    return { imported: result.imported, skipped: result.skipped, balancesSynced: result.balances, categorized }
+    return { imported: result.imported, skipped: result.skipped, balancesSynced: result.balances, categorized, warnings: result.warnings }
   }
 
   // Routine: innerhalb der 90-Tage-Ausnahme (keine Freigabe nötig). Volle Historie liegt
