@@ -1,8 +1,7 @@
 import { Skeleton, SkeletonChart } from '@/components/ui/skeleton'
 
 /**
- * Konto-Detail: Zurück-Link, Kopf mit Aktionen, Zeitraumzeile, Tabs, Kennzahlenleiste, Kontodaten
- * und Verlauf (der Standard-Tab „Überblick“). Ersetzt für diese Seite das Listen-Skelett von
+ * Konto-Detail: Zurück-Link, Kopf mit Aktionen, Zeitraumzeile, Kennzahlen, Highlights, Charts und Buchungen. Ersetzt für diese Seite das Listen-Skelett von
  * finance/accounts/loading.tsx, das sonst auch hier gälte.
  */
 export default function Loading() {
@@ -31,12 +30,7 @@ export default function Loading() {
         <Skeleton className="h-3 w-32" />
       </div>
 
-      <div className="space-y-4">
-        <div className="flex gap-1">
-          {[88, 92, 96].map((w, i) => (
-            <Skeleton key={i} className="h-10 rounded-full" style={{ width: w }} />
-          ))}
-        </div>
+      <div className="flex flex-col gap-5">
         <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="flex h-16 flex-col justify-center gap-1.5 bg-card px-4">
@@ -45,8 +39,12 @@ export default function Loading() {
             </div>
           ))}
         </div>
-        <Skeleton className="h-4 w-3/4" />
-        <SkeletonChart variant="area" height={220} />
+        <Skeleton className="h-14 rounded-lg" />
+        <div className="grid items-start gap-4 lg:grid-cols-2">
+          <SkeletonChart variant="area" height={220} />
+          <SkeletonChart variant="bars" height={220} />
+        </div>
+        <Skeleton className="h-64 rounded-lg" />
       </div>
     </div>
   )

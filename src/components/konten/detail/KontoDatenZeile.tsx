@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { AlertTriangle, ArrowUpRight, Landmark } from 'lucide-react'
 import { AnalyseKennzahlInfo } from '@/components/analyse/AnalyseKennzahlInfo'
 import type { StandAnzeige } from '@/lib/konten/berechnen'
+import { AbweichungAusgleichen } from '@/components/konten/AbweichungAusgleichen'
 import { formatBetrag, formatIban, formatMitVorzeichen } from './format'
 import { IbanKopieren } from './IbanKopieren'
 
@@ -11,9 +12,10 @@ import { IbanKopieren } from './IbanKopieren'
  * Einzeilig, bricht mobil um. Server-Komponente; nur der Kopieren-Knopf ist Client.
  */
 export function KontoDatenZeile({
-  kontoId, iban, istBank, stand, bankSaldo, buchungssumme, abweichung, currency, locale, period,
+  kontoId, name, iban, istBank, stand, bankSaldo, buchungssumme, abweichung, currency, locale, period,
 }: {
   kontoId: string
+  name: string
   iban: string | null
   istBank: boolean
   stand: StandAnzeige | null
@@ -54,17 +56,12 @@ export function KontoDatenZeile({
               ['Buchungen ergeben', formatBetrag(buchungssumme, currency, locale)],
               ['Abweichung', formatMitVorzeichen(abweichung, currency, locale)],
             ]}
-            text="Die Bank liefert über FinTS nur ein Zeitfenster der Umsätze, ältere Buchungen fehlen daher in der Summe. Der Kontostand oben ist der von der Bank gemeldete."
+            text={`Die Bank meldet ${formatBetrag(bankSaldo, currency, locale)}, alle Buchungen (inkl. Umbuchungen) summieren sich auf ${formatBetrag(buchungssumme, currency, locale)}. Es fehlt der Saldo vor der ersten Buchung — FinTS liefert nur ein Zeitfenster.`}
           >
             <AlertTriangle className="size-3.5" aria-hidden />
             Abweichung {formatMitVorzeichen(abweichung, currency, locale)}
           </AnalyseKennzahlInfo>
-          <Link
-            href="/analyse/verlauf?tab=accounts"
-            className="inline-flex min-h-8 items-center underline-offset-2 hover:text-foreground hover:underline"
-          >
-            Im Verlauf prüfen
-          </Link>
+          <AbweichungAusgleichen kontoId={kontoId} name={name} abweichung={abweichung} waehrung={currency} locale={locale} />
         </span>
       )}
 

@@ -32,6 +32,25 @@ export interface KategorieSumme {
   total: number
 }
 
+export interface GegenparteiSumme {
+  name: string
+  total: number
+  anzahl: number
+}
+
+/** Eine einzelne Buchung für die „Größte …“-Listen. */
+export interface GrosseBuchung {
+  id: string
+  date: string
+  betrag: number
+  titel: string
+}
+
+export interface SaldoSpanne {
+  tiefst: { date: string; balance: number }
+  hoechst: { date: string; balance: number }
+}
+
 export interface DetailFilter {
   /** Erster Tag des Zeitraums (YYYY-MM-DD) oder `null` für „Alles“. */
   cutoff: string | null
@@ -69,6 +88,12 @@ export interface DetailErgebnis<T extends DetailBuchung> {
   topKategorien: KategorieSumme[]
   kategorienMax: number
   genutzteKategorien: string[]
+  /** Empfänger/Absender mit den höchsten Ausgaben (Fluss, ohne Umbuchungen), im gewählten Monat bzw. Zeitraum. */
+  gegenparteien: GegenparteiSumme[]
+  groessteAusgaben: GrosseBuchung[]
+  groessteEinnahmen: GrosseBuchung[]
+  /** Ø Einnahmen/Ausgaben je Kalendermonat mit Buchungen im Zeitraum; `null` ohne Monate. */
+  proMonat: { einnahmen: number; ausgaben: number; monate: number } | null
   /** Nach Suche/Kategorie/Typ gefiltert und sortiert — alle Seiten. */
   tabelle: T[]
   /** Nur die aktuelle Seite. */
@@ -76,6 +101,30 @@ export interface DetailErgebnis<T extends DetailBuchung> {
   seite: number
   seiten: number
   gefiltert: boolean
+}
+
+/** Name für Listen: Empfänger, sonst Beschreibung, sonst „Ohne Bezeichnung“; eine Zeile, gekürzt. */
+export function buchungsTitel(t: { merchant: string | null; description: string | null }): string {
+  const roh = (t.merchant?.trim() || t.description?.trim() || 'Ohne Bezeichnung').replace(/\s+/g, ' ')
+  return roh.length > 48 ? `${roh.slice(0, 47).trimEnd()}…` : roh
+}
+
+/**
+ * Tiefster und höchster Stand eines Verlaufs; bei Gleichstand der jüngste Tag (der aktuellere Stand ist
+ * der, an den man sich erinnert). `null` bei weniger als zwei Punkten — eine Spanne gibt es dann nicht.
+ */
+export function saldoSpanne(punkte: { snapshot_date: string; balance: number }[]): SaldoSpanne | null {
+  if (punkte.length < 2) return null
+  let tiefst = punkte[0]
+  let hoechst = punkte[0]
+  for (const p of punkte) {
+    if (p.balance <= tiefst.balance) tiefst = p
+    if (p.balance >= hoechst.balance) hoechst = p
+  }
+  return {
+    tiefst: { date: tiefst.snapshot_date, balance: tiefst.balance },
+    hoechst: { date: hoechst.snapshot_date, balance: hoechst.balance },
+  }
 }
 
 export function rechneDetail<T extends DetailBuchung>(alle: T[], f: DetailFilter): DetailErgebnis<T> {
@@ -116,6 +165,38 @@ export function rechneDetail<T extends DetailBuchung>(alle: T[], f: DetailFilter
   }
   const topKategorien = [...katMap.values()].sort((a, b) => b.total - a.total).slice(0, 6)
 
+  // Gegenparteien und größte Einzelbuchungen: nur Fluss (keine Umbuchungen/Anfangsbestände), im gewählten
+  // Monat bzw. Zeitraum — dieselbe Basis wie die Kategorien.
+  const gegenMap = new Map<string, GegenparteiSumme>()
+  for (const t of imMonat) {
+    if (t.type !== 'expense' || !zaehltAlsFluss(t)) continue
+    const name = buchungsTitel({ merchant: t.merchant, description: null })
+    if (name === 'Ohne Bezeichnung') continue
+    const e = gegenMap.get(name.toLowerCase()) ?? { name, total: 0, anzahl: 0 }
+    e.total += t.amount
+    e.anzahl += 1
+    gegenMap.set(name.toLowerCase(), e)
+  }
+  const gegenparteien = [...gegenMap.values()].sort((a, b) => b.total - a.total).slice(0, 5)
+
+  const flussBuchungen = imMonat.filter((t) => zaehltAlsFluss(t) && (t.type === 'income' || t.type === 'expense'))
+  const gross = (typ: 'income' | 'expense'): GrosseBuchung[] =>
+    flussBuchungen
+      .filter((t) => t.type === typ)
+      .sort((a, b) => b.amount - a.amount || b.date.localeCompare(a.date))
+      .slice(0, 3)
+      .map((t) => ({ id: t.id, date: t.date, betrag: t.amount, titel: buchungsTitel(t) }))
+  const groessteAusgaben = gross('expense')
+  const groessteEinnahmen = gross('income')
+
+  const proMonat = monate.length > 0
+    ? {
+        einnahmen: monate.reduce((s, m) => s + m.income, 0) / monate.length,
+        ausgaben: -monate.reduce((s, m) => s + m.expense, 0) / monate.length,
+        monate: monate.length,
+      }
+    : null
+
   const genutzteKategorien = [...new Set(imMonat.map((t) => t.category_id).filter((x): x is string => Boolean(x)))]
 
   const needle = (f.q ?? '').trim().toLowerCase()
@@ -155,6 +236,10 @@ export function rechneDetail<T extends DetailBuchung>(alle: T[], f: DetailFilter
     topKategorien,
     kategorienMax: topKategorien[0]?.total ?? 0,
     genutzteKategorien,
+    gegenparteien,
+    groessteAusgaben,
+    groessteEinnahmen,
+    proMonat,
     tabelle,
     seitenZeilen: tabelle.slice((seite - 1) * proSeite, seite * proSeite),
     seite,

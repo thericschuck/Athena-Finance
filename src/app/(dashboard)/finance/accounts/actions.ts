@@ -170,6 +170,92 @@ export async function setzeManuellenSaldo(
   return { angepasst: true }
 }
 
+/** Beschreibung der Ausgleichsbuchung — beginnt mit „Alter Kontostand“, damit sie als Anfangsbestand zählt. */
+const AUSGLEICH_BESCHREIBUNG = 'Alter Kontostand – Anfangsbestand ergänzt'
+
+/** Einen Tag vor `iso` (YYYY-MM-DD), kalendarisch, ohne Zeitzonen-Rechnung. */
+function tagDavor(iso: string): string {
+  const d = new Date(`${iso}T12:00:00Z`)
+  d.setUTCDate(d.getUTCDate() - 1)
+  return d.toISOString().slice(0, 10)
+}
+
+const ausgleichSchema = z.object({ kontoId: uuid })
+
+/**
+ * Gleicht die Abweichung eines BANKKONTOS aus: Bank-Saldo und Summe aller Buchungen passen nicht
+ * zusammen, weil FinTS nur ein Zeitfenster liefert und der Saldo davor nirgends steht. Gebucht wird
+ * der fehlende Betrag als „Alter Kontostand – Anfangsbestand ergänzt“ einen Tag VOR der ersten Buchung.
+ *
+ * Das ändert weder Einnahmen/Ausgaben (Anfangsbestände zählen nicht als Fluss) noch den Verlauf (der ist
+ * am Bank-Saldo verankert, siehe fn_recompute_account_balances) — danach stimmt nur die Summe der
+ * Buchungen wieder mit dem Konto überein. Kommt die Bank später doch mit älteren Buchungen (voller
+ * Verlauf), taucht die Abweichung mit umgekehrtem Vorzeichen wieder auf und lässt sich erneut ausgleichen.
+ */
+export async function gleicheAbweichungAus(
+  kontoId: string,
+): Promise<{ error?: string; ausgeglichen?: boolean; betrag?: number; datum?: string }> {
+  const { supabase, user } = await getAuthUser()
+  if (!user) return { error: 'Nicht eingeloggt' }
+  const parsed = parseInput(ausgleichSchema, { kontoId })
+  if (!parsed.ok) return { error: issueMessage(parsed) }
+
+  const { data: konto } = await supabase
+    .from('accounts')
+    .select('id, currency, bank_iban')
+    .eq('id', parsed.data.kontoId)
+    .eq('user_id', user.id)
+    .maybeSingle()
+  if (!konto) return { error: 'Konto nicht gefunden' }
+  if (!konto.bank_iban) return { error: 'Nur für Bankkonten. Bei manuellen Konten gibt es „Saldo setzen“.' }
+
+  const [{ data: bank }, { data: summe }, { data: erste }] = await Promise.all([
+    supabase
+      .from('bank_balance')
+      .select('booked_balance')
+      .eq('user_id', user.id)
+      .eq('account_iban', konto.bank_iban)
+      .maybeSingle(),
+    supabase
+      .from('account_balance_sums_unified')
+      .select('balance')
+      .eq('user_id', user.id)
+      .eq('account_id', konto.id)
+      .maybeSingle(),
+    supabase
+      .from('unified_transactions')
+      .select('date')
+      .eq('user_id', user.id)
+      .eq('account_id', konto.id)
+      .order('date', { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+  ])
+  if (!bank) return { error: 'Für dieses Konto liegt kein Bank-Saldo vor (noch kein Sync).' }
+
+  const diff = Math.round((Number(bank.booked_balance) - Number(summe?.balance ?? 0)) * 100) / 100
+  if (diff === 0) return { ausgeglichen: false }
+
+  const datum = erste?.date ? tagDavor(erste.date) : heuteBerlinIso()
+  const { error } = await supabase.from('transactions').insert({
+    user_id: user.id,
+    account_id: konto.id,
+    type: diff > 0 ? 'income' : 'expense',
+    amount: Math.abs(diff),
+    currency: konto.currency,
+    description: AUSGLEICH_BESCHREIBUNG,
+    date: datum,
+    category_id: null,
+  })
+  if (error) return { error: error.message }
+
+  revalidatePath('/finance/accounts')
+  revalidatePath(`/finance/accounts/${konto.id}`)
+  revalidatePath('/dashboard')
+  revalidatePath('/analyse')
+  return { ausgeglichen: true, betrag: diff, datum }
+}
+
 const sortSchema = z.array(uuid).max(100, 'Zu viele Konten')
 
 /** Speichert die Anzeigereihenfolge: `sort_order` = Index in `ids` (nur eigene Konten). */

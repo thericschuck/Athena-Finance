@@ -182,7 +182,10 @@ export function SortableHeader({
 
   // Zelle eines Div-Rasters (die Buchungsliste ist mobil eine Kartenliste, keine Tabelle).
   return (
-    <div role="columnheader" className={`${align === 'right' ? 'text-right' : 'text-left'} ${className}`}>
+    <div
+      role="columnheader"
+      aria-sort={isActive ? (direction === 'asc' ? 'ascending' : 'descending') : undefined}
+      className={`${align === 'right' ? 'text-right' : 'text-left'} ${className}`}>
       <button
         type="button"
         onClick={() => filters.set('sort', next === 'date-desc' ? null : next)}

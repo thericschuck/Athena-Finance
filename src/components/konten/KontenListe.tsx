@@ -7,6 +7,7 @@ import { AccountSparkline } from '@/components/finance/account-sparkline'
 import { EditAccountDialog, DeleteAccountButton } from '@/components/finance/account-form'
 import { AnalyseKennzahlInfo } from '@/components/analyse/AnalyseKennzahlInfo'
 import { SaldoSetzenDialog } from '@/components/konten/SaldoSetzenDialog'
+import { AbweichungAusgleichen } from '@/components/konten/AbweichungAusgleichen'
 import { useKontenSortierung } from '@/components/konten/KontenSortierung'
 import { fmtCurrency } from '@/lib/format'
 import { TYP_LABELS } from '@/lib/konten/berechnen'
@@ -121,17 +122,18 @@ function Marken({ z, locale }: { z: KontoZeile; locale: string }) {
               ['Saldo der Bank', fmtCurrency(z.saldo, z.currency, locale, { fractionDigits: 2 })],
               ['Summe der Buchungen', fmtCurrency(z.buchungssumme, z.currency, locale, { fractionDigits: 2 })],
             ]}
-            text={`Die Bank meldet ${fmtCurrency(z.saldo, z.currency, locale, { fractionDigits: 2 })}, die Buchungen summieren sich auf ${fmtCurrency(z.buchungssumme, z.currency, locale, { fractionDigits: 2 })}. Die Buchungen decken die Historie nicht vollständig ab (FinTS liefert nur ein Zeitfenster; ein Anfangsbestand fehlt). Der angezeigte Saldo ist der der Bank. Korrekturen für den Verlauf gibt es unter Analyse › Verlauf.`}
+            text={`Die Bank meldet ${fmtCurrency(z.saldo, z.currency, locale, { fractionDigits: 2 })}, die Buchungen summieren sich auf ${fmtCurrency(z.buchungssumme, z.currency, locale, { fractionDigits: 2 })}. Umbuchungen und alle Buchungen im Zeitfenster sind dabei schon eingerechnet — es fehlt der Saldo vor der ersten Buchung (FinTS liefert nur ein Zeitfenster). Der angezeigte Saldo ist der der Bank; „Ausgleichen“ bucht den fehlenden Anfangsbestand.`}
           >
             <AlertTriangle className="size-2.5" aria-hidden />
             Abweichung {z.abweichung > 0 ? '+' : '−'}{fmtCurrency(Math.abs(z.abweichung), z.currency, locale, { fractionDigits: 0 })}
           </AnalyseKennzahlInfo>
-          <Link
-            href="/analyse/verlauf"
-            className="text-[11px] text-muted-foreground underline underline-offset-2 hover:text-foreground"
-          >
-            prüfen
-          </Link>
+          <AbweichungAusgleichen
+            kontoId={z.id}
+            name={z.name}
+            abweichung={z.abweichung}
+            waehrung={z.currency}
+            locale={locale}
+          />
         </span>
       )}
     </>

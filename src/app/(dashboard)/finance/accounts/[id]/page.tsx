@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { requireAuthUser } from '@/lib/supabase/server'
 import { ladeKontoDetail } from '@/lib/data/konto-detail'
-import { rechneDetail } from '@/lib/konten/detail'
+import { rechneDetail, saldoSpanne } from '@/lib/konten/detail'
 import { standAnzeige } from '@/lib/konten/berechnen'
 import { parsePeriod, periodCutoff, type Period } from '@/lib/period'
 import { UrlFiltersProvider, FilterPending } from '@/components/providers/url-filters'
@@ -9,10 +9,11 @@ import { UrlPeriodSelector } from '@/components/ui/period-selector'
 import { AccountBalanceChart, type AccountBalancePoint } from '@/components/finance/account-balance-chart'
 import { AccountTxToolbar, MonthChip } from '@/components/finance/account-tx-toolbar'
 import { KontoKopf } from '@/components/konten/detail/KontoKopf'
-import { KontoTabs } from '@/components/konten/detail/KontoTabs'
+import { KontoHighlights } from '@/components/konten/detail/KontoHighlights'
+import { KontoKarten } from '@/components/konten/detail/KontoKarten'
+import { KontoMonatsKarte } from '@/components/konten/detail/KontoMonatsKarte'
 import { KontoKennzahlen } from '@/components/konten/detail/KontoKennzahlen'
 import { KontoDatenZeile } from '@/components/konten/detail/KontoDatenZeile'
-import { KontoAuswertung } from '@/components/konten/detail/KontoAuswertung'
 import { BuchungenListe } from '@/components/konten/detail/BuchungenListe'
 import { KontoSeiten } from '@/components/konten/detail/KontoSeiten'
 import { heuteBerlin, monatLabel } from '@/components/konten/detail/format'
@@ -35,11 +36,6 @@ interface PageProps {
     month?: string
     /** Seite der Buchungsliste, 1-basiert. */
     seite?: string
-    /**
-     * `buchungen` | `auswertung` (Standard: Überblick). Wird nur im Browser ausgewertet
-     * (`localKeys` des Providers) — der Server braucht den Wert nicht.
-     */
-    ansicht?: string
   }>
 }
 
@@ -101,35 +97,10 @@ export default async function AccountDetailPage({ params, searchParams }: PagePr
   const gesamt = rows.length
   const filterAktiv = d.gefiltert
 
-  // ── Tabs ──────────────────────────────────────────────────────────────────────
-  const ueberblick = (
-    <>
-      <KontoKennzahlen
-        kontostand={kontostand}
-        quelle={quelle}
-        einnahmen={d.einnahmen}
-        ausgaben={d.ausgaben}
-        netto={d.netto}
-        anzahl={d.imZeitraum.length}
-        zeitraum={period}
-        currency={currency}
-        locale={locale}
-      />
-      <KontoDatenZeile
-        kontoId={account.id}
-        iban={account.iban ?? account.bank_iban}
-        istBank={Boolean(account.bank_iban)}
-        stand={standAnzeige(detail.stand, new Date())}
-        bankSaldo={detail.bankSaldo}
-        buchungssumme={detail.buchungssumme}
-        abweichung={detail.abweichung}
-        currency={currency}
-        locale={locale}
-        period={period}
-      />
-      <AccountBalanceChart points={verlauf} period={period} currency={currency} color={account.color} />
-    </>
-  )
+  // ── Abschnitte ────────────────────────────────────────────────────────────────
+  const spanne = saldoSpanne(verlauf)
+  const zeigeVerlauf = verlauf.length >= 2
+  const zeigeMonate = d.monate.length >= 2
 
   const buchungen = (
     <div id="konto-buchungen" className="scroll-mt-4 rounded-lg border border-border bg-card">
@@ -170,51 +141,93 @@ export default async function AccountDetailPage({ params, searchParams }: PagePr
             locale={locale}
             dateFormat={dateFormat}
           />
-          <KontoSeiten seite={d.seite} seiten={d.seiten} gesamt={d.tabelle.length} />
+          <KontoSeiten seite={d.seite} seiten={d.seiten} gesamt={d.tabelle.length} locale={locale} />
         </>
       )}
     </div>
   )
 
-  const auswertung = (
-    <KontoAuswertung
-      monate={d.monate}
-      topKategorien={d.topKategorien}
-      kategorienMax={d.kategorienMax}
-      aktiverMonat={d.aktiverMonat}
-      monatLabel={monatText}
-      currency={currency}
-      locale={locale}
-    />
-  )
-
   return (
-    // `seite` wird bei jedem anderen Filterwechsel zurückgesetzt; `ansicht` ist rein lokal (kein
-    // Server-Rendering beim Tab-Wechsel), alles andere sind Server-Filter.
-    <UrlFiltersProvider resetKeys="seite" localKeys="ansicht">
+    // `seite` wird bei jedem anderen Filterwechsel zurückgesetzt; alles sind Server-Filter.
+    <UrlFiltersProvider resetKeys="seite">
       <div className="flex flex-col gap-5 p-4 sm:p-8">
         <KontoKopf daten={detail} kontostand={kontostand} />
 
-        {/* Ein Zeitraum (und ggf. ein Monat) gilt für alle Tabs darunter. */}
+        {/* Ein Zeitraum (und ggf. ein Monat) gilt für alles darunter. */}
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border pb-4">
           <div className="flex flex-wrap items-center gap-2">
             <UrlPeriodSelector current={period} className="max-sm:[&_button]:min-h-10 max-sm:[&_button]:px-3" />
             {monatText && <MonthChip label={monatText} />}
           </div>
-          <p className="text-xs text-muted-foreground">
-            {d.imMonat.length} {d.imMonat.length === 1 ? 'Buchung' : 'Buchungen'}
-            {monatText ? ` in ${monatText}` : ' im Zeitraum'}
+          <p className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span>
+              {d.imMonat.length} {d.imMonat.length === 1 ? 'Buchung' : 'Buchungen'}
+              {monatText ? ` in ${monatText}` : ' im Zeitraum'}
+            </span>
+            <a href="#konto-buchungen" className="inline-flex min-h-10 items-center font-medium text-foreground/80 sm:hidden">
+              ↓ Zu den Buchungen
+            </a>
           </p>
         </div>
 
-        <FilterPending>
-          <KontoTabs
-            tabs={[
-              { key: 'ueberblick', label: 'Überblick', inhalt: ueberblick },
-              { key: 'buchungen', label: 'Buchungen', inhalt: buchungen },
-              { key: 'auswertung', label: 'Auswertung', inhalt: auswertung },
-            ]}
+        <FilterPending className="flex min-w-0 flex-col gap-5">
+          <KontoKennzahlen
+            kontostand={kontostand}
+            quelle={quelle}
+            einnahmen={d.einnahmen}
+            ausgaben={d.ausgaben}
+            netto={d.netto}
+            anzahl={d.imZeitraum.length}
+            zeitraum={period}
+            currency={currency}
+            locale={locale}
           />
+          <KontoHighlights
+            spanne={zeigeVerlauf ? spanne : null}
+            groessteAusgabe={d.groessteAusgaben[0] ?? null}
+            proMonat={d.proMonat}
+            currency={currency}
+            locale={locale}
+            dateFormat={dateFormat}
+          />
+          <KontoDatenZeile
+            kontoId={account.id}
+            name={account.name}
+            iban={account.iban ?? account.bank_iban}
+            istBank={Boolean(account.bank_iban)}
+            stand={standAnzeige(detail.stand, new Date())}
+            bankSaldo={detail.bankSaldo}
+            buchungssumme={detail.buchungssumme}
+            abweichung={detail.abweichung}
+            currency={currency}
+            locale={locale}
+            period={period}
+          />
+
+          {(zeigeVerlauf || zeigeMonate) && (
+            <div className={`grid min-w-0 items-start gap-4 ${zeigeVerlauf && zeigeMonate ? 'lg:grid-cols-2' : 'grid-cols-1'}`}>
+              {zeigeVerlauf && (
+                <AccountBalanceChart points={verlauf} period={period} currency={currency} color={account.color} />
+              )}
+              {zeigeMonate && (
+                <KontoMonatsKarte monate={d.monate} aktiverMonat={d.aktiverMonat} currency={currency} />
+              )}
+            </div>
+          )}
+
+          <KontoKarten
+            kategorien={d.topKategorien}
+            kategorienMax={d.kategorienMax}
+            gegenparteien={d.gegenparteien}
+            groessteAusgaben={d.groessteAusgaben}
+            groessteEinnahmen={d.groessteEinnahmen}
+            monatLabel={monatText}
+            currency={currency}
+            locale={locale}
+            dateFormat={dateFormat}
+          />
+
+          {buchungen}
         </FilterPending>
       </div>
     </UrlFiltersProvider>

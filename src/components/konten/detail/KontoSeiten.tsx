@@ -27,11 +27,12 @@ function seitenFolge(aktuell: number, gesamt: number): (number | null)[] {
 }
 
 export function KontoSeiten({
-  seite, seiten, gesamt, einheitSingular = 'Buchung', einheitPlural = 'Buchungen',
+  seite, seiten, gesamt, locale, einheitSingular = 'Buchung', einheitPlural = 'Buchungen',
 }: {
   seite: number
   seiten: number
   gesamt: number
+  locale: string
   einheitSingular?: string
   einheitPlural?: string
 }) {
@@ -49,7 +50,7 @@ export function KontoSeiten({
     >
       <p className="text-xs tabular-nums text-muted-foreground">
         {seiten > 1 ? `Seite ${seite} von ${seiten} · ` : ''}
-        {gesamt.toLocaleString('de-DE')} {gesamt === 1 ? einheitSingular : einheitPlural}
+        {gesamt.toLocaleString(locale)} {gesamt === 1 ? einheitSingular : einheitPlural}
       </p>
 
       {seiten > 1 && (

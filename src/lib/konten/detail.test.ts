@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { rechneDetail, type DetailBuchung } from './detail.ts'
+import { buchungsTitel, rechneDetail, saldoSpanne, type DetailBuchung } from './detail.ts'
 
 let n = 0
 function b(date: string, type: string, amount: number, extra: Partial<DetailBuchung> = {}): DetailBuchung {
@@ -84,4 +84,58 @@ test('Seiten: Aufteilung, Klemmen auf gültige Seite, Rest auf der letzten', () 
   assert.equal(rechneDetail(viele, { cutoff: null, seite: 99 }).seite, 3)
   assert.equal(rechneDetail(viele, { cutoff: null, seite: -4 }).seite, 1)
   assert.equal(rechneDetail([], { cutoff: null }).seiten, 1)
+})
+
+test('Gegenparteien: nur Fluss-Ausgaben mit Empfänger, zusammengefasst unabhängig von der Schreibweise', () => {
+  const rows = [
+    b('2026-08-01', 'expense', 20, { merchant: 'Rewe' }),
+    b('2026-08-05', 'expense', 30, { merchant: 'REWE' }),
+    b('2026-08-06', 'expense', 100, { merchant: 'Vermieter' }),
+    b('2026-08-07', 'expense', 9, { description: 'ohne Empfänger' }),
+    b('2026-08-08', 'transfer', 500, { flow_kind: 'umbuchung', merchant: 'Eigenes Konto' }),
+    b('2026-08-09', 'income', 3000, { merchant: 'Arbeitgeber' }),
+  ]
+  const r = rechneDetail(rows, { cutoff: null })
+  assert.deepEqual(r.gegenparteien.map((g) => [g.name, g.total, g.anzahl]), [['Vermieter', 100, 1], ['Rewe', 50, 2]])
+})
+
+test('Größte Buchungen: je drei, absteigend, Titel aus Empfänger oder Beschreibung', () => {
+  const rows = [
+    b('2026-08-01', 'expense', 10, { description: 'Kaffee' }),
+    b('2026-08-02', 'expense', 700, { merchant: 'Vermieter' }),
+    b('2026-08-03', 'expense', 80, { merchant: 'Rewe' }),
+    b('2026-08-04', 'expense', 40, { merchant: 'Tankstelle' }),
+    b('2026-08-05', 'income', 2500, { description: 'Gehalt' }),
+    b('2026-08-06', 'income', 5000, { flow_kind: 'anfangsbestand', description: 'Alter Kontostand' }),
+  ]
+  const r = rechneDetail(rows, { cutoff: null })
+  assert.deepEqual(r.groessteAusgaben.map((x) => [x.titel, x.betrag]), [['Vermieter', 700], ['Rewe', 80], ['Tankstelle', 40]])
+  assert.deepEqual(r.groessteEinnahmen.map((x) => [x.titel, x.betrag]), [['Gehalt', 2500]])
+})
+
+test('Ø pro Monat: Summe durch Monate mit Buchungen; ohne Monate null', () => {
+  const r = rechneDetail(
+    [b('2026-08-01', 'income', 3000), b('2026-08-02', 'expense', 1000), b('2026-09-01', 'expense', 500)],
+    { cutoff: null },
+  )
+  assert.deepEqual(r.proMonat, { einnahmen: 1500, ausgaben: 750, monate: 2 })
+  assert.equal(rechneDetail([], { cutoff: null }).proMonat, null)
+})
+
+test('Saldo-Spanne: tiefster/höchster Stand; zu wenige Punkte -> null; Gleichstand der jüngste Tag', () => {
+  const s = saldoSpanne([
+    { snapshot_date: '2026-01-01', balance: 100 },
+    { snapshot_date: '2026-02-01', balance: -50 },
+    { snapshot_date: '2026-03-01', balance: 400 },
+    { snapshot_date: '2026-04-01', balance: 400 },
+  ])
+  assert.deepEqual(s, { tiefst: { date: '2026-02-01', balance: -50 }, hoechst: { date: '2026-04-01', balance: 400 } })
+  assert.equal(saldoSpanne([{ snapshot_date: '2026-01-01', balance: 1 }]), null)
+})
+
+test('Titel: Empfänger vor Beschreibung, eine Zeile, gekürzt', () => {
+  assert.equal(buchungsTitel({ merchant: ' Rewe ', description: 'x' }), 'Rewe')
+  assert.equal(buchungsTitel({ merchant: null, description: 'a\nb' }), 'a b')
+  assert.equal(buchungsTitel({ merchant: null, description: null }), 'Ohne Bezeichnung')
+  assert.equal(buchungsTitel({ merchant: 'x'.repeat(80), description: null }).length, 48)
 })
