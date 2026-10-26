@@ -5,14 +5,16 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { parseForm, parseInput, issueMessage } from '@/lib/api/validate'
 import { idField, uuid, reqText, optText, optDate, optEnum, optMoneyField, moneyField, MAX_AMOUNT } from '@/lib/api/schemas'
-import { getSavingsGoalProgress } from '@/lib/data/finance-planning'
+import { heuteBerlin } from '@/lib/transaktionen/formular'
 
 export type GoalActionState = { error: string } | { success: true } | null
 
 const goalFields = {
   description: reqText('Bezeichnung ist erforderlich', 200),
-  target_amount: moneyField('Zielbetrag muss größer als 0 sein').refine(n => n > 0, 'Zielbetrag muss größer als 0 sein'),
-  monthly_savings_rate: optMoneyField('Sparrate ist ungültig'),
+  target_amount: moneyField('Zielbetrag ist ungültig').refine(n => n > 0, 'Zielbetrag muss größer als 0 sein'),
+  // Leer = nicht ändern (Update) bzw. 0 (Anlegen); sonst Stand des Sparziels
+  current_amount: optMoneyField('„Bereits gespart“ ist ungültig').refine(n => n === null || n >= 0, '„Bereits gespart“ darf nicht negativ sein'),
+  monthly_savings_rate: optMoneyField('Sparrate ist ungültig').refine(n => n === null || n >= 0, 'Sparrate darf nicht negativ sein'),
   savings_rate_start_date: optDate,
   priority: optEnum(['hoch', 'mittel', 'niedrig'] as const, 'Priorität ist ungültig'),
   target_date: optDate,
@@ -21,16 +23,16 @@ const goalFields = {
 const createGoalSchema = z.object(goalFields)
 const updateGoalSchema = z.object({ id: idField(), ...goalFields })
 
-/** Sparrate nur, wenn > 0; Startdatum dann Formularwert oder heute. */
+/** Sparrate nur, wenn > 0; Startdatum dann Formularwert oder heute (Berliner Tag, nie UTC). */
 function rateFields(d: { monthly_savings_rate: number | null; savings_rate_start_date: string | null }) {
   const hasRate = d.monthly_savings_rate !== null && d.monthly_savings_rate > 0
   return {
     monthly_savings_rate: hasRate ? d.monthly_savings_rate : null,
-    savings_rate_start_date: hasRate
-      ? d.savings_rate_start_date || new Date().toISOString().split('T')[0]
-      : null,
+    savings_rate_start_date: hasRate ? d.savings_rate_start_date || heuteBerlin() : null,
   }
 }
+
+const cent = (n: number) => Math.round(n * 100) / 100
 
 // ─── Create ───────────────────────────────────────────────────────────────────
 export async function createGoal(
@@ -46,14 +48,15 @@ export async function createGoal(
 
   const { error } = await supabase.from('savings_goals').insert({
     description: d.description,
-    target_amount: d.target_amount,
+    target_amount: cent(d.target_amount),
+    current_amount: cent(d.current_amount ?? 0),
     status: 'offen',
     user_id: user.id,
     priority: d.priority,
     ...rateFields(d),
     target_date: d.target_date,
     notes: d.notes,
-  } as never)
+  })
 
   if (error) return { error: error.message }
   revalidatePath('/finance/goals')
@@ -72,21 +75,25 @@ export async function updateGoal(
   if (!parsed.ok) return { error: issueMessage(parsed) }
   const { id, ...d } = parsed.data
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('savings_goals')
     .update({
       description: d.description,
-      target_amount: d.target_amount,
+      target_amount: cent(d.target_amount),
+      // leer lassen = Stand unverändert; Zahl = Stand bewusst setzen
+      ...(d.current_amount === null ? {} : { current_amount: cent(d.current_amount) }),
       priority: d.priority,
       ...rateFields(d),
       target_date: d.target_date,
       notes: d.notes,
       updated_at: new Date().toISOString(),
-    } as never)
+    })
     .eq('id', id)
     .eq('user_id', user.id)
+    .select('id')
 
   if (error) return { error: error.message }
+  if (!data || data.length === 0) return { error: 'Sparziel nicht gefunden' }
   revalidatePath('/finance/goals')
   return { success: true }
 }
@@ -107,6 +114,11 @@ export async function setGoalStatus(id: string, newStatus: string): Promise<void
 }
 
 // ─── Add payment (increment current_amount) ───────────────────────────────────
+/**
+ * Zahlt `amount` auf ein Sparziel ein. Anders als früher wird NICHT still auf das Ziel gekappt
+ * (das hätte Geld verschluckt, der Überschuss steht jetzt sichtbar am Ziel). Konkurrierende
+ * Einzahlungen: der Update gilt nur, wenn der Stand noch der gelesene ist.
+ */
 export async function addGoalPayment(
   goalId: string,
   amount: number
@@ -119,20 +131,29 @@ export async function addGoalPayment(
   )
   if (!args.ok) return { error: issueMessage(args) }
 
-  const { data: goal, error: fetchErr } = await getSavingsGoalProgress(supabase, user.id, goalId)
-
-  if (fetchErr || !goal) return { error: 'Sparziel nicht gefunden' }
-
-  const currentAmount = goal.current_amount ?? 0
-  const newAmount = Math.min(currentAmount + amount, goal.target_amount)
-
-  const { error } = await supabase
+  const { data: goal, error: fetchErr } = await supabase
     .from('savings_goals')
-    .update({ current_amount: newAmount, updated_at: new Date().toISOString() })
+    .select('current_amount, status')
     .eq('id', goalId)
     .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (fetchErr || !goal) return { error: 'Sparziel nicht gefunden' }
+  if (goal.status === 'geschlossen') return { error: 'Dieses Sparziel ist abgeschlossen. Öffne es zuerst wieder.' }
+
+  const alt = Number(goal.current_amount ?? 0)
+  const neu = cent(alt + amount)
+
+  const { data, error } = await supabase
+    .from('savings_goals')
+    .update({ current_amount: neu, updated_at: new Date().toISOString() })
+    .eq('id', goalId)
+    .eq('user_id', user.id)
+    .eq('current_amount', goal.current_amount)
+    .select('id')
 
   if (error) return { error: error.message }
+  if (!data || data.length === 0) return { error: 'Der Stand hat sich gerade geändert. Bitte erneut versuchen.' }
   revalidatePath('/finance/goals')
   return {}
 }

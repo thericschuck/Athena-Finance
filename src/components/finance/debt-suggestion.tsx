@@ -76,7 +76,7 @@ export function DebtSuggestion({
         <button
           type="button"
           onClick={() => setDismissed(true)}
-          className="shrink-0 text-muted-foreground hover:text-foreground"
+          className="-m-2 flex size-10 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground md:m-0 md:size-6"
           aria-label="Vorschlag verwerfen"
         >
           <X className="size-3.5" />
@@ -85,7 +85,7 @@ export function DebtSuggestion({
 
       {!treffer && aktive.length > 0 && (
         <Select value={selectedId} onValueChange={setSelectedId}>
-          <SelectTrigger size="sm" className="h-7 text-xs">
+          <SelectTrigger size="sm" className="h-10 text-base md:h-7 md:text-xs">
             <SelectValue placeholder="Bestehende Schuld wählen…" />
           </SelectTrigger>
           <SelectContent>
@@ -105,7 +105,7 @@ export function DebtSuggestion({
             sourceTransaction={{ id: transactionId, source }}
             onRecorded={handled}
             trigger={
-              <Button type="button" variant="outline" size="sm" className="h-7 px-2 text-xs">
+              <Button type="button" variant="outline" size="sm" className="h-10 px-3 text-xs md:h-7 md:px-2">
                 Zahlung verbuchen
               </Button>
             }
@@ -123,7 +123,7 @@ export function DebtSuggestion({
           }}
           onCreated={handled}
           trigger={
-            <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs">
+            <Button type="button" variant="ghost" size="sm" className="h-10 px-3 text-xs md:h-7 md:px-2">
               Neue Schuld anlegen
             </Button>
           }

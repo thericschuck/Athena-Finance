@@ -38,14 +38,14 @@ export function FixedCostsWidget({ totalMonthly, contracts, accounts }: Props) {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <p className="text-xs text-muted-foreground">Fixkosten / Monat</p>
-          <p className="text-2xl font-semibold tabular-nums mt-0.5">
+          <p className="text-lg font-semibold tabular-nums mt-0.5">
             {fmtEur(selectedAccount === '__all__' ? totalMonthly : filteredTotal)}
           </p>
         </div>
 
         {accounts.length > 0 && (
           <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-            <SelectTrigger className="h-8 w-44 text-xs">
+            <SelectTrigger className="w-44 max-w-full text-xs data-[size=default]:h-10 sm:data-[size=default]:h-8">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -62,10 +62,10 @@ export function FixedCostsWidget({ totalMonthly, contracts, accounts }: Props) {
       {filtered.length > 0 ? (
         <ul className="space-y-1.5">
           {filtered.slice(0, 6).map(c => (
-            <li key={c.id} className="flex items-center justify-between gap-2 text-sm">
+            <li key={c.id} className="flex min-w-0 items-center justify-between gap-2 text-sm">
               <Link
                 href={`/finance/contracts/${c.id}`}
-                className="text-foreground hover:underline underline-offset-2 truncate"
+                className="inline-flex min-h-8 min-w-0 items-center truncate text-foreground hover:underline underline-offset-2"
               >
                 {c.name}
               </Link>
@@ -75,7 +75,7 @@ export function FixedCostsWidget({ totalMonthly, contracts, accounts }: Props) {
           {filtered.length > 6 && (
             <li className="text-xs text-muted-foreground pt-1">
               + {filtered.length - 6} weitere ·{' '}
-              <Link href="/finance/contracts" className="hover:underline">Alle anzeigen</Link>
+              <Link href="/finance/contracts" className="inline-flex min-h-8 items-center hover:underline">Alle anzeigen</Link>
             </li>
           )}
         </ul>

@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { parseForm, parseInput, issueMessage } from '@/lib/api/validate'
 import { idField, uuid, reqText, reqEnum, reqDate, optText, optDate, optUuid, optIntField, moneyField, currency } from '@/lib/api/schemas'
-import { CONTRACT_TYPES, FREQUENCIES } from '@/lib/finance/contract-constants'
+import { CONTRACT_TYPES, FREQUENCIES, TRANSFER_TYPES } from '@/lib/finance/contract-constants'
 import { AUSGEBLENDET_KEY, leseAusgeblendet } from '@/lib/data/vertragsvorschlaege'
 
 export type ContractActionState = { error: string } | { success: true } | null
@@ -36,7 +36,30 @@ function buildPayload(formData: FormData, userId: string):
   | { ok: false; error: string } {
   const p = parseForm(formData, contractSchema)
   if (!p.ok) return { ok: false, error: issueMessage(p) }
-  return { ok: true, payload: { ...p.data, user_id: userId } }
+  const d = p.data
+  if (d.end_date && d.end_date < d.start_date) return { ok: false, error: 'Das Enddatum liegt vor dem Startdatum.' }
+  if (d.billing_day !== null && (d.billing_day < 1 || d.billing_day > 31)) return { ok: false, error: 'Abrechnungstag muss zwischen 1 und 31 liegen.' }
+  if (d.notice_days < 0) return { ok: false, error: 'Kündigungsfrist ist ungültig' }
+  if (TRANSFER_TYPES.has(d.type) && !d.to_account_id) return { ok: false, error: 'Bei Umbuchungen und Sparraten ist ein Zielkonto nötig.' }
+  return { ok: true, payload: { ...d, user_id: userId } }
+}
+
+/** Konten und Kategorie müssen dem Nutzer gehören (die RLS schützt nur die Zeile, nicht die Verweise). */
+async function pruefeBesitz(
+  supabase: Awaited<ReturnType<typeof getAuthUser>>['supabase'],
+  userId: string,
+  p: { account_id: string | null; to_account_id: string | null; category_id: string | null },
+): Promise<string | null> {
+  const kontoIds = [...new Set([p.account_id, p.to_account_id].filter((x): x is string => !!x))]
+  if (kontoIds.length > 0) {
+    const { data } = await supabase.from('accounts').select('id').eq('user_id', userId).in('id', kontoIds)
+    if ((data?.length ?? 0) !== kontoIds.length) return 'Das Konto wurde nicht gefunden.'
+  }
+  if (p.category_id) {
+    const { data } = await supabase.from('categories').select('id').eq('id', p.category_id).eq('user_id', userId).maybeSingle()
+    if (!data) return 'Die Kategorie wurde nicht gefunden.'
+  }
+  return null
 }
 
 export async function createContract(
@@ -48,11 +71,14 @@ export async function createContract(
 
   const built = buildPayload(formData, user.id)
   if (!built.ok) return { error: built.error }
+  const fremd = await pruefeBesitz(supabase, user.id, built.payload)
+  if (fremd) return { error: fremd }
 
   const { error } = await supabase.from('contracts').insert(built.payload)
   if (error) return { error: error.message }
 
   revalidatePath('/finance/contracts')
+  revalidatePath('/finance/prognose')
   return { success: true }
 }
 
@@ -69,7 +95,10 @@ export async function updateContract(
 
   const built = buildPayload(formData, user.id)
   if (!built.ok) return { error: built.error }
-  const { user_id: _uid, ...updates } = built.payload
+  const updates = { ...built.payload }
+  delete (updates as { user_id?: string }).user_id
+  const fremd = await pruefeBesitz(supabase, user.id, updates)
+  if (fremd) return { error: fremd }
 
   const { error } = await supabase
     .from('contracts')
@@ -80,6 +109,7 @@ export async function updateContract(
   if (error) return { error: error.message }
 
   revalidatePath('/finance/contracts')
+  revalidatePath('/finance/prognose')
   return { success: true }
 }
 
@@ -98,6 +128,7 @@ export async function deleteContract(id: string): Promise<{ error?: string }> {
   if (error) return { error: error.message }
 
   revalidatePath('/finance/contracts')
+  revalidatePath('/finance/prognose')
   return {}
 }
 

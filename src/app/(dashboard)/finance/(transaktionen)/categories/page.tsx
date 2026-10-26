@@ -1,69 +1,49 @@
 import { requireAuthUser } from '@/lib/supabase/server'
-import {
-  getCategories,
-  getEuerZeilenForCategories,
-  type CategoryRow as Category,
-} from '@/lib/data/finance-transactions'
 import { AddCategoryDialog } from '@/components/finance/category-form'
-import { CategoriesView, type CategoryNode } from '@/components/finance/categories-view'
-import { getSettings } from '@/lib/settings'
+import { UrlFiltersProvider, FilterPending } from '@/components/providers/url-filters'
+import { UrlPeriodSelector } from '@/components/ui/period-selector'
+import { KategorienKennzahlenLeiste } from '@/components/kategorien/KategorienKennzahlenLeiste'
+import { KategorienAnsicht } from '@/components/kategorien/KategorienAnsicht'
+import { ladeKategorienSeite } from '@/lib/data/kategorien-seite'
+import { kategorienKennzahlen, summeBaum } from '@/lib/kategorien/berechnen'
+import { parsePeriod } from '@/lib/period'
 
+export const dynamic = 'force-dynamic'
 
-// Build parent→child tree from flat list
-function buildTree(categories: Category[]): CategoryNode[] {
-  const map = new Map<string, CategoryNode>()
-  for (const c of categories) map.set(c.id, { ...c, children: [] })
-
-  const roots: CategoryNode[] = []
-  for (const node of map.values()) {
-    if (node.parent_id && map.has(node.parent_id)) {
-      map.get(node.parent_id)!.children.push(node)
-    } else {
-      roots.push(node)
-    }
-  }
-
-  // Sort each level by sort_order then name
-  const sort = (nodes: CategoryNode[]) =>
-    nodes.sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
-
-  for (const node of map.values()) sort(node.children)
-  return sort(roots)
-}
-
-export default async function CategoriesPage() {
-  const { supabase, user } = await requireAuthUser()
-
-  const [flat, settings, alleEuer] = await Promise.all([
-    getCategories(supabase, user!.id),
-    getSettings(user!.id),
-    // Die Zeilen der Anlage EUER, damit die Zuordnung im Formular eine Auswahl
-    // ist und keine Nummer, die man irgendwo nachschlagen muss. Nur Zeilen, in
-    // die Buchungen fliessen -- Summen- und Ergebniszeilen rechnet die App.
-    getEuerZeilenForCategories(supabase),
-  ])
-
-  const locale = (settings.number_format as string) ?? 'de-DE'
-  // Nur der jüngste hinterlegte Jahrgang — zwei Jahrgänge nebeneinander wären
-  // im Auswahlfeld nicht unterscheidbar.
-  const euerJahr = alleEuer[0]?.jahr ?? null
-  const euerZeilen = euerJahr === null ? [] : alleEuer.filter((z) => z.jahr === euerJahr)
-  const tree = buildTree(flat)
+export default async function CategoriesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ period?: string }>
+}) {
+  const [{ period: rawPeriod }, { supabase, user }] = await Promise.all([searchParams, requireAuthUser()])
+  const period = parsePeriod(rawPeriod)
+  const { baum, flat, euerZeilen, locale } = await ladeKategorienSeite(supabase, user!.id, period)
 
   return (
-    <div className="p-4 sm:p-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+    <UrlFiltersProvider>
+      <div className="space-y-4 p-4 sm:p-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-2xl font-semibold tracking-tight">Kategorien</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            {flat.length} Kategorien verwalten
-          </p>
+          {/* Der Zeitraum steuert nur die Nutzung (Summen); die Anzahl „gesamt“ zählt alle Buchungen. */}
+          <div className="flex flex-wrap items-center gap-2">
+            <UrlPeriodSelector current={period} />
+            <AddCategoryDialog allCategories={flat} euerZeilen={euerZeilen} />
+          </div>
         </div>
-        <AddCategoryDialog allCategories={flat} euerZeilen={euerZeilen} />
-      </div>
 
-      <CategoriesView tree={tree} flat={flat} euerZeilen={euerZeilen} locale={locale} />
-    </div>
+        {flat.length > 0 && (
+          <KategorienKennzahlenLeiste
+            k={kategorienKennzahlen(baum)}
+            summe={summeBaum(baum)}
+            zeitraum={period}
+            locale={locale}
+          />
+        )}
+
+        <FilterPending>
+          <KategorienAnsicht baum={baum} flat={flat} euerZeilen={euerZeilen} locale={locale} zeitraum={period} />
+        </FilterPending>
+      </div>
+    </UrlFiltersProvider>
   )
 }

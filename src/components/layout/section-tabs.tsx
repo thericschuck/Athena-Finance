@@ -27,7 +27,7 @@ export function SectionTabs({ tabs }: { tabs: SectionTab[] }) {
   return (
     // sticky, damit die Bereichs-Tabs beim Scrollen stehen bleiben — der
     // Scroll-Container ist der PageWrapper, nicht das Fenster.
-    <nav className="sticky top-0 z-20 flex shrink-0 gap-1 overflow-x-auto border-b border-border bg-background px-4 sm:px-8">
+    <nav className="sticky top-0 z-20 flex shrink-0 gap-1 overflow-x-auto overscroll-x-contain border-b border-border bg-background px-4 sm:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {tabs.map(({ href, label, exact }) => {
         const active = exact
           ? pathname === href

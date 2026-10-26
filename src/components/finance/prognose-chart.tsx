@@ -10,11 +10,6 @@ export const PrognoseChart = dynamic<{ daten: ChartDaten; mitAnnahmen: boolean }
   () => import('./prognose-chart-impl').then(m => m.PrognoseChartImpl),
   {
     ssr: false,
-    loading: () => (
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <SkeletonChart variant="area" height={260} />
-        <SkeletonChart variant="area" height={260} />
-      </div>
-    ),
+    loading: () => <SkeletonChart variant="area" height={300} legend />,
   },
 )

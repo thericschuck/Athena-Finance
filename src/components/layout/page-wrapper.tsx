@@ -90,7 +90,16 @@ export function PageWrapper({ children }: { children: React.ReactNode }) {
         />
       </div>
 
-      <div ref={ref} className="page-enter-active flex min-w-0 flex-1 flex-col overflow-auto">
+      {/* Nur senkrecht scrollen. Vorher `overflow-auto`: sobald IRGENDEIN Element auch nur wenige Pixel breiter
+          war als der Bildschirm (Streifen mit negativem Rand wie `-mx-4`, eine Leiste mit festen Breiten, ein
+          Popover am Rand), ließ sich die ganze Seite am Handy nach links/rechts verschieben. Breite Inhalte
+          (Tabellen, Chip-Reihen, Kennzahlenleisten) haben ihren EIGENEN `overflow-x-auto`-Streifen und
+          bleiben dadurch bedienbar; was darüber hinausragt, wird abgeschnitten statt die Seite zu verschieben.
+          `overscroll-x-none` hält auch den Wisch-Zurück/Vor-Effekt der Browser vom Seiteninhalt fern. */}
+      <div
+        ref={ref}
+        className="page-enter-active flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden overscroll-x-none"
+      >
         {children}
       </div>
     </>

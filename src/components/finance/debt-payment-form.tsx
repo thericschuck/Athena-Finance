@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -35,17 +36,174 @@ import {
 import type { DebtRow } from '@/lib/data/finance-planning'
 import { useSettings } from '@/components/providers/settings-context'
 import { fmtCurrency } from '@/lib/format'
+import { heuteBerlin } from '@/lib/transaktionen/formular'
+import { BetragEingabe } from '@/components/schulden/BetragEingabe'
+import { cn } from '@/lib/utils'
 
 type Debt = DebtRow
 
 const DEBT_TYPES = [
-  { value: 'borrowed', label: 'Geliehen (ich schulde)' },
-  { value: 'lent', label: 'Verliehen (mir wird geschuldet)' },
+  { value: 'borrowed', label: 'Ich schulde' },
+  { value: 'lent', label: 'Mir wird geschuldet' },
 ]
 
 const CURRENCIES = ['EUR', 'USD', 'CHF', 'GBP']
 
-// fmt used in DebtPaymentDialog — locale injected there via useSettings
+const DIALOG = 'max-h-[90dvh] overflow-y-auto sm:max-w-md'
+const FELD = 'h-10 text-base sm:text-sm'
+const FEHLER = 'rounded-md bg-danger/10 px-3 py-2 text-sm text-danger'
+
+function Fehler({ state }: { state: DebtActionState }) {
+  if (!state || !('error' in state)) return null
+  return <p role="alert" className={FEHLER}>{state.error}</p>
+}
+
+// ─────────────────────────────────────────────
+// Gemeinsames Formular: Schuld anlegen / bearbeiten
+// ─────────────────────────────────────────────
+interface SchuldFormularProps {
+  debt?: Debt
+  defaultValues?: { name?: string; creditor?: string; original_amount?: number; type?: string }
+  onFertig: () => void
+  onAbbruch: () => void
+}
+
+function SchuldFormular({ debt, defaultValues, onFertig, onAbbruch }: SchuldFormularProps) {
+  const router = useRouter()
+  const bearbeiten = !!debt
+  const [type, setType] = useState(debt?.type ?? defaultValues?.type ?? 'borrowed')
+  const [currency, setCurrency] = useState(debt?.currency ?? 'EUR')
+  const [state, formAction, isPending] = useActionState<DebtActionState, FormData>(
+    bearbeiten ? updateDebt : createDebt,
+    null,
+  )
+
+  useEffect(() => {
+    if (state && 'success' in state) {
+      router.refresh()
+      onFertig()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, router])
+
+  const creditorLabel = type === 'borrowed' ? 'Gläubiger' : 'Schuldner'
+  const hatZinsDaten = !!debt && (debt.interest_rate != null || debt.monthly_payment != null || !!debt.due_date || !!debt.notes)
+
+  return (
+    <form action={formAction} className="min-w-0 space-y-4 pt-1">
+      {debt && <input type="hidden" name="id" value={debt.id} />}
+      <input type="hidden" name="type" value={type} />
+      <input type="hidden" name="currency" value={currency} />
+
+      <div className="space-y-1.5">
+        <Label htmlFor="debt-name">Bezeichnung *</Label>
+        <Input
+          id="debt-name"
+          name="name"
+          className={FELD}
+          placeholder="z.B. Auto-Kredit, Freund Max"
+          defaultValue={debt?.name ?? defaultValues?.name ?? ''}
+          required
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <span className="text-sm font-medium leading-none">Richtung *</span>
+        <div role="radiogroup" aria-label="Richtung" className="grid grid-cols-2 gap-2">
+          {DEBT_TYPES.map(t => (
+            <button
+              key={t.value}
+              type="button"
+              role="radio"
+              aria-checked={type === t.value}
+              onClick={() => setType(t.value)}
+              className={cn(
+                'h-10 rounded-md border px-2 text-sm font-medium transition-colors',
+                type === t.value
+                  ? t.value === 'borrowed'
+                    ? 'border-danger/40 bg-danger/10 text-danger'
+                    : 'border-success/40 bg-success/10 text-success'
+                  : 'border-border text-muted-foreground hover:bg-accent',
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-[1fr_5.5rem] gap-3">
+        <BetragEingabe id="debt-amount" name="original_amount" label="Gesamtbetrag" startwert={debt?.original_amount ?? defaultValues?.original_amount} pflicht />
+        <div className="space-y-1.5">
+          <Label htmlFor="debt-currency">Währung</Label>
+          <Select value={currency} onValueChange={setCurrency}>
+            <SelectTrigger id="debt-currency" className={cn(FELD, 'w-full')}><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <BetragEingabe
+        id="debt-outstanding"
+        name="outstanding"
+        label="Noch offen"
+        startwert={debt?.outstanding}
+        platzhalter={bearbeiten ? 'unverändert' : '= Gesamtbetrag'}
+        hinweis={bearbeiten ? 'Leer lassen, um die aktuelle Restschuld zu behalten.' : 'Leer lassen, wenn noch nichts getilgt wurde.'}
+      />
+
+      <div className="space-y-1.5">
+        <Label htmlFor="debt-creditor">{creditorLabel}</Label>
+        <Input
+          id="debt-creditor"
+          name="creditor"
+          className={FELD}
+          placeholder="Name oder Institution"
+          defaultValue={debt?.creditor ?? defaultValues?.creditor ?? ''}
+        />
+      </div>
+
+      <details className="group rounded-md border border-border" open={hatZinsDaten}>
+        <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between px-3 text-sm font-medium [&::-webkit-details-marker]:hidden">
+          Zinsen, Rate, Fälligkeit, Notiz
+          <span aria-hidden className="text-muted-foreground transition-transform group-open:rotate-90">›</span>
+        </summary>
+        <div className="space-y-4 border-t border-border p-3">
+          <div className="grid grid-cols-2 gap-3">
+            <BetragEingabe id="debt-interest" name="interest_rate" label="Zinssatz (% p.a.)" startwert={debt?.interest_rate} platzhalter="0,00" />
+            <BetragEingabe id="debt-rate" name="monthly_payment" label="Monatsrate" startwert={debt?.monthly_payment} platzhalter="0,00" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="debt-due">Fällig am</Label>
+            <Input id="debt-due" name="due_date" type="date" className={FELD} defaultValue={debt?.due_date ?? ''} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="debt-notes">Notizen</Label>
+            <textarea
+              id="debt-notes"
+              name="notes"
+              rows={2}
+              defaultValue={debt?.notes ?? ''}
+              placeholder="Optionale Anmerkungen…"
+              className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring sm:text-sm"
+            />
+          </div>
+        </div>
+      </details>
+
+      <Fehler state={state} />
+
+      <div className="flex justify-end gap-2 pt-1">
+        <Button type="button" variant="outline" className="h-10 md:h-9" onClick={onAbbruch}>Abbrechen</Button>
+        <Button type="submit" className="h-10 md:h-9" disabled={isPending}>
+          {isPending ? 'Wird gespeichert…' : bearbeiten ? 'Speichern' : 'Anlegen'}
+        </Button>
+      </div>
+    </form>
+  )
+}
 
 // ─────────────────────────────────────────────
 // Add Debt Dialog
@@ -65,195 +223,29 @@ interface AddDebtDialogProps {
 }
 
 export function AddDebtDialog({ defaultValues, trigger, onCreated }: AddDebtDialogProps = {}) {
-  const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [type, setType] = useState(defaultValues?.type ?? 'borrowed')
-  const [currency, setCurrency] = useState('EUR')
-
-  const [state, formAction, isPending] = useActionState<DebtActionState, FormData>(
-    createDebt,
-    null
-  )
-
-  useEffect(() => {
-    if (state && 'success' in state) {
-      setOpen(false)
-      router.refresh()
-      onCreated?.()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, router])
-
-  function handleOpenChange(next: boolean) {
-    setOpen(next)
-    if (next) {
-      setType(defaultValues?.type ?? 'borrowed')
-      setCurrency('EUR')
-    }
-  }
-
-  const creditorLabel = type === 'borrowed' ? 'Gläubiger' : 'Schuldner'
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger ?? (
-          <Button size="sm">
+          <Button className="h-10 md:h-9">
             <Plus className="size-4" />
             Schuld anlegen
           </Button>
         )}
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={DIALOG}>
         <DialogHeader>
           <DialogTitle>Neue Schuld anlegen</DialogTitle>
+          <DialogDescription className="sr-only">Geliehenes oder verliehenes Geld erfassen</DialogDescription>
         </DialogHeader>
-
-        <form action={formAction} className="space-y-4 pt-2">
-          <input type="hidden" name="type" value={type} />
-          <input type="hidden" name="currency" value={currency} />
-
-          {/* Name */}
-          <div className="space-y-1.5">
-            <Label htmlFor="debt-name">Bezeichnung *</Label>
-            <Input
-              id="debt-name"
-              name="name"
-              placeholder="z.B. Auto-Kredit, Freund Max"
-              defaultValue={defaultValues?.name ?? ''}
-              required
-            />
-          </div>
-
-          {/* Typ + Währung */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Typ *</Label>
-              <Select value={type} onValueChange={setType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {DEBT_TYPES.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Währung *</Label>
-              <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CURRENCIES.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Betrag + Ausstehend */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="debt-amount">Gesamtbetrag *</Label>
-              <Input
-                id="debt-amount"
-                name="original_amount"
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="0,00"
-                defaultValue={defaultValues?.original_amount ?? undefined}
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="debt-outstanding">Ausstehend</Label>
-              <Input
-                id="debt-outstanding"
-                name="outstanding"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="= Gesamtbetrag"
-              />
-            </div>
-          </div>
-
-          {/* Gläubiger / Schuldner + Fälligkeitsdatum */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="debt-creditor">{creditorLabel}</Label>
-              <Input
-                id="debt-creditor"
-                name="creditor"
-                placeholder="Name oder Institution"
-                defaultValue={defaultValues?.creditor ?? ''}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="debt-due">Fällig am</Label>
-              <Input id="debt-due" name="due_date" type="date" />
-            </div>
-          </div>
-
-          {/* Zinssatz + Monatsrate */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="debt-interest">Zinssatz (%)</Label>
-              <Input
-                id="debt-interest"
-                name="interest_rate"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0,00"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="debt-rate">Monatsrate</Label>
-              <Input
-                id="debt-rate"
-                name="monthly_payment"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0,00"
-              />
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div className="space-y-1.5">
-            <Label htmlFor="debt-notes">Notizen</Label>
-            <textarea
-              id="debt-notes"
-              name="notes"
-              rows={2}
-              placeholder="Optionale Anmerkungen…"
-              className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            />
-          </div>
-
-          {state && 'error' in state && (
-            <p className="text-sm text-destructive">{state.error}</p>
-          )}
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
-              Abbrechen
-            </Button>
-            <Button type="submit" size="sm" disabled={isPending}>
-              {isPending ? 'Wird gespeichert…' : 'Anlegen'}
-            </Button>
-          </div>
-        </form>
+        <SchuldFormular
+          defaultValues={defaultValues}
+          onFertig={() => { setOpen(false); onCreated?.() }}
+          onAbbruch={() => setOpen(false)}
+        />
       </DialogContent>
     </Dialog>
   )
@@ -262,109 +254,22 @@ export function AddDebtDialog({ defaultValues, trigger, onCreated }: AddDebtDial
 // ─────────────────────────────────────────────
 // Edit Debt Dialog
 // ─────────────────────────────────────────────
-export function EditDebtDialog({ debt }: { debt: Debt }) {
-  const router = useRouter()
+export function EditDebtDialog({ debt, className }: { debt: Debt; className?: string }) {
   const [open, setOpen] = useState(false)
-  const [type, setType] = useState(debt.type)
-  const [currency, setCurrency] = useState(debt.currency)
-
-  const [state, formAction, isPending] = useActionState<DebtActionState, FormData>(updateDebt, null)
-
-  useEffect(() => {
-    if (state && 'success' in state) {
-      setOpen(false)
-      router.refresh()
-    }
-  }, [state, router])
-
-  const creditorLabel = type === 'borrowed' ? 'Gläubiger' : 'Schuldner'
 
   return (
-    <Dialog open={open} onOpenChange={v => { setOpen(v); if (v) { setType(debt.type); setCurrency(debt.currency) } }}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon-sm"><Pencil className="size-3.5" /></Button>
+        <Button variant="ghost" size="icon" className={cn('size-10 md:size-8', className)} aria-label={`${debt.name} bearbeiten`}>
+          <Pencil className="size-4 md:size-3.5" />
+        </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={DIALOG}>
         <DialogHeader>
           <DialogTitle>Schuld bearbeiten</DialogTitle>
+          <DialogDescription className="sr-only">{debt.name}</DialogDescription>
         </DialogHeader>
-        <form action={formAction} className="space-y-4 pt-2">
-          <input type="hidden" name="id" value={debt.id} />
-          <input type="hidden" name="type" value={type} />
-          <input type="hidden" name="currency" value={currency} />
-
-          <div className="space-y-1.5">
-            <Label htmlFor="edit-debt-name">Bezeichnung *</Label>
-            <Input id="edit-debt-name" name="name" defaultValue={debt.name} required />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Typ *</Label>
-              <Select value={type} onValueChange={setType}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {DEBT_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Währung *</Label>
-              <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="edit-debt-amount">Gesamtbetrag *</Label>
-              <Input id="edit-debt-amount" name="original_amount" type="number" step="0.01" min="0.01" defaultValue={debt.original_amount} required />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="edit-debt-outstanding">Ausstehend</Label>
-              <Input id="edit-debt-outstanding" name="outstanding" type="number" step="0.01" min="0" defaultValue={debt.outstanding} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="edit-debt-creditor">{creditorLabel}</Label>
-              <Input id="edit-debt-creditor" name="creditor" defaultValue={debt.creditor ?? ''} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="edit-debt-due">Fällig am</Label>
-              <Input id="edit-debt-due" name="due_date" type="date" defaultValue={debt.due_date ?? ''} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="edit-debt-interest">Zinssatz (%)</Label>
-              <Input id="edit-debt-interest" name="interest_rate" type="number" step="0.01" min="0" defaultValue={debt.interest_rate ?? ''} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="edit-debt-rate">Monatsrate</Label>
-              <Input id="edit-debt-rate" name="monthly_payment" type="number" step="0.01" min="0" defaultValue={debt.monthly_payment ?? ''} />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="edit-debt-notes">Notizen</Label>
-            <textarea id="edit-debt-notes" name="notes" rows={2} defaultValue={debt.notes ?? ''}
-              className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
-          </div>
-
-          {state && 'error' in state && <p className="text-sm text-destructive">{state.error}</p>}
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>Abbrechen</Button>
-            <Button type="submit" size="sm" disabled={isPending}>{isPending ? 'Wird gespeichert…' : 'Speichern'}</Button>
-          </div>
-        </form>
+        <SchuldFormular debt={debt} onFertig={() => setOpen(false)} onAbbruch={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   )
@@ -373,24 +278,33 @@ export function EditDebtDialog({ debt }: { debt: Debt }) {
 // ─────────────────────────────────────────────
 // Delete Debt Button
 // ─────────────────────────────────────────────
-export function DeleteDebtButton({ debt }: { debt: Debt }) {
+export function DeleteDebtButton({ debt, className }: { debt: Debt; className?: string }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [open, setOpen] = useState(false)
 
   function handleDelete() {
     startTransition(async () => {
       const result = await deleteDebt(debt.id)
       if (result.error) setError(result.error)
-      else router.refresh()
+      else {
+        setOpen(false)
+        router.refresh()
+      }
     })
   }
 
   return (
-    <AlertDialog onOpenChange={() => setError(null)}>
+    <AlertDialog open={open} onOpenChange={v => { setOpen(v); setError(null) }}>
       <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-destructive">
-          <Trash2 className="size-3.5" />
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn('size-10 text-muted-foreground hover:text-destructive md:size-8', className)}
+          aria-label={`${debt.name} löschen`}
+        >
+          <Trash2 className="size-4 md:size-3.5" />
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
@@ -400,10 +314,15 @@ export function DeleteDebtButton({ debt }: { debt: Debt }) {
             <strong>{debt.name}</strong> und alle Zahlungen werden unwiderruflich gelöscht.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        {error && <p className="text-sm text-destructive px-1">{error}</p>}
+        {error && <p role="alert" className={FEHLER}>{error}</p>}
         <AlertDialogFooter>
           <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDelete} disabled={isPending} className="bg-destructive text-white hover:bg-destructive/90">
+          {/* preventDefault: der Dialog bleibt bei einem Fehler offen und zeigt ihn an. */}
+          <AlertDialogAction
+            onClick={e => { e.preventDefault(); handleDelete() }}
+            disabled={isPending}
+            className="bg-destructive text-white hover:bg-destructive/90"
+          >
             {isPending ? 'Wird gelöscht…' : 'Löschen'}
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -426,6 +345,74 @@ interface DebtPaymentDialogProps {
   onRecorded?: () => void
 }
 
+function ZahlungFormular({
+  debt, defaultAmount, defaultDate, sourceTransaction, onFertig, onAbbruch,
+}: Omit<DebtPaymentDialogProps, 'trigger' | 'onRecorded'> & { onFertig: () => void; onAbbruch: () => void }) {
+  const { locale } = useSettings()
+  const router = useRouter()
+  const [state, formAction, isPending] = useActionState<DebtActionState, FormData>(recordPayment, null)
+  // Der Betrag lässt sich auf die Restschuld setzen; der Schlüssel baut das Feld dafür neu auf.
+  const [betrag, setBetrag] = useState<{ start: number | undefined; version: number }>({ start: defaultAmount, version: 0 })
+  const heute = heuteBerlin()
+
+  useEffect(() => {
+    if (state && 'success' in state) {
+      router.refresh()
+      onFertig()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, router])
+
+  return (
+    <form action={formAction} className="min-w-0 space-y-4">
+      <input type="hidden" name="debt_id" value={debt.id} />
+      {sourceTransaction && (
+        <>
+          <input type="hidden" name="source_transaction_id" value={sourceTransaction.id} />
+          <input type="hidden" name="source_transaction_type" value={sourceTransaction.source} />
+        </>
+      )}
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="pay-date">Datum *</Label>
+          <Input id="pay-date" name="payment_date" type="date" className={FELD} defaultValue={defaultDate ?? heute} required />
+        </div>
+        <BetragEingabe key={betrag.version} id="pay-amount" name="amount" label="Betrag" startwert={betrag.start} pflicht />
+      </div>
+      <button
+        type="button"
+        onClick={() => setBetrag(b => ({ start: debt.outstanding, version: b.version + 1 }))}
+        className="-mt-2 inline-flex min-h-10 items-center text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground md:min-h-6"
+      >
+        Restschuld einsetzen ({fmtCurrency(debt.outstanding, debt.currency, locale, { fractionDigits: 2 })})
+      </button>
+
+      <div className="grid grid-cols-2 gap-3">
+        <BetragEingabe id="pay-principal" name="principal" label="davon Tilgung" platzhalter="—" />
+        <BetragEingabe id="pay-interest" name="interest" label="davon Zinsen" platzhalter="—" />
+      </div>
+      <p className="-mt-2 text-xs text-muted-foreground">
+        Optional. Nur die Tilgung senkt die Restschuld; ohne Angabe zählt der ganze Betrag als Tilgung.
+      </p>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="pay-notes">Notiz</Label>
+        <Input id="pay-notes" name="notes" className={FELD} placeholder="Optionale Anmerkung" />
+      </div>
+
+      <Fehler state={state} />
+
+      <div className="flex justify-end gap-2 pt-1">
+        <Button type="button" variant="outline" className="h-10 md:h-9" onClick={onAbbruch}>Abbrechen</Button>
+        <Button type="submit" className="h-10 md:h-9" disabled={isPending}>
+          {isPending ? 'Wird gespeichert…' : 'Zahlung buchen'}
+        </Button>
+      </div>
+    </form>
+  )
+}
+
 export function DebtPaymentDialog({
   debt,
   defaultAmount,
@@ -435,110 +422,37 @@ export function DebtPaymentDialog({
   onRecorded,
 }: DebtPaymentDialogProps) {
   const { locale } = useSettings()
-  const fmt = (amount: number, currency: string) => fmtCurrency(amount, currency, locale)
-  const router = useRouter()
   const [open, setOpen] = useState(false)
-
-  const [state, formAction, isPending] = useActionState<DebtActionState, FormData>(
-    recordPayment,
-    null
-  )
-
-  useEffect(() => {
-    if (state && 'success' in state) {
-      setOpen(false)
-      router.refresh()
-      onRecorded?.()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, router])
-
-  const today = new Date().toISOString().split('T')[0]
-  const maxAmount = debt.outstanding
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger ?? (
-          <Button variant="outline" size="sm" className="gap-1.5">
+          <Button variant="outline" className="h-10 gap-1.5 md:h-8">
             <CreditCard className="size-3.5" />
-            Zahlung erfassen
+            Zahlung
           </Button>
         )}
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className={cn(DIALOG, 'sm:max-w-sm')}>
         <DialogHeader>
-          <DialogTitle>Zahlung erfassen</DialogTitle>
+          <DialogTitle className="truncate pr-6">Zahlung erfassen</DialogTitle>
+          <DialogDescription className="min-w-0 truncate">
+            {debt.name} · offen{' '}
+            <span className="font-semibold tabular-nums text-foreground">
+              {fmtCurrency(debt.outstanding, debt.currency, locale, { fractionDigits: 2 })}
+            </span>
+          </DialogDescription>
         </DialogHeader>
-
-        <div className="rounded-md bg-muted/50 px-3 py-2 text-sm mb-2">
-          <span className="text-muted-foreground">Ausstehend: </span>
-          <span className="font-semibold tabular-nums">{fmt(debt.outstanding, debt.currency)}</span>
-        </div>
-
-        <form action={formAction} className="space-y-4">
-          <input type="hidden" name="debt_id" value={debt.id} />
-          {sourceTransaction && (
-            <>
-              <input type="hidden" name="source_transaction_id" value={sourceTransaction.id} />
-              <input type="hidden" name="source_transaction_type" value={sourceTransaction.source} />
-            </>
-          )}
-
-          {/* Datum + Betrag */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="pay-date">Datum *</Label>
-              <Input id="pay-date" name="payment_date" type="date" defaultValue={defaultDate ?? today} required />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="pay-amount">Betrag *</Label>
-              <Input
-                id="pay-amount"
-                name="amount"
-                type="number"
-                step="0.01"
-                min="0.01"
-                max={maxAmount}
-                placeholder="0,00"
-                defaultValue={defaultAmount ?? undefined}
-                required
-              />
-            </div>
-          </div>
-
-          {/* Tilgung + Zinsen (optional) */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="pay-principal">Tilgung</Label>
-              <Input id="pay-principal" name="principal" type="number" step="0.01" min="0" placeholder="—" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="pay-interest">Zinsen</Label>
-              <Input id="pay-interest" name="interest" type="number" step="0.01" min="0" placeholder="—" />
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div className="space-y-1.5">
-            <Label htmlFor="pay-notes">Notizen</Label>
-            <Input id="pay-notes" name="notes" placeholder="Optionale Anmerkung" />
-          </div>
-
-          {state && 'error' in state && (
-            <p className="text-sm text-destructive">{state.error}</p>
-          )}
-
-          <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
-              Abbrechen
-            </Button>
-            <Button type="submit" size="sm" disabled={isPending}>
-              {isPending ? 'Wird gespeichert…' : 'Zahlung buchen'}
-            </Button>
-          </div>
-        </form>
+        <ZahlungFormular
+          debt={debt}
+          defaultAmount={defaultAmount}
+          defaultDate={defaultDate}
+          sourceTransaction={sourceTransaction}
+          onFertig={() => { setOpen(false); onRecorded?.() }}
+          onAbbruch={() => setOpen(false)}
+        />
       </DialogContent>
     </Dialog>
   )
@@ -550,28 +464,32 @@ export function DebtPaymentDialog({
 // ─────────────────────────────────────────────
 export function SettleDebtButton({ debt }: { debt: Debt }) {
   const { locale } = useSettings()
-  const fmt = (amount: number, currency: string) => fmtCurrency(amount, currency, locale)
+  const fmt = (amount: number, currency: string) => fmtCurrency(amount, currency, locale, { fractionDigits: 2 })
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [open, setOpen] = useState(false)
 
   function handleSettle() {
     const formData = new FormData()
     formData.set('debt_id', debt.id)
-    formData.set('payment_date', new Date().toISOString().split('T')[0])
+    formData.set('payment_date', heuteBerlin())
     formData.set('amount', String(debt.outstanding))
 
     startTransition(async () => {
       const result = await recordPayment(null, formData)
       if (result && 'error' in result) setError(result.error)
-      else router.refresh()
+      else {
+        setOpen(false)
+        router.refresh()
+      }
     })
   }
 
   return (
-    <AlertDialog onOpenChange={() => setError(null)}>
+    <AlertDialog open={open} onOpenChange={v => { setOpen(v); setError(null) }}>
       <AlertDialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-1.5 text-success hover:text-success">
+        <Button variant="outline" className="h-10 gap-1.5 text-success hover:text-success md:h-8">
           <CheckCircle2 className="size-3.5" />
           Begleichen
         </Button>
@@ -584,10 +502,10 @@ export function SettleDebtButton({ debt }: { debt: Debt }) {
             <strong>{debt.name}</strong> und markiert die Schuld als abgeschlossen.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        {error && <p className="text-sm text-destructive px-1">{error}</p>}
+        {error && <p role="alert" className={FEHLER}>{error}</p>}
         <AlertDialogFooter>
           <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-          <AlertDialogAction onClick={handleSettle} disabled={isPending}>
+          <AlertDialogAction onClick={e => { e.preventDefault(); handleSettle() }} disabled={isPending}>
             {isPending ? 'Wird gebucht…' : 'Begleichen'}
           </AlertDialogAction>
         </AlertDialogFooter>

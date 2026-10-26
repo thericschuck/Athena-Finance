@@ -1,25 +1,15 @@
 'use client'
 
-import { useActionState, useEffect, useState, useTransition } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -30,14 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Pencil, Plus } from 'lucide-react'
 import {
   createCategory,
   updateCategory,
-  deleteCategory,
   type CategoryActionState,
 } from '@/app/(dashboard)/finance/(transaktionen)/categories/actions'
 import type { CategoryRow, EuerZeileRow } from '@/lib/data/finance-transactions'
+import { moeglicheEltern } from '@/lib/kategorien/berechnen'
 
 type Category = CategoryRow
 type EuerZeile = EuerZeileRow
@@ -45,7 +35,7 @@ type EuerZeile = EuerZeileRow
 const CATEGORY_TYPES = [
   { value: 'expense', label: 'Ausgabe' },
   { value: 'income', label: 'Einnahme' },
-  { value: 'neutral', label: 'Neutral' },
+  { value: 'neutral', label: 'Neutral (Umbuchung, Anlage)' },
 ]
 
 /**
@@ -64,6 +54,20 @@ const TAX_ROLES = [
   { value: 'lohn',             label: 'Lohn / Gehalt' },
   { value: 'privat',           label: 'Privat (steuerlich irrelevant)' },
 ]
+
+/** Vorschlagsfarben; frei waehlbar ist weiterhin alles ueber den Farbwaehler. */
+const FARBEN = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#64748b']
+const ICONS = ['🛒', '🏠', '🚗', '🍽️', '✈️', '💼', '🎁', '💊', '📱', '🎓', '💰', '📈']
+
+const FELD = 'h-10 text-base sm:h-9 sm:text-sm'
+const TRIGGER = 'h-10 w-full text-base sm:h-9 sm:text-sm'
+
+function useFehlerAnzeige(state: CategoryActionState) {
+  // Ein Fehler vom letzten Mal soll beim erneuten Oeffnen nicht wieder auftauchen.
+  const [sichtbar, setSichtbar] = useState(true)
+  useEffect(() => { setSichtbar(true) }, [state])
+  return [sichtbar, setSichtbar] as const
+}
 
 // ─────────────────────────────────────────────
 // Shared form fields
@@ -95,24 +99,34 @@ function CategoryFormFields({
   euerZeilen: EuerZeile[]
   /**
    * Name der Oberkategorie, wenn der Parent von aussen fest vorgegeben ist (z.B. beim Anlegen
-   * über das "+" einer Hauptkategorie-Gruppe). Zeigt dann nur den Namen statt der Auswahl --
-   * verhindert, dass die Auswahl versehentlich auf "Keine" steht bleibt, obwohl man aus einer
-   * bestimmten Gruppe heraus angelegt hat.
+   * über das "+" einer Hauptkategorie). Zeigt dann nur den Namen statt der Auswahl.
    */
   lockedParentName?: string
 }) {
-  // Exclude self from parent options (prevent circular ref)
-  const parentOptions = allCategories.filter(
-    (c) => !c.parent_id && c.id !== category?.id
-  )
+  const [farbe, setFarbe] = useState<string>(category?.color ?? '')
+  const [icon, setIcon] = useState<string>(category?.icon ?? '')
+
+  // Zwei Ebenen: nur Hauptkategorien sind moegliche Eltern, nicht die Kategorie selbst (damit auch keine
+  // Nachkommen), und eine Kategorie mit Unterkategorien kann nicht selbst Unterkategorie werden.
+  const parentOptions = moeglicheEltern(allCategories, category?.id ?? null)
+  const hatKinder = category ? allCategories.some((c) => c.parent_id === category.id) : false
+  const eltern = parentId !== '__none__' ? allCategories.find((c) => c.id === parentId) : undefined
+
+  function waehleEltern(v: string) {
+    setParentId(v)
+    // Unterkategorien erben den Typ der Hauptkategorie.
+    const p = allCategories.find((c) => c.id === v)
+    if (p) setType(p.type)
+  }
 
   return (
     <>
       {category && <input type="hidden" name="id" value={category.id} />}
-      <input type="hidden" name="type" value={type} />
+      <input type="hidden" name="type" value={eltern?.type ?? type} />
       <input type="hidden" name="parent_id" value={parentId} />
       <input type="hidden" name="tax_role" value={taxRole === '__none__' ? '' : taxRole} />
       <input type="hidden" name="euer_zeile" value={euerZeile === '__none__' ? '' : euerZeile} />
+      <input type="hidden" name="color" value={farbe} />
 
       {/* Name */}
       <div className="space-y-1.5">
@@ -122,40 +136,52 @@ function CategoryFormFields({
           name="name"
           defaultValue={category?.name}
           placeholder="z.B. Lebensmittel"
+          maxLength={100}
           required
+          className={FELD}
         />
       </div>
 
       {/* Typ + Übergeordnete Kategorie */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label>Typ *</Label>
-          <Select value={type} onValueChange={setType}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {CATEGORY_TYPES.map((t) => (
-                <SelectItem key={t.value} value={t.value}>
-                  {t.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>Übergeordnet</Label>
-          {lockedParentName ? (
-            <div className="flex h-9 items-center rounded-md border border-input bg-muted/40 px-3 text-sm text-muted-foreground">
-              {lockedParentName}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="min-w-0 space-y-1.5">
+          <Label htmlFor="cat-typ">Typ *</Label>
+          {eltern ? (
+            <div id="cat-typ" className="flex h-10 items-center rounded-md border border-input bg-muted/40 px-3 text-base text-muted-foreground sm:h-9 sm:text-sm">
+              {CATEGORY_TYPES.find((t) => t.value === eltern.type)?.label ?? eltern.type} (von der Oberkategorie)
             </div>
           ) : (
-            <Select value={parentId} onValueChange={setParentId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Keine (Hauptkategorie)" />
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger id="cat-typ" className={TRIGGER}>
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                {CATEGORY_TYPES.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+
+        <div className="min-w-0 space-y-1.5">
+          <Label htmlFor="cat-parent">Übergeordnet</Label>
+          {lockedParentName ? (
+            <div id="cat-parent" className="flex h-10 items-center truncate rounded-md border border-input bg-muted/40 px-3 text-base text-muted-foreground sm:h-9 sm:text-sm">
+              {lockedParentName}
+            </div>
+          ) : hatKinder ? (
+            <div id="cat-parent" className="flex min-h-10 items-center rounded-md border border-input bg-muted/40 px-3 py-1.5 text-sm text-muted-foreground sm:min-h-9">
+              Hauptkategorie (hat Unterkategorien)
+            </div>
+          ) : (
+            <Select value={parentId} onValueChange={waehleEltern}>
+              <SelectTrigger id="cat-parent" className={TRIGGER}>
+                <SelectValue placeholder="Keine (Hauptkategorie)" />
+              </SelectTrigger>
+              <SelectContent className="max-h-72">
                 <SelectItem value="__none__">Keine (Hauptkategorie)</SelectItem>
                 {parentOptions.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
@@ -168,38 +194,80 @@ function CategoryFormFields({
         </div>
       </div>
 
-      {/* Farbe + Icon + Budget */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="cat-color">Farbe</Label>
+      {/* Farbe */}
+      <div className="space-y-1.5">
+        <Label htmlFor="cat-color">Farbe</Label>
+        <div className="flex flex-wrap items-center gap-2">
+          {FARBEN.map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setFarbe(f)}
+              aria-label={`Farbe ${f}`}
+              aria-pressed={farbe === f}
+              className="grid size-10 place-items-center rounded-full sm:size-8"
+            >
+              <span
+                className={`size-6 rounded-full border border-border sm:size-5 ${farbe === f ? 'ring-2 ring-ring ring-offset-2 ring-offset-background' : ''}`}
+                style={{ backgroundColor: f }}
+              />
+            </button>
+          ))}
           <input
             id="cat-color"
-            name="color"
             type="color"
-            defaultValue={category?.color ?? '#64748b'}
-            className="h-9 w-full cursor-pointer rounded-md border border-input bg-background p-1"
+            value={/^#[0-9a-fA-F]{6}$/.test(farbe) ? farbe : '#64748b'}
+            onChange={(e) => setFarbe(e.target.value)}
+            aria-label="Eigene Farbe wählen"
+            className="size-10 cursor-pointer rounded-md border border-input bg-background p-1 sm:size-8"
           />
+          {farbe && (
+            <Button type="button" variant="ghost" size="sm" className="h-10 sm:h-8" onClick={() => setFarbe('')}>
+              Keine
+            </Button>
+          )}
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="cat-icon">Icon</Label>
+      </div>
+
+      {/* Icon + Budget */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="min-w-0 space-y-1.5">
+          <Label htmlFor="cat-icon">Icon (Emoji)</Label>
           <Input
             id="cat-icon"
             name="icon"
-            defaultValue={category?.icon ?? ''}
+            value={icon}
+            onChange={(e) => setIcon(e.target.value)}
             placeholder="🛒"
-            className="text-center"
+            maxLength={16}
+            className={`${FELD} text-center`}
           />
+          <div className="flex flex-wrap gap-1">
+            {ICONS.map((i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setIcon(i)}
+                aria-label={`Icon ${i}`}
+                className={`grid size-10 place-items-center rounded-md text-base hover:bg-muted sm:size-8 ${icon === i ? 'bg-muted' : ''}`}
+              >
+                {i}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="cat-budget">Budget/Monat</Label>
+        <div className="min-w-0 space-y-1.5">
+          <Label htmlFor="cat-budget">Budget pro Monat (optional)</Label>
           <Input
             id="cat-budget"
             name="budget_monthly"
             type="number"
+            inputMode="decimal"
             step="0.01"
             min="0"
             defaultValue={category?.budget_monthly ?? ''}
             placeholder="0,00"
+            className={FELD}
           />
         </div>
       </div>
@@ -207,11 +275,11 @@ function CategoryFormFields({
       {/* Steuerliche Rolle -- bei neutralen Kategorien (Umbuchungen, Depot,
           Bausparen) gibt es steuerlich nichts zu entscheiden, deshalb dort
           ausgeblendet statt mit einer sinnlosen Auswahl belegt. */}
-      {type !== 'neutral' && (
+      {(eltern?.type ?? type) !== 'neutral' && (
         <div className="space-y-1.5">
-          <Label>Steuerlich</Label>
+          <Label htmlFor="cat-tax">Steuerlich</Label>
           <Select value={taxRole} onValueChange={setTaxRole}>
-            <SelectTrigger>
+            <SelectTrigger id="cat-tax" className={TRIGGER}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -223,7 +291,9 @@ function CategoryFormFields({
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">
-            Gilt auch für Unterkategorien, solange die keine eigene Rolle haben.
+            {eltern
+              ? 'Leer = gilt die Rolle der Oberkategorie. Eine eigene Rolle überschreibt sie.'
+              : 'Gilt auch für Unterkategorien, solange die keine eigene Rolle haben.'}
           </p>
         </div>
       )}
@@ -244,6 +314,7 @@ function CategoryFormFields({
             step="0.01"
             defaultValue={category?.business_share ?? ''}
             placeholder="100"
+            className={FELD}
           />
           <p className="text-xs text-muted-foreground">
             Nur dieser Anteil wird steuerlich als Betriebsausgabe gezählt. Leer = 100 %.
@@ -256,12 +327,12 @@ function CategoryFormFields({
           richtig, im Formular grob. */}
       {(taxRole === 'betriebseinnahme' || taxRole === 'betriebsausgabe') && euerZeilen.length > 0 && (
         <div className="space-y-1.5">
-          <Label>Zeile der Anlage EÜR</Label>
+          <Label htmlFor="cat-euer">Zeile der Anlage EÜR</Label>
           <Select value={euerZeile} onValueChange={setEuerZeile}>
-            <SelectTrigger>
+            <SelectTrigger id="cat-euer" className={TRIGGER}>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-72">
               <SelectItem value="__none__">Sammelzeile (nicht zugeordnet)</SelectItem>
               {euerZeilen
                 .filter((z) =>
@@ -275,12 +346,25 @@ function CategoryFormFields({
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">
-            Zeilennummern des Jahrgangs {euerZeilen[0]?.jahr}. Sie verschieben sich jährlich —
-            vor dem Abtippen gegen das amtliche Formular prüfen.
+            In dieser Zeile der Steuererklärung (Anlage EÜR, Jahrgang {euerZeilen[0]?.jahr}) landen die Beträge der Kategorie.
+            Ohne Auswahl kommen sie in die Sammelzeile. Die Nummern verschieben sich jährlich, im Zweifel gegen das amtliche Formular prüfen.
           </p>
         </div>
       )}
     </>
+  )
+}
+
+function FormFuss({ isPending, label, pendingLabel, onCancel }: { isPending: boolean; label: string; pendingLabel: string; onCancel: () => void }) {
+  return (
+    <div className="flex justify-end gap-2 pt-2">
+      <Button type="button" variant="outline" className="h-10 sm:h-9" onClick={onCancel}>
+        Abbrechen
+      </Button>
+      <Button type="submit" className="h-10 sm:h-9" disabled={isPending}>
+        {isPending ? pendingLabel : label}
+      </Button>
+    </div>
   )
 }
 
@@ -314,6 +398,7 @@ export function AddCategoryDialog({
     createCategory,
     null
   )
+  const [fehlerSichtbar, setFehlerSichtbar] = useFehlerAnzeige(state)
 
   useEffect(() => {
     if (state && 'success' in state) {
@@ -329,6 +414,7 @@ export function AddCategoryDialog({
       setParentId(defaultParentId ?? '__none__')
       setTaxRole('__none__')
       setEuerZeile('__none__')
+      setFehlerSichtbar(false)
     }
   }
 
@@ -336,15 +422,16 @@ export function AddCategoryDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {trigger ?? (
-          <Button size="sm">
+          <Button size="sm" className="h-10 sm:h-8">
             <Plus className="size-4" />
             Kategorie anlegen
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Neue Kategorie</DialogTitle>
+          <DialogTitle>{defaultParent ? 'Neue Unterkategorie' : 'Neue Kategorie'}</DialogTitle>
+          <DialogDescription className="sr-only">Name, Typ und Einstellungen der neuen Kategorie</DialogDescription>
         </DialogHeader>
         <form
           action={(fd) => {
@@ -367,17 +454,10 @@ export function AddCategoryDialog({
             euerZeilen={euerZeilen}
             lockedParentName={defaultParent?.name}
           />
-          {state && 'error' in state && (
-            <p className="text-sm text-destructive">{state.error}</p>
+          {fehlerSichtbar && state && 'error' in state && (
+            <p className="text-sm text-destructive" role="alert">{state.error}</p>
           )}
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
-              Abbrechen
-            </Button>
-            <Button type="submit" size="sm" disabled={isPending}>
-              {isPending ? 'Wird gespeichert…' : 'Anlegen'}
-            </Button>
-          </div>
+          <FormFuss isPending={isPending} label="Anlegen" pendingLabel="Wird gespeichert…" onCancel={() => setOpen(false)} />
         </form>
       </DialogContent>
     </Dialog>
@@ -409,6 +489,7 @@ export function EditCategoryDialog({
     updateCategory,
     null
   )
+  const [fehlerSichtbar, setFehlerSichtbar] = useFehlerAnzeige(state)
 
   useEffect(() => {
     if (state && 'success' in state) {
@@ -424,19 +505,26 @@ export function EditCategoryDialog({
       setParentId(category.parent_id ?? '__none__')
       setTaxRole(category.tax_role ?? '__none__')
       setEuerZeile(category.euer_zeile === null ? '__none__' : String(category.euer_zeile))
+      setFehlerSichtbar(false)
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon-sm">
-          <Pencil className="size-3.5" />
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="size-10 text-muted-foreground md:size-8"
+          aria-label={`${category.name} bearbeiten`}
+        >
+          <Pencil className="size-4 md:size-3.5" aria-hidden />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Kategorie bearbeiten</DialogTitle>
+          <DialogDescription className="sr-only">Name, Typ und Einstellungen der Kategorie ändern</DialogDescription>
         </DialogHeader>
         <form
           action={(fd) => {
@@ -458,69 +546,12 @@ export function EditCategoryDialog({
             setEuerZeile={setEuerZeile}
             euerZeilen={euerZeilen}
           />
-          {state && 'error' in state && (
-            <p className="text-sm text-destructive">{state.error}</p>
+          {fehlerSichtbar && state && 'error' in state && (
+            <p className="text-sm text-destructive" role="alert">{state.error}</p>
           )}
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
-              Abbrechen
-            </Button>
-            <Button type="submit" size="sm" disabled={isPending}>
-              {isPending ? 'Wird gespeichert…' : 'Speichern'}
-            </Button>
-          </div>
+          <FormFuss isPending={isPending} label="Speichern" pendingLabel="Wird gespeichert…" onCancel={() => setOpen(false)} />
         </form>
       </DialogContent>
     </Dialog>
-  )
-}
-
-// ─────────────────────────────────────────────
-// Delete button with AlertDialog confirmation
-// ─────────────────────────────────────────────
-export function DeleteCategoryButton({ category }: { category: Category }) {
-  const router = useRouter()
-  const [isPending, startTransition] = useTransition()
-  const [error, setError] = useState<string | null>(null)
-
-  function handleDelete() {
-    startTransition(async () => {
-      const result = await deleteCategory(category.id)
-      if (result.error) {
-        setError(result.error)
-      } else {
-        router.refresh()
-      }
-    })
-  }
-
-  return (
-    <AlertDialog onOpenChange={() => setError(null)}>
-      <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-destructive">
-          <Trash2 className="size-3.5" />
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Kategorie löschen?</AlertDialogTitle>
-          <AlertDialogDescription>
-            <strong>{category.name}</strong> wird unwiderruflich gelöscht. Transaktionen
-            dieser Kategorie werden nicht gelöscht, verlieren aber ihre Kategorie-Zuweisung.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        {error && <p className="text-sm text-destructive px-1">{error}</p>}
-        <AlertDialogFooter>
-          <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleDelete}
-            disabled={isPending}
-            className="bg-destructive text-white hover:bg-destructive/90"
-          >
-            {isPending ? 'Wird gelöscht…' : 'Löschen'}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
   )
 }

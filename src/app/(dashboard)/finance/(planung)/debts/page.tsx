@@ -1,273 +1,140 @@
+import Link from 'next/link'
+import { HandCoins } from 'lucide-react'
 import { requireAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
-import { fmtCurrency, fmtDate } from '@/lib/format'
-import { getDebts, type DebtRow as Debt } from '@/lib/data/finance-planning'
-import { AddDebtDialog, DebtPaymentDialog, SettleDebtButton, EditDebtDialog, DeleteDebtButton } from '@/components/finance/debt-payment-form'
-import { CalendarDays, TrendingDown, TrendingUp } from 'lucide-react'
+import { fmtCurrency } from '@/lib/format'
+import { heuteBerlin } from '@/lib/transaktionen/formular'
+import { ladeSchuldenSeite, type SchuldMitZahlungen } from '@/lib/data/schulden-seite'
+import { istUeberfaellig, schuldenKennzahlen } from '@/lib/schulden/berechnen'
+import { AddDebtDialog } from '@/components/finance/debt-payment-form'
+import { SchuldenKennzahlenLeiste } from '@/components/schulden/SchuldenKennzahlenLeiste'
+import { SchuldZeile } from '@/components/schulden/SchuldZeile'
+import { cn } from '@/lib/utils'
 
 interface PageProps {
   searchParams: Promise<{ all?: string }>
 }
 
-const fmt = (amount: number, currency: string, locale: string) =>
-  fmtCurrency(amount, currency, locale)
-
-function formatDate(dateStr: string, dateFormat: string) {
-  return fmtDate(dateStr, dateFormat)
-}
-
-function isOverdue(dueDate: string | null): boolean {
-  if (!dueDate) return false
-  return new Date(dueDate) < new Date()
-}
-
 export default async function DebtsPage({ searchParams }: PageProps) {
   const { all } = await searchParams
-  const showAll = all === '1'
+  const zeigeAbgeschlossene = all === '1'
 
   const { supabase, user } = await requireAuthUser()
-
   const settings = await getSettings(user!.id)
   const locale = (settings.number_format as string) ?? 'de-DE'
   const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
+  const heute = heuteBerlin()
 
-  const all_debts = await getDebts(supabase, user!.id, { onlyActive: !showAll })
+  const alle = await ladeSchuldenSeite(supabase, user!.id)
+  const kennzahlen = schuldenKennzahlen(alle, heute)
 
-  const borrowed = all_debts.filter((d) => d.type === 'borrowed')
-  const lent = all_debts.filter((d) => d.type === 'lent')
+  // Überfällige zuerst, dann größte Restschuld
+  const sortiere = (a: SchuldMitZahlungen, b: SchuldMitZahlungen) =>
+    Number(istUeberfaellig(b.due_date, heute)) - Number(istUeberfaellig(a.due_date, heute)) || b.outstanding - a.outstanding
+  const aktive = alle.filter(d => d.is_active)
+  const geliehen = aktive.filter(d => d.type === 'borrowed').sort(sortiere)
+  const verliehen = aktive.filter(d => d.type === 'lent').sort(sortiere)
+  const letzteZahlung = (d: SchuldMitZahlungen) => d.zahlungen[0]?.payment_date ?? d.angelegt
+  const abgeschlossen = alle.filter(d => !d.is_active).sort((a, b) => (letzteZahlung(a) < letzteZahlung(b) ? 1 : -1))
 
-  const totalOwed = borrowed.reduce((s, d) => s + d.outstanding, 0)
-  const totalLent = lent.reduce((s, d) => s + d.outstanding, 0)
+  const summe = (liste: SchuldMitZahlungen[]) =>
+    liste.filter(d => d.currency === 'EUR').reduce((s, d) => s + d.outstanding, 0)
 
   return (
-    <div className="p-4 sm:p-8 space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Schulden</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            {showAll ? 'Alle Einträge' : 'Aktive Einträge'} ·{' '}
-            <a
-              href={showAll ? '/finance/debts' : '/finance/debts?all=1'}
-              className="underline underline-offset-2 hover:text-foreground transition-colors"
+    <div className="min-w-0 space-y-4 p-4 sm:p-8">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+        <h1 className="text-2xl font-semibold tracking-tight">Schulden</h1>
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          {abgeschlossen.length > 0 && (
+            <Link
+              href={zeigeAbgeschlossene ? '/finance/debts' : '/finance/debts?all=1'}
+              scroll={false}
+              aria-pressed={zeigeAbgeschlossene}
+              className={cn(
+                'inline-flex h-10 items-center rounded-full border px-3 text-sm transition-colors md:h-8',
+                zeigeAbgeschlossene
+                  ? 'border-foreground/30 bg-accent font-medium text-foreground'
+                  : 'border-border text-muted-foreground hover:bg-accent hover:text-foreground',
+              )}
             >
-              {showAll ? 'Nur aktive zeigen' : 'Abgeschlossene anzeigen'}
-            </a>
-          </p>
+              Abgeschlossene ({abgeschlossen.length})
+            </Link>
+          )}
+          <AddDebtDialog />
         </div>
-        <AddDebtDialog />
       </div>
 
-      {/* Summary cards */}
-      {all_debts.length > 0 && (
-        <div className="grid grid-cols-2 gap-4 max-w-sm">
-          <SummaryCard
-            label="Ich schulde"
-            amount={totalOwed}
-            currency="EUR"
-            color="red"
-            icon={<TrendingDown className="size-4" />}
-            locale={locale}
-          />
-          <SummaryCard
-            label="Mir wird geschuldet"
-            amount={totalLent}
-            currency="EUR"
-            color="green"
-            icon={<TrendingUp className="size-4" />}
-            locale={locale}
-          />
-        </div>
-      )}
-
-      {/* Sections */}
-      {all_debts.length === 0 ? (
+      {alle.length === 0 ? (
         <EmptyState />
       ) : (
-        <div className="space-y-8">
-          {borrowed.length > 0 && (
-            <DebtSection title="Ich schulde" debts={borrowed} accentColor="red" locale={locale} dateFormat={dateFormat} />
+        <>
+          <SchuldenKennzahlenLeiste k={kennzahlen} locale={locale} />
+
+          {aktive.length === 0 && !zeigeAbgeschlossene && (
+            <div className="rounded-lg border border-dashed border-border bg-card px-4 py-6 text-center">
+              <p className="text-sm font-medium">Keine offenen Schulden</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Alles beglichen. Die {abgeschlossen.length} abgeschlossenen Einträge findest du über „Abgeschlossene“ oben.
+              </p>
+            </div>
           )}
-          {lent.length > 0 && (
-            <DebtSection title="Mir wird geschuldet" debts={lent} accentColor="green" locale={locale} dateFormat={dateFormat} />
-          )}
-        </div>
+
+          <div className="space-y-6">
+            {geliehen.length > 0 && (
+              <Abschnitt titel="Ich schulde" ton="danger" summe={summe(geliehen)} locale={locale} liste={geliehen} dateFormat={dateFormat} heute={heute} />
+            )}
+            {verliehen.length > 0 && (
+              <Abschnitt titel="Mir wird geschuldet" ton="success" summe={summe(verliehen)} locale={locale} liste={verliehen} dateFormat={dateFormat} heute={heute} />
+            )}
+            {zeigeAbgeschlossene && abgeschlossen.length > 0 && (
+              <Abschnitt titel="Abgeschlossen" summe={null} locale={locale} liste={abgeschlossen} dateFormat={dateFormat} heute={heute} />
+            )}
+          </div>
+        </>
       )}
     </div>
   )
 }
 
-// ─────────────────────────────────────────────────────────────
-// Summary card
-// ─────────────────────────────────────────────────────────────
-function SummaryCard({
-  label,
-  amount,
-  currency,
-  color,
-  icon,
-  locale,
+function Abschnitt({
+  titel, ton, summe, locale, liste, dateFormat, heute,
 }: {
-  label: string
-  amount: number
-  currency: string
-  color: 'red' | 'green'
-  icon: React.ReactNode
+  titel: string
+  ton?: 'danger' | 'success'
+  summe: number | null
   locale: string
-}) {
-  const bg = color === 'red' ? 'bg-danger/10' : 'bg-success/10'
-  const text = color === 'red' ? 'text-danger' : 'text-success'
-
-  return (
-    <div className={`rounded-lg border border-border px-4 py-3 ${bg}`}>
-      <div className={`flex items-center gap-1.5 text-xs font-medium mb-1 ${text}`}>
-        {icon}
-        {label}
-      </div>
-      <p className={`text-xl font-semibold tabular-nums ${text}`}>
-        {fmt(amount, currency, locale)}
-      </p>
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────
-// Section (borrowed / lent)
-// ─────────────────────────────────────────────────────────────
-function DebtSection({
-  title,
-  debts,
-  accentColor,
-  locale,
-  dateFormat,
-}: {
-  title: string
-  debts: Debt[]
-  accentColor: 'red' | 'green'
-  locale: string
+  liste: SchuldMitZahlungen[]
   dateFormat: string
+  heute: string
 }) {
   return (
-    <section className="space-y-3">
-      <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-        {title}
-      </h2>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {debts.map((debt) => (
-          <DebtCard key={debt.id} debt={debt} accentColor={accentColor} locale={locale} dateFormat={dateFormat} />
-        ))}
-      </div>
-    </section>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────
-// Debt card
-// ─────────────────────────────────────────────────────────────
-function DebtCard({ debt, accentColor, locale, dateFormat }: { debt: Debt; accentColor: 'red' | 'green'; locale: string; dateFormat: string }) {
-  const paid = debt.original_amount - debt.outstanding
-  const progress =
-    debt.original_amount > 0
-      ? Math.min(100, Math.round((paid / debt.original_amount) * 100))
-      : 0
-  const overdue = isOverdue(debt.due_date)
-
-  const barColor = !debt.is_active
-    ? 'bg-muted-foreground/40'
-    : accentColor === 'red'
-    ? 'bg-danger'
-    : 'bg-success'
-
-  const badgeClasses =
-    accentColor === 'red'
-      ? 'bg-danger/10 text-danger'
-      : 'bg-success/10 text-success'
-
-  return (
-    <div className="rounded-lg border border-border bg-card p-4 flex flex-col gap-3">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-medium text-foreground truncate">{debt.name}</p>
-            {!debt.is_active && (
-              <span className="text-xs rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
-                Abgeschlossen
-              </span>
-            )}
-          </div>
-          {debt.creditor && (
-            <p className="text-xs text-muted-foreground mt-0.5 truncate">{debt.creditor}</p>
-          )}
-        </div>
-        <span className={`shrink-0 text-xs rounded-full px-2 py-0.5 font-medium ${badgeClasses}`}>
-          {debt.type === 'borrowed' ? 'Geliehen' : 'Verliehen'}
-        </span>
-      </div>
-
-      {/* Progress bar */}
-      <div className="space-y-1.5">
-        <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all ${barColor}`}
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>{progress}% bezahlt</span>
-          <span className="tabular-nums">{fmt(paid, debt.currency, locale)} / {fmt(debt.original_amount, debt.currency, locale)}</span>
-        </div>
-      </div>
-
-      {/* Outstanding amount */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs text-muted-foreground">Ausstehend</p>
-          <p className="text-lg font-semibold tabular-nums text-foreground">
-            {fmt(debt.outstanding, debt.currency, locale)}
-          </p>
-        </div>
-        {debt.monthly_payment && (
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground">Rate/Monat</p>
-            <p className="text-sm font-medium tabular-nums">{fmt(debt.monthly_payment, debt.currency, locale)}</p>
-          </div>
+    <section className="min-w-0 space-y-2">
+      <h2 className="flex items-baseline justify-between gap-3 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <span className="min-w-0 truncate">{titel} ({liste.length})</span>
+        {summe !== null && (
+          <span className={cn('shrink-0 tabular-nums normal-case tracking-normal', ton === 'danger' ? 'text-danger' : 'text-success')}>
+            {fmtCurrency(summe, 'EUR', locale, { fractionDigits: 2 })}
+          </span>
         )}
-      </div>
-
-      {/* Meta row */}
-      <div className="flex items-center justify-between gap-2 flex-wrap text-xs text-muted-foreground">
-        <div className="flex items-center gap-2 flex-wrap">
-          {debt.interest_rate != null && (
-            <span>{debt.interest_rate}% p.a.</span>
-          )}
-          {debt.due_date && (
-            <span
-              className={`flex items-center gap-1 ${overdue && debt.is_active ? 'text-destructive font-medium' : ''}`}
-            >
-              <CalendarDays className="size-3" />
-              {formatDate(debt.due_date, dateFormat)}
-              {overdue && debt.is_active && ' · überfällig'}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          {debt.is_active && <DebtPaymentDialog debt={debt} />}
-          {debt.is_active && <SettleDebtButton debt={debt} />}
-          <EditDebtDialog debt={debt} />
-          <DeleteDebtButton debt={debt} />
-        </div>
-      </div>
-    </div>
+      </h2>
+      <ul className="min-w-0 divide-y divide-border rounded-lg border border-border bg-card">
+        {liste.map(s => (
+          <SchuldZeile key={s.id} schuld={s} locale={locale} dateFormat={dateFormat} heute={heute} />
+        ))}
+      </ul>
+    </section>
   )
 }
 
 function EmptyState() {
   return (
-    <div className="rounded-lg border border-dashed border-border bg-card py-16 text-center">
-      <p className="text-sm font-medium text-foreground">Keine Schulden erfasst</p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Lege geliehene oder verliehene Beträge an, um den Überblick zu behalten.
+    <div className="rounded-lg border border-dashed border-border bg-card px-4 py-10 text-center">
+      <HandCoins className="mx-auto size-6 text-muted-foreground" aria-hidden />
+      <p className="mt-3 text-sm font-medium">Noch keine Schulden erfasst</p>
+      <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+        Trage Kredite, geliehenes oder verliehenes Geld ein. Mit jeder Zahlung sinkt die Restschuld, und du siehst
+        Fortschritt, monatliche Last und wann du schuldenfrei bist. Buchungen der Kategorie „Schulden“ schlagen dir
+        passende Einträge vor.
       </p>
     </div>
   )

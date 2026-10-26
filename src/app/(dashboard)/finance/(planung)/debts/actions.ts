@@ -5,9 +5,12 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { parseForm, parseInput, issueMessage } from '@/lib/api/validate'
 import { idField, uuid, reqText, reqEnum, reqDate, optText, optDate, optUuid, optMoneyField, moneyField, currency } from '@/lib/api/schemas'
+import { pruefeZahlung, restNachLoeschen, restNachZahlung, zahlungsAnteile, rund2 } from '@/lib/schulden/berechnen'
 
 export type DebtActionState = { error: string } | { success: true } | null
 
+// Betragsregel: Der Browser liest die Eingabe mit betragAusNutzereingabe (deutsche Schreibweise) und
+// schickt den kanonischen Wert (Punkt als Dezimaltrenner); hier wird er nur noch geprüft.
 const positiveAmount = (msg: string) => moneyField(msg).refine(n => n > 0, msg)
 
 const debtFields = {
@@ -36,6 +39,22 @@ const recordPaymentSchema = z.object({
   source_transaction_type: z.enum(['manual', 'bank_sync']).nullish().catch(null),
 })
 
+type Felder = {
+  original_amount: number
+  outstanding: number | null
+  interest_rate: number | null
+  monthly_payment: number | null
+}
+
+/** Gemeinsame Plausibilität für Anlegen und Bearbeiten. */
+function pruefeSchuld(d: Felder): string | null {
+  if (d.outstanding != null && d.outstanding < 0) return 'Offener Betrag darf nicht negativ sein'
+  if (d.outstanding != null && d.outstanding > d.original_amount) return 'Offener Betrag darf den Gesamtbetrag nicht übersteigen'
+  if (d.interest_rate != null && (d.interest_rate < 0 || d.interest_rate > 100)) return 'Zinssatz muss zwischen 0 und 100 liegen'
+  if (d.monthly_payment != null && d.monthly_payment < 0) return 'Monatsrate darf nicht negativ sein'
+  return null
+}
+
 // ─── Create a new debt entry ──────────────────────────────────────────────────
 export async function createDebt(
   _prev: DebtActionState,
@@ -47,13 +66,17 @@ export async function createDebt(
   const parsed = parseForm(formData, createDebtSchema)
   if (!parsed.ok) return { error: issueMessage(parsed) }
   const d = parsed.data
+  const fehler = pruefeSchuld(d)
+  if (fehler) return { error: fehler }
 
+  const outstanding = d.outstanding ?? d.original_amount
   const { error } = await supabase.from('debts').insert({
     name: d.name,
     type: d.type,
     original_amount: d.original_amount,
     // outstanding defaults to original_amount at creation
-    outstanding: d.outstanding ?? d.original_amount,
+    outstanding,
+    is_active: outstanding > 0,
     currency: d.currency,
     creditor: d.creditor,
     interest_rate: d.interest_rate,
@@ -79,6 +102,20 @@ export async function updateDebt(
   const parsed = parseForm(formData, updateDebtSchema)
   if (!parsed.ok) return { error: issueMessage(parsed) }
   const { id, ...d } = parsed.data
+  const fehler = pruefeSchuld(d)
+  if (fehler) return { error: fehler }
+
+  // Bisherigen Stand lesen: ein leeres Feld „Ausstehend“ lässt die Restschuld unverändert (früher
+  // wurde sie dabei auf den Gesamtbetrag zurückgesetzt und getilgte Schulden wieder offen).
+  const { data: alt } = await supabase
+    .from('debts')
+    .select('outstanding')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .maybeSingle()
+  if (!alt) return { error: 'Schuld nicht gefunden' }
+
+  const outstanding = Math.min(d.outstanding ?? Number(alt.outstanding), d.original_amount)
 
   const { error } = await supabase
     .from('debts')
@@ -86,7 +123,8 @@ export async function updateDebt(
       name: d.name,
       type: d.type,
       original_amount: d.original_amount,
-      outstanding: d.outstanding ?? d.original_amount,
+      outstanding,
+      is_active: outstanding > 0,
       currency: d.currency,
       creditor: d.creditor,
       interest_rate: d.interest_rate,
@@ -133,17 +171,24 @@ export async function recordPayment(
   if (!parsed.ok) return { error: issueMessage(parsed) }
   const { debt_id: debtId, payment_date: paymentDate, amount } = parsed.data
 
-  // Fetch current outstanding to compute new balance
+  // Besitzprüfung: nur eigene Schulden
   const { data: debt, error: fetchError } = await supabase
     .from('debts')
-    .select('outstanding')
+    .select('outstanding, is_active')
     .eq('id', debtId)
     .eq('user_id', user.id)
     .single()
 
   if (fetchError || !debt) return { error: 'Schuld nicht gefunden' }
+  if (!debt.is_active) return { error: 'Diese Schuld ist bereits abgeschlossen' }
 
-  const newOutstanding = Math.max(0, debt.outstanding - amount)
+  const outstanding = Number(debt.outstanding)
+  const eingabe = { amount, principal: parsed.data.principal, interest: parsed.data.interest }
+  const fehler = pruefeZahlung(eingabe, outstanding)
+  if (fehler) return { error: fehler }
+  const { tilgung, zinsen } = zahlungsAnteile(eingabe)
+  const hatAnteile = eingabe.principal != null || eingabe.interest != null
+  const newOutstanding = restNachZahlung(outstanding, eingabe)
 
   // Optionale Verknuepfung zur Buchung, aus der dieser Vorschlag entstand (siehe
   // DebtSuggestion) -- manuelle und bank-synchte Buchungen leben in getrennten Tabellen,
@@ -151,21 +196,37 @@ export async function recordPayment(
   // Buchung zweimal als Zahlung zu verbuchen.
   const sourceTransactionId = parsed.data.source_transaction_id
   const sourceType = parsed.data.source_transaction_type
+  if (sourceTransactionId && sourceType) {
+    // Besitzprüfung der Quellbuchung: sonst ließe sich eine fremde Buchungs-ID verknüpfen.
+    const { data: quelle } = await supabase
+      .from(sourceType === 'manual' ? 'transactions' : 'bank_transactions')
+      .select('id')
+      .eq('id', sourceTransactionId)
+      .eq('user_id', user.id)
+      .maybeSingle()
+    if (!quelle) return { error: 'Verknüpfte Buchung nicht gefunden' }
+  }
 
-  const { error: payError } = await supabase.from('debt_payments').insert({
-    debt_id: debtId,
-    payment_date: paymentDate,
-    amount,
-    principal: parsed.data.principal,
-    interest: parsed.data.interest,
-    notes: parsed.data.notes,
-    transaction_id: sourceTransactionId && sourceType === 'manual' ? sourceTransactionId : null,
-    bank_transaction_id: sourceTransactionId && sourceType === 'bank_sync' ? sourceTransactionId : null,
-  })
-  if (payError) return { error: payError.message }
+  const { data: neu, error: payError } = await supabase
+    .from('debt_payments')
+    .insert({
+      debt_id: debtId,
+      payment_date: paymentDate,
+      amount,
+      principal: hatAnteile ? tilgung : null,
+      interest: hatAnteile ? zinsen : null,
+      notes: parsed.data.notes,
+      transaction_id: sourceTransactionId && sourceType === 'manual' ? sourceTransactionId : null,
+      bank_transaction_id: sourceTransactionId && sourceType === 'bank_sync' ? sourceTransactionId : null,
+    })
+    .select('id')
+    .single()
+  if (payError || !neu) {
+    return { error: payError?.code === '23505' ? 'Diese Buchung ist bereits als Zahlung verbucht' : (payError?.message ?? 'Zahlung konnte nicht gespeichert werden') }
+  }
 
-  // Update outstanding balance (and deactivate if fully paid)
-  const { error: updateError } = await supabase
+  // Restschuld nur setzen, wenn sie sich seit dem Lesen nicht geändert hat (zwei Zahlungen gleichzeitig).
+  const { data: geaendert, error: updateError } = await supabase
     .from('debts')
     .update({
       outstanding: newOutstanding,
@@ -174,9 +235,67 @@ export async function recordPayment(
     })
     .eq('id', debtId)
     .eq('user_id', user.id)
+    .eq('outstanding', outstanding)
+    .select('id')
 
-  if (updateError) return { error: updateError.message }
+  if (updateError || !geaendert || geaendert.length === 0) {
+    // Zahlung zurücknehmen, damit Zahlungen und Restschuld nicht auseinanderlaufen.
+    await supabase.from('debt_payments').delete().eq('id', neu.id)
+    return { error: updateError?.message ?? 'Die Schuld wurde zwischenzeitlich geändert. Bitte erneut versuchen.' }
+  }
 
   revalidatePath('/finance/debts')
   return { success: true }
+}
+
+// ─── Delete a payment (Korrektur): Tilgung kommt zur Restschuld zurück ───────
+export async function deletePayment(paymentId: string): Promise<{ error?: string }> {
+  const { supabase, user } = await getAuthUser()
+  if (!user) return { error: 'Nicht eingeloggt' }
+  const idP = parseInput(uuid, paymentId)
+  if (!idP.ok) return { error: issueMessage(idP) }
+
+  const { data: zahlung } = await supabase
+    .from('debt_payments')
+    .select('id, debt_id, amount, principal, interest')
+    .eq('id', paymentId)
+    .maybeSingle()
+  if (!zahlung) return { error: 'Zahlung nicht gefunden' }
+
+  // Besitzprüfung über die Schuld
+  const { data: debt } = await supabase
+    .from('debts')
+    .select('outstanding, original_amount')
+    .eq('id', zahlung.debt_id)
+    .eq('user_id', user.id)
+    .maybeSingle()
+  if (!debt) return { error: 'Zahlung nicht gefunden' }
+
+  const outstanding = Number(debt.outstanding)
+  const neu = restNachLoeschen(outstanding, Number(debt.original_amount), {
+    amount: Number(zahlung.amount),
+    principal: zahlung.principal == null ? null : Number(zahlung.principal),
+    interest: zahlung.interest == null ? null : Number(zahlung.interest),
+  })
+
+  const { data: geaendert, error: updateError } = await supabase
+    .from('debts')
+    .update({ outstanding: neu, is_active: neu > 0, updated_at: new Date().toISOString() })
+    .eq('id', zahlung.debt_id)
+    .eq('user_id', user.id)
+    .eq('outstanding', outstanding)
+    .select('id')
+  if (updateError || !geaendert || geaendert.length === 0) {
+    return { error: updateError?.message ?? 'Die Schuld wurde zwischenzeitlich geändert. Bitte erneut versuchen.' }
+  }
+
+  const { error: delError } = await supabase.from('debt_payments').delete().eq('id', paymentId)
+  if (delError) {
+    // Restschuld zurücksetzen, die Zahlung bleibt ja bestehen.
+    await supabase.from('debts').update({ outstanding: rund2(outstanding), is_active: outstanding > 0 }).eq('id', zahlung.debt_id).eq('user_id', user.id)
+    return { error: delError.message }
+  }
+
+  revalidatePath('/finance/debts')
+  return {}
 }

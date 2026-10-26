@@ -7,6 +7,9 @@ import { CalendarClock, Check, Loader2, Sparkles, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSettings } from '@/components/providers/settings-context'
 import { fmtCurrency, fmtDate } from '@/lib/format'
+import { HoverInfo } from '@/components/ui/hover-info'
+import { heuteBerlin } from '@/lib/transaktionen/formular'
+import { tageZwischen } from '@/lib/forecast/datum'
 import { FREQUENCIES } from '@/lib/finance/contract-constants'
 import { proMonat } from '@/lib/finance/vertragsvorschlag'
 import type { Vorschlag } from '@/lib/data/vertragsvorschlaege'
@@ -16,10 +19,8 @@ import {
 
 const FREQ_LABEL = Object.fromEntries(FREQUENCIES.map(f => [f.value, f.label.toLowerCase()]))
 
-function tageBis(iso: string): number {
-  const heute = new Date(); heute.setHours(0, 0, 0, 0)
-  return Math.round((Date.parse(`${iso}T00:00:00`) - heute.getTime()) / 86_400_000)
-}
+/** Tage von heute (Berliner Kalendertag) bis zum Datum. */
+const tageBis = (iso: string): number => tageZwischen(heuteBerlin(), iso)
 
 /**
  * Aus den Buchungen erkannte wiederkehrende Kosten, für die es noch keinen Vertrag gibt (Abos, Raten, Gebühren). Jede Zeile nennt, was
@@ -107,13 +108,17 @@ export function VertragsVorschlaege({ vorschlaege, ausgeblendet }: { vorschlaege
                       <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground">Karte / PayPal</span>
                     )}
                   </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground" title={v.begruendung}>
-                    {v.betrag_variabel ? 'ca. ' : ''}<span className="tabular-nums">{eur(v.betrag)}</span>{spanne} · {FREQ_LABEL[v.frequenz] ?? v.frequenz}
-                    {v.frequenz === 'monthly' && v.tag_im_monat ? `, meist am ${v.tag_im_monat}.` : ''} · {v.anzahl} Buchungen
-                  </p>
+                  <HoverInfo
+                    bare className="mt-0.5 max-w-full text-xs text-muted-foreground" titel="Warum erkannt?" text={v.begruendung}
+                  >
+                    <span className="truncate underline decoration-dotted decoration-muted-foreground/40 underline-offset-4">
+                      {v.betrag_variabel ? 'ca. ' : ''}<span className="tabular-nums">{eur(v.betrag)}</span>{spanne} · {FREQ_LABEL[v.frequenz] ?? v.frequenz}
+                      {v.frequenz === 'monthly' && v.tag_im_monat ? `, meist am ${v.tag_im_monat}.` : ''} · {v.anzahl} Buchungen
+                    </span>
+                  </HoverInfo>
                 </div>
 
-                <div className="flex min-w-36 items-center gap-1.5 text-xs">
+                <div className="flex min-w-0 items-center gap-1.5 text-xs sm:min-w-36">
                   <CalendarClock className={`size-3.5 shrink-0 ${v.ueberfaellig ? 'text-warning' : 'text-muted-foreground'}`} />
                   {v.naechste_erwartet ? (
                     <span className={v.ueberfaellig ? 'text-warning' : 'text-muted-foreground'}>
@@ -124,21 +129,26 @@ export function VertragsVorschlaege({ vorschlaege, ausgeblendet }: { vorschlaege
                   ) : <span className="text-muted-foreground">—</span>}
                 </div>
 
-                <p className="w-24 text-right text-xs tabular-nums text-muted-foreground" title="Hochgerechnet auf ein Jahr">
+                <HoverInfo
+                  bare className="text-right text-xs tabular-nums text-muted-foreground sm:w-24 sm:justify-end" popClassName="right-0 left-auto"
+                  titel="Pro Jahr" text="Der Betrag hochgerechnet auf ein Jahr."
+                >
                   {eur(v.jahreskosten, 0)} / Jahr
-                </p>
+                </HoverInfo>
 
                 <div className="flex gap-1.5">
-                  <Button variant="outline" size="sm" className="h-7 px-2" disabled={laeuft === v.schluessel} onClick={() => anlegen(v)}>
+                  <Button variant="outline" size="sm" className="h-10 px-3 sm:h-8 sm:px-2" disabled={laeuft === v.schluessel} onClick={() => anlegen(v)}>
                     {laeuft === v.schluessel ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
                     Vertrag anlegen
                   </Button>
-                  <Button
-                    variant="ghost" size="sm" className="h-7 px-2 text-muted-foreground hover:text-foreground"
-                    aria-label={`${v.entwurf.name} ausblenden`} title="Kein Vertrag: nicht mehr vorschlagen" onClick={() => ausblenden(v)}
-                  >
-                    <X className="size-3.5" />
-                  </Button>
+                  <HoverInfo bare className="inline-flex" popClassName="right-0 left-auto" titel="Ausblenden" text="Kein Vertrag: dieser Vorschlag erscheint nicht mehr. Ausgeblendete lassen sich oben wieder anzeigen.">
+                    <Button
+                      variant="ghost" size="sm" className="size-10 px-0 text-muted-foreground hover:text-foreground sm:size-8"
+                      aria-label={`${v.entwurf.name} ausblenden`} onClick={() => ausblenden(v)}
+                    >
+                      <X className="size-3.5" />
+                    </Button>
+                  </HoverInfo>
                 </div>
               </li>
             )

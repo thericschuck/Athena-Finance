@@ -1,46 +1,53 @@
-import { AlertTriangle, CalendarClock, Info } from 'lucide-react'
+import Link from 'next/link'
+import { AlertTriangle } from 'lucide-react'
 import { getAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency, fmtDate } from '@/lib/format'
-import { ymd } from '@/lib/period'
+import { heuteBerlin } from '@/lib/transaktionen/formular'
 import { ladePrognose } from '@/lib/forecast/laden'
-import type { SteuerPrognose } from '@/lib/forecast/steuer'
 import { baueChartDaten } from '@/lib/forecast/chartdaten'
+import { gruppiereAnnahmen, prognoseKennzahlen } from '@/lib/prognose-seite/berechnen'
 import { PrognoseChart } from '@/components/finance/prognose-chart'
-import { AnnahmenForm } from '@/components/finance/annahmen-form'
-import { EinmalpostenForm } from '@/components/finance/einmalposten-form'
+import { PrognoseKennzahlenLeiste } from '@/components/prognose/PrognoseKennzahlenLeiste'
+import { PrognoseMethode } from '@/components/prognose/PrognoseMethode'
+import { PrognoseTabs } from '@/components/prognose/PrognoseTabs'
+import { AnnahmenListe } from '@/components/prognose/AnnahmenListe'
+import { EinmalpostenListe } from '@/components/prognose/EinmalpostenListe'
+import { PrognoseSteuer } from '@/components/prognose/PrognoseSteuer'
 
 export const metadata = { title: 'Prognose' }
+// Das Datum (heute, Berlin) und die Daten des Nutzers bestimmen die Seite; nichts davon darf gecacht werden.
+export const dynamic = 'force-dynamic'
 
-const KU_STATUS = {
-  gruen: { text: 'Innerhalb der Grenzen', klasse: 'text-success' },
-  gelb: { text: 'Nähert sich einer Grenze', klasse: 'text-warning' },
-  rot: { text: 'Grenze überschritten', klasse: 'text-danger' },
-  unbekannt: { text: 'Unbekannt (kein Vorjahr)', klasse: 'text-muted-foreground' },
-} as const
+const HORIZONTE = [6, 12, 18, 24] as const
+const STANDARD_HORIZONT = 12
 
-function Karte({ titel, wert, unter, klasse = '' }: { titel: string; wert: string; unter?: string; klasse?: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{titel}</p>
-      <p className={`mt-1.5 text-2xl font-semibold tabular-nums tracking-tight ${klasse}`}>{wert}</p>
-      {unter && <p className="mt-1 text-xs text-muted-foreground">{unter}</p>}
-    </div>
-  )
-}
-
-export default async function PrognosePage() {
-  const { supabase, user } = await getAuthUser()
+export default async function PrognosePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ monate?: string }>
+}) {
+  const [{ monate: rohMonate }, { supabase, user }] = await Promise.all([searchParams, getAuthUser()])
   if (!user) return null
+  const gewaehlt = Number(rohMonate)
+  const monate = HORIZONTE.find(h => h === gewaehlt) ?? STANDARD_HORIZONT
+
   const settings = await getSettings(user.id)
   const locale = (settings.number_format as string) ?? 'de-DE'
   const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
   const eur = (n: number, digits = 0) => fmtCurrency(n, 'EUR', locale, { fractionDigits: digits })
+  // YYYY-MM-DD mit lokalem Mittag, damit keine Zeitzone den Tag verschiebt.
+  const datumText = (iso: string) => fmtDate(`${iso.slice(0, 10)}T12:00:00`, dateFormat)
+  const monatsLabel = (m: string) =>
+    new Date(`${m}-15T12:00:00Z`).toLocaleDateString(locale, { month: 'short', year: '2-digit', timeZone: 'UTC' })
 
-  const heute = ymd(new Date())
-  const d = await ladePrognose(supabase, user.id, heute, { monate: 18 })
-  const mitAnnahmen = d.annahmen.length > 0
+  // Berliner Kalendertag (nicht UTC): der Server läuft in UTC, nachts wäre „heute“ sonst gestern.
+  const heute = heuteBerlin()
+  const d = await ladePrognose(supabase, user.id, heute, { monate })
   const sz = d.szenario
+  const mitAnnahmen = d.annahmen.length > 0
+  const startMonat = heute.slice(0, 7)
+  const endMonat = sz.monate.length > 0 ? sz.monate[sz.monate.length - 1].month : startMonat
 
   // Rückblick (Tageswerte aus den Snapshots) durchgezogen, ab heute die Prognose gestrichelt mit Schwankungsbereich.
   const chart = baueChartDaten({
@@ -52,223 +59,164 @@ export default async function PrognosePage() {
     tiefpunkt: sz.tiefpunkt,
     mitAnnahmen,
   })
-  const in12 = sz.monate[Math.min(11, sz.monate.length - 1)]
-  const monatsLabel = (m: string) => new Date(m + '-01T12:00:00').toLocaleDateString(locale, { month: 'long', year: 'numeric' })
+  const kennzahlen = prognoseKennzahlen({
+    heute, start: sz.start, tage: sz.tage, tiefpunkt: sz.tiefpunkt, risikoTiefpunkt: sz.risikoTiefpunkt,
+  })
   const warnungen = [...d.hinweise, ...sz.warnungen]
   const m = sz.modell
+  const gruppen = gruppiereAnnahmen(d.annahmen, startMonat, endMonat)
+
+  const monateTabelle = (
+    <div className="min-w-0 overflow-x-auto rounded-lg border border-border">
+      <table className="w-full text-sm">
+        <thead className="border-b border-border bg-muted/40 text-xs text-muted-foreground">
+          <tr>
+            <th className="px-3 py-2 text-left font-medium">Monat</th>
+            <th className="px-3 py-2 text-right font-medium">Einnahmen</th>
+            <th className="px-3 py-2 text-right font-medium">Ausgaben</th>
+            <th className="px-3 py-2 text-right font-medium">Liquidität Ende</th>
+            <th className="hidden px-3 py-2 text-right font-medium sm:table-cell">Tiefster Stand</th>
+            <th className="hidden px-3 py-2 text-right font-medium md:table-cell">Vermögen Ende</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sz.monate.map(z => (
+            <tr key={z.month} className="border-b border-border/50 last:border-0">
+              <td className="whitespace-nowrap px-3 py-2">
+                {monatsLabel(z.month)}{z.teilmonat && <span className="ml-1 text-xs text-muted-foreground">(Rest)</span>}
+              </td>
+              <td className="px-3 py-2 text-right tabular-nums text-success">{eur(z.einnahmen)}</td>
+              <td className="px-3 py-2 text-right tabular-nums text-danger">{eur(z.ausgaben)}</td>
+              <td className={`px-3 py-2 text-right font-medium tabular-nums ${z.liquiditaetEnde < 0 ? 'text-danger' : ''}`}>{eur(z.liquiditaetEnde)}</td>
+              <td className={`hidden px-3 py-2 text-right tabular-nums sm:table-cell ${z.tiefpunkt < 0 ? 'text-danger' : 'text-muted-foreground'}`}>{eur(z.tiefpunkt)}</td>
+              <td className="hidden px-3 py-2 text-right tabular-nums text-muted-foreground md:table-cell">{eur(z.vermoegenEnde)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+
+  const termine = sz.termine.length > 0 ? (
+    <ul className="divide-y divide-border rounded-lg border border-border text-sm">
+      {sz.termine.slice(0, 12).map((t, i) => (
+        <li key={i} className="flex min-w-0 items-center gap-3 px-3 py-2">
+          <span className="w-20 shrink-0 text-xs text-muted-foreground">{datumText(t.datum)}</span>
+          <span className="min-w-0 flex-1 truncate">{t.name}</span>
+          <span className={`shrink-0 tabular-nums ${t.betrag < 0 ? 'text-danger' : 'text-success'}`}>{t.betrag < 0 ? '−' : '+'}{eur(Math.abs(t.betrag))}</span>
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <div className="rounded-lg border border-dashed border-border px-4 py-8 text-center">
+      <p className="text-sm font-medium">Keine bekannten Termine</p>
+      <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground">
+        Hier stehen die nächsten Abbuchungen und Eingänge aus deinen aktiven Verträgen. Aktive Verträge legst du unter Verträge an.
+      </p>
+    </div>
+  )
 
   return (
-    <div className="space-y-8 p-4 sm:p-8">
-      <header>
+    <div className="min-w-0 space-y-4 p-4 sm:p-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Prognose</h1>
-        <p className="mt-0.5 max-w-3xl text-sm text-muted-foreground">
-          Wie entwickeln sich Liquidität, Vermögen und Steuer in den nächsten Monaten? Eine Fortschreibung deiner letzten
-          Monate plus die Annahmen unten — keine Vorhersage und keine Steuerberatung.
-        </p>
-      </header>
-
-      {warnungen.length > 0 && (
-        <ul className="space-y-2" aria-label="Hinweise">
-          {warnungen.map((w, i) => (
-            <li key={i} className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm">
-              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
-              <span>{w}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {/* ── Kennzahlen ─────────────────────────────────────────────────────────── */}
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Kennzahlen">
-        <Karte titel="Liquidität heute" wert={eur(d.stand.liquiditaet)}
-          unter={`${d.stand.liquideKonten} liquide${d.stand.liquideKonten === 1 ? 's Konto' : ' Konten'} (Giro, Spar, Bargeld)`} />
-        <Karte titel="Tiefster Stand (erwartet)" wert={eur(sz.tiefpunkt.betrag)}
-          unter={`am ${fmtDate(sz.tiefpunkt.datum, dateFormat)} · in 1 von 10 Verläufen bis ${eur(sz.risikoTiefpunkt.betrag)}`}
-          klasse={sz.tiefpunkt.betrag < 0 ? 'text-danger' : ''} />
-        <Karte titel={`Liquidität ${in12 ? monatsLabel(in12.month) : ''}`} wert={in12 ? eur(in12.liquiditaetEnde) : '–'}
-          unter={`Vermögen dann ${in12 ? eur(in12.vermoegenEnde) : '–'}`} />
-        <Karte titel="Überschuss pro Monat" wert={eur(d.basis.basis.saldo)}
-          unter="Durchschnitt der nächsten 30 Tage laut Modell, ohne Termine und Annahmen"
-          klasse={d.basis.basis.saldo < 0 ? 'text-danger' : 'text-success'} />
-      </section>
-
-      {/* ── Kurven ─────────────────────────────────────────────────────────────── */}
-      <PrognoseChart daten={chart} mitAnnahmen={mitAnnahmen} />
-
-      {/* ── Monatstabelle ──────────────────────────────────────────────────────── */}
-      <section aria-labelledby="monate">
-        <h2 id="monate" className="mb-3 text-sm font-semibold">Monat für Monat</h2>
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-sm">
-            <thead className="border-b border-border bg-muted/40 text-xs text-muted-foreground">
-              <tr>
-                <th className="px-3 py-2 text-left font-medium">Monat</th>
-                <th className="px-3 py-2 text-right font-medium">Einnahmen</th>
-                <th className="px-3 py-2 text-right font-medium">Ausgaben</th>
-                <th className="px-3 py-2 text-right font-medium">Liquidität Ende</th>
-                <th className="hidden px-3 py-2 text-right font-medium sm:table-cell">Tiefster Stand</th>
-                <th className="hidden px-3 py-2 text-right font-medium md:table-cell">Vermögen Ende</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sz.monate.map(m => (
-                <tr key={m.month} className="border-b border-border/50 last:border-0">
-                  <td className="px-3 py-2">{monatsLabel(m.month)}{m.teilmonat && <span className="ml-1 text-xs text-muted-foreground">(Rest)</span>}</td>
-                  <td className="px-3 py-2 text-right tabular-nums text-success">{eur(m.einnahmen)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums text-danger">{eur(m.ausgaben)}</td>
-                  <td className={`px-3 py-2 text-right font-medium tabular-nums ${m.liquiditaetEnde < 0 ? 'text-danger' : ''}`}>{eur(m.liquiditaetEnde)}</td>
-                  <td className={`hidden px-3 py-2 text-right tabular-nums sm:table-cell ${m.tiefpunkt < 0 ? 'text-danger' : 'text-muted-foreground'}`}>{eur(m.tiefpunkt)}</td>
-                  <td className="hidden px-3 py-2 text-right tabular-nums text-muted-foreground md:table-cell">{eur(m.vermoegenEnde)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <details className="mt-3 rounded-lg border border-border bg-card p-4 text-sm" open>
-          <summary className="flex cursor-pointer items-center gap-2 font-medium">
-            <Info className="size-4 shrink-0" /> Wie die Prognose entsteht
-          </summary>
-          <div className="mt-3 space-y-2 text-xs leading-relaxed text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2">
+          <div role="group" aria-label="Zeitraum" className="inline-flex items-center gap-0.5 rounded-lg bg-muted/60 p-0.5">
+            {HORIZONTE.map(h => (
+              <Link
+                key={h} href={h === STANDARD_HORIZONT ? '?' : `?monate=${h}`} scroll={false}
+                aria-current={h === monate ? 'true' : undefined}
+                className={`inline-flex min-h-10 min-w-10 items-center justify-center rounded-md px-3 text-sm font-medium transition-colors sm:min-h-8 sm:text-xs ${
+                  h === monate ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {h} Mon.
+              </Link>
+            ))}
+          </div>
+          <PrognoseMethode>
             <p>
-              Gelernt aus <strong className="text-foreground">{m.daten.tage} Tagen</strong> ({fmtDate(m.daten.von, dateFormat)} bis{' '}
-              {fmtDate(m.daten.bis, dateFormat)}): die gesamte Historie zählt.{' '}
+              Eine Fortschreibung deiner letzten Monate plus die Annahmen, keine Vorhersage und keine Steuerberatung. Gelernt aus{' '}
+              <strong className="text-foreground">{m.daten.tage} Tagen</strong> ({datumText(m.daten.von)} bis {datumText(m.daten.bis)}).{' '}
               {m.halbwertszeit === null
-                ? 'Alle Tage zählen gleich — im Rückblick-Test war das besser als ein kürzeres Gedächtnis.'
-                : `Jüngere Tage zählen stärker (Halbwertszeit ${m.halbwertszeit} Tage) — das hat im Rückblick-Test am besten abgeschnitten.`}{' '}
+                ? 'Alle Tage zählen gleich; im Rückblick-Test war das besser als ein kürzeres Gedächtnis.'
+                : `Jüngere Tage zählen stärker (Halbwertszeit ${m.halbwertszeit} Tage); das hat im Rückblick-Test am besten abgeschnitten.`}{' '}
               Das Modell wählt die Gewichtung selbst und prüft sie bei neuen Daten erneut.
             </p>
             {m.muster.length > 0 && (
-              <ul className="list-disc space-y-0.5 pl-4">
-                {m.muster.map((t, i) => <li key={i}>{t}</li>)}
-              </ul>
+              <ul className="list-disc space-y-0.5 pl-4">{m.muster.map((t, i) => <li key={i}>{t}</li>)}</ul>
             )}
             {m.zyklen.length > 0 && (
               <p>
-                Periodogramm (Fourier): auffällige Zyklen{' '}
+                Auffällige Zyklen (Periodogramm):{' '}
                 {m.zyklen.map(z => `${String(z.periode).replace('.', ',')} Tage (${String(z.staerke).replace('.', ',')}× über dem Rauschniveau)`).join(', ')}.
                 Ein Jahreszyklus ist in deinen Daten nicht nachweisbar.
               </p>
             )}
             {m.backtest && (
               <p>
-                Rückblick-Test über {m.backtest.ursprunge} Ausgangspunkte (jeweils 30 Tage voraus, nur mit damals bekannten Daten):
-                mittlerer Fehler der Kurve <strong className="text-foreground">{eur(m.backtest.fehlerModell)}</strong> gegenüber{' '}
-                {eur(m.backtest.fehlerFlach)} bei einem flachen Verlauf —{' '}
-                {Math.abs(m.backtest.verbesserungPct) <= 2
-                  ? 'etwa gleich gut'
+                Rückblick-Test über {m.backtest.ursprunge} Ausgangspunkte (je 30 Tage voraus, nur mit damals bekannten Daten): mittlerer
+                Fehler der Kurve <strong className="text-foreground">{eur(m.backtest.fehlerModell)}</strong> gegenüber {eur(m.backtest.fehlerFlach)}{' '}
+                bei einem flachen Verlauf, {Math.abs(m.backtest.verbesserungPct) <= 2
+                  ? 'also etwa gleich gut'
                   : m.backtest.verbesserungPct > 0 ? `${m.backtest.verbesserungPct} % besser` : `${-m.backtest.verbesserungPct} % schlechter`}.{' '}
-                Das ist kein Mangel des Modells, sondern deiner Daten: Gehalt, Verträge und Wochenenden liegen fest auf ihren Tagen,
-                alles darüber bestimmen einzelne Großposten, deren Zeitpunkt sich nicht vorhersagen lässt. Genau dafür ist das Band da.
+                Gehalt, Verträge und Wochenenden liegen fest auf ihren Tagen; alles darüber bestimmen einzelne Großposten, deren Zeitpunkt
+                sich nicht vorhersagen lässt. Dafür ist das Band da.
               </p>
             )}
             <p>
-              Das Band zeigt, wo die Liquidität in 8 von 10 möglichen Verläufen liegt (aus den echten Abweichungen des Modells,
-              nicht geschätzt). Ø pro Monat: Einnahmen ohne Lohn {eur(d.basis.basis.einnahmenOhneLohn)}, Lohn {eur(d.basis.basis.lohn)},
-              Ausgaben {eur(d.basis.basis.ausgaben)} — inklusive Einzahlungen in Anlagen, denn das Geld ist vom Konto weg.
-              Verträge liegen auf ihrem Tag; ihre bisherigen Buchungen sind aus dem Muster herausgerechnet, damit sie nicht doppelt zählen.
+              Das Band zeigt, wo die Liquidität in 8 von 10 möglichen Verläufen liegt (aus den echten Abweichungen des Modells). Ø pro
+              Monat in den nächsten 30 Tagen: Einnahmen ohne Lohn {eur(d.basis.basis.einnahmenOhneLohn)}, Lohn {eur(d.basis.basis.lohn)},
+              Ausgaben {eur(d.basis.basis.ausgaben)}, inklusive Einzahlungen in Anlagen, denn das Geld ist vom Konto weg. Verträge liegen auf
+              ihrem Tag; ihre bisherigen Buchungen sind aus dem Muster herausgerechnet, damit sie nicht doppelt zählen.
             </p>
-          </div>
-        </details>
-      </section>
-
-      {/* ── Bekannte Termine ───────────────────────────────────────────────────── */}
-      {sz.termine.length > 0 && (
-        <section aria-labelledby="termine">
-          <h2 id="termine" className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <CalendarClock className="size-4" /> Bekannte Termine
-          </h2>
-          <ul className="divide-y divide-border rounded-lg border border-border text-sm">
-            {sz.termine.slice(0, 8).map((t, i) => (
-              <li key={i} className="flex items-center justify-between gap-3 px-3 py-2">
-                <span className="text-muted-foreground">{fmtDate(t.datum, dateFormat)}</span>
-                <span className="flex-1 truncate">{t.name}</span>
-                <span className={`tabular-nums ${t.betrag < 0 ? 'text-danger' : 'text-success'}`}>{eur(t.betrag)}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {/* ── Steuer ─────────────────────────────────────────────────────────────── */}
-      <section aria-labelledby="steuer" className="space-y-4">
-        <div>
-          <h2 id="steuer" className="text-sm font-semibold">Steuerprognose</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Hochgerechnet aus dem bisherigen Verlauf ({d.laufrateQuelle}), gerechnet mit derselben Engine wie die Steuerseite.
-            Eine Schätzung, kein Steuerbescheid.
-          </p>
+          </PrognoseMethode>
         </div>
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-          {d.steuer.map(s => <SteuerKarte key={s.jahr} s={s} eur={eur} mitAnnahmen={mitAnnahmen} />)}
-        </div>
-      </section>
+      </div>
 
-      {/* ── Einmalposten ───────────────────────────────────────────────────────── */}
-      <section aria-labelledby="einmalposten" className="space-y-3">
-        <div>
-          <h2 id="einmalposten" className="text-sm font-semibold">
-            Große Einzelposten
-            {d.ausgeschlossen > 0 && <span className="ml-2 text-xs font-normal text-muted-foreground">{d.ausgeschlossen} vom Lernen ausgenommen</span>}
-          </h2>
-          <p className="mt-0.5 max-w-3xl text-xs text-muted-foreground">
-            Einzelne große Posten können die Prognose verzerren: Die 28 größten Ausgaben machen über die Hälfte aller Ausgaben aus.
-            Extreme Ausreißer (etwa eine einmalige Auszahlung) sind deshalb standardmäßig ausgeschlossen. Alles andere bleibt drin,
-            denn im Rückblick-Test wurde die Prognose durch pauschales Ausschließen nicht genauer: Solche Posten kommen bei dir
-            immer wieder vor. Wähle nur ab, was du sicher nicht mehr erwartest. Gehalt, Geschäftseinnahmen und wiederkehrende Raten
-            stehen hier nie.
-          </p>
-        </div>
-        <EinmalpostenForm kandidaten={d.einmalposten} />
-      </section>
-
-      {/* ── Annahmen ───────────────────────────────────────────────────────────── */}
-      <section aria-labelledby="annahmen" className="space-y-3">
-        <div>
-          <h2 id="annahmen" className="text-sm font-semibold">Annahmen</h2>
-          <p className="mt-0.5 max-w-3xl text-xs text-muted-foreground">
-            Was sich ändern wird und in der Vergangenheit noch nicht steht. Ein Gehalt <em>ersetzt</em> das bisherige ab dem
-            Monat; alles andere kommt pro Monat obendrauf. Die fein gestrichelte graue Linie oben zeigt die Prognose ohne diese Annahmen.
-          </p>
-        </div>
-        <AnnahmenForm initial={d.annahmen} ersterMonat={heute.slice(0, 7)} />
-      </section>
-    </div>
-  )
-}
-
-function SteuerKarte({ s, eur, mitAnnahmen }: { s: SteuerPrognose; eur: (n: number, d?: number) => string; mitAnnahmen: boolean }) {
-  const p = s.szenario.position
-  const h = s.szenario.hochrechnung
-  const ku = KU_STATUS[p.kleinunternehmer.status]
-  const zeile = (label: string, wert: string, klasse = '') => (
-    <div className="flex items-baseline justify-between gap-3 py-1.5">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className={`tabular-nums ${klasse}`}>{wert}</dd>
-    </div>
-  )
-  return (
-    <article className="rounded-lg border border-border bg-card p-5">
-      <h3 className="text-base font-semibold">{s.jahr}</h3>
-      <dl className="mt-2 divide-y divide-border/60 text-sm">
-        {zeile('Gewinn aus dem Gewerbe', eur(h.gewinn), h.gewinn < 0 ? 'text-danger' : '')}
-        {zeile('Betriebseinnahmen / -ausgaben', `${eur(h.betriebseinnahmen)} / ${eur(h.betriebsausgaben)}`)}
-        {zeile('Lohn (netto)' + (h.lohnBrutto !== null ? ' · brutto' : ''), h.lohnBrutto !== null ? `${eur(h.lohnNetto)} · ${eur(h.lohnBrutto)}` : eur(h.lohnNetto))}
-        {zeile('Zu versteuerndes Einkommen', eur(p.zve.betrag))}
-        {zeile('Einkommensteuer gesamt', eur(p.steuer.gesamt), 'font-medium')}
-        {zeile('Grenzsteuersatz auf den nächsten Euro', `${p.grenzsteuersatz.naechster_euro_pct} %`)}
-        {mitAnnahmen && zeile('Mehrsteuer durch deine Annahmen', (s.mehrsteuer >= 0 ? '+' : '') + eur(s.mehrsteuer), s.mehrsteuer > 0 ? 'text-danger' : 'text-success')}
-        {zeile('Steuer, die der Gewinn kostet', eur(p.gewinn_kostet.steuer))}
-        {zeile('Rücklage: Soll / Ist', `${eur(s.ruecklage.soll)} / ${s.ruecklage.ist === null ? 'kein Ziel' : eur(s.ruecklage.ist)}`)}
-        {s.ruecklage.proMonat !== null && s.ruecklage.luecke! > 0 &&
-          zeile(`Zurücklegen pro Monat (${s.ruecklage.monateBisJahresende} Monate)`, eur(s.ruecklage.proMonat), 'font-medium')}
-        {zeile('Kleinunternehmer-Umsatz', `${eur(p.kleinunternehmer.umsatz_laufend)} von ${eur(p.kleinunternehmer.grenze_laufend)}`, ku.klasse)}
-      </dl>
-      <p className={`mt-2 text-xs ${ku.klasse}`}>Kleinunternehmer-Status: {ku.text}</p>
-      {[...p.warnungen, ...s.hinweise].length > 0 && (
-        <ul className="mt-3 list-disc space-y-1 pl-4 text-xs text-muted-foreground">
-          {[...p.warnungen, ...s.hinweise].slice(0, 5).map((w, i) => <li key={i}>{w}</li>)}
+      {warnungen.length > 0 && (
+        <ul className="space-y-1.5" aria-label="Hinweise">
+          {warnungen.map((w, i) => (
+            <li key={i} className="flex min-w-0 items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs sm:text-sm">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
+              <span className="min-w-0">{w}</span>
+            </li>
+          ))}
         </ul>
       )}
-    </article>
+
+      <PrognoseKennzahlenLeiste
+        k={kennzahlen} locale={locale} datumText={datumText} monate={monate}
+        risikoBetrag={sz.risikoTiefpunkt.betrag} risikoDatum={sz.risikoTiefpunkt.datum}
+      />
+
+      <PrognoseChart daten={chart} mitAnnahmen={mitAnnahmen} />
+
+      <PrognoseTabs
+        tabs={[
+          {
+            key: 'annahmen', label: 'Annahmen', anzahl: d.annahmen.length,
+            inhalt: <AnnahmenListe gruppen={gruppen} ersterMonat={startMonat} />,
+          },
+          { key: 'monate', label: 'Monate', inhalt: monateTabelle },
+          { key: 'termine', label: 'Termine', anzahl: sz.termine.length, inhalt: termine },
+          {
+            key: 'steuer', label: 'Steuer',
+            inhalt: <PrognoseSteuer steuer={d.steuer} eur={eur} mitAnnahmen={mitAnnahmen} laufrateQuelle={d.laufrateQuelle} />,
+          },
+          {
+            key: 'posten', label: 'Einmalposten', anzahl: d.einmalposten.length,
+            inhalt: (
+              <div className="space-y-2">
+                {d.ausgeschlossen > 0 && (
+                  <p className="text-xs text-muted-foreground">{d.ausgeschlossen} Buchung{d.ausgeschlossen === 1 ? '' : 'en'} vom Lernen ausgenommen.</p>
+                )}
+                <EinmalpostenListe kandidaten={d.einmalposten} />
+              </div>
+            ),
+          },
+        ]}
+      />
+    </div>
   )
 }

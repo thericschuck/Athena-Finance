@@ -9,7 +9,17 @@ export type ContractRow = {
   id: string; name: string; provider: string | null; frequency: string
   amount: number; currency: string; end_date: string | null
   notice_days: number; auto_renews: boolean; account_id: string | null
+  /** Vertragsart; fehlt sie, zählt der Vertrag wie bisher als Fixkosten. */
+  type?: string
 }
+
+/**
+ * Verträge, die Geld zwischen eigenen Konten bewegen (Sparraten): keine Fixkosten und nichts, was man
+ * kündigt. Dieselbe Regel wie `istUmbuchung` in lib/vertraege/rechnen.ts (hier bewusst als eigene Kopie:
+ * diese Datei hat keine Imports).
+ */
+const SPARRATEN_TYPEN = new Set(['transfer', 'savings_plan', 'building_savings'])
+const istSparrate = (c: { type?: string }) => c.type !== undefined && SPARRATEN_TYPEN.has(c.type)
 
 function startOfDay(d: Date): Date {
   const t = new Date(d); t.setHours(0, 0, 0, 0)
@@ -54,6 +64,7 @@ export type UpcomingContract = ContractRow & { renewalDate: Date; deadlineDate: 
 /** Verträge, deren Kündigungsfrist in <= `withinDays` Tagen (oder bereits) abläuft, dringendste zuerst. */
 export function computeUpcomingRenewals(contracts: ContractRow[], today: Date, withinDays = 45): UpcomingContract[] {
   return contracts
+    .filter(c => !istSparrate(c))
     .map(c => {
       const renewalDate = getNextRenewal(c, today)
       if (!renewalDate) return null
@@ -69,7 +80,7 @@ export type FixedCostContract = { id: string; name: string; monthly: number; acc
 
 export function buildFixedCosts(contracts: ContractRow[]): { contracts: FixedCostContract[]; total: number } {
   const list = contracts
-    .filter(c => c.currency === 'EUR')
+    .filter(c => c.currency === 'EUR' && !istSparrate(c))
     .map(c => ({ id: c.id, name: c.name, monthly: toMonthly(c.amount, c.frequency), accountId: c.account_id }))
     .sort((a, b) => b.monthly - a.monthly)
   return { contracts: list, total: list.reduce((s, c) => s + c.monthly, 0) }

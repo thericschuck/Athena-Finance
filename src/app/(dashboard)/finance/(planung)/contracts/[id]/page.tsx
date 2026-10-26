@@ -1,188 +1,186 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
 import { requireAuthUser } from '@/lib/supabase/server'
-import { getContract } from '@/lib/data/finance-planning'
-import { getAccountNames } from '@/lib/data/finance-accounts'
-import { getCategoryNames, getContractTransactions } from '@/lib/data/finance-transactions'
 import { EditContractDialog, DeleteContractButton } from '@/components/finance/contract-form'
-import { CONTRACT_TYPES, FREQUENCIES, TRANSFER_TYPES } from '@/lib/finance/contract-constants'
-import { ArrowLeft, RefreshCw, AlertTriangle } from 'lucide-react'
-import { getSettings } from '@/lib/settings'
-import { fmtCurrency, fmtDate as libFmtDate } from '@/lib/format'
+import { VertraegeKennzahlenLeiste, type Zelle } from '@/components/vertraege/VertraegeKennzahlenLeiste'
+import { AbgleichHinweis, KuendigungHinweis } from '@/components/vertraege/VertragHinweise'
+import { VertragVerlauf } from '@/components/vertraege/VertragVerlauf'
+import { CONTRACT_TYPES, FREQUENCIES } from '@/lib/finance/contract-constants'
+import { ladeVertragDetail } from '@/lib/data/vertraege-seite'
+import { pruefeVertrag } from '@/lib/forecast/vertrag-abgleich'
+import { tageZwischen } from '@/lib/forecast/datum'
+import { fmtCurrency } from '@/lib/format'
+import { datumText, istUmbuchung, kuendigung, naechsterTermin, proJahr, proMonat, relativTage } from '@/lib/vertraege/rechnen'
+import { abbuchungsVerlauf, verlaufKennzahlen } from '@/lib/vertraege/verlauf'
 
-function toMonthly(amount: number, frequency: string): number {
-  const map: Record<string, number> = {
-    weekly: 52 / 12, biweekly: 26 / 12,
-    monthly: 1, quarterly: 1 / 3, biannual: 1 / 6, yearly: 1 / 12,
-  }
-  return amount * (map[frequency] ?? 1)
-}
+const TYP = Object.fromEntries(CONTRACT_TYPES.map(t => [t.value, t.label]))
+const INTERVALL = Object.fromEntries(FREQUENCIES.map(f => [f.value, f.label]))
 
-const TYPE_LABEL   = Object.fromEntries(CONTRACT_TYPES.map(t => [t.value, t.label]))
-const FREQ_LABEL   = Object.fromEntries(FREQUENCIES.map(f => [f.value, f.label]))
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 export default async function ContractDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [{ id }, { supabase, user }] = await Promise.all([params, requireAuthUser()])
+  const d = await ladeVertragDetail(supabase, user!.id, id)
+  if (!d) notFound()
 
-  const [contract, txs, accs, cats, settings] = await Promise.all([
-    getContract(supabase, user!.id, id),
-    getContractTransactions(supabase, user!.id, id),
-    getAccountNames(supabase, user!.id),
-    getCategoryNames(supabase, user!.id),
-    getSettings(user!.id),
-  ])
+  const { vertrag: c, heute, locale, dateFormat, konten, kategorien } = d
+  const eur = (n: number, stellen = 2) => fmtCurrency(n, c.currency, locale, { fractionDigits: stellen })
+  const umbuchung = istUmbuchung(c.type)
+  const kontoName = (kid: string | null) => konten.find(k => k.id === kid)?.name
+  const kategorie = kategorien.find(k => k.id === c.category_id)?.name
 
-  const locale     = (settings.number_format as string) ?? 'de-DE'
-  const dateFormat = (settings.date_format   as string) ?? 'dd.MM.yyyy'
-  const fmtEur  = (n: number, currency = 'EUR') => fmtCurrency(n, currency, locale)
-  const fmtDate = (d: string) => libFmtDate(d, dateFormat)
+  const k = kuendigung(c, heute)
+  const naechste = c.is_active ? naechsterTermin(c, heute) : null
+  const monatlich = c.currency === 'EUR' ? proMonat(c.amount, c.frequency) : null
 
-  if (!contract) notFound()
+  const pruefbar = c.is_active && !umbuchung && c.account_id !== null
+  const abgleich = pruefbar
+    ? pruefeVertrag({ ...c, auto_renews: c.auto_renews === true }, d.buchungen, heute)
+    : null
+  const verlauf = pruefbar ? abbuchungsVerlauf({ ...c, auto_renews: c.auto_renews === true }, d.buchungen, heute, 12) : []
+  const vk = verlaufKennzahlen(verlauf, c.amount)
 
-  const c = contract
-
-  const isTransfer  = TRANSFER_TYPES.has(c.type)
-  const fromAccount = accs.find(a => a.id === c.account_id)
-  const toAccount   = accs.find(a => a.id === c.to_account_id)
-  const category    = cats.find(a => a.id === c.category_id)
-
-  const monthlyEur  = c.currency === 'EUR' ? toMonthly(c.amount, c.frequency) : null
-  const totalBooked = txs.reduce((s, t) => s + t.amount, 0)
-
-  const isExpired = c.end_date && c.notice_days
-    ? new Date(c.end_date).getTime() - c.notice_days * 86400000 <= Date.now()
-    : false
+  const zellen: Zelle[] = [
+    {
+      titel: 'Betrag', wert: eur(c.amount), zusatz: `/ ${INTERVALL[c.frequency]?.toLowerCase() ?? c.frequency}`,
+      info: {
+        titel: 'Vertragsbetrag',
+        zeilen: [['Intervall', INTERVALL[c.frequency] ?? c.frequency], ['Abrechnungstag', c.billing_day ? String(c.billing_day) : 'Starttag']],
+        text: 'Der im Vertrag hinterlegte Betrag je Abbuchung.',
+      },
+    },
+  ]
+  if (monatlich !== null && c.frequency !== 'monthly') {
+    zellen.push({
+      titel: 'Pro Monat', wert: eur(monatlich),
+      info: { titel: 'Pro Monat', zeilen: [['Pro Jahr', eur(proJahr(c.amount, c.frequency))]], text: 'Der Betrag auf einen Monat umgerechnet.' },
+    })
+  }
+  zellen.push({
+    titel: 'Pro Jahr', wert: eur(proJahr(c.amount, c.frequency), 0),
+    info: { titel: 'Pro Jahr', zeilen: [['Genau', eur(proJahr(c.amount, c.frequency))]], text: 'Hochgerechnet auf zwölf Monate.' },
+  })
+  if (naechste) {
+    zellen.push({
+      titel: 'Nächste Zahlung', wert: relativTage(tageZwischen(heute, naechste)), zusatz: datumText(naechste, dateFormat),
+      info: { titel: 'Nächste Zahlung', zeilen: [['Termin', datumText(naechste, dateFormat)]], text: 'Nach Abrechnungstag und Intervall gerechnet, wie in der Prognose.' },
+    })
+  }
+  if ((k.status === 'bald' || k.status === 'spaeter') && k.tage !== null) {
+    zellen.push({
+      titel: 'Kündigen bis', wert: datumText(k.frist, dateFormat), zusatz: relativTage(k.tage), ton: k.status === 'bald' ? 'warning' : undefined,
+      info: { titel: 'Kündigungsfrist', zeilen: [['Enddatum', datumText(c.end_date, dateFormat)], ['Frist', `${c.notice_days} Tage`]], text: 'Letzter Tag für die Kündigung: Enddatum minus Kündigungsfrist.' },
+    })
+  }
+  if (vk.anzahlGebucht > 0) {
+    zellen.push({
+      titel: 'Gebucht', wert: eur(vk.summeGebucht, 0), zusatz: `${vk.anzahlGebucht}×`,
+      info: {
+        titel: 'Tatsächlich abgebucht',
+        zeilen: [['Buchungen', String(vk.anzahlGebucht)], ['Durchschnitt', vk.durchschnitt !== null ? eur(vk.durchschnitt) : '—'], ['Summe', eur(vk.summeGebucht)]],
+        text: `Summe der gefundenen Abbuchungen zu den letzten ${verlauf.length} Terminen. Gefunden heißt: Ausgabe auf dem Vertragskonto, Betrag innerhalb von 5 %, Datum von 3 Tagen davor bis 7 Tage danach.`,
+      },
+    })
+  }
 
   return (
-    <div className="p-4 sm:p-8 space-y-6">
-      {/* Back nav */}
-      <Link
-        href="/finance/contracts"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
+    <div className="min-w-0 space-y-4 p-4 sm:p-8">
+      <Link href="/finance/contracts" className="inline-flex min-h-10 items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground md:min-h-0">
         <ArrowLeft className="size-4" />
         Alle Verträge
       </Link>
 
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl font-semibold tracking-tight">{c.name}</h1>
-            {!c.is_active && (
-              <span className="text-xs rounded-full bg-muted px-2 py-0.5 text-muted-foreground">Inaktiv</span>
-            )}
-            {c.is_active && isExpired && (
-              <span className="inline-flex items-center gap-1 text-xs rounded-full bg-destructive/10 px-2 py-0.5 font-medium text-destructive">
-                <AlertTriangle className="size-3" />Kündigung überfällig
-              </span>
-            )}
-            {c.is_active && c.auto_renews && (
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                <RefreshCw className="size-3" />Auto-Verlängerung
-              </span>
-            )}
-          </div>
-          {c.provider && <p className="mt-0.5 text-sm text-muted-foreground">{c.provider}</p>}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">{c.name}</h1>
+          <p className="truncate text-sm text-muted-foreground">
+            {[TYP[c.type] ?? c.type, c.provider, umbuchung ? `${kontoName(c.account_id) ?? '—'} → ${kontoName(c.to_account_id) ?? '—'}` : kontoName(c.account_id)]
+              .filter(Boolean).join(' · ')}
+            {!c.is_active && ' · inaktiv'}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <EditContractDialog contract={c} accounts={accs} categories={cats} />
-          <DeleteContractButton contract={c} />
+        <div className="flex shrink-0 items-center">
+          <EditContractDialog contract={c} accounts={konten} categories={kategorien} />
+          <DeleteContractButton contract={c} redirectTo="/finance/contracts" />
         </div>
       </div>
 
-      {/* Info grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <InfoCard label="Betrag" value={`${fmtEur(c.amount, c.currency)} / ${FREQ_LABEL[c.frequency] ?? c.frequency}`} money />
-        {monthlyEur !== null && (
-          <InfoCard label="Monatlich" value={fmtEur(monthlyEur)} money />
-        )}
-        <InfoCard label="Typ" value={TYPE_LABEL[c.type] ?? c.type} />
-        {isTransfer ? (
-          <InfoCard
-            label="Überweisung"
-            value={`${fromAccount?.name ?? '—'} → ${toAccount?.name ?? '—'}`}
-          />
-        ) : (
-          <InfoCard label="Konto" value={fromAccount?.name ?? '—'} />
-        )}
-        <InfoCard label="Startdatum" value={fmtDate(c.start_date)} />
-        {c.end_date && <InfoCard label="Enddatum" value={fmtDate(c.end_date)} />}
-        {c.notice_days > 0 && <InfoCard label="Kündigungsfrist" value={`${c.notice_days} Tage`} />}
-        {category && <InfoCard label="Kategorie" value={category.name} />}
-      </div>
+      <VertraegeKennzahlenLeiste zellen={zellen} />
 
-      {/* Totals */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <div className="rounded-lg border border-border bg-card p-4 space-y-1">
-          <p className="text-xs text-muted-foreground">Gebuchte Transaktionen</p>
-          <p className="text-2xl font-semibold tabular-nums">{txs.length}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card p-4 space-y-1">
-          <p className="text-xs text-muted-foreground">Gesamtbetrag</p>
-          <p className="text-2xl font-semibold tabular-nums">{fmtEur(totalBooked, c.currency)}</p>
-        </div>
-      </div>
-
-      {/* Transactions */}
-      <div className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Transaktionen ({txs.length})
-        </h2>
-
-        {txs.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border py-12 text-center">
-            <p className="text-sm text-muted-foreground">
-              Noch keine Transaktionen — der Cron-Job bucht täglich automatisch.
+      {c.is_active && (abgleich || k.status !== 'keine' || c.auto_renews) && (
+        <div className="flex min-w-0 flex-col gap-1">
+          {abgleich && <AbgleichHinweis abgleich={abgleich} dateFormat={dateFormat} />}
+          <KuendigungHinweis k={k} endDate={c.end_date} dateFormat={dateFormat} autoRenews={c.auto_renews === true} />
+          {vk.letzterBetrag !== null && (
+            <p className="text-xs text-warning">
+              Zuletzt wurden {eur(vk.letzterBetrag)} abgebucht, im Vertrag stehen {eur(c.amount)}. Betrag im Vertrag anpassen?
             </p>
-          </div>
+          )}
+        </div>
+      )}
+
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-lg border border-border bg-card px-4 py-3 text-sm sm:grid-cols-4">
+        <Fakt label="Start" wert={datumText(c.start_date, dateFormat)} />
+        <Fakt label="Ende" wert={c.end_date ? datumText(c.end_date, dateFormat) : 'unbefristet'} />
+        <Fakt label="Kündigungsfrist" wert={c.notice_days > 0 ? `${c.notice_days} Tage` : '—'} />
+        <Fakt label="Verlängerung" wert={c.auto_renews ? 'automatisch' : 'keine'} />
+        <Fakt label="Abrechnungstag" wert={c.billing_day ? `${c.billing_day}.` : 'wie Starttag'} />
+        <Fakt label="Kategorie" wert={kategorie ?? '—'} />
+        <Fakt label="Währung" wert={c.currency} />
+        <Fakt label="Konto" wert={kontoName(c.account_id) ?? '—'} />
+      </dl>
+
+      <section className="min-w-0 space-y-2">
+        <h2 className="px-1 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          Abbuchungen
+          {verlauf.length > 0 && <span className="ml-2 text-xs font-normal normal-case tracking-normal text-muted-foreground/70">letzte {verlauf.length} Termine</span>}
+        </h2>
+        {verlauf.length > 0 ? (
+          <VertragVerlauf zeilen={verlauf} currency={c.currency} locale={locale} dateFormat={dateFormat} vertragsBetrag={c.amount} />
         ) : (
-          <div className="rounded-lg border border-border bg-card overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-muted/40 border-b border-border text-muted-foreground">
-                  <th className="text-left px-4 py-2.5 font-medium">Datum</th>
-                  <th className="text-left px-4 py-2.5 font-medium">Beschreibung</th>
-                  <th className="text-right px-4 py-2.5 font-medium">Betrag</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {txs.map(tx => (
-                  <tr key={tx.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 tabular-nums text-muted-foreground whitespace-nowrap">
-                      {fmtDate(tx.date)}
-                    </td>
-                    <td className="px-4 py-3">
-                      {tx.description ?? c.name}
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums font-medium">
-                      <span className={tx.type === 'expense' ? 'text-danger' : ''}>
-                        {tx.type === 'expense' ? '−' : ''}{fmtEur(tx.amount, tx.currency)}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <p className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
+            {!c.is_active ? 'Der Vertrag ist inaktiv.'
+              : umbuchung ? 'Umbuchungen zwischen eigenen Konten werden nicht mit Bankbuchungen abgeglichen.'
+                : !c.account_id ? 'Ohne Konto lässt sich keine Abbuchung zuordnen. Konto im Vertrag hinterlegen.'
+                  : 'Noch kein Abbuchungstermin seit dem Start.'}
+          </p>
         )}
-      </div>
+      </section>
+
+      {d.verknuepft.length > 0 && (
+        <section className="min-w-0 space-y-2">
+          <h2 className="px-1 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Verknüpfte Buchungen
+            <span className="ml-2 text-xs font-normal normal-case tracking-normal text-muted-foreground/70">{d.verknuepft.length}</span>
+          </h2>
+          <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+            {d.verknuepft.slice(0, 12).map(b => (
+              <li key={b.id} className="flex items-baseline justify-between gap-3 px-3 py-2.5 sm:px-4">
+                <span className="min-w-0 truncate text-sm">
+                  <span className="tabular-nums">{datumText(b.date, dateFormat)}</span>
+                  <span className="ml-2 text-xs text-muted-foreground">{b.text || c.name}</span>
+                </span>
+                <span className={`shrink-0 text-sm font-medium tabular-nums ${b.type === 'expense' ? 'text-danger' : ''}`}>
+                  {b.type === 'expense' ? '−' : ''}{eur(b.amount)}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="px-1 text-xs text-muted-foreground">Früher hat ein Cron-Job Buchungen zum Vertrag angelegt; neue entstehen nicht mehr.</p>
+        </section>
+      )}
 
       {c.notes && (
-        <div className="rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-          {c.notes}
-        </div>
+        <p className="whitespace-pre-line rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">{c.notes}</p>
       )}
     </div>
   )
 }
 
-function InfoCard({ label, value, money }: { label: string; value: string; money?: boolean }) {
+function Fakt({ label, wert }: { label: string; wert: string }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-3 space-y-0.5">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={`text-sm font-medium ${money ? 'tabular-nums' : ''}`}>{value}</p>
+    <div className="min-w-0">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="truncate">{wert}</dd>
     </div>
   )
 }

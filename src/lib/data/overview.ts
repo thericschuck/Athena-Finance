@@ -92,12 +92,14 @@ export type ActiveContract = {
   id: string; name: string; provider: string | null; frequency: string
   amount: number; currency: string; end_date: string | null
   notice_days: number; auto_renews: boolean; account_id: string | null
+  /** Vertragsart (`abo`, `transfer`, `savings_plan`, `building_savings` …). */
+  type?: string
 }
 
 export async function getActiveContracts(supabase: Client, userId: string): Promise<ActiveContract[]> {
   const { data } = await supabase
     .from('contracts')
-    .select('id,name,provider,frequency,amount,currency,end_date,notice_days,auto_renews,account_id')
+    .select('id,name,provider,frequency,amount,currency,end_date,notice_days,auto_renews,account_id,type')
     .eq('user_id', userId)
     .eq('is_active', true)
   return (data ?? []) as ActiveContract[]

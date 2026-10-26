@@ -1,424 +1,165 @@
-import Link from 'next/link'
 import { requireAuthUser } from '@/lib/supabase/server'
-import {
-  AddContractDialog,
-  EditContractDialog,
-  DeleteContractButton,
-} from '@/components/finance/contract-form'
-import { CONTRACT_TYPES, FREQUENCIES, TRANSFER_TYPES } from '@/lib/finance/contract-constants'
-import { AlertTriangle, RefreshCw, TrendingUp, ExternalLink } from 'lucide-react'
-import { getSettings } from '@/lib/settings'
-import { fmtCurrency as fmtCurrencyLib, fmtDate as fmtDateLib } from '@/lib/format'
-import {
-  getContracts,
-  getSavingsPlansForContracts,
-  type ContractRow as Contract,
-  type SavingsPlanRow as SavingsPlan,
-} from '@/lib/data/finance-planning'
-import { getAccountNames } from '@/lib/data/finance-accounts'
-import { getCategoryNames } from '@/lib/data/finance-transactions'
-import { ladeVertragsVorschlaege } from '@/lib/data/vertragsvorschlaege'
+import { AddContractDialog } from '@/components/finance/contract-form'
 import { VertragsVorschlaege } from '@/components/finance/vertrags-vorschlaege'
-import { ladeVertragsAbgleich } from '@/lib/data/vertrag-abgleich'
-import type { Abgleich } from '@/lib/forecast/vertrag-abgleich'
+import { VertraegeKennzahlenLeiste, type Zelle } from '@/components/vertraege/VertraegeKennzahlenLeiste'
+import { VertraegeAnsicht } from '@/components/vertraege/VertraegeAnsicht'
+import { DepotPlanZeilen, VertraegeGruppe } from '@/components/vertraege/VertraegeListe'
+import { ladeVertraegeSeite } from '@/lib/data/vertraege-seite'
+import { fmtCurrency } from '@/lib/format'
+import {
+  ansichtVon, datumText, fixkostenNachKonto, gruppiere, kennzahlen, relativTage, type Ansicht,
+} from '@/lib/vertraege/rechnen'
 
-// ─── Date utilities ───────────────────────────────────────────────────────────
-function nextBillingDate(startDate: string, frequency: string, billingDay?: number | null): Date {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+export default async function ContractsPage({ searchParams }: { searchParams: Promise<{ ansicht?: string | string[] }> }) {
+  const [{ supabase, user }, params] = await Promise.all([requireAuthUser(), searchParams])
+  const ansicht = ansichtVon(params.ansicht)
+  const d = await ladeVertraegeSeite(supabase, user!.id)
 
-  const start = new Date(startDate)
-  start.setHours(0, 0, 0, 0)
+  const { heute, locale, dateFormat } = d
+  const euro = (n: number, stellen = 0) => fmtCurrency(n, 'EUR', locale, { fractionDigits: stellen })
 
-  const intervalDays: Record<string, number> = { weekly: 7, biweekly: 14 }
-  const intervalMonths: Record<string, number> = {
-    monthly: 1, quarterly: 3, biannual: 6, yearly: 12,
+  const gruppen = gruppiere(d.vertraege, heute)
+  const aktiveDepot = d.depotPlaene.filter(p => p.is_active)
+  const offeneIds = new Set([...d.abgleich].filter(([, a]) => a.status === 'offen').map(([id]) => id))
+  const k = kennzahlen(d.vertraege, aktiveDepot.reduce((s, p) => s + Number(p.monthly_amount), 0), offeneIds, heute)
+  const nachKonto = fixkostenNachKonto(d.vertraege, id => d.konten.find(x => x.id === id)?.name)
+
+  const zahlen: Record<Ansicht, number> = {
+    alle: d.vertraege.length + d.depotPlaene.length,
+    fixkosten: gruppen.fixkosten.length,
+    sparraten: gruppen.sparraten.length + d.depotPlaene.length,
+    inaktiv: gruppen.inaktiv.length,
   }
 
-  if (intervalDays[frequency]) {
-    if (start > today) return start
-    const days = intervalDays[frequency]
-    const diff = Math.floor((today.getTime() - start.getTime()) / 86400000)
-    const next = new Date(start)
-    next.setDate(next.getDate() + (Math.floor(diff / days) + 1) * days)
-    return next
+  const fremd = k.fremdwaehrung > 0
+    ? ` ${k.fremdwaehrung} Vertrag${k.fremdwaehrung === 1 ? '' : 'e'} in anderer Währung ${k.fremdwaehrung === 1 ? 'steht' : 'stehen'} nicht in der Summe.`
+    : ''
+
+  const zellen: Zelle[] = [
+    {
+      titel: 'Fixkosten', wert: euro(k.monatlich), zusatz: '/ Monat',
+      info: {
+        titel: 'Fixkosten pro Monat',
+        zeilen: [['Verträge', String(k.anzahlFixkosten)], ['Genau', euro(k.monatlich, 2)]],
+        text: `Summe der aktiven Verträge in Euro, Wochen-, Quartals-, Halbjahres- und Jahresbeträge auf den Monat umgerechnet. Sparraten und Umbuchungen zählen nicht dazu.${fremd}`,
+      },
+    },
+    {
+      titel: 'Pro Jahr', wert: euro(k.jahr),
+      info: { titel: 'Fixkosten pro Jahr', zeilen: [['Genau', euro(k.jahr, 2)]], text: 'Die Monatssumme mal zwölf.' },
+    },
+    {
+      titel: 'Aktiv', wert: String(k.anzahlFixkosten),
+      zusatz: k.anzahlSparraten > 0 ? `+ ${k.anzahlSparraten} Sparraten` : undefined,
+      info: {
+        titel: 'Aktive Verträge',
+        zeilen: [['Fixkosten', String(k.anzahlFixkosten)], ['Sparraten und Umbuchungen', String(k.anzahlSparraten)], ['Inaktiv', String(gruppen.inaktiv.length)]],
+        text: 'Aktive Verträge ohne Sparraten. Die Sparraten sind Umbuchungen zwischen eigenen Konten.',
+      },
+    },
+  ]
+  if (k.sparMonatlich > 0) {
+    zellen.push({
+      titel: 'Sparraten', wert: euro(k.sparMonatlich), zusatz: '/ Monat',
+      info: {
+        titel: 'Sparraten pro Monat',
+        zeilen: [['Verträge', String(k.anzahlSparraten)], ['Depot-Sparpläne', String(aktiveDepot.length)]],
+        text: 'Daueraufträge, Bausparraten und Depot-Sparpläne. Das Geld bleibt bei dir, deshalb gehören sie nicht zu den Fixkosten.',
+      },
+    })
+  }
+  if (k.naechsteAbbuchung) {
+    const n = k.naechsteAbbuchung
+    zellen.push({
+      titel: 'Nächste Abbuchung', wert: relativTage(n.tage), zusatz: n.name,
+      info: {
+        titel: n.name,
+        zeilen: [['Termin', datumText(n.termin, dateFormat)], ['Betrag', euro(n.betrag, 2)]],
+        text: 'Der nächste Abbuchungstermin aller aktiven Verträge, gerechnet nach Abrechnungstag und Intervall.',
+      },
+    })
+  }
+  if (k.naechsteKuendigung) {
+    const n = k.naechsteKuendigung
+    zellen.push({
+      titel: 'Kündigungsfrist', wert: relativTage(n.tage), zusatz: n.name, ton: n.tage <= 30 ? 'warning' : undefined,
+      info: {
+        titel: `Kündigung ${n.name}`,
+        zeilen: [['Kündigen bis', datumText(n.frist, dateFormat)]],
+        text: 'Die nächste Kündigungsfrist eines Vertrags mit Enddatum und automatischer Verlängerung (Enddatum minus Kündigungsfrist).',
+      },
+    })
+  }
+  if (k.ohneAbbuchung > 0) {
+    zellen.push({
+      titel: 'Ohne Abbuchung', wert: String(k.ohneAbbuchung), ton: 'warning',
+      info: {
+        titel: 'Abbuchung nicht eingegangen',
+        text: 'Zum letzten Termin dieser Verträge gibt es keine passende Ausgabe auf dem Vertragskonto (Betrag innerhalb von 5 %, 3 Tage davor bis 7 Tage danach). Bank-Sync prüfen, oder die Zahlung läuft über ein anderes Konto (Karte, PayPal).',
+      },
+    })
   }
 
-  const months = intervalMonths[frequency] ?? 1
-
-  if (billingDay && billingDay >= 1 && billingDay <= 31) {
-    // Nächste Occurrence des Abrechnungstags (frühestens morgen, frühestens ab Startdatum)
-    const earliest = start > today
-      ? start
-      : new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1)
-
-    // Versuche aktuellen Monat
-    const thisMonth = new Date(today.getFullYear(), today.getMonth(), billingDay)
-    if (thisMonth >= earliest) return thisMonth
-
-    // Nächster Intervall-Zyklus
-    return new Date(today.getFullYear(), today.getMonth() + months, billingDay)
-  }
-
-  // Kein billing_day: aus start_date-Muster berechnen
-  if (start > today) return start
-  const monthsDiff =
-    (today.getFullYear() - start.getFullYear()) * 12 +
-    (today.getMonth() - start.getMonth())
-  const next = new Date(start)
-  next.setMonth(next.getMonth() + Math.max(0, Math.floor(monthsDiff / months)) * months)
-  while (next <= today) next.setMonth(next.getMonth() + months)
-  return next
-}
-
-function isNoticeExpired(contract: Contract): boolean {
-  if (!contract.end_date || contract.notice_days == null) return false
-  const deadline = new Date(contract.end_date)
-  deadline.setDate(deadline.getDate() - contract.notice_days)
-  deadline.setHours(0, 0, 0, 0)
-  return deadline <= new Date()
-}
-
-function toMonthly(amount: number, frequency: string): number {
-  const map: Record<string, number> = {
-    weekly: 52 / 12, biweekly: 26 / 12,
-    monthly: 1, quarterly: 1 / 3, biannual: 1 / 6, yearly: 1 / 12,
-  }
-  return amount * (map[frequency] ?? 1)
-}
-
-// ─── Formatters ───────────────────────────────────────────────────────────────
-const fmtEur = (n: number, locale: string) =>
-  fmtCurrencyLib(n, 'EUR', locale)
-
-function fmtCurrency(n: number, currency: string, locale: string) {
-  return fmtCurrencyLib(n, currency, locale)
-}
-
-function fmtDate(d: Date, dateFormat: string) {
-  return fmtDateLib(d, dateFormat)
-}
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-const TYPE_ORDER = [
-  'subscription', 'insurance', 'utility', 'loan', 'rental',
-  'transfer', 'savings_plan', 'building_savings', 'service', 'other',
-]
-const TYPE_LABEL = Object.fromEntries(CONTRACT_TYPES.map(t => [t.value, t.label]))
-const FREQ_LABEL = Object.fromEntries(FREQUENCIES.map(f => [f.value, f.label]))
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
-export default async function ContractsPage() {
-  const { supabase, user } = await requireAuthUser()
-
-  const [all, accs, categories, savingsPlans, settings, vorschlagsDaten, abgleiche] = await Promise.all([
-    getContracts(supabase, user!.id),
-    getAccountNames(supabase, user!.id),
-    getCategoryNames(supabase, user!.id),
-    getSavingsPlansForContracts(supabase, user!.id),
-    getSettings(user!.id),
-    // Die Vorschläge sind eine Zugabe: scheitert ihre Berechnung, bleibt die Seite benutzbar.
-    ladeVertragsVorschlaege(supabase, user!.id).catch(() => ({ vorschlaege: [], ausgeblendet: 0 })),
-    // Ebenfalls eine Zugabe: ohne Abgleich fehlt nur die Statusmarke an der Zeile.
-    ladeVertragsAbgleich(supabase, user!.id).catch(() => []),
-  ])
-  const abgleichVon = new Map(abgleiche.map(a => [a.vertrag.id, a.abgleich]))
-  const offeneZahl = abgleiche.filter(a => a.abgleich.status === 'offen').length
-
-  const locale = (settings.number_format as string) ?? 'de-DE'
-  const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
-
-  const active = all.filter(c => c.is_active)
-
-  const monthlyTotal = active
-    .filter(c => c.currency === 'EUR')
-    .reduce((s, c) => s + toMonthly(c.amount, c.frequency), 0)
-
-  // Per-account monthly breakdown
-  const accsById = new Map(accs.map(a => [a.id, a]))
-  const byAccount = new Map<string, { name: string; monthly: number }>()
-  for (const c of active.filter(c => c.currency === 'EUR' && c.account_id)) {
-    const acc = accsById.get(c.account_id!)
-    const key = c.account_id!
-    if (!byAccount.has(key)) byAccount.set(key, { name: acc?.name ?? 'Unbekannt', monthly: 0 })
-    byAccount.get(key)!.monthly += toMonthly(c.amount, c.frequency)
-  }
-  const accountBreakdown = Array.from(byAccount.values()).sort((a, b) => b.monthly - a.monthly)
-
-  const grouped = new Map<string, Contract[]>()
-  for (const t of TYPE_ORDER) grouped.set(t, [])
-  for (const c of all) {
-    const key = TYPE_ORDER.includes(c.type) ? c.type : 'other'
-    grouped.get(key)?.push(c)
-  }
-
-  const warningCount = all.filter(c => c.is_active && isNoticeExpired(c)).length
+  const gemeinsam = { konten: d.konten, kategorien: d.kategorien, abgleich: d.abgleich, locale, dateFormat, heute }
+  const leer = d.vertraege.length === 0 && d.depotPlaene.length === 0
+  const zeigeVorschlaege = ansicht === 'alle' || ansicht === 'fixkosten'
 
   return (
-    <div className="p-4 sm:p-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Verträge & Abos</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            {active.length} aktive Verträge · monatlich ca. <span className="tabular-nums">{fmtEur(monthlyTotal, locale)}</span>
-            {warningCount > 0 && (
-              <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">
-                <AlertTriangle className="size-3" />
-                {warningCount} Kündigungswarnung{warningCount > 1 ? 'en' : ''}
-              </span>
-            )}
-            {offeneZahl > 0 && (
-              <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
-                <AlertTriangle className="size-3" />
-                {offeneZahl} Abbuchung{offeneZahl > 1 ? 'en' : ''} nicht eingegangen
-              </span>
-            )}
-          </p>
+    <div className="min-w-0 space-y-4 p-4 sm:p-8">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">Verträge &amp; Abos</h1>
+          <p className="line-clamp-2 text-xs text-muted-foreground">Nur Übersicht: gebucht wird nichts, abgeglichen wird mit deinen Bankbuchungen.</p>
         </div>
-        <AddContractDialog accounts={accs} categories={categories ?? []} />
+        <AddContractDialog accounts={d.konten} categories={d.kategorien} />
       </div>
 
-      {/* Aus den Buchungen erkannte wiederkehrende Kosten ohne Vertrag */}
-      <VertragsVorschlaege vorschlaege={vorschlagsDaten.vorschlaege} ausgeblendet={vorschlagsDaten.ausgeblendet} />
+      {!leer && <VertraegeKennzahlenLeiste zellen={zellen} />}
 
-      {/* Per-account breakdown */}
-      {accountBreakdown.length > 0 && (
-        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-          <h2 className="text-sm font-medium text-muted-foreground">Fixkosten nach Konto</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {accountBreakdown.map(({ name, monthly }) => (
-              <div key={name} className="space-y-0.5">
-                <p className="text-xs text-muted-foreground truncate">{name}</p>
-                <p className="text-base font-semibold tabular-nums">
-                  {fmtEur(monthly, locale)}
-                  <span className="text-xs font-normal text-muted-foreground">/Mo.</span>
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+      {d.abgleichFehlt && (
+        <p role="status" className="text-xs text-warning">Der Abgleich mit den Bankbuchungen ließ sich nicht laden; die Hinweise zu fehlenden Abbuchungen fehlen vorübergehend.</p>
       )}
 
-      {all.length === 0 && savingsPlans.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <div className="space-y-8">
-          {Array.from(grouped.entries()).map(([type, items]) =>
-            items.length === 0 ? null : (
-              <ContractGroup
-                key={type}
-                title={TYPE_LABEL[type] ?? type}
-                contracts={items}
-                accounts={accs}
-                categories={categories ?? []}
-                locale={locale}
-                dateFormat={dateFormat}
-                abgleichVon={abgleichVon}
-              />
-            )
-          )}
-
-          {/* Depot-Sparpläne (read-only) */}
-          {savingsPlans.length > 0 && (
-            <section className="space-y-2">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground px-1">
-                Depot-Sparpläne
-                <span className="ml-2 font-normal normal-case tracking-normal text-muted-foreground/70">
-                  ({savingsPlans.length})
+      {!leer && (
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <VertraegeAnsicht aktiv={ansicht} zahlen={zahlen} />
+          {nachKonto.length > 1 && ansicht !== 'sparraten' && ansicht !== 'inaktiv' && (
+            <p className="flex min-w-0 flex-wrap gap-x-3 text-xs text-muted-foreground">
+              {nachKonto.map(e => (
+                <span key={e.id ?? 'ohne'} className="min-w-0 max-w-full truncate">
+                  {e.name} <span className="tabular-nums text-foreground">{euro(e.monatlich)}</span>/Mo.
                 </span>
-              </h2>
-              <div className="rounded-lg border border-border bg-card overflow-hidden">
-                <table className="w-full text-sm">
-                  <tbody className="divide-y divide-border">
-                    {savingsPlans.map(plan => (
-                      <SavingsPlanRow key={plan.id} plan={plan} locale={locale} />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
+              ))}
+            </p>
           )}
         </div>
       )}
-    </div>
-  )
-}
 
-// ─── Group ────────────────────────────────────────────────────────────────────
-function ContractGroup({
-  title, contracts, accounts, categories, locale, dateFormat, abgleichVon,
-}: {
-  title: string
-  contracts: Contract[]
-  accounts: { id: string; name: string }[]
-  categories: { id: string; name: string }[]
-  locale: string
-  dateFormat: string
-  abgleichVon: Map<string, Abgleich>
-}) {
-  return (
-    <section className="space-y-2">
-      <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground px-1">
-        {title}
-        <span className="ml-2 font-normal normal-case tracking-normal text-muted-foreground/70">
-          ({contracts.length})
-        </span>
-      </h2>
-      <div className="rounded-lg border border-border bg-card overflow-hidden">
-        <table className="w-full text-sm">
-          <tbody className="divide-y divide-border">
-            {contracts.map(c => (
-              <ContractRow key={c.id} contract={c} accounts={accounts} categories={categories} locale={locale} dateFormat={dateFormat} abgleich={abgleichVon.get(c.id)} />
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  )
-}
+      {zeigeVorschlaege && <VertragsVorschlaege vorschlaege={d.vorschlaege} ausgeblendet={d.ausgeblendet} />}
 
-// ─── Row ──────────────────────────────────────────────────────────────────────
-function ContractRow({
-  contract: c, accounts, categories, locale, dateFormat, abgleich,
-}: {
-  contract: Contract
-  accounts: { id: string; name: string }[]
-  categories: { id: string; name: string }[]
-  locale: string
-  dateFormat: string
-  abgleich?: Abgleich
-}) {
-  const expired    = isNoticeExpired(c)
-  const nextDate   = c.is_active ? nextBillingDate(c.start_date, c.frequency, c.billing_day) : null
-  const isTransfer = TRANSFER_TYPES.has(c.type)
-  const fromAcc    = isTransfer ? accounts.find(a => a.id === c.account_id) : null
-  const toAcc      = isTransfer ? accounts.find(a => a.id === c.to_account_id) : null
-
-  return (
-    <tr className={`hover:bg-muted/30 transition-colors group ${!c.is_active ? 'opacity-50' : ''}`}>
-      {/* Name */}
-      <td className="px-4 py-3 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Link
-            href={`/finance/contracts/${c.id}`}
-            className="font-medium text-foreground hover:underline underline-offset-2"
-          >
-            {c.name}
-          </Link>
-          {!isTransfer && c.provider && (
-            <span className="text-xs text-muted-foreground">{c.provider}</span>
+      {leer ? (
+        <div className="rounded-lg border border-dashed border-border bg-card px-4 py-12 text-center">
+          <p className="text-sm font-medium">Keine Verträge erfasst</p>
+          <p className="mt-1 text-sm text-muted-foreground">Lege Abos, Versicherungen oder Daueraufträge an, oder übernimm einen erkannten Vorschlag.</p>
+        </div>
+      ) : (
+        <div className="min-w-0 space-y-6">
+          {(ansicht === 'alle' || ansicht === 'fixkosten') && (
+            <VertraegeGruppe titel="Fixkosten" vertraege={gruppen.fixkosten} {...gemeinsam} />
           )}
-          {isTransfer && (fromAcc || toAcc) && (
-            <span className="text-xs text-muted-foreground">
-              {fromAcc?.name ?? '—'} → {toAcc?.name ?? '—'}
-            </span>
+          {(ansicht === 'alle' || ansicht === 'sparraten') && (
+            <VertraegeGruppe titel="Sparraten & Umbuchungen" zusatzAnzahl={d.depotPlaene.length} vertraege={gruppen.sparraten} {...gemeinsam}>
+              {d.depotPlaene.length > 0 && <DepotPlanZeilen plaene={d.depotPlaene} locale={locale} dateFormat={dateFormat} heute={heute} />}
+            </VertraegeGruppe>
           )}
-          {!c.is_active && (
-            <span className="text-xs rounded-full bg-muted px-2 py-0.5 text-muted-foreground">Inaktiv</span>
+          {(ansicht === 'alle' || ansicht === 'inaktiv') && (
+            <VertraegeGruppe titel="Inaktiv" vertraege={gruppen.inaktiv} {...gemeinsam} />
           )}
-          {c.is_active && expired && (
-            <span className="inline-flex items-center gap-1 text-xs rounded-full bg-destructive/10 px-2 py-0.5 font-medium text-destructive">
-              <AlertTriangle className="size-3" />Kündigung überfällig
-            </span>
-          )}
-          {c.is_active && c.auto_renews && !expired && (
-            <span className="text-muted-foreground/60 flex items-center gap-0.5 text-xs">
-              <RefreshCw className="size-2.5" />
-            </span>
+          {zahlen[ansicht] === 0 && (
+            <p className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">Hier ist nichts.</p>
           )}
         </div>
-        {nextDate && (
-          <p className="text-xs text-muted-foreground mt-0.5">Nächste Zahlung: {fmtDate(nextDate, dateFormat)}</p>
-        )}
-        {c.is_active && abgleich && (
-          <p className={`text-xs mt-0.5 ${abgleich.status === 'offen' ? 'font-medium text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}`}>
-            {abgleich.status === 'eingegangen' && `Zahlung vom ${fmtDate(new Date(abgleich.buchungDatum ?? abgleich.termin), dateFormat)} eingegangen`}
-            {abgleich.status === 'erwartet' && `Zahlung vom ${fmtDate(new Date(abgleich.termin), dateFormat)} noch nicht gebucht`}
-            {abgleich.status === 'offen' && `Zahlung vom ${fmtDate(new Date(abgleich.termin), dateFormat)} nicht eingegangen – Bank-Sync prüfen`}
-          </p>
-        )}
-      </td>
-
-      {/* Betrag */}
-      <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap">
-        <span className="font-medium">{fmtCurrency(c.amount, c.currency, locale)}</span>
-        <span className="text-muted-foreground text-xs ml-1">/ {FREQ_LABEL[c.frequency] ?? c.frequency}</span>
-      </td>
-
-      {/* Enddatum */}
-      <td className="px-4 py-3 whitespace-nowrap">
-        {c.end_date ? (
-          <span className={`text-xs ${expired && c.is_active ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
-            Bis {fmtDate(new Date(c.end_date), dateFormat)}
-            {c.notice_days > 0 && ` · ${c.notice_days}d Frist`}
-          </span>
-        ) : (
-          <span className="text-xs text-muted-foreground">Unbefristet</span>
-        )}
-      </td>
-
-      {/* Actions */}
-      <td className="px-4 py-3 w-20">
-        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <EditContractDialog contract={c} accounts={accounts} categories={categories} />
-          <DeleteContractButton contract={c} />
-        </div>
-      </td>
-    </tr>
-  )
-}
-
-// ─── Depot-Sparplan Row ───────────────────────────────────────────────────────
-function SavingsPlanRow({ plan, locale }: { plan: SavingsPlan; locale: string }) {
-  const today = new Date()
-  const nextExecution = new Date(today.getFullYear(), today.getMonth(), plan.execution_day)
-  if (nextExecution <= today) nextExecution.setMonth(nextExecution.getMonth() + 1)
-
-  return (
-    <tr className={`hover:bg-muted/30 transition-colors group ${!plan.is_active ? 'opacity-50' : ''}`}>
-      <td className="px-4 py-3 min-w-0">
-        <div className="flex items-center gap-2">
-          <TrendingUp className="size-3.5 text-muted-foreground shrink-0" />
-          <Link href="/depot" className="font-medium text-foreground hover:underline underline-offset-2">
-            {plan.fund_name}
-          </Link>
-          <span className="text-xs text-muted-foreground font-mono">{plan.isin}</span>
-          {!plan.is_active && (
-            <span className="text-xs rounded-full bg-muted px-2 py-0.5 text-muted-foreground">Pausiert</span>
-          )}
-        </div>
-        <p className="text-xs text-muted-foreground mt-0.5 pl-5">
-          Nächste Ausführung: {nextExecution.toLocaleDateString('de-DE')} · Tag {plan.execution_day} des Monats
-        </p>
-      </td>
-      <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap">
-        <span className="font-medium">{fmtCurrencyLib(plan.monthly_amount, 'EUR', locale)}</span>
-        <span className="text-muted-foreground text-xs ml-1">/ Monat</span>
-      </td>
-      <td className="px-4 py-3 whitespace-nowrap">
-        <span className="text-xs text-muted-foreground">Depot · Automatisch</span>
-      </td>
-      <td className="px-4 py-3 w-20">
-        <div className="flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-          <Link href="/depot" title="Im Depot bearbeiten">
-            <button aria-label="Im Depot bearbeiten" className="rounded p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-              <ExternalLink className="size-3.5" />
-            </button>
-          </Link>
-        </div>
-      </td>
-    </tr>
-  )
-}
-
-function EmptyState() {
-  return (
-    <div className="rounded-lg border border-dashed border-border bg-card py-16 text-center">
-      <p className="text-sm font-medium text-foreground">Keine Verträge erfasst</p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Lege Abonnements, Versicherungen oder andere Verträge an.
-      </p>
+      )}
     </div>
   )
 }

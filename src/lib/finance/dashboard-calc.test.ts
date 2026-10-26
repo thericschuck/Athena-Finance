@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  computeAccountBalances, computeLiveBuckets, computeUpcomingRenewals,
+  buildFixedCosts, computeAccountBalances, computeLiveBuckets, computeUpcomingRenewals,
   toMonthly, buildCryptoPortfolio, computeInventory, type ContractRow,
 } from './dashboard-calc.ts'
 
@@ -64,4 +64,22 @@ test('Inventar: im_vermoegen=false zählt nicht in den Wert', () => {
     ]),
     { wert: 100, stueck: 3 },
   )
+})
+
+test('Fixkosten: Sparraten (Umbuchungen) zählen nicht, Verträge ohne Typ wie bisher', () => {
+  const basis = { provider: null, frequency: 'monthly', currency: 'EUR', end_date: null, notice_days: 0, auto_renews: true, account_id: 'k1' }
+  const liste: ContractRow[] = [
+    { ...basis, id: '1', name: 'Netflix', amount: 12, type: 'subscription' },
+    { ...basis, id: '2', name: 'Bauspar', amount: 15, type: 'building_savings' },
+    { ...basis, id: '3', name: 'Sparplan', amount: 25, type: 'savings_plan' },
+    { ...basis, id: '4', name: 'Umbuchung', amount: 100, type: 'transfer' },
+    { ...basis, id: '5', name: 'Altbestand ohne Typ', amount: 8 },
+  ]
+  const r = buildFixedCosts(liste)
+  assert.deepEqual(r.contracts.map(c => c.id).sort(), ['1', '5'])
+  assert.equal(r.total, 20)
+  // Sparraten kündigt man nicht: sie erscheinen auch nicht bei den anstehenden Kündigungen
+  const heute = new Date(2026, 9, 26)
+  const frist = liste.map(c => ({ ...c, end_date: '2026-11-10', notice_days: 7 }))
+  assert.deepEqual(computeUpcomingRenewals(frist, heute).map(c => c.id).sort(), ['1', '5'])
 })

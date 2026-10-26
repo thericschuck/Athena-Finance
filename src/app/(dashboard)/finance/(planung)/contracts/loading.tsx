@@ -1,36 +1,37 @@
-import { Skeleton, SkeletonCardList } from '@/components/ui/skeleton'
+import { Skeleton } from '@/components/ui/skeleton'
 
+/** Verträge: Kopf, schmale Kennzahlenleiste, Ansichts-Chips und die Zeilen der Fixkosten. */
 export default function Loading() {
   return (
-    <div className="p-4 sm:p-8 space-y-6 animate-in fade-in duration-150">
-      <div className="flex items-center justify-between gap-4">
+    <div className="min-w-0 space-y-4 p-4 sm:p-8 animate-in fade-in duration-150">
+      <div className="flex items-center justify-between gap-3">
         <div className="space-y-2">
-          <Skeleton className="h-7 w-52" />
-          <Skeleton className="h-3.5 w-64" />
+          <Skeleton className="h-6 w-44" />
+          <Skeleton className="h-3 w-56 max-w-full" />
         </div>
-        <Skeleton className="h-9 w-40 rounded-md" />
+        <Skeleton className="h-9 w-24 shrink-0 rounded-md sm:w-36" />
       </div>
 
-      {/* Fixkosten nach Konto */}
-      <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-        <Skeleton className="h-3.5 w-40" />
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="space-y-1.5">
-              <Skeleton className="h-2.5 w-24" />
-              <Skeleton className="h-5 w-20" />
+      <Skeleton className="h-14 w-full rounded-lg" />
+
+      <div className="flex gap-2">
+        {[16, 24, 24].map((w, i) => <Skeleton key={i} className="h-10 rounded-full md:h-8" style={{ width: `${w * 4}px` }} />)}
+      </div>
+
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-24" />
+        <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="space-y-1.5 px-3 py-3 sm:px-4">
+              <div className="flex justify-between gap-3">
+                <Skeleton className="h-4 w-40 max-w-[55%]" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+              <Skeleton className="h-3 w-56 max-w-[80%]" />
+              <Skeleton className="h-3 w-44 max-w-[60%]" />
             </div>
           ))}
         </div>
-      </div>
-
-      <div className="space-y-8">
-        {Array.from({ length: 2 }).map((_, i) => (
-          <div key={i} className="space-y-3">
-            <Skeleton className="h-4 w-36" />
-            <SkeletonCardList rows={3} />
-          </div>
-        ))}
       </div>
     </div>
   )

@@ -1,34 +1,36 @@
-import { Skeleton, SkeletonTable } from '@/components/ui/skeleton'
+import { Skeleton } from '@/components/ui/skeleton'
 
-/** Vertrags-Detail: Zurück-Link, Kopf mit Aktionen, Kennzahlenraster und die Buchungen des Vertrags. */
+/** Vertrags-Detail: Zurück-Link, Kopf mit Aktionen, Kennzahlenleiste, Stammdaten und Abbuchungsverlauf. */
 export default function Loading() {
   return (
-    <div className="space-y-6 p-4 sm:p-8 animate-in fade-in duration-150">
+    <div className="min-w-0 space-y-4 p-4 sm:p-8 animate-in fade-in duration-150">
       <Skeleton className="h-4 w-28" />
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-3">
         <div className="space-y-2">
-          <Skeleton className="h-7 w-56" />
-          <Skeleton className="h-3.5 w-32" />
+          <Skeleton className="h-6 w-52 max-w-full" />
+          <Skeleton className="h-3.5 w-40 max-w-full" />
         </div>
-        <div className="flex gap-2">
-          <Skeleton className="h-9 w-28 rounded-md" />
-          <Skeleton className="size-9 rounded-md" />
-        </div>
+        <Skeleton className="h-10 w-20 shrink-0 rounded-md" />
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="space-y-1.5 rounded-lg border border-border bg-card p-3">
-            <Skeleton className="h-2.5 w-16" />
-            <Skeleton className="h-4 w-24" />
-          </div>
-        ))}
-      </div>
+      <Skeleton className="h-14 w-full rounded-lg" />
+      <Skeleton className="h-24 w-full rounded-lg" />
 
-      <div className="space-y-3">
-        <Skeleton className="h-4 w-40" />
-        <SkeletonTable rows={6} cols={[80, 200, 96, 72]} />
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-28" />
+        <Skeleton className="h-16 w-full rounded-lg" />
+        <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex justify-between gap-3 px-3 py-3 sm:px-4">
+              <div className="space-y-1.5">
+                <Skeleton className="h-3.5 w-24" />
+                <Skeleton className="h-3 w-40 max-w-full" />
+              </div>
+              <Skeleton className="h-4 w-16" />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

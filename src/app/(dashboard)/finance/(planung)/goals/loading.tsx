@@ -1,38 +1,32 @@
 import { Skeleton } from '@/components/ui/skeleton'
 
-function GoalCardSkeleton() {
+function ZielSkeleton() {
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
-      <div className="flex items-start justify-between gap-2">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-5 w-16 rounded-full" />
+    <div className="space-y-2 rounded-lg border border-border bg-card p-3 sm:p-4">
+      <div className="flex items-center justify-between gap-2">
+        <Skeleton className="h-4 w-40 max-w-[60%]" />
+        <Skeleton className="h-5 w-14 rounded-full" />
       </div>
-      <Skeleton className="h-7 w-28" />
-      {/* Fortschrittsbalken */}
       <Skeleton className="h-2 w-full rounded-full" />
-      <div className="flex justify-between">
+      <div className="flex justify-between gap-2">
+        <Skeleton className="h-3 w-32" />
         <Skeleton className="h-3 w-20" />
-        <Skeleton className="h-3 w-16" />
       </div>
+      <Skeleton className="h-5 w-48 max-w-full rounded-full" />
     </div>
   )
 }
 
 export default function Loading() {
   return (
-    <div className="p-4 sm:p-8 space-y-8 animate-in fade-in duration-150">
+    <div className="min-w-0 animate-in space-y-4 p-4 fade-in duration-150 sm:p-8">
       <div className="flex items-center justify-between gap-4">
-        <div className="space-y-2">
-          <Skeleton className="h-7 w-36" />
-          <Skeleton className="h-3.5 w-56" />
-        </div>
-        <Skeleton className="h-9 w-36 rounded-md" />
+        <Skeleton className="h-7 w-28" />
+        <Skeleton className="h-10 w-36 rounded-md" />
       </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <GoalCardSkeleton key={i} />
-        ))}
+      <Skeleton className="h-14 w-full rounded-lg" />
+      <div className="space-y-2">
+        {Array.from({ length: 3 }).map((_, i) => <ZielSkeleton key={i} />)}
       </div>
     </div>
   )
