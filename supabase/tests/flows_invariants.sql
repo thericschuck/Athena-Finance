@@ -16,8 +16,13 @@ roh as (
            case when bt.amount >= 0 then bt.amount else 0 end inc,
            case when bt.amount <  0 then -bt.amount else 0 end exp
     from bank_transactions bt
-    join accounts a on a.user_id = bt.user_id and a.bank_iban = bt.account_iban
-    left join accounts own on own.user_id = bt.user_id and own.bank_iban = bt.counterpart_iban
+    -- haushaltsbasiert (Migration 20261029100000): Konto/Gegenkonto im Haushalt der Buchung, Besitzer-Konto zuerst, je ein Treffer
+    join lateral (select 1 as x from accounts a0 where a0.bank_iban = bt.account_iban
+                  and (a0.user_id = bt.user_id or exists (select 1 from household_members m1 join household_members m2 on m2.household_id = m1.household_id
+                                                           where m1.user_id = bt.user_id and m2.user_id = a0.user_id)) limit 1) a on true
+    left join lateral (select o0.id from accounts o0 where o0.bank_iban = bt.counterpart_iban
+                  and (o0.user_id = bt.user_id or exists (select 1 from household_members m1 join household_members m2 on m2.household_id = m1.household_id
+                                                           where m1.user_id = bt.user_id and m2.user_id = o0.user_id)) limit 1) own on true
     left join categories bc on bc.id = bt.category_id
     where own.id is null or coalesce(bc.type, 'neutral') in ('income', 'expense')
     union all

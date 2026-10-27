@@ -1,0 +1,27 @@
+-- Baseline 2026-10-26, Teil 10: pg_cron-Jobs -- NUR DOKUMENTATION, alles auskommentiert, NICHT ausfuehren.
+-- Live existieren 3 Jobs (cron.job). Alle rufen per net.http_post (pg_net) eine Edge Function im Projekt
+-- jefmszovqziiqxotncjm auf. Der Authorization-Header enthaelt live einen fest eingetragenen Bearer-Token;
+-- der Wert ist hier bewusst NICHT uebernommen (<SECRET>). Vor Re-Erstellung in anderer Umgebung eigenen
+-- Schluessel verwenden (idealerweise aus supabase_vault statt Klartext im Job-Command).
+--
+-- jobid 24    | fetch-fund-price      | */15 8-20 * * 1-5 | aktiv
+--   select net.http_post(
+--     url := 'https://jefmszovqziiqxotncjm.supabase.co/functions/v1/fetch-fund-price',
+--     headers := '{"Authorization": "Bearer <SECRET>", "Content-Type": "application/json"}'::jsonb,
+--     body := '{}'::jsonb) as request_id;
+--
+-- jobid 26    | execute-savings-plans | 0 9 * * *         | aktiv
+--   select net.http_post(
+--     url := 'https://jefmszovqziiqxotncjm.supabase.co/functions/v1/execute-savings-plans',
+--     headers := '{"Authorization": "Bearer <SECRET>", "Content-Type": "application/json"}'::jsonb,
+--     body := '{}'::jsonb) as request_id;
+--
+-- jobid 1287  | Daily-Snapshot        | 59 23 * * *       | aktiv
+--   select net.http_post(
+--     url := 'https://jefmszovqziiqxotncjm.supabase.co/functions/v1/daily-snapshot',
+--     headers := '{"Authorization": "Bearer <SECRET>", "Content-Type": "application/json"}'::jsonb,
+--     body := '{}'::jsonb,
+--     timeout_milliseconds := 60000) as request_id;
+--
+-- Beispiel zum Anlegen (auskommentiert):
+-- select cron.schedule('Daily-Snapshot', '59 23 * * *', $$ select net.http_post(...) $$);
