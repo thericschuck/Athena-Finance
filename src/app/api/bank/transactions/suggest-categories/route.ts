@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { suggestCategory, buildLearnedCategoryMap } from '@/lib/fints/categorize'
 import type { FinanceCategory } from '@/types/bank'
+import { ibanSet, istUmbuchungIban } from '@/lib/haushalt/umbuchung'
 
 /**
  * GET /api/bank/transactions/suggest-categories
@@ -16,10 +18,11 @@ export async function GET() {
   const { supabase, user } = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
+  const ctx = await resolveScope(supabase, user)
+  // Kategorienbaum pro Haushalt (RLS), Buchungen der Konten im Scope.
   const { data: categories, error: catError } = await supabase
     .from('categories')
     .select('id, name, type, color, icon, parent_id')
-    .eq('user_id', user.id)
 
   if (catError) return NextResponse.json({ error: catError.message }, { status: 500 })
 
@@ -28,7 +31,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from('bank_transactions')
     .select('id, description, counterpart_name, counterpart_iban, category_id, category_source, ai_category_id, amount, value_date')
-    .eq('user_id', user.id)
+    .in('account_iban', ctx.ibans)
     .order('value_date', { ascending: false })
     .limit(5000)
 
@@ -38,13 +41,7 @@ export async function GET() {
   // Vorschlag — sie sind über die IBAN eindeutig als Umbuchung erkannt (siehe
   // unified_transactions.flow_kind) und würden hier sonst z.B. als "Freizeit" vorgeschlagen,
   // nur weil der Empfängername zufällig auf eine Schlüsselwort-Regel passt.
-  const { data: ownAccounts } = await supabase
-    .from('accounts')
-    .select('bank_iban')
-    .eq('user_id', user.id)
-    .not('bank_iban', 'is', null)
-  const normIban = (iban: string) => iban.replace(/\s+/g, '').toUpperCase()
-  const ownIbans = new Set((ownAccounts ?? []).map(a => normIban(a.bank_iban as string)))
+  const ownIbans = ibanSet(ctx.ibans)
 
   // Learn "this counterparty is always category X" from what's already categorized, so a
   // transaction the user manually fixed (or an earlier suggestion they accepted) improves
@@ -56,7 +53,7 @@ export async function GET() {
 
   type Zeile = { id: string; description: string | null; counterpart_name: string | null; category_id: string | null; ai_category_id: string | null; amount: number; value_date: string }
   const suggestions = (data ?? [] as Zeile[])
-    .filter((tx: { counterpart_iban: string | null }) => !tx.counterpart_iban || !ownIbans.has(normIban(tx.counterpart_iban)))
+    .filter((tx: { counterpart_iban: string | null }) => !istUmbuchungIban(tx.counterpart_iban, ownIbans))
     .map((tx: Zeile) => {
       const suggested = suggestCategory(tx.counterpart_name, tx.description, categories ?? [], learnedMap, tx.amount)
       // Regeln und Gelerntes zuerst; wo sie schweigen, gilt bei offenen Buchungen der (unsichere) Vorschlag der KI.

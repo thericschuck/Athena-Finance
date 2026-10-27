@@ -6,6 +6,7 @@ import {
 import { vertragsEntwurf, vertragsName, proMonat, type Vertragsentwurf } from '../finance/vertragsvorschlag.ts'
 import { extrahiereHaendler } from '../fints/merchant-key.ts'
 import { normIban } from './scope.ts'
+import { ibanSet, istUmbuchungIban } from '../haushalt/umbuchung.ts'
 
 /**
  * Abschnitt „Feste Kosten & Abos" der Bankdaten-Seite: aus ALLEN Bankbuchungen (Wiederholung braucht
@@ -123,7 +124,7 @@ export function pruefePreisaenderung(betraege: number[]): Preisaenderung | null 
 }
 
 export function berechneFesteKosten(e: FesteKostenEingabe, vertraege: BestehenderVertrag[]): FesteKosten {
-  const eigene = new Set(e.eigeneIbans.map(normIban))
+  const eigene = ibanSet(e.eigeneIbans)
   const katName = new Map(e.categories.map(c => [c.id, c]))
   const wurzel = (id: string | null): FinanceCategory | null => {
     let c = id ? katName.get(id) ?? null : null
@@ -133,7 +134,7 @@ export function berechneFesteKosten(e: FesteKostenEingabe, vertraege: Bestehende
 
   const buchungen: WiederkehrBuchung[] = e.transactions
     // Nur Abbuchungen; Umbuchungen auf eigene Konten sind keine Kosten.
-    .filter(t => t.amount < 0 && !(t.counterpart_iban && eigene.has(normIban(t.counterpart_iban))))
+    .filter(t => t.amount < 0 && !istUmbuchungIban(t.counterpart_iban, eigene))
     .map(t => {
       const kat = t.category_id ? katName.get(t.category_id) ?? null : null
       return {

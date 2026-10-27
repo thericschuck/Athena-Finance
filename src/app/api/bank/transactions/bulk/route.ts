@@ -19,8 +19,9 @@ const bodySchema = z.object({
  *
  * Setzt die Kategorie fuer mehrere Buchungen in EINER Abfrage (statt 200 Einzel-PATCHes).
  * Wie die Einzelroute markiert sie die Quelle als 'manual', damit die automatische
- * Kategorisierung die Entscheidung nicht wieder ueberschreibt. Zusaetzlich zu RLS filtert
- * `.eq('user_id')`; fremde IDs werden einfach nicht gezaehlt.
+ * Kategorisierung die Entscheidung nicht wieder ueberschreibt. Bankbuchungen und Kategorien sind
+ * Haushaltsdaten: die RLS begrenzt auf den Haushalt (Entscheidung 2), kein user_id-Filter mehr.
+ * Fremde IDs werden einfach nicht gezaehlt.
  */
 export async function PATCH(request: Request) {
   const { supabase, user } = await getAuthUser()
@@ -30,10 +31,10 @@ export async function PATCH(request: Request) {
   if (b.response) return b.response
   const { ids, category_id: categoryId } = b.data
 
-  // Der Fremdschluessel prueft nur, dass die Kategorie EXISTIERT, nicht wem sie gehoert.
+  // Der Fremdschluessel prueft nur, dass die Kategorie EXISTIERT; die RLS zeigt nur Kategorien des Haushalts.
   if (categoryId) {
     const { data: kat } = await supabase
-      .from('categories').select('id').eq('id', categoryId).eq('user_id', user.id).maybeSingle()
+      .from('categories').select('id').eq('id', categoryId).maybeSingle()
     if (!kat) return NextResponse.json({ error: 'Kategorie nicht gefunden' }, { status: 404 })
   }
 
@@ -41,7 +42,6 @@ export async function PATCH(request: Request) {
     .from('bank_transactions')
     .update({ category_id: categoryId, category_source: categoryId ? 'manual' : null })
     .in('id', [...new Set(ids)])
-    .eq('user_id', user.id)
     .select('id')
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

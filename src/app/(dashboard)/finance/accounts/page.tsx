@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { requireAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { AddAccountDialog } from '@/components/finance/account-form'
 import { UrlFiltersProvider, FilterPending } from '@/components/providers/url-filters'
 import { UrlPeriodSelector } from '@/components/ui/period-selector'
@@ -14,6 +15,9 @@ import {
 import { ladeKontenSeite } from '@/lib/data/konten-seite'
 import { gruppiereKonten, kontenKennzahlen, standAnzeige } from '@/lib/konten/berechnen'
 import { parsePeriod } from '@/lib/period'
+import { Landmark } from 'lucide-react'
+import { LeerZustand } from '@/components/leer/LeerZustand'
+import { ScopeHinweisFuer } from '@/components/leer/ScopeHinweisFuer'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,7 +33,8 @@ export default async function AccountsPage({
 
   const period = parsePeriod(rawPeriod)
   const mitInaktiven = rawInaktive === '1'
-  const { zeilen, depots, locale } = await ladeKontenSeite(supabase, user!.id, period)
+  const scopeCtx = await resolveScope(supabase, user!)
+  const { zeilen, depots, locale } = await ladeKontenSeite(supabase, scopeCtx, period)
 
   const kennzahlen = kontenKennzahlen(zeilen)
   const jetzt = new Date()
@@ -66,9 +71,15 @@ export default async function AccountsPage({
           <SortierFehler />
 
           {zeilen.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border bg-card py-12 text-center">
-              <p className="text-sm font-medium">Noch keine Konten</p>
-              <p className="mt-1 text-sm text-muted-foreground">Füge dein erstes Konto hinzu, um loszulegen.</p>
+            <div className="space-y-4">
+              <ScopeHinweisFuer ctx={scopeCtx} thema="Konten" />
+              <LeerZustand
+                icon={Landmark}
+                titel="Noch keine Konten"
+                text="Konten sind die Basis für Salden, Buchungen und den Vermögensverlauf. Lege ein Konto von Hand an oder verbinde deine Bank in den Einstellungen."
+                aktionNode={<AddAccountDialog />}
+                sekundaer={{ label: 'Bank verbinden', href: '/settings' }}
+              />
             </div>
           ) : (
             <FilterPending>

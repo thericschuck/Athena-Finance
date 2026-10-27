@@ -1,4 +1,5 @@
 import { requireAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { AddCategoryDialog } from '@/components/finance/category-form'
 import { UrlFiltersProvider, FilterPending } from '@/components/providers/url-filters'
 import { UrlPeriodSelector } from '@/components/ui/period-selector'
@@ -17,7 +18,7 @@ export default async function CategoriesPage({
 }) {
   const [{ period: rawPeriod }, { supabase, user }] = await Promise.all([searchParams, requireAuthUser()])
   const period = parsePeriod(rawPeriod)
-  const { baum, flat, euerZeilen, locale } = await ladeKategorienSeite(supabase, user!.id, period)
+  const { baum, flat, euerZeilen, locale } = await ladeKategorienSeite(supabase, await resolveScope(supabase, user!), period)
 
   return (
     <UrlFiltersProvider>

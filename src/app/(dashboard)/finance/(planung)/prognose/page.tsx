@@ -1,6 +1,9 @@
 import Link from 'next/link'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, TrendingUp } from 'lucide-react'
+import { LeerZustand } from '@/components/leer/LeerZustand'
+import { ScopeHinweisFuer } from '@/components/leer/ScopeHinweisFuer'
 import { getAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency, fmtDate } from '@/lib/format'
 import { heuteBerlin } from '@/lib/transaktionen/formular'
@@ -43,7 +46,16 @@ export default async function PrognosePage({
 
   // Berliner Kalendertag (nicht UTC): der Server läuft in UTC, nachts wäre „heute“ sonst gestern.
   const heute = heuteBerlin()
-  const d = await ladePrognose(supabase, user.id, heute, { monate })
+  const scopeCtx = await resolveScope(supabase, user)
+  // Ohne Konto gibt es nichts fortzuschreiben: gar nicht erst rechnen, sondern erklaeren.
+  if (scopeCtx.accountIds.length === 0) {
+    return <PrognoseLeer ctx={scopeCtx} grund="konto" />
+  }
+  const d = await ladePrognose(supabase, scopeCtx, heute, { monate })
+  // Konto da, aber keine Buchung, aus der das Modell lernen koennte.
+  if (d.szenario.modell.daten.tage === 0) {
+    return <PrognoseLeer ctx={scopeCtx} grund="buchungen" />
+  }
   const sz = d.szenario
   const mitAnnahmen = d.annahmen.length > 0
   const startMonat = heute.slice(0, 7)
@@ -216,6 +228,26 @@ export default async function PrognosePage({
             ),
           },
         ]}
+      />
+    </div>
+  )
+}
+
+function PrognoseLeer({ ctx, grund }: { ctx: Parameters<typeof ScopeHinweisFuer>[0]['ctx']; grund: 'konto' | 'buchungen' }) {
+  return (
+    <div className="min-w-0 space-y-4 p-4 sm:p-8">
+      <h1 className="text-2xl font-semibold tracking-tight">Prognose</h1>
+      <ScopeHinweisFuer ctx={ctx} thema="Konten und Buchungen" />
+      <LeerZustand
+        icon={TrendingUp}
+        titel={grund === 'konto' ? 'Noch keine Konten für eine Prognose' : 'Noch keine Buchungen zum Lernen'}
+        text={grund === 'konto'
+          ? 'Die Prognose schreibt deine letzten Monate fort und zeigt, wie sich Liquidität und Vermögen entwickeln. Dafür braucht sie mindestens ein Konto mit Buchungen.'
+          : 'Die Prognose lernt aus deinen Buchungen. Sobald ein paar Wochen davon da sind, zeigt sie dir Liquidität und Vermögen der nächsten Monate, samt Verträgen und Terminen.'}
+        aktion={grund === 'konto'
+          ? { label: 'Konto anlegen', href: '/finance/accounts' }
+          : { label: 'Buchungen hinzufügen', href: '/finance/transactions' }}
+        sekundaer={{ label: 'Bank verbinden', href: '/settings' }}
       />
     </div>
   )

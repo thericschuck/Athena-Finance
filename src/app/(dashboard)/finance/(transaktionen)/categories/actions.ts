@@ -8,6 +8,8 @@ import { z } from 'zod'
 import { parseForm, parseInput, issueMessage } from '@/lib/api/validate'
 import { idField, uuid, reqText, reqEnum, optText, optUuid, optMoneyField } from '@/lib/api/schemas'
 import { pruefeEltern } from '@/lib/kategorien/berechnen'
+import { requireRows } from '@/lib/data/mutation'
+import { speichereSteuerOverride, type SteuerWerte } from '@/lib/tax/overrides'
 
 export type CategoryActionState = { error: string } | { success: true } | null
 
@@ -47,6 +49,15 @@ function leseBusinessShare(formData: FormData): number | null {
   return Number.isFinite(n) && n >= 0 && n <= 100 ? Math.round(n * 100) / 100 : null
 }
 
+/** Steuerwerte aus dem Formular. Neutrale Kategorien haben keine Steuerrolle — das Formular blendet das Feld aus, schickt den Wert aber mit. */
+function leseSteuerWerte(formData: FormData, typ: string): SteuerWerte {
+  return {
+    tax_role: typ === 'neutral' ? null : leseTaxRole(formData),
+    euer_zeile: leseEuerZeile(formData),
+    business_share: leseBusinessShare(formData),
+  }
+}
+
 /** Farbe nur als #rrggbb; alles andere wird zu null (die Seite faellt dann auf die Standardfarbe zurueck). */
 const farbe = z
   .string()
@@ -69,9 +80,9 @@ const updateCategorySchema = z.object({ id: idField(), ...categoryFields })
 
 type Eltern = { id: string; name: string; parent_id: string | null; type: string }
 
-/** Alle Kategorien des Nutzers in der schmalen Form, die die Hierarchie-Pruefung braucht. */
-async function ladeBaum(supabase: DB, userId: string): Promise<{ liste: Eltern[]; fehler: string | null }> {
-  const { data, error } = await supabase.from('categories').select('id, name, parent_id, type').eq('user_id', userId)
+/** Alle Kategorien des Haushalts (RLS) in der schmalen Form, die die Hierarchie-Pruefung braucht. */
+async function ladeBaum(supabase: DB): Promise<{ liste: Eltern[]; fehler: string | null }> {
+  const { data, error } = await supabase.from('categories').select('id, name, parent_id, type')
   if (error || !data) return { liste: [], fehler: error?.message ?? 'Kategorien konnten nicht gelesen werden' }
   return { liste: data, fehler: null }
 }
@@ -87,9 +98,9 @@ export async function createCategory(
   if (!parsed.ok) return { error: issueMessage(parsed) }
   const felder = parsed.data
 
-  const { liste, fehler } = await ladeBaum(supabase, user.id)
+  const { liste, fehler } = await ladeBaum(supabase)
   if (fehler) return { error: fehler }
-  // Besitz und Ebenen: die Eltern muessen dem Nutzer gehoeren (sie stehen sonst nicht in `liste`).
+  // Besitz und Ebenen: die Eltern muessen zum Haushalt gehoeren (sonst stehen sie nicht in `liste`; die RLS liefert nur den Haushaltsbaum).
   const elternFehler = pruefeEltern(liste, null, felder.parent_id)
   if (elternFehler) return { error: elternFehler }
   // Eine Unterkategorie erbt den Typ der Hauptkategorie: ein abweichender Typ liesse Rollup und Fluss-Regel auseinanderlaufen.
@@ -97,24 +108,22 @@ export async function createCategory(
   const typ = eltern?.type ?? felder.type
 
   // Ans Ende der Geschwister.
-  const basis = supabase.from('categories').select('sort_order').eq('user_id', user.id)
+  const basis = supabase.from('categories').select('sort_order')
   const geschwister = await (felder.parent_id ? basis.eq('parent_id', felder.parent_id) : basis.is('parent_id', null))
     .order('sort_order', { ascending: false })
     .limit(1)
   const naechste = (geschwister.data?.[0]?.sort_order ?? -1) + 1
 
-  const { error } = await supabase.from('categories').insert({
-    ...felder,
-    type: typ,
-    user_id: user.id,
-    sort_order: naechste,
-    // Neutrale Kategorien haben keine Steuerrolle — das Formular blendet das Feld aus, schickt den Wert aber mit.
-    tax_role: typ === 'neutral' ? null : leseTaxRole(formData),
-    euer_zeile: leseEuerZeile(formData),
-    business_share: leseBusinessShare(formData),
-  })
+  // Steuerwerte gehoeren der Person (category_tax_overrides), nicht der geteilten Kategorie: erst die Kategorie, dann der Override des Handelnden.
+  const { data: neu, error } = await supabase
+    .from('categories')
+    .insert({ ...felder, type: typ, user_id: user.id, sort_order: naechste })
+    .select('id')
+    .single()
+  if (error || !neu) return { error: error?.message ?? 'Kategorie konnte nicht angelegt werden' }
 
-  if (error) return { error: error.message }
+  const steuer = await speichereSteuerOverride(supabase, user.id, neu.id, leseSteuerWerte(formData, typ))
+  if (steuer.error) return { error: steuer.error }
   revalidatePath('/finance/categories')
   return { success: true }
 }
@@ -130,7 +139,7 @@ export async function updateCategory(
   if (!parsed.ok) return { error: issueMessage(parsed) }
   const { id, ...felder } = parsed.data
 
-  const { liste, fehler } = await ladeBaum(supabase, user.id)
+  const { liste, fehler } = await ladeBaum(supabase)
   if (fehler) return { error: fehler }
   const aktuell = liste.find((k) => k.id === id)
   if (!aktuell) return { error: 'Kategorie nicht gefunden' }
@@ -151,18 +160,15 @@ export async function updateCategory(
   const eltern = felder.parent_id ? liste.find((k) => k.id === felder.parent_id) : undefined
   const typ = eltern?.type ?? felder.type
 
-  const { error } = await supabase
+  const { error } = await requireRows(supabase
     .from('categories')
-    .update({
-      ...felder,
-      type: typ,
-      tax_role: typ === 'neutral' ? null : leseTaxRole(formData),
-      euer_zeile: leseEuerZeile(formData),
-      business_share: leseBusinessShare(formData),
-    })
-    .eq('id', id)
-    .eq('user_id', user.id)
+    .update({ ...felder, type: typ })
+    .eq('id', id))
   if (error) return { error: error.message }
+
+  // Steuerwerte nur fuer den Handelnden (Override); die Spalten in categories bleiben unangetastet (Ausnahme: Doppelschreiben vor dem Live-Gang, siehe lib/tax/overrides.ts).
+  const steuer = await speichereSteuerOverride(supabase, user.id, id, leseSteuerWerte(formData, typ))
+  if (steuer.error) return { error: steuer.error }
 
   // Aendert sich der Typ einer Hauptkategorie, ziehen die Unterkategorien nach (sonst waere die Vererbung gebrochen).
   if (!felder.parent_id && typ !== aktuell.type) {
@@ -170,7 +176,6 @@ export async function updateCategory(
       .from('categories')
       .update({ type: typ })
       .eq('parent_id', id)
-      .eq('user_id', user.id)
     if (kinderFehler) return { error: kinderFehler.message }
   }
 
@@ -196,13 +201,11 @@ async function zaehle(
   tabelle: 'transactions' | 'bank_transactions' | 'contracts' | 'categories',
   spalte: 'category_id' | 'parent_id',
   id: string,
-  userId: string,
 ): Promise<number> {
   const { count } = await supabase
     .from(tabelle)
     .select('id', { count: 'exact', head: true })
     .eq(spalte as 'id', id)
-    .eq('user_id', userId)
   return count ?? 0
 }
 
@@ -214,10 +217,10 @@ export async function ladeLoeschFolgen(id: string): Promise<{ error?: string; fo
   if (!idP.ok) return { error: issueMessage(idP) }
 
   const [buchungen, bankBuchungen, vertraege, unterkategorien] = await Promise.all([
-    zaehle(supabase, 'transactions', 'category_id', id, user.id),
-    zaehle(supabase, 'bank_transactions', 'category_id', id, user.id),
-    zaehle(supabase, 'contracts', 'category_id', id, user.id),
-    zaehle(supabase, 'categories', 'parent_id', id, user.id),
+    zaehle(supabase, 'transactions', 'category_id', id),
+    zaehle(supabase, 'bank_transactions', 'category_id', id),
+    zaehle(supabase, 'contracts', 'category_id', id),
+    zaehle(supabase, 'categories', 'parent_id', id),
   ])
   return { folgen: { buchungen, bankBuchungen, vertraege, unterkategorien } }
 }
@@ -249,7 +252,7 @@ export async function verschiebeBuchungenUndLoesche(
   const p = parseInput(loeschSchema, { id, zielId })
   if (!p.ok) return { error: issueMessage(p) }
 
-  const { liste, fehler } = await ladeBaum(supabase, user.id)
+  const { liste, fehler } = await ladeBaum(supabase)
   if (fehler) return { error: fehler }
   const zuLoeschen = liste.find((k) => k.id === id)
   if (!zuLoeschen) return { error: 'Kategorie nicht gefunden' }
@@ -268,7 +271,6 @@ export async function verschiebeBuchungenUndLoesche(
       .from('transactions')
       .update({ category_id: zielId })
       .eq('category_id', id)
-      .eq('user_id', user.id)
     if (buchungen.error) return { error: buchungen.error.message }
 
     // Bankbuchungen: die Zuordnung ist jetzt eine bewusste, die KI/Regeln duerfen sie nicht ueberschreiben.
@@ -276,18 +278,16 @@ export async function verschiebeBuchungenUndLoesche(
       .from('bank_transactions')
       .update({ category_id: zielId, category_source: 'manual' })
       .eq('category_id', id)
-      .eq('user_id', user.id)
     if (bank.error) return { error: bank.error.message }
 
     const vertraege = await supabase
       .from('contracts')
       .update({ category_id: zielId })
       .eq('category_id', id)
-      .eq('user_id', user.id)
     if (vertraege.error) return { error: vertraege.error.message }
   }
 
-  const { error } = await supabase.from('categories').delete().eq('id', id).eq('user_id', user.id)
+  const { error } = await requireRows(supabase.from('categories').delete().eq('id', id))
   if (error) return { error: error.message }
 
   revalidatePath('/finance/categories')
@@ -299,7 +299,7 @@ export async function verschiebeBuchungenUndLoesche(
 
 const sortSchema = z.array(uuid).max(500, 'Zu viele Kategorien')
 
-/** Speichert die Anzeigereihenfolge: `sort_order` = Index in `ids` (nur eigene Kategorien). */
+/** Speichert die Anzeigereihenfolge: `sort_order` = Index in `ids` (Kategorien des Haushalts, RLS). */
 export async function sortiereKategorien(ids: string[]): Promise<{ error?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
@@ -309,7 +309,7 @@ export async function sortiereKategorien(ids: string[]): Promise<{ error?: strin
 
   const ergebnisse = await Promise.all(
     parsed.data.map((id, index) =>
-      supabase.from('categories').update({ sort_order: index }).eq('id', id).eq('user_id', user.id),
+      supabase.from('categories').update({ sort_order: index }).eq('id', id),
     ),
   )
   const fehler = ergebnisse.find((r) => r.error)?.error

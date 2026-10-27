@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { requireAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { ladeKontoDetail } from '@/lib/data/konto-detail'
 import { rechneDetail, saldoSpanne } from '@/lib/konten/detail'
 import { standAnzeige } from '@/lib/konten/berechnen'
@@ -17,6 +18,9 @@ import { KontoDatenZeile } from '@/components/konten/detail/KontoDatenZeile'
 import { BuchungenListe } from '@/components/konten/detail/BuchungenListe'
 import { KontoSeiten } from '@/components/konten/detail/KontoSeiten'
 import { heuteBerlin, monatLabel } from '@/components/konten/detail/format'
+import { LeerZustand } from '@/components/leer/LeerZustand'
+import { ZuletztGeaendert } from '@/components/aenderungen/ZuletztGeaendert'
+import { letzteAenderung } from '@/lib/data/aenderungen'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -46,8 +50,10 @@ export default async function AccountDetailPage({ params, searchParams }: PagePr
   // Eine Nicht-UUID würde in der Abfrage nur einen Datenbankfehler auslösen.
   if (!UUID.test(id)) notFound()
 
-  const detail = await ladeKontoDetail(supabase, user!.id, id)
+  const scopeCtx = await resolveScope(supabase, user!)
+  const detail = await ladeKontoDetail(supabase, scopeCtx, id)
   if (!detail) notFound()
+  const zuletzt = await letzteAenderung(supabase, scopeCtx, 'accounts', id)
   const { account, accounts, categories, rows, balanceHistory, locale, dateFormat } = detail
   const currency = account.currency
 
@@ -111,15 +117,25 @@ export default async function AccountDetailPage({ params, searchParams }: PagePr
             <span className="text-xs text-muted-foreground">{gesamt} insgesamt auf diesem Konto</span>
           )}
         </div>
+        {gesamt > 0 && (
         <AccountTxToolbar
           categories={categories ?? []}
           usedCategoryIds={d.genutzteKategorien}
           shown={d.tabelle.length}
           total={d.imMonat.length}
         />
+        )}
       </div>
 
-      {d.tabelle.length === 0 ? (
+      {gesamt === 0 ? (
+        <LeerZustand
+          variante="eingebettet"
+          titel="Noch keine Buchungen"
+          text="Hier erscheinen alle Buchungen dieses Kontos, sobald die Bank synchronisiert, eine CSV importiert oder eine Buchung erfasst ist."
+          aktion={{ label: 'Buchung hinzufügen oder importieren', href: '/finance/transactions' }}
+          sekundaer={account.bank_iban ? undefined : { label: 'Bank verbinden', href: '/settings' }}
+        />
+      ) : d.tabelle.length === 0 ? (
         <div className="px-4 py-14 text-center">
           <p className="text-sm font-medium text-foreground">
             {gesamt === 0 ? 'Noch keine Buchungen' : filterAktiv ? 'Keine Treffer' : 'Keine Buchungen in diesem Zeitraum'}
@@ -152,8 +168,11 @@ export default async function AccountDetailPage({ params, searchParams }: PagePr
     <UrlFiltersProvider resetKeys="seite">
       <div className="flex flex-col gap-5 p-4 sm:p-8">
         <KontoKopf daten={detail} kontostand={kontostand} />
+        <ZuletztGeaendert info={zuletzt} className="-mt-3" />
 
-        {/* Ein Zeitraum (und ggf. ein Monat) gilt für alles darunter. */}
+        {/* Ein Zeitraum (und ggf. ein Monat) gilt für alles darunter. Ohne jede Buchung gibt es
+            nichts einzugrenzen: Zeitraumwahl und Kennzahlen mit lauter Nullen entfallen. */}
+        {gesamt > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border pb-4">
           <div className="flex flex-wrap items-center gap-2">
             <UrlPeriodSelector current={period} className="max-sm:[&_button]:min-h-10 max-sm:[&_button]:px-3" />
@@ -169,8 +188,10 @@ export default async function AccountDetailPage({ params, searchParams }: PagePr
             </a>
           </p>
         </div>
+        )}
 
         <FilterPending className="flex min-w-0 flex-col gap-5">
+          {gesamt > 0 && (
           <KontoKennzahlen
             kontostand={kontostand}
             quelle={quelle}
@@ -182,6 +203,7 @@ export default async function AccountDetailPage({ params, searchParams }: PagePr
             currency={currency}
             locale={locale}
           />
+          )}
           <KontoHighlights
             spanne={zeigeVerlauf ? spanne : null}
             groessteAusgabe={d.groessteAusgaben[0] ?? null}

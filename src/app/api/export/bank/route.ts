@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { getAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { parseQuery } from '@/lib/api/validate'
 import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvValue, formatCsvAmount } from '@/lib/csv'
 import { LEERER_FILTER, filterBuchungen, ibanMenge, kategorieMitKindern, parseBetrag, sortiereBuchungen } from '@/lib/bank/buchungen'
@@ -55,6 +56,7 @@ export async function GET(req: NextRequest) {
   const { supabase, user } = await getAuthUser()
   if (!user) return new Response('Unauthorized', { status: 401 })
 
+  const ctx = await resolveScope(supabase, user)
   const q = parseQuery(req, querySchema)
   if (q.response) return q.response
   const p = q.data
@@ -67,7 +69,8 @@ export async function GET(req: NextRequest) {
     const { data, error } = await supabase
       .from('bank_transactions')
       .select('*')
-      .eq('user_id', user.id)
+      // Konten im Scope (bank_transactions hat keine account_id: ueber die IBAN).
+      .in('account_iban', ctx.ibans)
       .order('value_date', { ascending: false })
       .order('id', { ascending: true })
       .range(from, from + PAGE - 1)
@@ -77,12 +80,10 @@ export async function GET(req: NextRequest) {
   }
   const basis = p.konto ? alle.filter(t => normIban(t.account_iban) === normIban(p.konto)) : alle
 
-  const [{ data: kats }, { data: konten }] = await Promise.all([
-    supabase.from('categories').select('id, name, parent_id').eq('user_id', user.id),
-    supabase.from('bank_balance').select('account_iban').eq('user_id', user.id),
-  ])
+  // Kategorienbaum pro Haushalt (RLS); Umbuchungsmenge = Konten im Scope.
+  const { data: kats } = await supabase.from('categories').select('id, name, parent_id')
   const katName = new Map((kats ?? []).map(k => [k.id as string, k.name as string]))
-  const eigene = ibanMenge((konten ?? []).map(k => k.account_iban as string))
+  const eigene = ibanMenge(ctx.ibans)
 
   const treffer = sortiereBuchungen(
     filterBuchungen(basis, {

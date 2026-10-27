@@ -4,7 +4,7 @@ import { getAuthUser } from '@/lib/supabase/server'
 /**
  * GET /api/finance/categories
  *
- * Read-only list of the authenticated user's Finance categories (same `categories` table
+ * Read-only list of the household's Finance categories (RLS) (same `categories` table
  * used by /finance/categories), for consumers like the Banking page that categorize against
  * the real taxonomy instead of a separate one.
  */
@@ -15,7 +15,6 @@ export async function GET() {
   const { data, error } = await supabase
     .from('categories')
     .select('id, name, type, color, icon, parent_id')
-    .eq('user_id', user.id)
     .order('type')
     .order('sort_order')
     .order('name')

@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/sheet'
 import { generateAnnualReport, sendExistingReportEmail, getReportDownloadUrl } from './actions'
 import type { ReportRow } from './page'
+import { LeerZustand } from '@/components/leer/LeerZustand'
 
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -115,6 +116,15 @@ export function ReportsClient({ reports, reminder, suggestedYear }: Props) {
         onView={setViewing} onDownload={handleDownload} onSendEmail={handleSendEmail} />
       <ReportList title="Monatsreports" rows={monthly} busyId={busyId}
         onView={setViewing} onDownload={handleDownload} onSendEmail={handleSendEmail} />
+
+      {reports.length === 0 && (
+        <LeerZustand
+          icon={FileText}
+          titel="Noch keine Reports"
+          text="Der erste Monatsreport kommt am 1. des nächsten Monats per Mail und erscheint dann hier. Er fasst deine Buchungen zusammen, braucht also Konten und Buchungen."
+          aktion={{ label: 'Buchungen ansehen', href: '/finance/transactions' }}
+        />
+      )}
 
       <Sheet open={viewing !== null} onOpenChange={open => !open && setViewing(null)}>
         <SheetContent side="right" className="w-full sm:max-w-2xl p-0">

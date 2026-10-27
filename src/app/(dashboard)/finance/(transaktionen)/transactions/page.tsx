@@ -1,5 +1,7 @@
 import { Suspense } from 'react'
 import { requireAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
+import { applyAccountScope } from '@/lib/haushalt/scope'
 import { AddTransactionDialog } from '@/components/finance/transaction-form'
 import { TransactionFilters } from '@/components/finance/transaction-filters'
 import { ExportTransactionsButton, ImportTransactionsChooser } from '@/components/finance/transaction-csv'
@@ -22,6 +24,9 @@ import { FilterZuruecksetzen } from '@/components/transaktionen/FilterZurueckset
 import { KiChip } from '@/components/transaktionen/KiChip'
 import { TransaktionenKennzahlen } from '@/components/transaktionen/TransaktionenKennzahlen'
 import { TransaktionenListe } from '@/components/transaktionen/TransaktionenListe'
+import { Receipt } from 'lucide-react'
+import { LeerZustand } from '@/components/leer/LeerZustand'
+import { ScopeHinweisFuer } from '@/components/leer/ScopeHinweisFuer'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,6 +41,7 @@ type SearchParams = RohFilter & { page?: string; per?: string }
 
 export default async function TransactionsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const [sp, { supabase, user }] = await Promise.all([searchParams, requireAuthUser()])
+  const ctx = await resolveScope(supabase, user!)
   const filter = parseFilter(sp)
   const page = parsePage(sp.page)
   const pageSize = parsePageSize(sp.per)
@@ -44,17 +50,17 @@ export default async function TransactionsPage({ searchParams }: { searchParams:
   const heute = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date())
 
   const [accounts, categories, debts, settings, kiBilanz, seite, summen, gesamt] = await Promise.all([
-    getActiveAccountOptions(supabase, user!.id),
-    getCategoryOptions(supabase, user!.id),
+    getActiveAccountOptions(supabase, ctx),
+    getCategoryOptions(supabase),
     // Für den Schulden-Vorschlag (DebtSuggestion): nur aktive, nicht abgeschlossene Schulden.
-    getActiveDebts(supabase, user!.id),
+    getActiveDebts(supabase, ctx),
     getSettings(user!.id),
-    getKiBilanz(supabase, user!.id),
-    getTransactionsPage(supabase, user!.id, { filters: filter, page, pageSize }),
-    getTransactionsSummary(supabase, user!.id, filter),
+    getKiBilanz(supabase, ctx),
+    getTransactionsPage(supabase, ctx, { filters: filter, page, pageSize }),
+    getTransactionsSummary(supabase, ctx, filter),
     // Gesamtzahl ohne Filter nur, wenn gefiltert wird („41 von 729“).
     hasFilters
-      ? supabase.from('unified_transactions').select('id', { count: 'exact', head: true }).eq('user_id', user!.id).then(r => r.count)
+      ? applyAccountScope(supabase.from('unified_transactions').select('id', { count: 'exact', head: true }), ctx).then(r => r.count)
       : Promise.resolve(null),
   ])
 
@@ -67,6 +73,9 @@ export default async function TransactionsPage({ searchParams }: { searchParams:
   // Von Hand eingetippte oder veraltete Seitenzahl (Lesezeichen auf Seite 12, inzwischen gefiltert).
   // PostgREST antwortet hinter dem Ende je nach Version mit leerer Liste oder 416 — beides landet hier.
   const seiteLeer = page > 1 && rows.length === 0 && (total > 0 || !!error)
+
+  // Wirklich nichts da (kein Filter, erste Seite, kein Fehler): Filterleiste und Kennzahlen mit Nullen entfallen.
+  const ganzLeer = rows.length === 0 && !hasFilters && page <= 1 && !error && total === 0
 
   const eintraege = (n: number) => `${n} ${n === 1 ? 'Eintrag' : 'Einträge'}`
 
@@ -107,6 +116,35 @@ export default async function TransactionsPage({ searchParams }: { searchParams:
 
         {/* `replace`: der Zurück-Knopf läuft nicht durch jeden Filterschritt. `resetKeys="page"`: jede
             Filteränderung springt auf Seite 1 (Filter auf Seite 7 führt sonst oft auf eine leere Seite). */}
+        {ganzLeer ? (
+          <div className="space-y-4">
+            <ScopeHinweisFuer ctx={ctx} thema="Buchungen" />
+            {accounts.length === 0 ? (
+              <LeerZustand
+                icon={Receipt}
+                titel="Noch keine Transaktionen"
+                text="Buchungen gehören zu einem Konto. Lege zuerst ein Konto an oder verbinde deine Bank; danach kannst du Buchungen erfassen, per CSV importieren oder synchronisieren."
+                aktion={{ label: 'Konto anlegen', href: '/finance/accounts' }}
+                sekundaer={{ label: 'Bank verbinden', href: '/settings' }}
+              />
+            ) : (
+              <LeerZustand
+                icon={Receipt}
+                titel="Noch keine Transaktionen"
+                text="Hier erscheinen alle Buchungen deiner Konten, mit Filtern, Kategorien und Sammelaktionen. Erfasse die erste Buchung, importiere eine CSV oder synchronisiere deine Bank."
+                aktionNode={
+                  <AddTransactionDialog
+                    accounts={accounts}
+                    categories={categories}
+                    debts={debts}
+                    schuldenCategoryId={schuldenCategoryId}
+                  />
+                }
+                sekundaer={{ label: 'Bank verbinden', href: '/settings' }}
+              />
+            )}
+          </div>
+        ) : (
         <Suspense fallback={<div className="h-8" />}>
           <UrlFiltersProvider replace resetKeys="page">
             <div className="space-y-4">
@@ -140,6 +178,7 @@ export default async function TransactionsPage({ searchParams }: { searchParams:
             </div>
           </UrlFiltersProvider>
         </Suspense>
+        )}
       </div>
     </AuswahlProvider>
   )

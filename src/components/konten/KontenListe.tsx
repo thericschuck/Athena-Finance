@@ -165,7 +165,7 @@ function Zeile({
   const ausgegraut = z.aktiv ? '' : 'opacity-60'
   const kontoRow = {
     id: z.id, name: z.name, type: z.type, institution: z.institution, currency: z.currency,
-    color: z.color, iban: z.iban, bank_iban: z.bankIban, is_active: z.aktiv, sort_order: z.sortOrder,
+    color: z.color, iban: z.iban, bank_iban: z.bankIban, is_active: z.aktiv, sort_order: z.sortOrder, shared: z.shared,
   }
   const delta = z.delta
   const verlaufTitel = z.verlauf && z.verlauf.values.length >= 2

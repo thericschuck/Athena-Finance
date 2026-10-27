@@ -28,21 +28,20 @@ export async function POST(req: NextRequest) {
   if (parsed.response) return parsed.response
   const { account_id, rows } = parsed.data
 
+  // Haushaltskonto: die RLS begrenzt auf den Haushalt (jedes Mitglied darf buchen); user_id der Buchung = Handelnder.
   const { data: account } = await supabase
     .from('accounts')
     .select('id')
     .eq('id', account_id)
-    .eq('user_id', user.id)
     .maybeSingle()
   if (!account) {
     return Response.json({ error: 'Konto nicht gefunden' }, { status: 404 })
   }
 
-  // Load categories for name lookup
+  // Load categories for name lookup (Kategorienbaum pro Haushalt, RLS)
   const { data: categories } = await supabase
     .from('categories')
     .select('id, name')
-    .eq('user_id', user.id)
 
   const categoryMap = new Map<string, string>()
   for (const cat of categories ?? []) {

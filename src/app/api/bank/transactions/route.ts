@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { z } from 'zod'
 import { parseQuery } from '@/lib/api/validate'
 import { uuid } from '@/lib/api/schemas'
@@ -22,7 +23,7 @@ const querySchema = z.object({
 /**
  * GET /api/bank/transactions?iban=...&limit=100&offset=0&category=...&q=...
  *
- * Returns stored bank transactions for the authenticated user.
+ * Returns stored bank transactions of the accounts in the current household scope.
  */
 export async function GET(request: Request) {
   const { supabase, user } = await getAuthUser()
@@ -38,6 +39,8 @@ export async function GET(request: Request) {
   // Spalten explizit statt '*': external_id ist ein base64-Hash, den ausschliesslich die
   // Dedup beim Sync braucht — im Browser wird sie nie gelesen, macht aber rund 12 % der
   // uebertragenen Nutzlast aus.
+  const ctx = await resolveScope(supabase, user)
+  // Buchungen der Konten im Scope (bank_transactions hat keine account_id: ueber die IBAN).
   let query = supabase
     .from('bank_transactions')
     .select(
@@ -45,7 +48,7 @@ export async function GET(request: Request) {
       'entry_date, description, counterpart_name, counterpart_iban, counterpart_bic, ' +
       'category_id, raw_description, bank_reference, created_at',
     )
-    .eq('user_id', user.id)
+    .in('account_iban', ctx.ibans)
     .order('value_date', { ascending: false })
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)

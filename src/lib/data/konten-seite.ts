@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 import {
   getAccounts,
   getBankBalances,
@@ -32,14 +33,14 @@ export interface KontenSeitenDaten {
 
 type DB = SupabaseClient<Database>
 
-export async function ladeKontenSeite(supabase: DB, userId: string, period: Period): Promise<KontenSeitenDaten> {
+export async function ladeKontenSeite(supabase: DB, ctx: ScopeContext, period: Period): Promise<KontenSeitenDaten> {
   const cutoff = periodCutoff(period)
   const [konten, manuell, bank, unified, settings, depots, history] = await Promise.all([
-    getAccounts(supabase, userId),
-    getManualBalanceSums(supabase, userId),
-    getBankBalances(supabase, userId),
-    getUnifiedBalanceSums(supabase, userId),
-    getSettings(userId),
+    getAccounts(supabase, ctx),
+    getManualBalanceSums(supabase, ctx),
+    getBankBalances(supabase, ctx),
+    getUnifiedBalanceSums(supabase, ctx),
+    getSettings(ctx.userId),
     getDepotsSummaries(),
     fetchBalanceHistory(supabase, { from: cutoff }),
   ])
@@ -47,7 +48,7 @@ export async function ladeKontenSeite(supabase: DB, userId: string, period: Peri
   // Manuelle Konten: Frische = letzte Buchung. Bankkonten brauchen das nicht (Sync-Zeitpunkt).
   const letzteBuchung = await getLetzteBuchungen(
     supabase,
-    userId,
+    ctx,
     konten.filter((k) => !k.bank_iban).map((k) => k.id),
   )
 

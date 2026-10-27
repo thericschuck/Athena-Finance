@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 import {
   getAccount,
   getActiveAccountOptions,
@@ -45,17 +46,17 @@ export interface KontoDetailDaten {
 type DB = SupabaseClient<Database>
 
 /** `null`, wenn es das Konto nicht (oder nicht für diesen Nutzer) gibt. */
-export async function ladeKontoDetail(supabase: DB, userId: string, id: string): Promise<KontoDetailDaten | null> {
+export async function ladeKontoDetail(supabase: DB, ctx: ScopeContext, id: string): Promise<KontoDetailDaten | null> {
   const [account, accounts, categories, rows, balanceHistory, settings, bank, unified] = await Promise.all([
-    getAccount(supabase, userId, id),
-    getActiveAccountOptions(supabase, userId),
-    getCategoryOptions(supabase, userId),
-    getAccountTransactions(supabase, userId, id),
+    getAccount(supabase, ctx, id),
+    getActiveAccountOptions(supabase, ctx),
+    getCategoryOptions(supabase),
+    getAccountTransactions(supabase, ctx, id),
     // Komplette Historie (nicht nur der Zeitraum): der Kontostand kommt aus dem letzten Punkt.
     fetchBalanceHistory(supabase, { accountId: id }),
-    getSettings(userId),
-    getBankBalances(supabase, userId),
-    getUnifiedBalanceSums(supabase, userId),
+    getSettings(ctx.userId),
+    getBankBalances(supabase, ctx),
+    getUnifiedBalanceSums(supabase, ctx),
   ])
   if (!account) return null
 
@@ -67,7 +68,7 @@ export async function ladeKontoDetail(supabase: DB, userId: string, id: string):
   let stand: KontoStand | null = null
   if (bankZeile) stand = { art: 'sync', wert: bankZeile.fetched_at }
   else {
-    const letzte = (await getLetzteBuchungen(supabase, userId, [id])).get(id)
+    const letzte = (await getLetzteBuchungen(supabase, ctx, [id])).get(id)
     if (letzte) stand = { art: 'buchung', wert: letzte }
   }
 

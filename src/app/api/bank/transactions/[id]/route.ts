@@ -14,7 +14,7 @@ const bodySchema = z.object({
  * PATCH /api/bank/transactions/:id
  * Body: { category_id: string | null }
  *
- * Updates the category of a single transaction. RLS ensures users can only touch their own rows.
+ * Updates the category of a single transaction. RLS limits access to the household (every member may edit).
  */
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { supabase, user } = await getAuthUser()
@@ -27,10 +27,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { id } = p.data
   const categoryId = b.data.category_id
 
-  // Der Fremdschluessel prueft nur, dass die Kategorie EXISTIERT, nicht wem sie gehoert.
+  // Der Fremdschluessel prueft nur, dass die Kategorie EXISTIERT; die RLS zeigt nur Kategorien des Haushalts.
   if (categoryId) {
     const { data: kat } = await supabase
-      .from('categories').select('id').eq('id', categoryId).eq('user_id', user.id).maybeSingle()
+      .from('categories').select('id').eq('id', categoryId).maybeSingle()
     if (!kat) return NextResponse.json({ error: 'Kategorie nicht gefunden' }, { status: 404 })
   }
 
@@ -38,7 +38,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     .from('bank_transactions')
     .update({ category_id: categoryId, category_source: categoryId ? 'manual' : null })
     .eq('id', id)
-    .eq('user_id', user.id)
     .select('id, category_id')
     .maybeSingle()
 

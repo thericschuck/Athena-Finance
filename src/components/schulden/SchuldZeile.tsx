@@ -5,6 +5,8 @@ import { DebtPaymentDialog, DeleteDebtButton, EditDebtDialog, SettleDebtButton }
 import { RestschuldVerlauf } from '@/components/schulden/RestschuldVerlauf'
 import { ZahlungLoeschen } from '@/components/schulden/ZahlungLoeschen'
 import type { SchuldMitZahlungen } from '@/lib/data/schulden-seite'
+import { ZuletztGeaendert } from '@/components/aenderungen/ZuletztGeaendert'
+import type { ZuletztGeaendertInfo } from '@/lib/data/aenderungen'
 import {
   addMonate,
   formatDatum,
@@ -25,9 +27,10 @@ import {
  * bei Hover oder Fokus. Server-Komponente.
  */
 export function SchuldZeile({
-  schuld: s, locale, dateFormat, heute,
+  schuld: s, locale, dateFormat, heute, zuletzt,
 }: {
   schuld: SchuldMitZahlungen
+  zuletzt?: ZuletztGeaendertInfo | null
   locale: string
   dateFormat: string
   heute: string
@@ -72,6 +75,7 @@ export function SchuldZeile({
             {bald && <span className="shrink-0 rounded-full bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning">{tage === 0 ? 'Heute fällig' : `Fällig in ${tage} ${tage === 1 ? 'Tag' : 'Tagen'}`}</span>}
           </div>
           {meta.length > 0 && <p className="mt-0.5 truncate text-xs text-muted-foreground">{meta.join(' · ')}</p>}
+          <ZuletztGeaendert info={zuletzt} className="mt-0.5" />
         </div>
         <div className="shrink-0 text-right">
           <p className={`text-lg font-semibold tabular-nums leading-tight ${ton}`}>{euro(s.outstanding)}</p>

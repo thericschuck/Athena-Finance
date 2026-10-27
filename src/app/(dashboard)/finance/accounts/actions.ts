@@ -6,6 +6,8 @@ import { z } from 'zod'
 import { parseForm, parseInput, issueMessage } from '@/lib/api/validate'
 import { idField, uuid, reqText, reqEnum, optText, boolTrue, currency, MAX_AMOUNT } from '@/lib/api/schemas'
 import { ANPASSUNG_BESCHREIBUNG, nachkommastellen, saldoAnpassung } from '@/lib/konten/berechnen'
+import { requireRows } from '@/lib/data/mutation'
+import { setzeGeteilt } from '@/lib/haushalt/teilen'
 
 export type AccountActionState = { error: string } | { success: true } | null
 
@@ -49,12 +51,14 @@ export async function createAccount(
   const parsed = parseForm(formData, createAccountSchema)
   if (!parsed.ok) return { error: issueMessage(parsed) }
 
-  const { error } = await supabase.from('accounts').insert({
+  const { data: neu, error } = await supabase.from('accounts').insert({
     ...parsed.data,
     user_id: user.id,
-  })
+  }).select('id').single()
 
   if (error) return { error: error.message }
+  const teilFehler = await setzeGeteilt(supabase, 'accounts', neu.id, user.id, formData)
+  if (teilFehler) return { error: teilFehler }
 
   revalidatePath('/finance/accounts')
   return { success: true }
@@ -71,16 +75,17 @@ export async function updateAccount(
   if (!parsed.ok) return { error: issueMessage(parsed) }
   const { id, ...fields } = parsed.data
 
-  const { error } = await supabase
+  const { error } = await requireRows(supabase
     .from('accounts')
     .update({
       ...fields,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('id', id))
 
   if (error) return { error: error.message }
+  const teilFehler = await setzeGeteilt(supabase, 'accounts', id, user.id, formData)
+  if (teilFehler) return { error: teilFehler }
   revalidatePath('/finance/accounts')
   return { success: true }
 }
@@ -91,11 +96,10 @@ export async function deleteAccount(id: string): Promise<{ error?: string }> {
   const idP = parseInput(uuid, id)
   if (!idP.ok) return { error: issueMessage(idP) }
 
-  const { error } = await supabase
+  const { error } = await requireRows(supabase
     .from('accounts')
     .delete()
-    .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('id', id))
 
   if (error) return { error: error.message }
   revalidatePath('/finance/accounts')
@@ -131,24 +135,23 @@ export async function setzeManuellenSaldo(
     .from('accounts')
     .select('id, currency, bank_iban, is_active')
     .eq('id', parsed.data.kontoId)
-    .eq('user_id', user.id)
     .maybeSingle()
   if (!konto) return { error: 'Konto nicht gefunden' }
   if (konto.bank_iban) return { error: 'Der Saldo eines Bankkontos kommt von der Bank und lässt sich nicht setzen.' }
   if (!konto.is_active) return { error: 'Das Konto ist inaktiv.' }
 
-  const { data: summe, error: leseFehler } = await supabase
+  // Die View gruppiert nach (user_id, account_id): im Haushalt kann es je Konto mehrere Zeilen geben (Buchungen beider
+  // Mitglieder) — summieren statt maybeSingle.
+  const { data: summenZeilen, error: leseFehler } = await supabase
     .from('account_balance_sums_manual')
     .select('balance')
     .eq('account_id', konto.id)
-    .eq('user_id', user.id)
-    .maybeSingle()
   if (leseFehler) return { error: leseFehler.message }
 
   // Basis ist die Summe der manuellen Buchungen (wie die Liste sie anzeigt). Der nächtliche Snapshot
   // (fn_recompute_account_balances) rechnet Umbuchungen und das Datum anders — solange es auf einem
   // manuellen Konto weder Umbuchungen noch Buchungen mit Zukunftsdatum gibt, ist das identisch.
-  const buchung = saldoAnpassung(Number(summe?.balance ?? 0), parsed.data.ziel, nachkommastellen(konto.currency))
+  const buchung = saldoAnpassung((summenZeilen ?? []).reduce((a, z) => a + Number(z.balance ?? 0), 0), parsed.data.ziel, nachkommastellen(konto.currency))
   if (!buchung) return { angepasst: false }
 
   const { error } = await supabase.from('transactions').insert({
@@ -204,28 +207,24 @@ export async function gleicheAbweichungAus(
     .from('accounts')
     .select('id, currency, bank_iban')
     .eq('id', parsed.data.kontoId)
-    .eq('user_id', user.id)
     .maybeSingle()
   if (!konto) return { error: 'Konto nicht gefunden' }
   if (!konto.bank_iban) return { error: 'Nur für Bankkonten. Bei manuellen Konten gibt es „Saldo setzen“.' }
 
-  const [{ data: bank }, { data: summe }, { data: erste }] = await Promise.all([
+  // Haushaltsdaten: kein user_id-Filter (RLS). Die Summen-View hat je Buchungs-Nutzer eine Zeile -> summieren.
+  const [{ data: bank }, { data: summenZeilen }, { data: erste }] = await Promise.all([
     supabase
       .from('bank_balance')
       .select('booked_balance')
-      .eq('user_id', user.id)
       .eq('account_iban', konto.bank_iban)
       .maybeSingle(),
     supabase
       .from('account_balance_sums_unified')
       .select('balance')
-      .eq('user_id', user.id)
-      .eq('account_id', konto.id)
-      .maybeSingle(),
+      .eq('account_id', konto.id),
     supabase
       .from('unified_transactions')
       .select('date')
-      .eq('user_id', user.id)
       .eq('account_id', konto.id)
       .order('date', { ascending: true })
       .limit(1)
@@ -233,7 +232,7 @@ export async function gleicheAbweichungAus(
   ])
   if (!bank) return { error: 'Für dieses Konto liegt kein Bank-Saldo vor (noch kein Sync).' }
 
-  const diff = Math.round((Number(bank.booked_balance) - Number(summe?.balance ?? 0)) * 100) / 100
+  const diff = Math.round((Number(bank.booked_balance) - (summenZeilen ?? []).reduce((a, z) => a + Number(z.balance ?? 0), 0)) * 100) / 100
   if (diff === 0) return { ausgeglichen: false }
 
   const datum = erste?.date ? tagDavor(erste.date) : heuteBerlinIso()
@@ -258,7 +257,7 @@ export async function gleicheAbweichungAus(
 
 const sortSchema = z.array(uuid).max(100, 'Zu viele Konten')
 
-/** Speichert die Anzeigereihenfolge: `sort_order` = Index in `ids` (nur eigene Konten). */
+/** Speichert die Anzeigereihenfolge: `sort_order` = Index in `ids` (Haushaltskonten, RLS). */
 export async function sortiereKonten(ids: string[]): Promise<{ error?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
@@ -268,7 +267,7 @@ export async function sortiereKonten(ids: string[]): Promise<{ error?: string }>
 
   const ergebnisse = await Promise.all(
     parsed.data.map((id, index) =>
-      supabase.from('accounts').update({ sort_order: index }).eq('id', id).eq('user_id', user.id),
+      supabase.from('accounts').update({ sort_order: index }).eq('id', id),
     ),
   )
   const fehler = ergebnisse.find((r) => r.error)?.error

@@ -62,6 +62,7 @@ export interface KontoEingabe {
   bank_iban: string | null
   is_active: boolean
   sort_order: number
+  shared?: boolean
 }
 
 export interface BankInfo {
@@ -105,6 +106,7 @@ export function baueKontoZeilen(eingabe: {
       bankIban: k.bank_iban,
       aktiv: k.is_active,
       sortOrder: k.sort_order,
+      shared: k.shared,
       saldo,
       istBank,
       buchungssumme: summe,

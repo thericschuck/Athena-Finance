@@ -21,6 +21,7 @@ import { betragAusNutzereingabe, betragFuerFeld, heuteBerlin, kanonisch, MAX_BET
 import { fmtCurrency } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import type { Ziel } from '@/lib/data/sparziele-seite'
+import { TeilenSchalter } from '@/components/haushalt/TeilenSchalter'
 
 const PRIORITIES = [
   { value: '', label: 'Keine' },
@@ -156,6 +157,8 @@ function GoalFormular({ mode, goal, onClose }: { mode: 'create' | 'edit'; goal?:
           className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:text-sm"
         />
       </div>
+
+      <TeilenSchalter defaultChecked={goal?.shared ?? false} unbekannt={!!goal && goal.shared === undefined} />
 
       {fehler && <p role="alert" className="text-sm text-destructive">{fehler}</p>}
 

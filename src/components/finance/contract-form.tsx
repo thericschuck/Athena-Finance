@@ -20,6 +20,7 @@ import {
 } from '@/app/(dashboard)/finance/(planung)/contracts/actions'
 import { Database } from '@/types/database'
 import type { ContractRow } from '@/lib/data/finance-planning'
+import { TeilenSchalter } from '@/components/haushalt/TeilenSchalter'
 import { CONTRACT_TYPES, FREQUENCIES, TRANSFER_TYPES } from '@/lib/finance/contract-constants'
 import { betragAusNutzereingabe, betragFuerFeld, heuteBerlin, kanonisch, MAX_BETRAG } from '@/lib/transaktionen/formular'
 
@@ -203,6 +204,8 @@ function ContractFields({
           className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:text-sm"
         />
       </div>
+
+      <TeilenSchalter defaultChecked={contract?.shared ?? false} unbekannt={!!contract && contract.shared === undefined} />
     </>
   )
 }

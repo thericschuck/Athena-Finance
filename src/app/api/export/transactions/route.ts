@@ -1,5 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { getAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
+import { applyAccountScope } from '@/lib/haushalt/scope'
 import { parseFilter } from '@/lib/transaktionen/filter'
 import { kategorieIdsFuer, wendeFilterAn } from '@/lib/data/finance-transactions'
 import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvValue, formatCsvAmount } from '@/lib/csv'
@@ -46,6 +48,7 @@ export async function GET(req: NextRequest) {
     return new Response('Unauthorized', { status: 401 })
   }
 
+  const ctx = await resolveScope(supabase, user)
   const params = Object.fromEntries(req.nextUrl.searchParams.entries())
   const filter = parseFilter(params)
 
@@ -55,7 +58,7 @@ export async function GET(req: NextRequest) {
   // Buchungen war sonst stillschweigend unvollständig.
   const [feld, richtung] = filter.sort.split('-')
   const aufsteigend = richtung === 'asc'
-  const kategorieIds = await kategorieIdsFuer(supabase, user.id, filter)
+  const kategorieIds = await kategorieIdsFuer(supabase, filter)
   const transactions: {
     date: string | null
     amount: number | null
@@ -70,10 +73,13 @@ export async function GET(req: NextRequest) {
 
   for (let seite = 0; seite < MAX_PAGES; seite++) {
     let query = wendeFilterAn(
-      supabase
-        .from('unified_transactions')
-        .select('date, amount, signed_amount, type, description, merchant, currency, account_name, category_name')
-        .eq('user_id', user.id),
+      // TODO(scope-flows): Herabstufung per counterpart_account_id (Export zeigt die Buchungen im Scope, Art nicht relevant)
+      applyAccountScope(
+        supabase
+          .from('unified_transactions')
+          .select('date, amount, signed_amount, type, description, merchant, currency, account_name, category_name'),
+        ctx,
+      ),
       filter,
       kategorieIds,
     )

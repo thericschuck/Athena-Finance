@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { HandCoins } from 'lucide-react'
 import { requireAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency } from '@/lib/format'
 import { heuteBerlin } from '@/lib/transaktionen/formular'
@@ -10,6 +11,9 @@ import { AddDebtDialog } from '@/components/finance/debt-payment-form'
 import { SchuldenKennzahlenLeiste } from '@/components/schulden/SchuldenKennzahlenLeiste'
 import { SchuldZeile } from '@/components/schulden/SchuldZeile'
 import { cn } from '@/lib/utils'
+import { LeerZustand } from '@/components/leer/LeerZustand'
+import { ScopeHinweisFuer } from '@/components/leer/ScopeHinweisFuer'
+import { letzteAenderungen } from '@/lib/data/aenderungen'
 
 interface PageProps {
   searchParams: Promise<{ all?: string }>
@@ -25,8 +29,10 @@ export default async function DebtsPage({ searchParams }: PageProps) {
   const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
   const heute = heuteBerlin()
 
-  const alle = await ladeSchuldenSeite(supabase, user!.id)
+  const ctx = await resolveScope(supabase, user!)
+  const alle = await ladeSchuldenSeite(supabase, ctx)
   const kennzahlen = schuldenKennzahlen(alle, heute)
+  const zuletzt = await letzteAenderungen(supabase, ctx, 'debts', alle.map(d => d.id))
 
   // Überfällige zuerst, dann größte Restschuld
   const sortiere = (a: SchuldMitZahlungen, b: SchuldMitZahlungen) =>
@@ -65,7 +71,7 @@ export default async function DebtsPage({ searchParams }: PageProps) {
       </div>
 
       {alle.length === 0 ? (
-        <EmptyState />
+        <EmptyState ctx={ctx} />
       ) : (
         <>
           <SchuldenKennzahlenLeiste k={kennzahlen} locale={locale} />
@@ -81,13 +87,13 @@ export default async function DebtsPage({ searchParams }: PageProps) {
 
           <div className="space-y-6">
             {geliehen.length > 0 && (
-              <Abschnitt titel="Ich schulde" ton="danger" summe={summe(geliehen)} locale={locale} liste={geliehen} dateFormat={dateFormat} heute={heute} />
+              <Abschnitt titel="Ich schulde" ton="danger" summe={summe(geliehen)} locale={locale} liste={geliehen} dateFormat={dateFormat} heute={heute} zuletzt={zuletzt} />
             )}
             {verliehen.length > 0 && (
-              <Abschnitt titel="Mir wird geschuldet" ton="success" summe={summe(verliehen)} locale={locale} liste={verliehen} dateFormat={dateFormat} heute={heute} />
+              <Abschnitt titel="Mir wird geschuldet" ton="success" summe={summe(verliehen)} locale={locale} liste={verliehen} dateFormat={dateFormat} heute={heute} zuletzt={zuletzt} />
             )}
             {zeigeAbgeschlossene && abgeschlossen.length > 0 && (
-              <Abschnitt titel="Abgeschlossen" summe={null} locale={locale} liste={abgeschlossen} dateFormat={dateFormat} heute={heute} />
+              <Abschnitt titel="Abgeschlossen" summe={null} locale={locale} liste={abgeschlossen} dateFormat={dateFormat} heute={heute} zuletzt={zuletzt} />
             )}
           </div>
         </>
@@ -97,8 +103,9 @@ export default async function DebtsPage({ searchParams }: PageProps) {
 }
 
 function Abschnitt({
-  titel, ton, summe, locale, liste, dateFormat, heute,
+  titel, ton, summe, locale, liste, dateFormat, heute, zuletzt,
 }: {
+  zuletzt: Awaited<ReturnType<typeof letzteAenderungen>>
   titel: string
   ton?: 'danger' | 'success'
   summe: number | null
@@ -119,23 +126,23 @@ function Abschnitt({
       </h2>
       <ul className="min-w-0 divide-y divide-border rounded-lg border border-border bg-card">
         {liste.map(s => (
-          <SchuldZeile key={s.id} schuld={s} locale={locale} dateFormat={dateFormat} heute={heute} />
+          <SchuldZeile key={s.id} schuld={s} locale={locale} dateFormat={dateFormat} heute={heute} zuletzt={zuletzt.get(s.id)} />
         ))}
       </ul>
     </section>
   )
 }
 
-function EmptyState() {
+function EmptyState({ ctx }: { ctx: Parameters<typeof ScopeHinweisFuer>[0]['ctx'] }) {
   return (
-    <div className="rounded-lg border border-dashed border-border bg-card px-4 py-10 text-center">
-      <HandCoins className="mx-auto size-6 text-muted-foreground" aria-hidden />
-      <p className="mt-3 text-sm font-medium">Noch keine Schulden erfasst</p>
-      <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
-        Trage Kredite, geliehenes oder verliehenes Geld ein. Mit jeder Zahlung sinkt die Restschuld, und du siehst
-        Fortschritt, monatliche Last und wann du schuldenfrei bist. Buchungen der Kategorie „Schulden“ schlagen dir
-        passende Einträge vor.
-      </p>
+    <div className="space-y-4">
+      <ScopeHinweisFuer ctx={ctx} thema="Schulden" />
+      <LeerZustand
+        icon={HandCoins}
+        titel="Noch keine Schulden erfasst"
+        text="Trage Kredite, geliehenes oder verliehenes Geld ein. Mit jeder Zahlung sinkt die Restschuld, und du siehst Fortschritt, monatliche Last und wann du schuldenfrei bist."
+        aktionNode={<AddDebtDialog />}
+      />
     </div>
   )
 }

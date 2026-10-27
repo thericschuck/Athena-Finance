@@ -1,8 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { getDashboardAccounts, getBalanceSums, getNetWorthSnapshotsSince } from '@/lib/data/overview'
-import { getBankBalances } from '@/lib/data/finance-accounts'
-import { getFlowTransactions } from '@/lib/data/flows'
+import { getAccounts, getBankBalances, getUnifiedBalanceSums } from '@/lib/data/finance-accounts'
+import { applyAccountScope, applyOwnerScope } from '@/lib/haushalt/scope'
+import { istScopeContext, userIdVon, type ScopeArg } from '@/lib/data/scope-arg'
+import { getFlowTransactionsScope } from '@/lib/data/flows-scope'
 import { fetchSettingValue } from '@/lib/data/settings'
 import { computeAccountBalances } from '@/lib/finance/dashboard-calc'
 import { ladeSteuerdaten, neuerSteuerCache } from '@/lib/tax/laden'
@@ -56,28 +58,34 @@ export type PrognoseBasis = {
   hinweise: string[]
 }
 
+/**
+ * `who`: ScopeContext = Konten/Vertraege/Historie des Scopes; string (userId) = bisheriges Verhalten (nur Eigenes).
+ * Owner-only bleiben Einstellungen/Annahmen, Steuer und der Vermoegens-Snapshot (`current_net_worth`, `net_worth_snapshots`):
+ * TODO(scope-flows): Vermoegensstand/Snapshots auf Konto-Ebene (Paket B ersetzt net_worth_snapshots).
+ */
 export async function ladePrognoseBasis(
-  supabase: DB, userId: string, heute: string, opts: { monate?: number } = {},
+  supabase: DB, who: ScopeArg, heute: string, opts: { monate?: number } = {},
 ): Promise<PrognoseBasis> {
   const monate = opts.monate ?? 18
   const hinweise: string[] = []
+  const userId = userIdVon(who)
+  const ctx = istScopeContext(who) ? who : null
+  const vertraegeQ = supabase
+    .from('contracts')
+    .select('id, name, type, frequency, amount, currency, billing_day, start_date, end_date, auto_renews, is_active, account_id, to_account_id')
+  const lohnQ = supabase.from('unified_transactions').select('date')
 
   const [accounts, balanceSums, bankBalances, vertraegeRes, nwRes, buchungen, lohnRes, annahmenRoh, ueRoh] = await Promise.all([
-    getDashboardAccounts(supabase, userId),
-    getBalanceSums(supabase, userId),
-    getBankBalances(supabase, userId),
-    supabase
-      .from('contracts')
-      .select('id, name, type, frequency, amount, currency, billing_day, start_date, end_date, auto_renews, is_active, account_id, to_account_id')
-      .eq('user_id', userId)
-      .eq('is_active', true),
+    ctx ? getAccounts(supabase, ctx) : getDashboardAccounts(supabase, userId),
+    ctx
+      ? getUnifiedBalanceSums(supabase, ctx).then(r => r.map(s => ({ ...s, tx_count: 0 })))
+      : getBalanceSums(supabase, userId),
+    getBankBalances(supabase, who),
+    (ctx ? applyOwnerScope(vertraegeQ, ctx) : vertraegeQ.eq('user_id', userId)).eq('is_active', true),
     supabase.from('current_net_worth').select('snapshot_date, net_worth').eq('user_id', userId).maybeSingle(),
     // Die GANZE Historie: das Zyklusmodell lernt aus allem, was da ist, und gewichtet selbst.
-    getFlowTransactions(supabase, userId, { to: heute }),
-    supabase
-      .from('unified_transactions')
-      .select('date')
-      .eq('user_id', userId)
+    getFlowTransactionsScope(supabase, who, { to: heute }),
+    (ctx ? applyAccountScope(lohnQ, ctx) : lohnQ.eq('user_id', userId))
       .eq('tax_role_effective', 'lohn')
       .eq('type', 'income')
       .gte('date', addMonate(monatVon(heute), -8) + '-01')
@@ -149,12 +157,13 @@ export async function ladePrognoseBasis(
 }
 
 export async function ladePrognose(
-  supabase: DB, userId: string, heute: string, opts: { monate?: number } = {},
+  supabase: DB, who: ScopeArg, heute: string, opts: { monate?: number } = {},
 ): Promise<PrognoseSeite> {
   const jahr = parse(heute).y
+  const userId = userIdVon(who)
   // Rückblick und Cashflow-Prognose sind unabhängig und laufen gleichzeitig.
   const [b, snapshots] = await Promise.all([
-    ladePrognoseBasis(supabase, userId, heute, opts),
+    ladePrognoseBasis(supabase, who, heute, opts),
     getNetWorthSnapshotsSince(supabase, userId, addTage(heute, -190)),
   ])
   const { basis, szenario, annahmen } = b

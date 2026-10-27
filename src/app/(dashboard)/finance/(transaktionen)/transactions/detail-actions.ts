@@ -4,11 +4,13 @@ import { z } from 'zod'
 import { getAuthUser } from '@/lib/supabase/server'
 import { parseInput, issueMessage } from '@/lib/api/validate'
 import { uuid } from '@/lib/api/schemas'
+import { resolveScope } from '@/lib/haushalt/resolve'
+import { letzteAenderung, type ZuletztGeaendertInfo } from '@/lib/data/aenderungen'
 
 /**
  * Lazy-Detail einer Buchung für das Seitenfenster der Transaktionen-Liste. Die Liste trägt nur die
  * Spalten, die sie anzeigt; Verwendungszweck im Volltext, Wertstellung, Gegenkonto und KI-Vorschlag
- * werden erst beim Öffnen geholt. Nur lesend; alles mit `user_id`-Filter.
+ * werden erst beim Öffnen geholt. Nur lesend; Haushaltsdaten: die RLS begrenzt auf den Haushalt (kein user_id-Filter).
  */
 
 export interface BuchungsDetailDaten {
@@ -38,6 +40,8 @@ export interface BuchungsDetailDaten {
   counterpartName: string | null
   counterpartIban: string | null
   bankReference: string | null
+  /** Letzte Änderung; nur bei Haushalt mit Partner, sonst null. */
+  zuletzt: ZuletztGeaendertInfo | null
 }
 
 const args = z.object({ id: uuid, source: z.enum(['manual', 'bank_sync']) })
@@ -89,7 +93,6 @@ export async function ladeBuchungsDetail(
     )
     .eq('id', p.data.id)
     .eq('source', p.data.source)
-    .eq('user_id', user.id)
     .maybeSingle()
   if (error) return { error: error.message }
   if (!data) return { error: 'Buchung nicht gefunden' }
@@ -101,10 +104,16 @@ export async function ladeBuchungsDetail(
       .from('bank_transactions')
       .select('counterpart_name, counterpart_iban, bank_reference, entry_date, value_date, category_source')
       .eq('id', p.data.id)
-      .eq('user_id', user.id)
       .maybeSingle()
     bank = (res.data as unknown as BankZeile | null) ?? null
   }
+
+  const zuletzt = await letzteAenderung(
+    supabase,
+    await resolveScope(supabase, user),
+    p.data.source === 'bank_sync' ? 'bank_transactions' : 'transactions',
+    p.data.id,
+  )
 
   const aiAbweichend = !!z.ai_category_id && z.ai_category_id !== z.category_id
   let aiCategoryName: string | null = null
@@ -113,7 +122,6 @@ export async function ladeBuchungsDetail(
       .from('categories')
       .select('name')
       .eq('id', z.ai_category_id)
-      .eq('user_id', user.id)
       .maybeSingle()
     aiCategoryName = kat?.name ?? null
   }
@@ -143,6 +151,7 @@ export async function ladeBuchungsDetail(
       counterpartName: bank?.counterpart_name ?? null,
       counterpartIban: bank?.counterpart_iban ?? null,
       bankReference: bank?.bank_reference ?? null,
+      zuletzt,
     },
   }
 }

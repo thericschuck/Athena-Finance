@@ -1,6 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import type { FlowInclude, FlowRow } from '@/lib/finance/flow-calc'
+import { applyAccountScope } from '../haushalt/scope.ts'
+import { istScopeContext, userIdVon, type ScopeArg } from './scope-arg.ts'
 
 /**
  * EINZIGER Lesepfad für Einnahmen und Ausgaben.
@@ -32,6 +34,28 @@ export type FlowScope = {
 
 const PAGE = 1000
 const MAX_PAGES = 50
+
+/**
+ * Scope der Abfrage: `ScopeContext` = Konten im Scope (`account_id in ctx.accountIds`, eine explizite Kontenauswahl wird
+ * geschnitten); `string` (userId) = altes Verhalten `user_id = userId` (Aufrufer, die noch nicht umgestellt sind).
+ *
+ * NUR BASIS: Umbuchungen (`flow_kind = 'umbuchung'`) sind haushaltsweit neutral und kommen hier nicht an. Die scope-abhaengige
+ * Herabstufung (Umbuchung auf Konto im Scope, Gegenkonto ausserhalb = echte Buchung) macht ausschliesslich
+ * `lib/data/flows-scope.ts` (`getMonthlyFlowsScope` / `getFlowTransactionsScope`). Aufrufer mit ScopeContext nutzen diese.
+ */
+function kontenFilter<Q extends { in: (c: string, v: readonly string[]) => Q; eq: (c: string, v: string) => Q; or: (f: string) => Q }>(
+  q: Q, who: ScopeArg, accountIds: string[] | undefined,
+): Q {
+  if (!istScopeContext(who)) {
+    const r = q.eq('user_id', userIdVon(who))
+    return accountIds?.length ? r.in('account_id', accountIds) : r
+  }
+  if (accountIds?.length) {
+    const erlaubt = new Set(who.accountIds)
+    return q.in('account_id', accountIds.filter(id => erlaubt.has(id)))
+  }
+  return applyAccountScope(q, who)
+}
 
 /** Lieber ein Fehler als eine still zu kleine Summe: bei 50.000 Zeilen ist hier Schluss. */
 function kappung(table: string): never {
@@ -65,18 +89,14 @@ const MONTHLY_COLUMNS =
  * Aggregierte Zeilen je Monat/Konto/Quelle/Art/Kategorie. Klein, auch für „Alles".
  * Beträge kommen als Zahl zurück (numeric wird von PostgREST teils als String geliefert).
  */
-export async function getMonthlyFlows(supabase: Client, userId: string, scope: FlowScope = {}): Promise<MonthlyFlowRow[]> {
+export async function getMonthlyFlows(supabase: Client, who: ScopeArg, scope: FlowScope = {}): Promise<MonthlyFlowRow[]> {
   const out: MonthlyFlowRow[] = []
   for (let page = 0; page < MAX_PAGES; page++) {
-    let q = supabase
-      .from('monthly_flows')
-      .select(MONTHLY_COLUMNS)
-      .eq('user_id', userId)
+    let q = kontenFilter(supabase.from('monthly_flows').select(MONTHLY_COLUMNS), who, scope.accountIds)
       .in('flow_kind', kindsFor(scope.include))
     // Der Monat reicht als Grenze: `from` mitten im Monat nimmt den ganzen Monat mit.
     if (scope.from) q = q.gte('month', scope.from.slice(0, 7) + '-01')
     if (scope.to) q = q.lte('month', scope.to.slice(0, 7) + '-01')
-    if (scope.accountIds?.length) q = q.in('account_id', scope.accountIds)
     if (scope.source) q = q.eq('source', scope.source)
 
     const { data, error } = await q
@@ -140,19 +160,15 @@ const TX_COLUMNS =
  * `getMonthlyFlows`, nur auf Buchungsebene. Wächst mit dem Zeitraum — wo es um Monatssummen
  * geht, `getMonthlyFlows` nehmen.
  */
-export async function getFlowTransactions(supabase: Client, userId: string, scope: FlowScope = {}): Promise<FlowTransaction[]> {
+export async function getFlowTransactions(supabase: Client, who: ScopeArg, scope: FlowScope = {}): Promise<FlowTransaction[]> {
   const out: FlowTransaction[] = []
   for (let page = 0; page < MAX_PAGES; page++) {
-    let q = supabase
-      .from('unified_transactions')
-      .select(TX_COLUMNS)
-      .eq('user_id', userId)
+    let q = kontenFilter(supabase.from('unified_transactions').select(TX_COLUMNS), who, scope.accountIds)
       .eq('counts_in_flow', true)
       .in('type', ['income', 'expense'])
       .in('flow_kind', kindsFor(scope.include))
     if (scope.from) q = q.gte('date', scope.from)
     if (scope.to) q = q.lte('date', scope.to)
-    if (scope.accountIds?.length) q = q.in('account_id', scope.accountIds)
     if (scope.source) q = q.eq('source', scope.source)
 
     // `id` als zweites Kriterium: `date` ist nicht eindeutig, ohne stabile Ordnung kämen

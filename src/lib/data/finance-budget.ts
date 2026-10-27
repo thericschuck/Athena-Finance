@@ -1,37 +1,36 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { applyOwnerScope } from '@/lib/haushalt/scope'
+import { istScopeContext, userIdVon, type ScopeArg } from '@/lib/data/scope-arg'
 
 type DB = SupabaseClient<Database>
 
 // ─── Lebenshaltungskosten / Budget ────────────────────────────────────────────────────────
 
 /** Alle Budget-Kategorien (kleine Stammdatenliste), nach sort_order, dann Name. */
-export async function getBudgetCategories(supabase: DB, userId: string) {
-  const { data } = await supabase
-    .from('budget_categories')
-    .select('id, name, icon, monthly_budget, sort_order')
-    .eq('user_id', userId)
+export async function getBudgetCategories(supabase: DB, who: ScopeArg) {
+  const q = supabase.from('budget_categories').select('id, name, icon, monthly_budget, sort_order, shared')
+  const { data } = await (istScopeContext(who) ? applyOwnerScope(q, who) : q.eq('user_id', userIdVon(who)))
     .order('sort_order')
     .order('name')
   return data ?? []
 }
 
 /** Alle Budget-Posten, nach Name. */
-export async function getBudgetItems(supabase: DB, userId: string) {
-  const { data } = await supabase
-    .from('budget_items')
-    .select('id, category_id, name, unit_price, quantity, interval_days, notes')
-    .eq('user_id', userId)
+export async function getBudgetItems(supabase: DB, who: ScopeArg) {
+  const q = supabase.from('budget_items').select('id, category_id, name, unit_price, quantity, interval_days, notes')
+  const { data } = await (istScopeContext(who) ? applyOwnerScope(q, who) : q.eq('user_id', userIdVon(who)))
     .order('name')
   return data ?? []
 }
 
+/** Einkommensziel: OWNER-ONLY (bleibt `user_id`, unabhaengig vom Scope). */
 /** Das (erste) Einkommensziel, oder null. */
-export async function getIncomeTarget(supabase: DB, userId: string) {
+export async function getIncomeTarget(supabase: DB, who: ScopeArg) {
   const { data } = await supabase
     .from('income_targets')
     .select('id, label, buffer_pct, tax_pct, savings_pct')
-    .eq('user_id', userId)
+    .eq('user_id', userIdVon(who))
     .order('created_at')
     .limit(1)
   return data?.[0] ?? null

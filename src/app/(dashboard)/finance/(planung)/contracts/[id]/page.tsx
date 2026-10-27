@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { requireAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { EditContractDialog, DeleteContractButton } from '@/components/finance/contract-form'
 import { VertraegeKennzahlenLeiste, type Zelle } from '@/components/vertraege/VertraegeKennzahlenLeiste'
 import { AbgleichHinweis, KuendigungHinweis } from '@/components/vertraege/VertragHinweise'
@@ -13,14 +14,18 @@ import { tageZwischen } from '@/lib/forecast/datum'
 import { fmtCurrency } from '@/lib/format'
 import { datumText, istUmbuchung, kuendigung, naechsterTermin, proJahr, proMonat, relativTage } from '@/lib/vertraege/rechnen'
 import { abbuchungsVerlauf, verlaufKennzahlen } from '@/lib/vertraege/verlauf'
+import { ZuletztGeaendert } from '@/components/aenderungen/ZuletztGeaendert'
+import { letzteAenderung } from '@/lib/data/aenderungen'
 
 const TYP = Object.fromEntries(CONTRACT_TYPES.map(t => [t.value, t.label]))
 const INTERVALL = Object.fromEntries(FREQUENCIES.map(f => [f.value, f.label]))
 
 export default async function ContractDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [{ id }, { supabase, user }] = await Promise.all([params, requireAuthUser()])
-  const d = await ladeVertragDetail(supabase, user!.id, id)
+  const ctx = await resolveScope(supabase, user!)
+  const d = await ladeVertragDetail(supabase, ctx, id)
   if (!d) notFound()
+  const zuletzt = await letzteAenderung(supabase, ctx, 'contracts', d.vertrag.id)
 
   const { vertrag: c, heute, locale, dateFormat, konten, kategorien } = d
   const eur = (n: number, stellen = 2) => fmtCurrency(n, c.currency, locale, { fractionDigits: stellen })
@@ -97,6 +102,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
               .filter(Boolean).join(' · ')}
             {!c.is_active && ' · inaktiv'}
           </p>
+          <ZuletztGeaendert info={zuletzt} />
         </div>
         <div className="flex shrink-0 items-center">
           <EditContractDialog contract={c} accounts={konten} categories={kategorien} />

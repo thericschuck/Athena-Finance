@@ -1,5 +1,7 @@
 'use server'
 
+import { resolveScope } from '@/lib/haushalt/resolve'
+import { applyAccountScope } from '@/lib/haushalt/scope'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { getAuthUser } from '@/lib/supabase/server'
@@ -115,13 +117,12 @@ export async function speichereEinmalposten(_prev: AnnahmenState, formData: Form
   const sichtbar = leseUeberschreibung({ aus: sichtbarRoh }).aus
   const alleIds = [...new Set([...neu.aus, ...neu.ein])]
 
-  // Besitzprüfung: nur Buchungen des angemeldeten Nutzers.
+  // Besitzprüfung: nur Buchungen im Scope des angemeldeten Nutzers.
   let erlaubt = new Set<string>()
   if (alleIds.length > 0) {
-    const { data, error: ownErr } = await supabase
-      .from('unified_transactions')
-      .select('id')
-      .eq('user_id', user.id)
+    // Buchungen der Konten im Scope (Haushalt); die Auswahl selbst landet owner-only in user_settings.
+    const ctx = await resolveScope(supabase, user)
+    const { data, error: ownErr } = await applyAccountScope(supabase.from('unified_transactions').select('id'), ctx)
       .in('id', alleIds)
     if (ownErr) return { error: ownErr.message }
     erlaubt = new Set((data ?? []).map(r => String(r.id)))

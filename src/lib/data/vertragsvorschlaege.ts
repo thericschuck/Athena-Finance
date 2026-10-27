@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
-import { getFlowTransactions } from '@/lib/data/flows'
+import { applyOwnerScope, type ScopeContext } from '@/lib/haushalt/scope'
+import { getFlowTransactionsScope } from '@/lib/data/flows-scope'
 import { fetchSettingValue } from '@/lib/data/settings'
 import { erkenneWiederkehrend, type Kandidat, type WiederkehrBuchung } from '@/lib/finance/wiederkehrend'
 import { vertragsEntwurf, type Vertragsentwurf } from '@/lib/finance/vertragsvorschlag'
@@ -28,14 +29,14 @@ export function leseAusgeblendet(roh: unknown): string[] {
  * ausgeblendete und Überweisungen auf eigene Konten bzw. Sparpläne (Typ transfer/savings_plan/building_savings): das sind keine Kosten.
  */
 export async function ladeVertragsVorschlaege(
-  supabase: DB, userId: string, heute = new Date().toISOString().slice(0, 10),
+  supabase: DB, ctx: ScopeContext, heute = new Date().toISOString().slice(0, 10),
 ): Promise<{ vorschlaege: Vorschlag[]; ausgeblendet: number }> {
   const von = new Date(Date.parse(`${heute}T00:00:00Z`) - 20 * 30.4375 * 86_400_000).toISOString().slice(0, 10)
 
   const [flows, vertraegeRes, ausgeblendetRoh] = await Promise.all([
-    getFlowTransactions(supabase, userId, { from: von, to: heute, include: { anlage: true, forderung: false } }),
-    supabase.from('contracts').select('name, amount, is_active').eq('user_id', userId),
-    fetchSettingValue(supabase, userId, AUSGEBLENDET_KEY),
+    getFlowTransactionsScope(supabase, ctx, { from: von, to: heute, include: { anlage: true, forderung: false } }),
+    applyOwnerScope(supabase.from('contracts').select('name, amount, is_active'), ctx),
+    fetchSettingValue(supabase, ctx.userId, AUSGEBLENDET_KEY),
   ])
   if (vertraegeRes.error) throw new Error(vertraegeRes.error.message)
 

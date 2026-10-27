@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation'
 import { getAuthUser } from '@/lib/supabase/server'
 import { ladeSteuerdaten } from '@/lib/tax/laden'
 import { berechneEuer, type EuerZeileErgebnis } from '@/lib/tax/euer'
-import { AlertTriangle, Download } from 'lucide-react'
+import { AlertTriangle, Download, FileSpreadsheet } from 'lucide-react'
+import { LeerZustand } from '@/components/leer/LeerZustand'
 import { BelegUpload } from '@/components/finance/beleg-upload'
 
 const euro = (n: number) =>
@@ -174,16 +175,12 @@ export default async function EuerPage({
       )}
 
       {leer ? (
-        <div className="rounded-lg border border-dashed border-border bg-card px-4 py-12 text-center">
-          <p className="text-sm text-muted-foreground">
-            Für {jahr} fließt nichts in die EÜR. Das ist richtig, solange keine Kategorie eine
-            steuerliche Rolle trägt —{' '}
-            <Link href="/finance/categories" className="underline">
-              hier zuordnen
-            </Link>
-            .
-          </p>
-        </div>
+        <LeerZustand
+          icon={FileSpreadsheet}
+          titel={`Für ${jahr} fließt nichts in die EÜR`}
+          text="Das ist richtig, solange keine Kategorie eine steuerliche Rolle trägt. Ordne Kategorien als Betriebseinnahme oder Betriebsausgabe zu, dann erscheinen die Buchungen hier nach Zeilen sortiert."
+          aktion={{ label: 'Kategorien zuordnen', href: '/finance/categories' }}
+        />
       ) : (
         <div className="space-y-6">
           <section className="space-y-2">

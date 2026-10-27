@@ -7,6 +7,8 @@ import { SparzielAmpel } from '@/components/sparziele/SparzielAmpel'
 import { ampelVon, anteil, phaseVon, prozent, restbetrag, ueberschuss } from '@/lib/sparziele/berechnen'
 import type { Ziel } from '@/lib/data/sparziele-seite'
 import { cn } from '@/lib/utils'
+import { ZuletztGeaendert } from '@/components/aenderungen/ZuletztGeaendert'
+import type { ZuletztGeaendertInfo } from '@/lib/data/aenderungen'
 
 /**
  * Eine Zeile je Sparziel: Name + Chips, Fortschrittsbalken, Beträge, Ampel mit Hover-Erklärung und
@@ -21,8 +23,8 @@ const PRIO: Record<string, { label: string; klasse: string }> = {
 }
 
 export function SparzielZeile({
-  ziel, heute, locale, dateFormat,
-}: { ziel: Ziel; heute: string; locale: string; dateFormat: string }) {
+  ziel, heute, locale, dateFormat, zuletzt,
+}: { ziel: Ziel; heute: string; locale: string; dateFormat: string; zuletzt?: ZuletztGeaendertInfo | null }) {
   const phase = phaseVon(ziel)
   const offen = phase === 'offen'
   const euro = (n: number) => fmtCurrency(n, 'EUR', locale, { fractionDigits: 0, maxFractionDigits: 2 })
@@ -64,6 +66,7 @@ export function SparzielZeile({
         </div>
 
         {ampel && <SparzielAmpel ziel={ziel} ampel={ampel} heute={heute} locale={locale} dateFormat={dateFormat} />}
+        <ZuletztGeaendert info={zuletzt} />
         {phase === 'beendet' && (
           <p className="text-xs text-muted-foreground">
             Abgeschlossen mit {euro(ziel.current_amount)} von {euro(ziel.target_amount)}. Wieder öffnen, wenn du weiter sparen willst.

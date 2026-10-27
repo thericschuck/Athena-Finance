@@ -6,6 +6,8 @@ import { z } from 'zod'
 import { parseForm, parseInput, issueMessage } from '@/lib/api/validate'
 import { idField, uuid, reqText, reqEnum, reqDate, optText, optDate, optUuid, optMoneyField, moneyField, currency } from '@/lib/api/schemas'
 import { pruefeZahlung, restNachLoeschen, restNachZahlung, zahlungsAnteile, rund2 } from '@/lib/schulden/berechnen'
+import { requireRows } from '@/lib/data/mutation'
+import { setzeGeteilt } from '@/lib/haushalt/teilen'
 
 export type DebtActionState = { error: string } | { success: true } | null
 
@@ -70,7 +72,7 @@ export async function createDebt(
   if (fehler) return { error: fehler }
 
   const outstanding = d.outstanding ?? d.original_amount
-  const { error } = await supabase.from('debts').insert({
+  const { data: neu, error } = await supabase.from('debts').insert({
     name: d.name,
     type: d.type,
     original_amount: d.original_amount,
@@ -84,9 +86,11 @@ export async function createDebt(
     due_date: d.due_date,
     notes: d.notes,
     user_id: user.id,
-  })
+  }).select('id').single()
 
   if (error) return { error: error.message }
+  const teilFehler = await setzeGeteilt(supabase, 'debts', neu.id, user.id, formData)
+  if (teilFehler) return { error: teilFehler }
   revalidatePath('/finance/debts')
   return { success: true }
 }
@@ -111,13 +115,12 @@ export async function updateDebt(
     .from('debts')
     .select('outstanding')
     .eq('id', id)
-    .eq('user_id', user.id)
     .maybeSingle()
   if (!alt) return { error: 'Schuld nicht gefunden' }
 
   const outstanding = Math.min(d.outstanding ?? Number(alt.outstanding), d.original_amount)
 
-  const { error } = await supabase
+  const { error } = await requireRows(supabase
     .from('debts')
     .update({
       name: d.name,
@@ -133,10 +136,11 @@ export async function updateDebt(
       notes: d.notes,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('id', id))
 
   if (error) return { error: error.message }
+  const teilFehler = await setzeGeteilt(supabase, 'debts', id, user.id, formData)
+  if (teilFehler) return { error: teilFehler }
   revalidatePath('/finance/debts')
   return { success: true }
 }
@@ -148,11 +152,10 @@ export async function deleteDebt(id: string): Promise<{ error?: string }> {
   const idP = parseInput(uuid, id)
   if (!idP.ok) return { error: issueMessage(idP) }
 
-  const { error } = await supabase
+  const { error } = await requireRows(supabase
     .from('debts')
     .delete()
-    .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('id', id))
 
   if (error) return { error: error.message }
   revalidatePath('/finance/debts')
@@ -176,7 +179,6 @@ export async function recordPayment(
     .from('debts')
     .select('outstanding, is_active')
     .eq('id', debtId)
-    .eq('user_id', user.id)
     .single()
 
   if (fetchError || !debt) return { error: 'Schuld nicht gefunden' }
@@ -202,7 +204,6 @@ export async function recordPayment(
       .from(sourceType === 'manual' ? 'transactions' : 'bank_transactions')
       .select('id')
       .eq('id', sourceTransactionId)
-      .eq('user_id', user.id)
       .maybeSingle()
     if (!quelle) return { error: 'Verknüpfte Buchung nicht gefunden' }
   }
@@ -234,7 +235,6 @@ export async function recordPayment(
       updated_at: new Date().toISOString(),
     })
     .eq('id', debtId)
-    .eq('user_id', user.id)
     .eq('outstanding', outstanding)
     .select('id')
 
@@ -267,7 +267,6 @@ export async function deletePayment(paymentId: string): Promise<{ error?: string
     .from('debts')
     .select('outstanding, original_amount')
     .eq('id', zahlung.debt_id)
-    .eq('user_id', user.id)
     .maybeSingle()
   if (!debt) return { error: 'Zahlung nicht gefunden' }
 
@@ -282,17 +281,16 @@ export async function deletePayment(paymentId: string): Promise<{ error?: string
     .from('debts')
     .update({ outstanding: neu, is_active: neu > 0, updated_at: new Date().toISOString() })
     .eq('id', zahlung.debt_id)
-    .eq('user_id', user.id)
     .eq('outstanding', outstanding)
     .select('id')
   if (updateError || !geaendert || geaendert.length === 0) {
     return { error: updateError?.message ?? 'Die Schuld wurde zwischenzeitlich geändert. Bitte erneut versuchen.' }
   }
 
-  const { error: delError } = await supabase.from('debt_payments').delete().eq('id', paymentId)
+  const { error: delError } = await requireRows(supabase.from('debt_payments').delete().eq('id', paymentId))
   if (delError) {
     // Restschuld zurücksetzen, die Zahlung bleibt ja bestehen.
-    await supabase.from('debts').update({ outstanding: rund2(outstanding), is_active: outstanding > 0 }).eq('id', zahlung.debt_id).eq('user_id', user.id)
+    await supabase.from('debts').update({ outstanding: rund2(outstanding), is_active: outstanding > 0 }).eq('id', zahlung.debt_id)
     return { error: delError.message }
   }
 
