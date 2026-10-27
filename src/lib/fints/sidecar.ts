@@ -13,6 +13,7 @@ import { spawn } from 'node:child_process'
 import path from 'node:path'
 import fs from 'node:fs'
 import os from 'node:os'
+import { envCredentials, type BankCredentials } from './connections-core'
 
 /**
  * Persisted python-fints client state for one bank login, keyed by a hash of
@@ -121,6 +122,27 @@ export interface SidecarOptions {
    * The sidecar then exits with code 'sca_required' rather than polling for minutes.
    */
   noSca?: boolean
+  /**
+   * Zugangsdaten aus der Datenbank (bank_connections), serverseitig entschluesselt. Sie gehen ueber die Umgebung des
+   * Kindprozesses (FINTS_PROFILES_JSON) an Python, nie ueber argv oder Dateien. Ohne Angabe liest der Sidecar wie bisher
+   * die FINTS_*-Variablen.
+   */
+  profiles?: BankCredentials[]
+}
+
+/** JSON fuer FINTS_PROFILES_JSON. Die extra_accounts der Env-Verbindung bleiben bei derselben Bank (gleicher bank_key) erhalten. */
+export function profilesToEnvJson(profiles: BankCredentials[], env: NodeJS.ProcessEnv = process.env): string {
+  const envConn = envCredentials(env)
+  const extra = (env.FINTS_EXTRA_ACCOUNTS ?? '').split(',').map(a => a.trim()).filter(Boolean)
+  return JSON.stringify(profiles.map(p => ({
+    label: p.label,
+    url: p.url,
+    blz: p.blz,
+    user: p.username,
+    pin: p.pin,
+    product_id: env.FINTS_PRODUCT_ID?.trim() || null,
+    extra_accounts: envConn && envConn.bankKey === p.bankKey ? extra : [],
+  })))
 }
 
 // Decoupled SCA polling in the Python side can take several minutes while the user
@@ -198,7 +220,13 @@ export async function runSidecar(opts: SidecarOptions = {}): Promise<SidecarSucc
     const child = spawn(python, args, {
       cwd: PROJECT_ROOT,
       // UTF-8 erzwingen: unter Windows loggt Python sonst in cp1252 (Umlaute → �).
-      env: { ...process.env, PYTHONIOENCODING: 'utf-8' },
+      env: {
+        ...process.env,
+        PYTHONIOENCODING: 'utf-8',
+        ...(opts.profiles && opts.profiles.length > 0
+          ? { FINTS_PROFILES_JSON: profilesToEnvJson(opts.profiles) }
+          : {}),
+      },
       windowsHide: true,
     })
 

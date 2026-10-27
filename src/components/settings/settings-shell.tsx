@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  BarChart2, CandlestickChart, Mail, Palette, Plug, User, Wallet,
+  BarChart2, CandlestickChart, Mail, Palette, Plug, User, Users, Wallet,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useReducedMotion } from '@/lib/use-reduced-motion'
@@ -15,6 +15,7 @@ import { AnalyseForm, type AnalyseFormAccount } from './analyse-form'
 import { TradingForm }       from './trading-form'
 import { IntegrationsForm }  from './integrations-form'
 import { WaitlistPanel }     from './waitlist-panel'
+import { HouseholdPanel }    from './household-panel'
 import type { WaitlistRow }  from '@/lib/waitlist'
 
 const TABS = [
@@ -24,6 +25,7 @@ const TABS = [
   { id: 'analyse',        label: 'Analyse',        icon: BarChart2        },
   { id: 'trading',        label: 'Trading',        icon: CandlestickChart },
   { id: 'integrationen',  label: 'Integrationen',  icon: Plug            },
+  { id: 'haushalt',       label: 'Haushalt',       icon: Users           },
   // Erscheint nur, wenn die Seite überhaupt Zeilen mitgeliefert hat — also für
   // den Eigentümer (siehe lib/waitlist.ts). Für alle anderen ist der Reiter
   // nicht etwa deaktiviert, sondern gar nicht vorhanden.
@@ -188,6 +190,7 @@ export function SettingsShell({
             {active === 'analyse'       && <AnalyseForm      initialSettings={initialSettings} accounts={accounts} />}
             {active === 'trading'       && <TradingForm      initialSettings={initialSettings} />}
             {active === 'integrationen' && <IntegrationsForm />}
+            {active === 'haushalt'      && <HouseholdPanel />}
             {active === 'warteliste'    && waitlist != null && <WaitlistPanel rows={waitlist} />}
           </motion.div>
         </AnimatePresence>

@@ -1,18 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { requireCron } from '@/lib/api/auth'
 import { schaetzeWertverlauf } from '@/lib/data/wertverlauf'
 
 export const maxDuration = 60
-
-function adminClient() {
-  return createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } },
-  )
-}
 
 /**
  * GET /api/cron/inventar-wert
@@ -29,7 +20,7 @@ export async function GET(req: NextRequest) {
   const denied = requireCron(req)
   if (denied) return denied
 
-  const supabase = adminClient()
+  const supabase = createAdminClient()
   const { data: stuecke, error } = await supabase
     .from('valuables')
     .select('user_id')

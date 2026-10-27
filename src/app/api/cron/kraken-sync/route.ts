@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { syncKrakenForUser } from '@/lib/kraken/sync'
 import { requireCron } from '@/lib/api/auth'
 
@@ -8,14 +7,6 @@ import { requireCron } from '@/lib/api/auth'
 // `fetchKrakenTradesHistory()` blättert bis zu 10 Seiten mit je 1,5 s Pause dazwischen — die
 // Kostenbasis ist der lange Teil, nicht die Bestände.
 export const maxDuration = 120
-
-function adminClient() {
-  return createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } },
-  )
-}
 
 /**
  * GET /api/cron/kraken-sync
@@ -39,7 +30,7 @@ export async function GET(req: NextRequest) {
   const denied = requireCron(req)
   if (denied) return denied
 
-  const supabase = adminClient()
+  const supabase = createAdminClient()
 
   const { data: keyRows, error } = await supabase
     .from('exchange_keys')

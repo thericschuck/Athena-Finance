@@ -6,6 +6,7 @@ import {
   scaFreeStartDate, stateFromError,
 } from '@/lib/fints'
 import { loadBankClientState, saveBankClientState } from '@/lib/fints/state'
+import { recordSyncResult, resolveConnectionsForUser, userHasBankAccess } from '@/lib/fints/connections'
 
 export type UserBankSyncResult = {
   imported: number
@@ -19,7 +20,7 @@ export type UserBankSyncResult = {
 /** Die Bank verlangt eine Freigabe in der App, die die Cloud-Funktion nicht abwarten darf. */
 export class BankScaRequiredError extends Error {}
 
-/** Der Bank-Sync ist single-tenant (ein globaler FinTS-Login) und nur für diesen Nutzer freigegeben. */
+/** Der Nutzer hat weder eine eigene Bankverbindung noch ist er der Env-Nutzer (BANK_SYNC_USER_ID). */
 export class BankSyncForbiddenError extends Error {}
 
 /**
@@ -36,11 +37,14 @@ export async function syncBankForUser(
   opts: { fullHistory?: boolean; startDate?: Date; endDate?: Date; origin?: string } = {},
 ): Promise<UserBankSyncResult> {
   if (isCloudRuntime()) {
-    if (userId !== process.env.BANK_SYNC_USER_ID) {
-      throw new BankSyncForbiddenError('Bank-Sync ist für dieses Konto nicht verfügbar.')
+    // Zugriff: eigene Verbindung (bank_connections) ODER Env-Nutzer (BANK_SYNC_USER_ID mit vollständiger FINTS_*-Env).
+    // Die Python-Funktion lädt/entschlüsselt die Verbindungen des Nutzers selbst (siehe docs/fints-verbindungen.md).
+    if (!(await userHasBankAccess(userId))) {
+      throw new BankSyncForbiddenError('Bank-Sync ist für dieses Konto nicht verfügbar. Bitte zuerst eine Bankverbindung eintragen.')
     }
     const origin = opts.origin ?? cloudOrigin()
     const result = await triggerCloudBankSync(origin, {
+      userId,
       allowSca: true,
       fullHistory: opts.fullHistory === true,
     })
@@ -63,6 +67,16 @@ export async function syncBankForUser(
   const startDate = opts.startDate
     ?? (opts.fullHistory ? new Date('2000-01-01') : scaFreeStartDate())
 
+  // Lokal: eigene Verbindungen aus der DB (entschlüsselt, nur für diesen Prozess) oder wie bisher die FINTS_*-Env.
+  // Ohne eigene Verbindung und mit gesetztem, fremdem BANK_SYNC_USER_ID darf die Env-Verbindung nicht benutzt werden.
+  const resolved = await resolveConnectionsForUser(userId)
+  const envOwner = process.env.BANK_SYNC_USER_ID?.trim()
+  if (resolved.source === 'none' && envOwner && envOwner !== userId) {
+    throw new BankSyncForbiddenError('Bank-Sync ist für dieses Konto nicht verfügbar. Bitte zuerst eine Bankverbindung eintragen.')
+  }
+  const profiles = resolved.source === 'db' ? resolved.connections : undefined
+  const dbBankKeys = resolved.source === 'db' ? resolved.connections.map(c => c.bankKey) : []
+
   try {
     const { data: categories } = await supabase
       .from('categories')
@@ -76,6 +90,7 @@ export async function syncBankForUser(
     const clientState = await loadBankClientState(userId)
     const result = await startSync(startDate, opts.endDate, categories ?? [], learnedMap, {
       state: clientState,
+      profiles,
     })
     await saveBankClientState(userId, result.state)
 
@@ -86,6 +101,7 @@ export async function syncBankForUser(
     const { synced: balancesSynced } = await upsertBankBalances(supabase, userId, result.balances)
     const { applied: categorizedCount } = await applySuggestionsToBacklog(supabase, userId)
     for (const w of result.warnings ?? []) console.warn('[bank-sync]', w)
+    await recordSyncResult(userId, dbBankKeys, { ok: true })
     return {
       imported, skipped, holdingsSynced, balancesSynced,
       categorized: categorizedCount, warnings: result.warnings,
@@ -93,6 +109,7 @@ export async function syncBankForUser(
   } catch (err) {
     // Ein Lauf kann für eine Bank scheitern und für eine andere brauchbaren State liefern.
     await saveBankClientState(userId, stateFromError(err))
+    await recordSyncResult(userId, dbBankKeys, { ok: false, error: err instanceof Error ? err.message : null })
     throw err
   }
 }

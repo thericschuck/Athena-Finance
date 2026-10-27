@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/supabase/server'
 import { applySuggestionsToBacklog, getFinTSErrorDetails, isCloudRuntime, triggerCloudBankSync } from '@/lib/fints'
 import { syncBankForUser } from '@/lib/fints/user-sync'
+import { userHasBankAccess } from '@/lib/fints/connections'
 
 // The sidecar drives the whole dialog (incl. waiting for a decoupled app approval),
 // so this route can block for a while. Give the platform enough headroom.
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
   // On Vercel there is no local Python venv to spawn — delegate to the sibling Vercel
   // Python Function instead, which talks to the bank and upserts to Supabase itself.
   if (isCloudRuntime()) {
-    if (user.id !== process.env.BANK_SYNC_USER_ID) {
+    if (!(await userHasBankAccess(user.id))) {
       return NextResponse.json({ error: 'Bank-Sync ist für dieses Konto nicht verfügbar.' }, { status: 403 })
     }
     try {
@@ -39,6 +40,7 @@ export async function POST(request: Request) {
       // A user is watching this request, so an app approval is possible here (unlike the
       // cron path, which calls the same function without ?sca=1 and aborts instead).
       const result = await triggerCloudBankSync(origin, {
+        userId: user.id,
         allowSca: true,
         fullHistory: body.fullHistory === true,
       })

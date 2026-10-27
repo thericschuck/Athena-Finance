@@ -49,14 +49,16 @@ async function leseSeiten<T>(frage: (von: number, bis: number) => PromiseLike<{ 
  * Schreibt nur `category_id`, `category_source = 'ai'` und `ai_category_id`, und nur bei Zeilen, die beim Schreiben
  * noch keine Kategorie haben. Eigene Umbuchungen (Gegen-IBAN = eigenes Konto) bleiben außen vor.
  */
-export async function kategorisiereMitKi(supabase: DB, userId: string, opts: { trockenlauf?: boolean } = {}): Promise<KiLaufErgebnis> {
+export async function kategorisiereMitKi(supabase: DB, userId: string, opts: { trockenlauf?: boolean; peerIds?: string[] } = {}): Promise<KiLaufErgebnis> {
+  // Kategorienbaum und Beispiele haushaltsweit; Kandidaten (Buchungen) bleiben die des Nutzers, jede Buchung wird so nur einmal bearbeitet.
+  const peerIds = opts.peerIds ?? [userId]
   const log = createLogger(supabase, userId, null)
   const { data: cfgRow } = await supabase.from('user_settings').select('value').eq('user_id', userId).eq('key', KI_SETTINGS_KEY).maybeSingle()
   const cfg = leseKiConfig(cfgRow?.value, STANDARD)
   if (!cfg.enabled) return { status: 'uebersprungen', grund: 'KI-Kategorisierung ist in user_settings.ai_categorization deaktiviert.' }
 
   const [{ data: kategorien }, { data: eigene }] = await Promise.all([
-    supabase.from('categories').select('id, name, type, parent_id').eq('user_id', userId),
+    supabase.from('categories').select('id, name, type, parent_id').in('user_id', peerIds),
     supabase.from('accounts').select('bank_iban').eq('user_id', userId).not('bank_iban', 'is', null),
   ])
   const katList = kategorien ?? []
@@ -96,7 +98,7 @@ export async function kategorisiereMitKi(supabase: DB, userId: string, opts: { t
   // Beispiele: nur Entscheidungen des Nutzers (nicht Regel- oder KI-Treffer), damit die KI nicht von sich selbst lernt.
   const entschieden = await leseSeiten(async (von, bis) => await supabase.from('bank_transactions')
     .select('counterpart_name, description, amount, category_id')
-    .eq('user_id', userId).not('category_id', 'is', null).or('category_source.is.null,category_source.eq.manual')
+    .in('user_id', peerIds).not('category_id', 'is', null).or('category_source.is.null,category_source.eq.manual')
     .range(von, bis))
   const beispiele: KiBeispiel[] = entschieden.map(r => ({
     counterpart_name: r.counterpart_name, description: r.description, amount: Number(r.amount), category_id: r.category_id as string,

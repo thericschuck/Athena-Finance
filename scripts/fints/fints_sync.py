@@ -282,6 +282,13 @@ def get_bank_profiles():
     hit via get_holdings() can (depot_holdings needs none). Set FINTS_EXTRA_ACCOUNTS for
     Bank 1, FINTS_BANK{N}_EXTRA_ACCOUNTS for Bank N.
     """
+    # Per-user connections from the database: Node decrypts them and hands them over through the
+    # child's environment (never argv, never a file). Empty/absent -> the env profiles below,
+    # exactly as before.
+    injected = os.environ.get("FINTS_PROFILES_JSON")
+    if injected:
+        return get_injected_profiles(injected)
+
     url, blz, user, pin, product_id = get_config()
     profiles = [{
         "label": os.environ.get("FINTS_LABEL") or "Raiffeisenbank",
@@ -304,6 +311,32 @@ def get_bank_profiles():
             "extra_accounts": parse_extra_accounts(os.environ.get(prefix + "EXTRA_ACCOUNTS")),
         })
 
+    return profiles
+
+
+def get_injected_profiles(raw):
+    """Profiles passed by the Node side (src/lib/fints/sidecar.ts) as a JSON list of
+    {label,url,blz,user,pin,product_id,extra_accounts}. Never logged."""
+    try:
+        data = json.loads(raw)
+    except ValueError:
+        fail("config", "FINTS_PROFILES_JSON ist kein gültiges JSON")
+    profiles = []
+    for item in data if isinstance(data, list) else []:
+        blz = "".join(ch for ch in str(item.get("blz") or "") if ch.isdigit())
+        url = str(item.get("url") or "").strip()
+        user = str(item.get("user") or "").strip()
+        pin = str(item.get("pin") or "").strip()
+        if not (url and user and pin) or len(blz) != 8:
+            continue
+        profiles.append({
+            "label": str(item.get("label") or "Bank"),
+            "url": url, "blz": blz, "user": user, "pin": pin,
+            "product_id": (str(item.get("product_id") or "").strip()) or None,
+            "extra_accounts": [str(a) for a in (item.get("extra_accounts") or [])],
+        })
+    if not profiles:
+        fail("config", "Keine gültige Bankverbindung übergeben")
     return profiles
 
 

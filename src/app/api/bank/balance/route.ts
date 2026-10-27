@@ -1,14 +1,18 @@
 import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { applyAccountScope, type ScopeContext } from '@/lib/haushalt/scope'
 import { fetchBalances, isCloudRuntime, triggerCloudBankSync } from '@/lib/fints'
+import { resolveConnectionsForUser, userHasBankAccess } from '@/lib/fints/connections'
 
-async function readCachedBalances(supabase: SupabaseClient<Database>, userId: string) {
+async function readCachedBalances(supabase: SupabaseClient<Database>, ctx: ScopeContext) {
+  // Salden der Konten im Scope (bank_balance hat keine account_id: ueber die normalisierte IBAN).
   const { data, error } = await supabase
     .from('bank_balance')
     .select('*')
-    .eq('user_id', userId)
+    .in('account_iban', ctx.ibans)
     .order('account_iban')
 
   if (error) throw new Error(error.message)
@@ -16,10 +20,7 @@ async function readCachedBalances(supabase: SupabaseClient<Database>, userId: st
   // Verknüpftes accounts-Konto nachreichen. Zwei Queries statt eines Embeds, weil die
   // Beziehung nur über accounts.bank_iban besteht und kein Fremdschlüssel ist — PostgREST
   // kann daraus keinen Join ableiten.
-  const { data: linked } = await supabase
-    .from('accounts')
-    .select('id, bank_iban')
-    .eq('user_id', userId)
+  const { data: linked } = await applyAccountScope(supabase.from('accounts').select('id, bank_iban'), ctx, 'id')
     .not('bank_iban', 'is', null)
 
   const idByIban = new Map(
@@ -44,7 +45,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
   try {
-    const balances = await readCachedBalances(supabase, user.id)
+    const balances = await readCachedBalances(supabase, await resolveScope(supabase, user))
     return NextResponse.json({ balances })
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unbekannter Fehler'
@@ -63,13 +64,13 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
   if (isCloudRuntime()) {
-    if (user.id !== process.env.BANK_SYNC_USER_ID) {
+    if (!(await userHasBankAccess(user.id))) {
       return NextResponse.json({ error: 'Bank-Sync ist für dieses Konto nicht verfügbar.' }, { status: 403 })
     }
     try {
       const origin = new URL(request.url).origin
-      await triggerCloudBankSync(origin)
-      return NextResponse.json({ balances: await readCachedBalances(supabase, user.id) })
+      await triggerCloudBankSync(origin, { userId: user.id })
+      return NextResponse.json({ balances: await readCachedBalances(supabase, await resolveScope(supabase, user)) })
     } catch (err) {
       return NextResponse.json({
         error: err instanceof Error ? err.message : 'Cloud-Sync fehlgeschlagen',
@@ -78,7 +79,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const balances = await fetchBalances()
+    // Eigene Verbindungen aus der DB, sonst wie bisher die FINTS_*-Env (Sidecar).
+    const resolved = await resolveConnectionsForUser(user.id)
+    const balances = await fetchBalances(resolved.source === 'db' ? resolved.connections : undefined)
 
     if (balances.length > 0) {
       const rows = balances.map(b => ({
@@ -100,7 +103,7 @@ export async function POST(request: Request) {
       if (error) throw new Error(error.message)
     }
 
-    return NextResponse.json({ balances: await readCachedBalances(supabase, user.id) })
+    return NextResponse.json({ balances: await readCachedBalances(supabase, await resolveScope(supabase, user)) })
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unbekannter Fehler'
     return NextResponse.json({ error: msg }, { status: 500 })

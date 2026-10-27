@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { saveExchangeKey, deleteExchangeKey, SettingsState } from '@/app/(dashboard)/settings/actions'
 import { Button } from '@/components/ui/button'
+import { BankConnectionsForm } from './bank-connections-form'
 import { CheckCircle2, ExternalLink, ImagePlus, KeyRound, Loader2, Sparkles, Trash2 } from 'lucide-react'
 
 const inputCls = 'h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring font-mono'
@@ -17,6 +18,8 @@ export function IntegrationsForm() {
           Verbinde externe Handelsplattformen, um Portfoliosalden automatisch abzurufen.
         </p>
       </div>
+
+      <BankConnectionsForm />
 
       <ExchangeKeyCard
         exchange="kraken"
