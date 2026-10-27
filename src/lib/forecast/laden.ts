@@ -161,21 +161,19 @@ export async function ladePrognose(
 ): Promise<PrognoseSeite> {
   const jahr = parse(heute).y
   const userId = userIdVon(who)
-  // Rückblick und Cashflow-Prognose sind unabhängig und laufen gleichzeitig.
-  const [b, snapshots] = await Promise.all([
-    ladePrognoseBasis(supabase, who, heute, opts),
-    getNetWorthSnapshotsSince(supabase, userId, addTage(heute, -190)),
-  ])
-  const { basis, szenario, annahmen } = b
-
-  // ── Steuer: laufendes und nächstes Jahr ───────────────────────────────────────────────
+  // Rückblick, Cashflow-Prognose und die drei Steuerjahre sind voneinander unabhängig (die Annahmen aus der Prognose fließen erst
+  // in die Berechnung unten ein, nicht in das Laden) und laufen deshalb in EINER Stufe statt Prognose -> Steuer.
   // Ein gemeinsamer Zwischenspeicher: die drei Jahre überlappen (Vorjahre, Kraken-Historie) und werden so je einmal geladen.
   const steuerCache = neuerSteuerCache()
-  const [aktuell, vorjahr, naechstes] = await Promise.all([
+  const [b, snapshots, aktuell, vorjahr, naechstes] = await Promise.all([
+    ladePrognoseBasis(supabase, who, heute, opts),
+    getNetWorthSnapshotsSince(supabase, userId, addTage(heute, -190)),
     ladeSteuerdaten(supabase, userId, jahr, steuerCache),
     ladeSteuerdaten(supabase, userId, jahr - 1, steuerCache),
     ladeSteuerdaten(supabase, userId, jahr + 1, steuerCache),
   ])
+  const { basis, szenario, annahmen } = b
+
   const { rate, quelle } = laufrateAus(
     aktuell.eingaben,
     {

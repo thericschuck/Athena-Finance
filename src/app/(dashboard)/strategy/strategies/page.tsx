@@ -36,17 +36,16 @@ export default async function StrategiesPage({
 
   const { supabase, user } = await requireAuthUser()
 
-  const settings = await getSettings(user!.id)
-  const locale = (settings.number_format as string) ?? 'de-DE'
-  const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
-  const defaultAssetClass = (settings.default_asset_class as string) ?? 'major'
-  const defaultTimeframe  = (settings.default_timeframe  as string) ?? ''
-
-  const [comboOptions, allStrategies, readyIds] = await Promise.all([
+  const [settings, comboOptions, allStrategies, readyIds] = await Promise.all([
+    getSettings(user!.id),
     getComboOptions(supabase, user!.id),
     getStrategies(supabase, user!.id),
     getSubmissionReadyIds(supabase),
   ])
+  const locale = (settings.number_format as string) ?? 'de-DE'
+  const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
+  const defaultAssetClass = (settings.default_asset_class as string) ?? 'major'
+  const defaultTimeframe  = (settings.default_timeframe  as string) ?? ''
   const readyIdSet = new Set(readyIds)
 
   const strategies = onlyReady

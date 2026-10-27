@@ -55,10 +55,10 @@ export default async function BankAnalysePage({
   ) as BankSeitenParams
 
   const { supabase, user } = await requireAuthUser()
-  const settings = await getSettings(user!.id)
+  // Scope und Einstellungen sind unabhaengig: eine Rundreise-Stufe statt zwei (Layout teilt dieselben Ergebnisse per cache()).
+  const [settings, ctx] = await Promise.all([getSettings(user!.id), resolveScope(supabase, user)])
   const heute = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date())
 
-  const ctx = await resolveScope(supabase, user)
   const daten = await ladeBankSeite(supabase, ctx, params, settings, heute)
   const scope = berechneScope(daten)
   const props = { daten, scope }

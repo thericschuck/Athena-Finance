@@ -23,9 +23,12 @@ const INTERVALL = Object.fromEntries(FREQUENCIES.map(f => [f.value, f.label]))
 export default async function ContractDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [{ id }, { supabase, user }] = await Promise.all([params, requireAuthUser()])
   const ctx = await resolveScope(supabase, user!)
-  const d = await ladeVertragDetail(supabase, ctx, id)
+  // Die Aenderungs-Abfrage braucht nur die ID aus der URL, nicht das geladene Detail: parallel starten.
+  const [d, zuletzt] = await Promise.all([
+    ladeVertragDetail(supabase, ctx, id),
+    letzteAenderung(supabase, ctx, 'contracts', id),
+  ])
   if (!d) notFound()
-  const zuletzt = await letzteAenderung(supabase, ctx, 'contracts', d.vertrag.id)
 
   const { vertrag: c, heute, locale, dateFormat, konten, kategorien } = d
   const eur = (n: number, stellen = 2) => fmtCurrency(n, c.currency, locale, { fractionDigits: stellen })

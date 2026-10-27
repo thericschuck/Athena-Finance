@@ -51,6 +51,10 @@ export async function ladeAnalyse(
   supabase: DB, ctx: ScopeContext, params: AnalyseParams,
   settings: Record<string, unknown>, heute: string,
 ): Promise<AnalyseDaten> {
+  // Kategorien und Monate mit Buchungen haengen nicht an der Kontenliste: gleich mitstarten statt erst nach ihr.
+  const kategorienP = ladeKategorien(supabase)
+  const fruehesteP = getFlowMonthsScope(supabase, ctx)
+  kategorienP.catch(() => {}); fruehesteP.catch(() => {}) // Ablehnung wird unten beim Abwarten behandelt, hier nur kein "unhandled"
   const konten = await getActiveAccountOptions(supabase, ctx)
   const kontoMenge = new Set(konten.map(k => k.id))
 
@@ -85,9 +89,9 @@ export async function ladeAnalyse(
     // Bei Alles die ganze Historie (Monatssummen sind klein): mit nur 24 Monaten deckten
     // Kategorien und Kennzahlen dort nicht die ganze Historie ab.
     getMonthlyFlowsScope(supabase, ctx, { from: periode === 'Alles' ? null : monatsStart, accountIds, include }),
-    ladeKategorien(supabase),
+    kategorienP,
     // Monate mit Buchungen: ohne Partner monthly_flow_totals (wie bisher), im Haushalt aus monthly_flows im Scope.
-    getFlowMonthsScope(supabase, ctx),
+    fruehesteP,
   ])
 
   return {

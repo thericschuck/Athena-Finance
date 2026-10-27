@@ -23,11 +23,18 @@ import {
   PendingActionCard,
   type PendingActionStatus,
 } from '@/components/assistant/PendingActionCard'
-import { AthenaChart, type ChartSpec } from '@/components/assistant/AthenaChart'
+import dynamic from 'next/dynamic'
+import type { ChartSpec } from '@/components/assistant/AthenaChart'
 import type { ActionDetail } from '@/lib/assistant/actions'
 import { ATHENA_MODELS, ATHENA_EFFORT_OPTIONS, type AthenaEffort } from '@/lib/assistant/settings'
 import { useAthenaChatSettings } from '@/components/providers/athena-settings-context'
 import { ToolTrace } from '@/components/assistant/chat/ToolTrace'
+
+// Recharts nur laden, wenn Athena wirklich ein Diagramm liefert (nicht jedem Chat-Aufruf mitgeben).
+const AthenaChart = dynamic(() => import('@/components/assistant/AthenaChart').then(m => m.AthenaChart), {
+  ssr: false,
+  loading: () => <div className="mt-2 h-[230px] max-w-md animate-pulse rounded-lg border border-border bg-muted/30" />,
+})
 import { MessageActions } from '@/components/assistant/chat/MessageActions'
 import { EmptyState } from '@/components/assistant/chat/EmptyState'
 import { useAnhaenge } from '@/components/assistant/chat/useAnhaenge'

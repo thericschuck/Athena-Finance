@@ -28,13 +28,13 @@ export default async function TestsPage({
 
   const { supabase, user } = await requireAuthUser()
 
-  const settings = await getSettings(user!.id)
+  const [settings, indicatorInfos] = await Promise.all([getSettings(user!.id), getIndicatorInfos(supabase, user!.id)])
   const defaultAssetClass = (settings.default_asset_class as string) ?? 'major'
   const defaultTimeframe  = (settings.default_timeframe  as string) ?? ''
 
   // Load indicators for this user
   const indicatorMap = new Map<string, IndicatorInfo>(
-    (await getIndicatorInfos(supabase, user!.id)).map(i => [i.id, i])
+    indicatorInfos.map(i => [i.id, i])
   )
 
   // Load all performance entries for these indicators

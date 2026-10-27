@@ -7,7 +7,8 @@ import { standAnzeige } from '@/lib/konten/berechnen'
 import { parsePeriod, periodCutoff, type Period } from '@/lib/period'
 import { UrlFiltersProvider, FilterPending } from '@/components/providers/url-filters'
 import { UrlPeriodSelector } from '@/components/ui/period-selector'
-import { AccountBalanceChart, type AccountBalancePoint } from '@/components/finance/account-balance-chart'
+import type { AccountBalancePoint } from '@/components/finance/account-balance-chart'
+import { AccountBalanceChartLazy } from '@/components/finance/AccountBalanceChartLazy'
 import { AccountTxToolbar, MonthChip } from '@/components/finance/account-tx-toolbar'
 import { KontoKopf } from '@/components/konten/detail/KontoKopf'
 import { KontoHighlights } from '@/components/konten/detail/KontoHighlights'
@@ -51,9 +52,12 @@ export default async function AccountDetailPage({ params, searchParams }: PagePr
   if (!UUID.test(id)) notFound()
 
   const scopeCtx = await resolveScope(supabase, user!)
-  const detail = await ladeKontoDetail(supabase, scopeCtx, id)
+  // Die Aenderungs-Abfrage braucht nur die ID aus der URL: parallel zum Detail statt danach.
+  const [detail, zuletzt] = await Promise.all([
+    ladeKontoDetail(supabase, scopeCtx, id),
+    letzteAenderung(supabase, scopeCtx, 'accounts', id),
+  ])
   if (!detail) notFound()
-  const zuletzt = await letzteAenderung(supabase, scopeCtx, 'accounts', id)
   const { account, accounts, categories, rows, balanceHistory, locale, dateFormat } = detail
   const currency = account.currency
 
@@ -229,7 +233,7 @@ export default async function AccountDetailPage({ params, searchParams }: PagePr
           {(zeigeVerlauf || zeigeMonate) && (
             <div className={`grid min-w-0 items-start gap-4 ${zeigeVerlauf && zeigeMonate ? 'lg:grid-cols-2' : 'grid-cols-1'}`}>
               {zeigeVerlauf && (
-                <AccountBalanceChart points={verlauf} period={period} currency={currency} color={account.color} />
+                <AccountBalanceChartLazy points={verlauf} period={period} currency={currency} color={account.color} />
               )}
               {zeigeMonate && (
                 <KontoMonatsKarte monate={d.monate} aktiverMonat={d.aktiverMonat} currency={currency} />

@@ -24,7 +24,7 @@ import { AnalyseKalender } from '@/components/analyse/AnalyseKalender'
 import { AusgabenHeatmap, type Mode as HeatmapMode } from '@/components/analyse/AusgabenHeatmap'
 import { GeldflussChartUrl } from '@/components/analyse/GeldflussChartUrl'
 import { MonatsVergleich } from '@/components/analyse/MonatsVergleich'
-import { MonatsVerteilung } from '@/components/analyse/MonatsVerteilung'
+import { MonatsVerteilungLazy } from '@/components/analyse/MonatsVerteilungLazy'
 import { FlowKindToggle } from '@/components/finance/flow-kind-toggle'
 import { UrlFiltersProvider, FilterPending } from '@/components/providers/url-filters'
 import { SkeletonChart } from '@/components/ui/skeleton'
@@ -63,9 +63,8 @@ export default async function AnalysePage({
 
   const { supabase, user } = await getAuthUser()
   if (!user) return null
-  const settings = await getSettings(user.id)
-
-  const ctx = await resolveScope(supabase, user)
+  // Scope und Einstellungen sind unabhaengig: eine Rundreise-Stufe statt zwei (Layout teilt dieselben Ergebnisse per cache()).
+  const [settings, ctx] = await Promise.all([getSettings(user.id), resolveScope(supabase, user)])
   const daten = await ladeAnalyse(supabase, ctx, params, settings, heuteBerlin())
   const props = { daten }
 
@@ -147,7 +146,7 @@ export default async function AnalysePage({
           {/* Verteilung — eigene, kategorieunabhängige Sicht auf die Monatssummen, deshalb immer
               über den vollen 24-Monats-Horizont statt der `period`-Auswahl (der Konten-Filter
               greift dagegen schon). */}
-          <MonatsVerteilung history={buildMonthSeries(serie, aktuellerMonat)} current={currentMonthTotals(serie, aktuellerMonat)} />
+          <MonatsVerteilungLazy history={buildMonthSeries(serie, aktuellerMonat)} current={currentMonthTotals(serie, aktuellerMonat)} />
         </>
       ),
     },

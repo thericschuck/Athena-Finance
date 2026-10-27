@@ -61,9 +61,13 @@ export default async function SteuerPage({
 
   // Fehlt der Tarif oder bricht eine Abfrage, wird das gesagt und nicht mit
   // halben Daten gerechnet -- eine falsche Steuerzahl ist schlimmer als keine.
+  // Die Konten-Zaehlung (unten fuer den Leerzustand) ist unabhaengig von den Steuerdaten: gleich mitstarten.
+  const kontenZaehlung = Promise.resolve(
+    supabase.from('accounts').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+  )
   let daten
   try {
-    daten = await ladeSteuerdaten(supabase, user.id, jahr)
+    ;[daten] = await Promise.all([ladeSteuerdaten(supabase, user.id, jahr), kontenZaehlung])
   } catch (fehler) {
     return (
       <div className="p-4 sm:p-8">
@@ -77,8 +81,7 @@ export default async function SteuerPage({
 
   // Wirklich nichts da (keine eigenen Konten, keine steuerrelevanten Betraege, kein Kraken): erklaeren
   // statt einer Steuerposition aus lauter Nullen. Wer Daten hat, kommt hier nie hinein.
-  const { count: eigeneKonten } = await supabase
-    .from('accounts').select('id', { count: 'exact', head: true }).eq('user_id', user.id)
+  const { count: eigeneKonten } = await kontenZaehlung
   const e = daten.eingaben
   const steuerLeer = (eigeneKonten ?? 0) === 0 && daten.krypto === null
     && e.betriebseinnahmen === 0 && e.betriebsausgaben === 0 && e.lohnNettoImJahr === 0

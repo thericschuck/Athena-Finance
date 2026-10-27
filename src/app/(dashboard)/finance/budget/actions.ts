@@ -175,9 +175,11 @@ export async function seedIfEmpty(): Promise<void> {
   const { supabase, user } = await getAuthUser()
   if (!user) return
 
-  const { count: catCount } = await supabase
-    .from('budget_categories')
-    .select('id', { count: 'exact', head: true })
+  // Beide Zaehlungen sind unabhaengig: eine Rundreise statt zwei hintereinander.
+  const [{ count: catCount }, { count: targetCount }] = await Promise.all([
+    supabase.from('budget_categories').select('id', { count: 'exact', head: true }),
+    supabase.from('income_targets').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+  ])
 
   if ((catCount ?? 0) === 0) {
     const seeds = [
@@ -189,11 +191,6 @@ export async function seedIfEmpty(): Promise<void> {
     ].map((seed) => ({ ...seed, user_id: user.id }))
     await supabase.from('budget_categories').insert(seeds)
   }
-
-  const { count: targetCount } = await supabase
-    .from('income_targets')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', user.id)
 
   if ((targetCount ?? 0) === 0) {
     await supabase.from('income_targets').insert({

@@ -33,8 +33,6 @@ export type IncomeTarget = {
 }
 
 export default async function LebenshaltungskostenPage() {
-  await seedIfEmpty()
-
   // Layout redirected bereits, falls kein User eingeloggt ist — der Check
   // hier ist trotzdem nötig, um `user.id` unten typsicher (und nicht nur
   // durchs Layout garantiert) an die Queries zu geben.
@@ -42,7 +40,8 @@ export default async function LebenshaltungskostenPage() {
   if (!user) redirect('/login')
 
   // Budget: Haushaltstabellen (Scope-Filter); das Einkommensziel bleibt owner-only (user_id).
-  const ctx = await resolveScope(supabase, user)
+  // Seed und Scope sind unabhaengig; die Daten werden erst danach gelesen (Seed muss fertig sein).
+  const [, ctx] = await Promise.all([seedIfEmpty(), resolveScope(supabase, user)])
   const [categories, items, target] = await Promise.all([
     getBudgetCategories(supabase, ctx),
     getBudgetItems(supabase, ctx),

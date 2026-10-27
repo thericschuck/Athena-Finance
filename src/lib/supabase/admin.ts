@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { PERF_ENABLED, createPerfFetch } from '@/lib/perf/perf-log'
 
 /**
  * Zentrale Factory fuer den Service-Role-Client (umgeht RLS!).
@@ -17,6 +18,10 @@ export function createAdminClient(): AdminClient {
   return createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } },
+    {
+      auth: { persistSession: false },
+      // Nur bei PERF_LOG=1 (Admin-Client laeuft ausserhalb eines Seiten-Requests, daher feste Kennung).
+      ...(PERF_ENABLED ? { global: { fetch: createPerfFetch({ rid: 'admin', route: 'admin-client' }, 'admin') } } : {}),
+    },
   )
 }

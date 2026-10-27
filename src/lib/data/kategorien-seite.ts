@@ -47,20 +47,25 @@ async function ladeBuchungen(supabase: DB, ctx: ScopeContext): Promise<BuchungKu
     )
       .not('category_id', 'is', null)
 
-  const { count } = await applyAccountScope(
-    supabase.from('unified_transactions').select('id', { count: 'exact', head: true }),
-    ctx,
-  )
-    .not('category_id', 'is', null)
+  const seite = (i: number) =>
+    basis()
+      .order('id', { ascending: true })
+      .range(i * SEITE, i * SEITE + SEITE - 1)
+
+  // Zaehlung und erste Seite sind unabhaengig: gleichzeitig starten. Bis 1.000 kategorisierte Buchungen (der Normalfall) ist damit
+  // eine Rundreise genug; nur bei mehr Zeilen folgt die zweite Welle (Seiten 2..n parallel), wie bisher mit der Gesamtzahl.
+  const [{ count }, erste] = await Promise.all([
+    applyAccountScope(
+      supabase.from('unified_transactions').select('id', { count: 'exact', head: true }),
+      ctx,
+    )
+      .not('category_id', 'is', null),
+    seite(0),
+  ])
   const seiten = Math.min(MAX_SEITEN, Math.max(1, Math.ceil((count ?? SEITE) / SEITE)))
 
-  const antworten = await Promise.all(
-    Array.from({ length: seiten }, (_, i) =>
-      basis()
-        .order('id', { ascending: true })
-        .range(i * SEITE, i * SEITE + SEITE - 1),
-    ),
-  )
+  const weitere = await Promise.all(Array.from({ length: seiten - 1 }, (_, i) => seite(i + 1)))
+  const antworten = [erste, ...weitere]
   const zeilen: BuchungKurz[] = []
   for (const a of antworten) {
     for (const z of a.data ?? []) {

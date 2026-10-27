@@ -46,33 +46,28 @@ export async function getCryptoAssets(supabase: DB, who: ScopeArg): Promise<Cryp
   return data ?? []
 }
 
-/**
- * Assets inkl. jüngster Bewertung je Asset.
- * Lädt die komplette Bewertungshistorie der Assets (unbegrenzt — Kandidat für eine
- * "letzte Bewertung je Asset"-View), da der Neueste je Asset clientseitig gewählt wird.
- */
+/** Assets inkl. jüngster Bewertung je Asset (View `asset_valuations_latest`). */
 export async function getCryptoAssetsWithPrice(supabase: DB, who: ScopeArg): Promise<AssetWithPrice[]> {
   const assets = await getCryptoAssets(supabase, who)
   const assetIds = assets.map(a => a.id)
 
+  // View `asset_valuations_latest`: je Asset genau der neueste Eintrag (valuation_date desc, created_at desc), identisch zur frueheren
+  // Client-Sortierung — aber eine Zeile pro Asset statt der gesamten Bewertungshistorie.
   const { data: valuations } = assetIds.length
     ? await supabase
-        .from('asset_valuations')
+        .from('asset_valuations_latest')
         .select('asset_id, price_per_unit, total_value, valuation_date')
         .in('asset_id', assetIds)
-        .order('valuation_date', { ascending: false })
-        .order('created_at',    { ascending: false })
     : { data: [] }
 
   const latest = new Map<string, { price_per_unit: number; total_value: number; valuation_date: string }>()
   for (const v of valuations ?? []) {
-    if (!latest.has(v.asset_id)) {
-      latest.set(v.asset_id, {
-        price_per_unit: v.price_per_unit,
-        total_value:    v.total_value,
-        valuation_date: v.valuation_date,
-      })
-    }
+    if (!v.asset_id || latest.has(v.asset_id)) continue
+    latest.set(v.asset_id, {
+      price_per_unit: v.price_per_unit as number,
+      total_value:    v.total_value as number,
+      valuation_date: v.valuation_date as string,
+    })
   }
 
   return assets.map(a => {

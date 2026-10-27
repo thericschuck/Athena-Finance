@@ -24,12 +24,12 @@ export default async function DebtsPage({ searchParams }: PageProps) {
   const zeigeAbgeschlossene = all === '1'
 
   const { supabase, user } = await requireAuthUser()
-  const settings = await getSettings(user!.id)
+  // Scope und Einstellungen sind unabhaengig: eine Rundreise-Stufe statt zwei (Layout teilt dieselben Ergebnisse per cache()).
+  const [settings, ctx] = await Promise.all([getSettings(user!.id), resolveScope(supabase, user!)])
   const locale = (settings.number_format as string) ?? 'de-DE'
   const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
   const heute = heuteBerlin()
 
-  const ctx = await resolveScope(supabase, user!)
   const alle = await ladeSchuldenSeite(supabase, ctx)
   const kennzahlen = schuldenKennzahlen(alle, heute)
   const zuletzt = await letzteAenderungen(supabase, ctx, 'debts', alle.map(d => d.id))

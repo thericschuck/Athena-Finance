@@ -158,3 +158,17 @@ export async function getAthenaSettings(supabase: DB, userId: string): Promise<A
     customInstructions: data.custom_instructions,
   }
 }
+
+/**
+ * Nur Modell und Denktiefe (Layout: Startwerte des Chat-Umschalters). Eine schmale Abfrage statt `select('*')` samt Persona-Text;
+ * Standardwerte und Ergebnis sind identisch zu `getAthenaSettings(...).model/.effort`.
+ */
+export async function getAthenaModelEffort(supabase: DB, userId: string): Promise<{ model: string; effort: AthenaEffort }> {
+  const { data } = await supabase
+    .from('ai_settings')
+    .select('model, effort')
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (!data) return { model: DEFAULT_ATHENA_SETTINGS.model, effort: DEFAULT_ATHENA_SETTINGS.effort }
+  return { model: data.model, effort: data.effort as AthenaEffort }
+}

@@ -8,7 +8,7 @@ import { ladeDashPrognose } from '@/lib/data/dashboard-prognose'
 import { heuteBerlin } from '@/lib/data/analyse-seite'
 import { FixedCostsWidget } from '@/components/finance/fixed-costs-widget'
 import { PortfolioDonut } from '@/components/dashboard/portfolio-donut'
-import { FinanceAnalytics } from '@/components/dashboard/finance-analytics'
+import { FinanceAnalyticsLazy } from '@/components/dashboard/FinanceAnalyticsLazy'
 import { DashKennzahlen } from '@/components/dashboard/DashKennzahlen'
 import { DashHinweise } from '@/components/dashboard/DashHinweise'
 import { DashZustand } from '@/components/dashboard/DashZustand'
@@ -42,8 +42,8 @@ import { ErsteSchritteKarte } from '@/components/leer/ErsteSchritteKarte'
 
 export default async function DashboardPage() {
   const { supabase, user } = await requireAuthUser()
-  const ctx = await resolveScope(supabase, user)
-  const settings = await getSettings(user.id)
+  // Scope und Einstellungen sind unabhaengig: eine Rundreise-Stufe statt zwei (Layout teilt dieselben Ergebnisse per cache()).
+  const [ctx, settings] = await Promise.all([resolveScope(supabase, user), getSettings(user.id)])
   const heute = heuteBerlin()
   // Die Prognose haengt nicht am Kern: gleich anstossen, damit sie parallel zu seinen Abfragen
   // laeuft statt erst, wenn die Kennzahlen rendern. `cache()` teilt das Ergebnis mit den Abschnitten.
@@ -154,7 +154,7 @@ function DashboardInhalt({ kern, props, aufteilung }: {
       </div>
 
       {kern.analytik.summaries.length > 0 && (
-        <FinanceAnalytics
+        <FinanceAnalyticsLazy
           summaries={kern.analytik.summaries}
           categorySeries={kern.analytik.categorySeries}
           locale={kern.locale}

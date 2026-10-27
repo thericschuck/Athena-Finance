@@ -3,14 +3,18 @@ import { cache } from 'react'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { Database } from '@/types/database'
+import { PERF_ENABLED, createPerfFetch, perfRequestInfo } from '@/lib/perf/perf-log'
 
 export async function createClient() {
   const cookieStore = await cookies()
+  // Nur bei PERF_LOG=1: Aufrufe messen (siehe lib/perf/perf-log.ts). Sonst undefined = Standardverhalten.
+  const perfFetch = PERF_ENABLED ? createPerfFetch(await perfRequestInfo(), 'server') : undefined
 
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      ...(perfFetch ? { global: { fetch: perfFetch } } : {}),
       cookies: {
         getAll() { return cookieStore.getAll() },
         setAll(cookiesToSet) {

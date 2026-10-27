@@ -1,13 +1,15 @@
 import { getAuthUser } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { after } from 'next/server'
+import { PERF_ENABLED, logRender, perfRequestInfo } from '@/lib/perf/perf-log'
 import { AppShell } from '@/components/layout/app-shell'
-import { getProfile, getSettings } from '@/lib/settings'
-import { getAthenaSettings } from '@/lib/assistant/settings'
+import { getSettings } from '@/lib/settings'
+import { getAthenaModelEffort } from '@/lib/assistant/settings'
 import { SettingsProvider } from '@/components/providers/settings-context'
 import { AthenaSettingsProvider } from '@/components/providers/athena-settings-context'
 import { PrivacyProvider } from '@/components/providers/privacy-context'
 import { HaushaltProvider } from '@/components/providers/haushalt-context'
-import { resolveScope } from '@/lib/haushalt/resolve'
+import { getOwnProfile, resolveScope } from '@/lib/haushalt/resolve'
 
 /**
  * Gilt für alle Server Actions, die unter diesem Layout ausgelöst werden — und eine davon
@@ -27,6 +29,13 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
+  // Nur bei PERF_LOG=1: Gesamtdauer des Renders protokollieren (nach dem Senden der Antwort).
+  if (PERF_ENABLED) {
+    const info = await perfRequestInfo()
+    const startedAt = Date.now()
+    after(() => logRender(info, startedAt))
+  }
+
   const { supabase, user } = await getAuthUser()
 
   if (!user) {
@@ -34,9 +43,9 @@ export default async function DashboardLayout({
   }
 
   const [profile, settings, athenaSettings, scopeCtx] = await Promise.all([
-    getProfile(user.id),
+    getOwnProfile(supabase, user.id),
     getSettings(user.id),
-    getAthenaSettings(supabase, user.id),
+    getAthenaModelEffort(supabase, user.id),
     resolveScope(supabase, user),
   ])
   const partnerName = scopeCtx.members.find(m => m.id === scopeCtx.partnerId)?.name ?? null

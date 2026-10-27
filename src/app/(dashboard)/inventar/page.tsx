@@ -43,7 +43,6 @@ export default async function InventarPage() {
     getSettings(user.id),
   ])
 
-  const zuletztInventar = Object.fromEntries(await letzteAenderungen(supabase, ctx, 'valuables', aktive.map(v => v.id)))
   const items = aktive.map(v => ({ ...v, hand_wert_stand: handStaende.get(v.id) ?? null }))
   const locale = (settings.number_format as string) ?? 'de-DE'
   // Der Bucket ist privat — ohne signierte URL liefert Storage 400. Alle Pfade in EINEM
@@ -51,9 +50,14 @@ export default async function InventarPage() {
   // und über `signierteBildUrls` zwischengespeichert, damit derselbe Pfad zwischen zwei
   // Seitenaufrufen dieselbe URL behält — sonst greift der Browser-Cache nie und die ganze
   // Vitrine lädt nach jedem Refresh neu herunter.
-  const signedByPath = bilder.length > 0
-    ? await signierteBildUrls(supabase, bilder.map(b => b.pfad))
-    : new Map<string, string>()
+  // Letzte Aenderungen (Audit-View) und Bild-Signierung brauchen beide nur die erste Stufe: parallel statt hintereinander.
+  const [zuletztEintraege, signedByPath] = await Promise.all([
+    letzteAenderungen(supabase, ctx, 'valuables', aktive.map(v => v.id)),
+    bilder.length > 0
+      ? signierteBildUrls(supabase, bilder.map(b => b.pfad))
+      : Promise.resolve(new Map<string, string>()),
+  ])
+  const zuletztInventar = Object.fromEntries(zuletztEintraege)
 
   const bilderByItem = new Map<string, ValuableImage[]>()
   for (const b of bilder) {

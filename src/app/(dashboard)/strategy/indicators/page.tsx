@@ -31,13 +31,14 @@ export default async function IndicatorsPage({
 
   const { supabase, user } = await requireAuthUser()
 
-  const settings = await getSettings(user!.id)
+  // Einstellungen, gefilterte Liste und die ungefilterten Filteroptionen sind voneinander unabhaengig: eine Stufe statt drei.
+  const [settings, indicators, allIndicators] = await Promise.all([
+    getSettings(user!.id),
+    getIndicators(supabase, user!.id, { type: filterType, author: filterAuthor, onlyAllowed }),
+    getIndicatorFilterOptions(supabase, user!.id),
+  ])
   const defaultAssetClass = (settings.default_asset_class as string) ?? 'major'
   const defaultTimeframe  = (settings.default_timeframe  as string) ?? ''
-
-  const indicators = await getIndicators(supabase, user!.id, {
-    type: filterType, author: filterAuthor, onlyAllowed,
-  })
 
   // Load performance entries for these indicators
   const perfs = await getPerformanceForIndicators(supabase, indicators.map(i => i.id))
@@ -66,7 +67,6 @@ export default async function IndicatorsPage({
   }))
 
   // Unique filter options (from unfiltered data for better UX — load all)
-  const allIndicators = await getIndicatorFilterOptions(supabase, user!.id)
 
   const allTypes   = [...new Set(allIndicators.map(i => i.type))].sort()
   const allAuthors = [...new Set(allIndicators.map(i => i.author))].sort()

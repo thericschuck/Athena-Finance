@@ -176,3 +176,6 @@ __pycache__/
 .ua/dashboard.log
 .ua/intermediate/*
 !.ua/intermediate/scan-result.json
+
+# Lokale Performance-Messung (PERF_LOG=1)
+perf-log/

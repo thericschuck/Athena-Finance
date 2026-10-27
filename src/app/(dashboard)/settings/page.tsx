@@ -1,5 +1,6 @@
 import { requireAuthUser } from '@/lib/supabase/server'
-import { getProfile, getSettings } from '@/lib/settings'
+import { getSettings } from '@/lib/settings'
+import { getOwnProfile } from '@/lib/haushalt/resolve'
 import { getActiveAccountOptions } from '@/lib/data/overview'
 import { listWaitlistFor } from '@/lib/waitlist'
 import { SettingsShell } from '@/components/settings/settings-shell'
@@ -8,7 +9,7 @@ export default async function SettingsPage() {
   const { supabase, user } = await requireAuthUser()
 
   const [profile, settings, accountRows, waitlist] = await Promise.all([
-    getProfile(user!.id),
+    getOwnProfile(supabase, user!.id),
     getSettings(user!.id),
     getActiveAccountOptions(supabase, user!.id),
     // Liefert nur für den Eigentümer Zeilen, sonst null — und genau daran

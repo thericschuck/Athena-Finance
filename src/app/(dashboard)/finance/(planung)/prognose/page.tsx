@@ -35,7 +35,8 @@ export default async function PrognosePage({
   const gewaehlt = Number(rohMonate)
   const monate = HORIZONTE.find(h => h === gewaehlt) ?? STANDARD_HORIZONT
 
-  const settings = await getSettings(user.id)
+  // Scope und Einstellungen sind unabhaengig: eine Rundreise-Stufe statt zwei (Layout teilt dieselben Ergebnisse per cache()).
+  const [settings, scopeCtx] = await Promise.all([getSettings(user.id), resolveScope(supabase, user)])
   const locale = (settings.number_format as string) ?? 'de-DE'
   const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
   const eur = (n: number, digits = 0) => fmtCurrency(n, 'EUR', locale, { fractionDigits: digits })
@@ -46,7 +47,6 @@ export default async function PrognosePage({
 
   // Berliner Kalendertag (nicht UTC): der Server läuft in UTC, nachts wäre „heute“ sonst gestern.
   const heute = heuteBerlin()
-  const scopeCtx = await resolveScope(supabase, user)
   // Ohne Konto gibt es nichts fortzuschreiben: gar nicht erst rechnen, sondern erklaeren.
   if (scopeCtx.accountIds.length === 0) {
     return <PrognoseLeer ctx={scopeCtx} grund="konto" />
