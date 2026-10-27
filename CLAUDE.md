@@ -47,6 +47,10 @@ Für Kontext zu Investing-Konzepten, die in dieser App umgesetzt werden:
 
 ---
 
+## Geplantes Großprojekt: Haushalt / Multi-User (Malik)
+
+Konzept, Entscheidungen und Fahrplan: `docs/haushalt-multiuser.md`. Umsetzung nur nach explizitem „Go“ von Eric.
+
 ## Arbeitsregeln
 
 - TypeScript strict – keine `any` Types ohne Begründung
