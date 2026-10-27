@@ -23,9 +23,10 @@ export type ActionContext = { supabase: DB; userId: string }
  *                Bestätigungs-Dialog liest. Er muss aus echten Daten bestehen
  *                (Kategoriename statt UUID), sonst ist die Bestätigung
  *                wertlos — man kann nicht zustimmen, was man nicht sieht.
- *  - `execute`   schreibt. Jede Query filtert zusätzlich auf `user_id`, obwohl
- *                RLS das ohnehin täte: die Aktion läuft mit dem Client der
- *                Nutzerin/des Nutzers, doppelter Boden kostet hier nichts.
+ *  - `execute`   schreibt. `ctx.userId` ist der HANDELNDE (bei Neuanlage = user_id der Zeile). Bei
+ *                Update/Delete von Haushaltszeilen wird NICHT auf `user_id` gefiltert: Haushalts-Peers
+ *                dürfen sie ändern, die RLS (Haushalts-Policies) ist die Grenze. Owner-only-Daten
+ *                (Krypto, Insights, ai_*) filtern weiter von Hand auf `ctx.userId`.
  */
 export type ActionDefinition<S extends z.ZodType> = {
   /** Klartext-Name der Aktion fürs UI. Der rohe Bezeichner

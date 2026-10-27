@@ -2,8 +2,10 @@ import { tool } from 'ai'
 import { z } from 'zod'
 import type { Json } from '@/types/database'
 import { type DB } from '@/lib/assistant/tools/shared'
+import { scopeKontenTabelle } from '@/lib/assistant/tools/scope'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 
-export function buildUserSettingsTools(supabase: DB, userId: string) {
+export function buildUserSettingsTools(supabase: DB, ctx: ScopeContext) {
   return {
     // ── Einstellungen ────────────────────────────────────────────────────────
     getUserSettings: tool({
@@ -23,8 +25,9 @@ export function buildUserSettingsTools(supabase: DB, userId: string) {
           'risk_per_trade_pct', 'max_open_trades',
         ]
         const [settingsRes, kontenRes] = await Promise.all([
-          supabase.from('user_settings').select('key, value, updated_at').eq('user_id', userId).in('key', RELEVANT),
-          supabase.from('accounts').select('id, name').eq('user_id', userId),
+          // user_settings ist owner-only; die Kontennamen (Auflösung der Filter-IDs) kommen aus dem Haushalt.
+          supabase.from('user_settings').select('key, value, updated_at').eq('user_id', ctx.userId).in('key', RELEVANT),
+          scopeKontenTabelle(supabase.from('accounts').select('id, name'), ctx),
         ])
         if (settingsRes.error) return { error: settingsRes.error.message }
 

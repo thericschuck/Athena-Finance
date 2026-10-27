@@ -31,6 +31,7 @@ import {
   mentionsAusNachricht,
 } from '@/lib/assistant/datei-aufloesen'
 import type { Json } from '@/types/database'
+import { resolveScope } from '@/lib/haushalt/resolve'
 
 // Node statt Edge: braucht den vollen Supabase-Server-Client (Cookies, RLS-
 // gebundene Queries) wie jede andere Route in dieser App.
@@ -101,6 +102,8 @@ export async function POST(request: NextRequest) {
     : null
 
   const settings = await getAthenaSettings(supabase, user.id)
+  // Haushalts-Scope des Nutzers (nur Cookie): kommt vom Server, nie aus dem Request-Body oder vom Modell.
+  const scopeCtx = await resolveScope(supabase, user)
 
   // ── Tageslimit ──────────────────────────────────────────────────────────────
   const todayStart = new Date()
@@ -231,7 +234,7 @@ export async function POST(request: NextRequest) {
   let systemBlocks!: ReturnType<typeof buildAthenaSystemPrompt>
   let modelMessages!: Awaited<ReturnType<typeof convertToModelMessages>>
   try {
-    context = await loadAthenaContext(supabase, user.id, { memoryEnabled: settings.memoryEnabled })
+    context = await loadAthenaContext(supabase, scopeCtx, { memoryEnabled: settings.memoryEnabled })
     const [projektAbschnitt, bezuege] = await Promise.all([
       projectId ? projektKontext(supabase, user.id, projectId) : Promise.resolve(null),
       mentionBlock(supabase, user.id, mentions),
@@ -279,7 +282,7 @@ export async function POST(request: NextRequest) {
   if (regenerate) await ersetzeLetzteAntwort(supabase, user.id, activeConversationId, assistantMessageId)
 
   const tools: ToolSet = {
-    ...buildAthenaTools(supabase, user.id, {
+    ...buildAthenaTools(supabase, scopeCtx, {
       conversationId: activeConversationId,
       messageId: assistantMessageId,
       logger: log,

@@ -1,3 +1,4 @@
+import type { ScopeContext } from '@/lib/haushalt/scope'
 import { tool, generateText } from 'ai'
 import { anthropic } from '@ai-sdk/anthropic'
 import { z } from 'zod'
@@ -35,7 +36,9 @@ const LESE_PROMPT =
   'weglassen). Wenn eine Frage gestellt ist, gib nur die dazu relevanten Stellen wieder, wörtlich ' +
   'mit Seiten-/Abschnittsangabe, und sag offen, wenn die Antwort in der Datei nicht steht.'
 
-export function buildAttachmentTools(supabase: DB, userId: string, options: AthenaToolOptions) {
+export function buildAttachmentTools(supabase: DB, ctx: ScopeContext, options: AthenaToolOptions) {
+  // Persönliche Daten (Athena-Gedächtnis, Anhänge): immer der angemeldete Nutzer, unabhängig vom Scope.
+  const userId = ctx.userId
   return {
     readAttachment: tool({
       description:

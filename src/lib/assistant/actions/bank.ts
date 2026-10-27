@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { getFinTSErrorDetails } from '@/lib/fints'
 import { syncBankForUser, BankScaRequiredError } from '@/lib/fints/user-sync'
+import { userHasBankAccess } from '@/lib/fints/connections'
 import { defineAction, type ActionDefinition } from '@/lib/assistant/actions/types'
 
 export const bankActions = {
@@ -22,7 +23,8 @@ export const bankActions = {
       fullHistory: z.boolean().optional().describe('Komplette Historie statt 90 Tage (braucht Freigabe).'),
     }),
     validate: async (_input, ctx) => {
-      if (process.env.VERCEL && ctx.userId !== process.env.BANK_SYNC_USER_ID) {
+      // Wie /api/bank/sync: Zugriff hat, wer eine eigene Bankverbindung hat oder der Env-Nutzer ist.
+      if (process.env.VERCEL && !(await userHasBankAccess(ctx.userId))) {
         return 'Bank-Sync ist für dieses Konto nicht verfügbar.'
       }
       return null

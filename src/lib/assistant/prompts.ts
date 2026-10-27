@@ -1,4 +1,6 @@
 import type { AthenaContext } from '@/lib/assistant/context'
+import { istAlleinstehend, scopeBeschreibung } from '@/lib/assistant/tools/scope'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 import type { AthenaPersona, AthenaSettings } from '@/lib/assistant/settings'
 import { describeCurrentRoute, renderAtlas } from '@/lib/assistant/atlas'
 
@@ -266,7 +268,7 @@ die Lücke, statt sie zu überbrücken.
 getDebts, getGoals, getBudget, getDepotHoldings, getCryptoPortfolio, getNetWorthTrend, getCategories, \
 getCategoryUsage, getValuables, getValuableGaps, getValuableImages, checkDataQuality, getInsights, \
 getObligationCalendar, getSavingsPlans, getUserSettings, getAccountBalanceHistory, \
-getTaxPosition, getEuerPosition, getForecast, findRecurringPayments, showChart.
+getTaxPosition, getEuerPosition, getForecast, findRecurringPayments, getRecentChanges (Änderungslog: wer hat wann was geändert), showChart.
 Hochgeladene Dateien (PDF, Bild, CSV/Text): in dem Zug, in dem sie angehängt werden, siehst du sie direkt. In \
 späteren Zügen steht im Verlauf nur eine Notiz — für den Inhalt rufst du \`readAttachment\` mit einer konkreten \
 \`frage\` auf (liefert gezielt die passenden Stellen). Sag Eric nicht, du könntest die Datei nicht mehr sehen, \
@@ -316,7 +318,7 @@ Kraken-Historie; \`warnungen\` nennt, was NICHT bewertet ist (Krypto-gegen-Krypt
 Zugänge von außerhalb). Lies sie vor jeder Aussage zu einem Krypto-Verkauf und sag, dass es keine Steuerberatung \
 ist — „lohnt sich der Verkauf jetzt" hängt an der Haltefrist des ältesten Loses, nicht am Durchschnittspreis.
 
-**Was als Einnahme oder Ausgabe zählt.** Umbuchungen zwischen Erics eigenen Konten und Anfangsbestände sind nie Einnahme oder Ausgabe. Alles andere zählt, wird aber nach Art getrennt — getTransactions markiert es in \`flow_kind\`:
+**Was als Einnahme oder Ausgabe zählt.** Umbuchungen zwischen den eigenen Konten im aktiven Scope und Anfangsbestände sind nie Einnahme oder Ausgabe (im Haushalt gilt: Buchungen zwischen zwei Konten innerhalb des Scopes sind neutral, zu einem Haushaltskonto außerhalb des Scopes nicht). Alles andere zählt, wird aber nach Art getrennt — getTransactions markiert es in \`flow_kind\`:
 \`echt\` = Konsum und normale Einnahme · \`anlage\` = rein oder raus aus Krypto, Depot, Bausparvertrag, Sparkonto · \`forderung\` = verliehenes oder zurückgezahltes Geld · \`umbuchung\` = zwischen eigenen Konten (zählt nicht) · \`anfangsbestand\` = Eröffnungssaldo eines Kontos (zählt nicht).
 getSpendingSummary liefert \`income\`/\`expense\` als Konsum (nur \`echt\`) und Anlage sowie Forderung getrennt daneben. Sprich bei Ausgaben von Konsum, wenn du \`echt\` meinst: eine Krypto-Einzahlung ist Sparen, kein Verbrauch, und Erics Vermögen bleibt dabei gleich. Wenn du selbst über Einzelbuchungen summierst, trenne nach \`flow_kind\` genauso. Kontostände sind davon unberührt: dort zählt jede Buchung, auch die Umbuchung.
 
@@ -488,6 +490,24 @@ function renderKnowledge(context: AthenaContext): string {
 antwortest.\n\n${lines.join('\n')}`
 }
 
+/**
+ * Aktiver Haushalts-Scope. Ohne Partner entfällt der Abschnitt komplett (Prompt wie vor dem Haushalt).
+ * Der Scope ist ein Filter des Servers: die Werkzeuge haben kein Scope-Feld, wechseln kann nur der Nutzer im Switcher.
+ */
+export function renderScope(scope: ScopeContext): string | null {
+  const beschreibung = scopeBeschreibung(scope)
+  if (!beschreibung) return null
+  const partner = scope.members.find((m) => m.id === scope.partnerId)?.name ?? 'Partner'
+  return (
+    `## Aktiver Scope\n\n${beschreibung}\n\n` +
+    `Der Nutzer führt einen Haushalt mit ${partner}. „Ich“ = eigene Konten plus geteilte, „${partner}“ = dessen Konten plus geteilte, ` +
+    `„Gemeinsam“ = der ganze Haushalt (geteilte Konten nur einmal gezählt). Alle Konto-, Buchungs-, Vertrags-, Schulden-, ` +
+    `Sparziel-, Inventar- und Depot-Werkzeuge liefern genau diesen Scope; Steuer, Gedächtnis, Einstellungen und Hinweise ` +
+    `bleiben persönlich. Nenne bei Zahlen, für welchen Scope sie gelten. Den Scope kannst du nicht ändern — der Nutzer wählt ihn ` +
+    `im Umschalter der Seitenleiste.`
+  )
+}
+
 function renderStructure(context: AthenaContext): string {
   const accounts = context.accounts
     .map((a) => `- ${a.name} (${a.type}, ${a.currency}) → id ${a.id}`)
@@ -504,7 +524,8 @@ function renderStructure(context: AthenaContext): string {
         .map((child) => `  - ${child.name} (${child.type}) → id ${child.id}`),
     ])
     .join('\n')
-  return `## Erics Konten\n\n${accounts || '(keine aktiven Konten)'}\n\n## Kategorien\n\n${
+  const kontenTitel = istAlleinstehend(context.scope) ? 'Erics Konten' : 'Konten im aktiven Scope'
+  return `## ${kontenTitel}\n\n${accounts || '(keine aktiven Konten)'}\n\n## Kategorien\n\n${
     categories || '(keine Kategorien angelegt)'
   }`
 }
@@ -559,7 +580,9 @@ export function buildAthenaSystemPrompt(
   // sich im Zweifel durch.
   const core = [ATHENA_CORE, renderAtlas()].join(SEPARATOR)
 
-  const user = [renderPersona(settings), renderStructure(context), renderKnowledge(context)]
+  const user = [renderPersona(settings), renderScope(context.scope), renderStructure(context), renderKnowledge(context)].filter(
+    (block): block is string => block !== null,
+  )
 
   if (settings.memoryEnabled) user.push(renderMemories(context))
   else user.push('## Kontext-Speicher\n\n(vom Nutzer deaktiviert — nutze `remember` in dieser Sitzung nicht.)')

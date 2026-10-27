@@ -1,8 +1,10 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { untrust, type DB } from '@/lib/assistant/tools/shared'
+import { scopeOwner } from '@/lib/assistant/tools/scope'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 
-export function buildSavingsPlanTools(supabase: DB, userId: string) {
+export function buildSavingsPlanTools(supabase: DB, ctx: ScopeContext) {
   return {
     // ── Fonds-Sparpläne ──────────────────────────────────────────────────────
     getSavingsPlans: tool({
@@ -14,10 +16,12 @@ export function buildSavingsPlanTools(supabase: DB, userId: string) {
         activeOnly: z.boolean().default(true),
       }),
       execute: async ({ activeOnly }) => {
-        let query = supabase
-          .from('savings_plans')
-          .select('id, isin, fund_name, monthly_amount, execution_day, start_date, is_active')
-          .eq('user_id', userId)
+        let query = scopeOwner(
+          supabase
+            .from('savings_plans')
+            .select('id, isin, fund_name, monthly_amount, execution_day, start_date, is_active'),
+          ctx,
+        )
           .order('monthly_amount', { ascending: false })
         if (activeOnly) query = query.eq('is_active', true)
         const { data, error } = await query

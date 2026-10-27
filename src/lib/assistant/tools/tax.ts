@@ -4,8 +4,9 @@ import { ladeSteuerdaten } from '@/lib/tax/laden'
 import { berechneSteuerposition } from '@/lib/tax/position'
 import { berechneEuer } from '@/lib/tax/euer'
 import { untrust, type DB } from '@/lib/assistant/tools/shared'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 
-export function buildTaxTools(supabase: DB, userId: string) {
+export function buildTaxTools(supabase: DB, ctx: ScopeContext) {
   return {
     // ── Steuerposition ───────────────────────────────────────────────────────
     getTaxPosition: tool({
@@ -24,7 +25,7 @@ export function buildTaxTools(supabase: DB, userId: string) {
       }),
       execute: async ({ jahr }) => {
         try {
-          const { eingaben, rollen, ruecklageZiel, krypto, kryptoFehler } = await ladeSteuerdaten(supabase, userId, jahr)
+          const { eingaben, rollen, ruecklageZiel, krypto, kryptoFehler } = await ladeSteuerdaten(supabase, ctx.userId, jahr)
           const position = berechneSteuerposition(eingaben)
           return {
             ...position,
@@ -71,7 +72,7 @@ export function buildTaxTools(supabase: DB, userId: string) {
       }),
       execute: async ({ jahr }) => {
         try {
-          const daten = await ladeSteuerdaten(supabase, userId, jahr)
+          const daten = await ladeSteuerdaten(supabase, ctx.userId, jahr)
           const e = berechneEuer({ jahr, ...daten.euer })
 
           // Die Einzelbuchungen tragen Freitext von der Bank. Für Athena

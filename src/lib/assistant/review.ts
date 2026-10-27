@@ -6,6 +6,7 @@ import type { Database, Json } from '@/types/database'
 import { getAthenaSettings, supportsThinking } from '@/lib/assistant/settings'
 import { estimateCostUsd } from '@/lib/assistant/cost'
 import { createLogger } from '@/lib/assistant/logger'
+import { resolveScopeForUser } from '@/lib/haushalt/resolve-user'
 import { buildAccountTools } from '@/lib/assistant/tools/accounts'
 import { buildTransactionTools } from '@/lib/assistant/tools/transactions'
 import { buildPlanningTools } from '@/lib/assistant/tools/planning'
@@ -79,21 +80,24 @@ export async function fuehreReviewAus(supabase: DB, userId: string, opts: { forc
     .eq('user_id', userId).is('dismissed_at', null)
   const offeneTitel = (offene ?? []).map(o => o.title)
 
+  // Wochenlauf läuft ohne Request/Cookie mit Service-Role: Scope 'ich' des Nutzers (eigene + geteilte Konten).
+  const scopeCtx = await resolveScopeForUser(supabase, userId, 'ich')
+
   const befunde: Befund[] = []
   const tools = {
-    ...buildAccountTools(supabase, userId),
-    ...buildTransactionTools(supabase, userId),
-    ...buildPlanningTools(supabase, userId),
-    ...buildForecastTools(supabase, userId),
-    ...buildPortfolioTools(supabase, userId),
-    ...buildDataQualityTools(supabase, userId),
-    ...buildInsightTools(supabase, userId),
-    ...buildObligationTools(supabase, userId),
-    ...buildSavingsPlanTools(supabase, userId),
-    ...buildAccountHistoryTools(supabase, userId),
-    ...buildTaxTools(supabase, userId),
-    ...buildRecurringTools(supabase, userId),
-    ...buildCategoryTools(supabase, userId),
+    ...buildAccountTools(supabase, scopeCtx),
+    ...buildTransactionTools(supabase, scopeCtx),
+    ...buildPlanningTools(supabase, scopeCtx),
+    ...buildForecastTools(supabase, scopeCtx),
+    ...buildPortfolioTools(supabase, scopeCtx),
+    ...buildDataQualityTools(supabase, scopeCtx),
+    ...buildInsightTools(supabase, scopeCtx),
+    ...buildObligationTools(supabase, scopeCtx),
+    ...buildSavingsPlanTools(supabase, scopeCtx),
+    ...buildAccountHistoryTools(supabase, scopeCtx),
+    ...buildTaxTools(supabase, scopeCtx),
+    ...buildRecurringTools(supabase, scopeCtx),
+    ...buildCategoryTools(supabase, scopeCtx),
     meldeBefund: tool({
       description:
         'Meldet EINEN Befund an Eric (landet als Hinweis auf dem Dashboard). Das ist deine einzige Ausgabe. ' +

@@ -35,7 +35,6 @@ export const transactionActions = {
       const { data } = await ctx.supabase
         .from('unified_transactions')
         .select('id, date, description, merchant, signed_amount, category_name')
-        .eq('user_id', ctx.userId)
         .in(
           'id',
           shown.map((t) => t.id),
@@ -75,7 +74,6 @@ export const transactionActions = {
           ? ctx.supabase.from(table).update({ category_id: categoryId, category_source: 'manual' })
           : ctx.supabase.from(table).update({ category_id: categoryId })
         const { data, error } = await update
-          .eq('user_id', ctx.userId)
           .in('id', ids)
           .select('id')
         if (error) throw new Error(error.message)

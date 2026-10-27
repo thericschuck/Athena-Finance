@@ -3,8 +3,10 @@ import { z } from 'zod'
 import { KATEGORIEN } from '@/lib/valuables'
 import { getHandBewertungsstaende } from '@/lib/data/inventar'
 import { ROW_CAP, untrust, type DB } from '@/lib/assistant/tools/shared'
+import { scopeOwner, wer } from '@/lib/assistant/tools/scope'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 
-export function buildInventoryTools(supabase: DB, userId: string) {
+export function buildInventoryTools(supabase: DB, ctx: ScopeContext) {
   return {
     // ── Inventar ──────────────────────────────────────────────────────────────
     getValuables: tool({
@@ -30,12 +32,16 @@ export function buildInventoryTools(supabase: DB, userId: string) {
         limit: z.number().int().min(1).max(ROW_CAP).default(50),
       }),
       execute: async ({ query, kategorie, ohneBild, limit }) => {
-        let q = supabase
-          .from('valuables_current')
-          // Als EIN String-Literal: supabase-js leitet den Zeilentyp aus dem Literal ab,
-          // eine zusammengesetzte Zeichenkette macht daraus `unknown`.
-          .select('id, name, kategorie, marke, modell, referenz, zustand, notizen, aktueller_wert, waehrung, gekauft_am, kaufpreis, bild_anzahl, foto_anzahl')
-          .eq('user_id', userId)
+        // Die View valuables_current hat keine Spalte `shared`: Filter nur nach Besitzer.
+        let q = scopeOwner(
+          supabase
+            .from('valuables_current')
+            // Als EIN String-Literal: supabase-js leitet den Zeilentyp aus dem Literal ab,
+            // eine zusammengesetzte Zeichenkette macht daraus `unknown`.
+            .select('id, name, kategorie, marke, modell, referenz, zustand, notizen, aktueller_wert, waehrung, gekauft_am, kaufpreis, bild_anzahl, foto_anzahl'),
+          ctx,
+          { sharedColumn: false },
+        )
           .eq('is_active', true)
           .order('sort_order')
           .limit(Math.min(limit, ROW_CAP))
@@ -77,10 +83,13 @@ export function buildInventoryTools(supabase: DB, userId: string) {
           .describe('Wie viele Stücke je Lückenliste höchstens aufgeführt werden (die Zählungen sind vollständig).'),
       }),
       execute: async ({ kategorie, limit }) => {
-        let q = supabase
-          .from('valuables_current')
-          .select('id, name, kategorie, marke, modell, seriennummer, box_vorhanden, papiere_vorhanden, versichert, aktueller_wert, wert_stand, waehrung')
-          .eq('user_id', userId)
+        let q = scopeOwner(
+          supabase
+            .from('valuables_current')
+            .select('id, name, kategorie, marke, modell, seriennummer, box_vorhanden, papiere_vorhanden, versichert, aktueller_wert, wert_stand, waehrung'),
+          ctx,
+          { sharedColumn: false },
+        )
           .eq('is_active', true)
           .order('sort_order')
           .limit(ROW_CAP)
@@ -106,7 +115,7 @@ export function buildInventoryTools(supabase: DB, userId: string) {
 
         // Stand der letzten HANDEINGABE: Modellpunkte (quelle `modell`) schreiben taeglich
         // einen neuen Stand und liessen jeden Wert aktuell aussehen.
-        const handStand = await getHandBewertungsstaende(supabase, userId)
+        const handStand = await getHandBewertungsstaende(supabase, wer(ctx))
         const grenze = new Date()
         grenze.setFullYear(grenze.getFullYear() - 1)
         const stichtag = grenze.toISOString().split('T')[0]
@@ -174,7 +183,6 @@ export function buildInventoryTools(supabase: DB, userId: string) {
           .from('valuable_images')
           .select('id, art, ist_hauptbild, created_at, hinweis, basis_bild_id, prompt')
           .eq('valuable_id', valuableId)
-          .eq('user_id', userId)
           .order('created_at', { ascending: false })
         if (error) return { error: error.message }
 

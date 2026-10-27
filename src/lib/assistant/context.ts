@@ -1,5 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import type { ScopeContext } from '@/lib/haushalt/scope'
+import { scopeHaushaltsweit, scopeKontenTabelle } from '@/lib/assistant/tools/scope'
 
 type DB = SupabaseClient<Database>
 
@@ -63,18 +65,13 @@ export async function loadKnowledgeIndex(supabase: DB, userId: string): Promise<
  * getAccounts-Aufruf beginnt, dessen Ergebnis sich zwischen zwei Nachrichten
  * praktisch nie ändert. Ein Schritt gespart, bei sehr geringen Kosten.
  */
-export async function loadAccountContext(supabase: DB, userId: string) {
+export async function loadAccountContext(supabase: DB, ctx: ScopeContext) {
   const [accounts, categories] = await Promise.all([
-    supabase
-      .from('accounts')
-      .select('id, name, type, currency')
-      .eq('user_id', userId)
+    // Konten des aktiven Scopes; Kategorien: ein Baum pro Haushalt.
+    scopeKontenTabelle(supabase.from('accounts').select('id, name, type, currency'), ctx)
       .eq('is_active', true)
       .order('sort_order'),
-    supabase
-      .from('categories')
-      .select('id, name, type, parent_id')
-      .eq('user_id', userId)
+    scopeHaushaltsweit(supabase.from('categories').select('id, name, type, parent_id'), ctx)
       .order('sort_order'),
   ])
   return {
@@ -84,6 +81,8 @@ export async function loadAccountContext(supabase: DB, userId: string) {
 }
 
 export type AthenaContext = {
+  /** Aktiver Haushalts-Scope (vom Server aufgelöst, nie vom Modell). */
+  scope: ScopeContext
   memories: MemoryEntry[]
   knowledge: KnowledgeIndexEntry[]
   accounts: Awaited<ReturnType<typeof loadAccountContext>>['accounts']
@@ -92,13 +91,14 @@ export type AthenaContext = {
 
 export async function loadAthenaContext(
   supabase: DB,
-  userId: string,
+  scope: ScopeContext,
   options: { memoryEnabled: boolean },
 ): Promise<AthenaContext> {
   const [memories, knowledge, structure] = await Promise.all([
-    options.memoryEnabled ? loadMemories(supabase, userId) : Promise.resolve([]),
-    loadKnowledgeIndex(supabase, userId),
-    loadAccountContext(supabase, userId),
+    // Gedächtnis und Wissensbasis sind persönlich (ai_*): immer der angemeldete Nutzer.
+    options.memoryEnabled ? loadMemories(supabase, scope.userId) : Promise.resolve([]),
+    loadKnowledgeIndex(supabase, scope.userId),
+    loadAccountContext(supabase, scope),
   ])
-  return { memories, knowledge, ...structure }
+  return { scope, memories, knowledge, ...structure }
 }

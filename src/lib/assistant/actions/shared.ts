@@ -19,12 +19,11 @@ export async function categoryLabel(ctx: ActionContext, categoryId: string | nul
     .from('categories')
     .select('name')
     .eq('id', categoryId)
-    .eq('user_id', ctx.userId)
     .maybeSingle()
   return data?.name ?? 'Unbekannte Kategorie'
 }
 
-/** Wirft, wenn die Kategorie nicht existiert oder nicht dem Nutzer gehört —
+/** Wirft, wenn die Kategorie nicht existiert oder für den Nutzer (Haushalt, per RLS) nicht sichtbar ist —
     eine halluzinierte UUID soll nicht als stiller No-Op durchgehen. */
 export async function assertCategory(ctx: ActionContext, categoryId: string | null) {
   if (!categoryId) return
@@ -32,7 +31,6 @@ export async function assertCategory(ctx: ActionContext, categoryId: string | nu
     .from('categories')
     .select('id')
     .eq('id', categoryId)
-    .eq('user_id', ctx.userId)
     .maybeSingle()
   if (!data) throw new Error(`Kategorie ${categoryId} existiert nicht`)
 }

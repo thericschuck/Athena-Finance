@@ -1,5 +1,6 @@
 import { tool } from 'ai'
 import { WRITE_ACTIONS, proposeWriteAction, type WriteActionName } from '@/lib/assistant/actions'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 import type { DB, AthenaToolOptions } from '@/lib/assistant/tools/shared'
 
 /**
@@ -11,7 +12,7 @@ import type { DB, AthenaToolOptions } from '@/lib/assistant/tools/shared'
  * sichtbar, wenn jemand daran denkt, hier ein Werkzeug nachzutragen. So gibt es
  * genau eine Stelle, an der eine Schreibaktion definiert wird.
  */
-export function buildProposalTools(supabase: DB, userId: string, options: AthenaToolOptions) {
+export function buildProposalTools(supabase: DB, ctx: ScopeContext, options: AthenaToolOptions) {
   const entries = Object.entries(WRITE_ACTIONS).map(([name, definition]) => [
     name,
     tool({
@@ -35,7 +36,7 @@ export function buildProposalTools(supabase: DB, userId: string, options: Athena
         return proposeWriteAction(
           actionName,
           input,
-          { supabase, userId },
+          { supabase, userId: ctx.userId }, // Handelnder = angemeldeter Nutzer
           { conversationId: options.conversationId, messageId: options.messageId, logger: options.logger },
         )
       },

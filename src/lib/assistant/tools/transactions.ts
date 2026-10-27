@@ -1,9 +1,11 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { ROW_CAP, untrust, type DB } from '@/lib/assistant/tools/shared'
-import { getFlowTransactions } from '@/lib/data/flows'
+import { scopeKonten, wer } from '@/lib/assistant/tools/scope'
+import type { ScopeContext } from '@/lib/haushalt/scope'
+import { getFlowTransactionsScope } from '@/lib/data/flows-scope'
 
-export function buildTransactionTools(supabase: DB, userId: string) {
+export function buildTransactionTools(supabase: DB, ctx: ScopeContext) {
   return {
     // ── Transaktionen (Detail, paginiert) ────────────────────────────────────
     getTransactions: tool({
@@ -25,7 +27,7 @@ export function buildTransactionTools(supabase: DB, userId: string) {
         const cappedLimit = Math.min(limit, ROW_CAP)
         // unified_transactions (see migration 20260821010000) merges in FinTS-synced bank
         // transactions for linked accounts, so the assistant sees the same picture as Finance.
-        let query = supabase
+        let query = scopeKonten(supabase
           .from('unified_transactions')
           // `source` MUSS mit: categorizeTransactions braucht es, um beim
           // Schreiben die richtige Quelltabelle (transactions vs.
@@ -33,8 +35,7 @@ export function buildTransactionTools(supabase: DB, userId: string) {
           .select(
             'id, date, amount, signed_amount, currency, type, flow_kind, merchant, description, category_id, category_name, account_id, source',
             { count: 'exact' },
-          )
-          .eq('user_id', userId)
+          ), ctx)
           .gte('date', startDate)
           .lte('date', endDate)
           .order('date', { ascending: false })
@@ -79,7 +80,7 @@ export function buildTransactionTools(supabase: DB, userId: string) {
         let data
         try {
           // Seitenweise geladen: eine einzelne Abfrage lieferte still nur die ersten 1.000 Zeilen.
-          data = await getFlowTransactions(supabase, userId, { from: startDate, to: endDate })
+          data = await getFlowTransactionsScope(supabase, wer(ctx), { from: startDate, to: endDate })
         } catch (e) {
           return { error: e instanceof Error ? e.message : 'Abfrage fehlgeschlagen' }
         }

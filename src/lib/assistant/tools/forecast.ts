@@ -3,8 +3,9 @@ import { z } from 'zod'
 import { ladePrognose } from '@/lib/forecast/laden'
 import { ymd } from '@/lib/period'
 import type { DB } from '@/lib/assistant/tools/shared'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 
-export function buildForecastTools(supabase: DB, userId: string) {
+export function buildForecastTools(supabase: DB, ctx: ScopeContext) {
   return {
     // ── Prognose (nur lesend) ────────────────────────────────────────────────────
     getForecast: tool({
@@ -23,7 +24,7 @@ export function buildForecastTools(supabase: DB, userId: string) {
       }),
       execute: async ({ monate }) => {
         try {
-          const d = await ladePrognose(supabase, userId, ymd(new Date()), { monate })
+          const d = await ladePrognose(supabase, ctx.userId, ymd(new Date()), { monate })
           const sz = d.szenario
           return {
             stand: d.stand,

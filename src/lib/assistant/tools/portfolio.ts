@@ -1,19 +1,22 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { untrust, type DB } from '@/lib/assistant/tools/shared'
+import { istAlleinstehend, scopeOwner } from '@/lib/assistant/tools/scope'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 
-export function buildPortfolioTools(supabase: DB, userId: string) {
+export function buildPortfolioTools(supabase: DB, ctx: ScopeContext) {
   return {
     // ── Depot ─────────────────────────────────────────────────────────────────
     getDepotHoldings: tool({
       description: 'Aktueller Depot-Bestand (per FinTS synchronisiert): Wertpapiere, Stückzahl, Kurswert.',
       inputSchema: z.object({}),
       execute: async () => {
-        const { data, error } = await supabase
-          .from('depot_holdings')
-          .select('isin, name, pieces, market_value, total_value, acquisition_price, currency, valuation_date')
-          .eq('user_id', userId)
-          .order('total_value', { ascending: false })
+        const { data, error } = await scopeOwner(
+          supabase
+            .from('depot_holdings')
+            .select('isin, name, pieces, market_value, total_value, acquisition_price, currency, valuation_date'),
+          ctx,
+        ).order('total_value', { ascending: false })
         if (error) return { error: error.message }
         return { holdings: (data ?? []).map((row) => untrust(row, ['name'])) }
       },
@@ -24,10 +27,12 @@ export function buildPortfolioTools(supabase: DB, userId: string) {
       description: 'Aktuelles Crypto-/Asset-Portfolio mit Menge, Einstandspreis und letztem bekannten Marktwert.',
       inputSchema: z.object({}),
       execute: async () => {
-        const { data: assets, error: assetsError } = await supabase
-          .from('assets')
-          .select('id, name, symbol, type, quantity, avg_buy_price, currency, portfolio_name')
-          .eq('user_id', userId)
+        const { data: assets, error: assetsError } = await scopeOwner(
+          supabase
+            .from('assets')
+            .select('id, name, symbol, type, quantity, avg_buy_price, currency, portfolio_name'),
+          ctx,
+        )
         if (assetsError) return { error: assetsError.message }
         if (!assets || assets.length === 0) return { assets: [] }
 
@@ -74,7 +79,8 @@ export function buildPortfolioTools(supabase: DB, userId: string) {
           .select(
             'snapshot_date, net_worth, total_checking, total_investment, total_savings, total_cash, total_bausparer, total_depot, total_crypto, total_debts',
           )
-          .eq('user_id', userId)
+          // Snapshots sind pro Nutzer (Summe zweier Nutzer-Snapshots würde das geteilte Konto doppelt zählen).
+          .eq('user_id', ctx.userId)
           .gte('snapshot_date', sinceIso)
           .order('snapshot_date', { ascending: true })
         if (error) return { error: error.message }
@@ -87,7 +93,12 @@ export function buildPortfolioTools(supabase: DB, userId: string) {
           byMonth.set(row.snapshot_date.slice(0, 7), row)
         }
 
-        return { months: Array.from(byMonth.values()) }
+        return {
+          months: Array.from(byMonth.values()),
+          ...(istAlleinstehend(ctx)
+            ? {}
+            : { hinweis_scope: 'Der Vermögensverlauf ist der Snapshot des angemeldeten Nutzers, unabhängig von der gewählten Ansicht (Ich/Partner/Gemeinsam).' }),
+        }
       },
     }),
 

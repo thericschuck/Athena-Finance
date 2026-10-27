@@ -40,7 +40,6 @@ async function loadCategoryMap(ctx: ActionContext): Promise<Map<string, Category
   const { data } = await ctx.supabase
     .from('categories')
     .select('id, name, type, parent_id, color, icon, budget_monthly')
-    .eq('user_id', ctx.userId)
   return new Map((data ?? []).map((row) => [row.id, row as CategoryLite]))
 }
 
@@ -70,9 +69,9 @@ async function categoryLinkCounts(
   if (ids.length === 0) return counts
 
   const [manual, bank, contracts] = await Promise.all([
-    ctx.supabase.from('transactions').select('category_id').eq('user_id', ctx.userId).in('category_id', ids),
-    ctx.supabase.from('bank_transactions').select('category_id').eq('user_id', ctx.userId).in('category_id', ids),
-    ctx.supabase.from('contracts').select('category_id').eq('user_id', ctx.userId).in('category_id', ids),
+    ctx.supabase.from('transactions').select('category_id').in('category_id', ids),
+    ctx.supabase.from('bank_transactions').select('category_id').in('category_id', ids),
+    ctx.supabase.from('contracts').select('category_id').in('category_id', ids),
   ])
 
   for (const row of [...(manual.data ?? []), ...(bank.data ?? [])]) {
@@ -92,7 +91,6 @@ async function nextSortOrder(ctx: ActionContext): Promise<number> {
   const { data } = await ctx.supabase
     .from('categories')
     .select('sort_order')
-    .eq('user_id', ctx.userId)
     .order('sort_order', { ascending: false })
     .limit(1)
     .maybeSingle()
@@ -419,7 +417,6 @@ export const categoryActions = {
         .from('categories')
         .update(patch)
         .eq('id', categoryId)
-        .eq('user_id', ctx.userId)
         .select('id')
         .maybeSingle()
       if (error) throw new Error(error.message)
@@ -505,7 +502,6 @@ export const categoryActions = {
       const { data, error } = await ctx.supabase
         .from('categories')
         .delete()
-        .eq('user_id', ctx.userId)
         .in('id', categoryIds)
         .select('id')
       if (error) throw new Error(error.message)
@@ -621,7 +617,6 @@ export const categoryActions = {
         const { data, error } = await ctx.supabase
           .from(table)
           .update({ category_id: targetCategoryId })
-          .eq('user_id', ctx.userId)
           .in('category_id', sources)
           .select('id')
         if (error) throw new Error(error.message)
@@ -631,7 +626,6 @@ export const categoryActions = {
       const { data: movedContracts, error: contractError } = await ctx.supabase
         .from('contracts')
         .update({ category_id: targetCategoryId })
-        .eq('user_id', ctx.userId)
         .in('category_id', sources)
         .select('id')
       if (contractError) throw new Error(contractError.message)
@@ -649,7 +643,6 @@ export const categoryActions = {
         const { data, error } = await ctx.supabase
           .from('categories')
           .update({ parent_id: targetCategoryId })
-          .eq('user_id', ctx.userId)
           .in('id', childIds)
           .select('id')
         if (error) throw new Error(error.message)
@@ -659,7 +652,6 @@ export const categoryActions = {
       const { data: deleted, error: deleteError } = await ctx.supabase
         .from('categories')
         .delete()
-        .eq('user_id', ctx.userId)
         .in('id', sources)
         .select('id')
       if (deleteError) throw new Error(deleteError.message)

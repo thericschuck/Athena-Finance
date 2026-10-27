@@ -1,8 +1,10 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { type DB } from '@/lib/assistant/tools/shared'
+import { scopeKontenTabelle } from '@/lib/assistant/tools/scope'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 
-export function buildAccountTools(supabase: DB, userId: string) {
+export function buildAccountTools(supabase: DB, ctx: ScopeContext) {
   return {
     // ── Konten ─────────────────────────────────────────────────────────────
     getAccounts: tool({
@@ -11,11 +13,10 @@ export function buildAccountTools(supabase: DB, userId: string) {
         'Währung, Institut und aktuellem Saldo. Für die Vermögensentwicklung über Zeit siehe getNetWorthTrend.',
       inputSchema: z.object({}),
       execute: async () => {
-        const { data, error } = await supabase
-          .from('accounts')
-          .select('id, name, type, currency, institution, is_active')
-          .eq('user_id', userId)
-          .order('sort_order')
+        const { data, error } = await scopeKontenTabelle(
+          supabase.from('accounts').select('id, name, type, currency, institution, is_active'),
+          ctx,
+        ).order('sort_order')
         if (error) return { error: error.message }
 
         // Salden bewusst aus `account_balances` und nicht selbst nachgerechnet:

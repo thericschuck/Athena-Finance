@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { type ActionDetail, defineAction, type ActionDefinition } from '@/lib/assistant/actions/types'
 import { money, day, FREQUENCY_LABELS } from '@/lib/assistant/actions/format'
 import { categoryLabel, assertCategory } from '@/lib/assistant/actions/shared'
+import { CONTRACT_TYPES, FREQUENCIES } from '@/lib/finance/contract-constants'
 
 export const contractActions = {
   // ── Verträge ───────────────────────────────────────────────────────────────
@@ -13,8 +14,11 @@ export const contractActions = {
     schema: z.object({
       name: z.string().min(1).max(200),
       provider: z.string().max(200).nullish(),
-      type: z.string().min(1).describe('z. B. subscription, insurance, rent, utility'),
-      frequency: z.enum(['monthly', 'quarterly', 'yearly', 'weekly']),
+      // Werte der CHECK-Beschränkungen von `contracts` (siehe contract-constants.ts); ein freier String
+      // wie „rent" statt `rental` würde sonst erst die Datenbank ablehnen.
+      type: z.enum(CONTRACT_TYPES.map(t => t.value) as [string, ...string[]])
+        .describe('subscription, insurance, utility, loan, rental (Miete), service oder other'),
+      frequency: z.enum(FREQUENCIES.map(f => f.value) as [string, ...string[]]),
       amount: z.number(),
       currency: z.string().length(3).default('EUR'),
       startDate: z.string().describe('ISO-Datum YYYY-MM-DD'),
@@ -81,7 +85,6 @@ export const contractActions = {
         .from('contracts')
         .select('name')
         .eq('id', contractId)
-        .eq('user_id', ctx.userId)
         .maybeSingle()
       return `Vertrag „${data?.name ?? contractId}" deaktivieren${endDate ? ` zum ${day(endDate)}` : ''}`
     },
@@ -90,7 +93,6 @@ export const contractActions = {
         .from('contracts')
         .select('name, provider, amount, currency, frequency')
         .eq('id', contractId)
-        .eq('user_id', ctx.userId)
         .maybeSingle()
       return [
         { label: 'Vertrag', value: data?.name ?? contractId, hint: data?.provider ?? undefined },
@@ -110,7 +112,6 @@ export const contractActions = {
         .from('contracts')
         .update({ is_active: false, end_date: endDate ?? null })
         .eq('id', contractId)
-        .eq('user_id', ctx.userId)
         .select('id')
         .maybeSingle()
       if (error) throw new Error(error.message)

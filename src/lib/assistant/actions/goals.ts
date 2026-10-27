@@ -13,7 +13,8 @@ export const goalActions = {
       currentAmount: z.number().min(0).default(0),
       targetDate: z.string().nullish().describe('ISO-Datum YYYY-MM-DD'),
       monthlySavingsRate: z.number().min(0).nullish(),
-      priority: z.enum(['high', 'medium', 'low']).default('medium'),
+      // Dieselben Werte wie die CHECK-Beschränkung der Spalte und das Formular unter Finance → Sparziele.
+      priority: z.enum(['hoch', 'mittel', 'niedrig']).default('mittel'),
     }),
     summarize: async (input) =>
       `Sparziel „${input.description}" über ${eur(input.targetAmount)} anlegen` +
@@ -37,7 +38,7 @@ export const goalActions = {
           target_date: input.targetDate ?? null,
           monthly_savings_rate: input.monthlySavingsRate ?? null,
           priority: input.priority,
-          status: 'active',
+          status: 'offen',
         })
         .select('id')
         .single()
@@ -55,14 +56,13 @@ export const goalActions = {
       targetAmount: z.number().positive().optional(),
       targetDate: z.string().nullish(),
       monthlySavingsRate: z.number().min(0).nullish(),
-      status: z.enum(['active', 'paused', 'reached', 'cancelled']).optional(),
+      status: z.enum(['offen', 'geschlossen']).optional().describe('geschlossen = erreicht oder abgebrochen'),
     }),
     summarize: async ({ goalId, ...changes }, ctx) => {
       const { data } = await ctx.supabase
         .from('savings_goals')
         .select('description')
         .eq('id', goalId)
-        .eq('user_id', ctx.userId)
         .maybeSingle()
       const parts: string[] = []
       if (changes.currentAmount !== undefined) parts.push(`Stand → ${eur(changes.currentAmount)}`)
@@ -80,7 +80,6 @@ export const goalActions = {
         .from('savings_goals')
         .select('description, current_amount, target_amount, target_date, monthly_savings_rate, status')
         .eq('id', goalId)
-        .eq('user_id', ctx.userId)
         .maybeSingle()
 
       const rows: ActionDetail[] = [{ label: 'Sparziel', value: data?.description ?? goalId }]
@@ -117,7 +116,6 @@ export const goalActions = {
         .from('savings_goals')
         .update(patch)
         .eq('id', goalId)
-        .eq('user_id', ctx.userId)
         .select('id')
         .maybeSingle()
       if (error) throw new Error(error.message)

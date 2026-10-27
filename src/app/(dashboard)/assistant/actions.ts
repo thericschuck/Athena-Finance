@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { getAuthUser } from '@/lib/supabase/server'
 import { runWriteAction, isWriteActionName } from '@/lib/assistant/actions'
 import {
+  ATHENA_EFFORT_OPTIONS,
   ATHENA_PERSONAS,
   ATHENA_TEXT_MAX,
   getAthenaSettings,
@@ -214,7 +215,6 @@ export async function signValuableImage(
     .from('valuable_images')
     .select('pfad')
     .eq('id', bildId)
-    .eq('user_id', ctx.user.id)
     .maybeSingle()
   if (!bild) return { error: 'Bild nicht gefunden' }
 
@@ -255,6 +255,8 @@ export async function rejectPendingAction(actionId: string): Promise<ActionState
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SLUG = /^[a-z0-9-]+$/
+/** Werte der CHECK-Beschränkung `ai_memories_category_check`. */
+const MEMORY_CATEGORIES = ['general', 'preference', 'goal', 'fact', 'constraint']
 
 export async function upsertMemory(formData: FormData): Promise<ActionState> {
   const ctx = await requireUser()
@@ -265,6 +267,7 @@ export async function upsertMemory(formData: FormData): Promise<ActionState> {
   const category = (formData.get('category') as string) || 'general'
 
   if (!key || !SLUG.test(key)) return { error: 'Key: nur Kleinbuchstaben, Ziffern, Bindestriche' }
+  if (!MEMORY_CATEGORIES.includes(category)) return { error: 'Unbekannte Kategorie' }
   if (!content) return { error: 'Inhalt darf nicht leer sein' }
 
   const { error } = await ctx.supabase.from('ai_memories').upsert(
@@ -410,6 +413,8 @@ export async function saveAthenaSettings(formData: FormData): Promise<ActionStat
   // Postgres-Fehler im Formular landen statt als lesbare Meldung.
   const persona = formData.get('persona') as string
   if (!ATHENA_PERSONAS.some(p => p.id === persona)) return { error: 'Unbekannte Persönlichkeit' }
+  const effort = formData.get('effort') as string
+  if (!ATHENA_EFFORT_OPTIONS.some(o => o.value === effort)) return { error: 'Unbekannte Denktiefe' }
 
   const personaTextRaw = ((formData.get('persona_text') as string) ?? '').trim()
   const instructionsRaw = ((formData.get('custom_instructions') as string) ?? '').trim()
@@ -429,7 +434,7 @@ export async function saveAthenaSettings(formData: FormData): Promise<ActionStat
     {
       user_id: ctx.user.id,
       model: formData.get('model') as string,
-      effort: formData.get('effort') as string,
+      effort,
       web_research: formData.get('web_research') === 'on',
       memory_enabled: formData.get('memory_enabled') === 'on',
       auto_memory: formData.get('auto_memory') === 'on',
