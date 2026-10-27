@@ -13,6 +13,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/api/cron/') ||
     pathname === '/login' ||
     pathname.startsWith('/auth/') ||
+    // Einladungslink eines Haushalts: wer ihn bekommt, hat noch kein Konto. Die Seite prueft das Token selbst.
+    pathname.startsWith('/einladung/') ||
     // Öffentliche Prototyp-/Rechtsseiten ohne Login — sonst greift dieselbe
     // Auth-Prüfung wie überall sonst und schickt jeden nicht eingeloggten
     // Besuch auf /login, bevor die Seite selbst überhaupt lädt.
