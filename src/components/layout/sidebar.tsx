@@ -12,6 +12,7 @@ import {
   X,
   Sparkles,
   Gem,
+  History,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,7 @@ import { signOut } from '@/app/login/actions'
 import { useSettings } from '@/components/providers/settings-context'
 import { MeanderFrieze } from '@/components/landing/olive-vines'
 import { PrivacyToggle } from '@/components/layout/privacy-toggle'
+import { ScopeSwitcher, type ScopeSwitcherProps } from '@/components/haushalt/ScopeSwitcher'
 
 type NavChild = {
   href:   string
@@ -42,6 +44,8 @@ type NavItem  = {
    * /depot, /strategy).
    */
   match?:    string[]
+  /** Nur sichtbar, wenn der Haushalt mehrere Mitglieder hat (Änderungslog). */
+  nurHaushalt?: boolean
 }
 
 const navItems: NavItem[] = [
@@ -105,6 +109,7 @@ const navItems: NavItem[] = [
     ],
   },
   { href: '/inventar', label: 'Inventar',      icon: Gem       },
+  { href: '/aenderungen', label: 'Änderungen', icon: History, nurHaushalt: true },
   { href: '/settings', label: 'Einstellungen', icon: Settings  },
 ]
 
@@ -114,6 +119,8 @@ interface SidebarProps {
   avatarUrl: string | null
   mobileOpen?: boolean
   onMobileClose?: () => void
+  /** Haushalts-Scope; der Switcher erscheint nur bei mehr als einem verfuegbaren Scope. */
+  scope?: Pick<ScopeSwitcherProps, 'available' | 'active' | 'partnerName'>
 }
 
 function getInitials(name: string | null, email: string): string {
@@ -121,7 +128,7 @@ function getInitials(name: string | null, email: string): string {
   return src.slice(0, 2).toUpperCase()
 }
 
-export function Sidebar({ email, displayName, avatarUrl, mobileOpen = false, onMobileClose }: SidebarProps) {
+export function Sidebar({ email, displayName, avatarUrl, mobileOpen = false, onMobileClose, scope }: SidebarProps) {
   const pathname = usePathname()
   const { themePreset } = useSettings()
   const isAthena = themePreset === 'athena' || themePreset === 'athena-dark'
@@ -152,6 +159,12 @@ export function Sidebar({ email, displayName, avatarUrl, mobileOpen = false, onM
         </button>
       </div>
 
+      {scope && scope.available.length > 1 && (
+        <div className="border-b border-sidebar-border px-3 py-2">
+          <ScopeSwitcher available={scope.available} active={scope.active} partnerName={scope.partnerName} />
+        </div>
+      )}
+
       {/* Mäander-Fries — griechischer Schlüssel als leiser architektonischer
           Rahmen, nur für Athena Light/Dark (in anderen Themes stilfremd). */}
       {isAthena && (
@@ -162,7 +175,7 @@ export function Sidebar({ email, displayName, avatarUrl, mobileOpen = false, onM
 
       {/* Navigation */}
       <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-        {navItems.map(({ href, label, icon: Icon, children, match }) => {
+        {navItems.filter(i => !i.nurHaushalt || (scope?.available.length ?? 0) > 1).map(({ href, label, icon: Icon, children, match }) => {
           const sectionActive = [href, ...(match ?? [])].some(
             prefix => pathname === prefix || pathname.startsWith(`${prefix}/`),
           )

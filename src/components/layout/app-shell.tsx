@@ -9,6 +9,7 @@ import { AssistantSheet } from '@/components/assistant/AssistantSheet'
 import { useSettings } from '@/components/providers/settings-context'
 import { OliveVines } from '@/components/landing/olive-vines'
 import { PrivacyToggle } from '@/components/layout/privacy-toggle'
+import type { ScopeSwitcherProps } from '@/components/haushalt/ScopeSwitcher'
 
 /**
  * Pro Bereich unterschiedliche Ranken-Platzierung (Seite/Dichte/Größe) statt
@@ -40,12 +41,13 @@ function vineVariantFor(pathname: string): VineVariant | null {
 }
 
 export function AppShell({
-  children, email, displayName, avatarUrl,
+  children, email, displayName, avatarUrl, scope,
 }: {
   children: React.ReactNode
   email: string
   displayName: string | null
   avatarUrl: string | null
+  scope?: Pick<ScopeSwitcherProps, 'available' | 'active' | 'partnerName'>
 }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
@@ -77,6 +79,7 @@ export function AppShell({
         avatarUrl={avatarUrl}
         mobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}
+        scope={scope}
       />
 
       <div className="relative isolate flex min-w-0 flex-1 flex-col overflow-hidden">

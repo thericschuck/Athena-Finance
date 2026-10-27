@@ -6,6 +6,8 @@ import { getAthenaSettings } from '@/lib/assistant/settings'
 import { SettingsProvider } from '@/components/providers/settings-context'
 import { AthenaSettingsProvider } from '@/components/providers/athena-settings-context'
 import { PrivacyProvider } from '@/components/providers/privacy-context'
+import { HaushaltProvider } from '@/components/providers/haushalt-context'
+import { resolveScope } from '@/lib/haushalt/resolve'
 
 /**
  * Gilt für alle Server Actions, die unter diesem Layout ausgelöst werden — und eine davon
@@ -31,23 +33,28 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
-  const [profile, settings, athenaSettings] = await Promise.all([
+  const [profile, settings, athenaSettings, scopeCtx] = await Promise.all([
     getProfile(user.id),
     getSettings(user.id),
     getAthenaSettings(supabase, user.id),
+    resolveScope(supabase, user),
   ])
+  const partnerName = scopeCtx.members.find(m => m.id === scopeCtx.partnerId)?.name ?? null
 
   return (
     <SettingsProvider settings={settings} currency={profile?.currency ?? 'EUR'}>
       <AthenaSettingsProvider initial={{ model: athenaSettings.model, effort: athenaSettings.effort }}>
         <PrivacyProvider>
+          <HaushaltProvider canShare={scopeCtx.available.length > 1}>
           <AppShell
             email={user.email ?? ''}
             displayName={profile?.display_name ?? null}
             avatarUrl={profile?.avatar_url ?? null}
+            scope={{ available: scopeCtx.available, active: scopeCtx.scope, partnerName }}
           >
             {children}
           </AppShell>
+          </HaushaltProvider>
         </PrivacyProvider>
       </AthenaSettingsProvider>
     </SettingsProvider>
