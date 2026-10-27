@@ -1,6 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import type { BewegungFlow, BewegungSnapshot } from '@/lib/verlauf/bewegung'
+import { istScopeContext, userIdVon, type ScopeArg } from '@/lib/data/scope-arg'
+import { getNetWorthReihe, nutztSnapshotFunktion } from '@/lib/data/networth-reihe'
+import { getMonthlyTotalsScope, mitHerabstufung } from '@/lib/data/flows-scope'
 
 type Client = SupabaseClient<Database>
 
@@ -11,7 +14,13 @@ const MAX_PAGES = 10
  * Tägliche Snapshots (aufsteigend). Seitenweise: PostgREST kappt jede Antwort still bei 1.000
  * Zeilen, und die Tage summieren sich über die Jahre.
  */
-export async function getBewegungSnapshots(supabase: Client, userId: string): Promise<BewegungSnapshot[]> {
+export async function getBewegungSnapshots(supabase: Client, who: ScopeArg): Promise<BewegungSnapshot[]> {
+  if (istScopeContext(who) && nutztSnapshotFunktion(who)) {
+    const { rows, fehler } = await getNetWorthReihe(supabase, who)
+    if (fehler) console.error(`[bewegung] net_worth_series: ${fehler}`)
+    return rows.map(r => ({ datum: r.snapshot_date, net_worth: r.net_worth, total_depot: r.total_depot, total_crypto: r.total_crypto }))
+  }
+  const userId = userIdVon(who)
   const out: BewegungSnapshot[] = []
   for (let page = 0; page < MAX_PAGES; page++) {
     const { data, error } = await supabase
@@ -36,7 +45,17 @@ export async function getBewegungSnapshots(supabase: Client, userId: string): Pr
 }
 
 /** Monatssummen je Art aus `monthly_flow_totals` (eine Zeile je Monat, also klein). */
-export async function getBewegungFlows(supabase: Client, userId: string): Promise<BewegungFlow[]> {
+export async function getBewegungFlows(supabase: Client, who: ScopeArg): Promise<BewegungFlow[]> {
+  if (istScopeContext(who) && mitHerabstufung(who)) {
+    // monthly_flow_totals ist pro user_id: im Haushalt aus monthly_flows (Konten im Scope) + herabgestuften Umbuchungen.
+    const rows = await getMonthlyTotalsScope(supabase, who)
+    return [...rows].sort((a, b) => a.month.localeCompare(b.month)).slice(0, PAGE).map(r => ({
+      month: r.month.slice(0, 10),
+      echt_income: r.echt_income, echt_expense: r.echt_expense,
+      anlage_income: r.anlage_income, anlage_expense: r.anlage_expense,
+    }))
+  }
+  const userId = userIdVon(who)
   const { data, error } = await supabase
     .from('monthly_flow_totals')
     .select('month, echt_income, echt_expense, anlage_income, anlage_expense')

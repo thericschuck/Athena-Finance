@@ -2,6 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { sampleReihe, type KontoPunkt } from '@/lib/verlauf/konten'
 import type { AccountBalanceHistoryRow } from '@/lib/data/overview'
+import { applyAccountScope } from '@/lib/haushalt/scope'
+import { istScopeContext, type ScopeArg } from '@/lib/data/scope-arg'
 
 /**
  * Datenzugriff fuer den Konten-Tab der Verlauf-Seite. account_balances hat ein Saldo je Konto
@@ -17,11 +19,10 @@ export type VerlaufKonto = {
 }
 
 /** Alle Konten des Nutzers inkl. inaktiver (deren Historie bleibt ja sichtbar), aktive zuerst. */
-export async function getVerlaufKonten(supabase: Client, userId: string): Promise<VerlaufKonto[]> {
-  const { data, error } = await supabase
-    .from('accounts')
-    .select('id, name, type, color, is_active')
-    .eq('user_id', userId)
+export async function getVerlaufKonten(supabase: Client, who: ScopeArg): Promise<VerlaufKonto[]> {
+  const q = supabase.from('accounts').select('id, name, type, color, is_active')
+  // Scope: Konten im Scope (inkl. inaktiver, `ctx.accountIds`); string = alle eigenen wie bisher.
+  const { data, error } = await (istScopeContext(who) ? applyAccountScope(q, who, 'id') : q.eq('user_id', who))
     .order('name')
   if (error) throw new Error(`accounts: ${error.message}`)
   const liste = (data ?? []) as VerlaufKonto[]

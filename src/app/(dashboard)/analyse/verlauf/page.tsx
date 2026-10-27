@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { requireAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { getSettings } from '@/lib/settings'
 import { MAX_PAGE } from '@/lib/pagination'
 import { PAGE_SIZE, type TabCtx } from '@/components/verlauf/shared'
@@ -39,13 +40,14 @@ export default async function HistoryPage({
   const to   = from + PAGE_SIZE - 1
 
   const { supabase, user } = await requireAuthUser()
-  const uid = user!.id
+  const uid = user.id
+  const scopeCtx = await resolveScope(supabase, user)
 
   const settings = await getSettings(uid)
   const locale = (settings.number_format as string) ?? 'de-DE'
   const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
 
-  const ctx: TabCtx = { supabase, uid, locale, dateFormat, page, from, to, params }
+  const ctx: TabCtx = { supabase, uid, ctx: scopeCtx, locale, dateFormat, page, from, to, params }
 
   // ── Fetch data for active tab ──────────────────────────────────────────────
   let content: React.ReactNode = null

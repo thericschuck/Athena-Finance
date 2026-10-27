@@ -6,6 +6,9 @@ import {
 import { Th, Td, Pagination, PAGE_SIZE, fmtEur, heuteBerlin, type TabCtx } from './shared'
 import { SparquoteHeatmap } from './SparquoteHeatmap'
 import { MonatsBalkenLazy } from './MonatsBalkenLazy'
+import { CalendarDays } from 'lucide-react'
+import { LeerZustand } from '@/components/leer/LeerZustand'
+import { ScopeHinweisFuer } from '@/components/leer/ScopeHinweisFuer'
 
 // ─── Tab: Monthly ─────────────────────────────────────────────────────────────
 // Aus `monthly_flow_totals` (live aus monthly_flows) statt der früheren Cron-Tabelle. Einnahmen und
@@ -118,11 +121,22 @@ function MobilKarte({ titel, s, vorjahr, locale, gruppe }: {
   )
 }
 
-export async function MonthlyTab({ supabase, uid, locale, page, params }: TabCtx) {
-  const rows: MonatRow[] = await getAllMonthlyTotals(supabase, uid)
+export async function MonthlyTab({ supabase, ctx, locale, page, params }: TabCtx) {
+  const rows: MonatRow[] = await getAllMonthlyTotals(supabase, ctx)
 
   if (rows.length === 0) {
-    return <p className="px-3 py-8 text-center text-sm text-muted-foreground">Noch keine Monatsdaten.</p>
+    return (
+      <div className="space-y-4 p-4">
+        <ScopeHinweisFuer ctx={ctx} thema="Buchungen" />
+        <LeerZustand
+          variante="eingebettet"
+          icon={CalendarDays}
+          titel="Noch keine Monatsdaten"
+          text="Die Monatsübersicht fasst Einnahmen, Ausgaben und Sparquote je Monat zusammen. Sie füllt sich mit deinen ersten Buchungen."
+          aktion={{ label: 'Buchungen hinzufügen', href: '/finance/transactions' }}
+        />
+      </div>
+    )
   }
 
   const k = kennzahlen(rows, 12, heuteBerlin())

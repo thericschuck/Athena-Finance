@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
+import { applyOwnerScope } from '@/lib/haushalt/scope'
 
 /**
  * GET /api/depot/holdings
@@ -11,10 +13,8 @@ export async function GET() {
   const { supabase, user } = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 
-  const { data, error } = await supabase
-    .from('depot_holdings')
-    .select('*')
-    .eq('user_id', user.id)
+  const ctx = await resolveScope(supabase, user)
+  const { data, error } = await applyOwnerScope(supabase.from('depot_holdings').select('*'), ctx)
     .order('isin')
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

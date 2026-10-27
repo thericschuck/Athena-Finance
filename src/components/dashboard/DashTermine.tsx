@@ -1,4 +1,3 @@
-import { getAuthUser } from '@/lib/supabase/server'
 import { ladeDashPrognose } from '@/lib/data/dashboard-prognose'
 import { fuehreZusammen, TERMINE_FENSTER } from '@/lib/dashboard/termine'
 import type { DashAbschnittProps } from '@/lib/dashboard/typen'
@@ -16,8 +15,7 @@ import { DashTermineListe } from './DashTermineListe'
  * eigenes Fälligkeitsdatum, die Kündigungsfristen darin stammen ohnehin aus denselben Verträgen.
  */
 export async function DashTermine({ kern }: DashAbschnittProps) {
-  const { user } = await getAuthUser()
-  const basis = user ? await ladeDashPrognose(user.id, kern.heute) : null
+  const basis = await ladeDashPrognose(kern.scopeCtx, kern.heute)
   const maxTage = TERMINE_FENSTER[TERMINE_FENSTER.length - 1]
 
   const zeilen = fuehreZusammen(

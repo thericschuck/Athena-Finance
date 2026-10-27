@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Plus, RefreshCw } from 'lucide-react'
+import { Coins, Plus, RefreshCw } from 'lucide-react'
+import { LeerZustand } from '@/components/leer/LeerZustand'
 import { refreshPrices } from '@/app/(dashboard)/crypto/actions'
 import { AssetFormDialog } from '@/components/crypto/asset-form'
 import { PortfolioChart, type SnapshotRow } from '@/components/crypto/portfolio-chart'
@@ -191,6 +192,7 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, e
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{activePortfolio ?? 'Crypto Portfolio'}</h1>
+          {assets.length > 0 && (
           <p className="mt-0.5 text-sm text-muted-foreground">
             {assets.length} Assets · Gesamtwert <span className="tabular-nums">{fmtEur(totalValue)}</span>
             {totalPnL != null && (
@@ -202,10 +204,12 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, e
               </span>
             )}
           </p>
+          )}
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           {/* Last-refresh badge */}
+          {assets.length > 0 && (
           <span
             className={`text-xs border rounded-full px-2.5 py-1 ${
               priceStale
@@ -222,6 +226,8 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, e
             )}
           </span>
 
+          )}
+
           {/* Feedback message */}
           {message && (
             <span className={`text-xs ${message.ok ? 'text-muted-foreground' : 'text-destructive'}`}>
@@ -229,10 +235,12 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, e
             </span>
           )}
 
+          {assets.length > 0 && (
           <Button variant="outline" size="sm" onClick={handleManualRefresh} disabled={isRefreshing}>
             <RefreshCw className={`size-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             {isRefreshing ? 'Aktualisiert…' : 'Preise aktualisieren'}
           </Button>
+          )}
 
           {!readonly && (
             <Button size="sm" onClick={() => setAssetFormOpen(true)}>
@@ -245,13 +253,18 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, e
 
       {/* Empty state */}
       {assets.length === 0 && (
-        <div className="rounded-lg border border-dashed border-border bg-card py-16 text-center">
-          <p className="text-sm font-medium">Noch keine Crypto-Assets</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Füge dein erstes Asset hinzu — die Kurse kommen dann automatisch von Kraken bzw.
-            CoinGecko.
-          </p>
-        </div>
+        <LeerZustand
+          icon={Coins}
+          titel="Noch keine Crypto-Assets"
+          text="Hier siehst du Wert, Gewinn und Verlauf deiner Krypto-Bestände. Lege ein Asset an oder verbinde Kraken in den Einstellungen; die Kurse kommen dann automatisch von Kraken bzw. CoinGecko."
+          aktionNode={!readonly ? (
+            <Button type="button" onClick={() => setAssetFormOpen(true)}>
+              <Plus className="size-4" />
+              Asset anlegen
+            </Button>
+          ) : undefined}
+          sekundaer={{ label: 'Kraken verbinden', href: '/settings' }}
+        />
       )}
 
       {/* Chart */}

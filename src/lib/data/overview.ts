@@ -1,5 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { applyAccountScope } from '@/lib/haushalt/scope'
+import { istScopeContext, userIdVon, type ScopeArg } from '@/lib/data/scope-arg'
+import { scopedOwner } from '@/lib/data/scope-owner'
+import { getNetWorthReihe, nutztSnapshotFunktion } from '@/lib/data/networth-reihe'
 
 /**
  * Datenzugriff für Dashboard, Analyse (inkl. Verlauf) und die zugehörigen Widgets.
@@ -15,6 +19,12 @@ import type { Database } from '@/types/database'
 
 type Client = SupabaseClient<Database>
 
+/**
+ * Scope-Parameter `who`: ScopeContext = Haushaltssicht (Konten `ctx.accountIds`, Inventar/Vertraege/Ziele/Assets nach
+ * `applyOwnerScope`), string (userId) = bisheriges Verhalten (`user_id = userId`). OWNER-ONLY bleiben insights und
+ * net_worth_snapshots (Snapshots im Haushalt: lib/data/networth-reihe.ts).
+ */
+
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
 export type DashboardAccount = {
@@ -23,11 +33,9 @@ export type DashboardAccount = {
 }
 
 /** Alle Konten (auch inaktive) — das Dashboard filtert aktive selbst. */
-export async function getDashboardAccounts(supabase: Client, userId: string): Promise<DashboardAccount[]> {
-  const { data } = await supabase
-    .from('accounts')
-    .select('id, name, type, color, currency, is_active, bank_iban')
-    .eq('user_id', userId)
+export async function getDashboardAccounts(supabase: Client, who: ScopeArg): Promise<DashboardAccount[]> {
+  const q = supabase.from('accounts').select('id, name, type, color, currency, is_active, bank_iban')
+  const { data } = await (istScopeContext(who) ? applyAccountScope(q, who, 'id') : q.eq('user_id', who))
     .order('sort_order')
   return (data ?? []) as DashboardAccount[]
 }
@@ -40,24 +48,29 @@ export type BalanceSum = { account_id: string; balance: number; tx_count: number
  * sehr wohl. Aggregiert in der DB — das Laden aller Buchungen lief in PostgREST' 1.000-Zeilen-
  * Deckel und schnitt die Salden still ab.
  */
-export async function getBalanceSums(supabase: Client, userId: string): Promise<BalanceSum[]> {
-  const { data } = await supabase
-    .from('account_balance_sums_unified')
-    .select('account_id, balance, tx_count')
-    .eq('user_id', userId)
+export async function getBalanceSums(supabase: Client, who: ScopeArg): Promise<BalanceSum[]> {
+  const q = supabase.from('account_balance_sums_unified').select('account_id, balance, tx_count')
+  const { data } = await (istScopeContext(who) ? applyAccountScope(q, who) : q.eq('user_id', who))
   // View-Spalten sind im generierten Typ nullable, in der Praxis gefüllt.
-  return (data ?? []) as BalanceSum[]
+  const rows = (data ?? []) as BalanceSum[]
+  if (!istScopeContext(who)) return rows
+  // Die View gruppiert nach (user_id, account_id): buchen zwei Mitglieder auf dasselbe Konto, gibt es zwei Zeilen, die zusammengehoeren.
+  const je = new Map<string, BalanceSum>()
+  for (const r of rows) {
+    const alt = je.get(r.account_id)
+    je.set(r.account_id, alt
+      ? { account_id: r.account_id, balance: Number(alt.balance) + Number(r.balance), tx_count: Number(alt.tx_count) + Number(r.tx_count) }
+      : r)
+  }
+  return [...je.values()]
 }
 
 export type OpenSavingsGoal = {
   id: string; current_amount: number; target_amount: number; description: string; status: string
 }
 
-export async function getOpenSavingsGoals(supabase: Client, userId: string): Promise<OpenSavingsGoal[]> {
-  const { data } = await supabase
-    .from('savings_goals')
-    .select('id, current_amount, target_amount, description, status')
-    .eq('user_id', userId)
+export async function getOpenSavingsGoals(supabase: Client, who: ScopeArg): Promise<OpenSavingsGoal[]> {
+  const { data } = await scopedOwner(supabase.from('savings_goals').select('id, current_amount, target_amount, description, status'), who)
     .eq('status', 'offen')
   return data ?? []
 }
@@ -67,12 +80,9 @@ export type DashboardCryptoAsset = {
   quantity: number | null; avg_buy_price: number | null
 }
 
-export async function getDashboardCryptoAssets(supabase: Client, userId: string): Promise<DashboardCryptoAsset[]> {
-  const { data } = await supabase
-    .from('assets')
-    .select('id, symbol, name, portfolio_name, quantity, avg_buy_price')
+export async function getDashboardCryptoAssets(supabase: Client, who: ScopeArg): Promise<DashboardCryptoAsset[]> {
+  const { data } = await scopedOwner(supabase.from('assets').select('id, symbol, name, portfolio_name, quantity, avg_buy_price'), who)
     .in('type', ['crypto', 'stable', 'fiat'])
-    .eq('user_id', userId)
   return (data ?? []) as DashboardCryptoAsset[]
 }
 
@@ -96,12 +106,11 @@ export type ActiveContract = {
   type?: string
 }
 
-export async function getActiveContracts(supabase: Client, userId: string): Promise<ActiveContract[]> {
-  const { data } = await supabase
-    .from('contracts')
-    .select('id,name,provider,frequency,amount,currency,end_date,notice_days,auto_renews,account_id,type')
-    .eq('user_id', userId)
-    .eq('is_active', true)
+export async function getActiveContracts(supabase: Client, who: ScopeArg): Promise<ActiveContract[]> {
+  const { data } = await scopedOwner(
+    supabase.from('contracts').select('id,name,provider,frequency,amount,currency,end_date,notice_days,auto_renews,account_id,type'),
+    who,
+  ).eq('is_active', true)
   return (data ?? []) as ActiveContract[]
 }
 
@@ -110,11 +119,11 @@ export type InsightListRow = {
 }
 
 /** Offene Hinweise, die Athena angelegt hat (lib/assistant/actions/insights.ts, createInsight). Neueste 6. */
-export async function getOpenInsights(supabase: Client, userId: string, limit = 6): Promise<InsightListRow[]> {
+export async function getOpenInsights(supabase: Client, who: ScopeArg, limit = 6): Promise<InsightListRow[]> {
   const { data } = await supabase
     .from('insights')
     .select('id, type, severity, title, body, created_at')
-    .eq('user_id', userId)
+    .eq('user_id', userIdVon(who)) // OWNER-ONLY: Athena-Hinweise gehoeren der Person, nie dem Scope
     .is('dismissed_at', null)
     .order('created_at', { ascending: false })
     .limit(limit)
@@ -126,12 +135,17 @@ export type DashboardValuable = {
 }
 
 /** Inventar (bewusst nicht im Net Worth, siehe Migration 20260831000002). */
-export async function getActiveValuables(supabase: Client, userId: string): Promise<DashboardValuable[]> {
-  const { data } = await supabase
-    .from('valuables_current')
-    .select('aktueller_wert, kaufpreis, im_vermoegen')
-    .eq('user_id', userId)
-    .eq('is_active', true)
+export async function getActiveValuables(supabase: Client, who: ScopeArg): Promise<DashboardValuable[]> {
+  const q = supabase.from('valuables_current').select('aktueller_wert, kaufpreis, im_vermoegen')
+  if (!istScopeContext(who)) {
+    const { data } = await q.eq('user_id', who).eq('is_active', true)
+    return (data ?? []) as DashboardValuable[]
+  }
+  // Die View hat keine Spalte `shared` (siehe inventar.ts): erst die Stueck-IDs im Scope aus `valuables`, dann die View per id.
+  const { data: ids } = await scopedOwner(supabase.from('valuables').select('id'), who)
+  const idListe = (ids ?? []).map(r => r.id)
+  if (idListe.length === 0) return []
+  const { data } = await q.in('id', idListe).eq('is_active', true)
   return (data ?? []) as DashboardValuable[]
 }
 
@@ -143,7 +157,15 @@ export type NetWorthSnapshotLite = {
 }
 
 /** Net-Worth-Snapshots ab `fromDate` (YYYY-MM-DD) für den Verlaufschart, aufsteigend. */
-export async function getNetWorthSnapshotsSince(supabase: Client, userId: string, fromDate: string): Promise<NetWorthSnapshotLite[]> {
+export async function getNetWorthSnapshotsSince(supabase: Client, who: ScopeArg, fromDate: string): Promise<NetWorthSnapshotLite[]> {
+  // Haushalt mit Partner: berechnete Reihe aus net_worth_series (keine Doppelzaehlung des geteilten Kontos); sonst wie bisher
+  // die eigenen net_worth_snapshots (OWNER-ONLY-Tabelle).
+  if (istScopeContext(who) && nutztSnapshotFunktion(who)) {
+    const { rows, fehler } = await getNetWorthReihe(supabase, who, fromDate)
+    if (fehler) console.error(`[networth] net_worth_series: ${fehler}`)
+    return rows
+  }
+  const userId = userIdVon(who)
   const { data } = await supabase
     .from('net_worth_snapshots')
     .select('snapshot_date,net_worth,total_checking,total_investment,total_savings,total_cash,total_depot,total_crypto,total_bausparer,total_business,total_debts,total_assets')
@@ -159,11 +181,9 @@ export async function getNetWorthSnapshotsSince(supabase: Client, userId: string
 export type ActiveAccountOption = { id: string; name: string; type: string; color: string | null }
 
 /** Aktive Konten für Auswahl/Filter (Analyse-Kontofilter, Settings-Standardauswahl). */
-export async function getActiveAccountOptions(supabase: Client, userId: string): Promise<ActiveAccountOption[]> {
-  const { data } = await supabase
-    .from('accounts')
-    .select('id, name, type, color')
-    .eq('user_id', userId)
+export async function getActiveAccountOptions(supabase: Client, who: ScopeArg): Promise<ActiveAccountOption[]> {
+  const q = supabase.from('accounts').select('id, name, type, color')
+  const { data } = await (istScopeContext(who) ? applyAccountScope(q, who, 'id') : q.eq('user_id', who))
     .eq('is_active', true)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true })
@@ -193,11 +213,9 @@ export async function getNetWorthHistoryPage(
 
 export type HistoryAccount = { id: string; name: string; type: string; color: string | null }
 
-export async function getHistoryAccounts(supabase: Client, userId: string): Promise<HistoryAccount[]> {
-  const { data } = await supabase
-    .from('accounts')
-    .select('id, name, type, color')
-    .eq('user_id', userId)
+export async function getHistoryAccounts(supabase: Client, who: ScopeArg): Promise<HistoryAccount[]> {
+  const q = supabase.from('accounts').select('id, name, type, color')
+  const { data } = await (istScopeContext(who) ? applyAccountScope(q, who, 'id') : q.eq('user_id', who))
   return (data ?? []) as HistoryAccount[]
 }
 
@@ -221,11 +239,8 @@ export async function getAccountBalanceHistoryPage(
 
 export type HistoryAsset = { id: string; name: string; symbol: string; type: string }
 
-export async function getHistoryAssets(supabase: Client, userId: string): Promise<HistoryAsset[]> {
-  const { data } = await supabase
-    .from('assets')
-    .select('id, name, symbol, type')
-    .eq('user_id', userId)
+export async function getHistoryAssets(supabase: Client, who: ScopeArg): Promise<HistoryAsset[]> {
+  const { data } = await scopedOwner(supabase.from('assets').select('id, name, symbol, type'), who)
   return (data ?? []) as HistoryAsset[]
 }
 

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { fmtCurrency, fmtNumber, fmtDate as fmtDateLib } from '@/lib/format'
@@ -82,6 +83,8 @@ export function Pagination({ tab, page, total, params = {} }: { tab: string; pag
 export type TabCtx = {
   supabase: SupabaseClient<Database>
   uid: string
+  /** Haushalts-Scope der Seite (`?scope=` vor Cookie). */
+  ctx: ScopeContext
   locale: string
   dateFormat: string
   page: number

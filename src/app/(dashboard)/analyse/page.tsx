@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { getAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { getSettings } from '@/lib/settings'
 import { ladeAnalyse, heuteBerlin, type AnalyseParams } from '@/lib/data/analyse-seite'
 import {
@@ -27,6 +28,9 @@ import { MonatsVerteilung } from '@/components/analyse/MonatsVerteilung'
 import { FlowKindToggle } from '@/components/finance/flow-kind-toggle'
 import { UrlFiltersProvider, FilterPending } from '@/components/providers/url-filters'
 import { SkeletonChart } from '@/components/ui/skeleton'
+import { BarChart3 } from 'lucide-react'
+import { LeerZustand } from '@/components/leer/LeerZustand'
+import { ScopeHinweisFuer } from '@/components/leer/ScopeHinweisFuer'
 
 const HEATMAP_MODES: HeatmapMode[] = ['ausgaben', 'einnahmen', 'guv']
 
@@ -61,8 +65,26 @@ export default async function AnalysePage({
   if (!user) return null
   const settings = await getSettings(user.id)
 
-  const daten = await ladeAnalyse(supabase, user.id, params, settings, heuteBerlin())
+  const ctx = await resolveScope(supabase, user)
+  const daten = await ladeAnalyse(supabase, ctx, params, settings, heuteBerlin())
   const props = { daten }
+
+  // Nie eine Buchung (auch nicht ausserhalb des Zeitraums): Kennzahlen und Charts waeren lauter Nullen.
+  if (daten.fruehesterMonat === null && daten.txns.length === 0 && daten.monatsZeilen.length === 0) {
+    return (
+      <div className="min-w-0 max-w-full space-y-4 p-4 sm:p-6">
+        <h1 className="text-2xl font-semibold tracking-tight">Analyse</h1>
+        <ScopeHinweisFuer ctx={ctx} thema="Buchungen" />
+        <LeerZustand
+          icon={BarChart3}
+          titel="Noch nichts auszuwerten"
+          text="Die Analyse zeigt, woher dein Geld kommt und wohin es geht: Einnahmen, Ausgaben, Kategorien und Muster über die Zeit. Sie füllt sich mit deinen ersten Buchungen."
+          aktion={{ label: 'Buchungen hinzufügen', href: '/finance/transactions' }}
+          sekundaer={{ label: 'Bank verbinden', href: '/settings' }}
+        />
+      </div>
+    )
+  }
 
   // Heatmap-Ansicht: gleiche Rueckfallkette wie der Zeitraum, startet nur den Zustand der Komponente.
   const heatmapModus = HEATMAP_MODES.includes(settings.analyse_default_heatmap_mode as HeatmapMode)

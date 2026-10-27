@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { applyAccountScope, type ScopeContext } from '@/lib/haushalt/scope'
 import { getSettings } from '@/lib/settings'
 import { getContract, getContracts, getSavingsPlansForContracts, type SavingsPlanRow } from '@/lib/data/finance-planning'
 import { getAccountNames } from '@/lib/data/finance-accounts'
@@ -33,16 +34,16 @@ export type VertraegeSeite = {
 }
 
 /** Alles, was die Verträge-Seite braucht. Vorschläge und Abgleich sind Zugaben: scheitern sie, bleibt die Seite benutzbar. */
-export async function ladeVertraegeSeite(supabase: DB, userId: string): Promise<VertraegeSeite> {
+export async function ladeVertraegeSeite(supabase: DB, ctx: ScopeContext): Promise<VertraegeSeite> {
   let abgleichFehlt = false
   const [vertraege, konten, kategorien, depotPlaene, settings, vorschlag, abgleiche] = await Promise.all([
-    getContracts(supabase, userId),
-    getAccountNames(supabase, userId),
-    getCategoryNames(supabase, userId),
-    getSavingsPlansForContracts(supabase, userId),
-    getSettings(userId),
-    ladeVertragsVorschlaege(supabase, userId).catch(() => ({ vorschlaege: [] as Vorschlag[], ausgeblendet: 0 })),
-    ladeVertragsAbgleich(supabase, userId).catch(() => { abgleichFehlt = true; return [] }),
+    getContracts(supabase, ctx),
+    getAccountNames(supabase, ctx),
+    getCategoryNames(supabase),
+    getSavingsPlansForContracts(supabase, ctx),
+    getSettings(ctx.userId),
+    ladeVertragsVorschlaege(supabase, ctx).catch(() => ({ vorschlaege: [] as Vorschlag[], ausgeblendet: 0 })),
+    ladeVertragsAbgleich(supabase, ctx).catch(() => { abgleichFehlt = true; return [] }),
   ])
   return {
     heute: heuteBerlin(),
@@ -72,13 +73,13 @@ export type VertragDetail = {
   verknuepft: VerlaufBuchung[]
 }
 
-/** Ein Vertrag mit den Buchungen, aus denen sich Verlauf und Abgleich ergeben; `null`, wenn er nicht existiert oder nicht gehört. */
-export async function ladeVertragDetail(supabase: DB, userId: string, id: string): Promise<VertragDetail | null> {
+/** Ein Vertrag mit den Buchungen, aus denen sich Verlauf und Abgleich ergeben; `null`, wenn er nicht existiert oder nicht zum Haushalt gehört. */
+export async function ladeVertragDetail(supabase: DB, ctx: ScopeContext, id: string): Promise<VertragDetail | null> {
   const [vertrag, konten, kategorien, settings] = await Promise.all([
-    getContract(supabase, userId, id),
-    getAccountNames(supabase, userId),
-    getCategoryNames(supabase, userId),
-    getSettings(userId),
+    getContract(supabase, id),
+    getAccountNames(supabase, ctx),
+    getCategoryNames(supabase),
+    getSettings(ctx.userId),
   ])
   if (!vertrag) return null
   const heute = heuteBerlin()
@@ -86,12 +87,13 @@ export async function ladeVertragDetail(supabase: DB, userId: string, id: string
   const spalten = 'id, account_id, date, amount, type, description, merchant, contract_id'
   const [kontoRes, linkRes] = await Promise.all([
     vertrag.account_id
-      ? supabase.from('unified_transactions').select(spalten)
-        .eq('user_id', userId).eq('account_id', vertrag.account_id).eq('type', 'expense')
+      ? applyAccountScope(supabase.from('unified_transactions').select(spalten), ctx)
+        .eq('account_id', vertrag.account_id).eq('type', 'expense')
         .gte('date', addTage(heute, -800)).order('date', { ascending: false }).limit(2000)
       : Promise.resolve({ data: [] }),
+    // Verknuepfte Buchungen per Vertrags-ID: RLS (Haushalt) genuegt, kein Konten-Scope (Buchung kann ohne Konto sein).
     supabase.from('unified_transactions').select(spalten)
-      .eq('user_id', userId).eq('contract_id', id).order('date', { ascending: false }).limit(500),
+      .eq('contract_id', id).order('date', { ascending: false }).limit(500),
   ])
 
   const alsBuchung = (r: { id: string | null; account_id: string | null; date: string | null; amount: number | null; type: string | null; description: string | null; merchant: string | null }): VerlaufBuchung[] =>

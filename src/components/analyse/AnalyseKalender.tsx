@@ -1,5 +1,5 @@
 import { getAuthUser } from '@/lib/supabase/server'
-import { getFlowTransactions } from '@/lib/data/flows'
+import { getFlowTransactionsScope } from '@/lib/data/flows-scope'
 import { INCLUDE_ALL } from '@/lib/finance/flow-calc'
 import { buildCashflow } from '@/lib/analyse/aufbereiten'
 import type { AnalyseAbschnittProps } from '@/lib/analyse/typen'
@@ -22,7 +22,7 @@ export async function AnalyseKalender({ daten }: AnalyseAbschnittProps) {
   // Ende des NÄCHSTEN Monats (Tag 0 des übernächsten).
   const kalenderEnde = new Date(Date.UTC(j, m + 1, 0)).toISOString().slice(0, 10)
 
-  const buchungen = await getFlowTransactions(supabase, user.id, {
+  const buchungen = await getFlowTransactionsScope(supabase, daten.scopeCtx, {
     to: kalenderEnde,
     accountIds: daten.kontoIds.length > 0 ? daten.kontoIds : undefined,
     include: INCLUDE_ALL,

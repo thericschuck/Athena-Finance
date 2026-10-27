@@ -1,5 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database, Json } from '@/types/database'
+import type { ScopeArg } from '@/lib/data/scope-arg'
+import { scopedOwner } from '@/lib/data/scope-owner'
 
 /**
  * Datenzugriff Crypto. Reine Funktionen: Client und userId kommen vom Aufrufer
@@ -31,15 +33,15 @@ export type AssetAuditEntry = {
 }
 
 const ASSET_COLUMNS =
-  'id, user_id, account_id, name, symbol, type, exchange, portfolio_name, quantity, avg_buy_price, currency, source, notes, created_at, updated_at'
+  'id, user_id, account_id, name, symbol, type, exchange, portfolio_name, quantity, avg_buy_price, currency, source, notes, shared, created_at, updated_at'
 
-/** Krypto-/Stable-/Fiat-Assets des Users, nach Name sortiert. */
-export async function getCryptoAssets(supabase: DB, userId: string): Promise<CryptoAssetRow[]> {
-  const { data } = await supabase
-    .from('assets')
-    .select(ASSET_COLUMNS)
+/**
+ * Krypto-/Stable-/Fiat-Assets im Scope, nach Name sortiert (ScopeContext: eigene ODER geteilte; string: nur eigene).
+ * Haushaltssicht ist nur lesend: Kraken-Assets (source='kraken') haengen an den Exchange-Keys des Eigentuemers.
+ */
+export async function getCryptoAssets(supabase: DB, who: ScopeArg): Promise<CryptoAssetRow[]> {
+  const { data } = await scopedOwner(supabase.from('assets').select(ASSET_COLUMNS), who)
     .in('type', ['crypto', 'stable', 'fiat'])
-    .eq('user_id', userId)
     .order('name')
   return data ?? []
 }
@@ -49,8 +51,8 @@ export async function getCryptoAssets(supabase: DB, userId: string): Promise<Cry
  * Lädt die komplette Bewertungshistorie der Assets (unbegrenzt — Kandidat für eine
  * "letzte Bewertung je Asset"-View), da der Neueste je Asset clientseitig gewählt wird.
  */
-export async function getCryptoAssetsWithPrice(supabase: DB, userId: string): Promise<AssetWithPrice[]> {
-  const assets = await getCryptoAssets(supabase, userId)
+export async function getCryptoAssetsWithPrice(supabase: DB, who: ScopeArg): Promise<AssetWithPrice[]> {
+  const assets = await getCryptoAssets(supabase, who)
   const assetIds = assets.map(a => a.id)
 
   const { data: valuations } = assetIds.length
@@ -84,7 +86,7 @@ export async function getCryptoAssetsWithPrice(supabase: DB, userId: string): Pr
   })
 }
 
-/** Portfolio-Snapshots ab einem Datum (Chart — bewusst ohne limit). */
+/** Portfolio-Snapshots ab einem Datum (Chart — bewusst ohne limit). OWNER-ONLY (portfolio_snapshots). */
 export async function getPortfolioSnapshots(
   supabase: DB,
   userId: string,
@@ -102,19 +104,21 @@ export async function getPortfolioSnapshots(
 /** Änderungsprotokoll — die UI zeigt ohnehin nur die letzten N Einträge. */
 export async function getAssetAuditLog(
   supabase: DB,
-  userId: string,
+  who: ScopeArg,
   limit = 50,
 ): Promise<AssetAuditEntry[]> {
-  const { data } = await supabase
-    .from('asset_audit_log')
-    .select('id, asset_name, asset_symbol, action, changes, created_at')
-    .eq('user_id', userId)
+  // asset_audit_log: Haushaltstabelle ohne shared-Spalte; user_id = Handelnder.
+  const { data } = await scopedOwner(
+    supabase.from('asset_audit_log').select('id, asset_name, asset_symbol, action, changes, created_at'),
+    who,
+    { sharedColumn: false },
+  )
     .order('created_at', { ascending: false })
     .limit(limit)
   return data ?? []
 }
 
-/** Ob für die Exchange ein Key hinterlegt ist (ohne Entschlüsselung, ohne Secrets). */
+/** Ob für die Exchange ein Key hinterlegt ist (ohne Entschlüsselung, ohne Secrets). OWNER-ONLY. */
 export async function hasExchangeKey(supabase: DB, userId: string, exchange: string): Promise<boolean> {
   const { data } = await supabase
     .from('exchange_keys')

@@ -1,6 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import type { NetWorthPunkt } from '@/lib/verlauf/types'
+import { istScopeContext, userIdVon, type ScopeArg } from '@/lib/data/scope-arg'
+import { getNetWorthReihe, nutztSnapshotFunktion } from '@/lib/data/networth-reihe'
 
 /**
  * Datenzugriff des Net-Worth-Tabs. Anders als `getNetWorthHistoryPage` (overview.ts) lädt
@@ -17,8 +19,33 @@ export type NetWorthZeile = NetWorthPunkt & { id: string; source: string }
 const SPALTEN =
   'id, snapshot_date, net_worth, total_assets, total_checking, total_investment, total_savings, total_cash, total_depot, total_crypto, total_bausparer, total_business, total_debts, source'
 
-/** Alle Snapshots des Nutzers, aufsteigend nach Datum. */
-export async function getNetWorthZeilen(supabase: Client, userId: string): Promise<NetWorthZeile[]> {
+/**
+ * Alle Snapshots, aufsteigend nach Datum. `who` = userId (oder ScopeContext ohne Partner): exakt die bisherigen
+ * net_worth_snapshots des Nutzers (OWNER-ONLY-Tabelle). ScopeContext MIT Partner: berechnete Reihe aus `net_worth_series`
+ * (lib/data/networth-reihe.ts), damit das geteilte Konto nicht doppelt zaehlt; Zeilen haben dann source 'berechnet'.
+ */
+export async function getNetWorthZeilen(supabase: Client, who: ScopeArg): Promise<NetWorthZeile[]> {
+  return (await getNetWorthZeilenMitHinweis(supabase, who)).zeilen
+}
+
+export type NetWorthZeilenErgebnis = {
+  zeilen: NetWorthZeile[]
+  quelle: 'snapshots' | 'funktion'
+  /** Gesetzt, wenn die berechnete Reihe (net_worth_series) fehlschlug: die UI zeigt dann einen Hinweis statt einer leeren Reihe. */
+  fehler: string | null
+}
+
+/** Wie `getNetWorthZeilen`, zusaetzlich mit Quelle und Fehlertext (Verlauf-Tab). */
+export async function getNetWorthZeilenMitHinweis(supabase: Client, who: ScopeArg): Promise<NetWorthZeilenErgebnis> {
+  if (istScopeContext(who) && nutztSnapshotFunktion(who)) {
+    const { rows, fehler } = await getNetWorthReihe(supabase, who)
+    if (fehler) console.error(`[verlauf] net_worth_series: ${fehler}`)
+    return { zeilen: rows.map(({ snapshot_date, ...r }) => ({ ...r, datum: snapshot_date })), quelle: 'funktion', fehler }
+  }
+  return { zeilen: await ausSnapshotTabelle(supabase, userIdVon(who)), quelle: 'snapshots', fehler: null }
+}
+
+async function ausSnapshotTabelle(supabase: Client, userId: string): Promise<NetWorthZeile[]> {
   const out: NetWorthZeile[] = []
   const SEITE = 1000
   for (let von = 0; ; von += SEITE) {

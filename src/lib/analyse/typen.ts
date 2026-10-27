@@ -1,3 +1,4 @@
+import type { ScopeContext } from '@/lib/haushalt/scope'
 import type { FlowTransaction, MonthlyFlowRow } from '@/lib/data/flows'
 import type { ActiveAccountOption } from '@/lib/data/overview'
 import type { FlowInclude } from '@/lib/finance/flow-calc'
@@ -24,6 +25,8 @@ export interface AnalyseFilter {
 }
 
 export interface AnalyseDaten {
+  /** Scope der Seite (nur fuer Server-Abschnitte, die zusaetzlich laden; nicht an Client-Komponenten weiterreichen). */
+  scopeCtx: ScopeContext
   /** Heutiges Datum (YYYY-MM-DD, deutsche Zeit). */
   heute: string
   locale: string

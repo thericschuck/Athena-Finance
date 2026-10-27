@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { getAuthUser } from '@/lib/supabase/server'
 import { ladeDashPrognose } from '@/lib/data/dashboard-prognose'
 import { prognoseLinie } from '@/lib/verlauf/prognose-linie'
 import { meilensteine } from '@/lib/verlauf/networth'
@@ -15,8 +14,7 @@ import type { DashAbschnittProps } from '@/lib/dashboard/typen'
  * sie, zeigt der Chart nur den Verlauf.
  */
 export async function DashVerlauf({ kern }: DashAbschnittProps) {
-  const { user } = await getAuthUser()
-  const prognose = user ? await ladeDashPrognose(user.id, kern.heute) : null
+  const prognose = await ladeDashPrognose(kern.scopeCtx, kern.heute)
   const projektion = prognose ? prognoseLinie(prognose.szenario.tage) : []
   const hoechster = projektion.length ? Math.max(...projektion.map(p => p.wert)) : kern.netWorth
   // Meilensteine nur, wenn die Prognose sie in Sicht rückt — sonst streckt eine ferne Linie die Achse.

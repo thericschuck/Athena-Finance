@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { requireAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { getSettings } from '@/lib/settings'
 import { ladeDashboard } from '@/lib/data/dashboard-seite'
 import { baueAufteilung } from '@/lib/dashboard/aufteilung'
@@ -19,6 +20,11 @@ import { DashKonten } from '@/components/dashboard/DashKonten'
 import { DashAnlagen } from '@/components/dashboard/DashAnlagen'
 import { DashSparziele } from '@/components/dashboard/DashSparziele'
 import { Skeleton, SkeletonChart } from '@/components/ui/skeleton'
+import { ladeErsteSchritteZaehler } from '@/lib/data/erste-schritte'
+import { einstiegsAnsicht, ersteSchritte } from '@/lib/leer/erste-schritte'
+import { scopeHinweis } from '@/lib/leer/hinweis'
+import { DashboardEinstieg } from '@/components/leer/DashboardEinstieg'
+import { ErsteSchritteKarte } from '@/components/leer/ErsteSchritteKarte'
 
 /**
  * Dashboard — ein Blick, ein Cockpit.
@@ -36,12 +42,19 @@ import { Skeleton, SkeletonChart } from '@/components/ui/skeleton'
 
 export default async function DashboardPage() {
   const { supabase, user } = await requireAuthUser()
-  const settings = await getSettings(user!.id)
+  const ctx = await resolveScope(supabase, user)
+  const settings = await getSettings(user.id)
   const heute = heuteBerlin()
   // Die Prognose haengt nicht am Kern: gleich anstossen, damit sie parallel zu seinen Abfragen
   // laeuft statt erst, wenn die Kennzahlen rendern. `cache()` teilt das Ergebnis mit den Abschnitten.
-  void ladeDashPrognose(user!.id, heute)
-  const kern = await ladeDashboard(supabase, user!.id, settings, heute)
+  if (ctx.accountIds.length > 0) void ladeDashPrognose(ctx, heute)
+  const kern = await ladeDashboard(supabase, ctx, settings, heute)
+  // Erste Schritte: nur pruefen, wenn das Dashboard leer sein KOENNTE (kein Konto oder kein Konto mit
+  // Buchungen). Ein Nutzer mit Daten zahlt dafuer keine Abfrage und sieht nichts Zusaetzliches.
+  const kannLeerSein = !kern.konten.some(k => k.hatBuchungen)
+  const zaehler = kannLeerSein ? await ladeErsteSchritteZaehler(supabase, ctx) : null
+  const einstieg = zaehler ? einstiegsAnsicht(zaehler) : 'aus'
+  const schritte = zaehler ? ersteSchritte(zaehler) : []
   const props = { kern }
   const aufteilung = baueAufteilung({
     konten: kern.konten,
@@ -62,6 +75,22 @@ export default async function DashboardPage() {
         <p className="text-sm text-muted-foreground">{datumLang}</p>
       </div>
 
+      {einstieg === 'voll' && (
+        <DashboardEinstieg schritte={schritte} hinweis={scopeHinweis(ctx, 'Konten und Buchungen')} />
+      )}
+      {einstieg === 'karte' && <ErsteSchritteKarte schritte={schritte} />}
+      {einstieg !== 'voll' && <DashboardInhalt kern={kern} props={props} aufteilung={aufteilung} />}
+    </div>
+  )
+}
+
+function DashboardInhalt({ kern, props, aufteilung }: {
+  kern: Awaited<ReturnType<typeof ladeDashboard>>
+  props: { kern: Awaited<ReturnType<typeof ladeDashboard>> }
+  aufteilung: ReturnType<typeof baueAufteilung>
+}) {
+  return (
+    <>
       {/* Schmale Zeilen oben: Kennzahlen, Hinweise, Zustand. */}
       <Suspense fallback={<Skeleton className="h-16 w-full rounded-lg" />}>
         <DashKennzahlen {...props} />
@@ -131,6 +160,6 @@ export default async function DashboardPage() {
           locale={kern.locale}
         />
       )}
-    </div>
+    </>
   )
 }

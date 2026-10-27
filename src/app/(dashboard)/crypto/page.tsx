@@ -1,4 +1,5 @@
 import { requireAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { getSettings } from '@/lib/settings'
 import { fmtDate as fmtDateLib } from '@/lib/format'
 import { PortfolioOverview } from '@/components/crypto/portfolio-overview'
@@ -20,6 +21,9 @@ export default async function CryptoPage({
   searchParams: Promise<{ p?: string }>
 }) {
   const [{ p: portfolioParam }, { supabase, user }] = await Promise.all([searchParams, requireAuthUser()])
+  const ctx = await resolveScope(supabase, user)
+  // Haushaltssicht auf Assets ist nur lesend; Snapshots, Kraken-Verbindung, Ziele und Einstellungen sind owner-only.
+  const ownSnapshotsOnly = ctx.scope === 'ich'
 
   const oneYearAgo = (() => {
     const d = new Date(); d.setFullYear(d.getFullYear() - 1); return d.toISOString().split('T')[0]
@@ -35,9 +39,10 @@ export default async function CryptoPage({
     krakenConnected,
     lastSyncValue,
   ] = await Promise.all([
-    getCryptoAssetsWithPrice(supabase, user!.id),
-    getPortfolioSnapshots(supabase, user!.id, oneYearAgo),
-    getAssetAuditLog(supabase, user!.id, 50),
+    getCryptoAssetsWithPrice(supabase, ctx),
+    // portfolio_snapshots sind owner-only: nur in 'ich' passend zur Anzeige (sonst waeren es fremde/gemischte Verlaeufe).
+    ownSnapshotsOnly ? getPortfolioSnapshots(supabase, ctx.userId, oneYearAgo) : Promise.resolve([]),
+    getAssetAuditLog(supabase, ctx, 50),
     getRebalancingTargets(user!.id),
     getSettings(user!.id),
     getEurUsdRate(),
@@ -64,7 +69,7 @@ export default async function CryptoPage({
   )]
 
   const portfolios: PortfolioMeta[] = [
-    ...(krakenConnected ? [{ name: 'Kraken', isKraken: true, assetCount: krakenAssets.length }] : []),
+    ...(krakenConnected || (ctx.scope !== 'ich' && krakenAssets.length > 0) ? [{ name: 'Kraken', isKraken: true, assetCount: krakenAssets.length }] : []),
     ...manualNames.map(name => ({
       name,
       assetCount: nonKrakenAssets.filter(a => a.portfolio_name === name).length,
@@ -112,7 +117,7 @@ export default async function CryptoPage({
         eurUsdRate={eurUsdRate}
         activePortfolio={activePortfolio ?? undefined}
       />
-      {activePortfolio === 'Kraken' && <OpenPositionsCard />}
+      {activePortfolio === 'Kraken' && ctx.scope === 'ich' && <OpenPositionsCard />}
       <AssetAuditLog entries={auditLog as unknown as AuditEntry[]} locale={locale} dateFormat={dateFormat} />
     </>
   )

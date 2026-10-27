@@ -23,9 +23,11 @@ interface Props {
   trigger: React.ReactNode
   /** Gesetzt = Bearbeiten, sonst Anlegen. */
   item?: Valuable
+  /** Schalter 'Mit Haushalt teilen' beim Anlegen (nur bei Haushalt mit Partner). */
+  canShare?: boolean
 }
 
-export function ValuableForm({ trigger, item }: Props) {
+export function ValuableForm({ trigger, item, canShare = false }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [kategorie, setKategorie] = useState(item?.kategorie ?? 'uhr')
@@ -205,6 +207,7 @@ export function ValuableForm({ trigger, item }: Props) {
               label="Zählt in den Sammlungswert"
               defaultChecked={item ? item.im_vermoegen : true}
             />
+            {canShare && !item && <Haken name="shared" label="Mit Haushalt teilen" />}
           </div>
 
           {/* Verkauf — nur beim Bearbeiten. Beim Anlegen wäre das Feld sinnlos und würde

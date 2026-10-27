@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient, getAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { z } from 'zod'
 import { parseInput, issueMessage } from '@/lib/api/validate'
 import { uuid, isoDate, money } from '@/lib/api/schemas'
@@ -12,6 +13,8 @@ import {
   getSavingsPlan,
   getSavingsPlans as loadSavingsPlans,
   hasInitialTransaction,
+  isDepotShared,
+  resolveDepotOwner,
   type Depot,
   type DepotTransaction,
   type DepotSummary,
@@ -19,6 +22,7 @@ import {
   type PortfolioHistoryPoint,
   type SavingsPlan,
 } from '@/lib/data/depot'
+import { requireRows } from '@/lib/data/mutation'
 
 export type { Depot, DepotTransaction, DepotSummary, DepotWithSummary, PortfolioHistoryPoint, SavingsPlan }
 
@@ -90,7 +94,8 @@ export async function addInitialHolding(
 
   try {
     // Check: initial darf nur einmal pro ISIN existieren
-    if (await hasInitialTransaction(supabase, user.id, isin)) {
+    const ctx = await resolveScope(supabase, user)
+    if (await hasInitialTransaction(supabase, ctx, isin)) {
       return { success: false, error: 'Bestand wurde bereits eingetragen' }
     }
 
@@ -98,7 +103,8 @@ export async function addInitialHolding(
 
     await upsertFundPrice(supabase, isin, fundName, pricePerShare, date)
     const { error } = await supabase.from('depot_transactions').insert({
-      user_id: user.id,
+      // Transaktionen gehoeren dem Besitzer des (sichtbaren) Depots, sonst dem Handelnden.
+      user_id: await resolveDepotOwner(supabase, ctx, isin),
       isin,
       fund_name: fundName,
       transaction_date: date,
@@ -129,9 +135,10 @@ export async function addManualDeposit(
   if (!args.ok) return invalid(args)
 
   try {
+    const ctx = await resolveScope(supabase, user)
     await upsertFundPrice(supabase, isin, fundName, pricePerShare, date)
     const { error } = await supabase.from('depot_transactions').insert({
-      user_id: user.id,
+      user_id: await resolveDepotOwner(supabase, ctx, isin),
       isin,
       fund_name: fundName,
       transaction_date: date,
@@ -151,14 +158,14 @@ export async function getDepotTransactions(isin: string): Promise<DepotTransacti
   const { supabase, user } = await getAuthUser()
   if (!user) return []
   if (!parseInput(isinField, isin).ok) return []
-  return loadDepotTransactions(supabase, user.id, isin)
+  return loadDepotTransactions(supabase, await resolveScope(supabase, user), isin)
 }
 
 export async function getPortfolioHistory(isin: string): Promise<PortfolioHistoryPoint[]> {
   const { supabase, user } = await getAuthUser()
   if (!user) return []
   if (!parseInput(isinField, isin).ok) return []
-  return loadPortfolioHistory(supabase, user.id, isin)
+  return loadPortfolioHistory(supabase, await resolveScope(supabase, user), isin)
 }
 
 export async function deleteDepotTransaction(id: string): Promise<{ success: boolean; error?: string }> {
@@ -168,11 +175,10 @@ export async function deleteDepotTransaction(id: string): Promise<{ success: boo
   if (!idP.ok) return invalid(idP)
 
   try {
-    const { error } = await supabase
+    const { error } = await requireRows(supabase
       .from('depot_transactions')
       .delete()
-      .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('id', id)) // Haushaltstabelle: Zugriff regelt die RLS (Peers duerfen loeschen)
     if (error) return { success: false, error: error.message }
     return { success: true }
   } catch (err) {
@@ -196,8 +202,9 @@ export async function createSavingsPlan(
   if (!args.ok) return invalid(args)
 
   try {
+    const ctx = await resolveScope(supabase, user)
     const { error } = await supabase.from('savings_plans').insert({
-      user_id: user.id, isin, fund_name: fundName, monthly_amount: monthlyAmount,
+      user_id: user.id, shared: await isDepotShared(supabase, ctx, isin), isin, fund_name: fundName, monthly_amount: monthlyAmount,
       execution_day: executionDay, start_date: startDate,
     })
     if (error) return { success: false, error: error.message }
@@ -210,7 +217,7 @@ export async function createSavingsPlan(
 export async function getSavingsPlans(): Promise<SavingsPlan[]> {
   const { supabase, user } = await getAuthUser()
   if (!user) return []
-  return loadSavingsPlans(supabase, user.id)
+  return loadSavingsPlans(supabase, await resolveScope(supabase, user))
 }
 
 export async function toggleSavingsPlan(id: string, isActive: boolean): Promise<{ success: boolean; error?: string }> {
@@ -220,11 +227,10 @@ export async function toggleSavingsPlan(id: string, isActive: boolean): Promise<
   if (!args.ok) return invalid(args)
 
   try {
-    const { error } = await supabase
+    const { error } = await requireRows(supabase
       .from('savings_plans')
       .update({ is_active: isActive })
-      .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('id', id)) // Haushaltstabelle: RLS
     if (error) return { success: false, error: error.message }
     return { success: true }
   } catch (err) {
@@ -239,11 +245,10 @@ export async function deleteSavingsPlan(id: string): Promise<{ success: boolean;
   if (!idP.ok) return invalid(idP)
 
   try {
-    const { error } = await supabase
+    const { error } = await requireRows(supabase
       .from('savings_plans')
       .delete()
-      .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('id', id)) // Haushaltstabelle: RLS
     if (error) return { success: false, error: error.message }
     return { success: true }
   } catch (err) {
@@ -261,7 +266,8 @@ export async function executeSavingsPlanPayment(
   if (!args.ok) return invalid(args)
 
   try {
-    const plan = await getSavingsPlan(supabase, user.id, planId)
+    const ctx = await resolveScope(supabase, user)
+    const plan = await getSavingsPlan(supabase, ctx, planId)
 
     if (!plan) return { success: false, error: 'Sparplan nicht gefunden' }
     if (pricePerShare <= 0) return { success: false, error: 'Kurs muss größer als 0 sein' }
@@ -271,7 +277,7 @@ export async function executeSavingsPlanPayment(
     await upsertFundPrice(supabase, plan.isin, plan.fund_name, pricePerShare, today)
 
     const { error } = await supabase.from('depot_transactions').insert({
-      user_id: user.id,
+      user_id: await resolveDepotOwner(supabase, ctx, plan.isin),
       isin: plan.isin,
       fund_name: plan.fund_name,
       transaction_date: today,
@@ -292,12 +298,13 @@ export async function executeSavingsPlanPayment(
 export async function getDepots(): Promise<Depot[]> {
   const { supabase, user } = await getAuthUser()
   if (!user) return []
-  return loadDepots(supabase, user.id)
+  return loadDepots(supabase, await resolveScope(supabase, user))
 }
 
 export async function createDepot(
   name: string,
-  isin: string
+  isin: string,
+  shared = false,
 ): Promise<{ success: boolean; error?: string; id?: string }> {
   const { supabase, user } = await getAuthUser()
   if (!user) return { success: false, error: 'Nicht eingeloggt' }
@@ -311,7 +318,7 @@ export async function createDepot(
   try {
     const { data, error } = await supabase
       .from('depots')
-      .insert({ user_id: user.id, name: name.trim(), isin: isin.trim().toUpperCase() })
+      .insert({ user_id: user.id, name: name.trim(), isin: isin.trim().toUpperCase(), shared })
       .select('id')
       .single()
     if (error) return { success: false, error: error.message }
@@ -328,11 +335,10 @@ export async function deleteDepot(id: string): Promise<{ success: boolean; error
   if (!idP.ok) return invalid(idP)
 
   try {
-    const { error } = await supabase
+    const { error } = await requireRows(supabase
       .from('depots')
       .delete()
-      .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('id', id)) // Haushaltstabelle: RLS
     if (error) return { success: false, error: error.message }
     return { success: true }
   } catch (err) {
@@ -340,10 +346,24 @@ export async function deleteDepot(id: string): Promise<{ success: boolean; error
   }
 }
 
+/** Depot (und seine Sparplaene) mit dem Haushalt teilen bzw. wieder privat machen. */
+export async function setDepotShared(id: string, shared: boolean): Promise<{ success: boolean; error?: string }> {
+  const { supabase, user } = await getAuthUser()
+  if (!user) return { success: false, error: 'Nicht eingeloggt' }
+  const args = parseInput(z.object({ id: uuid, shared: z.boolean() }), { id, shared })
+  if (!args.ok) return invalid(args)
+
+  const { data: depot, error } = await supabase.from('depots').update({ shared }).eq('id', id).select('user_id, isin').single()
+  if (error) return { success: false, error: error.message }
+  // Sparplaene zur ISIN des Depots folgen dem Flag.
+  await supabase.from('savings_plans').update({ shared }).eq('user_id', depot.user_id).eq('isin', depot.isin)
+  return { success: true }
+}
+
 // ─── Summary (for accounts page & dashboard) ──────────────────────────────────
 
 export async function getDepotsSummaries(): Promise<DepotWithSummary[]> {
   const { supabase, user } = await getAuthUser()
   if (!user) return []
-  return loadDepotsSummaries(supabase, user.id)
+  return loadDepotsSummaries(supabase, await resolveScope(supabase, user))
 }

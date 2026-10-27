@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { getAuthUser } from '@/lib/supabase/server'
 import { ladeDashPrognose } from '@/lib/data/dashboard-prognose'
 import { AUSBLICK_ZEITRAEUME, reduziereTage } from '@/lib/dashboard/ausblick'
 import type { DashAbschnittProps } from '@/lib/dashboard/typen'
@@ -14,8 +13,7 @@ import { DashAusblickLazy } from './DashAusblickLazy'
  * Gezeigt wird das Szenario (Prognose mit den gesetzten Annahmen) — wie der grosse Chart dort.
  */
 export async function DashAusblick({ kern }: DashAbschnittProps) {
-  const { user } = await getAuthUser()
-  const basis = user ? await ladeDashPrognose(user.id, kern.heute) : null
+  const basis = await ladeDashPrognose(kern.scopeCtx, kern.heute)
   const maxTage = AUSBLICK_ZEITRAEUME[AUSBLICK_ZEITRAEUME.length - 1]
   const punkte = basis ? reduziereTage(basis.szenario.tage, kern.heute, maxTage) : []
 

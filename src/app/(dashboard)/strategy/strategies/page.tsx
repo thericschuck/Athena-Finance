@@ -5,6 +5,7 @@ import { AddStrategyDialog } from '@/components/strategy/strategy-form'
 import { DeleteStrategyButton } from '@/components/strategy/strategy-form'
 import { getComboOptions, getStrategies, getSubmissionReadyIds } from '@/lib/data/strategy'
 import { getSettings } from '@/lib/settings'
+import { LeerZustand } from '@/components/leer/LeerZustand'
 
 // ─── Badge helpers ────────────────────────────────────────────────────────────
 const STATUS_STYLE: Record<string, string> = {
@@ -84,16 +85,15 @@ export default async function StrategiesPage({
 
       {/* Empty state */}
       {strategies.length === 0 && (
-        <div className="rounded-lg border border-dashed border-border bg-card py-16 text-center">
-          <p className="text-sm font-medium text-foreground">
-            {onlyReady ? 'Keine submission-ready Strategien' : 'Noch keine Strategien'}
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {onlyReady
-              ? 'Checklist und Robustness Tests müssen vollständig sein.'
-              : 'Erstelle deine erste Trading-Strategie.'}
-          </p>
-        </div>
+        <LeerZustand
+          titel={onlyReady ? 'Keine submission-ready Strategien' : 'Noch keine Strategien'}
+          text={onlyReady
+            ? 'Checklist und Robustness Tests müssen vollständig sein.'
+            : 'Hier verwaltest du Trading-Strategien samt Checkliste und Robustness-Tests. Erstelle deine erste Strategie.'}
+          aktionNode={onlyReady ? undefined : (
+            <AddStrategyDialog comboOptions={comboOptions} defaultAssetClass={defaultAssetClass} defaultTimeframe={defaultTimeframe} />
+          )}
+        />
       )}
 
       {/* Strategy cards */}

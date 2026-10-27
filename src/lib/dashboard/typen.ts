@@ -1,8 +1,9 @@
 import type { NetWorthPunkt } from '@/lib/verlauf/types'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 import type { InsightListRow } from '@/lib/data/overview'
 import type { FixedCostContract, UpcomingContract } from '@/lib/finance/dashboard-calc'
 import type { getLastRebalancing } from '@/app/(dashboard)/crypto/actions'
-import type { getDepotsSummaries } from '@/app/actions/depot'
+import type { getDepotsSummaries } from '@/lib/data/depot'
 
 /**
  * Gemeinsame Formen des Dashboards. Die Seite rechnet den Kern EINMAL (lib/data/dashboard-seite.ts)
@@ -30,6 +31,8 @@ export interface DashFluss {
 }
 
 export interface DashboardKern {
+  /** Scope der Seite (nur fuer Server-Abschnitte, die zusaetzlich laden; nicht an Client-Komponenten weiterreichen). */
+  scopeCtx: ScopeContext
   /** Heutiges Datum (YYYY-MM-DD) in deutscher Zeit. */
   heute: string
   locale: string

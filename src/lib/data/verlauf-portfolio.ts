@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import type { SnapshotZeile } from '@/lib/verlauf/portfolio'
 import type { PortfolioSnapshotHistoryRow } from '@/lib/data/overview'
+import { istScopeContext, type ScopeArg } from '@/lib/data/scope-arg'
 
 type DB = SupabaseClient<Database>
 
@@ -13,15 +14,18 @@ type DB = SupabaseClient<Database>
  * zwischen Seiten doppelt oder gar nicht auftauchen.
  */
 export async function getPortfolioSnapshotsAlle(
-  supabase: DB, userId: string, ab: string | null,
+  supabase: DB, who: ScopeArg, ab: string | null, assetIds: string[] = [],
 ): Promise<SnapshotZeile[]> {
+  // Scope: Positionen der Assets im Scope (`assetIds` aus getHistoryAssets). portfolio_snapshots ist bisher owner-only (RLS);
+  // Partner-Zeilen sieht erst die Peer-SELECT-Policy aus Migration 20261029110000 (nur als Datei). Bis dahin: nur eigene.
+  if (istScopeContext(who) && assetIds.length === 0) return []
   const SEITE = 1000
   const alle: SnapshotZeile[] = []
   for (let von = 0; ; von += SEITE) {
     let q = supabase
       .from('portfolio_snapshots')
       .select('asset_id, snapshot_date, portfolio_name, quantity, price_eur, value_eur')
-      .eq('user_id', userId)
+    q = istScopeContext(who) ? q.in('asset_id', assetIds) : q.eq('user_id', who)
     if (ab) q = q.gte('snapshot_date', ab)
     const { data, error } = await q
       .order('snapshot_date', { ascending: true })
@@ -38,7 +42,7 @@ export async function getPortfolioSnapshotsAlle(
 
 /** Eine Seite der Tabelle, gefiltert nach Asset, Portfolio und Zeitraum. */
 export async function getPortfolioTabelle(
-  supabase: DB, userId: string,
+  supabase: DB, who: ScopeArg,
   filter: { assetIds: string[]; portfolio?: string; ab: string | null },
   range: { from: number; to: number },
 ): Promise<{ rows: PortfolioSnapshotHistoryRow[]; count: number }> {
@@ -47,8 +51,9 @@ export async function getPortfolioTabelle(
   let q = supabase
     .from('portfolio_snapshots')
     .select('id, asset_id, snapshot_date, portfolio_name, quantity, price_eur, value_eur, source', { count: 'exact' })
-    .eq('user_id', userId)
     .in('asset_id', filter.assetIds)
+  // Im Scope bestimmt `assetIds` (Assets im Scope) die Menge; ohne Scope (string) zusaetzlich user_id wie bisher.
+  if (!istScopeContext(who)) q = q.eq('user_id', who)
   if (filter.portfolio) q = q.eq('portfolio_name', filter.portfolio)
   if (filter.ab) q = q.gte('snapshot_date', filter.ab)
   const { data, count, error } = await q

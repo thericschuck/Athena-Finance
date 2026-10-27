@@ -1,4 +1,5 @@
 import { getAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency } from '@/lib/format'
 import { InventoryClient } from '@/components/inventar/InventoryClient'
@@ -10,9 +11,11 @@ import { Gem } from 'lucide-react'
 import { getActiveValuables, getDocumentCounts, getHandBewertungsstaende, getSammlungsRohdaten, getSoldValuables, getValuableImages } from '@/lib/data/inventar'
 import { SammlungsChartLazy } from '@/components/inventar/SammlungsChartLazy'
 import { sammlungsverlauf } from '@/lib/inventar/sammlungsverlauf'
+import { letzteAenderungen } from '@/lib/data/aenderungen'
 import { SoldList } from '@/components/inventar/SoldList'
 import { VerlaufSchaetzenButton } from '@/components/inventar/VerlaufSchaetzenButton'
 import { signierteBildUrls } from '@/lib/inventar/bildurls'
+import { ScopeHinweisFuer } from '@/components/leer/ScopeHinweisFuer'
 
 /**
  * Inventar — die Vitrine.
@@ -28,17 +31,19 @@ export const metadata = { title: 'Inventar' }
 export default async function InventarPage() {
   const { supabase, user } = await getAuthUser()
   if (!user) return null
+  const ctx = await resolveScope(supabase, user)
 
   const [aktive, verkauft, dokumente, handStaende, rohdaten, bilder, settings] = await Promise.all([
-    getActiveValuables(supabase, user.id),
-    getSoldValuables(supabase, user.id),
-    getDocumentCounts(supabase, user.id),
-    getHandBewertungsstaende(supabase, user.id),
-    getSammlungsRohdaten(supabase, user.id),
-    getValuableImages(supabase, user.id),
+    getActiveValuables(supabase, ctx),
+    getSoldValuables(supabase, ctx),
+    getDocumentCounts(supabase, ctx),
+    getHandBewertungsstaende(supabase, ctx),
+    getSammlungsRohdaten(supabase, ctx),
+    getValuableImages(supabase, ctx),
     getSettings(user.id),
   ])
 
+  const zuletztInventar = Object.fromEntries(await letzteAenderungen(supabase, ctx, 'valuables', aktive.map(v => v.id)))
   const items = aktive.map(v => ({ ...v, hand_wert_stand: handStaende.get(v.id) ?? null }))
   const locale = (settings.number_format as string) ?? 'de-DE'
   // Der Bucket ist privat — ohne signierte URL liefert Storage 400. Alle Pfade in EINEM
@@ -129,8 +134,12 @@ export default async function InventarPage() {
         {items.length > 0 && <VerlaufSchaetzenButton />}
       </div>
 
+      {items.length === 0 && verkauft.length === 0 && <ScopeHinweisFuer ctx={ctx} thema="Inventar" />}
+
       {/* Kennzahlen. Der Hinweis zum Net Worth steht bewusst direkt an der Summe: sonst
-          nimmt man an, die Zahl stecke im Vermögen. */}
+          nimmt man an, die Zahl stecke im Vermögen. Ohne jedes Stück (auch ohne verkaufte)
+          entfaellt die Leiste: sie waere nur Striche und Nullen. */}
+      {(items.length > 0 || verkauft.length > 0) && (
       <div className="rounded-lg border border-border bg-card px-5 py-4">
         <div className="flex flex-wrap items-end gap-x-10 gap-y-4">
           <div>
@@ -168,6 +177,7 @@ export default async function InventarPage() {
           </div>
         </div>
       </div>
+      )}
 
       {verlauf.length > 1 && <SammlungsChartLazy punkte={verlauf} locale={locale} />}
 
@@ -236,7 +246,7 @@ export default async function InventarPage() {
         </div>
       )}
 
-      <InventoryClient items={itemsMitBild} locale={locale} />
+      <InventoryClient items={itemsMitBild} locale={locale} canShare={ctx.available.length > 1} zuletzt={zuletztInventar} />
 
       <SoldList items={verkauft} locale={locale} />
     </div>

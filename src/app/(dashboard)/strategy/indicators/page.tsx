@@ -10,6 +10,7 @@ import { IndicatorFilters } from '@/components/strategy/indicator-filters'
 import { UrlFiltersProvider, FilterPending } from '@/components/providers/url-filters'
 import { IndicatorsTable } from '@/components/strategy/indicators-table'
 import { Suspense } from 'react'
+import { LeerZustand } from '@/components/leer/LeerZustand'
 
 type IndicatorWithCobra = IndicatorRow & {
   cobraGreen: number | null
@@ -120,11 +121,9 @@ export default async function IndicatorsPage({
 
 function EmptyState() {
   return (
-    <div className="rounded-lg border border-dashed border-border bg-card py-16 text-center">
-      <p className="text-sm font-medium text-foreground">Noch keine Indikatoren</p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Füge deinen ersten Indikator hinzu und verfolge seine Performance.
-      </p>
-    </div>
+    <LeerZustand
+      titel="Noch keine Indikatoren"
+      text="Indikatoren sind die Bausteine deiner Strategien. Füge deinen ersten Indikator hinzu und verfolge seine Performance."
+    />
   )
 }

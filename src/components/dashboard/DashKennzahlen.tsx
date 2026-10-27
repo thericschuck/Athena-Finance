@@ -1,6 +1,5 @@
 import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react'
 import { fmtCurrency, fmtDate } from '@/lib/format'
-import { getAuthUser } from '@/lib/supabase/server'
 import { ladeDashPrognose } from '@/lib/data/dashboard-prognose'
 import { kennzahlen as nwKennzahlen } from '@/lib/verlauf/networth'
 import {
@@ -73,8 +72,7 @@ function Zelle({
 }
 
 export async function DashKennzahlen({ kern }: DashAbschnittProps) {
-  const { user } = await getAuthUser()
-  const prognoseBasis = user ? await ladeDashPrognose(user.id, kern.heute) : null
+  const prognoseBasis = await ladeDashPrognose(kern.scopeCtx, kern.heute)
   const prognose = prognoseBasis?.szenario ?? null
 
   const { locale, monat, buckets, nichtImNetWorth } = kern
