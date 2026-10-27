@@ -8,6 +8,7 @@ import {
   createItem,     updateItem,     deleteItem,
 } from '@/app/(dashboard)/finance/budget/actions'
 import type { BudgetCategory, BudgetItem } from '@/app/(dashboard)/finance/budget/page'
+import { TeilenSchalter } from '@/components/haushalt/TeilenSchalter'
 
 function monthlyItem(item: BudgetItem): number {
   return (item.unit_price * item.quantity) / item.interval_days * 30
@@ -169,6 +170,7 @@ function CategoryCard({
           <Inp name="icon"           defaultValue={category.icon ?? ''}           placeholder="Icon" className="w-12" />
           <Inp name="name"           defaultValue={category.name}                 placeholder="Name" className="w-36" required />
           <Inp name="monthly_budget" defaultValue={category.monthly_budget ?? ''} placeholder="Ziel € (opt.)" step="0.01" className="w-28" />
+          <TeilenSchalter defaultChecked={category.shared ?? false} unbekannt={category.shared === undefined} label="Teilen" hinweis="" />
           {'error' in (catState ?? {}) && (
             <span className="text-xs text-destructive w-full">{(catState as {error:string}).error}</span>
           )}
@@ -311,6 +313,7 @@ function AddCategoryForm({ onDone }: { onDone: () => void }) {
       <Inp name="icon"           placeholder="Icon (Emoji)" className="w-20" />
       <Inp name="name"           placeholder="Kategoriename"  className="w-40" required />
       <Inp name="monthly_budget" placeholder="Budget-Ziel (opt.)" step="0.01" className="w-36" />
+      <TeilenSchalter label="Mit Haushalt teilen" hinweis="" />
       {'error' in (state ?? {}) && (
         <span className="text-xs text-destructive w-full">{(state as {error:string}).error}</span>
       )}

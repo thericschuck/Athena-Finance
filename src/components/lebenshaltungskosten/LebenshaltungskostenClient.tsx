@@ -52,7 +52,7 @@ export function LebenshaltungskostenClient({ categories, items, target }: Props)
       </div>
 
       {/* Content */}
-      {tab === 'übersicht'     && <OverviewTab     categories={categories} items={items} target={target} />}
+      {tab === 'übersicht'     && <OverviewTab     categories={categories} items={items} target={target} onZuProdukten={() => setTab('kategorien')} />}
       {tab === 'kategorien'    && <KategorienTab   categories={categories} items={items} />}
       {tab === 'einstellungen' && <EinstellungenTab target={target} />}
     </div>

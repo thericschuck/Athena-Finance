@@ -1,6 +1,8 @@
 'use client'
 
-import { Wallet, Landmark, ShoppingBasket } from 'lucide-react'
+import { Wallet, Landmark, ShoppingBasket, PiggyBank } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { LeerZustand } from '@/components/leer/LeerZustand'
 import type { BudgetCategory, BudgetItem, IncomeTarget } from '@/app/(dashboard)/finance/budget/page'
 
 function monthlyItem(item: BudgetItem): number {
@@ -15,9 +17,11 @@ interface Props {
   categories: BudgetCategory[]
   items:      BudgetItem[]
   target:     IncomeTarget | null
+  /** Wechselt zum Tab „Kategorien & Produkte“ (für die Leer-Ansicht ohne Posten). */
+  onZuProdukten?: () => void
 }
 
-export function OverviewTab({ categories, items, target }: Props) {
+export function OverviewTab({ categories, items, target, onZuProdukten }: Props) {
   const categoryMonthly = (catId: string) =>
     items.filter(i => i.category_id === catId).reduce((s, i) => s + monthlyItem(i), 0)
 
@@ -52,6 +56,19 @@ export function OverviewTab({ categories, items, target }: Props) {
       return { cat, actual, budget, delta, pct, over }
     })
     .sort((a, b) => b.actual - a.actual)
+
+  // Ohne einen einzigen Posten wären alle Zahlen 0,00 € und die Leiste 0/0: stattdessen eine Anleitung.
+  if (items.length === 0) {
+    return (
+      <LeerZustand
+        icon={PiggyBank}
+        titel="Noch keine Posten im Budget"
+        text="Das Budget rechnet aus deinen Lebenshaltungskosten das Mindestgehalt aus: Lege unter „Kategorien & Produkte“ Posten wie Miete, Lebensmittel oder Abos mit Preis und Intervall an."
+        aktionNode={onZuProdukten ? <Button type="button" onClick={onZuProdukten}>Posten anlegen</Button> : undefined}
+        sekundaer={{ label: 'Verträge ansehen', href: '/finance/contracts' }}
+      />
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -101,7 +118,7 @@ export function OverviewTab({ categories, items, target }: Props) {
             {composition.map(seg => (
               <div
                 key={seg.label}
-                style={{ width: `${(seg.value / netMin) * 100}%`, background: seg.color }}
+                style={{ width: `${netMin > 0 ? (seg.value / netMin) * 100 : 0}%`, background: seg.color }}
                 className="h-full first:rounded-l-full last:rounded-r-full"
               />
             ))}
