@@ -237,7 +237,7 @@ export async function POST(request: NextRequest) {
     context = await loadAthenaContext(supabase, scopeCtx, { memoryEnabled: settings.memoryEnabled })
     const [projektAbschnitt, bezuege] = await Promise.all([
       projectId ? projektKontext(supabase, user.id, projectId) : Promise.resolve(null),
-      mentionBlock(supabase, user.id, mentions),
+      mentionBlock(supabase, user.id, mentions, context.nutzerName ?? null),
     ])
     systemBlocks = buildAthenaSystemPrompt(context, settings, new Date(), currentRoute, {
       projekt: projektAbschnitt,

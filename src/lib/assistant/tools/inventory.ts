@@ -210,7 +210,7 @@ export function buildInventoryTools(supabase: DB, ctx: ScopeContext) {
           })),
           hinweis:
             'Du kannst diese Bilder nicht sehen — du kennst nur ihre Metadaten. Was am Ergebnis ' +
-            'zu ändern ist, sagt dir Eric; frag nach, statt zu raten.',
+            'zu ändern ist, sagt dir der Nutzer; frag nach, statt zu raten.',
         }
       },
     }),

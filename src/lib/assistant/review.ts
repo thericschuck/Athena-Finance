@@ -6,6 +6,7 @@ import type { Database, Json } from '@/types/database'
 import { getAthenaSettings, supportsThinking } from '@/lib/assistant/settings'
 import { estimateCostUsd } from '@/lib/assistant/cost'
 import { createLogger } from '@/lib/assistant/logger'
+import { loadAnzeigeName } from '@/lib/assistant/context'
 import { resolveScopeForUser } from '@/lib/haushalt/resolve-user'
 import { buildAccountTools } from '@/lib/assistant/tools/accounts'
 import { buildTransactionTools } from '@/lib/assistant/tools/transactions'
@@ -21,7 +22,7 @@ import { buildTaxTools } from '@/lib/assistant/tools/tax'
 import { buildRecurringTools } from '@/lib/assistant/tools/recurring'
 import { buildCategoryTools } from '@/lib/assistant/tools/categories'
 import {
-  REVIEW_LAST_KEY, REVIEW_LOCK_KEY, REVIEW_SETTINGS_KEY, REVIEW_SYSTEM_PROMPT, REVIEW_TYP,
+  REVIEW_LAST_KEY, REVIEW_LOCK_KEY, REVIEW_SETTINGS_KEY, REVIEW_TYP, reviewSystemPrompt,
   cacheLetzteNachricht, istFaellig, istGesperrt, leseReviewConfig, waehleBefunde, type Befund,
 } from '@/lib/assistant/review-regeln'
 
@@ -82,6 +83,7 @@ export async function fuehreReviewAus(supabase: DB, userId: string, opts: { forc
 
   // Wochenlauf läuft ohne Request/Cookie mit Service-Role: Scope 'ich' des Nutzers (eigene + geteilte Konten).
   const scopeCtx = await resolveScopeForUser(supabase, userId, 'ich')
+  const nutzerName = await loadAnzeigeName(supabase, scopeCtx)
 
   const befunde: Befund[] = []
   const tools = {
@@ -100,7 +102,7 @@ export async function fuehreReviewAus(supabase: DB, userId: string, opts: { forc
     ...buildCategoryTools(supabase, scopeCtx),
     meldeBefund: tool({
       description:
-        'Meldet EINEN Befund an Eric (landet als Hinweis auf dem Dashboard). Das ist deine einzige Ausgabe. ' +
+        'Meldet EINEN Befund an den Nutzer (landet als Hinweis auf dem Dashboard). Das ist deine einzige Ausgabe. ' +
         'Nur Neues, Belegtes, Handlungsrelevantes; höchstens fünf pro Lauf.',
       inputSchema: z.object({
         severity: z.enum(['info', 'warning']).describe('warning nur bei Geldverlust, Frist oder Datenfehler'),
@@ -130,7 +132,7 @@ export async function fuehreReviewAus(supabase: DB, userId: string, opts: { forc
       const result = await generateText({
         model: anthropic(cfg.model),
         // Cache-Haltepunkt am Ende von Werkzeugen und Systemprompt (identisch in jedem Schritt) ...
-        instructions: [{ role: 'system', content: REVIEW_SYSTEM_PROMPT, providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } } }],
+        instructions: [{ role: 'system', content: reviewSystemPrompt(nutzerName), providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } } }],
         prompt: `Heute ist ${jetzt.toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' })}. Starte den Wochenlauf.`,
         tools,
         stopWhen: stepCountIs(cfg.maxSteps),

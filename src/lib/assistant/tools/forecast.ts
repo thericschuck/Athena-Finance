@@ -16,7 +16,7 @@ export function buildForecastTools(supabase: DB, ctx: ScopeContext) {
         'Rücklage pro Monat, Kleinunternehmer-Status). Benutze es für Fragen wie "reicht mein Geld bis ' +
         'Dezember", "was bleibt mir im Februar", "was kostet mich das höhere Gehalt an Steuer", "wann wird es eng". ' +
         'Es ist eine FORTSCHREIBUNG der gesamten Historie (Zyklusmodell: Monats- und Wochenrhythmus) plus die Annahmen, ' +
-        'die Eric auf der Prognose-Seite eingetragen hat — keine Vorhersage. Sag das, nenne den tiefsten Stand ' +
+        'die der Nutzer auf der Prognose-Seite eingetragen hat — keine Vorhersage. Sag das, nenne den tiefsten Stand ' +
         '(erwartet und in 1 von 10 Verläufen) statt eines einzelnen Endwerts, ' +
         'und nenne die Annahmen (`annahmen`), auf denen die Zahl beruht. Die Steuerzahlen sind Schätzungen.',
       inputSchema: z.object({

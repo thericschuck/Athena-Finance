@@ -42,7 +42,7 @@ export function buildAttachmentTools(supabase: DB, ctx: ScopeContext, options: A
   return {
     readAttachment: tool({
       description:
-        'Liest eine Datei, die Eric früher in DIESEM Chat hochgeladen hat (PDF, Bild, CSV/Text). ' +
+        'Liest eine Datei, die der Nutzer früher in DIESEM Chat hochgeladen hat (PDF, Bild, CSV/Text). ' +
         'Frühere Anhänge stehen im Verlauf nur als Notiz „nicht erneut mitgesendet“ — wenn du ' +
         'ihren Inhalt brauchst, rufst du dieses Werkzeug auf. Gib eine konkrete `frage` mit, ' +
         'dann bekommst du gezielt die passenden Stellen statt des ganzen Dokuments (billiger und ' +

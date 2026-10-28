@@ -30,7 +30,7 @@ export function buildInsightTools(supabase: DB, ctx: ScopeContext) {
         return {
           insights: (data ?? []).map(row => untrust(row, ['title', 'body'])),
           hinweis_zur_deutung:
-            'dismissed_at gesetzt heißt: Eric hat den Hinweis weggeklickt. Schlag denselben Inhalt ' +
+            'dismissed_at gesetzt heißt: Der Nutzer hat den Hinweis weggeklickt. Schlag denselben Inhalt ' +
             'nicht erneut vor, ohne zu sagen, dass er ihn schon einmal verworfen hat.',
         }
       },

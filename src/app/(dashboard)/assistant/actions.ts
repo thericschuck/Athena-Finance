@@ -11,7 +11,8 @@ import {
   type AthenaEffort,
   type AthenaPersona,
 } from '@/lib/assistant/settings'
-import { PERSONA_TEMPLATES } from '@/lib/assistant/prompts'
+import { personaTemplates } from '@/lib/assistant/prompts'
+import { loadAnzeigeNameFuerNutzer } from '@/lib/assistant/context'
 import { logAi } from '@/lib/assistant/logger'
 import { entferneChatDateien } from '@/lib/assistant/datei-speicher'
 import {
@@ -427,7 +428,9 @@ export async function saveAthenaSettings(formData: FormData): Promise<ActionStat
   // NULL statt einer Kopie: dann bleibt Eric an die Vorlage gebunden und
   // bekommt spaetere Verbesserungen daran automatisch mit. Eine identische
   // Kopie in der Datenbank waere ab dem Speichern eingefroren.
-  const vorlage = PERSONA_TEMPLATES[persona as AthenaPersona] ?? ''
+  // Die Vorlage im Formular trägt den Anzeigenamen; für den Vergleich dieselbe Fassung bauen.
+  const nutzerName = await loadAnzeigeNameFuerNutzer(ctx.supabase, ctx.user.id)
+  const vorlage = personaTemplates(nutzerName)[persona as AthenaPersona] ?? ''
   const personaText = !personaTextRaw || personaTextRaw === vorlage.trim() ? null : personaTextRaw
 
   const { error } = await ctx.supabase.from('ai_settings').upsert(

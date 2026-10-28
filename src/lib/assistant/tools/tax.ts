@@ -46,7 +46,7 @@ export function buildTaxTools(supabase: DB, ctx: ScopeContext) {
               'nicht genau. Der Grenzsteuersatz ist robust, weil ihn Abzüge nur verschieben, wenn sie ' +
               'eine Zonengrenze überschreiten. Sag beides so, statt eine geschätzte Jahressteuer als ' +
               'Fakt zu nennen. Fehlt ein Rücklage-Sparziel, schlag es mit createSavingsGoal vor ' +
-              '("Steuerrücklage <Jahr>", Zielbetrag = ruecklage.soll) — Eric bestätigt das mit einem Klick.',
+              '("Steuerrücklage <Jahr>", Zielbetrag = ruecklage.soll) — der Nutzer bestätigt das mit einem Klick.',
           }
         } catch (fehler) {
           // Der Lader wirft bei fehlendem Tarif oder Datenbankfehlern. Lieber

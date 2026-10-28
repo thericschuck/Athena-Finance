@@ -40,7 +40,7 @@ export const inventoryActions = {
       'Trägt eine neue Bewertung (Schätzwert) für ein Stück aus dem Inventar ein. Sie wird ein ' +
       'weiterer Punkt im Wertverlauf, der aktuelle Wert ist der jüngste Eintrag bis heute. ' +
       'Vorher getValuables oder getValuableGaps aufrufen, um die id zu bekommen. Existiert für ' +
-      'dasselbe Datum schon eine Bewertung, wird sie ersetzt. Nenne nur Werte, die Eric dir ' +
+      'dasselbe Datum schon eine Bewertung, wird sie ersetzt. Nenne nur Werte, die der Nutzer dir ' +
       'gesagt hat — schätze nicht selbst.',
     schema: z.object({
       valuableId: z.string().uuid(),
@@ -125,7 +125,7 @@ export const inventoryActions = {
       'Markiert ein Stück aus dem Inventar als verkauft: Verkaufsdatum und Verkaufspreis werden ' +
       'gesetzt, das Stück verschwindet aus Vitrine und Sammlungssumme. Zeile und Wertverlauf ' +
       'bleiben erhalten. Vorher getValuables aufrufen, um die id zu bekommen. Datum und Preis ' +
-      'müssen von Eric stammen — rate sie nicht.',
+      'müssen vom Nutzer stammen — rate sie nicht.',
     schema: z.object({
       valuableId: z.string().uuid(),
       verkauftAm: z
@@ -234,7 +234,7 @@ export const inventoryActions = {
       qualitaet: z
         .enum(['auto', 'high'])
         .default('auto')
-        .describe('high kostet ein Vielfaches — nur wenn Eric ausdrücklich mehr Qualität will'),
+        .describe('high kostet ein Vielfaches — nur wenn der Nutzer ausdrücklich mehr Qualität will'),
     }),
     validate: async (input, ctx) => {
       if (!artworkVerfuegbar()) return OHNE_SCHLUESSEL

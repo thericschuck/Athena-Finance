@@ -9,6 +9,8 @@ import { SettingsProvider } from '@/components/providers/settings-context'
 import { AthenaSettingsProvider } from '@/components/providers/athena-settings-context'
 import { PrivacyProvider } from '@/components/providers/privacy-context'
 import { HaushaltProvider } from '@/components/providers/haushalt-context'
+import { NutzerProvider } from '@/components/providers/nutzer-context'
+import { anzeigeName } from '@/lib/assistant/nutzername'
 import { getOwnProfile, resolveScope } from '@/lib/haushalt/resolve'
 
 /**
@@ -42,11 +44,18 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
-  const [profile, settings, athenaSettings, scopeCtx] = await Promise.all([
+  const [profile, settings, athenaSettings, scopeCtx, ausgangslage] = await Promise.all([
     getOwnProfile(supabase, user.id),
     getSettings(user.id),
     getAthenaModelEffort(supabase, user.id),
     resolveScope(supabase, user),
+    // Nur zählen (kein Inhalt): gibt es schon Ziele/Fakten/Randbedingungen/Vorlieben im Athena-Gedächtnis?
+    supabase
+      .from('ai_memories')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .in('source', ['agent', 'user'])
+      .in('category', ['goal', 'fact', 'constraint', 'preference']),
   ])
   const partnerName = scopeCtx.members.find(m => m.id === scopeCtx.partnerId)?.name ?? null
   const ownName = scopeCtx.members.find(m => m.id === user.id)?.name ?? profile?.display_name ?? null
@@ -56,6 +65,7 @@ export default async function DashboardLayout({
       <AthenaSettingsProvider initial={{ model: athenaSettings.model, effort: athenaSettings.effort }}>
         <PrivacyProvider>
           <HaushaltProvider canShare={scopeCtx.available.length > 1}>
+          <NutzerProvider name={anzeigeName(ownName)} hatAusgangslage={(ausgangslage.count ?? 0) > 0}>
           <AppShell
             email={user.email ?? ''}
             displayName={profile?.display_name ?? null}
@@ -64,6 +74,7 @@ export default async function DashboardLayout({
           >
             {children}
           </AppShell>
+          </NutzerProvider>
           </HaushaltProvider>
         </PrivacyProvider>
       </AthenaSettingsProvider>

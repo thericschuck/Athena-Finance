@@ -16,8 +16,8 @@ export const bankActions = {
       'Synchronisiert die Bankkonten per FinTS: aktualisiert Salden, importiert neue Umsätze ' +
       'und Depotbestände. Standard: letzte 90 Tage — das läuft normalerweise OHNE Freigabe in ' +
       'der Bank-App. fullHistory=true holt die komplette Historie und verlangt IMMER eine ' +
-      'Freigabe in der SecureGo-plus-App; nur nutzen, wenn Eric ausdrücklich alle alten Umsätze ' +
-      'will. Nutze das, wenn Eric aktuelle Bankdaten will oder Salden/Umsätze veraltet wirken ' +
+      'Freigabe in der SecureGo-plus-App; nur nutzen, wenn der Nutzer ausdrücklich alle alten Umsätze ' +
+      'will. Nutze das, wenn der Nutzer aktuelle Bankdaten will oder Salden/Umsätze veraltet wirken ' +
       '(siehe checkDataQuality) — nicht für bloße Fragen zu vorhandenen Daten.',
     schema: z.object({
       fullHistory: z.boolean().optional().describe('Komplette Historie statt 90 Tage (braucht Freigabe).'),

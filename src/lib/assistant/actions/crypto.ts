@@ -108,7 +108,7 @@ export const cryptoActions = {
       'verkauft übergewichtete und kauft untergewichtete Ziel-Assets per Market-Order. Nutzt ' +
       'dafür ein direktes Kraken-Pair, wenn eines existiert (z. B. BTC→ETH direkt), sonst den ' +
       'Umweg über EUR. ECHTES GELD — jede Order wird bei Bestätigung sofort ausgeführt, es gibt ' +
-      'kein Rollback. Nutze das nur, wenn Eric ausdrücklich ein Rebalancing ausführen lassen ' +
+      'kein Rollback. Nutze das nur, wenn der Nutzer ausdrücklich ein Rebalancing ausführen lassen ' +
       'will — nicht als Antwort auf eine bloße Frage nach dem aktuellen Rebalancing-Bedarf.',
     schema: z.object({}),
     validate: async (_input, ctx) => {

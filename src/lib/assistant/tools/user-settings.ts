@@ -10,8 +10,8 @@ export function buildUserSettingsTools(supabase: DB, ctx: ScopeContext) {
     // ── Einstellungen ────────────────────────────────────────────────────────
     getUserSettings: tool({
       description:
-        'Erics Einstellungen, soweit sie Zahlen beeinflussen — vor allem `analyse_default_accounts`: ' +
-        'der Kontenfilter, mit dem die Analyse-Seite standardmäßig rechnet. Wenn Eric eine Zahl von dort ' +
+        'Die Einstellungen des Nutzers, soweit sie Zahlen beeinflussen — vor allem `analyse_default_accounts`: ' +
+        'der Kontenfilter, mit dem die Analyse-Seite standardmäßig rechnet. Wenn der Nutzer eine Zahl von dort ' +
         'nennt und deine abweicht, ist das oft der Grund und keine von beiden ist falsch. Reine ' +
         'Darstellungseinstellungen (Theme, Zahlenformat, Sidebar) liefert dieses Werkzeug bewusst nicht.',
       inputSchema: z.object({}),
