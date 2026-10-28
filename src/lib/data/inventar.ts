@@ -3,13 +3,16 @@ import type { Database } from '@/types/database'
 import type { Valuable, Valuation } from '@/lib/valuables'
 import type { ScopeArg } from '@/lib/data/scope-arg'
 import { scopedOwner } from '@/lib/data/scope-owner'
+import { valuablesSharedLive, valuablesViewDirekt, valuablesSpalten } from '@/lib/data/valuables-shared'
 
 /**
  * Datenzugriff Inventar. Reine Funktionen: Client und Scope kommen vom Aufrufer.
  * ScopeContext = Haushaltssicht (eigene ODER geteilte Stuecke), string (userId) = nur eigene Zeilen wie bisher.
  *
- * Die View `valuables_current` hat KEINE Spalte `shared` (sie wurde vor dem Flag mit `v.*` angelegt), daher werden
- * im Haushaltsscope zuerst die Stueck-IDs aus `valuables` gelesen und die View/Kindtabellen per valuable_id gefiltert.
+ * Die View `valuables_current` bekommt `shared` mit Migration 20261102100000. Solange VALUABLES_SHARED_LIVE nicht 'true'
+ * ist (siehe valuables-shared.ts, dort auch wann der Schalter entfaellt), gilt der alte Umweg: erst die Stueck-IDs aus
+ * `valuables`, dann die View per id. Kindtabellen (Bilder, Bewertungen, Dokumente) haben kein `shared` und werden immer
+ * per valuable_id gefiltert.
  */
 type DB = SupabaseClient<Database>
 
@@ -32,7 +35,7 @@ async function scopedValuableIds(supabase: DB, who: ScopeArg): Promise<string[] 
   return (data ?? []).map(r => r.id)
 }
 
-const VALUABLE_COLUMNS = [
+const VALUABLE_BASIS = [
   'id', 'user_id', 'name', 'kategorie', 'marke', 'modell', 'referenz', 'seriennummer',
   'gekauft_am', 'kaufpreis', 'kaufquelle', 'waehrung', 'zustand', 'box_vorhanden',
   'papiere_vorhanden', 'lagerort', 'versichert', 'versicherungsnummer', 'notizen',
@@ -42,15 +45,27 @@ const VALUABLE_COLUMNS = [
 ].join(', ')
 
 /**
+ * Query auf `valuables_current` im Scope; null = nichts im Scope (Umweg ohne Stuecke).
+ * Direkt: Legacy-String per user_id, Haushaltsscope per `shared` (Schalter live). Sonst Umweg ueber Stueck-IDs.
+ */
+async function viewQuery(supabase: DB, who: ScopeArg) {
+  const live = valuablesSharedLive()
+  const base = supabase.from('valuables_current').select(valuablesSpalten(VALUABLE_BASIS, live))
+  if (typeof who === 'string') return { q: base.eq('user_id', who) }
+  if (valuablesViewDirekt(who, live)) return { q: scopedOwner(base, who) }
+  const ids = await scopedValuableIds(supabase, who)
+  if (!ids || ids.length === 0) return null
+  return { q: base.in('id', ids) }
+}
+
+/**
  * Aktive Inventar-Stücke inkl. aktuellem Wert (View `valuables_current`).
  * Unbegrenzt — die Summe der Sammlung läuft über alle Stücke.
  */
 export async function getActiveValuables(supabase: DB, who: ScopeArg): Promise<Valuable[]> {
-  const ids = await scopedValuableIds(supabase, who)
-  if (ids && ids.length === 0) return []
-  let q = supabase.from('valuables_current').select(VALUABLE_COLUMNS)
-  q = ids ? q.in('id', ids) : q.eq('user_id', who as string)
-  const { data } = await q
+  const v = await viewQuery(supabase, who)
+  if (!v) return []
+  const { data } = await v.q
     .eq('is_active', true)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: false })
@@ -62,11 +77,9 @@ export async function getActiveValuables(supabase: DB, who: ScopeArg): Promise<V
  * getActiveValuables blendet sie aus; die View liefert sie trotzdem, weil sie nicht filtert.
  */
 export async function getSoldValuables(supabase: DB, who: ScopeArg): Promise<Valuable[]> {
-  const ids = await scopedValuableIds(supabase, who)
-  if (ids && ids.length === 0) return []
-  let q = supabase.from('valuables_current').select(VALUABLE_COLUMNS)
-  q = ids ? q.in('id', ids) : q.eq('user_id', who as string)
-  const { data } = await q
+  const v = await viewQuery(supabase, who)
+  if (!v) return []
+  const { data } = await v.q
     .eq('is_active', false)
     .not('verkauft_am', 'is', null)
     .order('verkauft_am', { ascending: false })

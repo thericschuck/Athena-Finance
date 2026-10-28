@@ -4,7 +4,7 @@ import type { Database } from '@/types/database'
 type DB = SupabaseClient<Database>
 
 /** Tabellen mit Spalte `shared`, die ueber das Formular-Schalter-Muster geteilt werden. */
-export type TeilbareTabelle = 'accounts' | 'contracts' | 'debts' | 'savings_goals' | 'budget_categories'
+export type TeilbareTabelle = 'accounts' | 'contracts' | 'debts' | 'savings_goals' | 'budget_categories' | 'valuables'
 
 /** Wahr, wenn der Haushalt des Nutzers mindestens ein weiteres Mitglied hat (sonst gibt es nichts zu teilen). */
 export async function teilenErlaubt(supabase: DB): Promise<boolean> {

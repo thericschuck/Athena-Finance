@@ -2,6 +2,7 @@ import { tool } from 'ai'
 import { z } from 'zod'
 import { KATEGORIEN } from '@/lib/valuables'
 import { getHandBewertungsstaende } from '@/lib/data/inventar'
+import { valuablesSharedLive } from '@/lib/data/valuables-shared'
 import { ROW_CAP, untrust, type DB } from '@/lib/assistant/tools/shared'
 import { scopeOwner, wer } from '@/lib/assistant/tools/scope'
 import type { ScopeContext } from '@/lib/haushalt/scope'
@@ -32,7 +33,7 @@ export function buildInventoryTools(supabase: DB, ctx: ScopeContext) {
         limit: z.number().int().min(1).max(ROW_CAP).default(50),
       }),
       execute: async ({ query, kategorie, ohneBild, limit }) => {
-        // Die View valuables_current hat keine Spalte `shared`: Filter nur nach Besitzer.
+        // `shared` in der View erst mit Migration 20261102100000 + VALUABLES_SHARED_LIVE (valuables-shared.ts); davor nur nach Besitzer.
         let q = scopeOwner(
           supabase
             .from('valuables_current')
@@ -40,7 +41,7 @@ export function buildInventoryTools(supabase: DB, ctx: ScopeContext) {
             // eine zusammengesetzte Zeichenkette macht daraus `unknown`.
             .select('id, name, kategorie, marke, modell, referenz, zustand, notizen, aktueller_wert, waehrung, gekauft_am, kaufpreis, bild_anzahl, foto_anzahl'),
           ctx,
-          { sharedColumn: false },
+          { sharedColumn: valuablesSharedLive() },
         )
           .eq('is_active', true)
           .order('sort_order')
@@ -88,7 +89,7 @@ export function buildInventoryTools(supabase: DB, ctx: ScopeContext) {
             .from('valuables_current')
             .select('id, name, kategorie, marke, modell, seriennummer, box_vorhanden, papiere_vorhanden, versichert, aktueller_wert, wert_stand, waehrung'),
           ctx,
-          { sharedColumn: false },
+          { sharedColumn: valuablesSharedLive() },
         )
           .eq('is_active', true)
           .order('sort_order')

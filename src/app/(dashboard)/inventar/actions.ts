@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { parseForm, parseInput, issueMessage } from '@/lib/api/validate'
 import { idField, uuid, isoDate, money, MAX_AMOUNT, optDate, optText } from '@/lib/api/schemas'
 import { requireRows } from '@/lib/data/mutation'
+import { setzeGeteilt } from '@/lib/haushalt/teilen'
 
 // Textfelder und Datumsangaben des Formulars. Beträge laufen weiter über `zahl()`
 // (parseCsvAmount versteht beide Schreibweisen) und werden danach auf Endlichkeit geprüft.
@@ -189,6 +190,11 @@ export async function updateValuable(
     .eq('id', id)) // Haushaltstabelle: Zugriff regelt die RLS (Peers duerfen bearbeiten)
 
   if (error) return { error: error.message }
+
+  // Schalter „Mit Haushalt teilen“ (nur wenn im Formular vorhanden): nur eigene Stuecke (user_id = Handelnder),
+  // Entzug immer erlaubt, Teilen nur mit Haushaltsmitgliedern (siehe setzeGeteilt).
+  const teilenFehler = await setzeGeteilt(supabase, 'valuables', id, user.id, formData)
+  if (teilenFehler) return { error: teilenFehler }
 
   // Die Kaufbewertung folgt Kaufdatum und Kaufpreis. Vorher blieb sie beim Datum stehen, das
   // beim Anlegen galt: wer ein vertipptes Kaufdatum korrigierte (Prada: 2026 statt 2025),

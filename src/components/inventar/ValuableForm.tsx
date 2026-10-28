@@ -208,6 +208,14 @@ export function ValuableForm({ trigger, item, canShare = false }: Props) {
               defaultChecked={item ? item.im_vermoegen : true}
             />
             {canShare && !item && <Haken name="shared" label="Mit Haushalt teilen" />}
+            {/* Bestehendes Stueck: Ist-Zustand aus `shared`. Fremde Stuecke (Partner) koennen nicht umgestellt werden,
+                die Action aendert nur eigene Zeilen. Ohne `shared` aus der View (Migration noch nicht live) kein Schalter. */}
+            {canShare && item && item.shared !== undefined && (
+              <>
+                <input type="hidden" name="shared_form" value="1" />
+                <Haken name="shared" label="Mit Haushalt teilen" defaultChecked={item.shared} />
+              </>
+            )}
           </div>
 
           {/* Verkauf — nur beim Bearbeiten. Beim Anlegen wäre das Feld sinnlos und würde

@@ -3,6 +3,7 @@ import type { Database } from '@/types/database'
 import { applyAccountScope } from '@/lib/haushalt/scope'
 import { istScopeContext, userIdVon, type ScopeArg } from '@/lib/data/scope-arg'
 import { scopedOwner } from '@/lib/data/scope-owner'
+import { valuablesViewDirekt } from '@/lib/data/valuables-shared'
 import { getNetWorthReihe, nutztSnapshotFunktion } from '@/lib/data/networth-reihe'
 
 /**
@@ -141,7 +142,11 @@ export async function getActiveValuables(supabase: Client, who: ScopeArg): Promi
     const { data } = await q.eq('user_id', who).eq('is_active', true)
     return (data ?? []) as DashboardValuable[]
   }
-  // Die View hat keine Spalte `shared` (siehe inventar.ts): erst die Stueck-IDs im Scope aus `valuables`, dann die View per id.
+  // Haushaltssicht: mit Schalter (Migration 20261102100000 live) direkt ueber `shared`, sonst Umweg ueber die Stueck-IDs.
+  if (valuablesViewDirekt(who)) {
+    const { data } = await scopedOwner(q, who).eq('is_active', true)
+    return (data ?? []) as DashboardValuable[]
+  }
   const { data: ids } = await scopedOwner(supabase.from('valuables').select('id'), who)
   const idListe = (ids ?? []).map(r => r.id)
   if (idListe.length === 0) return []

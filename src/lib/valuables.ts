@@ -51,6 +51,8 @@ export interface Valuable {
   wertmodus: string
   /** Datum der letzten HANDEINGABE (alles ausser `modell`). Von der Seite ergaenzt, nicht aus der View. */
   hand_wert_stand?: string | null
+  /** Mit dem Haushalt geteilt. Nur gesetzt, wenn die View `shared` liefert (Migration 20261102100000, Schalter VALUABLES_SHARED_LIVE). */
+  shared?: boolean
 }
 
 /** Eine Zeile aus `valuable_images`, angereichert um die signierte URL. */
