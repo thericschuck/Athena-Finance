@@ -150,6 +150,8 @@ export type FlowTransaction = {
   merchant: string | null
   /** Vererbte Steuerrolle der Kategorie, null = keine. */
   tax_role: string | null
+  /** Nur im Haushalt gesetzt: haushaltsweite Umbuchung, die im Scope zur echten Buchung herabgestuft wurde (siehe flows-scope.ts). */
+  herabgestuft?: boolean
 }
 
 const TX_COLUMNS =

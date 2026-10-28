@@ -75,7 +75,7 @@ export function herabgestufteBuchungen(
       date: String(r.date).slice(0, 10), amount: Math.abs(Number(r.amount_eur ?? 0)), flow_kind: art, source: String(r.source),
       category_id: r.category_id, category_name: r.category_name,
       root_category_id: r.root_category_id, root_category_name: r.root_category_name,
-      description: r.description, merchant: r.merchant, tax_role: r.tax_role_effective,
+      description: r.description, merchant: r.merchant, tax_role: r.tax_role_effective, herabgestuft: true,
     }
     if (r.account_id && konten.has(r.account_id)
       && wirdHerabgestuft({ flow_kind: 'umbuchung', account_id: r.account_id, counterpart_account_id: r.counterpart_account_id, flow_kind_extern: art }, scope)) {

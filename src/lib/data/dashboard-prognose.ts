@@ -9,12 +9,14 @@ import type { ScopeContext } from '@/lib/haushalt/scope'
  * und `cache()` lässt die drei Abschnitte sie teilen, ohne dass einer den anderen kennt.
  *
  * Drei Monate reichen fürs Dashboard (die Prognose-Seite selbst rechnet 18). Schlägt die
- * Berechnung fehl, kommt `null`: das Dashboard bleibt benutzbar, nur der Ausblick fehlt.
+ * Berechnung fehl (oder fehlt Historie), kommt `null`: das Dashboard bleibt benutzbar, nur der Ausblick fehlt.
  */
 export const ladeDashPrognose = cache(async (ctx: ScopeContext, heute: string): Promise<PrognoseBasis | null> => {
   try {
     const { supabase } = await getAuthUser()
-    return await ladePrognoseBasis(supabase, ctx, heute, { monate: 3 })
+    const b = await ladePrognoseBasis(supabase, ctx, heute, { monate: 3 })
+    // Ansicht mit weniger als 3 Monaten Historie: keine Scheinprognose, der Ausblick fehlt (die Prognose-Seite erklaert warum).
+    return b.zuWenigHistorie ? null : b
   } catch {
     return null
   }

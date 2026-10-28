@@ -6,8 +6,9 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { getAuthUser } from '@/lib/supabase/server'
 import { fetchSettingValue } from '@/lib/data/settings'
-import { ANNAHMEN_KEY, ANNAHME_ARTEN, leseAnnahmen } from '@/lib/forecast/annahmen'
-import { leseUeberschreibung, UEBERSCHREIBUNG_KEY } from '@/lib/forecast/einmalig'
+import { ANNAHME_ARTEN, leseAnnahmen } from '@/lib/forecast/annahmen'
+import { leseUeberschreibung } from '@/lib/forecast/einmalig'
+import { annahmenKey, ueberschreibungKey } from '@/lib/forecast/scope-regeln'
 import { pruefeAnnahme } from '@/lib/prognose-seite/annahme-eingabe'
 import { mischeUeberschreibung } from '@/lib/prognose-seite/berechnen'
 import type { Json } from '@/types/database'
@@ -18,6 +19,7 @@ export type AnnahmenState = { error?: string; success?: boolean } | null
  * Besitz: Annahmen und Auswahl liegen als JSON in der `user_settings`-Zeile des angemeldeten Nutzers
  * (user_id kommt aus der Sitzung, nie aus dem Formular). Eine Annahme-Id, die nicht in SEINER Liste
  * steht, wird abgelehnt; Buchungs-Ids der Einmalposten müssen ihm gehören.
+ * Je Ansicht (Scope) eigene Zeile: 'ich' unter dem bisherigen Schlüssel, Partner/Gemeinsam mit Suffix (siehe scope-regeln.ts).
  */
 
 const annahmeSchema = z.object({
@@ -55,7 +57,8 @@ export async function speichereAnnahme(_prev: AnnahmenState, formData: FormData)
   const geprueft = pruefeAnnahme(roh)
   if (!geprueft.ok) return { error: geprueft.fehler }
 
-  const bisher = leseAnnahmen(await fetchSettingValue(supabase, user.id, ANNAHMEN_KEY))
+  const key = annahmenKey((await resolveScope(supabase, user)).scope)
+  const bisher = leseAnnahmen(await fetchSettingValue(supabase, user.id, key))
   let liste = bisher
   if (id) {
     if (!bisher.some(a => a.id === id)) return { error: 'Diese Annahme gibt es nicht mehr. Bitte die Seite neu laden.' }
@@ -67,7 +70,7 @@ export async function speichereAnnahme(_prev: AnnahmenState, formData: FormData)
 
   const { error } = await supabase
     .from('user_settings')
-    .upsert({ user_id: user.id, key: ANNAHMEN_KEY, value: liste as unknown as Json }, { onConflict: 'user_id,key' })
+    .upsert({ user_id: user.id, key, value: liste as unknown as Json }, { onConflict: 'user_id,key' })
   if (error) return { error: error.message }
 
   revalidatePath('/finance/prognose')
@@ -80,12 +83,13 @@ export async function loescheAnnahme(id: string): Promise<{ error?: string }> {
   if (!user) return { error: 'Nicht eingeloggt' }
   if (typeof id !== 'string' || id.length === 0 || id.length > 40) return { error: 'Ungültige Annahme' }
 
-  const bisher = leseAnnahmen(await fetchSettingValue(supabase, user.id, ANNAHMEN_KEY))
+  const key = annahmenKey((await resolveScope(supabase, user)).scope)
+  const bisher = leseAnnahmen(await fetchSettingValue(supabase, user.id, key))
   if (!bisher.some(a => a.id === id)) return {}
   const { error } = await supabase
     .from('user_settings')
     .upsert(
-      { user_id: user.id, key: ANNAHMEN_KEY, value: bisher.filter(a => a.id !== id) as unknown as Json },
+      { user_id: user.id, key, value: bisher.filter(a => a.id !== id) as unknown as Json },
       { onConflict: 'user_id,key' },
     )
   if (error) return { error: error.message }
@@ -119,21 +123,22 @@ export async function speichereEinmalposten(_prev: AnnahmenState, formData: Form
 
   // Besitzprüfung: nur Buchungen im Scope des angemeldeten Nutzers.
   let erlaubt = new Set<string>()
+  const ctx = await resolveScope(supabase, user)
+  const key = ueberschreibungKey(ctx.scope)
   if (alleIds.length > 0) {
     // Buchungen der Konten im Scope (Haushalt); die Auswahl selbst landet owner-only in user_settings.
-    const ctx = await resolveScope(supabase, user)
     const { data, error: ownErr } = await applyAccountScope(supabase.from('unified_transactions').select('id'), ctx)
       .in('id', alleIds)
     if (ownErr) return { error: ownErr.message }
     erlaubt = new Set((data ?? []).map(r => String(r.id)))
   }
 
-  const bisher = leseUeberschreibung(await fetchSettingValue(supabase, user.id, UEBERSCHREIBUNG_KEY))
+  const bisher = leseUeberschreibung(await fetchSettingValue(supabase, user.id, key))
   const gueltig = mischeUeberschreibung(bisher, sichtbar, neu, erlaubt)
 
   const { error } = await supabase
     .from('user_settings')
-    .upsert({ user_id: user.id, key: UEBERSCHREIBUNG_KEY, value: gueltig as unknown as Json }, { onConflict: 'user_id,key' })
+    .upsert({ user_id: user.id, key, value: gueltig as unknown as Json }, { onConflict: 'user_id,key' })
   if (error) return { error: error.message }
 
   revalidatePath('/finance/prognose')

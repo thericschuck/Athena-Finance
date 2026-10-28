@@ -52,6 +52,10 @@ export default async function PrognosePage({
     return <PrognoseLeer ctx={scopeCtx} grund="konto" />
   }
   const d = await ladePrognose(supabase, scopeCtx, heute, { monate })
+  // Ansicht (Partner/Gemeinsam) mit weniger als 3 Monaten Historie: keine Scheinprognose.
+  if (d.zuWenigHistorie) {
+    return <PrognoseLeer ctx={scopeCtx} grund="historie" />
+  }
   // Konto da, aber keine Buchung, aus der das Modell lernen koennte.
   if (d.szenario.modell.daten.tage === 0) {
     return <PrognoseLeer ctx={scopeCtx} grund="buchungen" />
@@ -233,15 +237,17 @@ export default async function PrognosePage({
   )
 }
 
-function PrognoseLeer({ ctx, grund }: { ctx: Parameters<typeof ScopeHinweisFuer>[0]['ctx']; grund: 'konto' | 'buchungen' }) {
+function PrognoseLeer({ ctx, grund }: { ctx: Parameters<typeof ScopeHinweisFuer>[0]['ctx']; grund: 'konto' | 'buchungen' | 'historie' }) {
   return (
     <div className="min-w-0 space-y-4 p-4 sm:p-8">
       <h1 className="text-2xl font-semibold tracking-tight">Prognose</h1>
       <ScopeHinweisFuer ctx={ctx} thema="Konten und Buchungen" />
       <LeerZustand
         icon={TrendingUp}
-        titel={grund === 'konto' ? 'Noch keine Konten für eine Prognose' : 'Noch keine Buchungen zum Lernen'}
-        text={grund === 'konto'
+        titel={grund === 'konto' ? 'Noch keine Konten für eine Prognose' : grund === 'historie' ? 'Noch zu wenig Historie für diese Ansicht' : 'Noch keine Buchungen zum Lernen'}
+        text={grund === 'historie'
+          ? 'Für diese Ansicht gibt es erst weniger als 3 Monate Buchungen auf allen Konten. Die Prognose lernt ab dem Tag, an dem alle Konten der Ansicht Buchungen haben, und startet, sobald genug Verlauf da ist. In der Ansicht Ich ist sie bereits verfügbar.'
+          : grund === 'konto'
           ? 'Die Prognose schreibt deine letzten Monate fort und zeigt, wie sich Liquidität und Vermögen entwickeln. Dafür braucht sie mindestens ein Konto mit Buchungen.'
           : 'Die Prognose lernt aus deinen Buchungen. Sobald ein paar Wochen davon da sind, zeigt sie dir Liquidität und Vermögen der nächsten Monate, samt Verträgen und Terminen.'}
         aktion={grund === 'konto'
