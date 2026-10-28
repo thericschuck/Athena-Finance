@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/supabase/server'
 import { getBankScaStatus } from '@/lib/fints/state'
 import { getBankBalances } from '@/lib/data/finance-accounts'
 import { applyAccountScope, type ScopeContext } from '@/lib/haushalt/scope'
+import { artFragment, herabstufungsIds } from '@/lib/haushalt/umbuchung'
 import { ladeSteuerdaten } from '@/lib/tax/laden'
 import { berechneSteuerposition } from '@/lib/tax/position'
 import type { ErinnerungsEingabe } from '@/lib/reminders/regeln'
@@ -77,9 +78,11 @@ async function ladeBank(ctx: ScopeContext, jetzt: number) {
 async function zaehleOffene(ctx: ScopeContext): Promise<number> {
   try {
     const { supabase } = await getAuthUser()
-    // TODO(scope-flows): herabgestufte Umbuchungen (flow_kind_extern) ohne Kategorie zaehlen hier noch nicht mit.
-    const { count, error } = await applyAccountScope(supabase.from('unified_transactions').select('id', { count: 'exact', head: true }), ctx)
-      .is('category_id', null).in('flow_kind', ['echt', 'anlage', 'forderung'])
+    // Haushalt: auch herabgestufte Umbuchungen (Gegenkonto nicht im Scope, flow_kind_extern zaehlend) ohne Kategorie (lib/haushalt/umbuchung.ts).
+    const arten = ['echt', 'anlage', 'forderung']
+    const herab = herabstufungsIds(ctx)
+    const basis = applyAccountScope(supabase.from('unified_transactions').select('id', { count: 'exact', head: true }), ctx).is('category_id', null)
+    const { count, error } = await (herab ? basis.or(artFragment(herab, arten)) : basis.in('flow_kind', arten))
     return error ? 0 : count ?? 0
   } catch {
     return 0

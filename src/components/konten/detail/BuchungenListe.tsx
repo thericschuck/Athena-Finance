@@ -120,7 +120,7 @@ export function BuchungenListe({
                     // Mobil immer sichtbar (kein Hover am Handy), am Desktop bei Hover oder Tastaturfokus.
                     <span className="flex items-center gap-0.5 opacity-100 transition-opacity max-md:[&_button]:size-10 md:opacity-0 md:focus-within:opacity-100 md:group-hover:opacity-100">
                       {/* Die Dialoge erwarten die Zeile der Tabelle `transactions`; die View liefert dieselben Spalten. */}
-                      <EditTransactionDialog tx={tx as unknown as TxRow} accounts={accounts} categories={categories} />
+                      <EditTransactionDialog tx={{ ...tx, type: tx.type_db ?? tx.type } as unknown as TxRow} accounts={accounts} categories={categories} />
                       <DeleteTransactionButton tx={tx as unknown as TxRow} />
                     </span>
                   )}

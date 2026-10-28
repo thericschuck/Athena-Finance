@@ -2,9 +2,10 @@ import { mitSteuerWerten } from '@/lib/tax/overrides'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { applyAccountScope, type ScopeContext } from '@/lib/haushalt/scope'
+import { HERAB_SPALTEN, effektiveBuchungen, herabstufungsIds, wendeHerabFilterAn } from '@/lib/haushalt/umbuchung'
 import { berechneKiBilanz, type KiBilanz, type KiZeile } from '@/lib/fints/ai-bilanz'
 import { OHNE_KATEGORIE, type TransaktionsFilter } from '@/lib/transaktionen/filter'
-import { summiereTreffer, type TrefferSummen } from '@/lib/transaktionen/berechnen'
+import { summiereTreffer, type SummenZeile, type TrefferSummen } from '@/lib/transaktionen/berechnen'
 
 type DB = SupabaseClient<Database>
 
@@ -34,6 +35,13 @@ export type UnifiedTxRow = {
   category_source: string | null
   /** Vorschlag der KI; bei offenen Buchungen der Vorschlag, bei gesetzten der ursprüngliche KI-Wert. */
   ai_category_id: string | null
+  /** Nur im Haushalt (Partner) geladen: Gegenkonto bzw. transfer_to und Art ohne Umbuchungs-Erkennung. */
+  counterpart_account_id?: string | null
+  flow_kind_extern?: string | null
+  /** Im Scope zur echten Buchung herabgestufte Umbuchung (type/flow_kind sind dann die effektiven Werte). */
+  herabgestuft?: boolean
+  /** Ursprünglicher View-Typ einer herabgestuften Zeile (transfer), für das Bearbeiten-Formular. */
+  type_db?: string
 }
 
 /** Zeile der globalen Transaktionsliste (zusätzlich Konto-Name/-Farbe für die Tabelle). */
@@ -68,10 +76,17 @@ interface FilterBuilder<Q> {
  * Wendet die Filter auf eine Abfrage der View `unified_transactions` an. EINE Stelle für Liste, Summe
  * und Export: sonst zeigt die Liste etwas anderes, als die Summe darüber addiert oder der Export schreibt.
  */
-export function wendeFilterAn<Q extends FilterBuilder<Q>>(query: Q, f: TransaktionsFilter, kategorieIds?: string[]): Q {
+export function wendeFilterAn<Q extends FilterBuilder<Q>>(
+  query: Q, f: TransaktionsFilter, kategorieIds?: string[], herabIds?: readonly string[],
+): Q {
   let q = query
-  if (f.type) q = q.eq('type', f.type)
-  if (f.art) q = q.eq('flow_kind', f.art)
+  // Im Haushalt (herabIds gesetzt) gilt die EFFEKTIVE Art/Richtung im Scope (Umbuchung ohne Gegenkonto im Scope = echte Buchung),
+  // sonst exakt wie bisher. Regel und Fragmente: lib/haushalt/umbuchung.ts.
+  if (herabIds) q = wendeHerabFilterAn(q, herabIds, f)
+  else {
+    if (f.type) q = q.eq('type', f.type)
+    if (f.art) q = q.eq('flow_kind', f.art)
+  }
   if (f.account) q = q.eq('account_id', f.account)
   if (f.category === OHNE_KATEGORIE) q = q.is('category_id', null)
   else if (f.category) {
@@ -96,6 +111,11 @@ const UNIFIED_BASE_COLUMNS =
   'id, account_id, category_id, date, type, amount, currency, description, merchant, transfer_to, source, signed_amount, flow_kind, category_source, ai_category_id'
 const TRANSACTION_LIST_COLUMNS = `${UNIFIED_BASE_COLUMNS}, account_name, account_color`
 const ACCOUNT_TRANSACTION_COLUMNS = `${UNIFIED_BASE_COLUMNS}, category_name, category_color`
+// Mit Partner zusätzlich die Spalten der Herabstufung (ohne Partner bleibt die Abfrage unverändert).
+const TRANSACTION_LIST_COLUMNS_HERAB = `${TRANSACTION_LIST_COLUMNS}, ${HERAB_SPALTEN}`
+const ACCOUNT_TRANSACTION_COLUMNS_HERAB = `${ACCOUNT_TRANSACTION_COLUMNS}, ${HERAB_SPALTEN}`
+const SUMMEN_COLUMNS = 'type, flow_kind, amount, signed_amount'
+const SUMMEN_COLUMNS_HERAB = `${SUMMEN_COLUMNS}, account_id, ${HERAB_SPALTEN}`
 
 /**
  * Die gewählte Kategorie samt allen Unterkategorien (aus der View `category_tree`: `root_id` ist die
@@ -135,14 +155,16 @@ export async function getTransactionsPage(
   // Zweites Sortierkriterium: `date` ist ein Datum, kein Zeitstempel. Ohne eindeutige Ordnung (`id`)
   // wäre die Seiteneinteilung nicht stabil (Buchung auf zwei Seiten / auf keiner). Nach Betrag zuerst
   // der Betrag, dann das Datum — gleiche Beträge erscheinen in zeitlicher Reihenfolge.
-  // TODO(scope-flows): Herabstufung per counterpart_account_id (flow_kind der Liste ist haushaltsweit)
+  // Herabstufung (Haushalt): Typ-/Art-Filter wirken auf die effektive Art, die Zeilen werden danach abgebildet (lib/haushalt/umbuchung.ts).
+  const herab = herabstufungsIds(ctx)
   let query = wendeFilterAn(
     applyAccountScope(
-      supabase.from('unified_transactions').select(TRANSACTION_LIST_COLUMNS, { count: 'exact' }),
+      supabase.from('unified_transactions').select(herab ? TRANSACTION_LIST_COLUMNS_HERAB : TRANSACTION_LIST_COLUMNS, { count: 'exact' }),
       ctx,
     ),
     filters,
     kategorieIds,
+    herab,
   )
   if (feld === 'amount') query = query.order('amount', { ascending: aufsteigend }).order('date', { ascending: false })
   else query = query.order('date', { ascending: aufsteigend })
@@ -152,7 +174,7 @@ export async function getTransactionsPage(
   const { data, count, error } = await query.range(von, von + pageSize - 1)
 
   return {
-    rows: (data ?? []) as unknown as TransactionListRow[],
+    rows: effektiveBuchungen((data ?? []) as unknown as TransactionListRow[], herab),
     count,
     error,
   }
@@ -173,15 +195,17 @@ export async function getTransactionsSummary(
   ctx: ScopeContext,
   filters: TransaktionsFilter,
 ): Promise<TrefferSummen & { gekappt: boolean }> {
-  const zeilen: { type: string; flow_kind: string; amount: number; signed_amount: number }[] = []
+  const zeilen: (SummenZeile & { account_id?: string | null; counterpart_account_id?: string | null; flow_kind_extern?: string | null })[] = []
   let gekappt = false
   const kategorieIds = await kategorieIdsFuer(supabase, filters)
+  const herab = herabstufungsIds(ctx)
   for (let seite = 0; seite < SUMMEN_MAX_SEITEN; seite++) {
-    // TODO(scope-flows): Herabstufung per counterpart_account_id
+    // Herabstufung: gleiche Filter wie die Liste; die geladenen Zeilen werden unten auf die effektive Art/Richtung abgebildet.
     const { data, error } = await wendeFilterAn(
-      applyAccountScope(supabase.from('unified_transactions').select('type, flow_kind, amount, signed_amount'), ctx),
+      applyAccountScope(supabase.from('unified_transactions').select(herab ? SUMMEN_COLUMNS_HERAB : SUMMEN_COLUMNS), ctx),
       filters,
       kategorieIds,
+      herab,
     )
       .order('date', { ascending: false })
       .order('id', { ascending: false })
@@ -192,7 +216,7 @@ export async function getTransactionsSummary(
       break
     }
     if (!data || data.length === 0) break
-    zeilen.push(...(data as unknown as typeof zeilen))
+    zeilen.push(...effektiveBuchungen(data as unknown as typeof zeilen, herab))
     if (data.length < SUMMEN_SEITE) break
     if (seite === SUMMEN_MAX_SEITEN - 1) gekappt = true
   }
@@ -216,11 +240,12 @@ export async function getAccountTransactions(
 ): Promise<AccountTransactionRow[]> {
   const rows: AccountTransactionRow[] = []
   let offset = 0
+  const herab = herabstufungsIds(ctx)
 
   for (let page = 0; page < MAX_PAGES; page++) {
-    // TODO(scope-flows): Herabstufung per counterpart_account_id
+    // Herabstufung (Haushalt): Zeilen werden nach dem Laden auf die effektive Art/Richtung abgebildet.
     const { data } = await applyAccountScope(
-      supabase.from('unified_transactions').select(ACCOUNT_TRANSACTION_COLUMNS),
+      supabase.from('unified_transactions').select(herab ? ACCOUNT_TRANSACTION_COLUMNS_HERAB : ACCOUNT_TRANSACTION_COLUMNS),
       ctx,
     )
       .eq('account_id', accountId)
@@ -228,7 +253,7 @@ export async function getAccountTransactions(
       .order('id', { ascending: false })
       .range(offset, offset + PAGE_SIZE - 1)
     if (!data || data.length === 0) break
-    rows.push(...(data as unknown as AccountTransactionRow[]))
+    rows.push(...effektiveBuchungen(data as unknown as AccountTransactionRow[], herab))
     offset += data.length
   }
   return rows

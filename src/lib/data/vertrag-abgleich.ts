@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { applyAccountScope, applyOwnerScope } from '@/lib/haushalt/scope'
+import { herabstufungsIds, typFragment } from '@/lib/haushalt/umbuchung'
 import { istScopeContext, userIdVon, type ScopeArg } from '@/lib/data/scope-arg'
 import { addTage } from '@/lib/forecast/datum'
 import {
@@ -31,16 +32,18 @@ export async function ladeVertragsAbgleich(supabase: DB, who: ScopeArg, heute = 
   const liste: AbgleichVertrag[] = (vertraege ?? []).map(v => ({ ...v, auto_renews: v.auto_renews === true }))
   if (liste.length === 0) return []
 
-  // TODO(scope-flows): Herabstufung per counterpart_account_id (hier nur Ausgaben; Umbuchungs-Typ ist 'transfer')
+  // Nur Ausgaben. Im Haushalt zaehlt auch eine Umbuchung ohne Gegenkonto im Scope als Ausgabe (effektive Richtung, lib/haushalt/umbuchung.ts);
+  // ohne Partner und im Cron-Pfad (string) bleibt es bei type = 'expense'.
+  const herab = istScopeContext(who) ? herabstufungsIds(who) : undefined
   const bq = supabase.from('unified_transactions').select('id, account_id, date, amount, type')
-  const { data: rows, error: bError } = await (istScopeContext(who) ? applyAccountScope(bq, who) : bq.eq('user_id', userIdVon(who)))
-    .eq('type', 'expense')
+  const gescopt = istScopeContext(who) ? applyAccountScope(bq, who) : bq.eq('user_id', userIdVon(who))
+  const { data: rows, error: bError } = await (herab ? gescopt.or(typFragment(herab, 'expense')) : gescopt.eq('type', 'expense'))
     .in('account_id', [...new Set(liste.flatMap(v => (v.account_id ? [v.account_id] : [])))])
     .gte('date', addTage(heute, -(FENSTER_TAGE + TAGE_VOR)))
   if (bError) throw new Error(bError.message)
 
   const buchungen: AbgleichBuchung[] = (rows ?? []).flatMap(r =>
-    r.id && r.date && r.amount !== null && r.type ? [{ id: r.id, account_id: r.account_id, date: r.date, amount: Number(r.amount), type: r.type }] : [])
+    r.id && r.date && r.amount !== null && r.type ? [{ id: r.id, account_id: r.account_id, date: r.date, amount: Number(r.amount), type: 'expense' }] : [])
 
   return liste.flatMap(vertrag => {
     const abgleich = pruefeVertrag(vertrag, buchungen, heute)

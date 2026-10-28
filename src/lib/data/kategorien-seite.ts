@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { applyAccountScope, type ScopeContext } from '@/lib/haushalt/scope'
+import { HERAB_SPALTEN, effektiveBuchung, herabstufungsIds } from '@/lib/haushalt/umbuchung'
 import {
   getCategories,
   getEuerZeilenForCategories,
@@ -38,11 +39,15 @@ const MAX_SEITEN = 60
  * PostgREST kappt bei 1.000 Zeilen, deshalb seitenweise mit stabiler Sortierung; die erste Welle
  * laeuft parallel, sobald die Gesamtzahl bekannt ist.
  */
-// TODO(scope-flows): Herabstufung per counterpart_account_id (flow_kind der Nutzung ist haushaltsweit)
+// Herabstufung (Haushalt): eine Umbuchung ohne Gegenkonto im Scope zaehlt als echte Buchung (Art/Richtung effektiv, lib/haushalt/umbuchung.ts).
+const SPALTEN = 'category_id, type, flow_kind, amount_eur, date'
+const SPALTEN_HERAB = `${SPALTEN}, signed_amount, account_id, ${HERAB_SPALTEN}`
 async function ladeBuchungen(supabase: DB, ctx: ScopeContext): Promise<BuchungKurz[]> {
+  const herab = herabstufungsIds(ctx)
+  const accountIds = new Set(ctx.accountIds)
   const basis = () =>
     applyAccountScope(
-      supabase.from('unified_transactions').select('category_id, type, flow_kind, amount_eur, date'),
+      supabase.from('unified_transactions').select(herab ? SPALTEN_HERAB : SPALTEN),
       ctx,
     )
       .not('category_id', 'is', null)
@@ -68,7 +73,8 @@ async function ladeBuchungen(supabase: DB, ctx: ScopeContext): Promise<BuchungKu
   const antworten = [erste, ...weitere]
   const zeilen: BuchungKurz[] = []
   for (const a of antworten) {
-    for (const z of a.data ?? []) {
+    for (const roh of (a.data ?? []) as unknown as (BuchungsQuelle[])) {
+      const z = herab ? effektiveBuchung({ ...roh, signed_amount: Number(roh.signed_amount ?? 0), type: roh.type ?? '' }, accountIds) : roh
       zeilen.push({
         category_id: z.category_id,
         type: z.type ?? '',
@@ -79,6 +85,18 @@ async function ladeBuchungen(supabase: DB, ctx: ScopeContext): Promise<BuchungKu
     }
   }
   return zeilen
+}
+
+type BuchungsQuelle = {
+  category_id: string | null
+  type: string | null
+  flow_kind: string
+  amount_eur: number | string | null
+  date: string | null
+  signed_amount?: number | string | null
+  account_id?: string | null
+  counterpart_account_id?: string | null
+  flow_kind_extern?: string | null
 }
 
 export async function ladeKategorienSeite(supabase: DB, ctx: ScopeContext, period: Period): Promise<KategorienSeitenDaten> {

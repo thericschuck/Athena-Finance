@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/supabase/server'
 import { parseInput, issueMessage } from '@/lib/api/validate'
 import { uuid } from '@/lib/api/schemas'
 import { resolveScope } from '@/lib/haushalt/resolve'
+import { HERAB_SPALTEN, effektiveBuchung, herabstufungsIds } from '@/lib/haushalt/umbuchung'
 import { letzteAenderung, type ZuletztGeaendertInfo } from '@/lib/data/aenderungen'
 
 /**
@@ -66,6 +67,10 @@ interface ViewZeile {
   tax_role_effective: string | null
   category_source: string | null
   ai_category_id: string | null
+  /** Nur im Haushalt geladen (Herabstufung). */
+  account_id?: string | null
+  counterpart_account_id?: string | null
+  flow_kind_extern?: string | null
 }
 
 interface BankZeile {
@@ -86,17 +91,21 @@ export async function ladeBuchungsDetail(
   const p = parseInput(args, { id, source })
   if (!p.ok) return { error: issueMessage(p) }
 
+  const ctx = await resolveScope(supabase, user)
+  // Haushalt: Art/Typ wie in der Liste (Umbuchung ohne Gegenkonto im Scope = Einnahme/Ausgabe), lib/haushalt/umbuchung.ts.
+  const herab = herabstufungsIds(ctx)
+  const spalten =
+    'id, date, booked_date, type, flow_kind, amount, signed_amount, currency, merchant, description, description_raw, account_name, category_id, category_name, root_category_name, category_path, tax_role_effective, category_source, ai_category_id'
   const { data, error } = await supabase
     .from('unified_transactions')
-    .select(
-      'id, date, booked_date, type, flow_kind, amount, signed_amount, currency, merchant, description, description_raw, account_name, category_id, category_name, root_category_name, category_path, tax_role_effective, category_source, ai_category_id',
-    )
+    .select(herab ? `${spalten}, account_id, ${HERAB_SPALTEN}` : spalten)
     .eq('id', p.data.id)
     .eq('source', p.data.source)
     .maybeSingle()
   if (error) return { error: error.message }
   if (!data) return { error: 'Buchung nicht gefunden' }
-  const z = data as unknown as ViewZeile
+  const roh = data as unknown as ViewZeile
+  const z = herab ? effektiveBuchung(roh, herab) : roh
 
   let bank: BankZeile | null = null
   if (p.data.source === 'bank_sync') {
@@ -110,7 +119,7 @@ export async function ladeBuchungsDetail(
 
   const zuletzt = await letzteAenderung(
     supabase,
-    await resolveScope(supabase, user),
+    ctx,
     p.data.source === 'bank_sync' ? 'bank_transactions' : 'transactions',
     p.data.id,
   )
