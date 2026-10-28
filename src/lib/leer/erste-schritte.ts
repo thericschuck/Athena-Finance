@@ -221,3 +221,35 @@ export function checklisteStatus(
 export function sollFertigVermerken(zaehler: ErsteSchritteZaehler, scope: string, flag: ChecklisteFlag | null): boolean {
   return flag === null && scope === 'ich' && checklisteStatus(zaehler, null) === 'fertig'
 }
+
+export type KarteTexte = {
+  titel: string
+  /** Zeile unter dem Titel; leer, wenn es nichts Besonderes zu sagen gibt. */
+  untertitel: string
+  /** Alle Pflicht-Schritte (Grundlagen) erledigt, optionale Anbindungen offen. */
+  grundlagenFertig: boolean
+  /** Z. B. "38 %", immer 0..100, nie NaN. */
+  prozentText: string
+  /** Z. B. "3 von 8 erledigt". */
+  zaehlText: string
+  /** Beschriftung ueber dem naechsten Schritt. */
+  naechsterLabel: string
+}
+
+/** Texte und Zwischenzustand der Karte, rein aus der Ansicht abgeleitet (testbar ohne React). */
+export function karteTexte(a: ChecklisteAnsicht): KarteTexte {
+  const pflichtOffen = a.schritte.some(s => !s.optional && !s.erledigt)
+  const grundlagenFertig = a.schritte.length > 0 && !pflichtOffen
+  const roh = Number.isFinite(a.fortschritt.prozent) ? a.fortschritt.prozent : 0
+  const prozent = Math.min(100, Math.max(0, Math.round(roh)))
+  const erledigt = Math.max(0, a.fortschritt.erledigt || 0)
+  const gesamt = Math.max(0, a.fortschritt.gesamt || 0)
+  return {
+    titel: grundlagenFertig ? 'Grundlagen erledigt' : a.willkommen ? 'Willkommen – so legst du los' : 'Erste Schritte',
+    untertitel: grundlagenFertig ? 'Weiter mit den Anbindungen' : a.willkommen ? 'Mit dem ersten Konto geht es los' : '',
+    grundlagenFertig,
+    prozentText: `${prozent} %`,
+    zaehlText: `${erledigt} von ${gesamt} erledigt`,
+    naechsterLabel: grundlagenFertig ? 'Als Nächstes (optional)' : 'Als Nächstes',
+  }
+}

@@ -147,3 +147,40 @@ test('ErsteSchritteKarte: alle Schritte erledigt, ausgeblendet oder fertig liefe
   assert.equal(logik.checklisteStatus(null, 'ausgeblendet'), 'ausgeblendet')
   assert.equal(logik.checklisteStatus(null, 'fertig'), 'fertig')
 })
+
+test('ErsteSchritteKarte: Fortschrittsbalken mit role/aria-Werten, Prozent sichtbar, Titel gross, Aktion', async () => {
+  const html = await karte({ konten: 1, buchungen: 4, kategorien: 2 })
+  assert.match(html, /role="progressbar"/)
+  assert.match(html, /aria-valuenow="38"/)
+  assert.match(html, /aria-valuemin="0"/)
+  assert.match(html, /aria-valuemax="100"/)
+  assert.match(html, /aria-label="3 von 8 Schritten erledigt"/)
+  assert.match(html, />38 %</)
+  assert.match(html, /Als Nächstes/)
+  assert.match(html, /erste-schritte-ein/)
+  assert.doesNotMatch(html, /Grundlagen erledigt/)
+})
+
+test('ErsteSchritteKarte: Grundlagen fertig, Anbindungen offen -> freundlicher Zwischenzustand', async () => {
+  const html = await karte({ konten: 1, buchungen: 4, kategorien: 2, vertraege: 1 })
+  sauber(html, 'ErsteSchritteKarte Zwischenzustand')
+  assert.match(html, /Grundlagen erledigt/)
+  assert.match(html, /Weiter mit den Anbindungen/)
+  assert.match(html, /Als Nächstes \(optional\)/)
+  assert.match(html, /aria-valuenow="50"/)
+  assert.match(html, /aria-label="Checkliste ausblenden"/)
+  assert.match(html, /aria-expanded="false"/)
+})
+
+test('ErsteSchritteKarte: schmale Variante ohne Beschreibung, mit Aktion', async () => {
+  const { ErsteSchritteKarte } = (await laden('ErsteSchritteKarte.tsx')) as { ErsteSchritteKarte: (p: object) => unknown }
+  const logik = (await laden('../../lib/leer/erste-schritte.ts')) as Logik
+  const ansicht = logik.checklisteStatus({ ...logik.LEERE_ZAEHLER }, null)
+  const breit = renderToStaticMarkup(h(ErsteSchritteKarte, { ansicht }))
+  const schmal = renderToStaticMarkup(h(ErsteSchritteKarte, { ansicht, schmal: true }))
+  sauber(schmal, 'ErsteSchritteKarte schmal')
+  assert.match(schmal, /href="\/finance\/accounts"/)
+  assert.ok(schmal.length < breit.length)
+  assert.doesNotMatch(schmal, /Ein Konto ist die Basis/)
+  assert.match(breit, /Ein Konto ist die Basis/)
+})

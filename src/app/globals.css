@@ -208,6 +208,18 @@ html.lenis-active {
   animation: pageEnter 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) backwards;
 }
 
+/* Sanfter Eingang der Erste-Schritte-Karte: einmalig, kein Dauer-Effekt; bei reduzierter Bewegung gar keine Animation. */
+@keyframes ersteSchritteEin {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.erste-schritte-ein { animation: ersteSchritteEin 0.28s cubic-bezier(0.23, 1, 0.32, 1) backwards; }
+@media (prefers-reduced-motion: reduce) {
+  .erste-schritte-ein { animation: none; }
+}
+/* Sakura: weisser Text auf --primary erreicht nur 3,9:1 -> in dieser Karte dunkler Text (4,8:1). */
+[data-theme="sakura"] .erste-schritte-ein .es-aktion { color: var(--foreground); }
+
 /* ── Sidebar sub-nav: CSS grid expand/collapse ─────────────────────────────── */
 .subnav-container {
   display: grid;

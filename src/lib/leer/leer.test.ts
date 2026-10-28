@@ -200,3 +200,26 @@ test('Scope-Hinweis: ohne Partnername faellt der Text sauber zurueck', () => {
 test('Scope-Hinweis: Scope Partner verweist ebenfalls auf Gemeinsam', () => {
   assert.equal(scopeHinweis(ctx('partner', ['ich', 'partner', 'gemeinsam']), 'Konten')?.ziel, 'gemeinsam')
 })
+
+import { karteTexte, checklisteStatus as statusFuerKarte, type ChecklisteAnsicht } from './erste-schritte.ts'
+
+test('karteTexte: Standard, Willkommen, Zwischenzustand, ohne NaN/undefined', () => {
+  const ansicht = (teil: object) => statusFuerKarte({ ...LEERE_ZAEHLER, ...teil }, null) as ChecklisteAnsicht
+  const leer = karteTexte(ansicht({}))
+  assert.equal(leer.titel, 'Willkommen – so legst du los')
+  assert.equal(leer.prozentText, '0 %')
+  assert.equal(leer.grundlagenFertig, false)
+  const mitte = karteTexte(ansicht({ konten: 1, buchungen: 2 }))
+  assert.equal(mitte.titel, 'Erste Schritte')
+  assert.equal(mitte.untertitel, '')
+  assert.equal(mitte.zaehlText, '2 von 8 erledigt')
+  const grund = karteTexte(ansicht({ konten: 1, buchungen: 2, kategorien: 1, sparziele: 1 }))
+  assert.equal(grund.grundlagenFertig, true)
+  assert.equal(grund.titel, 'Grundlagen erledigt')
+  assert.equal(grund.prozentText, '50 %')
+  assert.equal(grund.naechsterLabel, 'Als Nächstes (optional)')
+  const kaputt = karteTexte({ ...ansicht({}), fortschritt: { erledigt: NaN, gesamt: NaN, prozent: NaN } })
+  for (const v of Object.values(kaputt)) assert.doesNotMatch(String(v), /NaN|undefined/)
+  assert.equal(kaputt.prozentText, '0 %')
+  assert.equal(karteTexte({ ...ansicht({}), fortschritt: { erledigt: 9, gesamt: 8, prozent: 150 } }).prozentText, '100 %')
+})
