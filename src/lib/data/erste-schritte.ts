@@ -23,7 +23,7 @@ export async function ladeErsteSchritteZaehler(supabase: DB, ctx: ScopeContext):
   const bankTabelle = supabase as unknown as SupabaseClient
 
   const [
-    buchungen, kategorien, vertraege, sparziele, athenaChats, depots, krypto, inventar, schulden,
+    buchungen, kategorien, vertraege, sparziele, athenaChats, depots, krypto, inventar,
     bankVerbindungen, kryptoKonten,
   ] = await Promise.all([
     ctx.accountIds.length
@@ -36,7 +36,6 @@ export async function ladeErsteSchritteZaehler(supabase: DB, ctx: ScopeContext):
     anzahl(scopedOwner(supabase.from('depots').select('id', kopf), ctx)),
     anzahl(scopedOwner(supabase.from('assets').select('id', kopf), ctx)),
     anzahl(scopedOwner(supabase.from('valuables').select('id', kopf), ctx)),
-    anzahl(scopedOwner(supabase.from('debts').select('id', kopf), ctx)),
     // OWNER-ONLY: Bankverbindungen und Boersen-Schluessel gehoeren immer dem eigenen Nutzer, unabhaengig vom Scope.
     anzahl(bankTabelle.from('bank_connections').select('id', kopf).eq('user_id', ctx.userId)),
     anzahl(supabase.from('exchange_keys').select('id', kopf).eq('user_id', ctx.userId)),
@@ -51,7 +50,6 @@ export async function ladeErsteSchritteZaehler(supabase: DB, ctx: ScopeContext):
     vertraege,
     sparziele,
     athenaChats,
-    anlagen: depots + krypto + inventar + schulden,
     bankVerbindungen,
     kryptoKonten,
     kryptoAssets: krypto,

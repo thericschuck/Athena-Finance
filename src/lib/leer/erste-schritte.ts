@@ -1,12 +1,12 @@
 /**
- * Erste Schritte fuer neue Nutzer — reine Regeln, ohne Supabase und ohne React.
+ * Checkliste "Erste Schritte" - reine Regeln, ohne Supabase und ohne React.
  *
  * Die Schritte werden aus Zaehlwerten abgeleitet (nichts wird extra gespeichert): sie haken sich
- * von selbst ab, sobald die Daten da sind. Die Entscheidung, WANN das Dashboard die Checkliste
- * zeigt, ist bewusst eng gefasst, damit sich die Ansicht eines Nutzers mit Daten nie aendert:
- *  - 'voll':  gar nichts vorhanden -> die Checkliste ersetzt das Dashboard.
- *  - 'karte': Daten da, aber noch kein Konto oder noch keine Buchung -> kompakte Karte oben.
- *  - 'aus':   Konto UND Buchungen vorhanden -> nichts Zusaetzliches.
+ * von selbst ab, sobald die Daten da sind. Gespeichert wird nur ein Vermerk je Nutzer
+ * (user_settings 'onboarding_checkliste'): 'ausgeblendet' (weggeklickt) oder 'fertig' (alle Schritte erledigt).
+ * Mit Vermerk laufen keine Zaehl-Abfragen mehr. Entscheidung: 'fertig' bleibt fertig, auch wenn spaeter
+ * ein neuer Schritt hinzukommt (z. B. der Partner-Schritt) - die Checkliste kehrt nie von selbst zurueck;
+ * wiederholen kann der Nutzer sie in den Einstellungen (Darstellung).
  */
 
 export type ErsteSchritteZaehler = {
@@ -19,8 +19,6 @@ export type ErsteSchritteZaehler = {
   vertraege: number
   sparziele: number
   athenaChats: number
-  /** Alles uebrige, was Vermoegen zaehlt: Depots, Krypto, Inventar, Schulden. */
-  anlagen: number
   /** Eigene FinTS-Bankverbindungen (Einstellungen -> Integrationen). */
   bankVerbindungen: number
   /** Eigene Boersen-Verbindungen (Kraken Spot/Futures, API-Schluessel). */
@@ -37,7 +35,7 @@ export type ErsteSchritteZaehler = {
 }
 
 export const LEERE_ZAEHLER: ErsteSchritteZaehler = {
-  konten: 0, bankVerbunden: false, buchungen: 0, kategorien: 0, vertraege: 0, sparziele: 0, athenaChats: 0, anlagen: 0,
+  konten: 0, bankVerbunden: false, buchungen: 0, kategorien: 0, vertraege: 0, sparziele: 0, athenaChats: 0,
   bankVerbindungen: 0, kryptoKonten: 0, kryptoAssets: 0, depots: 0, inventar: 0, partnerEinladbar: false, partnerVorhanden: false,
 }
 
@@ -62,6 +60,8 @@ export type Schritt = {
 /** Direktlinks in die Einstellungen (Reiter per ?tab=, siehe settings/page.tsx). */
 export const EINSTELLUNGEN_INTEGRATIONEN = '/settings?tab=integrationen'
 export const EINSTELLUNGEN_HAUSHALT = '/settings?tab=haushalt'
+/** Oeffnet den Chat mit vorbefuelltem Kennenlern-Text (Parameter wertet der Assistent aus). */
+export const ATHENA_KENNENLERNEN_HREF = '/assistant?start=kennenlernen'
 
 export function ersteSchritte(z: ErsteSchritteZaehler): Schritt[] {
   const hatKonto = z.konten > 0
@@ -157,20 +157,20 @@ export function ersteSchritte(z: ErsteSchritteZaehler): Schritt[] {
   schritte.push({
     id: 'athena',
     gruppe: 'anbindungen',
-    titel: 'Athena ausprobieren',
-    text: 'Athena liest deine Finanzdaten und beantwortet Fragen dazu. Geändert wird nur, was du bestätigst.',
-    href: '/assistant',
-    aktion: 'Athena öffnen',
+    titel: 'Athena kennenlernen',
+    text: 'Athena stellt dir ein paar gezielte Fragen zu deiner Lage, damit ihre Antworten besser werden. Der Text steht schon im Eingabefeld, du schickst ihn nur ab.',
+    href: ATHENA_KENNENLERNEN_HREF,
+    aktion: 'Athena kennenlernen',
     erledigt: z.athenaChats > 0,
     optional: true,
   })
   return schritte
 }
 
+/** Fortschritt ueber ALLE sichtbaren Schritte (auch die optionalen): 100 % = alles abgehakt = Karte verschwindet. */
 export function fortschritt(schritte: Schritt[]): { erledigt: number; gesamt: number; prozent: number } {
-  const relevant = schritte.filter(s => !s.optional)
-  const erledigt = relevant.filter(s => s.erledigt).length
-  const gesamt = relevant.length
+  const erledigt = schritte.filter(s => s.erledigt).length
+  const gesamt = schritte.length
   return { erledigt, gesamt, prozent: gesamt === 0 ? 0 : Math.round((erledigt / gesamt) * 100) }
 }
 
@@ -179,15 +179,45 @@ export function naechsterSchritt(schritte: Schritt[]): Schritt | null {
   return schritte.find(s => !s.erledigt && !s.optional) ?? schritte.find(s => !s.erledigt) ?? null
 }
 
-export type EinstiegsAnsicht = 'voll' | 'karte' | 'aus'
+export const CHECKLISTE_KEY = 'onboarding_checkliste'
+export type ChecklisteFlag = 'ausgeblendet' | 'fertig'
 
-/** Nichts da: kein Konto, keine Buchung, keine Anlage, kein Vertrag, kein Sparziel. */
-export function istDatenlos(z: ErsteSchritteZaehler): boolean {
-  return z.konten === 0 && z.buchungen === 0 && z.anlagen === 0 && z.vertraege === 0 && z.sparziele === 0
+/** Liest den gespeicherten Vermerk (unbekannte Werte zaehlen als "kein Vermerk"). */
+export function checklisteFlag(wert: unknown): ChecklisteFlag | null {
+  return wert === 'ausgeblendet' || wert === 'fertig' ? wert : null
 }
 
-export function einstiegsAnsicht(z: ErsteSchritteZaehler): EinstiegsAnsicht {
-  if (istDatenlos(z)) return 'voll'
-  if (z.konten === 0 || z.buchungen === 0) return 'karte'
-  return 'aus'
+export type ChecklisteAnsicht = {
+  schritte: Schritt[]
+  naechster: Schritt
+  fortschritt: { erledigt: number; gesamt: number; prozent: number }
+  /** Noch gar nichts da (kein Konto, keine Buchung): freundlicher Einstieg statt "Erste Schritte". */
+  willkommen: boolean
+}
+
+/**
+ * Was das Dashboard zeigt. Mit Vermerk braucht es keine Zaehler (`null`); ohne Vermerk muss `zaehler`
+ * da sein, sonst gibt es nichts anzuzeigen ('fertig'). Alle Schritte erledigt -> 'fertig'.
+ */
+export function checklisteStatus(
+  zaehler: ErsteSchritteZaehler | null,
+  flag: ChecklisteFlag | null,
+): 'ausgeblendet' | 'fertig' | ChecklisteAnsicht {
+  if (flag) return flag
+  if (!zaehler) return 'fertig'
+  const schritte = ersteSchritte(zaehler)
+  const naechster = naechsterSchritt(schritte)
+  if (!naechster) return 'fertig'
+  return {
+    schritte, naechster, fortschritt: fortschritt(schritte),
+    willkommen: zaehler.konten === 0 && zaehler.buchungen === 0,
+  }
+}
+
+/**
+ * 'fertig' wird nur im Scope 'ich' vermerkt und nur, wenn die Zaehler wirklich alles erledigt zeigen:
+ * der Blick in 'Gemeinsam' oder 'Partner' darf keine fremde Vollstaendigkeit vortaeuschen.
+ */
+export function sollFertigVermerken(zaehler: ErsteSchritteZaehler, scope: string, flag: ChecklisteFlag | null): boolean {
+  return flag === null && scope === 'ich' && checklisteStatus(zaehler, null) === 'fertig'
 }

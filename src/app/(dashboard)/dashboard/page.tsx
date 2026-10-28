@@ -21,9 +21,8 @@ import { DashAnlagen } from '@/components/dashboard/DashAnlagen'
 import { DashSparziele } from '@/components/dashboard/DashSparziele'
 import { Skeleton, SkeletonChart } from '@/components/ui/skeleton'
 import { ladeErsteSchritteZaehler } from '@/lib/data/erste-schritte'
-import { einstiegsAnsicht, ersteSchritte } from '@/lib/leer/erste-schritte'
-import { scopeHinweis } from '@/lib/leer/hinweis'
-import { DashboardEinstieg } from '@/components/leer/DashboardEinstieg'
+import { CHECKLISTE_KEY, checklisteFlag, checklisteStatus, sollFertigVermerken } from '@/lib/leer/erste-schritte'
+import { ChecklisteFertigVermerk } from '@/components/leer/ChecklisteFertigVermerk'
 import { ErsteSchritteKarte } from '@/components/leer/ErsteSchritteKarte'
 
 /**
@@ -48,13 +47,16 @@ export default async function DashboardPage() {
   // Die Prognose haengt nicht am Kern: gleich anstossen, damit sie parallel zu seinen Abfragen
   // laeuft statt erst, wenn die Kennzahlen rendern. `cache()` teilt das Ergebnis mit den Abschnitten.
   if (ctx.accountIds.length > 0) void ladeDashPrognose(ctx, heute)
+  // Checkliste "Erste Schritte": Vermerk aus den ohnehin geladenen Einstellungen. Mit Vermerk (ausgeblendet/fertig)
+  // laeuft KEINE Zaehl-Abfrage; ohne Vermerk starten die Zaehler jetzt parallel zum Kern statt nach ihm.
+  // Schlaegt das Zaehlen fehl, gibt es null -> keine Karte, nie eine kaputte Seite.
+  const flag = checklisteFlag(settings[CHECKLISTE_KEY])
+  const zaehlerP = flag ? null : ladeErsteSchritteZaehler(supabase, ctx).catch(() => null)
   const kern = await ladeDashboard(supabase, ctx, settings, heute)
-  // Erste Schritte: nur pruefen, wenn das Dashboard leer sein KOENNTE (kein Konto oder kein Konto mit
-  // Buchungen). Ein Nutzer mit Daten zahlt dafuer keine Abfrage und sieht nichts Zusaetzliches.
-  const kannLeerSein = !kern.konten.some(k => k.hatBuchungen)
-  const zaehler = kannLeerSein ? await ladeErsteSchritteZaehler(supabase, ctx) : null
-  const einstieg = zaehler ? einstiegsAnsicht(zaehler) : 'aus'
-  const schritte = zaehler ? ersteSchritte(zaehler) : []
+  const zaehler = zaehlerP ? await zaehlerP : null
+  const checkliste = checklisteStatus(zaehler, flag)
+  // 'fertig' nur im Scope 'ich' vermerken (siehe sollFertigVermerken); geschrieben wird nach dem Rendern vom Client.
+  const fertigVermerken = zaehler !== null && sollFertigVermerken(zaehler, ctx.scope, flag)
   const props = { kern }
   const aufteilung = baueAufteilung({
     konten: kern.konten,
@@ -75,11 +77,9 @@ export default async function DashboardPage() {
         <p className="text-sm text-muted-foreground">{datumLang}</p>
       </div>
 
-      {einstieg === 'voll' && (
-        <DashboardEinstieg schritte={schritte} hinweis={scopeHinweis(ctx, 'Konten und Buchungen')} />
-      )}
-      {einstieg === 'karte' && <ErsteSchritteKarte schritte={schritte} />}
-      {einstieg !== 'voll' && <DashboardInhalt kern={kern} props={props} aufteilung={aufteilung} />}
+      {typeof checkliste === 'object' && <ErsteSchritteKarte ansicht={checkliste} />}
+      {fertigVermerken && <ChecklisteFertigVermerk />}
+      <DashboardInhalt kern={kern} props={props} aufteilung={aufteilung} />
     </div>
   )
 }

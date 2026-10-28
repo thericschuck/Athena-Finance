@@ -12,10 +12,11 @@ const GRUPPEN: { id: SchrittGruppe; titel: string }[] = [
 /**
  * Checkliste „Erste Schritte“ (ohne State, in Server und Client Components verwendbar).
  * Erledigte Schritte sind abgehakt und gedimmt; der nächste offene Schritt trägt die primäre
- * Aktion, die übrigen einen schlichten Link. Der Fortschrittsbalken zählt nur die Grundlagen.
- * „Anbindungen und mehr“ (Bank, Krypto, Depot, Partner, Athena) sind optional und stehen darunter.
+ * Aktion, die übrigen einen schlichten Link. Der Fortschrittsbalken zählt alle Schritte.
+ * „Anbindungen und mehr“ (Bank, Krypto, Depot, Partner, Athena) sind als optional beschriftet und stehen darunter.
+ * `ohneFortschritt`: ohne eigenen Balken (die kompakte Karte zeigt ihn schon in der Kopfzeile).
  */
-export function ErsteSchritteListe({ schritte, className }: { schritte: Schritt[]; className?: string }) {
+export function ErsteSchritteListe({ schritte, className, ohneFortschritt }: { schritte: Schritt[]; className?: string; ohneFortschritt?: boolean }) {
   const f = fortschritt(schritte)
   const naechster = naechsterSchritt(schritte)
   // Die Nummerierung läuft über beide Gruppen durch (1..n), damit „Schritt 5“ eindeutig bleibt.
@@ -27,7 +28,7 @@ export function ErsteSchritteListe({ schritte, className }: { schritte: Schritt[
 
   return (
     <div className={cn('min-w-0', className)}>
-      <div className="mb-3 flex items-center gap-3">
+      {!ohneFortschritt && <div className="mb-3 flex items-center gap-3">
         <span
           role="progressbar"
           aria-valuenow={f.prozent}
@@ -39,7 +40,7 @@ export function ErsteSchritteListe({ schritte, className }: { schritte: Schritt[
           <span className="block h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${f.prozent}%` }} />
         </span>
         <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{f.erledigt} von {f.gesamt}</span>
-      </div>
+      </div>}
       {gruppen.map(g => (
         <section key={g.id} aria-label={g.titel} className={cn(mitUeberschriften && g.id !== 'grundlagen' && 'mt-4')}>
           {mitUeberschriften && (

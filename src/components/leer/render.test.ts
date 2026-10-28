@@ -49,7 +49,7 @@ test('LeerZustand: ohne Aktion keine leere Aktionszeile', async () => {
   assert.doesNotMatch(html, /<a /)
 })
 
-test('ErsteSchritteListe: alle Zaehler 0 -> 8 Schritte in 2 Gruppen, 0 von 4, erster Schritt primaer, Direktlinks', async () => {
+test('ErsteSchritteListe: alle Zaehler 0 -> 8 Schritte in 2 Gruppen, 0 von 8, erster Schritt primaer, Direktlinks', async () => {
   const { ErsteSchritteListe } = (await laden('ErsteSchritteListe.tsx')) as { ErsteSchritteListe: (p: object) => unknown }
   const logik = (await laden('../../lib/leer/erste-schritte.ts')) as {
     ersteSchritte: (z: object) => unknown[]; LEERE_ZAEHLER: object
@@ -57,7 +57,7 @@ test('ErsteSchritteListe: alle Zaehler 0 -> 8 Schritte in 2 Gruppen, 0 von 4, er
   const html = renderToStaticMarkup(h(ErsteSchritteListe, { schritte: logik.ersteSchritte(logik.LEERE_ZAEHLER) }))
   sauber(html, 'ErsteSchritteListe')
   assert.equal((html.match(/<li /g) ?? []).length, 8)
-  assert.match(html, /0 von 4/)
+  assert.match(html, /0 von 8/)
   assert.match(html, /aria-valuenow="0"/)
   assert.match(html, /Konto anlegen/)
   // zwei Gruppen mit Ueberschrift, Nummerierung laeuft durch (1..8)
@@ -68,6 +68,9 @@ test('ErsteSchritteListe: alle Zaehler 0 -> 8 Schritte in 2 Gruppen, 0 von 4, er
   assert.match(html, /href="\/settings\?tab=integrationen"/)
   assert.match(html, /Bank verbinden/)
   assert.match(html, /Krypto verbinden/)
+  // Athena kennenlernen: Titel, Aktion und Direktlink in den Chat
+  assert.match(html, /Athena kennenlernen/)
+  assert.match(html, /href="\/assistant\?start=kennenlernen"/)
 })
 
 test('ErsteSchritteListe: Eigentuemer ohne Partner sieht zusaetzlich "Partner einladen" (9 Schritte)', async () => {
@@ -84,28 +87,63 @@ test('ErsteSchritteListe: Eigentuemer ohne Partner sieht zusaetzlich "Partner ei
   assert.match(html, /href="\/settings\?tab=haushalt"/)
 })
 
-test('ErsteSchritteListe: alles erledigt -> 4 von 4, keine Aktionen ausser Athena', async () => {
+test('ErsteSchritteListe: alles erledigt -> 8 von 8, 100 %', async () => {
   const { ErsteSchritteListe } = (await laden('ErsteSchritteListe.tsx')) as { ErsteSchritteListe: (p: object) => unknown }
   const logik = (await laden('../../lib/leer/erste-schritte.ts')) as { ersteSchritte: (z: object) => unknown[] }
   const html = renderToStaticMarkup(h(ErsteSchritteListe, {
-    schritte: logik.ersteSchritte({ konten: 2, bankVerbunden: true, buchungen: 40, kategorien: 9, vertraege: 1, sparziele: 0, athenaChats: 0, anlagen: 0 }),
+    schritte: logik.ersteSchritte({
+      konten: 2, bankVerbunden: true, buchungen: 40, kategorien: 9, vertraege: 1, sparziele: 0, athenaChats: 2,
+      kryptoAssets: 1, depots: 1,
+    }),
   }))
   sauber(html, 'ErsteSchritteListe fertig')
-  assert.match(html, /4 von 4/)
+  assert.match(html, /8 von 8/)
   assert.match(html, /aria-valuenow="100"/)
 })
 
-test('DashboardEinstieg: rendert ohne Hinweis und mit Hinweis', async () => {
-  const { DashboardEinstieg } = (await laden('DashboardEinstieg.tsx')) as { DashboardEinstieg: (p: object) => unknown }
-  const logik = (await laden('../../lib/leer/erste-schritte.ts')) as { ersteSchritte: (z: object) => unknown[]; LEERE_ZAEHLER: object }
-  const schritte = logik.ersteSchritte(logik.LEERE_ZAEHLER)
-  const ohne = renderToStaticMarkup(h(DashboardEinstieg, { schritte, hinweis: null }))
-  sauber(ohne, 'DashboardEinstieg')
-  assert.match(ohne, /Willkommen/)
-  assert.match(ohne, /href="\/settings"/)
-  const mit = renderToStaticMarkup(h(DashboardEinstieg, {
-    schritte, hinweis: { ziel: 'gemeinsam', text: 'Hinweistext', aktion: 'Zu Gemeinsam wechseln' },
-  }))
-  sauber(mit, 'DashboardEinstieg mit Hinweis')
-  assert.match(mit, /Hinweistext/)
+type Logik = {
+  checklisteStatus: (z: object | null, flag: string | null) => unknown
+  LEERE_ZAEHLER: Record<string, unknown>
+}
+
+async function karte(teil: object, flag: string | null = null): Promise<string> {
+  const { ErsteSchritteKarte } = (await laden('ErsteSchritteKarte.tsx')) as { ErsteSchritteKarte: (p: object) => unknown }
+  const logik = (await laden('../../lib/leer/erste-schritte.ts')) as Logik
+  const ansicht = logik.checklisteStatus({ ...logik.LEERE_ZAEHLER, ...teil }, flag)
+  assert.equal(typeof ansicht, 'object')
+  return renderToStaticMarkup(h(ErsteSchritteKarte, { ansicht }))
+}
+
+test('ErsteSchritteKarte: zugeklappt nur der naechste Schritt, X mit aria-label, Aufklapper mit aria-expanded', async () => {
+  const html = await karte({ konten: 1, buchungen: 4, kategorien: 2 })
+  sauber(html, 'ErsteSchritteKarte')
+  assert.match(html, /Erste Schritte/)
+  assert.match(html, /3 von 8/)
+  assert.match(html, /aria-label="Checkliste ausblenden"/)
+  assert.match(html, /aria-expanded="false"/)
+  assert.match(html, /Alle Schritte anzeigen/)
+  // naechster Schritt: Vertrag anlegen, mit Aktion
+  assert.match(html, /Vertrag oder Sparziel anlegen/)
+  assert.match(html, /href="\/finance\/contracts"/)
+  // weder Liste noch andere Schritte
+  assert.equal((html.match(/<li /g) ?? []).length, 0)
+  assert.doesNotMatch(html, /Krypto-Konto verbinden/)
+  assert.doesNotMatch(html, /Anbindungen und mehr/)
+})
+
+test('ErsteSchritteKarte: Willkommen-Titel nur bei voellig leerem Konto', async () => {
+  const leer = await karte({})
+  sauber(leer, 'ErsteSchritteKarte leer')
+  assert.match(leer, /Willkommen – so legst du los/)
+  assert.match(leer, /0 von 8/)
+  assert.match(leer, /Konto anlegen/)
+  assert.doesNotMatch(await karte({ konten: 1 }), /Willkommen/)
+})
+
+test('ErsteSchritteKarte: alle Schritte erledigt, ausgeblendet oder fertig liefert keine Ansicht', async () => {
+  const logik = (await laden('../../lib/leer/erste-schritte.ts')) as Logik
+  const alles = { konten: 1, buchungen: 1, kategorien: 1, vertraege: 1, athenaChats: 1, bankVerbindungen: 1, kryptoKonten: 1, depots: 1 }
+  assert.equal(logik.checklisteStatus({ ...logik.LEERE_ZAEHLER, ...alles }, null), 'fertig')
+  assert.equal(logik.checklisteStatus(null, 'ausgeblendet'), 'ausgeblendet')
+  assert.equal(logik.checklisteStatus(null, 'fertig'), 'fertig')
 })

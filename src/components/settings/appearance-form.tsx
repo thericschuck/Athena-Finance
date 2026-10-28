@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 import { DEFAULT_PRESET } from '@/components/providers/settings-context'
 import type { SettingsMap } from '@/lib/settings'
 import { Check } from 'lucide-react'
+import { ChecklisteZeile } from './checkliste-zeile'
 
 // ─── Theme Presets ────────────────────────────────────────────────────────────
 
@@ -459,6 +460,7 @@ export function AppearanceForm({ initialSettings }: { initialSettings: SettingsM
           </div>
           <Toggle checked={compactTables} onChange={setCompactTables} label="Kompakte Tabellen" />
         </div>
+        <ChecklisteZeile initialSettings={initialSettings} />
       </div>
 
       {/* Formats */}

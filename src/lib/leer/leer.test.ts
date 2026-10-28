@@ -2,36 +2,45 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   EINSTELLUNGEN_HAUSHALT, EINSTELLUNGEN_INTEGRATIONEN,
-  LEERE_ZAEHLER, einstiegsAnsicht, ersteSchritte, fortschritt, istDatenlos, naechsterSchritt,
+  ATHENA_KENNENLERNEN_HREF, LEERE_ZAEHLER, checklisteFlag, checklisteStatus, ersteSchritte, fortschritt, naechsterSchritt, sollFertigVermerken,
   type ErsteSchritteZaehler,
 } from './erste-schritte.ts'
 import { scopeHinweis } from './hinweis.ts'
 
 const z = (teil: Partial<ErsteSchritteZaehler>): ErsteSchritteZaehler => ({ ...LEERE_ZAEHLER, ...teil })
 
-test('Erste Schritte: ohne Daten ist nichts erledigt, 0 von 4 Grundlagen, naechster ist das Konto', () => {
+test('Erste Schritte: ohne Daten ist nichts erledigt, 0 von 8, naechster ist das Konto', () => {
   const s = ersteSchritte(LEERE_ZAEHLER)
   // 4 Grundlagen + Bank, Krypto, Depot, Athena (der Partner-Schritt fehlt ohne Haushalt)
   assert.deepEqual(s.map(x => x.id), ['konto', 'buchungen', 'kategorien', 'planung', 'bank', 'krypto', 'depot', 'athena'])
   assert.ok(s.every(x => !x.erledigt))
-  assert.deepEqual(fortschritt(s), { erledigt: 0, gesamt: 4, prozent: 0 })
+  assert.deepEqual(fortschritt(s), { erledigt: 0, gesamt: 8, prozent: 0 })
   assert.equal(naechsterSchritt(s)?.id, 'konto')
 })
 
 test('Erste Schritte: haken sich aus den Zaehlwerten ab', () => {
   const s = ersteSchritte(z({ konten: 1, buchungen: 12, kategorien: 5, sparziele: 1 }))
   assert.deepEqual(s.filter(x => x.erledigt).map(x => x.id), ['konto', 'buchungen', 'kategorien', 'planung'])
-  assert.equal(fortschritt(s).prozent, 100)
+  assert.deepEqual(fortschritt(s), { erledigt: 4, gesamt: 8, prozent: 50 })
   // sind die Grundlagen fertig, ist der erste offene optionale Schritt der naechste: die Bank
   assert.equal(naechsterSchritt(s)?.id, 'bank')
 })
 
-test('Erste Schritte: Vertrag ODER Sparziel erledigt den Planungsschritt; Athena zaehlt nicht zum Fortschritt', () => {
+test('Erste Schritte: Vertrag ODER Sparziel erledigt den Planungsschritt; Athena zaehlt zum Fortschritt', () => {
   assert.ok(ersteSchritte(z({ vertraege: 1 })).find(x => x.id === 'planung')?.erledigt)
   assert.ok(ersteSchritte(z({ sparziele: 2 })).find(x => x.id === 'planung')?.erledigt)
   const s = ersteSchritte(z({ athenaChats: 3 }))
   assert.ok(s.find(x => x.id === 'athena')?.erledigt)
-  assert.equal(fortschritt(s).erledigt, 0)
+  assert.equal(fortschritt(s).erledigt, 1)
+})
+
+test('Erste Schritte: Athena kennenlernen mit Direktlink in den Chat', () => {
+  const a = ersteSchritte(LEERE_ZAEHLER).find(x => x.id === 'athena')
+  assert.equal(a?.titel, 'Athena kennenlernen')
+  assert.equal(a?.aktion, 'Athena kennenlernen')
+  assert.equal(a?.href, '/assistant?start=kennenlernen')
+  assert.equal(a?.href, ATHENA_KENNENLERNEN_HREF)
+  assert.match(a?.text ?? '', /Eingabefeld/)
 })
 
 test('Erste Schritte: ganz fertig -> kein naechster Schritt', () => {
@@ -42,9 +51,9 @@ test('Erste Schritte: ganz fertig -> kein naechster Schritt', () => {
   assert.equal(naechsterSchritt(s), null)
 })
 
-test('Erste Schritte: Anbindungen sind optional und zaehlen nicht zum Fortschritt', () => {
+test('Erste Schritte: Anbindungen sind optional, zaehlen aber zum Fortschritt', () => {
   const s = ersteSchritte(z({ bankVerbindungen: 1, kryptoKonten: 1, depots: 1, inventar: 2 }))
-  assert.equal(fortschritt(s).erledigt, 0)
+  assert.equal(fortschritt(s).erledigt, 3)
   for (const id of ['bank', 'krypto', 'depot', 'athena'] as const) {
     const x = s.find(y => y.id === id)
     assert.equal(x?.optional, true, id)
@@ -97,26 +106,68 @@ test('Erste Schritte: Partner-Schritt steht zwischen Depot und Athena', () => {
   assert.ok(ids.indexOf('haushalt') > ids.indexOf('depot') && ids.indexOf('haushalt') < ids.indexOf('athena'))
 })
 
-test('Dashboard-Ansicht: nichts da -> voll (Checkliste ersetzt das Dashboard)', () => {
-  assert.equal(istDatenlos(LEERE_ZAEHLER), true)
-  assert.equal(einstiegsAnsicht(LEERE_ZAEHLER), 'voll')
+const ALLES = {
+  konten: 1, buchungen: 1, kategorien: 1, vertraege: 1, athenaChats: 1, bankVerbindungen: 1, kryptoKonten: 1, depots: 1,
+}
+
+test('Checkliste: Vermerk wird streng gelesen', () => {
+  assert.equal(checklisteFlag('ausgeblendet'), 'ausgeblendet')
+  assert.equal(checklisteFlag('fertig'), 'fertig')
+  for (const x of [null, undefined, '', 'offen', 1, true, {}, ['fertig']]) assert.equal(checklisteFlag(x), null)
 })
 
-test('Dashboard-Ansicht: schon eine Anlage, ein Vertrag oder ein Sparziel -> nicht mehr voll', () => {
-  for (const teil of [{ anlagen: 1 }, { vertraege: 1 }, { sparziele: 1 }, { buchungen: 1 }, { konten: 1 }]) {
-    assert.notEqual(einstiegsAnsicht(z(teil)), 'voll', JSON.stringify(teil))
-  }
+test('Checkliste: Vermerk gewinnt, ohne Zaehler (keine Abfragen noetig)', () => {
+  assert.equal(checklisteStatus(null, 'ausgeblendet'), 'ausgeblendet')
+  assert.equal(checklisteStatus(null, 'fertig'), 'fertig')
+  assert.equal(checklisteStatus(LEERE_ZAEHLER, 'ausgeblendet'), 'ausgeblendet')
 })
 
-test('Dashboard-Ansicht: Konto ohne Buchungen oder Buchungen ohne Konto -> Karte', () => {
-  assert.equal(einstiegsAnsicht(z({ konten: 1 })), 'karte')
-  assert.equal(einstiegsAnsicht(z({ buchungen: 3 })), 'karte')
-  assert.equal(einstiegsAnsicht(z({ anlagen: 2 })), 'karte')
+test('Checkliste: nichts da -> Willkommen, naechster ist das Konto, 0 von 8', () => {
+  const st = checklisteStatus(LEERE_ZAEHLER, null)
+  assert.ok(typeof st === 'object')
+  if (typeof st !== 'object') return
+  assert.equal(st.willkommen, true)
+  assert.equal(st.naechster.id, 'konto')
+  assert.deepEqual(st.fortschritt, { erledigt: 0, gesamt: 8, prozent: 0 })
 })
 
-test('Dashboard-Ansicht: Konto UND Buchungen -> aus (Regression: Nutzer mit Daten sehen nichts Neues)', () => {
-  assert.equal(einstiegsAnsicht(z({ konten: 1, buchungen: 1 })), 'aus')
-  assert.equal(einstiegsAnsicht(z({ konten: 4, buchungen: 900, kategorien: 30, vertraege: 5, sparziele: 2, athenaChats: 9, anlagen: 3 })), 'aus')
+test('Checkliste: teilweise erledigt -> Karte mit naechstem Schritt, kein Willkommen', () => {
+  const st = checklisteStatus(z({ konten: 1, buchungen: 5, kategorien: 3 }), null)
+  assert.ok(typeof st === 'object')
+  if (typeof st !== 'object') return
+  assert.equal(st.willkommen, false)
+  assert.equal(st.naechster.id, 'planung')
+  assert.equal(st.fortschritt.erledigt, 3)
+})
+
+test('Checkliste: Grundlagen fertig, optionale offen -> Karte bleibt (Fortschritt 4 von 8)', () => {
+  const st = checklisteStatus(z({ konten: 1, buchungen: 1, kategorien: 1, vertraege: 1 }), null)
+  assert.ok(typeof st === 'object')
+  if (typeof st !== 'object') return
+  assert.equal(st.naechster.id, 'bank')
+  assert.equal(st.fortschritt.prozent, 50)
+})
+
+test('Checkliste: alle Schritte erledigt -> fertig; mit Partner-Schritt muss auch der erledigt sein', () => {
+  assert.equal(checklisteStatus(z(ALLES), null), 'fertig')
+  const mitPartnerOffen = checklisteStatus(z({ ...ALLES, partnerEinladbar: true }), null)
+  assert.ok(typeof mitPartnerOffen === 'object')
+  if (typeof mitPartnerOffen === 'object') assert.equal(mitPartnerOffen.naechster.id, 'haushalt')
+  assert.equal(checklisteStatus(z({ ...ALLES, partnerVorhanden: true }), null), 'fertig')
+})
+
+test('Checkliste: ohne Zaehler und ohne Vermerk (Abfrage fehlgeschlagen) -> nichts anzeigen', () => {
+  assert.equal(checklisteStatus(null, null), 'fertig')
+})
+
+test("Checkliste: 'fertig' wird nur im Scope ich und nur ohne Vermerk geschrieben", () => {
+  const fertig = z(ALLES)
+  assert.equal(sollFertigVermerken(fertig, 'ich', null), true)
+  assert.equal(sollFertigVermerken(fertig, 'gemeinsam', null), false)
+  assert.equal(sollFertigVermerken(fertig, 'partner', null), false)
+  assert.equal(sollFertigVermerken(fertig, 'ich', 'ausgeblendet'), false)
+  assert.equal(sollFertigVermerken(fertig, 'ich', 'fertig'), false)
+  assert.equal(sollFertigVermerken(z({ konten: 1 }), 'ich', null), false)
 })
 
 const mitglieder = [
