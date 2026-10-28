@@ -120,7 +120,7 @@ interface SidebarProps {
   mobileOpen?: boolean
   onMobileClose?: () => void
   /** Haushalts-Scope; der Switcher erscheint nur bei mehr als einem verfuegbaren Scope. */
-  scope?: Pick<ScopeSwitcherProps, 'available' | 'active' | 'partnerName'>
+  scope?: Pick<ScopeSwitcherProps, 'available' | 'active' | 'ownName' | 'partnerName'>
 }
 
 function getInitials(name: string | null, email: string): string {
@@ -161,7 +161,7 @@ export function Sidebar({ email, displayName, avatarUrl, mobileOpen = false, onM
 
       {scope && scope.available.length > 1 && (
         <div className="border-b border-sidebar-border px-3 py-2">
-          <ScopeSwitcher available={scope.available} active={scope.active} partnerName={scope.partnerName} />
+          <ScopeSwitcher available={scope.available} active={scope.active} ownName={scope.ownName} partnerName={scope.partnerName} />
         </div>
       )}
 

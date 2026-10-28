@@ -49,6 +49,7 @@ export default async function DashboardLayout({
     resolveScope(supabase, user),
   ])
   const partnerName = scopeCtx.members.find(m => m.id === scopeCtx.partnerId)?.name ?? null
+  const ownName = scopeCtx.members.find(m => m.id === user.id)?.name ?? profile?.display_name ?? null
 
   return (
     <SettingsProvider settings={settings} currency={profile?.currency ?? 'EUR'}>
@@ -59,7 +60,7 @@ export default async function DashboardLayout({
             email={user.email ?? ''}
             displayName={profile?.display_name ?? null}
             avatarUrl={profile?.avatar_url ?? null}
-            scope={{ available: scopeCtx.available, active: scopeCtx.scope, partnerName }}
+            scope={{ available: scopeCtx.available, active: scopeCtx.scope, ownName, partnerName }}
           >
             {children}
           </AppShell>

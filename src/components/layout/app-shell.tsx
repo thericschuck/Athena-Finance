@@ -10,6 +10,7 @@ import { useSettings } from '@/components/providers/settings-context'
 import { OliveVines } from '@/components/landing/olive-vines'
 import { PrivacyToggle } from '@/components/layout/privacy-toggle'
 import type { ScopeSwitcherProps } from '@/components/haushalt/ScopeSwitcher'
+import { ScopeLadeProvider, ScopeLadeBalken, ScopeLadeInhalt } from '@/components/haushalt/ScopeLadeContext'
 
 /**
  * Athenas Schnellzugriff (Chat, KI-SDK, Markdown) haengt an jeder Dashboard-Seite, wird aber erst nach einem Klick gebraucht:
@@ -57,7 +58,7 @@ export function AppShell({
   email: string
   displayName: string | null
   avatarUrl: string | null
-  scope?: Pick<ScopeSwitcherProps, 'available' | 'active' | 'partnerName'>
+  scope?: Pick<ScopeSwitcherProps, 'available' | 'active' | 'ownName' | 'partnerName'>
 }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
@@ -72,6 +73,8 @@ export function AppShell({
   }, [pathname])
 
   return (
+    <ScopeLadeProvider active={scope?.active ?? 'ich'}>
+    <ScopeLadeBalken />
     <div className="flex h-dvh bg-background overflow-hidden">
       {/* Mobile backdrop */}
       {mobileOpen && (
@@ -129,12 +132,13 @@ export function AppShell({
           <PrivacyToggle />
         </header>
 
-        <PageWrapper>{children}</PageWrapper>
+        <PageWrapper><ScopeLadeInhalt>{children}</ScopeLadeInhalt></PageWrapper>
       </div>
 
       {/* Auf der eigenen Assistant-Seite gibt es die Konversation schon
           großflächig — kein zweites, schwebendes Sheet-Trigger nötig. */}
       {!pathname.startsWith('/assistant') && <AssistantSheet />}
     </div>
+    </ScopeLadeProvider>
   )
 }

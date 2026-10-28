@@ -1,65 +1,67 @@
 'use client'
 
-import { useOptimistic, useTransition } from 'react'
+import { useMemo } from 'react'
 import { cn } from '@/lib/utils'
-import { setScope } from '@/lib/haushalt/actions'
+import { scopeAnzeige } from '@/lib/haushalt/scope-labels'
+import { useScopeLade } from '@/components/haushalt/ScopeLadeContext'
 import type { ScopeName } from '@/lib/haushalt/scope'
 
 export type ScopeSwitcherProps = {
   available: ScopeName[]
   active: ScopeName
-  /** Anzeigename des Partners; ohne Namen steht „Partner“. */
+  /** Eigener Anzeigename; ohne Namen steht „I“. */
+  ownName?: string | null
+  /** Anzeigename des Partners; ohne Namen steht „P“. */
   partnerName?: string | null
   className?: string
 }
 
-const LABELS: Record<ScopeName, string> = { ich: 'Ich', partner: 'Partner', gemeinsam: 'Gemeinsam' }
-
 /**
- * Segmentierte Auswahl Ich | Partner | Gemeinsam. Unsichtbar, solange nur ein Scope verfuegbar ist
- * (kein Haushalt oder kein weiteres Mitglied). Der Wechsel setzt das Cookie per Server Action und laedt das Layout neu.
+ * Segmentierte Auswahl mit je EINEM Zeichen (Anfangsbuchstabe Ich / Partner, „&“ fuer Gemeinsam). Der volle Text
+ * steht in aria-label und title (Logik: lib/haushalt/scope-labels.ts). Unsichtbar, solange nur ein Scope verfuegbar ist.
+ * Wechsel und Ladezustand kommen aus dem ScopeLadeProvider (AppShell): waehrend des Ladens sind die Segmente gesperrt,
+ * das gewaehlte pulsiert.
  */
-export function ScopeSwitcher({ available, active, partnerName, className }: ScopeSwitcherProps) {
-  const [pending, startTransition] = useTransition()
-  const [optimistic, setOptimistic] = useOptimistic(active)
+export function ScopeSwitcher({ available, active, ownName, partnerName, className }: ScopeSwitcherProps) {
+  const { scope: optimistic, laedt, wechseln } = useScopeLade()
+  const anzeige = useMemo(() => scopeAnzeige(ownName, partnerName), [ownName, partnerName])
 
   if (available.length < 2) return null
-
-  const select = (scope: ScopeName) => {
-    if (scope === optimistic) return
-    startTransition(async () => {
-      setOptimistic(scope)
-      await setScope(scope)
-    })
-  }
+  // Ausserhalb eines Providers (Fallback) gilt der Server-Wert.
+  const gewaehlt = laedt ? optimistic : active
 
   return (
     <div
       role="radiogroup"
       aria-label="Ansicht"
-      aria-busy={pending}
-      className={cn('flex w-full min-w-0 rounded-md bg-sidebar-accent/60 p-0.5', className)}
+      aria-busy={laedt}
+      className={cn('inline-flex w-fit max-w-full gap-0.5 rounded-full bg-sidebar-accent/60 p-0.5', className)}
     >
       {available.map(scope => {
-        const selected = scope === optimistic
-        const label = scope === 'partner' ? (partnerName?.trim() || LABELS.partner) : LABELS[scope]
+        const selected = scope === gewaehlt
+        const { zeichen, text } = anzeige[scope]
         return (
           <button
             key={scope}
             type="button"
             role="radio"
             aria-checked={selected}
-            onClick={() => select(scope)}
-            title={label}
+            aria-label={text}
+            title={text}
+            disabled={laedt}
+            onClick={() => { if (scope !== gewaehlt) wechseln(scope) }}
             className={cn(
-              'min-w-0 flex-1 truncate rounded px-2 py-1 text-xs transition-colors outline-none',
+              'flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-xs font-semibold leading-none',
+              'transition-colors outline-none select-none',
               'focus-visible:ring-[3px] focus-visible:ring-ring/50',
+              'disabled:cursor-progress',
               selected
-                ? 'bg-sidebar-primary font-medium text-sidebar-primary-foreground'
-                : 'text-sidebar-foreground/70 hover:text-sidebar-foreground',
+                ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                : 'text-sidebar-foreground/70 hover:text-sidebar-foreground disabled:hover:text-sidebar-foreground/70',
+              selected && laedt && 'motion-safe:animate-pulse',
             )}
           >
-            {label}
+            <span aria-hidden>{zeichen}</span>
           </button>
         )
       })}

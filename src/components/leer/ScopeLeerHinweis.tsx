@@ -1,9 +1,8 @@
 'use client'
 
-import { useTransition } from 'react'
 import { Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { setScope } from '@/lib/haushalt/actions'
+import { useScopeLade } from '@/components/haushalt/ScopeLadeContext'
 import type { ScopeHinweis } from '@/lib/leer/hinweis'
 
 /**
@@ -13,7 +12,7 @@ import type { ScopeHinweis } from '@/lib/leer/hinweis'
  * Komponente nur, wenn er nicht null ist, also nur bei `ctx.available.length > 1`.
  */
 export function ScopeLeerHinweis({ hinweis }: { hinweis: ScopeHinweis }) {
-  const [pending, start] = useTransition()
+  const { laedt, wechseln } = useScopeLade()
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
       <p className="flex min-w-0 items-start gap-2 text-sm text-muted-foreground">
@@ -24,8 +23,8 @@ export function ScopeLeerHinweis({ hinweis }: { hinweis: ScopeHinweis }) {
         type="button"
         variant="outline"
         size="sm"
-        disabled={pending}
-        onClick={() => start(async () => { await setScope(hinweis.ziel) })}
+        disabled={laedt}
+        onClick={() => wechseln(hinweis.ziel)}
         className="shrink-0 self-start sm:self-auto"
       >
         {hinweis.aktion}
