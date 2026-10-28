@@ -26,12 +26,13 @@ import {
   vollstaendigkeit, wertAlterMonate, WERT_VERALTET_MONATE,
   type ValuableWithImage,
 } from '@/lib/valuables'
+import { Skeleton } from '@/components/ui/skeleton'
 
 // Recharts wiegt mehr als der Rest der Seite zusammen und wird erst im Detail-Panel
 // gebraucht — also nachladen, statt es jedem Seitenaufruf mitzugeben.
 const ValuableHistory = dynamic(
   () => import('./ValuableHistory').then(m => m.ValuableHistory),
-  { ssr: false, loading: () => <div className="h-28 animate-pulse rounded-lg bg-muted/40" /> },
+  { ssr: false, loading: () => <Skeleton className="h-28 rounded-lg" /> },
 )
 
 interface Props {

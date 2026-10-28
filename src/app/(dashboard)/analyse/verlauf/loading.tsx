@@ -1,25 +1,31 @@
-import { Skeleton, SkeletonTable } from '@/components/ui/skeleton'
+import { Skeleton, SkeletonRegion } from '@/components/ui/skeleton'
+import { VerlaufTabFlaeche } from '@/components/verlauf/VerlaufSkeletons'
 
+/**
+ * Ladezustand der Historie: Titel + Untertitel, Tab-Leiste (vier Reiter mit Unterstrich, wie die
+ * Seite) und die Karte mit dem Platzhalter des Standard-Tabs (Net Worth).
+ */
 export default function Loading() {
   return (
-    <div className="p-4 sm:p-8 space-y-6 animate-in fade-in duration-150">
-      <div className="flex items-center justify-between gap-4">
-        <div className="space-y-2">
-          <Skeleton className="h-7 w-40" />
-          <Skeleton className="h-3.5 w-72" />
+    <SkeletonRegion className="max-w-[1400px] space-y-6 p-4 sm:p-8 animate-in fade-in duration-150">
+      <div>
+        <Skeleton className="h-8 w-28" />
+        <div className="mt-0.5 flex h-5 items-center">
+          <Skeleton className="h-3.5 w-64 max-w-full" />
         </div>
-        <Skeleton className="h-9 w-32 rounded-md" />
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-8 w-32 rounded-md" />
+      <div className="flex gap-1 border-b border-border">
+        {[64, 56, 64, 112].map((w, i) => (
+          <div key={i} className="px-4 py-2">
+            <Skeleton className="h-5" style={{ width: w }} />
+          </div>
         ))}
       </div>
 
-      {/* Breite Verlaufstabelle */}
-      <SkeletonTable rows={12} cols={[88, 88, 72, 72, 72, 64, 72, 72, 80, 72, 72, 64]} />
-    </div>
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <VerlaufTabFlaeche tab="networth" />
+      </div>
+    </SkeletonRegion>
   )
 }

@@ -9,7 +9,7 @@ import { NetworthTab } from '@/components/verlauf/NetworthTab'
 import { AccountsTab } from '@/components/verlauf/AccountsTab'
 import { PortfolioTab } from '@/components/verlauf/PortfolioTab'
 import { MonthlyTab } from '@/components/verlauf/MonthlyTab'
-import { SkeletonTable } from '@/components/ui/skeleton'
+import { VerlaufTabSkeleton } from '@/components/verlauf/VerlaufSkeletons'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const TABS     = ['networth', 'accounts', 'portfolio', 'monthly'] as const
@@ -87,7 +87,7 @@ export default async function HistoryPage({
       {/* Kopf und Tabs stehen sofort; nur der Tab-Inhalt (die schweren Abfragen) streamt nach. key: jeder Parameter-
           wechsel (Tab, Seite, Filter) zeigt wieder den Platzhalter statt die alte Ansicht einzufrieren. */}
       <div className="rounded-lg border border-border bg-card overflow-hidden">
-        <Suspense key={JSON.stringify(params)} fallback={<SkeletonTable rows={10} cols={[88, 88, 72, 72, 72, 64, 72, 72]} />}>
+        <Suspense key={JSON.stringify(params)} fallback={<VerlaufTabSkeleton tab={tab} />}>
           <TabInhalt tab={tab} ctx={ctx} />
         </Suspense>
       </div>

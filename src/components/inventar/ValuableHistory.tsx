@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { loadValuations } from '@/app/(dashboard)/inventar/valuation-actions'
 import { fmtCurrency } from '@/lib/format'
+import { Skeleton } from '@/components/ui/skeleton'
 import type { Valuation } from '@/lib/valuables'
 
 interface Props {
@@ -67,7 +68,7 @@ export function ValuableHistory({ valuableId, kaufpreis, gekauftAm, locale, refr
   if (fehler) return <p className="text-xs text-muted-foreground">{fehler}</p>
 
   if (rows === null) {
-    return <div className="h-28 w-full animate-pulse rounded-md bg-muted/50" aria-busy="true" aria-label="Verlauf lädt" />
+    return <div role="status" aria-busy="true" aria-label="Verlauf lädt"><Skeleton className="h-28 w-full" /></div>
   }
 
   if (rows.length === 0) {

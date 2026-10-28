@@ -121,6 +121,7 @@ export async function NetworthTab({ supabase, ctx, locale, dateFormat, page, par
 async function ladeProjektion(supabase: TabCtx['supabase'], ctx: TabCtx['ctx'], heute: string): Promise<ProjektionPunkt[]> {
   try {
     const b = await ladePrognoseBasis(supabase, ctx, heute, { monate: 12 })
+    if (b.zuWenigHistorie) return [] // weniger als 3 Monate Historie in dieser Ansicht: keine Scheinprognose
     return prognoseLinie(b.szenario.tage)
   } catch {
     return []

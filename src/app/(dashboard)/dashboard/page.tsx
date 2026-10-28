@@ -96,7 +96,7 @@ function DashboardInhalt({ kern, props, aufteilung }: {
         <DashKennzahlen {...props} />
       </Suspense>
       <DashHinweise insights={kern.insights} />
-      <Suspense fallback={null}>
+      <Suspense fallback={<Skeleton className="h-10 w-full rounded-lg" />}>
         <DashZustand {...props} />
       </Suspense>
 
@@ -123,7 +123,7 @@ function DashboardInhalt({ kern, props, aufteilung }: {
           </div>
         </div>
         <div className="flex flex-col gap-4">
-          <Suspense fallback={<SkeletonChart variant="area" height={280} />}>
+          <Suspense fallback={<Skeleton className="h-[290px] rounded-lg border border-border" />}>
             <DashAusblick {...props} />
           </Suspense>
           <div className="flex min-h-0 flex-1 flex-col [&>*]:min-h-0 [&>*]:flex-1">

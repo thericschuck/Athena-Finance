@@ -2,7 +2,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 export default function Loading() {
   return (
-    <div className="min-w-0 space-y-4 p-4 sm:p-8 animate-in fade-in duration-150">
+    <div role="status" aria-busy="true" className="min-w-0 space-y-4 p-4 sm:p-8 animate-in fade-in duration-150">
+      <span className="sr-only">Lädt…</span>
       <div className="flex items-center justify-between gap-3">
         <Skeleton className="h-8 w-32" />
         <div className="flex gap-2">

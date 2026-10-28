@@ -9,7 +9,8 @@ import { Skeleton } from '@/components/ui/skeleton'
  */
 export default function Loading() {
   return (
-    <div className="grid h-full min-h-0 grid-cols-1 gap-4 animate-in fade-in duration-150 lg:grid-cols-[16rem_1fr]">
+    <div role="status" aria-busy="true" className="grid h-full min-h-0 grid-cols-1 gap-4 animate-in fade-in duration-150 lg:grid-cols-[16rem_1fr]">
+      <span className="sr-only">Lädt…</span>
       <aside className="hidden min-h-0 space-y-3 rounded-lg border border-border p-3 lg:block">
         <Skeleton className="h-8 w-full rounded-md" />
         {Array.from({ length: 6 }).map((_, i) => (

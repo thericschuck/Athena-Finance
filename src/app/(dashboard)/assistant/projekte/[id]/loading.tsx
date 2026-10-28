@@ -3,7 +3,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 /** Projektdetail: Kopfzeile, Reiter, Inhaltsfläche. */
 export default function Loading() {
   return (
-    <div className="flex max-w-3xl flex-col gap-4 animate-in fade-in duration-150">
+    <div role="status" aria-busy="true" className="flex max-w-3xl flex-col gap-4 animate-in fade-in duration-150">
+      <span className="sr-only">Lädt…</span>
       <Skeleton className="h-10 w-2/3 rounded-md" />
       <div className="flex gap-2">
         <Skeleton className="h-10 w-32 rounded-full" />

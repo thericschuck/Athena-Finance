@@ -2,7 +2,8 @@ import { Skeleton, SkeletonChart, SkeletonTable } from '@/components/ui/skeleton
 
 export default function Loading() {
   return (
-    <div className="animate-in fade-in duration-150">
+    <div role="status" aria-busy="true" className="animate-in fade-in duration-150">
+      <span className="sr-only">Lädt…</span>
       {/* Portfolio-Tabs */}
       <div className="border-b border-border bg-muted/20 px-4 sm:px-8 py-3 flex gap-2">
         {Array.from({ length: 3 }).map((_, i) => (

@@ -143,6 +143,9 @@ export function DepotDashboard({ canShare = false, leerHinweis, zuletzt }: { can
   const [savingsPlans, setSavingsPlans] = useState<SavingsPlan[]>([])
   const [duePlans, setDuePlans]         = useState<SavingsPlan[]>([])
   const [loading, setLoading]           = useState(false)
+  // Erst wenn Depots UND Daten des aktiven Depots da sind, zeigen Kennzahlen echte Werte (sonst kurz "0,00 EUR").
+  const [geladenIsin, setGeladenIsin]   = useState<string | null>(null)
+  const [preisGeprueft, setPreisGeprueft] = useState(false)
 
   // ─── Chart ──────────────────────────────────────────────────────────────────
   const [chartTab, setChartTab] = useState<ChartTab>('Wert')
@@ -176,6 +179,7 @@ export function DepotDashboard({ canShare = false, leerHinweis, zuletzt }: { can
     setLivePrice(null)
     setFetchedAt(null)
     setIsLive(false)
+    setPreisGeprueft(false)
     livePricePreFilled.current = false
 
     let cancelled = false
@@ -195,7 +199,9 @@ export function DepotDashboard({ canShare = false, leerHinweis, zuletzt }: { can
         }
         setIsLive(data.isLive ?? false)
         setFetchedAt(data.fetchedAt ?? null)
-      } catch {}
+      } catch {} finally {
+        if (!cancelled) setPreisGeprueft(true)
+      }
     }
     fetchPrice()
     const interval = setInterval(fetchPrice, 5 * 60_000)
@@ -219,6 +225,7 @@ export function DepotDashboard({ canShare = false, leerHinweis, zuletzt }: { can
       setDuePlans(checkDueSavingsPlans(plans, txs))
     } finally {
       setLoading(false)
+      setGeladenIsin(activeDepot.isin)
     }
   }, [activeDepot])
 
@@ -353,7 +360,10 @@ export function DepotDashboard({ canShare = false, leerHinweis, zuletzt }: { can
   }
 
   // ─── Live price badge ────────────────────────────────────────────────────────
-  const priceStatus = livePrice === null
+  const datenLaden = depotsLoading || loading || (activeDepot !== null && geladenIsin !== activeDepot.isin)
+  const priceStatus = livePrice === null && !preisGeprueft
+    ? { dot: 'bg-muted-foreground/40', label: 'Lädt…', color: 'text-muted-foreground' }
+    : livePrice === null
     ? { dot: 'bg-destructive', label: 'Offline',    color: 'text-destructive' }
     : isLive
     ? { dot: 'bg-success',   label: 'LIVE',        color: 'text-success' }
@@ -764,21 +774,21 @@ export function DepotDashboard({ canShare = false, leerHinweis, zuletzt }: { can
           {/* Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <StatCard title="Portfoliowert"
-              value={loading ? '' : fmtEur(portfolioValue)}
-              sub={loading ? '' : (hasData ? fmtShares(totalShares) + ' Anteile' : '–')}
-              loading={loading} />
+              value={datenLaden ? '' : fmtEur(portfolioValue)}
+              sub={datenLaden ? '' : (hasData ? fmtShares(totalShares) + ' Anteile' : '–')}
+              loading={datenLaden} />
             <StatCard title="Investiert"
-              value={loading ? '' : fmtEur(totalInvested)}
-              loading={loading} />
+              value={datenLaden ? '' : fmtEur(totalInvested)}
+              loading={datenLaden} />
             <StatCard title="Gewinn / Verlust"
-              value={loading ? '' : (returnAbs >= 0 ? '+' : '') + fmtEur(returnAbs)}
-              sub={loading ? '' : (hasData ? (returnPct >= 0 ? '+' : '') + fmtPct(returnPct) : '–')}
-              color={!loading && hasData ? (returnAbs >= 0 ? 'green' : 'red') : 'neutral'}
-              loading={loading} />
+              value={datenLaden ? '' : (returnAbs >= 0 ? '+' : '') + fmtEur(returnAbs)}
+              sub={datenLaden ? '' : (hasData ? (returnPct >= 0 ? '+' : '') + fmtPct(returnPct) : '–')}
+              color={!datenLaden && hasData ? (returnAbs >= 0 ? 'green' : 'red') : 'neutral'}
+              loading={datenLaden} />
             <StatCard title="Live-Kurs"
-              value={loading ? '' : (livePrice ? livePrice.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €' : '–')}
-              sub={loading ? '' : (livePriceFetchedAt ? priceStatus.label + ' ' + fmtTime(livePriceFetchedAt) : '')}
-              loading={loading} />
+              value={datenLaden ? '' : (livePrice ? livePrice.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €' : '–')}
+              sub={datenLaden ? '' : (livePriceFetchedAt ? priceStatus.label + ' ' + fmtTime(livePriceFetchedAt) : '')}
+              loading={datenLaden} />
           </div>
 
           {/* Chart */}
@@ -795,7 +805,7 @@ export function DepotDashboard({ canShare = false, leerHinweis, zuletzt }: { can
               ))}
             </div>
 
-            {loading ? (
+            {datenLaden ? (
               <SkeletonChartBody variant="area" height={208} />
             ) : !hasData ? (
               <div className="flex items-center justify-center h-52 text-sm text-muted-foreground">
@@ -811,7 +821,7 @@ export function DepotDashboard({ canShare = false, leerHinweis, zuletzt }: { can
             <div className="px-5 py-3 border-b border-border">
               <h2 className="text-sm font-semibold text-foreground">Transaktionen</h2>
             </div>
-            {loading ? (
+            {datenLaden ? (
               <div className="p-5 space-y-2">
                 {[1, 2, 3].map(i => <Skeleton key={i} className="h-10 w-full" />)}
               </div>

@@ -33,7 +33,7 @@ import { ToolTrace } from '@/components/assistant/chat/ToolTrace'
 // Recharts nur laden, wenn Athena wirklich ein Diagramm liefert (nicht jedem Chat-Aufruf mitgeben).
 const AthenaChart = dynamic(() => import('@/components/assistant/AthenaChart').then(m => m.AthenaChart), {
   ssr: false,
-  loading: () => <div className="mt-2 h-[230px] max-w-md animate-pulse rounded-lg border border-border bg-muted/30" />,
+  loading: () => <Skeleton className="mt-2 h-[230px] max-w-md rounded-lg border border-border" />,
 })
 import { MessageActions } from '@/components/assistant/chat/MessageActions'
 import { EmptyState } from '@/components/assistant/chat/EmptyState'
@@ -61,6 +61,7 @@ import {
   setzeMention,
   zerlegeMentions,
 } from '@/lib/assistant/mention-eingabe'
+import { Skeleton } from '@/components/ui/skeleton'
 
 /** Athena-Avatar neben Antworten: am Handy kleiner (24), ab sm 28 — er soll
     auch dort die Zuordnung zeigen, ohne der Blase viel Breite zu nehmen. */

@@ -3,7 +3,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 /** Vertrags-Detail: Zurück-Link, Kopf mit Aktionen, Kennzahlenleiste, Stammdaten und Abbuchungsverlauf. */
 export default function Loading() {
   return (
-    <div className="min-w-0 space-y-4 p-4 sm:p-8 animate-in fade-in duration-150">
+    <div role="status" aria-busy="true" className="min-w-0 space-y-4 p-4 sm:p-8 animate-in fade-in duration-150">
+      <span className="sr-only">Lädt…</span>
       <Skeleton className="h-4 w-28" />
 
       <div className="flex items-start justify-between gap-3">
