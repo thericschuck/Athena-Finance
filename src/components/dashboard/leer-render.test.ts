@@ -49,11 +49,78 @@ for (const name of ['DashKonten', 'DashSparziele', 'DashMonat', 'DashAnlagen']) 
     assert.doesNotMatch(html, SCHLECHT, `${name}: ${html.match(SCHLECHT)?.[0]}`)
     if (name === 'DashKonten') assert.match(html, /Noch keine Konten/)
     if (name === 'DashSparziele') assert.match(html, /Noch keine Sparziele/)
-    if (name === 'DashAnlagen') assert.equal(html, '')
+    if (name === 'DashAnlagen') assert.match(html, /Noch keine Anlagen/)
+    if (name === 'DashKonten') assert.match(html, /Konto anlegen/)
   })
 }
 
 test('PortfolioDonut ohne Posten rendert nichts (kein leerer Ring)', async () => {
   const mod = (await jiti.import(path.join(hier, 'portfolio-donut.tsx'))) as Record<string, (p: object) => unknown>
   assert.equal(renderToStaticMarkup(h(mod.PortfolioDonut, { posten: [], total: 0, minus: 0, locale: 'de-DE' })), '')
+})
+
+// ---- Platzhalter und Leerlogik (Nutzer ohne Daten) ----
+
+const mitDaten = {
+  ...leererKern,
+  netWorth: 5000,
+  konten: [{ id: 'k1', name: 'Giro', type: 'checking', color: null, currency: 'EUR', saldo: 5000, hatBuchungen: true }],
+  snapshots: [{}, {}],
+}
+
+async function ladeAsync(name: string): Promise<(p: object) => Promise<unknown>> {
+  const mod = (await jiti.import(path.join(hier, `${name}.tsx`))) as Record<string, (p: object) => Promise<unknown>>
+  return mod[name]
+}
+
+test('DashVerlauf ohne Verlauf: Platzhalter mit Text und Button, ohne NaN', async () => {
+  const el = await (await ladeAsync('DashVerlauf'))({ kern: leererKern })
+  const html = renderToStaticMarkup(el)
+  assert.doesNotMatch(html, SCHLECHT)
+  assert.match(html, /Dein Vermögensverlauf erscheint hier/)
+  assert.match(html, /Konto anlegen/)
+  assert.match(html, /min-h-\[320px\]/)
+  assert.match(html, /aria-hidden/)
+})
+
+test('DashVerlauf mit Konto, aber ohne zwei Snapshots: Zwischenzustand ohne Button', async () => {
+  const kern = { ...leererKern, konten: [{ ...mitDaten.konten[0], hatBuchungen: false }], snapshots: [{}] }
+  const html = renderToStaticMarkup(await (await ladeAsync('DashVerlauf'))({ kern }))
+  assert.match(html, /entsteht gerade/)
+  assert.doesNotMatch(html, /Konto anlegen|erscheint hier/)
+})
+
+test('DashAusblick ohne Buchungen: Leer-Ansicht, keine Warnung', async () => {
+  const html = renderToStaticMarkup(await (await ladeAsync('DashAusblick'))({ kern: leererKern }))
+  assert.doesNotMatch(html, SCHLECHT)
+  assert.match(html, /startet, sobald du ein Konto mit Buchungen hast/)
+  assert.doesNotMatch(html, /Wird knapp|<svg/)
+})
+
+test('DashZustand ohne Buchungen: nichts', async () => {
+  assert.equal(await (await ladeAsync('DashZustand'))({ kern: leererKern }), null)
+})
+
+test('AufteilungPlatzhalter rendert Ring-Silhouette und Text', async () => {
+  const mod = (await jiti.import(path.join(hier, 'DashPlatzhalter.tsx'))) as Record<string, () => unknown>
+  const html = renderToStaticMarkup(h(mod.AufteilungPlatzhalter))
+  assert.doesNotMatch(html, SCHLECHT)
+  assert.match(html, /Hier erscheint deine Vermögensaufteilung/)
+  assert.match(html, /<svg[^>]*aria-hidden/)
+})
+
+test('DashKennzahlen ohne Daten: gedaempft mit Tooltip; mit Daten nicht', async () => {
+  // Die Kennzahlen laden die Prognose ueber Supabase; hier nur geprueft, dass die Regel so greift.
+  const { dashboardLeer } = (await jiti.import(path.join(hier, '../../lib/dashboard/leer.ts'))) as typeof import('../../lib/dashboard/leer')
+  assert.equal(dashboardLeer(leererKern as never).leer, true)
+  assert.equal(dashboardLeer(mitDaten as never).leer, false)
+})
+
+test('Kern mit Daten: keine Platzhalter bei Konten und Anlagen', async () => {
+  const konten = (await jiti.import(path.join(hier, 'DashKonten.tsx'))) as Record<string, (p: object) => unknown>
+  const html = renderToStaticMarkup(h(konten.DashKonten, { kern: mitDaten }))
+  assert.match(html, /Giro/)
+  assert.doesNotMatch(html, /Noch keine Konten|Konto anlegen/)
+  const anl = (await jiti.import(path.join(hier, 'DashAnlagen.tsx'))) as Record<string, (p: object) => unknown>
+  assert.equal(renderToStaticMarkup(h(anl.DashAnlagen, { kern: mitDaten })), '')
 })

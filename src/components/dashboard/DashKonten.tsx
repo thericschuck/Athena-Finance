@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { fmtCurrency } from '@/lib/format'
 import { kontotypLabel } from '@/lib/dashboard/anlagen'
 import type { DashAbschnittProps } from '@/lib/dashboard/typen'
+import { LeerZustand } from '@/components/leer/LeerZustand'
 
 /**
  * Konten als vertikale Listen-Karte unter der Monatskarte: sie fuellt die Restspalte
@@ -32,7 +33,13 @@ export function DashKonten({ kern }: DashAbschnittProps) {
       </div>
 
       {konten.length === 0 ? (
-        <p className="flex flex-1 items-center justify-center py-6 text-sm text-muted-foreground/70">Noch keine Konten</p>
+        <LeerZustand
+          variante="kompakt"
+          className="flex-1"
+          titel="Noch keine Konten"
+          text="Lege dein erstes Konto an, dann erscheinen hier Salden und Summe."
+          aktion={{ label: 'Konto anlegen', href: '/finance/accounts' }}
+        />
       ) : (
         <ul className="min-h-0 flex-1 divide-y divide-border overflow-y-auto overscroll-contain">
           {konten.map(k => {

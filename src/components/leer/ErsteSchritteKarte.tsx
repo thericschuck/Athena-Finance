@@ -1,6 +1,6 @@
 'use client'
 
-import { useId, useState, useTransition } from 'react'
+import { useId, useState, useSyncExternalStore, useTransition } from 'react'
 import Link from 'next/link'
 import { ChevronDown, X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -11,13 +11,28 @@ import { ErsteSchritteListe } from './ErsteSchritteListe'
 import type { ChecklisteAnsicht } from '@/lib/leer/erste-schritte'
 
 /**
- * Kompakte Karte "Erste Schritte" ganz oben im Dashboard. Zugeklappt: Kopfzeile mit Fortschritt und Schliessen-Button,
+ * Ausgeblendet-Zustand, geteilt von allen Instanzen der Karte: das Dashboard rendert sie zweimal (oben fuer
+ * Handy/Tablet, in der rechten Spalte ab lg; je eine per CSS versteckt). Schliessen blendet damit beide aus.
+ */
+const hoerer = new Set<() => void>()
+let ausgeblendet = false
+const setzeAus = (v: boolean) => { ausgeblendet = v; hoerer.forEach(f => f()) }
+// Sind beide Instanzen weg (Seitenwechsel), wird zurueckgesetzt: der naechste Besuch richtet sich nach dem Server-Vermerk.
+const abonniere = (f: () => void) => {
+  hoerer.add(f)
+  return () => { hoerer.delete(f); if (hoerer.size === 0) ausgeblendet = false }
+}
+
+/**
+ * Kompakte Karte "Erste Schritte" im Dashboard (Handy/Tablet unter den Hinweisen, ab lg in der rechten Spalte
+ * von Zeile 2; `schmal` fuer die Spalte: Button volle Breite, ohne Beschreibung). Zugeklappt: Kopfzeile mit Fortschritt und Schliessen-Button,
  * der naechste offene Schritt mit seiner Aktion, und der Aufklapper "Alle Schritte anzeigen" (Standard: zu).
  * Schliessen blendet sofort aus (optimistisch) und speichert den Vermerk serverseitig (geraeteuebergreifend);
  * schlaegt das Speichern fehl, erscheint die Karte wieder und ein Hinweis erklaert es.
  */
-export function ErsteSchritteKarte({ ansicht }: { ansicht: ChecklisteAnsicht }) {
-  const [aus, setAus] = useState(false)
+export function ErsteSchritteKarte({ ansicht, schmal = false }: { ansicht: ChecklisteAnsicht; schmal?: boolean }) {
+  const aus = useSyncExternalStore(abonniere, () => ausgeblendet, () => false)
+  const setAus = setzeAus
   const [offen, setOffen] = useState(false)
   const [, start] = useTransition()
   const listeId = useId()
@@ -56,18 +71,18 @@ export function ErsteSchritteKarte({ ansicht }: { ansicht: ChecklisteAnsicht }) 
           type="button"
           onClick={ausblenden}
           aria-label="Checkliste ausblenden"
-          className="flex size-10 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="-my-1 flex size-10 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <X className="size-4" aria-hidden />
         </button>
       </div>
 
-      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className={cn('mt-3 flex flex-col gap-3', !schmal && 'sm:flex-row sm:items-center sm:justify-between')}>
         <div className="min-w-0">
           <p className="text-sm font-medium">{naechster.titel}</p>
-          <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{naechster.text}</p>
+          {!schmal && <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{naechster.text}</p>}
         </div>
-        <Button asChild size="sm" className="w-full shrink-0 sm:w-auto">
+        <Button asChild size="sm" className={cn('w-full shrink-0', !schmal && 'sm:w-auto')}>
           <Link href={naechster.href}>{naechster.aktion}</Link>
         </Button>
       </div>

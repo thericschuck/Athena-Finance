@@ -1,5 +1,6 @@
 import { ladeDashZustand } from '@/lib/data/dashboard-zustand'
 import type { DashAbschnittProps } from '@/lib/dashboard/typen'
+import { dashboardLeer } from '@/lib/dashboard/leer'
 import { DashZustandZeile } from './DashZustandZeile'
 
 /**
@@ -9,6 +10,8 @@ import { DashZustandZeile } from './DashZustandZeile'
  * fehlt nur dieser Chip; ist gar nichts auswertbar, bleibt die Zeile weg.
  */
 export async function DashZustand({ kern }: DashAbschnittProps) {
+  // Ohne Buchungen gibt es nichts zu pruefen (Steuer, Bank, offene Buchungen): die Zeile sagt nichts aus.
+  if (dashboardLeer(kern).keineBuchungen) return null
   const zeile = await ladeDashZustand(kern.scopeCtx, kern.heute)
   return <DashZustandZeile zeile={zeile} />
 }

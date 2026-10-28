@@ -19,11 +19,14 @@ import { DashAusblick } from '@/components/dashboard/DashAusblick'
 import { DashKonten } from '@/components/dashboard/DashKonten'
 import { DashAnlagen } from '@/components/dashboard/DashAnlagen'
 import { DashSparziele } from '@/components/dashboard/DashSparziele'
+import { AufteilungPlatzhalter } from '@/components/dashboard/DashPlatzhalter'
+import { dashboardLeer } from '@/lib/dashboard/leer'
 import { Skeleton, SkeletonChart } from '@/components/ui/skeleton'
 import { ladeErsteSchritteZaehler } from '@/lib/data/erste-schritte'
 import { CHECKLISTE_KEY, checklisteFlag, checklisteStatus, sollFertigVermerken } from '@/lib/leer/erste-schritte'
 import { ChecklisteFertigVermerk } from '@/components/leer/ChecklisteFertigVermerk'
 import { ErsteSchritteKarte } from '@/components/leer/ErsteSchritteKarte'
+import type { ChecklisteAnsicht } from '@/lib/leer/erste-schritte'
 
 /**
  * Dashboard — ein Blick, ein Cockpit.
@@ -77,28 +80,43 @@ export default async function DashboardPage() {
         <p className="text-sm text-muted-foreground">{datumLang}</p>
       </div>
 
-      {typeof checkliste === 'object' && <ErsteSchritteKarte ansicht={checkliste} />}
       {fertigVermerken && <ChecklisteFertigVermerk />}
-      <DashboardInhalt kern={kern} props={props} aufteilung={aufteilung} />
+      <DashboardInhalt
+        kern={kern} props={props} aufteilung={aufteilung}
+        checkliste={typeof checkliste === 'object' ? checkliste : null}
+      />
     </div>
   )
 }
 
-function DashboardInhalt({ kern, props, aufteilung }: {
+function DashboardInhalt({ kern, props, aufteilung, checkliste }: {
   kern: Awaited<ReturnType<typeof ladeDashboard>>
   props: { kern: Awaited<ReturnType<typeof ladeDashboard>> }
   aufteilung: ReturnType<typeof baueAufteilung>
+  checkliste: ChecklisteAnsicht | null
 }) {
+  const leer = dashboardLeer(kern)
+  const hatAufteilung = aufteilung.total > 0 && aufteilung.posten.length > 0
   return (
     <>
       {/* Schmale Zeilen oben: Kennzahlen, Hinweise, Zustand. */}
       <Suspense fallback={<Skeleton className="h-16 w-full rounded-lg" />}>
         <DashKennzahlen {...props} />
       </Suspense>
-      <DashHinweise insights={kern.insights} />
-      <Suspense fallback={<Skeleton className="h-10 w-full rounded-lg" />}>
-        <DashZustand {...props} />
-      </Suspense>
+      {/* Ohne Daten sagt "Keine offenen Hinweise" nichts: die Zeile entfaellt, solange es nichts zu zeigen gibt. */}
+      {!(leer.leer && kern.insights.length === 0) && <DashHinweise insights={kern.insights} />}
+      {!leer.keineBuchungen && (
+        <Suspense fallback={<Skeleton className="h-10 w-full rounded-lg" />}>
+          <DashZustand {...props} />
+        </Suspense>
+      )}
+      {/* Handy/Tablet: Checkliste direkt unter den Hinweisen. Ab lg steht sie in der rechten Spalte von Zeile 2
+          (gleiche Karte, geteilter Ausgeblendet-Zustand). */}
+      {checkliste && (
+        <div className="lg:hidden">
+          <ErsteSchritteKarte ansicht={checkliste} />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 [&>*]:min-w-0">
         <div className="lg:col-span-2">
@@ -131,14 +149,29 @@ function DashboardInhalt({ kern, props, aufteilung }: {
           </div>
         </div>
         {/* Jedes Konto, jedes Depot und Krypto als eigener Posten: dieselben Bausteine wie in der
-            Net-Worth-Kennzahl, nur aufgeschluesselt (lib/dashboard/aufteilung.ts). */}
-        <div className="md:col-span-2 lg:col-span-1">
-          <PortfolioDonut
-            posten={aufteilung.posten}
-            total={aufteilung.total}
-            minus={aufteilung.minus}
-            locale={kern.locale}
-          />
+            Net-Worth-Kennzahl, nur aufgeschluesselt (lib/dashboard/aufteilung.ts). Ab lg steht die kompakte
+            Checkliste ueber der Aufteilung; ohne Posten fuellt ein Geister-Ring den Rest der Spalte, damit
+            kein Loch entsteht (auf dem Handy entfaellt er, dort waere er nur Platzverbrauch). */}
+        <div className="flex flex-col gap-4 md:col-span-2 lg:col-span-1">
+          {checkliste && (
+            <div className="hidden lg:block">
+              <ErsteSchritteKarte ansicht={checkliste} schmal />
+            </div>
+          )}
+          {hatAufteilung ? (
+            <div className="min-h-0 flex-1 [&>*]:h-full">
+              <PortfolioDonut
+                posten={aufteilung.posten}
+                total={aufteilung.total}
+                minus={aufteilung.minus}
+                locale={kern.locale}
+              />
+            </div>
+          ) : (
+            <div className="hidden min-h-0 flex-1 flex-col lg:flex [&>*]:flex-1">
+              <AufteilungPlatzhalter />
+            </div>
+          )}
         </div>
       </div>
 
