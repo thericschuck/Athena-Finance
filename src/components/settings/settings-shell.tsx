@@ -64,6 +64,7 @@ export function SettingsShell({
   accounts,
   email,
   waitlist,
+  initialTab,
 }: {
   initialProfile: UserProfile
   initialSettings: SettingsMap
@@ -71,6 +72,8 @@ export function SettingsShell({
   email: string
   /** `null`, wenn die Liste für dieses Konto nicht sichtbar ist. */
   waitlist?: WaitlistRow[] | null
+  /** Reiter aus `?tab=`; unbekannte oder nicht sichtbare Werte (z. B. 'warteliste' ohne Rechte) starten auf 'profil'. */
+  initialTab?: string
 }) {
   // Richtung im selben State wie der Tab, nicht in einer Ref: `AnimatePresence`
   // liest sie beim Rendern, und genau das darf man mit einer Ref nicht tun
@@ -79,7 +82,10 @@ export function SettingsShell({
   // rechnet mit dieser Liste, nicht mit TABS — sonst stimmte die Richtung der
   // Panel-Animation nicht mehr, sobald ein Reiter fehlt.
   const tabs = useMemo(() => TABS.filter(t => t.id !== 'warteliste' || waitlist != null), [waitlist])
-  const [{ active, dir }, setTab] = useState<{ active: TabId; dir: number }>({ active: 'profil', dir: 1 })
+  const [{ active, dir }, setTab] = useState<{ active: TabId; dir: number }>(() => ({
+    active: (tabs.find(t => t.id === initialTab)?.id ?? 'profil') as TabId,
+    dir: 1,
+  }))
   const still = useReducedMotion()
   const direction = still ? 0 : dir
 

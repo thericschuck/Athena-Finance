@@ -18,7 +18,14 @@ export async function ladeErsteSchritteZaehler(supabase: DB, ctx: ScopeContext):
   }
   const kopf = { count: 'exact', head: true } as const
 
-  const [buchungen, kategorien, vertraege, sparziele, athenaChats, depots, krypto, inventar, schulden] = await Promise.all([
+  // bank_connections steht noch nicht in den generierten Typen (src/types/database.ts): schmaler Cast wie in
+  // src/lib/fints/connections.ts. Fehlt die Tabelle (Migration offen), liefert die Abfrage einen Fehler -> zaehlt als 0.
+  const bankTabelle = supabase as unknown as SupabaseClient
+
+  const [
+    buchungen, kategorien, vertraege, sparziele, athenaChats, depots, krypto, inventar, schulden,
+    bankVerbindungen, kryptoKonten,
+  ] = await Promise.all([
     ctx.accountIds.length
       ? anzahl(applyAccountScope(supabase.from('unified_transactions').select('id', kopf), ctx))
       : Promise.resolve(0),
@@ -30,8 +37,12 @@ export async function ladeErsteSchritteZaehler(supabase: DB, ctx: ScopeContext):
     anzahl(scopedOwner(supabase.from('assets').select('id', kopf), ctx)),
     anzahl(scopedOwner(supabase.from('valuables').select('id', kopf), ctx)),
     anzahl(scopedOwner(supabase.from('debts').select('id', kopf), ctx)),
+    // OWNER-ONLY: Bankverbindungen und Boersen-Schluessel gehoeren immer dem eigenen Nutzer, unabhaengig vom Scope.
+    anzahl(bankTabelle.from('bank_connections').select('id', kopf).eq('user_id', ctx.userId)),
+    anzahl(supabase.from('exchange_keys').select('id', kopf).eq('user_id', ctx.userId)),
   ])
 
+  const ich = ctx.members.find(m => m.id === ctx.userId)
   return {
     konten: ctx.accountIds.length,
     bankVerbunden: ctx.ibans.length > 0,
@@ -41,5 +52,13 @@ export async function ladeErsteSchritteZaehler(supabase: DB, ctx: ScopeContext):
     sparziele,
     athenaChats,
     anlagen: depots + krypto + inventar + schulden,
+    bankVerbindungen,
+    kryptoKonten,
+    kryptoAssets: krypto,
+    depots,
+    inventar,
+    // Einladen darf nur der Eigentuemer seines Haushalts, solange er allein darin ist. Ohne Haushalt: nicht moeglich.
+    partnerEinladbar: ich?.role === 'owner' && ctx.members.length <= 1,
+    partnerVorhanden: ctx.members.length > 1,
   }
 }

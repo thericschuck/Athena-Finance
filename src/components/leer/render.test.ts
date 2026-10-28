@@ -49,17 +49,39 @@ test('LeerZustand: ohne Aktion keine leere Aktionszeile', async () => {
   assert.doesNotMatch(html, /<a /)
 })
 
-test('ErsteSchritteListe: alle Zaehler 0 -> 5 Schritte, 0 von 4, erster Schritt primaer', async () => {
+test('ErsteSchritteListe: alle Zaehler 0 -> 8 Schritte in 2 Gruppen, 0 von 4, erster Schritt primaer, Direktlinks', async () => {
   const { ErsteSchritteListe } = (await laden('ErsteSchritteListe.tsx')) as { ErsteSchritteListe: (p: object) => unknown }
   const logik = (await laden('../../lib/leer/erste-schritte.ts')) as {
     ersteSchritte: (z: object) => unknown[]; LEERE_ZAEHLER: object
   }
   const html = renderToStaticMarkup(h(ErsteSchritteListe, { schritte: logik.ersteSchritte(logik.LEERE_ZAEHLER) }))
   sauber(html, 'ErsteSchritteListe')
-  assert.equal((html.match(/<li /g) ?? []).length, 5)
+  assert.equal((html.match(/<li /g) ?? []).length, 8)
   assert.match(html, /0 von 4/)
   assert.match(html, /aria-valuenow="0"/)
   assert.match(html, /Konto anlegen/)
+  // zwei Gruppen mit Ueberschrift, Nummerierung laeuft durch (1..8)
+  assert.match(html, /Grundlagen/)
+  assert.match(html, /Anbindungen und mehr/)
+  assert.match(html, />8</)
+  // Direktlinks in die Einstellungen
+  assert.match(html, /href="\/settings\?tab=integrationen"/)
+  assert.match(html, /Bank verbinden/)
+  assert.match(html, /Krypto verbinden/)
+})
+
+test('ErsteSchritteListe: Eigentuemer ohne Partner sieht zusaetzlich "Partner einladen" (9 Schritte)', async () => {
+  const { ErsteSchritteListe } = (await laden('ErsteSchritteListe.tsx')) as { ErsteSchritteListe: (p: object) => unknown }
+  const logik = (await laden('../../lib/leer/erste-schritte.ts')) as {
+    ersteSchritte: (z: object) => unknown[]; LEERE_ZAEHLER: object
+  }
+  const html = renderToStaticMarkup(h(ErsteSchritteListe, {
+    schritte: logik.ersteSchritte({ ...logik.LEERE_ZAEHLER, partnerEinladbar: true }),
+  }))
+  sauber(html, 'ErsteSchritteListe mit Partner-Schritt')
+  assert.equal((html.match(/<li /g) ?? []).length, 9)
+  assert.match(html, /Partner einladen/)
+  assert.match(html, /href="\/settings\?tab=haushalt"/)
 })
 
 test('ErsteSchritteListe: alles erledigt -> 4 von 4, keine Aktionen ausser Athena', async () => {

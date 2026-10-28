@@ -21,16 +21,36 @@ export type ErsteSchritteZaehler = {
   athenaChats: number
   /** Alles uebrige, was Vermoegen zaehlt: Depots, Krypto, Inventar, Schulden. */
   anlagen: number
+  /** Eigene FinTS-Bankverbindungen (Einstellungen -> Integrationen). */
+  bankVerbindungen: number
+  /** Eigene Boersen-Verbindungen (Kraken Spot/Futures, API-Schluessel). */
+  kryptoKonten: number
+  /** Krypto-Assets im Scope (von Hand erfasst oder per Boerse gespiegelt). */
+  kryptoAssets: number
+  /** Depots und Wertgegenstaende im Scope. */
+  depots: number
+  inventar: number
+  /** Der Nutzer ist Eigentuemer seines Haushalts und hat noch kein weiteres Mitglied: Einladen ist moeglich. */
+  partnerEinladbar: boolean
+  /** Es gibt bereits ein weiteres Haushaltsmitglied. */
+  partnerVorhanden: boolean
 }
 
 export const LEERE_ZAEHLER: ErsteSchritteZaehler = {
   konten: 0, bankVerbunden: false, buchungen: 0, kategorien: 0, vertraege: 0, sparziele: 0, athenaChats: 0, anlagen: 0,
+  bankVerbindungen: 0, kryptoKonten: 0, kryptoAssets: 0, depots: 0, inventar: 0, partnerEinladbar: false, partnerVorhanden: false,
 }
 
-export type SchrittId = 'konto' | 'buchungen' | 'kategorien' | 'planung' | 'athena'
+export type SchrittId =
+  | 'konto' | 'buchungen' | 'kategorien' | 'planung'
+  | 'bank' | 'krypto' | 'depot' | 'haushalt' | 'athena'
+
+/** Grundlagen zaehlen zum Fortschritt; Anbindungen und mehr sind optional und erscheinen darunter. */
+export type SchrittGruppe = 'grundlagen' | 'anbindungen'
 
 export type Schritt = {
   id: SchrittId
+  gruppe: SchrittGruppe
   titel: string
   text: string
   href: string
@@ -39,13 +59,21 @@ export type Schritt = {
   optional: boolean
 }
 
+/** Direktlinks in die Einstellungen (Reiter per ?tab=, siehe settings/page.tsx). */
+export const EINSTELLUNGEN_INTEGRATIONEN = '/settings?tab=integrationen'
+export const EINSTELLUNGEN_HAUSHALT = '/settings?tab=haushalt'
+
 export function ersteSchritte(z: ErsteSchritteZaehler): Schritt[] {
   const hatKonto = z.konten > 0
-  return [
+  const bankDa = z.bankVerbindungen > 0 || z.bankVerbunden
+  const kryptoDa = z.kryptoKonten > 0 || z.kryptoAssets > 0
+  const depotDa = z.depots > 0 || z.inventar > 0
+  const schritte: Schritt[] = [
     {
       id: 'konto',
-      titel: 'Konto anlegen oder Bank verbinden',
-      text: 'Ein Konto ist die Basis: Salden, Buchungen und der Vermögensverlauf hängen daran. Eine Bank verbindest du in den Einstellungen, ein Konto legst du von Hand an.',
+      gruppe: 'grundlagen',
+      titel: 'Konto anlegen',
+      text: 'Ein Konto ist die Basis: Salden, Buchungen und der Vermögensverlauf hängen daran. Du legst es von Hand an oder verbindest weiter unten deine Bank.',
       href: '/finance/accounts',
       aktion: hatKonto ? 'Konten ansehen' : 'Konto anlegen',
       erledigt: hatKonto,
@@ -53,6 +81,7 @@ export function ersteSchritte(z: ErsteSchritteZaehler): Schritt[] {
     },
     {
       id: 'buchungen',
+      gruppe: 'grundlagen',
       titel: 'Erste Buchungen erfassen oder importieren',
       text: 'Über den Bank-Sync, einen CSV-Import oder von Hand. Erst mit Buchungen füllen sich Monat, Analyse und Prognose.',
       href: '/finance/transactions',
@@ -62,6 +91,7 @@ export function ersteSchritte(z: ErsteSchritteZaehler): Schritt[] {
     },
     {
       id: 'kategorien',
+      gruppe: 'grundlagen',
       titel: 'Kategorien prüfen',
       text: 'Kategorien sortieren Einnahmen und Ausgaben. Lege eigene an oder passe sie an, bevor du viele Buchungen einsortierst.',
       href: '/finance/categories',
@@ -71,6 +101,7 @@ export function ersteSchritte(z: ErsteSchritteZaehler): Schritt[] {
     },
     {
       id: 'planung',
+      gruppe: 'grundlagen',
       titel: 'Vertrag oder Sparziel anlegen',
       text: 'Verträge und Abos speisen die Fixkosten und die Prognose, Sparziele zeigen, ob du rechtzeitig ankommst.',
       href: z.vertraege > 0 ? '/finance/goals' : '/finance/contracts',
@@ -79,15 +110,61 @@ export function ersteSchritte(z: ErsteSchritteZaehler): Schritt[] {
       optional: false,
     },
     {
-      id: 'athena',
-      titel: 'Athena ausprobieren',
-      text: 'Athena liest deine Finanzdaten und beantwortet Fragen dazu. Geändert wird nur, was du bestätigst.',
-      href: '/assistant',
-      aktion: 'Athena öffnen',
-      erledigt: z.athenaChats > 0,
+      id: 'bank',
+      gruppe: 'anbindungen',
+      titel: 'Bank verbinden',
+      text: 'Per FinTS holt die App Salden und Umsätze automatisch. Zugangsdaten trägst du selbst ein; sie werden verschlüsselt gespeichert und nie wieder angezeigt.',
+      href: EINSTELLUNGEN_INTEGRATIONEN,
+      aktion: bankDa ? 'Bankverbindungen ansehen' : 'Bank verbinden',
+      erledigt: bankDa,
+      optional: true,
+    },
+    {
+      id: 'krypto',
+      gruppe: 'anbindungen',
+      titel: 'Krypto-Konto verbinden',
+      text: 'Verbinde Kraken mit einem API-Schlüssel (nur lesend) für Salden, Kurse und Handelshistorie, oder erfasse Krypto-Assets von Hand.',
+      href: z.kryptoKonten > 0 ? '/crypto' : EINSTELLUNGEN_INTEGRATIONEN,
+      aktion: z.kryptoKonten > 0 ? 'Krypto ansehen' : 'Krypto verbinden',
+      erledigt: kryptoDa,
+      optional: true,
+    },
+    {
+      id: 'depot',
+      gruppe: 'anbindungen',
+      titel: 'Depot oder Wertgegenstände erfassen',
+      text: 'Fondsdepots und Sachwerte wie Uhren oder Kunst gehören zum Gesamtbild deines Vermögens.',
+      href: z.depots > 0 ? '/inventar' : '/depot',
+      aktion: z.depots > 0 ? 'Wertgegenstände anlegen' : 'Depot anlegen',
+      erledigt: depotDa,
       optional: true,
     },
   ]
+  // Partner einladen: nur fuer den Eigentuemer eines Haushalts. Wer selbst Mitglied ist (eingeladen wurde) oder
+  // keinen Haushalt hat, sieht den Schritt nicht. Ist schon ein Partner da, steht er abgehakt da.
+  if (z.partnerEinladbar || z.partnerVorhanden) {
+    schritte.push({
+      id: 'haushalt',
+      gruppe: 'anbindungen',
+      titel: 'Partner zum Haushalt einladen',
+      text: 'Gemeinsame Konten, Verträge und Ziele in einer Ansicht. Du lädst per Link ein, jeder behält seinen eigenen Login und seine eigenen Steuerdaten.',
+      href: EINSTELLUNGEN_HAUSHALT,
+      aktion: z.partnerVorhanden ? 'Haushalt ansehen' : 'Partner einladen',
+      erledigt: z.partnerVorhanden,
+      optional: true,
+    })
+  }
+  schritte.push({
+    id: 'athena',
+    gruppe: 'anbindungen',
+    titel: 'Athena ausprobieren',
+    text: 'Athena liest deine Finanzdaten und beantwortet Fragen dazu. Geändert wird nur, was du bestätigst.',
+    href: '/assistant',
+    aktion: 'Athena öffnen',
+    erledigt: z.athenaChats > 0,
+    optional: true,
+  })
+  return schritte
 }
 
 export function fortschritt(schritte: Schritt[]): { erledigt: number; gesamt: number; prozent: number } {

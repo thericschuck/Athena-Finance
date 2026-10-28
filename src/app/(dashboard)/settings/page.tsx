@@ -5,8 +5,12 @@ import { getActiveAccountOptions } from '@/lib/data/overview'
 import { listWaitlistFor } from '@/lib/waitlist'
 import { SettingsShell } from '@/components/settings/settings-shell'
 
-export default async function SettingsPage() {
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ tab?: string | string[] }> }) {
   const { supabase, user } = await requireAuthUser()
+  // Direktlink auf einen Reiter, z. B. /settings?tab=integrationen (Checkliste "Erste Schritte"). Unbekannte Werte
+  // werden in der Shell ignoriert (Start auf "Profil").
+  const tabParam = (await searchParams).tab
+  const initialTab = Array.isArray(tabParam) ? tabParam[0] : tabParam
 
   const [profile, settings, accountRows, waitlist] = await Promise.all([
     getOwnProfile(supabase, user!.id),
@@ -27,6 +31,7 @@ export default async function SettingsPage() {
         accounts={accountRows}
         email={user!.email ?? ''}
         waitlist={waitlist}
+        initialTab={initialTab}
       />
     </div>
   )
