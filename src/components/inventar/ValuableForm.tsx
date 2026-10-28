@@ -23,11 +23,13 @@ interface Props {
   trigger: React.ReactNode
   /** Gesetzt = Bearbeiten, sonst Anlegen. */
   item?: Valuable
-  /** Schalter 'Mit Haushalt teilen' beim Anlegen (nur bei Haushalt mit Partner). */
+  /** Schalter 'Mit Haushalt teilen' (nur bei Haushalt mit Partner). */
   canShare?: boolean
+  /** Beim Bearbeiten: Stueck gehoert dem Nutzer. Stuecke des Partners lassen sich nicht umstellen (kein Schalter). */
+  eigen?: boolean
 }
 
-export function ValuableForm({ trigger, item, canShare = false }: Props) {
+export function ValuableForm({ trigger, item, canShare = false, eigen = true }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [kategorie, setKategorie] = useState(item?.kategorie ?? 'uhr')
@@ -209,8 +211,8 @@ export function ValuableForm({ trigger, item, canShare = false }: Props) {
             />
             {canShare && !item && <Haken name="shared" label="Mit Haushalt teilen" />}
             {/* Bestehendes Stueck: Ist-Zustand aus `shared`. Fremde Stuecke (Partner) koennen nicht umgestellt werden,
-                die Action aendert nur eigene Zeilen. Ohne `shared` aus der View (Migration noch nicht live) kein Schalter. */}
-            {canShare && item && item.shared !== undefined && (
+                die Action aendert nur eigene Zeilen: dort gibt es keinen Schalter. */}
+            {canShare && item && eigen && (
               <>
                 <input type="hidden" name="shared_form" value="1" />
                 <Haken name="shared" label="Mit Haushalt teilen" defaultChecked={item.shared} />

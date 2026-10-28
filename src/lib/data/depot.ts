@@ -1,12 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
-import type { ScopeArg } from '@/lib/data/scope-arg'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 import { scopedOwner, scopeUserId } from '@/lib/data/scope-owner'
 
 /**
  * Datenzugriff Depot. Reine Funktionen: Client und Scope kommen vom Aufrufer.
- * `ScopeArg`: ScopeContext = Haushaltssicht (Depots eigene ODER geteilt; Transaktionen folgen dem Depot
- * ueber (user_id, isin)); string = nur Zeilen dieses Nutzers (wie bisher).
+ * Haushaltssicht ueber `ScopeContext` (Depots eigene ODER geteilt; Transaktionen folgen dem Depot ueber (user_id, isin)).
  */
 type DB = SupabaseClient<Database>
 
@@ -70,11 +69,10 @@ const SAVINGS_PLAN_COLUMNS =
   'id, user_id, isin, fund_name, monthly_amount, execution_day, start_date, is_active, created_at'
 const DEPOT_COLUMNS = 'id, user_id, name, isin, shared, created_at'
 
-export async function getDepots(supabase: DB, who: ScopeArg): Promise<Depot[]> {
-  const { data } = await scopedOwner(supabase.from('depots').select(DEPOT_COLUMNS), who)
+export async function getDepots(supabase: DB, ctx: ScopeContext): Promise<Depot[]> {
+  const { data } = await scopedOwner(supabase.from('depots').select(DEPOT_COLUMNS), ctx)
     .order('created_at', { ascending: true })
   const rows = (data ?? []) as Depot[]
-  if (typeof who === 'string') return rows
   // Dieselbe ISIN bei mehreren Haushaltsmitgliedern: im Haushaltsscope ein Eintrag je ISIN (aeltester);
   // Bestand/Verlauf aggregieren ueber die sichtbaren Besitzer (siehe visibleOwnersByIsin).
   const seen = new Set<string>()
@@ -82,8 +80,8 @@ export async function getDepots(supabase: DB, who: ScopeArg): Promise<Depot[]> {
 }
 
 /** Besitzer der sichtbaren Depots je ISIN (Transaktionen gehoeren zu (user_id, isin) eines sichtbaren Depots). */
-async function visibleOwnersByIsin(supabase: DB, who: ScopeArg, isins?: string[]): Promise<Map<string, string[]>> {
-  let q = scopedOwner(supabase.from('depots').select('user_id, isin'), who)
+async function visibleOwnersByIsin(supabase: DB, ctx: ScopeContext, isins?: string[]): Promise<Map<string, string[]>> {
+  let q = scopedOwner(supabase.from('depots').select('user_id, isin'), ctx)
   if (isins) q = q.in('isin', isins)
   const { data } = await q
   const map = new Map<string, string[]>()
@@ -96,26 +94,25 @@ async function visibleOwnersByIsin(supabase: DB, who: ScopeArg, isins?: string[]
 }
 
 /** Ist das sichtbare Depot zu dieser ISIN mit dem Haushalt geteilt? (Neue Sparplaene erben das Flag.) */
-export async function isDepotShared(supabase: DB, who: ScopeArg, isin: string): Promise<boolean> {
-  const { data } = await scopedOwner(supabase.from('depots').select('shared'), who).eq('isin', isin).limit(1)
+export async function isDepotShared(supabase: DB, ctx: ScopeContext, isin: string): Promise<boolean> {
+  const { data } = await scopedOwner(supabase.from('depots').select('shared'), ctx).eq('isin', isin).limit(1)
   return !!data?.[0]?.shared
 }
 
 /** Besitzer-ID, dem neue Transaktionen/Plaene zu dieser ISIN zugeordnet werden: Besitzer des sichtbaren Depots, sonst der Handelnde. */
-export async function resolveDepotOwner(supabase: DB, who: ScopeArg, isin: string): Promise<string> {
-  const own = scopeUserId(who)
-  if (typeof who === 'string') return own
-  const owners = (await visibleOwnersByIsin(supabase, who, [isin])).get(isin) ?? []
+export async function resolveDepotOwner(supabase: DB, ctx: ScopeContext, isin: string): Promise<string> {
+  const own = scopeUserId(ctx)
+  const owners = (await visibleOwnersByIsin(supabase, ctx, [isin])).get(isin) ?? []
   return owners.includes(own) || owners.length === 0 ? own : owners[0]
 }
 
 /** Alle Transaktionen einer ISIN (unbegrenzt: fließen in Bestand/Summen ein). */
 export async function getDepotTransactions(
   supabase: DB,
-  who: ScopeArg,
+  ctx: ScopeContext,
   isin: string,
 ): Promise<DepotTransaction[]> {
-  const owners = typeof who === 'string' ? [who] : ((await visibleOwnersByIsin(supabase, who, [isin])).get(isin) ?? [])
+  const owners = (await visibleOwnersByIsin(supabase, ctx, [isin])).get(isin) ?? []
   if (owners.length === 0) return []
   const { data } = await supabase
     .from('depot_transactions')
@@ -128,8 +125,8 @@ export async function getDepotTransactions(
 }
 
 /** Gibt es für die ISIN bereits eine "initial"-Transaktion? */
-export async function hasInitialTransaction(supabase: DB, who: ScopeArg, isin: string): Promise<boolean> {
-  const owners = typeof who === 'string' ? [who] : ((await visibleOwnersByIsin(supabase, who, [isin])).get(isin) ?? [scopeUserId(who)])
+export async function hasInitialTransaction(supabase: DB, ctx: ScopeContext, isin: string): Promise<boolean> {
+  const owners = (await visibleOwnersByIsin(supabase, ctx, [isin])).get(isin) ?? [scopeUserId(ctx)]
   const { data } = await supabase
     .from('depot_transactions')
     .select('id')
@@ -140,8 +137,8 @@ export async function hasInitialTransaction(supabase: DB, who: ScopeArg, isin: s
   return !!data && data.length > 0
 }
 
-export async function getSavingsPlans(supabase: DB, who: ScopeArg): Promise<SavingsPlan[]> {
-  const { data } = await scopedOwner(supabase.from('savings_plans').select(SAVINGS_PLAN_COLUMNS), who)
+export async function getSavingsPlans(supabase: DB, ctx: ScopeContext): Promise<SavingsPlan[]> {
+  const { data } = await scopedOwner(supabase.from('savings_plans').select(SAVINGS_PLAN_COLUMNS), ctx)
     .order('created_at', { ascending: true })
   return (data ?? []) as SavingsPlan[]
 }
@@ -149,10 +146,10 @@ export async function getSavingsPlans(supabase: DB, who: ScopeArg): Promise<Savi
 /** Einzelner Sparplan; null wenn nicht gefunden (oder Fehler). */
 export async function getSavingsPlan(
   supabase: DB,
-  who: ScopeArg,
+  ctx: ScopeContext,
   planId: string,
 ): Promise<SavingsPlan | null> {
-  const { data, error } = await scopedOwner(supabase.from('savings_plans').select(SAVINGS_PLAN_COLUMNS), who)
+  const { data, error } = await scopedOwner(supabase.from('savings_plans').select(SAVINGS_PLAN_COLUMNS), ctx)
     .eq('id', planId)
     .single()
   if (error || !data) return null
@@ -166,10 +163,10 @@ export async function getSavingsPlan(
  */
 export async function getPortfolioHistory(
   supabase: DB,
-  who: ScopeArg,
+  ctx: ScopeContext,
   isin: string,
 ): Promise<PortfolioHistoryPoint[]> {
-  const owners = typeof who === 'string' ? [who] : ((await visibleOwnersByIsin(supabase, who, [isin])).get(isin) ?? [])
+  const owners = (await visibleOwnersByIsin(supabase, ctx, [isin])).get(isin) ?? []
   if (owners.length === 0) return []
   const [{ data: prices }, { data: transactions }] = await Promise.all([
     supabase
@@ -216,13 +213,13 @@ export async function getPortfolioHistory(
 }
 
 /** Depots inkl. Bestand, Kurs und Rendite (für Konten-Seite und Dashboard). */
-export async function getDepotsSummaries(supabase: DB, who: ScopeArg): Promise<DepotWithSummary[]> {
-  const depots = await getDepots(supabase, who)
+export async function getDepotsSummaries(supabase: DB, ctx: ScopeContext): Promise<DepotWithSummary[]> {
+  const depots = await getDepots(supabase, ctx)
   if (!depots.length) return []
 
   const isins = depots.map(d => d.isin)
-  const ownersByIsin = typeof who === 'string' ? null : await visibleOwnersByIsin(supabase, who, isins)
-  const txOwners = ownersByIsin ? [...new Set([...ownersByIsin.values()].flat())] : [who as string]
+  const ownersByIsin = await visibleOwnersByIsin(supabase, ctx, isins)
+  const txOwners = [...new Set([...ownersByIsin.values()].flat())]
 
   const [{ data: transactions }, { data: caches }, { data: history }] = await Promise.all([
     supabase
@@ -254,7 +251,7 @@ export async function getDepotsSummaries(supabase: DB, who: ScopeArg): Promise<D
 
   return depots.map(depot => {
     // Nur Transaktionen der Besitzer, deren Depot zu dieser ISIN sichtbar ist (nie privates Depot eines Peers).
-    const owners    = ownersByIsin?.get(depot.isin) ?? txOwners
+    const owners    = ownersByIsin.get(depot.isin) ?? txOwners
     const txs       = (transactions ?? []).filter(t => t.isin === depot.isin && owners.includes(t.user_id))
     const cache     = caches?.find(c => c.isin === depot.isin)
     const totalShares   = txs.reduce((s, t) => s + Number(t.shares), 0)

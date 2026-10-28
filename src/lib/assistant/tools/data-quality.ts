@@ -1,9 +1,9 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { type DB } from '@/lib/assistant/tools/shared'
-import { scopeHaushaltsweit, scopeIbans, scopeKonten, scopeKontenTabelle, wer } from '@/lib/assistant/tools/scope'
+import { scopeHaushaltsweit, scopeIbans, scopeKonten, scopeKontenTabelle } from '@/lib/assistant/tools/scope'
 import type { ScopeContext } from '@/lib/haushalt/scope'
-import { getFlowTransactionsScope } from '@/lib/data/flows-scope'
+import { ladeBuchungenImScope } from '@/lib/assistant/tools/buchungen'
 
 export function buildDataQualityTools(supabase: DB, ctx: ScopeContext) {
   return {
@@ -188,7 +188,7 @@ export function buildDataQualityTools(supabase: DB, ctx: ScopeContext) {
           const jahrStart = `${heute.getFullYear()}-01-01`
           const [{ data: baum }, buchungen] = await Promise.all([
             scopeHaushaltsweit(supabase.from('category_tree').select('id, name, path, type, tax_role_effective'), ctx),
-            getFlowTransactionsScope(supabase, wer(ctx), { from: jahrStart, include: { anlage: false, forderung: false } }),
+            ladeBuchungenImScope(supabase, ctx, { from: jahrStart, include: { anlage: false, forderung: false } }),
           ])
           const ohneRolle = new Map(
             (baum ?? [])

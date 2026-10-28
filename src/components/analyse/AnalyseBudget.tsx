@@ -33,7 +33,7 @@ export async function AnalyseBudget({ daten }: AnalyseAbschnittProps) {
   const [kategorien, posten, ziel] = await Promise.all([
     getBudgetCategories(supabase, daten.scopeCtx),
     getBudgetItems(supabase, daten.scopeCtx),
-    getIncomeTarget(supabase, daten.scopeCtx), // income_targets: OWNER-ONLY (entscheidet finance-budget.ts)
+    getIncomeTarget(supabase, daten.scopeCtx.userId), // income_targets: OWNER-ONLY (entscheidet finance-budget.ts)
   ])
 
   const eur = (n: number) => fmtCurrency(n, 'EUR', daten.locale)

@@ -77,6 +77,15 @@ export function normIban(iban: string): string {
   return iban.replace(/\s+/g, '').toUpperCase()
 }
 
+/**
+ * EINZIGE Definition von „hat Haushaltspartner“ (mindestens ein weiteres Mitglied im Haushalt). Gleichbedeutend mit
+ * `available.length > 1` und `partnerId !== null`. Ohne Partner gelten ueberall die bisherigen Einzelnutzer-Abfragen.
+ * Nicht zu verwechseln mit `sharedFremdBesitz` (ein geteiltes Scope-Konto gehoert einem ANDEREN Nutzer).
+ */
+export function hatPartner(ctx: Pick<ScopeContext, 'partnerId'>): boolean {
+  return ctx.partnerId !== null
+}
+
 export function parseScope(value: unknown): ScopeName | null {
   return typeof value === 'string' && (SCOPE_NAMES as readonly string[]).includes(value)
     ? (value as ScopeName)
@@ -164,17 +173,21 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  * Filtert eine Haushaltstabelle (nicht kontengebunden) auf den Scope.
  * `sharedColumn: true` bei Tabellen mit Spalte `shared` (ich/partner: eigene ODER geteilte Zeilen).
  * Ohne `shared`-Spalte (z. B. Kind-Tabellen) wird nur nach Besitzer gefiltert.
+ * Geteilte Zeilen zaehlen nur, wenn ihr Besitzer ein Haushaltsmitglied ist (`ctx.members`), nie fremde Haushalte.
  */
 export function applyOwnerScope<Q extends ScopeFilterable<Q>>(
   query: Q,
-  ctx: Pick<ScopeContext, 'ownerIds' | 'includeShared'>,
+  ctx: Pick<ScopeContext, 'ownerIds' | 'includeShared'> & { members?: readonly { id: string }[] },
   opts: { sharedColumn: boolean; userColumn?: string } = { sharedColumn: true },
 ): Q {
   const userColumn = opts.userColumn ?? 'user_id'
   if (opts.sharedColumn && ctx.includeShared) {
     // UUIDs stammen aus der DB; die Pruefung verhindert trotzdem Filter-Injection im or()-String.
     const ids = ctx.ownerIds.filter(id => UUID_RE.test(id))
-    return query.or(`${userColumn}.in.(${ids.join(',')}),shared.eq.true`)
+    // Geteilte Zeilen NUR von Haushaltsmitgliedern (bzw. dem Nutzer selbst ohne Haushalt): unter RLS redundant, aber Pflicht im
+    // Service-Role-Pfad (Cron, keine RLS), sonst waeren geteilte Zeilen fremder Haushalte lesbar.
+    const mitglieder = (ctx.members?.length ? ctx.members.map(m => m.id) : ctx.ownerIds).filter(id => UUID_RE.test(id))
+    return query.or(`${userColumn}.in.(${ids.join(',')}),and(shared.eq.true,${userColumn}.in.(${mitglieder.join(',')}))`)
   }
   return query.in(userColumn, ctx.ownerIds)
 }

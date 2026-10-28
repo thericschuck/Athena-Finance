@@ -115,9 +115,9 @@ test('Regression: alle Gegenkonten im Scope bzw. kein Partner => Zeilen und Summ
 })
 
 test('herabstufungsIds: nur mit Partner, nur gueltige UUIDs', () => {
-  assert.equal(herabstufungsIds({ available: ['ich'], accountIds: SCOPE_ICH }), undefined)
-  assert.deepEqual(herabstufungsIds({ available: ['ich', 'partner'], accountIds: [...SCOPE_ICH, 'x)'] }), SCOPE_ICH)
-  assert.equal(herabstufungsIds({ available: ['ich', 'partner'], accountIds: [] }), undefined)
+  assert.equal(herabstufungsIds({ partnerId: null, accountIds: SCOPE_ICH }), undefined)
+  assert.deepEqual(herabstufungsIds({ partnerId: 'p', accountIds: [...SCOPE_ICH, 'x)'] }), SCOPE_ICH)
+  assert.equal(herabstufungsIds({ partnerId: 'p', accountIds: [] }), undefined)
   assert.deepEqual(gueltigeKontoIds([E_GIRO, 'abc', "1' or 1=1", `${E_SPAR})`]), [E_GIRO])
 })
 

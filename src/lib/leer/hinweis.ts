@@ -1,4 +1,4 @@
-import type { ScopeContext, ScopeName } from '@/lib/haushalt/scope'
+import { hatPartner, type ScopeContext, type ScopeName } from '../haushalt/scope.ts'
 
 /**
  * Hinweis fuer Haushaltsmitglieder, deren aktueller Scope leer ist, obwohl der Haushalt weitere
@@ -21,7 +21,7 @@ function partnerName(ctx: Eingabe): string {
 }
 
 export function scopeHinweis(ctx: Eingabe, thema: string): ScopeHinweis | null {
-  if (ctx.available.length <= 1) return null
+  if (!hatPartner(ctx)) return null
   if (ctx.scope === 'gemeinsam') return null
   if (ctx.scope === 'ich' && ctx.available.includes('gemeinsam')) {
     return {

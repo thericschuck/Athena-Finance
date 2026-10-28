@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database, Json } from '@/types/database'
-import type { ScopeContext } from '@/lib/haushalt/scope'
+import { hatPartner, type ScopeContext } from '@/lib/haushalt/scope'
 import {
   akteurName, beschreibeAenderung, bereichTabellen, cursorKodieren, cursorLesen, objektLink, objektName,
   tabellenLabel, zeitraumAb, type AuditZeile, type MitgliedNamen,
@@ -58,7 +58,7 @@ export function mitgliedNamen(ctx: ScopeContext): MitgliedNamen {
 
 /** Aenderungsanzeigen nur, wenn mehrere Mitglieder bearbeiten koennen (Alleinstehende: alles unveraendert). */
 export function zeigeUrheber(ctx: ScopeContext): boolean {
-  return ctx.available.length > 1
+  return hatPartner(ctx)
 }
 
 // ---------------------------------------------------------------------------------------------------------

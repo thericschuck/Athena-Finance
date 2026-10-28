@@ -1,3 +1,4 @@
+import { hatPartner } from '@/lib/haushalt/scope'
 import Link from 'next/link'
 import { History } from 'lucide-react'
 import { requireAuthUser } from '@/lib/supabase/server'
@@ -26,7 +27,7 @@ export default async function AenderungenPage({ searchParams }: { searchParams: 
   const cursor = erster(sp.cursor)
 
   const seite = await ladeVerlauf(supabase, ctx, { bereich, zeitraum, person, cursor })
-  const mehrere = ctx.available.length > 1
+  const mehrere = hatPartner(ctx)
   const gefiltert = Boolean(bereich || person || zeitraum !== 'alle')
 
   const andere = ctx.members.filter(m => m.id !== ctx.userId)

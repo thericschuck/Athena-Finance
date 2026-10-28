@@ -15,7 +15,7 @@ import { modellpunkte } from '@/lib/inventar/wertmodell'
  * Anker werden entfernt).
  */
 /**
- * OWNER-ONLY (Haushalt Phase 3, Paket B): schreibt Modellpunkte nur fuer Stuecke des Nutzers (`user_id = userId`), bewusst
+ * OWNER-ONLY (Haushalt Phase 3): schreibt Modellpunkte nur fuer Stuecke des Nutzers (`user_id = userId`), bewusst
  * ohne Scope. Der Cron laeuft je Besitzer.
  */
 type DB = SupabaseClient<Database>

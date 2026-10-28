@@ -67,7 +67,7 @@ export async function ladeDashboard(
     getOpenSavingsGoals(supabase, ctx),
     getDashboardCryptoAssets(supabase, ctx),
     getActiveContracts(supabase, ctx),
-    getOpenInsights(supabase, ctx),
+    getOpenInsights(supabase, ctx.userId),
     getRebalancingTargets(userId), // OWNER-ONLY (user_settings)
     getLastRebalancing(userId),
     getDepotsSummaries(supabase, ctx),

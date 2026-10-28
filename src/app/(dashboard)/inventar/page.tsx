@@ -1,3 +1,4 @@
+import { hatPartner } from '@/lib/haushalt/scope'
 import { getAuthUser } from '@/lib/supabase/server'
 import { resolveScope } from '@/lib/haushalt/resolve'
 import { getSettings } from '@/lib/settings'
@@ -84,6 +85,7 @@ export default async function InventarPage() {
     anzeige_url: i.hauptbild_pfad ? signedByPath.get(i.hauptbild_pfad) ?? null : null,
     bilder: bilderByItem.get(i.id) ?? [],
     dokument_anzahl: dokumente.get(i.id) ?? 0,
+    eigen: i.user_id === user.id,
   }))
 
   const summe = gesamtwert(items, true)
@@ -250,7 +252,7 @@ export default async function InventarPage() {
         </div>
       )}
 
-      <InventoryClient items={itemsMitBild} locale={locale} canShare={ctx.available.length > 1} zuletzt={zuletztInventar} />
+      <InventoryClient items={itemsMitBild} locale={locale} canShare={hatPartner(ctx)} zuletzt={zuletztInventar} />
 
       <SoldList items={verkauft} locale={locale} />
     </div>

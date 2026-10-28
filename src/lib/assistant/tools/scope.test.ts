@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { buildScopeContext } from '../../haushalt/scope.ts'
-import { scopeOwner, scopeKonten, scopeKontenTabelle, scopeIbans, scopeHaushaltsweit, scopeBeschreibung, wer } from './scope.ts'
+import { scopeOwner, scopeKonten, scopeKontenTabelle, scopeIbans, scopeHaushaltsweit, scopeBeschreibung } from './scope.ts'
 
 const ERIC = '11111111-1111-4111-8111-111111111111'
 const MALIK = '22222222-2222-4222-8222-222222222222'
@@ -44,14 +44,13 @@ test('ohne Partner: exakt das alte user_id-Filter (Regression)', () => {
     fn(q)
     assert.deepEqual(calls, [`eq user_id=${ERIC}`])
   }
-  assert.equal(wer(solo), ERIC)
   assert.equal(scopeBeschreibung(solo), null)
 })
 
 test('mit Partner: Scope-Helfer, Besitzer immer auf Haushaltsmitglieder begrenzt', () => {
   const ich = zu_zweit('ich')
   let f = fake(); scopeOwner(f.q, ich)
-  assert.deepEqual(f.calls, [`in user_id=[${ERIC},${MALIK}]`, `or user_id.in.(${ERIC}),shared.eq.true`])
+  assert.deepEqual(f.calls, [`in user_id=[${ERIC},${MALIK}]`, `or user_id.in.(${ERIC}),and(shared.eq.true,user_id.in.(${ERIC},${MALIK}))`])
   f = fake(); scopeKonten(f.q, ich)
   assert.deepEqual(f.calls, ['in account_id=[e1,g1]'])
   f = fake(); scopeKontenTabelle(f.q, ich)
@@ -67,6 +66,5 @@ test('mit Partner: Scope-Helfer, Besitzer immer auf Haushaltsmitglieder begrenzt
     f = fake(); scopeHaushaltsweit(f.q, c)
     assert.deepEqual(f.calls, [`in user_id=[${ERIC},${MALIK}]`])
   }
-  assert.equal(wer(gem), gem)
   assert.match(scopeBeschreibung(gem) ?? '', /Gemeinsam/)
 })

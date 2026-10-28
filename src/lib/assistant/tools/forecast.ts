@@ -24,7 +24,7 @@ export function buildForecastTools(supabase: DB, ctx: ScopeContext) {
       }),
       execute: async ({ monate }) => {
         try {
-          const d = await ladePrognose(supabase, ctx.userId, ymd(new Date()), { monate })
+          const d = await ladePrognose(supabase, ctx, ymd(new Date()), { monate })
           const sz = d.szenario
           return {
             stand: d.stand,

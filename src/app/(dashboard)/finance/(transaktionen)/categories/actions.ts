@@ -166,7 +166,7 @@ export async function updateCategory(
     .eq('id', id))
   if (error) return { error: error.message }
 
-  // Steuerwerte nur fuer den Handelnden (Override); die Spalten in categories bleiben unangetastet (Ausnahme: Doppelschreiben vor dem Live-Gang, siehe lib/tax/overrides.ts).
+  // Steuerwerte nur fuer den Handelnden (Override); die Legacy-Spalten in categories werden nicht mehr beschrieben (siehe lib/tax/overrides.ts).
   const steuer = await speichereSteuerOverride(supabase, user.id, id, leseSteuerWerte(formData, typ))
   if (steuer.error) return { error: steuer.error }
 

@@ -13,7 +13,7 @@
  */
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
-import { getFlowTransactions, txToFlowRow } from '../data/flows.ts'
+import { getFlowTransactionsFuerNutzer, txToFlowRow } from '../data/flows.ts'
 import { FLOW_DEFAULT_KEY, flowDefaultFrom, includeForDefault, rollupByRoot, sumFlows, type FlowInclude } from '../finance/flow-calc.ts'
 import { ladeSteuerdaten } from '../tax/laden.ts'
 import { berechneSteuerposition } from '../tax/position.ts'
@@ -94,7 +94,7 @@ async function periodTotals(
   end: string,
   include: FlowInclude,
 ): Promise<ReportTotals> {
-  const txns = await getFlowTransactions(supabase, userId, { from: start, to: end, include })
+  const txns = await getFlowTransactionsFuerNutzer(supabase, userId, { from: start, to: end, include })
   const t = sumFlows(txns.map(txToFlowRow), include)
   return { income: round2(t.income), expenses: round2(t.expense), net: round2(t.net) }
 }
@@ -107,7 +107,7 @@ async function categoryBreakdown(
   end: string,
   include: FlowInclude,
 ): Promise<ReportCategoryDatum[]> {
-  const txns = await getFlowTransactions(supabase, userId, { from: start, to: end, include })
+  const txns = await getFlowTransactionsFuerNutzer(supabase, userId, { from: start, to: end, include })
   return rollupByRoot(txns.map(txToFlowRow), include, 'expense')
     .map(c => ({ name: c.name, amount: round2(c.expense) }))
 }

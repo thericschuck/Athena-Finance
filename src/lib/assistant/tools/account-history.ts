@@ -2,8 +2,8 @@ import { tool } from 'ai'
 import { z } from 'zod'
 import { fetchBalanceHistory } from '@/lib/account-history'
 import { type DB } from '@/lib/assistant/tools/shared'
-import { istAlleinstehend, scopeKontenTabelle } from '@/lib/assistant/tools/scope'
-import type { ScopeContext } from '@/lib/haushalt/scope'
+import { scopeKontenTabelle } from '@/lib/assistant/tools/scope'
+import { hatPartner, type ScopeContext } from '@/lib/haushalt/scope'
 
 export function buildAccountHistoryTools(supabase: DB, ctx: ScopeContext) {
   return {
@@ -31,7 +31,7 @@ export function buildAccountHistoryTools(supabase: DB, ctx: ScopeContext) {
         ])
         const kontoName = new Map((konten ?? []).map(k => [k.id, k.name]))
         // balance_series liefert alle per RLS sichtbaren Konten (Haushalt); mit Partner grenzt der Scope hier ein.
-        const solo = istAlleinstehend(ctx)
+        const solo = !hatPartner(ctx)
 
         // Ein Wert pro Konto und Monat: der letzte des Monats gewinnt, weil
         // aufsteigend durchlaufen wird.

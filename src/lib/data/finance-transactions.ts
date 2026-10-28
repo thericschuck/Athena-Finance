@@ -1,4 +1,4 @@
-import { mitSteuerWerten } from '@/lib/tax/overrides'
+import { mitSteuerWerten, type SteuerWerte } from '@/lib/tax/overrides'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { applyAccountScope, type ScopeContext } from '@/lib/haushalt/scope'
@@ -277,13 +277,13 @@ export async function getContractTransactions(supabase: DB, contractId: string) 
 // ─── Kategorien ───────────────────────────────────────────────────────────────────────────
 
 const CATEGORY_COLUMNS =
-  'id, name, type, color, icon, parent_id, sort_order, budget_monthly, tax_role, euer_zeile, business_share'
+  'id, name, type, color, icon, parent_id, sort_order, budget_monthly'
 
 /** Kategorie mit allen für Verwaltung und Formulare gelesenen Spalten. */
 export type CategoryRow = Pick<
   Database['public']['Tables']['categories']['Row'],
-  'id' | 'name' | 'type' | 'color' | 'icon' | 'parent_id' | 'sort_order' | 'budget_monthly' | 'tax_role' | 'euer_zeile' | 'business_share'
->
+  'id' | 'name' | 'type' | 'color' | 'icon' | 'parent_id' | 'sort_order' | 'budget_monthly'
+> & SteuerWerte
 
 /** Kategorie-Auswahl (Dropdowns, Filter, Kategorie-Select in der Tabelle). */
 export type CategoryOptionRow = {

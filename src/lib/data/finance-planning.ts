@@ -1,7 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { applyOwnerScope, type ScopeContext } from '@/lib/haushalt/scope'
-import { istScopeContext, userIdVon, type ScopeArg } from '@/lib/data/scope-arg'
 
 type DB = SupabaseClient<Database>
 
@@ -78,9 +77,9 @@ export async function getDebts(
 }
 
 /** Aktive Schulden (Schulden-Vorschlag in der Transaktionsliste), unsortiert wie bisher. */
-export async function getActiveDebts(supabase: DB, who: ScopeArg): Promise<DebtRow[]> {
+export async function getActiveDebts(supabase: DB, ctx: ScopeContext): Promise<DebtRow[]> {
   const q = supabase.from('debts').select(DEBT_COLUMNS)
-  const { data } = await (istScopeContext(who) ? applyOwnerScope(q, who) : q.eq('user_id', userIdVon(who))).eq('is_active', true)
+  const { data } = await applyOwnerScope(q, ctx).eq('is_active', true)
   return data ?? []
 }
 

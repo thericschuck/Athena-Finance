@@ -1,11 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database, Json } from '@/types/database'
-import type { ScopeArg } from '@/lib/data/scope-arg'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 import { scopedOwner } from '@/lib/data/scope-owner'
 
 /**
  * Datenzugriff Crypto. Reine Funktionen: Client und userId kommen vom Aufrufer
- * (User-Client in Pages/Actions, Admin-Client in Cron-Routen).
+ * (User-Client in Pages/Actions; Cron-Routen nutzen fuer owner-only-Daten eigene userId-Funktionen).
  */
 type DB = SupabaseClient<Database>
 
@@ -36,19 +36,19 @@ const ASSET_COLUMNS =
   'id, user_id, account_id, name, symbol, type, exchange, portfolio_name, quantity, avg_buy_price, currency, source, notes, shared, created_at, updated_at'
 
 /**
- * Krypto-/Stable-/Fiat-Assets im Scope, nach Name sortiert (ScopeContext: eigene ODER geteilte; string: nur eigene).
+ * Krypto-/Stable-/Fiat-Assets im Scope, nach Name sortiert (eigene ODER geteilte).
  * Haushaltssicht ist nur lesend: Kraken-Assets (source='kraken') haengen an den Exchange-Keys des Eigentuemers.
  */
-export async function getCryptoAssets(supabase: DB, who: ScopeArg): Promise<CryptoAssetRow[]> {
-  const { data } = await scopedOwner(supabase.from('assets').select(ASSET_COLUMNS), who)
+export async function getCryptoAssets(supabase: DB, ctx: ScopeContext): Promise<CryptoAssetRow[]> {
+  const { data } = await scopedOwner(supabase.from('assets').select(ASSET_COLUMNS), ctx)
     .in('type', ['crypto', 'stable', 'fiat'])
     .order('name')
   return data ?? []
 }
 
 /** Assets inkl. jüngster Bewertung je Asset (View `asset_valuations_latest`). */
-export async function getCryptoAssetsWithPrice(supabase: DB, who: ScopeArg): Promise<AssetWithPrice[]> {
-  const assets = await getCryptoAssets(supabase, who)
+export async function getCryptoAssetsWithPrice(supabase: DB, ctx: ScopeContext): Promise<AssetWithPrice[]> {
+  const assets = await getCryptoAssets(supabase, ctx)
   const assetIds = assets.map(a => a.id)
 
   // View `asset_valuations_latest`: je Asset genau der neueste Eintrag (valuation_date desc, created_at desc), identisch zur frueheren
@@ -99,13 +99,13 @@ export async function getPortfolioSnapshots(
 /** Änderungsprotokoll — die UI zeigt ohnehin nur die letzten N Einträge. */
 export async function getAssetAuditLog(
   supabase: DB,
-  who: ScopeArg,
+  ctx: ScopeContext,
   limit = 50,
 ): Promise<AssetAuditEntry[]> {
   // asset_audit_log: Haushaltstabelle ohne shared-Spalte; user_id = Handelnder.
   const { data } = await scopedOwner(
     supabase.from('asset_audit_log').select('id, asset_name, asset_symbol, action, changes, created_at'),
-    who,
+    ctx,
     { sharedColumn: false },
   )
     .order('created_at', { ascending: false })

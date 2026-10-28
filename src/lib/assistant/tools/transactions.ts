@@ -1,10 +1,10 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { ROW_CAP, untrust, type DB } from '@/lib/assistant/tools/shared'
-import { scopeKonten, wer } from '@/lib/assistant/tools/scope'
+import { scopeKonten } from '@/lib/assistant/tools/scope'
 import type { ScopeContext } from '@/lib/haushalt/scope'
 import { HERAB_SPALTEN, effektiveBuchungen, herabstufungsIds, wendeHerabFilterAn } from '@/lib/haushalt/umbuchung'
-import { getFlowTransactionsScope } from '@/lib/data/flows-scope'
+import { ladeBuchungenImScope } from '@/lib/assistant/tools/buchungen'
 
 export function buildTransactionTools(supabase: DB, ctx: ScopeContext) {
   return {
@@ -90,7 +90,7 @@ export function buildTransactionTools(supabase: DB, ctx: ScopeContext) {
         let data
         try {
           // Seitenweise geladen: eine einzelne Abfrage lieferte still nur die ersten 1.000 Zeilen.
-          data = await getFlowTransactionsScope(supabase, wer(ctx), { from: startDate, to: endDate })
+          data = await ladeBuchungenImScope(supabase, ctx, { from: startDate, to: endDate })
         } catch (e) {
           return { error: e instanceof Error ? e.message : 'Abfrage fehlgeschlagen' }
         }

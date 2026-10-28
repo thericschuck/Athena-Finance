@@ -3,7 +3,7 @@ import type { Database } from '@/types/database'
 import type { Tarif } from './tarif.ts'
 import type { SteuerEingaben } from './position.ts'
 import { leseSteuerprofil } from './profil.ts'
-import { mischeSteuerWerte, ladeSteuerOverrides, rueckfallAufSpalten } from './overrides.ts'
+import { mischeSteuerWerte, ladeSteuerOverrides } from './overrides.ts'
 import { effektiveRollen, effektiveEuerZeilen, effektiveAnteile, wendeAnteilAn } from './rollen.ts'
 import type { EuerBuchung, EuerZeileDef } from './euer.ts'
 import { ladeKrakenRoh, ladeKrakenSteuer, type KrakenRoh } from './krypto-laden.ts'
@@ -119,7 +119,7 @@ async function ladeKategorienDesHaushalts(supabase: DB, userId: string) {
   const { data: mitgliedschaft } = await supabase.from('household_members').select('household_id').eq('user_id', userId)
   const haushalte = (mitgliedschaft ?? []).map(m => m.household_id)
   const filter = haushalte.length > 0 ? `user_id.eq.${userId},household_id.in.(${haushalte.join(',')})` : `user_id.eq.${userId}`
-  return supabase.from('categories').select('id, name, parent_id, tax_role, type, business_share').or(filter)
+  return supabase.from('categories').select('id, name, parent_id, type').or(filter)
 }
 
 /**
@@ -174,7 +174,7 @@ export async function ladeSteuerdaten(
     Math.abs(kandidat.jahr - jahr) < Math.abs(beste.jahr - jahr) ? kandidat : beste,
   )
 
-  const kategorien = mischeSteuerWerte(kategorienRes.data ?? [], overrides, rueckfallAufSpalten())
+  const kategorien = mischeSteuerWerte(kategorienRes.data ?? [], overrides)
   const rollenMap = effektiveRollen(kategorien)
   // BEWUSST unveraendert: die Kategorien-Abfrage hat euer_zeile nie geladen, die EUeR-Zuordnung je Kategorie war hier also immer leer
   // (alles fliesst in die Sammelzeile). Die Overrides liefern euer_zeile jetzt mit; das wuerde Erics EUeR-Ausgabe aendern und ist

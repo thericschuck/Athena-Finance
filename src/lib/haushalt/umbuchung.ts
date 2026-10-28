@@ -9,7 +9,7 @@
  * Reines Modul ohne Alias-Imports (laeuft auch unter `node --test`). Nicht zu verwechseln mit
  * `istUmbuchung(type)` in vertraege/rechnen.ts: das klassifiziert Vertragsarten (Sparraten), nicht Buchungen.
  */
-import { normIban } from './scope.ts'
+import { hatPartner, normIban, type ScopeContext } from './scope.ts'
 
 /** Normalisierte Menge der Scope-IBANs (Eingabe fuer `istUmbuchungIban`). */
 export function ibanSet(ibans: readonly string[]): Set<string> {
@@ -64,7 +64,7 @@ export function effektiverFlowKind(z: UmbuchungsZeile, accountIds: ReadonlySet<s
 // (dann Ausgabe, Art = flow_kind_extern). Die Zugangsseite (Cashflow: ID `<id>:zu`) erscheint in der Liste nicht als eigene Zeile:
 // die Liste filtert nach `account_id` im Scope und zeigt je Buchung genau eine Zeile (bekannte, bewusste Luecke).
 //
-// SCHALTER: nur im Haushalt mit Partner (`ctx.available.length > 1`, `herabstufungsIds`). Ohne Partner liefert
+// SCHALTER: nur im Haushalt mit Partner (`hatPartner(ctx)`, `herabstufungsIds`). Ohne Partner liefert
 // `herabstufungsIds` undefined, alle Aufrufer nehmen dann ihren bisherigen Pfad (kein neues Feld in select/filter).
 
 /** Spalten, die `effektiveBuchung` braucht (zusaetzlich zu type, flow_kind, signed_amount, account_id). */
@@ -79,8 +79,8 @@ export function gueltigeKontoIds(ids: readonly string[]): string[] {
 }
 
 /** Konten-IDs fuer die Herabstufung, oder `undefined` (kein Partner / keine gueltigen IDs): dann alles wie bisher. */
-export function herabstufungsIds(ctx: { available: readonly unknown[]; accountIds: readonly string[] }): string[] | undefined {
-  if (ctx.available.length <= 1) return undefined
+export function herabstufungsIds(ctx: Pick<ScopeContext, 'partnerId' | 'accountIds'>): string[] | undefined {
+  if (!hatPartner(ctx)) return undefined
   const ids = gueltigeKontoIds(ctx.accountIds)
   return ids.length > 0 ? ids : undefined
 }

@@ -46,6 +46,35 @@ applyAccountScope(q, ctx, 'konto_id')                                           
 Die Helfer geben den Query-Builder zurueck (Typ bleibt erhalten), danach normal weiter mit `.order()`, `.limit()` usw.
 `ctx.accountIds` kann leer sein: `.in(col, [])` liefert dann nichts (gewollt).
 
+## Datenfunktionen: nur ScopeContext, Service-Role-Pfade
+
+Alle scope-faehigen Datenfunktionen (`src/lib/data/*`, `forecast/laden.ts`) nehmen AUSSCHLIESSLICH `ctx: ScopeContext`. Es gibt keinen
+`ScopeArg`/`string`-Zweig mehr (frueher Uebergangsschicht `scope-arg.ts`, entfernt). Keine Funktion verhaelt sich je nach Typ ihres
+Arguments verschieden.
+
+- **Eine Definition „hat Partner“:** `hatPartner(ctx)` (`src/lib/haushalt/scope.ts`, = `partnerId !== null` = `available.length > 1`).
+  Alle Stellen nutzen sie (Herabstufung, Haushalts-Snapshot-Pfad von `getBewegungFlows`, Assistant-Scope-Helfer, Switcher-Sichtbarkeit
+  in Seiten). Davon getrennt bleibt `nutztSnapshotFunktion(ctx)` (Scope ≠ 'ich' ODER `sharedFremdBesitz`: ein geteiltes Scope-Konto
+  gehoert einem anderen Nutzer) — das ist eine andere Frage.
+- **Service-Role-/Cron-Pfade ohne Request-Cookie** haben zwei erlaubte Wege:
+  1. Scope „ich“ des Nutzers: `resolveScopeForUser(supabase, userId, 'ich')` (`haushalt/resolve-user.ts`), je Nutzer EINMAL bauen (nicht je Aufruf
+     in einer Schleife). Es begrenzt Mitglieder und Konten auf den Haushalt des Nutzers.
+  2. Owner-only-Daten mit eigener, klar benannter Funktion und explizitem `userId: string`, die nur `user_id = userId` filtert
+     (kein Haushalts-/Peer-Filter): `getFlowTransactionsFuerNutzer` (Reports/EUeR), `ladeVertragsAbgleichFuerNutzer` (Erinnerungen),
+     `getIncomeTarget`, `getOpenInsights`, Kraken-/Steuerfunktionen.
+- `applyOwnerScope` zaehlt `shared`-Zeilen nur von Haushaltsmitgliedern (`ctx.members`), nicht von beliebigen Nutzern: unter RLS
+  redundant, im Service-Role-Pfad (keine RLS) Pflicht, sonst waeren geteilte Zeilen fremder Haushalte lesbar.
+- Athena-Tools: ohne Partner exakt die alte `user_id`-Abfrage (`assistant/tools/scope.ts`, `assistant/tools/buchungen.ts`), mit Partner der Scope.
+- Seiten, die fest die eigene Sicht brauchen (Einstellungen, Krypto-Rebalancing): `resolveScope(supabase, user, 'ich')` (memoisiert,
+  ignoriert das Cookie).
+
+## Steuerwerte, Inventar-View
+
+- Steuerrolle/EUeR-Zeile/betrieblicher Anteil: nur `category_tax_overrides` (Lesen und Schreiben). Kein Rueckfall auf die eingefrorenen
+  Spalten `categories.tax_role/euer_zeile/business_share` (Schalter `STEUER_OVERRIDES_LIVE` entfernt); der Code fasst sie nicht mehr an.
+- `valuables_current` hat `shared` und wird direkt ueber `applyOwnerScope` gefiltert (Schalter `VALUABLES_SHARED_LIVE` entfernt). Nur die
+  Kindtabellen (Bilder, Bewertungen, Dokumente) laufen ueber die Stueck-IDs aus `valuables`.
+
 ## Owner-only: kein Scope-Helfer
 
 Bleiben IMMER `.eq('user_id', ctx.userId)`: Steuer/EUeR/Steuerprofil, Reports, Krypto-Steuer/FIFO (kraken_*), Exchange-Keys,
@@ -66,7 +95,7 @@ isHouseholdOnlyUmbuchung(iban, ctx)         // Haushaltskonto ausserhalb des Sco
 ## Switcher
 
 `src/components/haushalt/ScopeSwitcher.tsx` sitzt in der Sidebar (Desktop und mobiler Drawer), nur sichtbar bei
-`available.length > 1`. `setScope(scope)` (Server Action, `src/lib/haushalt/actions.ts`) setzt das Cookie `athena_scope`
+`available.length > 1` (= `hatPartner`). `setScope(scope)` (Server Action, `src/lib/haushalt/actions.ts`) setzt das Cookie `athena_scope`
 (httpOnly:false, sameSite lax, path /) und `revalidatePath('/', 'layout')`.
 
 ## Tests / Regression

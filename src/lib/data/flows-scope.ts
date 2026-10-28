@@ -1,12 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
-import type { ScopeContext } from '@/lib/haushalt/scope'
+import { hatPartner, type ScopeContext } from '@/lib/haushalt/scope'
 import { herabgestufteBuchungen, herabgestufteMonate, monatsTotals } from '@/lib/finance/herabstufung'
 import {
   getFlowTransactions, getMonthlyFlows, getMonthlyTotalsPage, kindsFor,
   type FlowScope, type FlowTransaction, type MonthlyFlowRow, type MonthlyTotalsPageRow,
 } from '@/lib/data/flows'
-import { istScopeContext, type ScopeArg } from '@/lib/data/scope-arg'
 
 /**
  * Lesepfade fuer Dashboard, Analyse und Verlauf, die im Haushalt (Partner vorhanden) die HAUSHALTSWEITE Umbuchungsregel
@@ -14,7 +13,7 @@ import { istScopeContext, type ScopeArg } from '@/lib/data/scope-arg'
  * liegt und das Gegenkonto fehlt oder ausserhalb liegt (`wirdHerabgestuft`, Regel in src/lib/haushalt/umbuchung.ts).
  *
  * EINZIGE Stelle der Herabstufung (flows.ts liefert nur die Basis, sonst wuerden die Zeilen doppelt zaehlen).
- * SCHALTER: `ctx.available.length > 1` (Nutzer mit Partner). Ohne Partner (heute Eric) laufen ausschliesslich die bisherigen
+ * SCHALTER: `hatPartner(ctx)` (Nutzer mit Partner). Ohne Partner (heute Eric) laufen ausschliesslich die bisherigen
  * Abfragen (monthly_flows / unified_transactions / monthly_flow_totals) und es werden weder `counterpart_account_id` noch
  * `monthly_umbuchungen` angefasst — die Seiten brechen also auch ohne die Migration 20261029100000 nicht.
  */
@@ -24,11 +23,6 @@ type DB = SupabaseClient<Database>
 const PAGE = 1000
 const MAX_PAGES = 50
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-/** `true`, wenn die Herabstufung gilt (Haushalt mit Partner). */
-export function mitHerabstufung(ctx: ScopeContext): boolean {
-  return ctx.available.length > 1
-}
 
 /** Konten im Scope, geschnitten mit einer expliziten Kontenauswahl (wie `kontenFilter` in flows.ts). */
 function kontenImScope(ctx: ScopeContext, auswahl: string[] | undefined): string[] {
@@ -40,10 +34,9 @@ function kontenImScope(ctx: ScopeContext, auswahl: string[] | undefined): string
 // ─── Monatssummen ────────────────────────────────────────────────────────────────────────────
 
 /** Wie `getMonthlyFlows`, im Haushalt zusaetzlich mit den herabgestuften Umbuchungen (flow_kind := flow_kind_extern). */
-export async function getMonthlyFlowsScope(supabase: DB, who: ScopeArg, scope: FlowScope = {}): Promise<MonthlyFlowRow[]> {
-  const basis = await getMonthlyFlows(supabase, who, scope)
-  if (!istScopeContext(who) || !mitHerabstufung(who)) return basis
-  const ctx = who
+export async function getMonthlyFlowsScope(supabase: DB, ctx: ScopeContext, scope: FlowScope = {}): Promise<MonthlyFlowRow[]> {
+  const basis = await getMonthlyFlows(supabase, ctx, scope)
+  if (!hatPartner(ctx)) return basis
 
   const konten = kontenImScope(ctx, scope.accountIds)
   if (konten.length === 0) return basis
@@ -80,7 +73,7 @@ export async function getMonthlyFlowsScope(supabase: DB, who: ScopeArg, scope: F
  * Ohne Partner: unveraendert `monthly_flow_totals` (Regression).
  */
 export async function getMonthlyTotalsScope(supabase: DB, ctx: ScopeContext): Promise<MonthlyTotalsPageRow[]> {
-  if (!mitHerabstufung(ctx)) {
+  if (!hatPartner(ctx)) {
     const { rows } = await getMonthlyTotalsPage(supabase, ctx.userId, { from: 0, to: 998 })
     return rows
   }
@@ -89,7 +82,7 @@ export async function getMonthlyTotalsScope(supabase: DB, ctx: ScopeContext): Pr
 
 /** Monate (YYYY-MM-01, aufsteigend), in denen es im Scope Buchungen gibt: Ersatz fuer `select month from monthly_flow_totals`. */
 export async function getFlowMonthsScope(supabase: DB, ctx: ScopeContext): Promise<string[]> {
-  if (!mitHerabstufung(ctx)) {
+  if (!hatPartner(ctx)) {
     const { data } = await supabase.from('monthly_flow_totals').select('month').eq('user_id', ctx.userId).order('month', { ascending: true })
     return (data ?? []).map(r => String(r.month).slice(0, 10))
   }
@@ -107,10 +100,9 @@ const UMB_COLUMNS =
  * (Abgang auf `account_id`, Zugang auf `counterpart_account_id`); wie in der View monthly_umbuchungen zaehlt jede Seite aus
  * der Sicht ihres Kontos, die Zugangsseite bekommt die ID `<id>:zu`.
  */
-export async function getFlowTransactionsScope(supabase: DB, who: ScopeArg, scope: FlowScope = {}): Promise<FlowTransaction[]> {
-  const basis = await getFlowTransactions(supabase, who, scope)
-  if (!istScopeContext(who) || !mitHerabstufung(who)) return basis
-  const ctx = who
+export async function getFlowTransactionsScope(supabase: DB, ctx: ScopeContext, scope: FlowScope = {}): Promise<FlowTransaction[]> {
+  const basis = await getFlowTransactions(supabase, ctx, scope)
+  if (!hatPartner(ctx)) return basis
 
   const konten = kontenImScope(ctx, scope.accountIds).filter(id => UUID_RE.test(id))
   if (konten.length === 0) return basis

@@ -38,7 +38,7 @@ export async function PortfolioTab({ supabase, ctx, locale, dateFormat, page, fr
   const aktiveIds = aktiv.size > 0 ? [...aktiv] : alleIds
 
   // Gesamtlauf einmal lesen (Zeitraum), Portfolio- und Asset-Filter dann im Speicher.
-  const imZeitraum = await getPortfolioSnapshotsAlle(supabase, ctx, ab, alleIds)
+  const imZeitraum = await getPortfolioSnapshotsAlle(supabase, ab, alleIds)
   if (assetsAll.length === 0 && imZeitraum.length === 0) {
     return (
       <div className="space-y-4 p-4">
@@ -65,7 +65,7 @@ export async function PortfolioTab({ supabase, ctx, locale, dateFormat, page, fr
   const kennzahlen = assetKennzahlen(zeilen)
 
   const { rows: data, count } = await getPortfolioTabelle(
-    supabase, ctx, { assetIds: aktiveIds, portfolio, ab }, { from, to },
+    supabase, { assetIds: aktiveIds, portfolio, ab }, { from, to },
   )
 
   // Filterwechsel springt immer auf Seite 1 (page: undefined), sonst landet man hinter dem Ende.

@@ -1,9 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
-import { getDashboardAccounts, getBalanceSums, getNetWorthSnapshotsSince } from '@/lib/data/overview'
+import { getNetWorthSnapshotsSince } from '@/lib/data/overview'
 import { getAccounts, getBankBalances, getUnifiedBalanceSums } from '@/lib/data/finance-accounts'
-import { applyAccountScope, applyOwnerScope } from '@/lib/haushalt/scope'
-import { istScopeContext, userIdVon, type ScopeArg } from '@/lib/data/scope-arg'
+import { applyAccountScope, applyOwnerScope, type ScopeContext } from '@/lib/haushalt/scope'
 import { getFlowTransactionsScope } from '@/lib/data/flows-scope'
 import { fetchSettingValue } from '@/lib/data/settings'
 import { getNetWorthReihe, nutztSnapshotFunktion } from '@/lib/data/networth-reihe'
@@ -69,40 +68,37 @@ export type PrognoseBasis = {
 }
 
 /**
- * `who`: ScopeContext = Konten/Vertraege/Historie des Scopes; string (userId) = bisheriges Verhalten (nur Eigenes).
+ * `ctx`: Konten/Vertraege/Historie des Scopes.
  * Owner-only bleiben die Einstellungen (Annahmen/Auswahl, je Scope mit eigenem Schluessel, siehe scope-regeln.ts) und die Steuer
  * (nur Scope 'ich'). Das Start-Vermoegen und der Rueckblick kommen im Scope 'ich' (ohne fremdes geteiltes Konto) wie bisher aus dem
  * Snapshot des Nutzers; sonst aus `net_worth_series` (networth-reihe.ts), damit Vermoegen und Liquiditaet zum selben Scope gehoeren.
  */
 export async function ladePrognoseBasis(
-  supabase: DB, who: ScopeArg, heute: string, opts: { monate?: number } = {},
+  supabase: DB, ctx: ScopeContext, heute: string, opts: { monate?: number } = {},
 ): Promise<PrognoseBasis> {
   const monate = opts.monate ?? 18
   const hinweise: string[] = []
-  const userId = userIdVon(who)
-  const ctx = istScopeContext(who) ? who : null
-  const scope = ctx?.scope ?? 'ich'
+  const userId = ctx.userId
+  const scope = ctx.scope
   const ueberKey = ueberschreibungKey(scope)
-  const reiheCtx = ctx && nutztSnapshotFunktion(ctx) ? ctx : null
+  const reiheCtx = nutztSnapshotFunktion(ctx) ? ctx : null
   const vertraegeQ = supabase
     .from('contracts')
     .select('id, name, type, frequency, amount, currency, billing_day, start_date, end_date, auto_renews, is_active, account_id, to_account_id')
   const lohnQ = supabase.from('unified_transactions').select('date')
 
   const [accounts, balanceSums, bankBalances, vertraegeRes, nwRes, reiheRes, buchungenRoh, lohnRes, annahmenRoh, ueRoh] = await Promise.all([
-    ctx ? getAccounts(supabase, ctx) : getDashboardAccounts(supabase, userId),
-    ctx
-      ? getUnifiedBalanceSums(supabase, ctx).then(r => r.map(s => ({ ...s, tx_count: 0 })))
-      : getBalanceSums(supabase, userId),
-    getBankBalances(supabase, who),
-    (ctx ? applyOwnerScope(vertraegeQ, ctx) : vertraegeQ.eq('user_id', userId)).eq('is_active', true),
+    getAccounts(supabase, ctx),
+    getUnifiedBalanceSums(supabase, ctx).then(r => r.map(s => ({ ...s, tx_count: 0 }))),
+    getBankBalances(supabase, ctx),
+    applyOwnerScope(vertraegeQ, ctx).eq('is_active', true),
     reiheCtx
       ? Promise.resolve(null)
       : supabase.from('current_net_worth').select('snapshot_date, net_worth').eq('user_id', userId).maybeSingle(),
     reiheCtx ? getNetWorthReihe(supabase, reiheCtx, addTage(heute, -190)) : Promise.resolve(null),
     // Die GANZE Historie: das Zyklusmodell lernt aus allem, was da ist, und gewichtet selbst.
-    getFlowTransactionsScope(supabase, who, { to: heute }),
-    (ctx ? applyAccountScope(lohnQ, ctx) : lohnQ.eq('user_id', userId))
+    getFlowTransactionsScope(supabase, ctx, { to: heute }),
+    applyAccountScope(lohnQ, ctx)
       .eq('tax_role_effective', 'lohn')
       .eq('type', 'income')
       .gte('date', addMonate(monatVon(heute), -8) + '-01')
@@ -141,7 +137,7 @@ export async function ladePrognoseBasis(
 
   // ── Verträge (nur EUR) ────────────────────────────────────────────────────────────────
   // Ansicht Partner/Gemeinsam: nur Verträge, deren Konto im Scope liegt (sonst wirkten sie auf das Vermögen, aber nicht auf die Liquidität).
-  const kontoImScope = (id: string | null) => scope === 'ich' || ctx === null || id === null || ctx.accountIds.includes(id)
+  const kontoImScope = (id: string | null) => scope === 'ich' || id === null || ctx.accountIds.includes(id)
   const vertraege: PrognoseVertrag[] = (vertraegeRes.data ?? [])
     .filter(v => v.currency === 'EUR' && kontoImScope(v.account_id))
     .map(v => ({
@@ -201,13 +197,13 @@ export async function ladePrognoseBasis(
 }
 
 export async function ladePrognose(
-  supabase: DB, who: ScopeArg, heute: string, opts: { monate?: number } = {},
+  supabase: DB, ctx: ScopeContext, heute: string, opts: { monate?: number } = {},
 ): Promise<PrognoseSeite> {
   const jahr = parse(heute).y
-  const userId = userIdVon(who)
-  const scope = istScopeContext(who) ? who.scope : 'ich'
+  const userId = ctx.userId
+  const scope = ctx.scope
   const mitSteuer = steuerErlaubt(scope)
-  const eigenerRueckblick = !(istScopeContext(who) && nutztSnapshotFunktion(who))
+  const eigenerRueckblick = !nutztSnapshotFunktion(ctx)
   // Rückblick, Cashflow-Prognose und die drei Steuerjahre sind voneinander unabhängig (die Annahmen aus der Prognose fließen erst
   // in die Berechnung unten ein, nicht in das Laden) und laufen deshalb in EINER Stufe statt Prognose -> Steuer.
   // Ein gemeinsamer Zwischenspeicher: die drei Jahre überlappen (Vorjahre, Kraken-Historie) und werden so je einmal geladen.
@@ -215,8 +211,8 @@ export async function ladePrognose(
   // Vermögensreihe aus der Prognose-Basis (dieselbe `net_worth_series`-Abfrage wie das Start-Vermögen), sonst aus den Snapshots des Nutzers.
   const steuerCache = neuerSteuerCache()
   const [b, snapshots, aktuell, vorjahr, naechstes] = await Promise.all([
-    ladePrognoseBasis(supabase, who, heute, opts),
-    eigenerRueckblick ? getNetWorthSnapshotsSince(supabase, userId, addTage(heute, -190)) : Promise.resolve(null),
+    ladePrognoseBasis(supabase, ctx, heute, opts),
+    eigenerRueckblick ? getNetWorthSnapshotsSince(supabase, ctx, addTage(heute, -190)) : Promise.resolve(null),
     mitSteuer ? ladeSteuerdaten(supabase, userId, jahr, steuerCache) : Promise.resolve(null),
     mitSteuer ? ladeSteuerdaten(supabase, userId, jahr - 1, steuerCache) : Promise.resolve(null),
     mitSteuer ? ladeSteuerdaten(supabase, userId, jahr + 1, steuerCache) : Promise.resolve(null),

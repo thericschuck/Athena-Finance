@@ -1,6 +1,6 @@
 import type { AthenaContext } from '@/lib/assistant/context'
-import { istAlleinstehend, scopeBeschreibung } from '@/lib/assistant/tools/scope'
-import type { ScopeContext } from '@/lib/haushalt/scope'
+import { scopeBeschreibung } from '@/lib/assistant/tools/scope'
+import { hatPartner, type ScopeContext } from '@/lib/haushalt/scope'
 import type { AthenaPersona, AthenaSettings } from '@/lib/assistant/settings'
 import { describeCurrentRoute, renderAtlas } from '@/lib/assistant/atlas'
 import { personalisiere } from '@/lib/assistant/nutzername'
@@ -549,7 +549,7 @@ function renderStructure(context: AthenaContext): string {
         .map((child) => `  - ${child.name} (${child.type}) → id ${child.id}`),
     ])
     .join('\n')
-  const kontenTitel = istAlleinstehend(context.scope)
+  const kontenTitel = !hatPartner(context.scope)
     ? personalisiere('{{g:Konten|Konten des Nutzers}}', context.nutzerName ?? null)
     : 'Konten im aktiven Scope'
   return `## ${kontenTitel}\n\n${accounts || '(keine aktiven Konten)'}\n\n## Kategorien\n\n${

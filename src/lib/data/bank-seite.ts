@@ -5,8 +5,7 @@ import { getMonthlyFlowsScope } from '@/lib/data/flows-scope'
 import { FLOW_DEFAULT_KEY, flowDefaultFrom, includeFromParam, INCLUDE_PARAM } from '@/lib/finance/flow-calc'
 import { parsePeriod, periodCutoff } from '@/lib/period'
 import { normIban } from '@/lib/bank/scope'
-import { applyAccountScope } from '@/lib/haushalt/scope'
-import { istScopeContext, userIdVon, type ScopeArg } from '@/lib/data/scope-arg'
+import { applyAccountScope, type ScopeContext } from '@/lib/haushalt/scope'
 import type { BankSeitenDaten } from '@/lib/bank/typen'
 
 /**
@@ -31,12 +30,12 @@ const BUCHUNGS_SPALTEN =
 const SEITE = 1000
 const MAX_BUCHUNGEN = 5000
 
-/** `who` = ScopeContext (Buchungen der Scope-Konten, per IBAN) oder userId (alt). */
-async function ladeBuchungen(supabase: DB, who: ScopeArg): Promise<BankTransaction[]> {
+/** Buchungen der Scope-Konten (per IBAN). */
+async function ladeBuchungen(supabase: DB, ctx: ScopeContext): Promise<BankTransaction[]> {
   const alle: BankTransaction[] = []
   for (let von = 0; von < MAX_BUCHUNGEN; von += SEITE) {
     const q = supabase.from('bank_transactions').select(BUCHUNGS_SPALTEN)
-    const { data, error } = await (istScopeContext(who) ? q.in('account_iban', who.ibans) : q.eq('user_id', userIdVon(who)))
+    const { data, error } = await q.in('account_iban', ctx.ibans)
       .order('value_date', { ascending: false })
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
@@ -49,16 +48,12 @@ async function ladeBuchungen(supabase: DB, who: ScopeArg): Promise<BankTransacti
   return alle
 }
 
-async function ladeSalden(supabase: DB, who: ScopeArg): Promise<BankBalance[]> {
+async function ladeSalden(supabase: DB, ctx: ScopeContext): Promise<BankBalance[]> {
   const [{ data, error }, { data: verknuepft }] = await Promise.all([
-    istScopeContext(who)
-      ? supabase.from('bank_balance').select('*').in('account_iban', who.ibans).order('account_iban')
-      : supabase.from('bank_balance').select('*').eq('user_id', userIdVon(who)).order('account_iban'),
+    supabase.from('bank_balance').select('*').in('account_iban', ctx.ibans).order('account_iban'),
     // Verknuepftes Konto: nur ueber accounts.bank_iban, kein Fremdschluessel (siehe
     // api/bank/balance) — deshalb zwei Abfragen statt eines Embeds.
-    istScopeContext(who)
-      ? applyAccountScope(supabase.from('accounts').select('id, bank_iban'), who, 'id').not('bank_iban', 'is', null)
-      : supabase.from('accounts').select('id, bank_iban').eq('user_id', userIdVon(who)).not('bank_iban', 'is', null),
+    applyAccountScope(supabase.from('accounts').select('id, bank_iban'), ctx, 'id').not('bank_iban', 'is', null),
   ])
   if (error) throw new Error(`bank_balance: ${error.message}`)
   const idByIban = new Map(
@@ -100,14 +95,14 @@ export interface BankSeitenParams {
 
 /** `settings` = Ergebnis von getSettings (Zahlen-/Datumsformat, Standardzeitraum, Flow-Standard). */
 export async function ladeBankSeite(
-  supabase: DB, who: ScopeArg, params: BankSeitenParams,
+  supabase: DB, ctx: ScopeContext, params: BankSeitenParams,
   settings: Record<string, unknown>, heute: string,
 ): Promise<BankSeitenDaten> {
   const [balances, transactions, categories, flowRows] = await Promise.all([
-    ladeSalden(supabase, who),
-    ladeBuchungen(supabase, who),
+    ladeSalden(supabase, ctx),
+    ladeBuchungen(supabase, ctx),
     ladeKategorien(supabase),
-    getMonthlyFlowsScope(supabase, who, { source: 'bank_sync' }),
+    getMonthlyFlowsScope(supabase, ctx, { source: 'bank_sync' }),
   ])
 
   // 1W und 1M fehlen bewusst: Monatstrend und Kategorien brauchen mehrere Monate.
@@ -132,7 +127,7 @@ export async function ladeBankSeite(
     transactions,
     categories,
     flowRows: flowRows.map(r => ({ ...r })) as BankSeitenDaten['flowRows'],
-    // Umbuchungsmenge: im Scope = ctx.ibans (Haushaltskonto ausserhalb des Scopes ist keine Umbuchung), sonst Konten mit Saldo.
-    eigeneIbans: istScopeContext(who) ? who.ibans : balances.map(b => normIban(b.account_iban)),
+    // Umbuchungsmenge: ctx.ibans (Haushaltskonto ausserhalb des Scopes ist keine Umbuchung).
+    eigeneIbans: ctx.ibans,
   }
 }

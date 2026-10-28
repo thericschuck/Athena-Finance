@@ -5,23 +5,13 @@ type DB = SupabaseClient<Database>
 
 /**
  * Steuerattribute pro PERSON (Haushalt: ein gemeinsamer Kategorienbaum, Steuerrolle/EUeR-Zeile/betrieblicher Anteil je Nutzer).
- * Quelle ist `category_tax_overrides` (owner-only per RLS); die Spalten `categories.tax_role/euer_zeile/business_share` sind
- * LEGACY (eingefroren, siehe supabase/migrations/20261030110000_tax_overrides_views.sql).
+ * Einzige Quelle ist `category_tax_overrides` (owner-only per RLS). Lesen: Override des Nutzers, fehlt er, sind alle drei Werte
+ * NULL (KEIN Rueckfall auf die Spalten von `categories`). Schreiben: nur in die Overrides.
  *
- * SCHALTER `STEUER_OVERRIDES_LIVE` (Umgebungsvariable, Server):
- *   - nicht gesetzt / ungleich 'true' (Standard, solange die View-Migration 20261030110000 NICHT live ist):
- *       Lesen: Override des Nutzers, fehlt er, Rueckfall auf die Spalten von `categories`.
- *       Schreiben: Override UND (Doppelschreiben) die Spalten, damit die noch spaltenbasierten Views (category_tree,
- *       unified_transactions) Erics Aenderungen weiter sehen. Mit nur einem Nutzer sind beide Quellen identisch.
- *   - 'true' (nach Anwenden der Migration): Lesen nur aus Overrides (kein Rueckfall, fehlt er -> ungesetzt), Schreiben nur
- *       in Overrides, die Spalten bleiben unangetastet.
- * ENTFERNEN: Sobald die Migration live und der Schalter auf 'true' stabil laeuft, `rueckfallAufSpalten()` und den
- * Doppelschreib-Zweig in categories/actions.ts loeschen (Phase 5, zusammen mit dem Entfernen der Legacy-Spalten).
+ * Die Spalten `categories.tax_role/euer_zeile/business_share` sind LEGACY und eingefroren (Migration 20261030110000, Overrides
+ * backfilled, Drift 0). Sie bleiben bis zu einer eigenen spaeteren Migration in der Datenbank, der Code liest und schreibt
+ * sie nicht mehr (Selects auf `categories` nennen sie nicht).
  */
-export function rueckfallAufSpalten(): boolean {
-  return process.env.STEUER_OVERRIDES_LIVE !== 'true'
-}
-
 export type SteuerWerte = {
   tax_role: string | null
   euer_zeile: number | null
@@ -30,16 +20,16 @@ export type SteuerWerte = {
 
 export type OverrideRow = SteuerWerte & { category_id: string }
 
-type MitSteuerSpalten = { id: string; tax_role?: string | null; euer_zeile?: number | null; business_share?: number | null }
+type MitId = { id: string }
 
 /**
- * Setzt die Steuerwerte der Kategorien auf die des Nutzers: Override vorhanden -> dessen drei Werte (auch NULL), sonst
- * mit Rueckfall die Spaltenwerte der Kategorie, ohne Rueckfall NULL. Reine Funktion, ohne Datenbankzugriff.
+ * Setzt die Steuerwerte der Kategorien auf die des Nutzers: Override vorhanden -> dessen drei Werte (auch NULL), sonst alle NULL.
+ * Reine Funktion, ohne Datenbankzugriff. Ein Rueckfall auf Spaltenwerte der Kategorie existiert nicht mehr (und wird auch dann
+ * nicht gemacht, wenn die Overrides leer sind).
  */
-export function mischeSteuerWerte<K extends MitSteuerSpalten>(
+export function mischeSteuerWerte<K extends MitId>(
   kategorien: readonly K[],
   overrides: readonly OverrideRow[],
-  rueckfall: boolean,
 ): (Omit<K, keyof SteuerWerte> & SteuerWerte)[] {
   const jeKategorie = new Map(overrides.map(o => [o.category_id, o]))
   return kategorien.map(k => {
@@ -50,13 +40,7 @@ export function mischeSteuerWerte<K extends MitSteuerSpalten>(
           euer_zeile: o.euer_zeile ?? null,
           business_share: o.business_share === null || o.business_share === undefined ? null : Number(o.business_share),
         }
-      : rueckfall
-        ? {
-            tax_role: k.tax_role ?? null,
-            euer_zeile: k.euer_zeile ?? null,
-            business_share: k.business_share === null || k.business_share === undefined ? null : Number(k.business_share),
-          }
-        : { tax_role: null, euer_zeile: null, business_share: null }
+      : { tax_role: null, euer_zeile: null, business_share: null }
     return { ...k, ...werte }
   })
 }
@@ -71,19 +55,19 @@ export async function ladeSteuerOverrides(supabase: DB, userId: string): Promise
   return (data ?? []).map(r => ({ ...r, business_share: r.business_share === null ? null : Number(r.business_share) }))
 }
 
-/** Kategorien mit den Steuerwerten des Nutzers (Override, ggf. Rueckfall auf die Spalten, siehe Schalter oben). */
-export async function mitSteuerWerten<K extends MitSteuerSpalten>(
+/** Kategorien mit den Steuerwerten des Nutzers (nur Overrides, siehe oben). */
+export async function mitSteuerWerten<K extends MitId>(
   supabase: DB,
   userId: string,
   kategorien: readonly K[],
 ): Promise<(Omit<K, keyof SteuerWerte> & SteuerWerte)[]> {
   const overrides = await ladeSteuerOverrides(supabase, userId)
-  return mischeSteuerWerte(kategorien, overrides, rueckfallAufSpalten())
+  return mischeSteuerWerte(kategorien, overrides)
 }
 
 /**
  * Speichert die Steuerwerte des HANDELNDEN fuer eine Kategorie: alle drei NULL -> Override loeschen, sonst Upsert.
- * Solange der Schalter nicht 'true' ist, werden zusaetzlich die Legacy-Spalten geschrieben (Views lesen sie noch).
+ * Die Legacy-Spalten von `categories` werden nicht beschrieben.
  */
 export async function speichereSteuerOverride(
   supabase: DB,
@@ -103,10 +87,6 @@ export async function speichereSteuerOverride(
     const { error } = await supabase
       .from('category_tax_overrides')
       .upsert({ category_id: categoryId, user_id: userId, ...werte }, { onConflict: 'category_id,user_id' })
-    if (error) return { error: error.message }
-  }
-  if (rueckfallAufSpalten()) {
-    const { error } = await supabase.from('categories').update(werte).eq('id', categoryId)
     if (error) return { error: error.message }
   }
   return { error: null }

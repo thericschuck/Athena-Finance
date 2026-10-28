@@ -1,3 +1,4 @@
+import { hatPartner } from '@/lib/haushalt/scope'
 import { requireAuthUser } from '@/lib/supabase/server'
 import { resolveScope } from '@/lib/haushalt/resolve'
 import { DepotDashboard } from '@/components/depot/DepotDashboard'
@@ -10,11 +11,11 @@ export default async function DepotPage() {
 
   // Letzte Aenderung je Depot nur bei Haushalt mit Partner (sonst keine Zusatzabfrage).
   let zuletzt: Record<string, import('@/lib/data/aenderungen').ZuletztGeaendertInfo> = {}
-  if (ctx.available.length > 1) {
+  if (hatPartner(ctx)) {
     const { data } = await supabase.from('depots').select('id')
     zuletzt = Object.fromEntries(await letzteAenderungen(supabase, ctx, 'depots', (data ?? []).map(d => d.id)))
   }
 
   // key: Scope-Wechsel laedt die (clientseitig geholten) Depotdaten neu.
-  return <DepotDashboard key={ctx.scope} canShare={ctx.available.length > 1} leerHinweis={<ScopeHinweisFuer ctx={ctx} thema="Depots" />} zuletzt={zuletzt} />
+  return <DepotDashboard key={ctx.scope} canShare={hatPartner(ctx)} leerHinweis={<ScopeHinweisFuer ctx={ctx} thema="Depots" />} zuletzt={zuletzt} />
 }

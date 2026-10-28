@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  buildScopeContext, parseScope, applyOwnerScope, applyAccountScope, umbuchungsArt, isOwnUmbuchung,
+  buildScopeContext, hatPartner, parseScope, applyOwnerScope, applyAccountScope, umbuchungsArt, isOwnUmbuchung,
   isHouseholdOnlyUmbuchung, type ScopeAccountInput, type ScopeMemberInput,
 } from './scope.ts'
 
@@ -133,13 +133,25 @@ const rec = (): Rec => {
 
 test('applyOwnerScope: or() mit shared fuer ich/partner, in() fuer gemeinsam und ohne shared-Spalte', () => {
   const ich = applyOwnerScope(rec(), zwei('ich'), { sharedColumn: true })
-  assert.deepEqual(ich.calls, [`or:user_id.in.(${ERIC}),shared.eq.true`])
+  assert.deepEqual(ich.calls, [`or:user_id.in.(${ERIC}),and(shared.eq.true,user_id.in.(${ERIC},${MALIK}))`])
   const gem = applyOwnerScope(rec(), zwei('gemeinsam'), { sharedColumn: true })
   assert.deepEqual(gem.calls, [`in:user_id:${ERIC},${MALIK}`])
   const ohne = applyOwnerScope(rec(), zwei('partner'), { sharedColumn: false })
   assert.deepEqual(ohne.calls, [`in:user_id:${MALIK}`])
   const bad = applyOwnerScope(rec(), { ownerIds: ['x),shared.eq.true,(y'], includeShared: true })
-  assert.deepEqual(bad.calls, ['or:user_id.in.(),shared.eq.true'])
+  assert.deepEqual(bad.calls, ['or:user_id.in.(),and(shared.eq.true,user_id.in.())'])
+})
+
+test('applyOwnerScope: geteilte Zeilen nur von Haushaltsmitgliedern (Service-Role ohne RLS sieht keine fremden Haushalte)', () => {
+  const eric = buildScopeContext({
+    userId: ERIC, requested: 'ich', householdId: H, members: [member(ERIC, '2026-01-01', 'owner')], accounts: ericKonten,
+  })
+  const calls = applyOwnerScope(rec(), eric).calls
+  assert.deepEqual(calls, [`or:user_id.in.(${ERIC}),and(shared.eq.true,user_id.in.(${ERIC}))`])
+  assert.ok(!calls[0].includes(DRITTE))
+  // ohne Haushalt (members leer): nur der Nutzer selbst
+  const solo = buildScopeContext({ userId: ERIC, requested: 'ich', members: [], accounts: [] })
+  assert.deepEqual(applyOwnerScope(rec(), solo).calls, [`or:user_id.in.(${ERIC}),and(shared.eq.true,user_id.in.(${ERIC}))`])
 })
 
 test('applyAccountScope filtert auf Scope-Konten', () => {
@@ -157,4 +169,14 @@ test('Umbuchungen: intern im Scope, Haushalt ausserhalb, extern sonst', () => {
   assert.equal(isOwnUmbuchung('DE02 2222', ich), true)
   assert.equal(isHouseholdOnlyUmbuchung('DE03 3333', ich), true)
   assert.equal(isHouseholdOnlyUmbuchung('DE03 3333', gem), false)
+})
+
+test('hatPartner: eine Definition, deckungsgleich mit available.length > 1', () => {
+  const allein = buildScopeContext({ userId: ERIC, requested: 'gemeinsam', householdId: H, members: [member(ERIC, '2026-01-01', 'owner')], accounts: ericKonten })
+  const ohneHaushalt = buildScopeContext({ userId: ERIC, requested: 'ich', members: [], accounts: [] })
+  for (const c of [allein, ohneHaushalt, zwei('ich'), zwei('partner'), zwei('gemeinsam')]) {
+    assert.equal(hatPartner(c), c.available.length > 1)
+  }
+  assert.equal(hatPartner(allein), false)
+  assert.equal(hatPartner(zwei('ich')), true)
 })

@@ -1,3 +1,4 @@
+import { hatPartner } from '@/lib/haushalt/scope'
 import { getAuthUser } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { after } from 'next/server'
@@ -64,7 +65,7 @@ export default async function DashboardLayout({
     <SettingsProvider settings={settings} currency={profile?.currency ?? 'EUR'}>
       <AthenaSettingsProvider initial={{ model: athenaSettings.model, effort: athenaSettings.effort }}>
         <PrivacyProvider>
-          <HaushaltProvider canShare={scopeCtx.available.length > 1}>
+          <HaushaltProvider canShare={hatPartner(scopeCtx)}>
           <NutzerProvider name={anzeigeName(ownName)} hatAusgangslage={(ausgangslage.count ?? 0) > 0}>
           <AppShell
             email={user.email ?? ''}

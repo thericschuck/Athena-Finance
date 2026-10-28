@@ -1,6 +1,6 @@
 import { requireAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
-import { getOwnProfile } from '@/lib/haushalt/resolve'
+import { getOwnProfile, resolveScope } from '@/lib/haushalt/resolve'
 import { getActiveAccountOptions } from '@/lib/data/overview'
 import { listWaitlistFor } from '@/lib/waitlist'
 import { SettingsShell } from '@/components/settings/settings-shell'
@@ -15,7 +15,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const [profile, settings, accountRows, waitlist] = await Promise.all([
     getOwnProfile(supabase, user!.id),
     getSettings(user!.id),
-    getActiveAccountOptions(supabase, user!.id),
+    // Fest Scope 'ich' (Standardkonten gehoeren zur eigenen Sicht), unabhaengig vom Switcher-Cookie; pro Request memoisiert.
+    resolveScope(supabase, user!, 'ich').then(ctx => getActiveAccountOptions(supabase, ctx)),
     // Liefert nur für den Eigentümer Zeilen, sonst null — und genau daran
     // entscheidet die Shell, ob es den Reiter überhaupt gibt (siehe
     // lib/waitlist.ts).

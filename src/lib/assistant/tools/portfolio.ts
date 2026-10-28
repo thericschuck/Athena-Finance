@@ -1,8 +1,8 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { untrust, type DB } from '@/lib/assistant/tools/shared'
-import { istAlleinstehend, scopeOwner } from '@/lib/assistant/tools/scope'
-import type { ScopeContext } from '@/lib/haushalt/scope'
+import { scopeOwner } from '@/lib/assistant/tools/scope'
+import { hatPartner, type ScopeContext } from '@/lib/haushalt/scope'
 
 export function buildPortfolioTools(supabase: DB, ctx: ScopeContext) {
   return {
@@ -95,7 +95,7 @@ export function buildPortfolioTools(supabase: DB, ctx: ScopeContext) {
 
         return {
           months: Array.from(byMonth.values()),
-          ...(istAlleinstehend(ctx)
+          ...(!hatPartner(ctx)
             ? {}
             : { hinweis_scope: 'Der Vermögensverlauf ist der Snapshot des angemeldeten Nutzers, unabhängig von der gewählten Ansicht (Ich/Partner/Gemeinsam).' }),
         }

@@ -175,7 +175,8 @@ const mitglieder = [
   { id: 'malik', name: 'Malik', role: 'member' },
 ]
 const ctx = (scope: 'ich' | 'partner' | 'gemeinsam', available: ('ich' | 'partner' | 'gemeinsam')[], userId = 'malik') => ({
-  scope, available, members: mitglieder, userId, partnerId: userId === 'malik' ? 'eric' : 'malik',
+  scope, available, members: mitglieder, userId,
+  partnerId: available.length <= 1 ? null : userId === 'malik' ? 'eric' : 'malik',
 })
 
 test('Scope-Hinweis: ohne Haushalt (nur ein Scope) kein Hinweis', () => {

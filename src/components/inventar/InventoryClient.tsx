@@ -216,7 +216,7 @@ export function InventoryClient({ items, locale, canShare = false, zuletzt }: Pr
       {/* Detail */}
       <Sheet open={offen !== null} onOpenChange={o => { if (!o) setOffenId(null) }}>
         <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-          {offen && <Detail item={offen} eur={eur} locale={locale} zuletzt={zuletzt?.[offen.id]} />}
+          {offen && <Detail item={offen} eur={eur} locale={locale} zuletzt={zuletzt?.[offen.id]} canShare={canShare} />}
         </SheetContent>
       </Sheet>
     </div>
@@ -507,10 +507,11 @@ function Karte({
 // ── Detail ────────────────────────────────────────────────────────────────────
 
 function Detail({
-  item, eur, locale, zuletzt,
+  item, eur, locale, zuletzt, canShare,
 }: {
   item: ValuableWithImage
   zuletzt?: ZuletztGeaendertInfo
+  canShare: boolean
   eur: (n: number, digits?: number) => string
   locale: string
 }) {
@@ -614,7 +615,7 @@ function Detail({
           </p>
         )}
 
-        <ValuableActions item={item} />
+        <ValuableActions item={item} canShare={canShare} />
       </div>
     </>
   )

@@ -1,7 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { applyAccountScope, type ScopeContext } from '@/lib/haushalt/scope'
-import { istScopeContext, userIdVon, type ScopeArg } from '@/lib/data/scope-arg'
 
 type DB = SupabaseClient<Database>
 
@@ -73,10 +72,10 @@ export async function getManualBalanceSums(supabase: DB, ctx: ScopeContext) {
 }
 
 /** Gebuchter Bank-Saldo je IBAN (FinTS-Sync). */
-export async function getBankBalances(supabase: DB, who: ScopeArg) {
+export async function getBankBalances(supabase: DB, ctx: ScopeContext) {
   const q = supabase.from('bank_balance').select('account_iban, booked_balance, fetched_at')
   // bank_balance hat keine account_id: Scope ueber die IBANs der Scope-Konten (ctx.ibans, normalisiert wie die Spalte).
-  const { data } = istScopeContext(who) ? await q.in('account_iban', who.ibans) : await q.eq('user_id', userIdVon(who))
+  const { data } = await q.in('account_iban', ctx.ibans)
   return data ?? []
 }
 

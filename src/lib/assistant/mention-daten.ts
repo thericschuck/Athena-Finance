@@ -78,7 +78,7 @@ async function faktenZeile(supabase: DB, userId: string, m: Mention): Promise<st
     case 'kategorie': {
       const { data: kat } = await supabase
         .from('categories')
-        .select('id, name, type, budget_monthly, tax_role, parent_id')
+        .select('id, name, type, budget_monthly, parent_id')
         .eq('id', m.id)
         .maybeSingle()
       if (!kat) return null

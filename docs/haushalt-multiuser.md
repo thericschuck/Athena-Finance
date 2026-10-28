@@ -156,7 +156,7 @@ Quellen: drei Lese-Agents (Schema, App-Code, Service-Role). Zählungen stammen a
 
 ### Phase 5 (Stand 2026-10-27, nur Code, nichts angewendet)
 
-- **Änderungslog:** Route `/aenderungen` (Filter Bereich, Person, Zeitraum; cursorbasiert, 50 je Seite; Link zum Objekt). Navigationseintrag nur bei `ctx.available.length > 1`, die Seite selbst funktioniert für alle (Alleinstehende sehen nur eigene Änderungen). Daten: `src/lib/data/aenderungen.ts` (liest nur `v_audit_feed`), Formatierung rein in `src/lib/aenderungen/format.ts` (Tests dort).
+- **Änderungslog:** Route `/aenderungen` (Filter Bereich, Person, Zeitraum; cursorbasiert, 50 je Seite; Link zum Objekt). Navigationseintrag nur bei `hatPartner(ctx)`, die Seite selbst funktioniert für alle (Alleinstehende sehen nur eigene Änderungen). Daten: `src/lib/data/aenderungen.ts` (liest nur `v_audit_feed`), Formatierung rein in `src/lib/aenderungen/format.ts` (Tests dort).
 - **„Zuletzt geändert von …“:** Komponente `ZuletztGeaendert`, eine gebündelte Abfrage je Seite. Eingebaut in Konto-Detail, Vertrag-Detail, Schulden- und Sparziel-Zeilen, Inventar-Detail, Depot-Kopf, Buchungs-Detail. Ohne Partner wird nichts abgefragt oder angezeigt.
 - **Datenschutz im Log:** IBANs nie im Satz (als Name nur maskiert, `DE89 •••• 3000`), Notizen/Beschreibungen/Verwendungszweck/Seriennummern nur als „geändert“, Textwerte auf 30 Zeichen gekürzt. Der Name des Akteurs kommt aus `ctx.members` (die View liefert für Peers sonst „Mitglied“, bis die Peer-Sicht auf `user_profiles` existiert).
 - **Optionaler Index:** `supabase/migrations/20261029120000_audit_record_idx.sql` (nicht angewendet; bei 470 Zeilen aktuell nicht nötig, sinnvoll sobald der Sync viele Zeilen schreibt).
@@ -165,3 +165,9 @@ Quellen: drei Lese-Agents (Schema, App-Code, Service-Role). Zählungen stammen a
   - Berechnung: je Monat Summe der gemeinsamen Ausgaben, die jede Person bezahlt hat, minus ihr Anteil (Gesamt x Quote). Das Ergebnis ist der Ausgleichsbetrag (Eric schuldet Malik oder umgekehrt). Umbuchungen und private Ausgaben bleiben außen vor; Erstattungen verringern den Anteil des Zahlers.
   - UI: Auswahl „Bezahlt von“ im Buchungs-Detail und als Sammelaktion; Karte „Ausgleich“ auf der Haushaltsansicht (Scope Gemeinsam) mit Monatswahl und Button „Als ausgeglichen markieren“ (Ausgleichsbuchung).
   - Aufwand: ca. 1 Migration, 2 Datenfunktionen mit Tests, 1 Karte, Regelbaustein; Risiko: Quoten und Sonderfälle (Kinder, Urlaub). Empfehlung: erst nach einigen Wochen realer Nutzung entscheiden, ob der Bedarf besteht.
+
+### Aufraeumen nach Phase 3 (2026-10-28, nur Code)
+
+- Uebergangsschicht `ScopeArg`/`scope-arg.ts` entfernt: Datenfunktionen nehmen nur `ScopeContext`; owner-only-Pfade (Reports, Erinnerungen) haben eigene `...FuerNutzer`-Funktionen mit explizitem `userId`. Details und Regeln fuer Service-Role-Pfade: `docs/haushalt-scope-api.md`.
+- Kompatibilitaetsschalter `STEUER_OVERRIDES_LIVE` (Rueckfall/Doppelschreiben der Legacy-Spalten) und `VALUABLES_SHARED_LIVE` (ID-Umweg) entfernt; die Legacy-Spalten bleiben bis zu einer eigenen Migration in der DB.
+- Eine Definition `hatPartner(ctx)` statt `istAlleinstehend`/`available.length > 1`/`mitHerabstufung`.
