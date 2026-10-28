@@ -74,7 +74,7 @@ export function EinmalpostenListe({ kandidaten }: { kandidaten: EinmalKandidat[]
                   <span className="mt-0.5 block text-xs text-muted-foreground">
                     {k.grund}{k.kategorie ? ` · ${k.kategorie}` : ''}
                     {' · '}{gewaehlt ? 'ausgenommen, zählte sonst mit' : 'zählt mit'} {k.effektProMonat >= 0 ? '+' : '−'}{eur(Math.abs(k.effektProMonat))} pro Monat im erwarteten Saldo
-                    {k.extrem && ' · extremer Ausreißer'}
+                    {k.extrem && !k.einlage && ' · extremer Ausreißer'}
                   </span>
                 </span>
               </label>

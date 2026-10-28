@@ -1,8 +1,9 @@
 import Link from 'next/link'
-import { getAuthUser } from '@/lib/supabase/server'
 import { ladeDashPrognose } from '@/lib/data/dashboard-prognose'
 import { AUSBLICK_ZEITRAEUME, reduziereTage } from '@/lib/dashboard/ausblick'
 import type { DashAbschnittProps } from '@/lib/dashboard/typen'
+import { dashboardLeer } from '@/lib/dashboard/leer'
+import { LeerZustand } from '@/components/leer/LeerZustand'
 import { DashAusblickLazy } from './DashAusblickLazy'
 
 /**
@@ -14,8 +15,22 @@ import { DashAusblickLazy } from './DashAusblickLazy'
  * Gezeigt wird das Szenario (Prognose mit den gesetzten Annahmen) — wie der grosse Chart dort.
  */
 export async function DashAusblick({ kern }: DashAbschnittProps) {
-  const { user } = await getAuthUser()
-  const basis = user ? await ladeDashPrognose(user.id, kern.heute) : null
+  // Ohne Konto mit Buchungen gibt es nichts zu prognostizieren: keine Kurve bei 0 und keine "Wird knapp"-Warnung.
+  if (dashboardLeer(kern).keineBuchungen) {
+    return (
+      <div className="rounded-lg border border-border bg-card p-4">
+        <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Ausblick Liquidität</p>
+        <LeerZustand
+          variante="kompakt"
+          titel="Noch kein Ausblick"
+          text="Der Liquiditäts-Ausblick startet, sobald du ein Konto mit Buchungen hast."
+          aktion={kern.konten.length === 0 ? { label: 'Konto anlegen', href: '/finance/accounts' } : undefined}
+        />
+      </div>
+    )
+  }
+
+  const basis = await ladeDashPrognose(kern.scopeCtx, kern.heute)
   const maxTage = AUSBLICK_ZEITRAEUME[AUSBLICK_ZEITRAEUME.length - 1]
   const punkte = basis ? reduziereTage(basis.szenario.tage, kern.heute, maxTage) : []
 

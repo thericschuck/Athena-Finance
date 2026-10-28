@@ -24,6 +24,7 @@ const TOOL_LABELS: Record<string, string> = {
   getInsights: 'Hinweise gelesen',
   getObligationCalendar: 'Verpflichtungen geprüft',
   getSavingsPlans: 'Sparpläne gelesen',
+  getRecentChanges: 'Änderungslog gelesen',
   showChart: 'Chart erstellt',
   getUserSettings: 'Einstellungen gelesen',
   getAccountBalanceHistory: 'Konto-Verlauf gelesen',

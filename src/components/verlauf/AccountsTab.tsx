@@ -6,6 +6,9 @@ import {
 import { Th, Td, Pagination, fmtNum, fmtDate, href, type TabCtx } from './shared'
 import { KontenSparkline } from './KontenSparkline'
 import { KontenVerlaufChartLazy } from './KontenVerlaufChartLazy'
+import { Landmark } from 'lucide-react'
+import { LeerZustand } from '@/components/leer/LeerZustand'
+import { ScopeHinweisFuer } from '@/components/leer/ScopeHinweisFuer'
 
 // ─── Tab: Konten ──────────────────────────────────────────────────────────────
 
@@ -21,8 +24,23 @@ const chipCls = (aktiv: boolean) =>
       : 'border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/40'
   }`
 
-export async function AccountsTab({ supabase, uid, locale, dateFormat, page, from, to, params }: TabCtx) {
-  const konten  = await getVerlaufKonten(supabase, uid)
+export async function AccountsTab({ supabase, ctx, locale, dateFormat, page, from, to, params }: TabCtx) {
+  const konten  = await getVerlaufKonten(supabase, ctx)
+  if (konten.length === 0) {
+    return (
+      <div className="space-y-4 p-4">
+        <ScopeHinweisFuer ctx={ctx} thema="Konten" />
+        <LeerZustand
+          variante="eingebettet"
+          icon={Landmark}
+          titel="Noch keine Konten"
+          text="Hier siehst du den Saldoverlauf jedes Kontos. Sobald ein Konto angelegt ist, wird sein Stand täglich festgehalten."
+          aktion={{ label: 'Konto anlegen', href: '/finance/accounts' }}
+          sekundaer={{ label: 'Bank verbinden', href: '/settings' }}
+        />
+      </div>
+    )
+  }
   const kontoId = parseKonto(params.konto, konten.map(k => k.id))
   const zeitraum = parseZeitraum(params.zeitraum)
   const start   = zeitraumStart(zeitraum, new Date())

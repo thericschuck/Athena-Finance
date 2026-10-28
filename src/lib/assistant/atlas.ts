@@ -34,6 +34,8 @@
  * für Athena nicht existent.
  */
 
+import { personalisiere } from '@/lib/assistant/nutzername'
+
 export type AtlasDomain = {
   /** Hauptroute des Bereichs — dieselbe Schreibweise wie in der Sidebar. */
   route: string
@@ -190,7 +192,7 @@ export const APP_ATLAS: AtlasSection[] = [
         tools: [],
         blind:
           'ALLES in diesem Bereich. Du hast kein einziges Werkzeug für Indikatoren, TPI-Scores, ' +
-          'Kombinationen, Strategien, Backtests oder offene Positionen. Fragt Eric nach seiner ' +
+          'Kombinationen, Strategien, Backtests oder offene Positionen. Fragt {{n}} nach seiner ' +
           'Marktmeinung, seinem TPI-Stand oder einer seiner Strategien: sag, dass dieser Bereich ' +
           'noch nicht an dich angeschlossen ist, und rate NICHT anhand allgemeinen Marktwissens',
       },
@@ -270,11 +272,11 @@ export const APP_ATLAS: AtlasSection[] = [
  * Kapitel. Blinde Flecken stehen ausdrücklich mit dabei — eine Karte, die nur
  * zeigt, was funktioniert, verleitet zum Erfinden des Rests.
  */
-export function renderAtlas(): string {
+export function renderAtlas(name: string | null = null): string {
   const lines: string[] = [
     '## Karte der App',
     '',
-    'So ist Athena Finance aufgebaut — die Oberfläche, auf die Eric schaut, wenn er dich fragt. ' +
+    'So ist Athena Finance aufgebaut — die Oberfläche, auf die {{n}} schaut, wenn er dich fragt. ' +
       'Nutze sie, um seine Frage dem richtigen Bereich und den richtigen Werkzeugen zuzuordnen, ' +
       'und um in deiner Antwort zu sagen, WO in der App etwas steht ("steht unter Finance → Planung").',
     '',
@@ -295,7 +297,8 @@ export function renderAtlas(): string {
     }
   }
 
-  return lines.join('\n')
+  // Der Atlas ist reiner Code-Text ohne Nutzerdaten: ein Durchlauf über das Ganze ist sicher.
+  return personalisiere(lines.join('\n'), name)
 }
 
 /** Alle Routen der Karte, längste zuerst — damit `/finance/accounts` vor
@@ -309,7 +312,7 @@ const ROUTE_INDEX: { route: string; label: string; shows: string }[] = APP_ATLAS
   .sort((a, b) => b.route.length - a.route.length)
 
 /**
- * Ordnet die Route, auf der Eric gerade steht, einem Kartenpunkt zu.
+ * Ordnet die Route, auf der der Nutzer gerade steht, einem Kartenpunkt zu.
  *
  * Der Sinn ist Auflösung von Bezügen, nicht Überwachung: „was ist das hier für
  * eine Zahl", „kannst du das erklären" und „passt das so?" sind ohne die Seite
@@ -319,12 +322,12 @@ const ROUTE_INDEX: { route: string; label: string; shows: string }[] = APP_ATLAS
  * Robust gegen unbekannte Routen (Detailseiten mit ID, neue Seiten ohne
  * Atlas-Eintrag): dann lieber kein Block als ein falscher.
  */
-export function describeCurrentRoute(pathname: string | null | undefined): string | null {
+export function describeCurrentRoute(pathname: string | null | undefined, name: string | null = null): string | null {
   if (!pathname) return null
   const hit = ROUTE_INDEX.find(r => pathname === r.route || pathname.startsWith(`${r.route}/`))
   if (!hit) return null
 
-  return `## Wo Eric gerade ist
+  return `${personalisiere('## Wo {{n}} gerade ist', name)}
 
 Er hat dich von \`${pathname}\` aus geschrieben — ${hit.label}. Dort steht: ${hit.shows}.
 

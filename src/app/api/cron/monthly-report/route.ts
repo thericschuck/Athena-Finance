@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { buildReportData, monthPeriod } from '@/lib/reports/build'
@@ -8,24 +8,19 @@ import { renderReportPdf } from '@/lib/reports/render-pdf'
 import { persistReport, markReportSent } from '@/lib/reports/store'
 import { sendReportEmail } from '@/lib/reports/email'
 import { requireCron } from '@/lib/api/auth'
+import { bestimmeReportZiele } from '@/lib/reports/ziele'
 
 // PDF-Rendering (react-pdf) plus ein Mail-Versand mit Anhang — großzügiger als die reinen
 // Datenbank-Crons, aber deutlich unter dem Limit von /api/assistant.
 export const maxDuration = 120
 
-function adminClient() {
-  return createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  )
-}
-
 /**
  * GET /api/cron/monthly-report
  *
- * Läuft am 1. jedes Monats für den soeben abgelaufenen Monat — einziger echter Nutzer wie
- * beim Bank-Sync-Cron, deshalb dasselbe Single-Tenant-Muster über feste Env-Vars statt einer
- * Nutzerschleife (siehe BANK_SYNC_USER_ID in /api/cron/bank-sync).
+ * Läuft am 1. jedes Monats für den soeben abgelaufenen Monat. Mit REPORT_USER_ID (+ REPORT_RECIPIENT_EMAIL) für genau
+ * einen Nutzer (bisheriges Verhalten); ohne REPORT_USER_ID für jeden Nutzer mit Konto, Empfänger aus auth.users.
+ * ACHTUNG Haushalt: Fehlt REPORT_USER_ID, geht der Report per Mail an ALLE Nutzer mit Konto, also auch an den Testaccount bzw.
+ * später Malik. Reports sind owner-only (je Nutzer nur eigene Daten). Vor Phase 4 REPORT_USER_ID setzen, wenn das nicht gewollt ist.
  *
  * Nach dem Dezember-Lauf legt sie zusätzlich einen Hinweis an, der an den Jahresreport
  * erinnert — ein direkter Write in `insights`, kein Athena-Werkzeugaufruf und damit ohne
@@ -37,15 +32,6 @@ export async function GET(req: NextRequest) {
   const denied = requireCron(req)
   if (denied) return denied
 
-  const userId    = process.env.REPORT_USER_ID
-  const recipient = process.env.REPORT_RECIPIENT_EMAIL
-  if (!userId || !recipient) {
-    return NextResponse.json(
-      { error: 'REPORT_USER_ID / REPORT_RECIPIENT_EMAIL nicht konfiguriert' },
-      { status: 500 },
-    )
-  }
-
   const today = new Date()
   const prevMonth = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 1, 1))
   const year  = prevMonth.getUTCFullYear()
@@ -53,9 +39,34 @@ export async function GET(req: NextRequest) {
   const period = monthPeriod(year, month)
   const title = `Monatsreport ${period.label}`
 
-  const supabase = adminClient()
+  const supabase = createAdminClient()
 
-  try {
+  // Mit REPORT_USER_ID (+ REPORT_RECIPIENT_EMAIL) wie bisher genau ein Nutzer. Ohne beide Variablen: Schleife ueber alle
+  // Nutzer mit Konto; die Empfaengeradresse kommt dann aus auth.users (Admin-API). Siehe lib/reports/ziele.ts.
+  const envUser = process.env.REPORT_USER_ID
+  const envRecipient = process.env.REPORT_RECIPIENT_EMAIL
+  let kandidaten: string[] = []
+  if (!envUser) {
+    const { data: konten, error } = await supabase.from('accounts').select('user_id')
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    kandidaten = (konten ?? []).map(k => k.user_id)
+  }
+  const ziele = bestimmeReportZiele({ userId: envUser, recipient: envRecipient }, kandidaten)
+  if (ziele.length === 0) {
+    return NextResponse.json(
+      { error: 'REPORT_USER_ID / REPORT_RECIPIENT_EMAIL nicht konfiguriert und kein Nutzer mit Konto gefunden' },
+      { status: 500 },
+    )
+  }
+
+  const sendeFuer = async (userId: string, recipientVorgabe: string | null) => {
+    let recipient = recipientVorgabe
+    if (!recipient) {
+      const { data, error } = await supabase.auth.admin.getUserById(userId)
+      recipient = data?.user?.email ?? null
+      if (!recipient) throw new Error(error?.message ?? 'Keine E-Mail-Adresse am Konto hinterlegt')
+    }
+
     const data      = await buildReportData(supabase, userId, period)
     const html      = renderReportHtml(data)
     const pdfBuffer = await renderReportPdf(data)
@@ -82,14 +93,33 @@ export async function GET(req: NextRequest) {
     const reminderCreated = month === 12
       ? await ensureAnnualReportReminder(supabase, userId, year)
       : false
-
-    return NextResponse.json({ ok: true, reportId: id, period: period.label, reminderCreated })
-  } catch (err) {
-    return NextResponse.json({
-      ok:    false,
-      error: err instanceof Error ? err.message : 'Monatsreport fehlgeschlagen',
-    }, { status: 500 })
+    return { reportId: id, reminderCreated }
   }
+
+  // Ein-Ziel-Fall (Env gesetzt): Antwortformat und Statuscodes unveraendert.
+  if (envUser) {
+    try {
+      const { reportId, reminderCreated } = await sendeFuer(ziele[0].userId, ziele[0].recipient)
+      return NextResponse.json({ ok: true, reportId, period: period.label, reminderCreated })
+    } catch (err) {
+      return NextResponse.json({
+        ok:    false,
+        error: err instanceof Error ? err.message : 'Monatsreport fehlgeschlagen',
+      }, { status: 500 })
+    }
+  }
+
+  // Mehrpersonen-Betrieb: nacheinander, ein Fehler bricht die uebrigen nicht ab. Reports sind owner-only (je Person).
+  const results: Record<string, unknown>[] = []
+  for (const z of ziele) {
+    try {
+      results.push({ user_id: z.userId, ...(await sendeFuer(z.userId, z.recipient)) })
+    } catch (e) {
+      results.push({ user_id: z.userId, error: e instanceof Error ? e.message : 'Monatsreport fehlgeschlagen' })
+    }
+  }
+  const failed = results.filter(r => 'error' in r).length
+  return NextResponse.json({ ok: failed === 0, period: period.label, results }, { status: failed === 0 ? 200 : 207 })
 }
 
 async function ensureAnnualReportReminder(

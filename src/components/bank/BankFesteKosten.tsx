@@ -1,6 +1,8 @@
 import { requireAuthUser } from '@/lib/supabase/server'
 import { fmtCurrency } from '@/lib/format'
 import { normIban } from '@/lib/bank/scope'
+import { resolveScope } from '@/lib/haushalt/resolve'
+import { applyOwnerScope } from '@/lib/haushalt/scope'
 import { berechneFesteKosten } from '@/lib/bank/feste-kosten'
 import type { BankAbschnittProps } from '@/lib/bank/typen'
 import { BankFesteKostenListe } from '@/components/bank/BankFesteKostenListe'
@@ -19,10 +21,12 @@ import { BankFesteKostenListe } from '@/components/bank/BankFesteKostenListe'
  */
 export async function BankFesteKosten({ daten }: BankAbschnittProps) {
   const { supabase, user } = await requireAuthUser()
-  const { data: vertraegeRoh, error } = await supabase
-    .from('contracts')
-    .select('name, amount, is_active')
-    .eq('user_id', user.id)
+  // Scope aus dem Cookie (kein URL-Parameter an dieser Stelle); Vertraege = Haushaltstabelle.
+  const ctx = await resolveScope(supabase, user)
+  const { data: vertraegeRoh, error } = await applyOwnerScope(
+    supabase.from('contracts').select('name, amount, is_active'),
+    ctx,
+  )
   // Ohne Vertragsliste wuerde jede Zeile als „ohne Vertrag" erscheinen und zum Doppelanlegen einladen:
   // dann lieber nichts behaupten.
   if (error) {

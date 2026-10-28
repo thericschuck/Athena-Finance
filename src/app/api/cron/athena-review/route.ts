@@ -1,19 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { requireCron } from '@/lib/api/auth'
 import { fuehreReviewAus } from '@/lib/assistant/review'
 
 // Ein agentischer Lauf mit bis zu 24 Werkzeugschritten braucht Zeit; 300 s ist das Maximum.
 export const maxDuration = 300
-
-function adminClient() {
-  return createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } },
-  )
-}
 
 /**
  * GET /api/cron/athena-review[?force=1]
@@ -29,7 +20,7 @@ export async function GET(req: NextRequest) {
   if (denied) return denied
 
   const force = req.nextUrl.searchParams.get('force') === '1'
-  const supabase = adminClient()
+  const supabase = createAdminClient()
   const { data: konten, error } = await supabase.from('accounts').select('user_id')
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

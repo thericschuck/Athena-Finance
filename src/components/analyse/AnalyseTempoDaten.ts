@@ -1,6 +1,6 @@
 import { cache } from 'react'
 import { getAuthUser } from '@/lib/supabase/server'
-import { getFlowTransactions } from '@/lib/data/flows'
+import { getFlowTransactionsScope } from '@/lib/data/flows-scope'
 import { monatPlus } from '@/lib/analyse/vergleich'
 import { hochrechnung, tempoReihe, MAX_VORMONATE } from '@/lib/analyse/tempo'
 import type { Hochrechnung, TempoReihe } from '@/lib/analyse/tempo'
@@ -33,7 +33,7 @@ export const ladeTempoDaten = cache(async (daten: AnalyseDaten): Promise<TempoDa
 
   // Hoechstens MAX_VORMONATE abgeschlossene Monate plus der laufende.
   const von = monatPlus(daten.heute, -MAX_VORMONATE)
-  const buchungen = await getFlowTransactions(supabase, user.id, {
+  const buchungen = await getFlowTransactionsScope(supabase, daten.scopeCtx, {
     from: von,
     accountIds: daten.kontoIds.length > 0 ? daten.kontoIds : undefined,
     include: daten.include,

@@ -8,6 +8,8 @@ import { NUTZUNGEN, WERTMODI } from '@/lib/inventar/wertmodell'
 import { z } from 'zod'
 import { parseForm, parseInput, issueMessage } from '@/lib/api/validate'
 import { idField, uuid, isoDate, money, MAX_AMOUNT, optDate, optText } from '@/lib/api/schemas'
+import { requireRows } from '@/lib/data/mutation'
+import { setzeGeteilt } from '@/lib/haushalt/teilen'
 
 // Textfelder und Datumsangaben des Formulars. Beträge laufen weiter über `zahl()`
 // (parseCsvAmount versteht beide Schreibweisen) und werden danach auf Endlichkeit geprüft.
@@ -119,7 +121,7 @@ export async function createValuable(
 
   const { data, error } = await supabase
     .from('valuables')
-    .insert({ ...f, user_id: user.id } as never)
+    .insert({ ...f, user_id: user.id, shared: schalter(formData, 'shared') } as never)
     .select('id')
     .single()
 
@@ -182,13 +184,17 @@ export async function updateValuable(
   // Ein gesetztes Verkaufsdatum nimmt das Stueck aus der Vitrine und aus der Summe. Die
   // Zeile bleibt samt Wertverlauf erhalten -- fuer die Frage „was war die Sammlung 2025
   // wert“ zaehlt es an Stichtagen VOR dem Verkauf weiterhin mit.
-  const { error } = await supabase
+  const { error } = await requireRows(supabase
     .from('valuables')
     .update({ ...f, is_active: !f.verkauft_am, updated_at: new Date().toISOString() } as never)
-    .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('id', id)) // Haushaltstabelle: Zugriff regelt die RLS (Peers duerfen bearbeiten)
 
   if (error) return { error: error.message }
+
+  // Schalter „Mit Haushalt teilen“ (nur wenn im Formular vorhanden): nur eigene Stuecke (user_id = Handelnder),
+  // Entzug immer erlaubt, Teilen nur mit Haushaltsmitgliedern (siehe setzeGeteilt).
+  const teilenFehler = await setzeGeteilt(supabase, 'valuables', id, user.id, formData)
+  if (teilenFehler) return { error: teilenFehler }
 
   // Die Kaufbewertung folgt Kaufdatum und Kaufpreis. Vorher blieb sie beim Datum stehen, das
   // beim Anlegen galt: wer ein vertipptes Kaufdatum korrigierte (Prada: 2026 statt 2025),
@@ -203,7 +209,6 @@ export async function updateValuable(
       .from('valuable_valuations')
       .update({ bewertet_am: f.gekauft_am, wert: f.kaufpreis } as never)
       .eq('valuable_id', id)
-      .eq('user_id', user.id)
       .eq('quelle', 'kauf')
   }
 
@@ -225,7 +230,6 @@ export async function updateValuable(
       .from('valuable_valuations')
       .select('wert')
       .eq('valuable_id', id)
-      .eq('user_id', user.id)
       .lte('bewertet_am', heute)
       .order('bewertet_am', { ascending: false })
       .limit(1)
@@ -311,8 +315,7 @@ export async function registerValuableImage(
   const { count } = await supabase
     .from('valuable_images')
     .select('id', { count: 'exact', head: true })
-    .eq('valuable_id', valuableId)
-    .eq('user_id', user.id)
+    .eq('valuable_id', valuableId) // alle Bilder des Stuecks (auch von Peers), sonst gaebe es zwei Hauptbilder
 
   const { error } = await supabase.from('valuable_images').insert({
     valuable_id: valuableId,
@@ -340,14 +343,12 @@ export async function setHauptbild(bildId: string, valuableId: string): Promise<
     .from('valuable_images')
     .update({ ist_hauptbild: false } as never)
     .eq('valuable_id', valuableId)
-    .eq('user_id', user.id)
   if (clearErr) return { error: clearErr.message }
 
-  const { error } = await supabase
+  const { error } = await requireRows(supabase
     .from('valuable_images')
     .update({ ist_hauptbild: true } as never)
-    .eq('id', bildId)
-    .eq('user_id', user.id)
+    .eq('id', bildId))
 
   if (error) return { error: error.message }
   revalidatePath('/inventar')
@@ -388,7 +389,6 @@ export async function deleteValuableImage(bildId: string): Promise<{ error?: str
       .from('valuable_images')
       .select('id')
       .eq('valuable_id', bild.valuable_id)
-      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -398,7 +398,6 @@ export async function deleteValuableImage(bildId: string): Promise<{ error?: str
         .from('valuable_images')
         .update({ ist_hauptbild: true } as never)
         .eq('id', next.id)
-        .eq('user_id', user.id)
     }
   }
 
@@ -430,11 +429,10 @@ export async function deleteValuable(id: string): Promise<{ error?: string }> {
   }
 
   // valuable_valuations hängt per `on delete cascade` dran und geht automatisch mit.
-  const { error } = await supabase
+  const { error } = await requireRows(supabase
     .from('valuables')
     .delete()
-    .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('id', id)) // Haushaltstabelle: RLS
 
   if (error) return { error: error.message }
   revalidatePath('/inventar')

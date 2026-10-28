@@ -19,7 +19,8 @@ function ZielSkeleton() {
 
 export default function Loading() {
   return (
-    <div className="min-w-0 animate-in space-y-4 p-4 fade-in duration-150 sm:p-8">
+    <div role="status" aria-busy="true" className="min-w-0 animate-in space-y-4 p-4 fade-in duration-150 sm:p-8">
+      <span className="sr-only">Lädt…</span>
       <div className="flex items-center justify-between gap-4">
         <Skeleton className="h-7 w-28" />
         <Skeleton className="h-10 w-36 rounded-md" />

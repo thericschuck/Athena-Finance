@@ -1,9 +1,12 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { ROW_CAP, untrust, type DB } from '@/lib/assistant/tools/shared'
-import { getFlowTransactions } from '@/lib/data/flows'
+import { scopeKonten } from '@/lib/assistant/tools/scope'
+import type { ScopeContext } from '@/lib/haushalt/scope'
+import { HERAB_SPALTEN, effektiveBuchungen, herabstufungsIds, wendeHerabFilterAn } from '@/lib/haushalt/umbuchung'
+import { ladeBuchungenImScope } from '@/lib/assistant/tools/buchungen'
 
-export function buildTransactionTools(supabase: DB, userId: string) {
+export function buildTransactionTools(supabase: DB, ctx: ScopeContext) {
   return {
     // ── Transaktionen (Detail, paginiert) ────────────────────────────────────
     getTransactions: tool({
@@ -25,28 +28,36 @@ export function buildTransactionTools(supabase: DB, userId: string) {
         const cappedLimit = Math.min(limit, ROW_CAP)
         // unified_transactions (see migration 20260821010000) merges in FinTS-synced bank
         // transactions for linked accounts, so the assistant sees the same picture as Finance.
-        let query = supabase
+        // Haushalt: Typ-Filter und Zeilen nach effektiver Art (Umbuchung ohne Gegenkonto im Scope = Einnahme/Ausgabe), lib/haushalt/umbuchung.ts.
+        const herab = herabstufungsIds(ctx)
+        const spalten = 'id, date, amount, signed_amount, currency, type, flow_kind, merchant, description, category_id, category_name, account_id, source'
+        let query = scopeKonten(supabase
           .from('unified_transactions')
           // `source` MUSS mit: categorizeTransactions braucht es, um beim
           // Schreiben die richtige Quelltabelle (transactions vs.
           // bank_transactions) zu treffen — die View führt beide zusammen.
-          .select(
-            'id, date, amount, signed_amount, currency, type, flow_kind, merchant, description, category_id, category_name, account_id, source',
-            { count: 'exact' },
-          )
-          .eq('user_id', userId)
+          .select(herab ? `${spalten}, ${HERAB_SPALTEN}` : spalten, { count: 'exact' }), ctx)
           .gte('date', startDate)
           .lte('date', endDate)
           .order('date', { ascending: false })
           .range(offset, offset + cappedLimit - 1)
         if (categoryId) query = query.eq('category_id', categoryId)
         if (accountId) query = query.eq('account_id', accountId)
-        if (type) query = query.eq('type', type)
+        if (type) query = herab ? wendeHerabFilterAn(query, herab, { type }) : query.eq('type', type)
 
         const { data, error, count } = await query
         if (error) return { error: error.message }
 
-        const items = (data ?? []).map((row) => untrust(row, ['merchant', 'description']))
+        const zeilen = herab
+          ? effektiveBuchungen((data ?? []) as unknown as (Parameters<typeof effektiveBuchungen>[0][number] & Record<string, unknown>)[], herab)
+              // Interne Hilfsspalten der Herabstufung gehoeren nicht in die Antwort des Assistenten.
+              .map((zeile) => {
+                const rest: Record<string, unknown> = { ...zeile }
+                for (const k of ['counterpart_account_id', 'flow_kind_extern', 'type_db']) delete rest[k]
+                return rest
+              })
+          : (data ?? [])
+        const items = zeilen.map((row) => untrust(row as typeof row & Record<string, unknown>, ['merchant', 'description']))
         const total = count ?? items.length
         const hasMore = offset + items.length < total
         return {
@@ -79,7 +90,7 @@ export function buildTransactionTools(supabase: DB, userId: string) {
         let data
         try {
           // Seitenweise geladen: eine einzelne Abfrage lieferte still nur die ersten 1.000 Zeilen.
-          data = await getFlowTransactions(supabase, userId, { from: startDate, to: endDate })
+          data = await ladeBuchungenImScope(supabase, ctx, { from: startDate, to: endDate })
         } catch (e) {
           return { error: e instanceof Error ? e.message : 'Abfrage fehlgeschlagen' }
         }

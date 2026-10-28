@@ -208,6 +208,18 @@ html.lenis-active {
   animation: pageEnter 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) backwards;
 }
 
+/* Sanfter Eingang der Erste-Schritte-Karte: einmalig, kein Dauer-Effekt; bei reduzierter Bewegung gar keine Animation. */
+@keyframes ersteSchritteEin {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.erste-schritte-ein { animation: ersteSchritteEin 0.28s cubic-bezier(0.23, 1, 0.32, 1) backwards; }
+@media (prefers-reduced-motion: reduce) {
+  .erste-schritte-ein { animation: none; }
+}
+/* Sakura: weisser Text auf --primary erreicht nur 3,9:1 -> in dieser Karte dunkler Text (4,8:1). */
+[data-theme="sakura"] .erste-schritte-ein .es-aktion { color: var(--foreground); }
+
 /* ── Sidebar sub-nav: CSS grid expand/collapse ─────────────────────────────── */
 .subnav-container {
   display: grid;
@@ -800,6 +812,18 @@ tbody tr {
   animation: navSlide 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   transform-origin: left center;
 }
+/* Scope-Wechsel: gleicher Balken, ohne Bewegung als ruhig pulsierende volle Linie. */
+.scope-lade-balken {
+  animation: navSlide 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  transform-origin: left center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .scope-lade-balken {
+    animation: none;
+    width: 100%;
+    opacity: 0.7;
+  }
+}
 
 /* ── Shimmer for loading states ────────────────────────────────────────────── */
 @keyframes shimmer {
@@ -807,14 +831,22 @@ tbody tr {
   to   { background-position:  400px 0; }
 }
 .shimmer {
+  /* color-mix statt oklch(var(--muted) / a): die Tokens sind komplette Farbwerte
+     (oklch oder Hex je Preset), `oklch(var(--x) / a)` waere ungueltig und der Platzhalter unsichtbar. */
   background: linear-gradient(
     90deg,
-    oklch(var(--muted) / 0.4) 25%,
-    oklch(var(--muted) / 0.8) 50%,
-    oklch(var(--muted) / 0.4) 75%
+    color-mix(in oklab, var(--muted-foreground) 10%, transparent) 25%,
+    color-mix(in oklab, var(--muted-foreground) 20%, transparent) 50%,
+    color-mix(in oklab, var(--muted-foreground) 10%, transparent) 75%
   );
   background-size: 800px 100%;
   animation: shimmer 1.5s infinite linear;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shimmer {
+    animation: none;
+    background: color-mix(in oklab, var(--muted-foreground) 14%, transparent);
+  }
 }
 /* ── Scroll-Hinweis (Interesse-Seite) ─────────────────────────────────────────
  * Reines CSS statt GSAP: ein Auf-und-ab ohne Scroll-Bezug ist kein Kandidat

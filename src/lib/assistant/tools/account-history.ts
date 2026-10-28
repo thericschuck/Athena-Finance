@@ -2,8 +2,10 @@ import { tool } from 'ai'
 import { z } from 'zod'
 import { fetchBalanceHistory } from '@/lib/account-history'
 import { type DB } from '@/lib/assistant/tools/shared'
+import { scopeKontenTabelle } from '@/lib/assistant/tools/scope'
+import { hatPartner, type ScopeContext } from '@/lib/haushalt/scope'
 
-export function buildAccountHistoryTools(supabase: DB, userId: string) {
+export function buildAccountHistoryTools(supabase: DB, ctx: ScopeContext) {
   return {
     // ── Saldo-Historie je Konto ──────────────────────────────────────────────
     getAccountBalanceHistory: tool({
@@ -25,14 +27,17 @@ export function buildAccountHistoryTools(supabase: DB, userId: string) {
         // sortiert wird, fehlt dann das JÜNGSTE Ende — ohne Fehlermeldung.
         const [rows, { data: konten }] = await Promise.all([
           fetchBalanceHistory(supabase, { accountId, from: seit.toISOString().slice(0, 10) }),
-          supabase.from('accounts').select('id, name').eq('user_id', userId),
+          scopeKontenTabelle(supabase.from('accounts').select('id, name'), ctx),
         ])
         const kontoName = new Map((konten ?? []).map(k => [k.id, k.name]))
+        // balance_series liefert alle per RLS sichtbaren Konten (Haushalt); mit Partner grenzt der Scope hier ein.
+        const solo = !hatPartner(ctx)
 
         // Ein Wert pro Konto und Monat: der letzte des Monats gewinnt, weil
         // aufsteigend durchlaufen wird.
         const jeKontoMonat = new Map<string, { konto: string; monat: string; saldo: number; stand: string }>()
         for (const r of rows) {
+          if (!solo && !kontoName.has(r.account_id)) continue
           const monat = r.snapshot_date.slice(0, 7)
           jeKontoMonat.set(`${r.account_id}|${monat}`, {
             konto: kontoName.get(r.account_id) ?? '(unbekanntes Konto)',

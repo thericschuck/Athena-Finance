@@ -1,4 +1,5 @@
 import type { SteuerPrognose } from '@/lib/forecast/steuer'
+import { STEUER_HINWEIS } from '@/lib/forecast/scope-regeln'
 
 /**
  * Steuerprognose je Jahr (Server-Komponente): aus dem bisherigen Verlauf hochgerechnet, mit derselben
@@ -74,6 +75,15 @@ export function PrognoseSteuer({
   mitAnnahmen: boolean
   laufrateQuelle: string
 }) {
+  // Steuer ist persönlich: in Ansichten ohne Steuerdaten (Partner/Gemeinsam) steht nur der Hinweis.
+  if (steuer.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-border px-4 py-8 text-center">
+        <p className="text-sm font-medium">Keine Steuerprognose in dieser Ansicht</p>
+        <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground">{STEUER_HINWEIS}</p>
+      </div>
+    )
+  }
   return (
     <div className="min-w-0 space-y-3">
       <p className="text-xs text-muted-foreground">

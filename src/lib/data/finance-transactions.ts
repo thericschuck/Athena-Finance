@@ -1,8 +1,11 @@
+import { mitSteuerWerten, type SteuerWerte } from '@/lib/tax/overrides'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { applyAccountScope, type ScopeContext } from '@/lib/haushalt/scope'
+import { HERAB_SPALTEN, effektiveBuchungen, herabstufungsIds, wendeHerabFilterAn } from '@/lib/haushalt/umbuchung'
 import { berechneKiBilanz, type KiBilanz, type KiZeile } from '@/lib/fints/ai-bilanz'
 import { OHNE_KATEGORIE, type TransaktionsFilter } from '@/lib/transaktionen/filter'
-import { summiereTreffer, type TrefferSummen } from '@/lib/transaktionen/berechnen'
+import { summiereTreffer, type SummenZeile, type TrefferSummen } from '@/lib/transaktionen/berechnen'
 
 type DB = SupabaseClient<Database>
 
@@ -32,6 +35,13 @@ export type UnifiedTxRow = {
   category_source: string | null
   /** Vorschlag der KI; bei offenen Buchungen der Vorschlag, bei gesetzten der ursprüngliche KI-Wert. */
   ai_category_id: string | null
+  /** Nur im Haushalt (Partner) geladen: Gegenkonto bzw. transfer_to und Art ohne Umbuchungs-Erkennung. */
+  counterpart_account_id?: string | null
+  flow_kind_extern?: string | null
+  /** Im Scope zur echten Buchung herabgestufte Umbuchung (type/flow_kind sind dann die effektiven Werte). */
+  herabgestuft?: boolean
+  /** Ursprünglicher View-Typ einer herabgestuften Zeile (transfer), für das Bearbeiten-Formular. */
+  type_db?: string
 }
 
 /** Zeile der globalen Transaktionsliste (zusätzlich Konto-Name/-Farbe für die Tabelle). */
@@ -66,10 +76,17 @@ interface FilterBuilder<Q> {
  * Wendet die Filter auf eine Abfrage der View `unified_transactions` an. EINE Stelle für Liste, Summe
  * und Export: sonst zeigt die Liste etwas anderes, als die Summe darüber addiert oder der Export schreibt.
  */
-export function wendeFilterAn<Q extends FilterBuilder<Q>>(query: Q, f: TransaktionsFilter, kategorieIds?: string[]): Q {
+export function wendeFilterAn<Q extends FilterBuilder<Q>>(
+  query: Q, f: TransaktionsFilter, kategorieIds?: string[], herabIds?: readonly string[],
+): Q {
   let q = query
-  if (f.type) q = q.eq('type', f.type)
-  if (f.art) q = q.eq('flow_kind', f.art)
+  // Im Haushalt (herabIds gesetzt) gilt die EFFEKTIVE Art/Richtung im Scope (Umbuchung ohne Gegenkonto im Scope = echte Buchung),
+  // sonst exakt wie bisher. Regel und Fragmente: lib/haushalt/umbuchung.ts.
+  if (herabIds) q = wendeHerabFilterAn(q, herabIds, f)
+  else {
+    if (f.type) q = q.eq('type', f.type)
+    if (f.art) q = q.eq('flow_kind', f.art)
+  }
   if (f.account) q = q.eq('account_id', f.account)
   if (f.category === OHNE_KATEGORIE) q = q.is('category_id', null)
   else if (f.category) {
@@ -94,22 +111,25 @@ const UNIFIED_BASE_COLUMNS =
   'id, account_id, category_id, date, type, amount, currency, description, merchant, transfer_to, source, signed_amount, flow_kind, category_source, ai_category_id'
 const TRANSACTION_LIST_COLUMNS = `${UNIFIED_BASE_COLUMNS}, account_name, account_color`
 const ACCOUNT_TRANSACTION_COLUMNS = `${UNIFIED_BASE_COLUMNS}, category_name, category_color`
+// Mit Partner zusätzlich die Spalten der Herabstufung (ohne Partner bleibt die Abfrage unverändert).
+const TRANSACTION_LIST_COLUMNS_HERAB = `${TRANSACTION_LIST_COLUMNS}, ${HERAB_SPALTEN}`
+const ACCOUNT_TRANSACTION_COLUMNS_HERAB = `${ACCOUNT_TRANSACTION_COLUMNS}, ${HERAB_SPALTEN}`
+const SUMMEN_COLUMNS = 'type, flow_kind, amount, signed_amount'
+const SUMMEN_COLUMNS_HERAB = `${SUMMEN_COLUMNS}, account_id, ${HERAB_SPALTEN}`
 
 /**
  * Die gewählte Kategorie samt allen Unterkategorien (aus der View `category_tree`: `root_id` ist die
- * oberste Kategorie des Astes). Ohne Kategorie-Filter oder bei „ohne Kategorie“: `undefined`. Bei einem
+ * oberste Kategorie des Astes). Der Baum gilt pro Haushalt: die RLS liefert ihn, kein Scope-Filter. Ohne Kategorie-Filter oder bei „ohne Kategorie“: `undefined`. Bei einem
  * Fehler bleibt es bei der Kategorie selbst — lieber zu eng gefiltert als eine fremde Auswahl.
  */
 export async function kategorieIdsFuer(
   supabase: DB,
-  userId: string,
   f: TransaktionsFilter,
 ): Promise<string[] | undefined> {
   if (!f.category || f.category === OHNE_KATEGORIE) return undefined
   const { data, error } = await supabase
     .from('category_tree')
     .select('id')
-    .eq('user_id', userId)
     .or(`id.eq.${f.category},root_id.eq.${f.category}`)
   if (error || !data || data.length === 0) return [f.category]
   const ids = data.map((r) => r.id).filter((id): id is string => Boolean(id))
@@ -123,25 +143,28 @@ export async function kategorieIdsFuer(
  */
 export async function getTransactionsPage(
   supabase: DB,
-  userId: string,
+  ctx: ScopeContext,
   opts: { filters: TransactionListFilters; page: number; pageSize: number },
 ): Promise<{ rows: TransactionListRow[]; count: number | null; error: { message: string } | null }> {
   const { filters, page, pageSize } = opts
 
   const [feld, richtung] = filters.sort.split('-')
   const aufsteigend = richtung === 'asc'
-  const kategorieIds = await kategorieIdsFuer(supabase, userId, filters)
+  const kategorieIds = await kategorieIdsFuer(supabase, filters)
 
   // Zweites Sortierkriterium: `date` ist ein Datum, kein Zeitstempel. Ohne eindeutige Ordnung (`id`)
   // wäre die Seiteneinteilung nicht stabil (Buchung auf zwei Seiten / auf keiner). Nach Betrag zuerst
   // der Betrag, dann das Datum — gleiche Beträge erscheinen in zeitlicher Reihenfolge.
+  // Herabstufung (Haushalt): Typ-/Art-Filter wirken auf die effektive Art, die Zeilen werden danach abgebildet (lib/haushalt/umbuchung.ts).
+  const herab = herabstufungsIds(ctx)
   let query = wendeFilterAn(
-    supabase
-      .from('unified_transactions')
-      .select(TRANSACTION_LIST_COLUMNS, { count: 'exact' })
-      .eq('user_id', userId),
+    applyAccountScope(
+      supabase.from('unified_transactions').select(herab ? TRANSACTION_LIST_COLUMNS_HERAB : TRANSACTION_LIST_COLUMNS, { count: 'exact' }),
+      ctx,
+    ),
     filters,
     kategorieIds,
+    herab,
   )
   if (feld === 'amount') query = query.order('amount', { ascending: aufsteigend }).order('date', { ascending: false })
   else query = query.order('date', { ascending: aufsteigend })
@@ -151,7 +174,7 @@ export async function getTransactionsPage(
   const { data, count, error } = await query.range(von, von + pageSize - 1)
 
   return {
-    rows: (data ?? []) as unknown as TransactionListRow[],
+    rows: effektiveBuchungen((data ?? []) as unknown as TransactionListRow[], herab),
     count,
     error,
   }
@@ -169,17 +192,20 @@ const SUMMEN_MAX_SEITEN = 20
 
 export async function getTransactionsSummary(
   supabase: DB,
-  userId: string,
+  ctx: ScopeContext,
   filters: TransaktionsFilter,
 ): Promise<TrefferSummen & { gekappt: boolean }> {
-  const zeilen: { type: string; flow_kind: string; amount: number; signed_amount: number }[] = []
+  const zeilen: (SummenZeile & { account_id?: string | null; counterpart_account_id?: string | null; flow_kind_extern?: string | null })[] = []
   let gekappt = false
-  const kategorieIds = await kategorieIdsFuer(supabase, userId, filters)
+  const kategorieIds = await kategorieIdsFuer(supabase, filters)
+  const herab = herabstufungsIds(ctx)
   for (let seite = 0; seite < SUMMEN_MAX_SEITEN; seite++) {
+    // Herabstufung: gleiche Filter wie die Liste; die geladenen Zeilen werden unten auf die effektive Art/Richtung abgebildet.
     const { data, error } = await wendeFilterAn(
-      supabase.from('unified_transactions').select('type, flow_kind, amount, signed_amount').eq('user_id', userId),
+      applyAccountScope(supabase.from('unified_transactions').select(herab ? SUMMEN_COLUMNS_HERAB : SUMMEN_COLUMNS), ctx),
       filters,
       kategorieIds,
+      herab,
     )
       .order('date', { ascending: false })
       .order('id', { ascending: false })
@@ -190,7 +216,7 @@ export async function getTransactionsSummary(
       break
     }
     if (!data || data.length === 0) break
-    zeilen.push(...(data as unknown as typeof zeilen))
+    zeilen.push(...effektiveBuchungen(data as unknown as typeof zeilen, herab))
     if (data.length < SUMMEN_SEITE) break
     if (seite === SUMMEN_MAX_SEITEN - 1) gekappt = true
   }
@@ -209,23 +235,25 @@ const MAX_PAGES = 50
 
 export async function getAccountTransactions(
   supabase: DB,
-  userId: string,
+  ctx: ScopeContext,
   accountId: string,
 ): Promise<AccountTransactionRow[]> {
   const rows: AccountTransactionRow[] = []
   let offset = 0
+  const herab = herabstufungsIds(ctx)
 
   for (let page = 0; page < MAX_PAGES; page++) {
-    const { data } = await supabase
-      .from('unified_transactions')
-      .select(ACCOUNT_TRANSACTION_COLUMNS)
-      .eq('user_id', userId)
+    // Herabstufung (Haushalt): Zeilen werden nach dem Laden auf die effektive Art/Richtung abgebildet.
+    const { data } = await applyAccountScope(
+      supabase.from('unified_transactions').select(herab ? ACCOUNT_TRANSACTION_COLUMNS_HERAB : ACCOUNT_TRANSACTION_COLUMNS),
+      ctx,
+    )
       .eq('account_id', accountId)
       .order('date', { ascending: false })
       .order('id', { ascending: false })
       .range(offset, offset + PAGE_SIZE - 1)
     if (!data || data.length === 0) break
-    rows.push(...(data as unknown as AccountTransactionRow[]))
+    rows.push(...effektiveBuchungen(data as unknown as AccountTransactionRow[], herab))
     offset += data.length
   }
   return rows
@@ -235,12 +263,13 @@ export async function getAccountTransactions(
  * Manuell gebuchte Transaktionen eines Vertrags (Vertrags-Detailseite, Gesamtsumme).
  * Unbegrenzt (Summe und Anzahl der Seite hängen daran), Kandidat für Paginierung.
  */
-export async function getContractTransactions(supabase: DB, userId: string, contractId: string) {
+export async function getContractTransactions(supabase: DB, contractId: string) {
+  // Gezielt per Vertrags-ID (Haushaltsvertrag); die RLS begrenzt auf den Haushalt, kein Konten-Scope
+  // (Buchungen ohne Konto blieben sonst unsichtbar).
   const { data } = await supabase
     .from('transactions')
     .select('id, date, description, amount, currency, type')
     .eq('contract_id', contractId)
-    .eq('user_id', userId)
     .order('date', { ascending: false })
   return data ?? []
 }
@@ -248,13 +277,13 @@ export async function getContractTransactions(supabase: DB, userId: string, cont
 // ─── Kategorien ───────────────────────────────────────────────────────────────────────────
 
 const CATEGORY_COLUMNS =
-  'id, name, type, color, icon, parent_id, sort_order, budget_monthly, tax_role, euer_zeile, business_share'
+  'id, name, type, color, icon, parent_id, sort_order, budget_monthly'
 
 /** Kategorie mit allen für Verwaltung und Formulare gelesenen Spalten. */
 export type CategoryRow = Pick<
   Database['public']['Tables']['categories']['Row'],
-  'id' | 'name' | 'type' | 'color' | 'icon' | 'parent_id' | 'sort_order' | 'budget_monthly' | 'tax_role' | 'euer_zeile' | 'business_share'
->
+  'id' | 'name' | 'type' | 'color' | 'icon' | 'parent_id' | 'sort_order' | 'budget_monthly'
+> & SteuerWerte
 
 /** Kategorie-Auswahl (Dropdowns, Filter, Kategorie-Select in der Tabelle). */
 export type CategoryOptionRow = {
@@ -265,33 +294,32 @@ export type CategoryOptionRow = {
   parent_id: string | null
 }
 
+/** Kategorienbaum pro Haushalt: die RLS liefert ihn, deshalb kein user_id-/Scope-Filter (Eric ohne Partner: unveraendert nur seine). */
 /** Alle Kategorien für die Verwaltungsseite (nach sort_order, dann Name). */
 export async function getCategories(supabase: DB, userId: string): Promise<CategoryRow[]> {
   const { data } = await supabase
     .from('categories')
     .select(CATEGORY_COLUMNS)
-    .eq('user_id', userId)
     .order('sort_order', { ascending: true })
     .order('name', { ascending: true })
-  return data ?? []
+  // Steuerwerte (Rolle, EUeR-Zeile, betrieblicher Anteil) sind persoenlich: Overrides des Nutzers statt der geteilten Spalten.
+  return mitSteuerWerten(supabase, userId, data ?? [])
 }
 
 /** Kategorie-Auswahl (Name, Farbe, Icon, Eltern), nach sort_order. */
-export async function getCategoryOptions(supabase: DB, userId: string): Promise<CategoryOptionRow[]> {
+export async function getCategoryOptions(supabase: DB): Promise<CategoryOptionRow[]> {
   const { data } = await supabase
     .from('categories')
     .select('id, name, color, icon, parent_id')
-    .eq('user_id', userId)
     .order('sort_order')
   return data ?? []
 }
 
 /** Kategorien nur mit id + name, nach Name (Verträge). */
-export async function getCategoryNames(supabase: DB, userId: string): Promise<{ id: string; name: string }[]> {
+export async function getCategoryNames(supabase: DB): Promise<{ id: string; name: string }[]> {
   const { data } = await supabase
     .from('categories')
     .select('id, name')
-    .eq('user_id', userId)
     .order('name')
   return data ?? []
 }
@@ -316,13 +344,14 @@ export async function getEuerZeilenForCategories(supabase: DB): Promise<EuerZeil
  * Trefferquote der KI-Kategorisierung (siehe lib/fints/ai-bilanz.ts). Seitenweise gelesen, weil PostgREST bei 1.000
  * Zeilen still kappt; gelesen werden nur Zeilen, zu denen die KI überhaupt etwas gesagt hat.
  */
-export async function getKiBilanz(supabase: DB, userId: string): Promise<KiBilanz> {
+export async function getKiBilanz(supabase: DB, ctx: ScopeContext): Promise<KiBilanz> {
   const zeilen: KiZeile[] = []
   for (let seite = 0; seite < 20; seite++) {
+    // bank_transactions hat keine account_id: Scope ueber die IBAN der Scope-Konten.
     const { data, error } = await supabase
       .from('bank_transactions')
       .select('category_id, category_source, ai_category_id')
-      .eq('user_id', userId)
+      .in('account_iban', ctx.ibans)
       .not('ai_category_id', 'is', null)
       .order('id', { ascending: true })
       .range(seite * 1000, seite * 1000 + 999)

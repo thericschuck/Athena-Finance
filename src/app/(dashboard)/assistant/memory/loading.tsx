@@ -3,7 +3,8 @@ import { Skeleton, SkeletonCardList } from '@/components/ui/skeleton'
 /** Gilt auch für „Wissen" (re-exportiert): beide sind eine Kopfleiste (Suche, Info, Neu), Chips und eine Kartenliste. */
 export default function Loading() {
   return (
-    <div className="space-y-3 animate-in fade-in duration-150">
+    <div role="status" aria-busy="true" className="space-y-3 animate-in fade-in duration-150">
+      <span className="sr-only">Lädt…</span>
       <div className="flex items-center gap-2">
         <Skeleton className="h-10 flex-1 rounded-md" />
         <Skeleton className="size-10 rounded-md" />

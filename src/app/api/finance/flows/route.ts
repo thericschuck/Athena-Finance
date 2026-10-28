@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { parseQuery } from '@/lib/api/validate'
-import { getMonthlyFlows } from '@/lib/data/flows'
+import { getMonthlyFlowsScope } from '@/lib/data/flows-scope'
 
 const querySchema = z.object({
   source: z.enum(['manual', 'bank_sync']).optional(),
@@ -23,7 +24,7 @@ export async function GET(request: Request) {
   if (parsed.response) return parsed.response
 
   try {
-    const rows = await getMonthlyFlows(supabase, user.id, { source: parsed.data.source })
+    const rows = await getMonthlyFlowsScope(supabase, await resolveScope(supabase, user), { source: parsed.data.source })
     return NextResponse.json({ rows })
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Fehler' }, { status: 500 })

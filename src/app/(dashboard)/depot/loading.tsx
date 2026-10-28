@@ -2,7 +2,8 @@ import { Skeleton, SkeletonChart, SkeletonTable } from '@/components/ui/skeleton
 
 export default function Loading() {
   return (
-    <div className="p-4 sm:p-8 animate-in fade-in duration-150">
+    <div role="status" aria-busy="true" className="p-4 sm:p-8 animate-in fade-in duration-150">
+      <span className="sr-only">Lädt…</span>
       <div className="flex flex-col lg:flex-row gap-5">
         <div className="flex-1 min-w-0 space-y-5">
           {/* Kennzahlen */}

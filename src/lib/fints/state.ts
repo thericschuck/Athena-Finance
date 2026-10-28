@@ -14,22 +14,16 @@
  * Die Vercel-Function schreibt dieselbe Tabelle direkt über die REST-API
  * (siehe `api/bank-sync.py`), mit demselben `bank_key`-Schema.
  */
-import { createClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { BankClientStateMap } from './sidecar'
 
 /**
- * Service-Role-Client. `fints_client_state` hat bewusst KEINE RLS-Policies — der Zustand
+ * Service-Role-Client (zentrale Factory `createAdminClient`). `fints_client_state` hat bewusst KEINE RLS-Policies — der Zustand
  * ist reine Server-Infrastruktur und soll nie über einen Browser-Client erreichbar sein.
  * Deshalb erzeugt dieses Modul seinen Client selbst, statt einen durchgereichten
  * (möglicherweise cookie-basierten) Client zu verwenden, der hier stillschweigend
  * leere Ergebnisse liefern würde.
  */
-function adminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  )
-}
 
 /** Dauer der PSD2-Ausnahme für Kontoinformationen nach einer starken Authentifizierung. */
 export const SCA_EXEMPTION_DAYS = 90
@@ -47,7 +41,7 @@ export interface BankStateRow {
  * dann nur eine App-Freigabe — das ist besser, als den Sync komplett scheitern zu lassen.
  */
 export async function loadBankClientState(userId: string): Promise<BankClientStateMap> {
-  const { data, error } = await adminClient()
+  const { data, error } = await createAdminClient()
     .from('fints_client_state')
     .select('bank_key, bank_label, state_blob')
     .eq('user_id', userId)
@@ -91,7 +85,7 @@ export async function saveBankClientState(
     ...(value.scaPerformed ? { last_sca_at: now } : {}),
   }))
 
-  const { error } = await adminClient()
+  const { error } = await createAdminClient()
     .from('fints_client_state')
     .upsert(rows, { onConflict: 'user_id,bank_key' })
 
@@ -109,7 +103,7 @@ export async function saveBankClientState(
  * beim nächsten interaktiven Sync noch als Ausgangspunkt taugt.
  */
 export async function markScaRequired(userId: string): Promise<void> {
-  const { error } = await adminClient()
+  const { error } = await createAdminClient()
     .from('fints_client_state')
     .update({ sca_required_since: new Date().toISOString() })
     .eq('user_id', userId)
@@ -132,7 +126,7 @@ export interface BankScaStatus {
 }
 
 export async function getBankScaStatus(userId: string): Promise<BankScaStatus[]> {
-  const { data, error } = await adminClient()
+  const { data, error } = await createAdminClient()
     .from('fints_client_state')
     .select('bank_key, bank_label, last_sca_at, sca_required_since')
     .eq('user_id', userId)

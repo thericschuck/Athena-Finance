@@ -23,9 +23,13 @@ interface Props {
   trigger: React.ReactNode
   /** Gesetzt = Bearbeiten, sonst Anlegen. */
   item?: Valuable
+  /** Schalter 'Mit Haushalt teilen' (nur bei Haushalt mit Partner). */
+  canShare?: boolean
+  /** Beim Bearbeiten: Stueck gehoert dem Nutzer. Stuecke des Partners lassen sich nicht umstellen (kein Schalter). */
+  eigen?: boolean
 }
 
-export function ValuableForm({ trigger, item }: Props) {
+export function ValuableForm({ trigger, item, canShare = false, eigen = true }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [kategorie, setKategorie] = useState(item?.kategorie ?? 'uhr')
@@ -205,6 +209,15 @@ export function ValuableForm({ trigger, item }: Props) {
               label="Zählt in den Sammlungswert"
               defaultChecked={item ? item.im_vermoegen : true}
             />
+            {canShare && !item && <Haken name="shared" label="Mit Haushalt teilen" />}
+            {/* Bestehendes Stueck: Ist-Zustand aus `shared`. Fremde Stuecke (Partner) koennen nicht umgestellt werden,
+                die Action aendert nur eigene Zeilen: dort gibt es keinen Schalter. */}
+            {canShare && item && eigen && (
+              <>
+                <input type="hidden" name="shared_form" value="1" />
+                <Haken name="shared" label="Mit Haushalt teilen" defaultChecked={item.shared} />
+              </>
+            )}
           </div>
 
           {/* Verkauf — nur beim Bearbeiten. Beim Anlegen wäre das Feld sinnlos und würde

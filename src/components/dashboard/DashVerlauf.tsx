@@ -1,10 +1,11 @@
 import Link from 'next/link'
-import { getAuthUser } from '@/lib/supabase/server'
 import { ladeDashPrognose } from '@/lib/data/dashboard-prognose'
 import { prognoseLinie } from '@/lib/verlauf/prognose-linie'
 import { meilensteine } from '@/lib/verlauf/networth'
 import { NetWorthChartLazy } from '@/components/verlauf/NetWorthChartLazy'
 import type { DashAbschnittProps } from '@/lib/dashboard/typen'
+import { dashboardLeer } from '@/lib/dashboard/leer'
+import { VerlaufPlatzhalter } from './DashPlatzhalter'
 
 /**
  * Net-Worth-Verlauf: derselbe Chart wie auf der Verlauf-Seite (Zeiträume, nach Topf gestapelt,
@@ -15,8 +16,11 @@ import type { DashAbschnittProps } from '@/lib/dashboard/typen'
  * sie, zeigt der Chart nur den Verlauf.
  */
 export async function DashVerlauf({ kern }: DashAbschnittProps) {
-  const { user } = await getAuthUser()
-  const prognose = user ? await ladeDashPrognose(user.id, kern.heute) : null
+  // Der Chart rendert unter zwei Snapshots nichts: statt einer leeren Flaeche ein Platzhalter gleicher Rolle.
+  const { verlauf } = dashboardLeer(kern)
+  if (verlauf !== 'daten') return <VerlaufPlatzhalter zustand={verlauf} />
+
+  const prognose = await ladeDashPrognose(kern.scopeCtx, kern.heute)
   const projektion = prognose ? prognoseLinie(prognose.szenario.tage) : []
   const hoechster = projektion.length ? Math.max(...projektion.map(p => p.wert)) : kern.netWorth
   // Meilensteine nur, wenn die Prognose sie in Sicht rückt — sonst streckt eine ferne Linie die Achse.

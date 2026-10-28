@@ -8,6 +8,9 @@ import {
 import { Th, Td, Pagination, fmtEur, fmtNum, fmtDate, href, type TabCtx } from './shared'
 import { PortfolioAllokationChartLazy } from './PortfolioAllokationChartLazy'
 import { PortfolioKarten } from './PortfolioKarten'
+import { PieChart } from 'lucide-react'
+import { LeerZustand } from '@/components/leer/LeerZustand'
+import { ScopeHinweisFuer } from '@/components/leer/ScopeHinweisFuer'
 
 const ZEITRAUM_LABEL: Record<(typeof PORTFOLIO_ZEITRAEUME)[number], string> = {
   '3m': '3 Mon.', '6m': '6 Mon.', '1y': '1 Jahr', max: 'Alles',
@@ -21,8 +24,8 @@ const chipCls = (aktiv: boolean) =>
 // ─── Tab: Portfolio ───────────────────────────────────────────────────────────
 // Filter laufen ueber die URL (`asset`, `portfolio`, `zeitraum`), nicht ueber Client-State:
 // Server Component, teilbare Links, und die Tabellen-Pagination behaelt sie ueber `params`.
-export async function PortfolioTab({ supabase, uid, locale, dateFormat, page, from, to, params }: TabCtx) {
-  const assetsAll = await getHistoryAssets(supabase, uid)
+export async function PortfolioTab({ supabase, ctx, locale, dateFormat, page, from, to, params }: TabCtx) {
+  const assetsAll = await getHistoryAssets(supabase, ctx)
   const assetMap = new Map(assetsAll.map(a => [a.id, a]))
   const alleIds = assetsAll.map(a => a.id)
 
@@ -35,7 +38,22 @@ export async function PortfolioTab({ supabase, uid, locale, dateFormat, page, fr
   const aktiveIds = aktiv.size > 0 ? [...aktiv] : alleIds
 
   // Gesamtlauf einmal lesen (Zeitraum), Portfolio- und Asset-Filter dann im Speicher.
-  const imZeitraum = await getPortfolioSnapshotsAlle(supabase, uid, ab)
+  const imZeitraum = await getPortfolioSnapshotsAlle(supabase, ab, alleIds)
+  if (assetsAll.length === 0 && imZeitraum.length === 0) {
+    return (
+      <div className="space-y-4 p-4">
+        <ScopeHinweisFuer ctx={ctx} thema="Anlagen" />
+        <LeerZustand
+          variante="eingebettet"
+          icon={PieChart}
+          titel="Noch kein Portfolio"
+          text="Hier siehst du, wie sich Krypto-Bestände und weitere Positionen über die Zeit entwickeln. Es füllt sich, sobald Anlagen erfasst sind."
+          aktion={{ label: 'Zum Depot', href: '/depot' }}
+          sekundaer={{ label: 'Zu Krypto', href: '/crypto' }}
+        />
+      </div>
+    )
+  }
   const portfolios = [...new Set(imZeitraum.map(z => z.portfolio_name).filter((n): n is string => !!n))].sort()
   const portfolio = params.portfolio && portfolios.includes(params.portfolio) ? params.portfolio : undefined
 
@@ -47,7 +65,7 @@ export async function PortfolioTab({ supabase, uid, locale, dateFormat, page, fr
   const kennzahlen = assetKennzahlen(zeilen)
 
   const { rows: data, count } = await getPortfolioTabelle(
-    supabase, uid, { assetIds: aktiveIds, portfolio, ab }, { from, to },
+    supabase, { assetIds: aktiveIds, portfolio, ab }, { from, to },
   )
 
   // Filterwechsel springt immer auf Seite 1 (page: undefined), sonst landet man hinter dem Ende.

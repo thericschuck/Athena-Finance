@@ -1,32 +1,29 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { applyOwnerScope, type ScopeContext } from '@/lib/haushalt/scope'
 
 type DB = SupabaseClient<Database>
 
 // ─── Lebenshaltungskosten / Budget ────────────────────────────────────────────────────────
 
 /** Alle Budget-Kategorien (kleine Stammdatenliste), nach sort_order, dann Name. */
-export async function getBudgetCategories(supabase: DB, userId: string) {
-  const { data } = await supabase
-    .from('budget_categories')
-    .select('id, name, icon, monthly_budget, sort_order')
-    .eq('user_id', userId)
+export async function getBudgetCategories(supabase: DB, ctx: ScopeContext) {
+  const q = supabase.from('budget_categories').select('id, name, icon, monthly_budget, sort_order, shared')
+  const { data } = await applyOwnerScope(q, ctx)
     .order('sort_order')
     .order('name')
   return data ?? []
 }
 
 /** Alle Budget-Posten, nach Name. */
-export async function getBudgetItems(supabase: DB, userId: string) {
-  const { data } = await supabase
-    .from('budget_items')
-    .select('id, category_id, name, unit_price, quantity, interval_days, notes')
-    .eq('user_id', userId)
+export async function getBudgetItems(supabase: DB, ctx: ScopeContext) {
+  const q = supabase.from('budget_items').select('id, category_id, name, unit_price, quantity, interval_days, notes')
+  const { data } = await applyOwnerScope(q, ctx)
     .order('name')
   return data ?? []
 }
 
-/** Das (erste) Einkommensziel, oder null. */
+/** Das (erste) Einkommensziel, oder null. OWNER-ONLY: bleibt `user_id`, unabhaengig vom Scope (daher `userId`, kein ScopeContext). */
 export async function getIncomeTarget(supabase: DB, userId: string) {
   const { data } = await supabase
     .from('income_targets')

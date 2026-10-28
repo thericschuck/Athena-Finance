@@ -18,7 +18,7 @@ import type { ValuableWithImage } from '@/lib/valuables'
  * Bearbeiten und Löschen. Alles rund um Bilder steckt in ValuableMedia — es sitzt oben am
  * Hauptbild, weil der Generierungszustand genau dort sichtbar werden muss.
  */
-export function ValuableActions({ item }: { item: ValuableWithImage }) {
+export function ValuableActions({ item, canShare = false }: { item: ValuableWithImage; canShare?: boolean }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [fehler, setFehler] = useState<string | null>(null)
@@ -28,6 +28,8 @@ export function ValuableActions({ item }: { item: ValuableWithImage }) {
       <div className="flex flex-wrap gap-2">
         <ValuableForm
           item={item}
+          canShare={canShare}
+          eigen={item.eigen}
           trigger={
             <Button variant="outline" size="sm">
               <Pencil className="size-3.5" />

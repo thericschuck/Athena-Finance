@@ -4,8 +4,16 @@ Node sidecar under scripts/fints/) because Vercel's Python runtime can install `
 directly (see /requirements.txt).
 
 Auth: shared secret via `Authorization: Bearer <CRON_SECRET>`, matching every other cron
-route in this app. The target Supabase user is fixed via BANK_SYNC_USER_ID, since the FinTS
-credentials (FINTS_URL/BLZ/USERNAME/PIN) are a single global bank login, not per-user.
+route in this app.
+
+Connections (per user, see docs/fints-verbindungen.md): the FinTS credentials live encrypted in
+`bank_connections` (AES-256-GCM, format iv:authTag:ciphertext, key derived from ENCRYPTION_KEY exactly
+as in src/lib/encryption.ts). This function loads them itself with the service role and decrypts them
+in memory; credentials never travel through an HTTP request body. Fallback: the legacy global login
+from FINTS_URL/BLZ/USERNAME/PIN is used ONLY for BANK_SYNC_USER_ID and ONLY while that user has no
+connection of their own.
+  ?user=<uuid>  sync just this user (manual sync; the Node route has authenticated the user).
+  (none)        sync every user that has a connection, plus the env user without one (cron).
 
 Query flags (this endpoint serves both the cron and the UI's manual sync):
   ?sca=1   allow waiting for a SecureGo plus approval (manual sync only — the cron has
@@ -42,6 +50,7 @@ from urllib.parse import urlparse, parse_qs
 import requests
 from fints.client import FinTS3PinTanClient, NeedTANResponse
 from fints.exceptions import FinTSClientPINError
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 # ── Config ───────────────────────────────────────────────────────────────────────
 
@@ -270,6 +279,113 @@ def mark_sca_required(base_url, user_id, key):
         print(f"[fints] sca_required_since nicht setzbar: {exc}")
 
 
+# ── Connections (bank_connections + env fallback) ────────────────────────────────
+
+class NoConnection(RuntimeError):
+    """The user has neither a connection of their own nor is the env user."""
+
+
+def decrypt_secret(ciphertext):
+    """AES-256-GCM, compatible with src/lib/encryption.ts: key = sha256(ENCRYPTION_KEY),
+    ciphertext = base64(iv):base64(authTag):base64(encrypted). Never log the result."""
+    raw = os.environ.get("ENCRYPTION_KEY")
+    if not raw:
+        raise RuntimeError("ENCRYPTION_KEY ist nicht gesetzt")
+    parts = ciphertext.split(":")
+    if len(parts) != 3:
+        raise ValueError("Ungültiges Chiffretext-Format")
+    iv, tag, enc = (base64.b64decode(p) for p in parts)
+    key = hashlib.sha256(raw.encode("utf-8")).digest()
+    # cryptography expects ciphertext || tag
+    return AESGCM(key).decrypt(iv, enc + tag, None).decode("utf-8")
+
+
+def env_profile():
+    """The legacy global login, or None if the env is incomplete."""
+    url = (os.environ.get("FINTS_URL") or "").strip()
+    blz = re.sub(r"\D", "", os.environ.get("FINTS_BLZ") or "")
+    user = (os.environ.get("FINTS_USERNAME") or "").strip()
+    pin = (os.environ.get("FINTS_PIN") or "").strip()
+    if not (url and len(blz) == 8 and user and pin):
+        return None
+    return {
+        "connection_id": None, "source": "env",
+        "label": os.environ.get("FINTS_LABEL") or "Raiffeisenbank",
+        "url": url, "blz": blz, "user": user, "pin": pin,
+        "product_id": os.environ.get("FINTS_PRODUCT_ID") or None,
+    }
+
+
+def load_db_profiles(base_url, user_id=None):
+    """Decrypted connections from bank_connections as {user_id: [profile, ...]}.
+    A missing table (migration not applied yet) counts as 'no connections'; any other
+    error is raised so a DB problem never silently falls back to the env login."""
+    params = {"select": "id,user_id,label,blz,fints_url,username_enc,pin_enc,tan_medium"}
+    if user_id:
+        params["user_id"] = f"eq.{user_id}"
+    resp = requests.get(f"{base_url}/rest/v1/bank_connections", headers=supabase_headers(), params=params, timeout=30)
+    if resp.status_code == 404:
+        return {}
+    resp.raise_for_status()
+    out = {}
+    for row in resp.json():
+        try:
+            profile = {
+                "connection_id": row["id"], "source": "db", "label": row["label"],
+                "url": row["fints_url"], "blz": row["blz"],
+                "user": decrypt_secret(row["username_enc"]), "pin": decrypt_secret(row["pin_enc"]),
+                "product_id": os.environ.get("FINTS_PRODUCT_ID") or None,
+                "tan_medium": row.get("tan_medium"),
+            }
+        except Exception:  # noqa: BLE001 - never include the cause: it could echo ciphertext
+            raise RuntimeError(
+                f"Bankverbindung \u201e{row.get('label')}\u201c konnte nicht entschlüsselt werden "
+                "(ENCRYPTION_KEY geändert?). Bitte neu eintragen."
+            ) from None
+        out.setdefault(row["user_id"], []).append(profile)
+    return out
+
+
+def plan_targets(base_url, user_id=None):
+    """List of (supabase_user_id, profile) to sync."""
+    env_user = (os.environ.get("BANK_SYNC_USER_ID") or "").strip()
+    if user_id:
+        db = load_db_profiles(base_url, user_id).get(user_id, [])
+        if db:
+            return [(user_id, p) for p in db]
+        envp = env_profile()
+        if envp and env_user == user_id:
+            return [(user_id, envp)]
+        raise NoConnection("Für dieses Konto ist keine Bankverbindung hinterlegt.")
+    targets = []
+    db_all = load_db_profiles(base_url)
+    for uid, profiles in db_all.items():
+        targets.extend((uid, p) for p in profiles)
+    if env_user and env_user not in db_all:
+        envp = env_profile()
+        if envp:
+            targets.append((env_user, envp))
+    return targets
+
+
+def record_connection_result(base_url, user_id, profile, error):
+    """Best-effort status for the settings page. `error` is None on success."""
+    if not profile.get("connection_id"):
+        return
+    patch = {"last_error": None, "last_sync_at": _dt.datetime.now(_dt.timezone.utc).isoformat()}
+    if error is not None:
+        patch = {"last_error": str(error).replace(profile.get("pin") or "\0", "***")[:300]}
+    try:
+        requests.patch(
+            f"{base_url}/rest/v1/bank_connections",
+            headers=supabase_headers("return=minimal"),
+            params={"id": f"eq.{profile['connection_id']}", "user_id": f"eq.{user_id}"},
+            json=patch, timeout=30,
+        )
+    except Exception as exc:  # noqa: BLE001
+        print(f"[fints] Verbindungsstatus nicht setzbar: {type(exc).__name__}")
+
+
 # ── FinTS ──────────────────────────────────────────────────────────────────────
 
 class ScaRequired(RuntimeError):
@@ -317,8 +433,8 @@ def settle(client, result, allow_sca, state):
     return result
 
 
-def run_sync(allow_sca=False, full_history=False):
-    """Run one FinTS sync and upsert the result.
+def sync_profile(profile, supabase_user_id, allow_sca=False, full_history=False):
+    """Run one FinTS sync for one bank login and upsert the result.
 
     allow_sca:    may this run wait for a SecureGo plus approval? True only for a manual
                   sync triggered from the UI (a person is watching); False for the cron.
@@ -327,13 +443,12 @@ def run_sync(allow_sca=False, full_history=False):
     """
     import datetime as dt
 
-    url = os.environ["FINTS_URL"]
-    blz = re.sub(r"\D", "", os.environ["FINTS_BLZ"])
-    user = os.environ["FINTS_USERNAME"]
-    pin = os.environ["FINTS_PIN"]
-    product_id = os.environ.get("FINTS_PRODUCT_ID") or None
-    label = os.environ.get("FINTS_LABEL") or "Raiffeisenbank"
-    supabase_user_id = os.environ["BANK_SYNC_USER_ID"]
+    url = profile["url"]
+    blz = re.sub(r"\D", "", profile["blz"])
+    user = profile["user"]
+    pin = profile["pin"]
+    product_id = profile.get("product_id") or None
+    label = profile.get("label") or "Raiffeisenbank"
     supabase_url = os.environ["NEXT_PUBLIC_SUPABASE_URL"]
 
     if full_history:
@@ -477,6 +592,58 @@ def run_sync(allow_sca=False, full_history=False):
     }
 
 
+def run_sync(allow_sca=False, full_history=False, user_id=None):
+    """Sync one user (user_id) or everybody with a connection (cron).
+
+    Exactly one target (the normal single-user case, incl. Eric's env fallback): behaves like
+    before, exceptions propagate unchanged. Several targets: failures of one connection do not
+    stop the others; they become warnings and the connection's last_error."""
+    supabase_url = os.environ["NEXT_PUBLIC_SUPABASE_URL"]
+    targets = plan_targets(supabase_url, user_id)
+    if not targets:
+        return {"ok": True, "imported": 0, "skipped": 0, "balances": 0, "scaPerformed": False,
+                "warnings": [], "connections": 0}
+
+    single = len(targets) == 1
+    total = {"ok": True, "imported": 0, "skipped": 0, "balances": 0, "scaPerformed": False,
+             "warnings": [], "connections": len(targets)}
+    sca_count = 0
+    failed = 0
+    last_exc = None
+    for uid, profile in targets:
+        try:
+            r = sync_profile(profile, uid, allow_sca, full_history)
+        except ScaRequired as exc:
+            record_connection_result(supabase_url, uid, profile, "Freigabe in der App erforderlich")
+            if single:
+                raise
+            sca_count += 1
+            last_exc = exc
+            continue
+        except Exception as exc:  # noqa: BLE001
+            record_connection_result(supabase_url, uid, profile, f"{type(exc).__name__}: {exc}")
+            if single:
+                raise
+            failed += 1
+            last_exc = exc
+            total["warnings"].append(f"{profile.get('label')}: {type(exc).__name__}")
+            continue
+        record_connection_result(supabase_url, uid, profile, None)
+        total["imported"] += r["imported"]
+        total["skipped"] += r["skipped"]
+        total["balances"] += r["balances"]
+        total["scaPerformed"] = total["scaPerformed"] or r["scaPerformed"]
+        total["warnings"].extend(r["warnings"])
+
+    if sca_count == len(targets):
+        raise last_exc  # every connection needs an approval -> skippedReason sca_required
+    if failed + sca_count == len(targets):
+        raise last_exc
+    if sca_count:
+        total["warnings"].append(f"{sca_count} Verbindung(en) brauchen eine Freigabe in der App.")
+    return total
+
+
 # ── Vercel entrypoint ────────────────────────────────────────────────────────────
 
 class handler(BaseHTTPRequestHandler):
@@ -498,9 +665,13 @@ class handler(BaseHTTPRequestHandler):
         query = parse_qs(urlparse(self.path).query)
         allow_sca = query.get("sca", ["0"])[0] == "1"
         full_history = query.get("full", ["0"])[0] == "1"
+        user_id = query.get("user", [None])[0]
+        if user_id is not None and not re.fullmatch(r"[0-9a-fA-F-]{36}", user_id):
+            self._json(400, {"ok": False, "error": "Ungültige Nutzer-ID."})
+            return
 
         try:
-            body = run_sync(allow_sca=allow_sca, full_history=full_history)
+            body = run_sync(allow_sca=allow_sca, full_history=full_history, user_id=user_id)
             self._json(200, body)
         except ScaRequired as exc:
             # Not a malfunction — PSD2's 90-day exemption has run out. Answer 200 so the
@@ -513,6 +684,8 @@ class handler(BaseHTTPRequestHandler):
                 "skipped": 0,
                 "message": str(exc),
             })
+        except NoConnection as exc:
+            self._json(403, {"ok": False, "error": str(exc)})
         except FinTSClientPINError:
             self._json(500, {"ok": False, "error": "PIN/Zugangsdaten wurden von der Bank abgelehnt."})
         except Exception as exc:  # noqa: BLE001

@@ -34,6 +34,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import type { DebtRow } from '@/lib/data/finance-planning'
+import { TeilenSchalter } from '@/components/haushalt/TeilenSchalter'
 import { useSettings } from '@/components/providers/settings-context'
 import { fmtCurrency } from '@/lib/format'
 import { heuteBerlin } from '@/lib/transaktionen/formular'
@@ -192,6 +193,8 @@ function SchuldFormular({ debt, defaultValues, onFertig, onAbbruch }: SchuldForm
           </div>
         </div>
       </details>
+
+      <TeilenSchalter defaultChecked={debt?.shared ?? false} unbekannt={!!debt && debt.shared === undefined} />
 
       <Fehler state={state} />
 

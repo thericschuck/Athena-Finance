@@ -8,6 +8,7 @@ import { idField, uuid, optUuid, optText, reqDate, currency as currencySchema, b
 import { betragAusEingabe, MAX_BETRAG, typUndBetrag } from '@/lib/transaktionen/formular'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { requireRows } from '@/lib/data/mutation'
 
 // Betrag als Text mit Vorzeichen (negativ = Ausgabe). Dieselbe Leseregel wie im Formular
 // (`betragAusEingabe`): vorher las die Anlage nur Maschinenformat ("12,5" scheiterte), das Bearbeiten
@@ -35,7 +36,6 @@ type Db = SupabaseClient<Database>
 /** Gemeinsame Prüfung für Anlegen und Ändern: Betrag lesen, Umbuchung plausibilisieren, Besitz prüfen. */
 async function pruefeEingabe(
   supabase: Db,
-  userId: string,
   d: {
     amount: string
     is_transfer: boolean
@@ -53,15 +53,15 @@ async function pruefeEingabe(
   }
   const transferTo = d.is_transfer ? d.transfer_to : null
 
-  // Konten und Kategorie müssen dem Nutzer gehören (sonst ließe sich eine fremde ID eintragen).
+  // Konten und Kategorie müssen zum Haushalt gehören (die RLS zeigt nur diese; sonst ließe sich eine fremde ID eintragen).
   const kontoIds = [d.account_id, ...(transferTo ? [transferTo] : [])]
   const { data: konten, error: kontoFehler } = await supabase
-    .from('accounts').select('id').in('id', kontoIds).eq('user_id', userId)
+    .from('accounts').select('id').in('id', kontoIds)
   if (kontoFehler) return { error: kontoFehler.message }
   if ((konten?.length ?? 0) !== kontoIds.length) return { error: 'Konto nicht gefunden' }
   if (d.category_id) {
     const { data: kat, error: katFehler } = await supabase
-      .from('categories').select('id').eq('id', d.category_id).eq('user_id', userId).maybeSingle()
+      .from('categories').select('id').eq('id', d.category_id).maybeSingle()
     if (katFehler) return { error: katFehler.message }
     if (!kat) return { error: 'Kategorie nicht gefunden' }
   }
@@ -91,7 +91,7 @@ export async function createTransaction(
   if (!parsed.ok) return { error: issueMessage(parsed) }
   const { date, account_id, currency, description, merchant, category_id } = parsed.data
 
-  const geprueft = await pruefeEingabe(supabase, user.id, parsed.data)
+  const geprueft = await pruefeEingabe(supabase, parsed.data)
   if ('error' in geprueft) return { error: geprueft.error }
   const { type, amount, transferTo } = geprueft
 
@@ -134,7 +134,7 @@ export async function updateTransaction(
   if (!parsed.ok) return { error: issueMessage(parsed) }
   const { id, date, account_id, currency, category_id, description, merchant } = parsed.data
 
-  const geprueft = await pruefeEingabe(supabase, user.id, parsed.data)
+  const geprueft = await pruefeEingabe(supabase, parsed.data)
   if ('error' in geprueft) return { error: geprueft.error }
   const { type, amount, transferTo } = geprueft
 
@@ -152,7 +152,6 @@ export async function updateTransaction(
       merchant,
     })
     .eq('id', id)
-    .eq('user_id', user.id)
     .select('id')
 
   if (error) return { error: error.message }
@@ -186,14 +185,13 @@ export async function updateTransactionCategory(
   const p = parseInput(updateCategoryArgs, { id, categoryId, source })
   if (!p.ok) return { error: issueMessage(p) }
 
-  // Die Kategorie muss dem Nutzer gehören (sonst ließe sich eine fremde ID eintragen, und die View würde ihren
+  // Die Kategorie muss zum Haushalt gehören (RLS; sonst ließe sich eine fremde ID eintragen, und die View würde ihren
   // Namen mit ausliefern) — dieselbe Prüfung wie in `bulkSetzeKategorie`.
   if (categoryId) {
     const { data: kat } = await supabase
       .from('categories')
       .select('id')
       .eq('id', categoryId)
-      .eq('user_id', user.id)
       .maybeSingle()
     if (!kat) return { error: 'Kategorie nicht gefunden' }
   }
@@ -203,9 +201,8 @@ export async function updateTransactionCategory(
   const query = source === 'bank_sync'
     ? supabase.from('bank_transactions').update({ category_id: categoryId, category_source: categoryId ? 'manual' : null })
     : supabase.from('transactions').update({ category_id: categoryId })
-  const { error } = await query
-    .eq('id', id)
-    .eq('user_id', user.id)
+  const { error } = await requireRows(query
+    .eq('id', id))
 
   if (error) return { error: error.message }
   // Beide Seiten neu rendern: dieselbe Select steckt auch in der Buchungstabelle der
@@ -226,7 +223,6 @@ export async function deleteTransaction(id: string): Promise<{ error?: string }>
     .from('transactions')
     .delete()
     .eq('id', id)
-    .eq('user_id', user.id)
     .select('id')
 
   if (error) return { error: error.message }
@@ -261,13 +257,12 @@ export async function bulkSetzeKategorie(
   const p = parseInput(bulkKategorieArgs, { zeilen, categoryId })
   if (!p.ok) return { error: issueMessage(p) }
 
-  // Die Kategorie muss dem Nutzer gehören (sonst ließe sich eine fremde ID eintragen).
+  // Die Kategorie muss zum Haushalt gehören (RLS; sonst ließe sich eine fremde ID eintragen).
   if (p.data.categoryId) {
     const { data: kat } = await supabase
       .from('categories')
       .select('id')
       .eq('id', p.data.categoryId)
-      .eq('user_id', user.id)
       .maybeSingle()
     if (!kat) return { error: 'Kategorie nicht gefunden' }
   }
@@ -281,7 +276,6 @@ export async function bulkSetzeKategorie(
       .from('bank_transactions')
       .update({ category_id: p.data.categoryId, category_source: p.data.categoryId ? 'manual' : null })
       .in('id', bank)
-      .eq('user_id', user.id)
       .select('id')
     if (error) return { error: error.message }
     geaendert += data?.length ?? 0
@@ -291,7 +285,6 @@ export async function bulkSetzeKategorie(
       .from('transactions')
       .update({ category_id: p.data.categoryId })
       .in('id', manuell)
-      .eq('user_id', user.id)
       .select('id')
     if (error) return { error: error.message }
     geaendert += data?.length ?? 0
@@ -323,7 +316,6 @@ export async function bulkLoesche(ids: string[]): Promise<{ error?: string; gelo
     .from('transactions')
     .delete()
     .in('id', p.data.ids)
-    .eq('user_id', user.id)
     .select('id')
   if (error) return { error: error.message }
 

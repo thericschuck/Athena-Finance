@@ -1,4 +1,6 @@
+import { hatPartner } from '@/lib/haushalt/scope'
 import { getAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { getSettings } from '@/lib/settings'
 import { fmtCurrency } from '@/lib/format'
 import { InventoryClient } from '@/components/inventar/InventoryClient'
@@ -10,9 +12,11 @@ import { Gem } from 'lucide-react'
 import { getActiveValuables, getDocumentCounts, getHandBewertungsstaende, getSammlungsRohdaten, getSoldValuables, getValuableImages } from '@/lib/data/inventar'
 import { SammlungsChartLazy } from '@/components/inventar/SammlungsChartLazy'
 import { sammlungsverlauf } from '@/lib/inventar/sammlungsverlauf'
+import { letzteAenderungen } from '@/lib/data/aenderungen'
 import { SoldList } from '@/components/inventar/SoldList'
 import { VerlaufSchaetzenButton } from '@/components/inventar/VerlaufSchaetzenButton'
 import { signierteBildUrls } from '@/lib/inventar/bildurls'
+import { ScopeHinweisFuer } from '@/components/leer/ScopeHinweisFuer'
 
 /**
  * Inventar — die Vitrine.
@@ -28,14 +32,15 @@ export const metadata = { title: 'Inventar' }
 export default async function InventarPage() {
   const { supabase, user } = await getAuthUser()
   if (!user) return null
+  const ctx = await resolveScope(supabase, user)
 
   const [aktive, verkauft, dokumente, handStaende, rohdaten, bilder, settings] = await Promise.all([
-    getActiveValuables(supabase, user.id),
-    getSoldValuables(supabase, user.id),
-    getDocumentCounts(supabase, user.id),
-    getHandBewertungsstaende(supabase, user.id),
-    getSammlungsRohdaten(supabase, user.id),
-    getValuableImages(supabase, user.id),
+    getActiveValuables(supabase, ctx),
+    getSoldValuables(supabase, ctx),
+    getDocumentCounts(supabase, ctx),
+    getHandBewertungsstaende(supabase, ctx),
+    getSammlungsRohdaten(supabase, ctx),
+    getValuableImages(supabase, ctx),
     getSettings(user.id),
   ])
 
@@ -46,9 +51,14 @@ export default async function InventarPage() {
   // und über `signierteBildUrls` zwischengespeichert, damit derselbe Pfad zwischen zwei
   // Seitenaufrufen dieselbe URL behält — sonst greift der Browser-Cache nie und die ganze
   // Vitrine lädt nach jedem Refresh neu herunter.
-  const signedByPath = bilder.length > 0
-    ? await signierteBildUrls(supabase, bilder.map(b => b.pfad))
-    : new Map<string, string>()
+  // Letzte Aenderungen (Audit-View) und Bild-Signierung brauchen beide nur die erste Stufe: parallel statt hintereinander.
+  const [zuletztEintraege, signedByPath] = await Promise.all([
+    letzteAenderungen(supabase, ctx, 'valuables', aktive.map(v => v.id)),
+    bilder.length > 0
+      ? signierteBildUrls(supabase, bilder.map(b => b.pfad))
+      : Promise.resolve(new Map<string, string>()),
+  ])
+  const zuletztInventar = Object.fromEntries(zuletztEintraege)
 
   const bilderByItem = new Map<string, ValuableImage[]>()
   for (const b of bilder) {
@@ -75,6 +85,7 @@ export default async function InventarPage() {
     anzeige_url: i.hauptbild_pfad ? signedByPath.get(i.hauptbild_pfad) ?? null : null,
     bilder: bilderByItem.get(i.id) ?? [],
     dokument_anzahl: dokumente.get(i.id) ?? 0,
+    eigen: i.user_id === user.id,
   }))
 
   const summe = gesamtwert(items, true)
@@ -129,8 +140,12 @@ export default async function InventarPage() {
         {items.length > 0 && <VerlaufSchaetzenButton />}
       </div>
 
+      {items.length === 0 && verkauft.length === 0 && <ScopeHinweisFuer ctx={ctx} thema="Inventar" />}
+
       {/* Kennzahlen. Der Hinweis zum Net Worth steht bewusst direkt an der Summe: sonst
-          nimmt man an, die Zahl stecke im Vermögen. */}
+          nimmt man an, die Zahl stecke im Vermögen. Ohne jedes Stück (auch ohne verkaufte)
+          entfaellt die Leiste: sie waere nur Striche und Nullen. */}
+      {(items.length > 0 || verkauft.length > 0) && (
       <div className="rounded-lg border border-border bg-card px-5 py-4">
         <div className="flex flex-wrap items-end gap-x-10 gap-y-4">
           <div>
@@ -168,6 +183,7 @@ export default async function InventarPage() {
           </div>
         </div>
       </div>
+      )}
 
       {verlauf.length > 1 && <SammlungsChartLazy punkte={verlauf} locale={locale} />}
 
@@ -236,7 +252,7 @@ export default async function InventarPage() {
         </div>
       )}
 
-      <InventoryClient items={itemsMitBild} locale={locale} />
+      <InventoryClient items={itemsMitBild} locale={locale} canShare={hatPartner(ctx)} zuletzt={zuletztInventar} />
 
       <SoldList items={verkauft} locale={locale} />
     </div>

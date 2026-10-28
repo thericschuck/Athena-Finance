@@ -6,6 +6,8 @@ import { z } from 'zod'
 import { parseForm, parseInput, issueMessage } from '@/lib/api/validate'
 import { idField, uuid, reqText, optText, optDate, optEnum, optMoneyField, moneyField, MAX_AMOUNT } from '@/lib/api/schemas'
 import { heuteBerlin } from '@/lib/transaktionen/formular'
+import { requireRows } from '@/lib/data/mutation'
+import { setzeGeteilt } from '@/lib/haushalt/teilen'
 
 export type GoalActionState = { error: string } | { success: true } | null
 
@@ -46,7 +48,7 @@ export async function createGoal(
   if (!parsed.ok) return { error: issueMessage(parsed) }
   const d = parsed.data
 
-  const { error } = await supabase.from('savings_goals').insert({
+  const { data: neu, error } = await supabase.from('savings_goals').insert({
     description: d.description,
     target_amount: cent(d.target_amount),
     current_amount: cent(d.current_amount ?? 0),
@@ -56,9 +58,11 @@ export async function createGoal(
     ...rateFields(d),
     target_date: d.target_date,
     notes: d.notes,
-  })
+  }).select('id').single()
 
   if (error) return { error: error.message }
+  const teilFehler = await setzeGeteilt(supabase, 'savings_goals', neu.id, user.id, formData)
+  if (teilFehler) return { error: teilFehler }
   revalidatePath('/finance/goals')
   return { success: true }
 }
@@ -89,11 +93,12 @@ export async function updateGoal(
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
-    .eq('user_id', user.id)
     .select('id')
 
   if (error) return { error: error.message }
   if (!data || data.length === 0) return { error: 'Sparziel nicht gefunden' }
+  const teilFehler = await setzeGeteilt(supabase, 'savings_goals', id, user.id, formData)
+  if (teilFehler) return { error: teilFehler }
   revalidatePath('/finance/goals')
   return { success: true }
 }
@@ -108,7 +113,6 @@ export async function setGoalStatus(id: string, newStatus: string): Promise<void
     .from('savings_goals')
     .update({ status: newStatus, updated_at: new Date().toISOString() })
     .eq('id', id)
-    .eq('user_id', user.id)
 
   revalidatePath('/finance/goals')
 }
@@ -135,7 +139,6 @@ export async function addGoalPayment(
     .from('savings_goals')
     .select('current_amount, status')
     .eq('id', goalId)
-    .eq('user_id', user.id)
     .maybeSingle()
 
   if (fetchErr || !goal) return { error: 'Sparziel nicht gefunden' }
@@ -148,7 +151,6 @@ export async function addGoalPayment(
     .from('savings_goals')
     .update({ current_amount: neu, updated_at: new Date().toISOString() })
     .eq('id', goalId)
-    .eq('user_id', user.id)
     .eq('current_amount', goal.current_amount)
     .select('id')
 
@@ -165,11 +167,10 @@ export async function deleteGoal(id: string): Promise<{ error?: string }> {
   const idP = parseInput(uuid, id)
   if (!idP.ok) return { error: issueMessage(idP) }
 
-  const { error } = await supabase
+  const { error } = await requireRows(supabase
     .from('savings_goals')
     .delete()
-    .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('id', id))
 
   if (error) return { error: error.message }
   revalidatePath('/finance/goals')

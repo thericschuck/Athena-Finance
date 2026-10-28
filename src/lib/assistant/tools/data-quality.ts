@@ -1,9 +1,11 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { type DB } from '@/lib/assistant/tools/shared'
-import { getFlowTransactions } from '@/lib/data/flows'
+import { scopeHaushaltsweit, scopeIbans, scopeKonten, scopeKontenTabelle } from '@/lib/assistant/tools/scope'
+import type { ScopeContext } from '@/lib/haushalt/scope'
+import { ladeBuchungenImScope } from '@/lib/assistant/tools/buchungen'
 
-export function buildDataQualityTools(supabase: DB, userId: string) {
+export function buildDataQualityTools(supabase: DB, ctx: ScopeContext) {
   return {
     // ── Vertrauensschicht: taugen die Zahlen ueberhaupt? ─────────────────────
     checkDataQuality: tool({
@@ -35,7 +37,8 @@ export function buildDataQualityTools(supabase: DB, userId: string) {
         const { data: snaps, error: snapErr } = await supabase
           .from('net_worth_snapshots')
           .select('snapshot_date, net_worth, total_checking')
-          .eq('user_id', userId)
+          // Snapshots sind pro Nutzer, nicht pro Scope.
+          .eq('user_id', ctx.userId)
           .gte('snapshot_date', vorTagen(30))
           .order('snapshot_date', { ascending: false })
         if (snapErr) return { error: snapErr.message }
@@ -68,10 +71,10 @@ export function buildDataQualityTools(supabase: DB, userId: string) {
         }
 
         // 2) Konten — App-Saldo gegen Bankstand, und wie frisch die Buchungen sind.
-        const { data: konten, error: kontenErr } = await supabase
-          .from('accounts')
-          .select('id, name, type, bank_iban')
-          .eq('user_id', userId)
+        const { data: konten, error: kontenErr } = await scopeKontenTabelle(
+          supabase.from('accounts').select('id, name, type, bank_iban'),
+          ctx,
+        )
           .eq('is_active', true)
           .order('sort_order')
         if (kontenErr) return { error: kontenErr.message }
@@ -91,10 +94,10 @@ export function buildDataQualityTools(supabase: DB, userId: string) {
           }
         }
 
-        const { data: bankStaende } = await supabase
-          .from('bank_balance')
-          .select('account_iban, booked_balance, fetched_at')
-          .eq('user_id', userId)
+        const { data: bankStaende } = await scopeIbans(
+          supabase.from('bank_balance').select('account_iban, booked_balance, fetched_at'),
+          ctx,
+        )
         const bankMap = new Map(
           (bankStaende ?? []).map(b => [b.account_iban, { stand: Number(b.booked_balance), geholt: b.fetched_at }]),
         )
@@ -103,10 +106,7 @@ export function buildDataQualityTools(supabase: DB, userId: string) {
         // grossen über alle Zeilen — PostgREST kann kein max() je Gruppe.
         const letzteBuchungen = await Promise.all(
           (konten ?? []).map(async k => {
-            const { data } = await supabase
-              .from('unified_transactions')
-              .select('date')
-              .eq('user_id', userId)
+            const { data } = await scopeKonten(supabase.from('unified_transactions').select('date'), ctx)
               .eq('account_id', k.id)
               .order('date', { ascending: false })
               .limit(1)
@@ -160,16 +160,10 @@ export function buildDataQualityTools(supabase: DB, userId: string) {
         // ab — nacheinander erwartet waeren es vier Roundtrips, bevor Athena
         // ueberhaupt anfangen kann zu antworten.
         const [{ count: buchungenGesamt }, { count: buchungenOhneKategorie }] = await Promise.all([
-          supabase
-            .from('unified_transactions')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', userId)
+          scopeKonten(supabase.from('unified_transactions').select('id', { count: 'exact', head: true }), ctx)
             .eq('counts_in_flow', true)
             .gte('date', seit90),
-          supabase
-            .from('unified_transactions')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', userId)
+          scopeKonten(supabase.from('unified_transactions').select('id', { count: 'exact', head: true }), ctx)
             .eq('counts_in_flow', true)
             .gte('date', seit90)
             .is('category_id', null),
@@ -193,8 +187,8 @@ export function buildDataQualityTools(supabase: DB, userId: string) {
         try {
           const jahrStart = `${heute.getFullYear()}-01-01`
           const [{ data: baum }, buchungen] = await Promise.all([
-            supabase.from('category_tree').select('id, name, path, type, tax_role_effective').eq('user_id', userId),
-            getFlowTransactions(supabase, userId, { from: jahrStart, include: { anlage: false, forderung: false } }),
+            scopeHaushaltsweit(supabase.from('category_tree').select('id, name, path, type, tax_role_effective'), ctx),
+            ladeBuchungenImScope(supabase, ctx, { from: jahrStart, include: { anlage: false, forderung: false } }),
           ])
           const ohneRolle = new Map(
             (baum ?? [])

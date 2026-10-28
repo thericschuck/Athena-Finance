@@ -8,6 +8,7 @@ import { ART_LABEL, TYP_LABEL, type Art, type Typ } from '@/lib/transaktionen/fi
 import { STEUERROLLE_LABEL } from '@/lib/analyse/buchungen'
 import { ladeBuchungsDetail, type BuchungsDetailDaten } from '@/app/(dashboard)/finance/(transaktionen)/transactions/detail-actions'
 import { formatBetrag } from '@/components/konten/detail/format'
+import { ZuletztGeaendert } from '@/components/aenderungen/ZuletztGeaendert'
 import { betragTon, herkunftText, TON_KLASSE, vorzeichenText } from './auswahl'
 
 /**
@@ -88,6 +89,7 @@ export function BuchungsDetail({
                   )}
                 </div>
               </SheetDescription>
+              <ZuletztGeaendert info={d?.zuletzt} />
             </SheetHeader>
 
             {aktuell === null && (

@@ -7,6 +7,8 @@ import { parseForm, parseInput, issueMessage } from '@/lib/api/validate'
 import { idField, uuid, reqText, reqEnum, reqDate, optText, optDate, optUuid, optIntField, moneyField, currency } from '@/lib/api/schemas'
 import { CONTRACT_TYPES, FREQUENCIES, TRANSFER_TYPES } from '@/lib/finance/contract-constants'
 import { AUSGEBLENDET_KEY, leseAusgeblendet } from '@/lib/data/vertragsvorschlaege'
+import { requireRows } from '@/lib/data/mutation'
+import { setzeGeteilt } from '@/lib/haushalt/teilen'
 
 export type ContractActionState = { error: string } | { success: true } | null
 
@@ -44,19 +46,18 @@ function buildPayload(formData: FormData, userId: string):
   return { ok: true, payload: { ...d, user_id: userId } }
 }
 
-/** Konten und Kategorie müssen dem Nutzer gehören (die RLS schützt nur die Zeile, nicht die Verweise). */
+/** Konten und Kategorie müssen zum Haushalt gehören (die RLS zeigt nur diese; der Fremdschlüssel prüft nur die Existenz). */
 async function pruefeBesitz(
   supabase: Awaited<ReturnType<typeof getAuthUser>>['supabase'],
-  userId: string,
   p: { account_id: string | null; to_account_id: string | null; category_id: string | null },
 ): Promise<string | null> {
   const kontoIds = [...new Set([p.account_id, p.to_account_id].filter((x): x is string => !!x))]
   if (kontoIds.length > 0) {
-    const { data } = await supabase.from('accounts').select('id').eq('user_id', userId).in('id', kontoIds)
+    const { data } = await supabase.from('accounts').select('id').in('id', kontoIds)
     if ((data?.length ?? 0) !== kontoIds.length) return 'Das Konto wurde nicht gefunden.'
   }
   if (p.category_id) {
-    const { data } = await supabase.from('categories').select('id').eq('id', p.category_id).eq('user_id', userId).maybeSingle()
+    const { data } = await supabase.from('categories').select('id').eq('id', p.category_id).maybeSingle()
     if (!data) return 'Die Kategorie wurde nicht gefunden.'
   }
   return null
@@ -71,11 +72,13 @@ export async function createContract(
 
   const built = buildPayload(formData, user.id)
   if (!built.ok) return { error: built.error }
-  const fremd = await pruefeBesitz(supabase, user.id, built.payload)
+  const fremd = await pruefeBesitz(supabase, built.payload)
   if (fremd) return { error: fremd }
 
-  const { error } = await supabase.from('contracts').insert(built.payload)
+  const { data: neu, error } = await supabase.from('contracts').insert(built.payload).select('id').single()
   if (error) return { error: error.message }
+  const teilFehler = await setzeGeteilt(supabase, 'contracts', neu.id, user.id, formData)
+  if (teilFehler) return { error: teilFehler }
 
   revalidatePath('/finance/contracts')
   revalidatePath('/finance/prognose')
@@ -97,16 +100,17 @@ export async function updateContract(
   if (!built.ok) return { error: built.error }
   const updates = { ...built.payload }
   delete (updates as { user_id?: string }).user_id
-  const fremd = await pruefeBesitz(supabase, user.id, updates)
+  const fremd = await pruefeBesitz(supabase, updates)
   if (fremd) return { error: fremd }
 
-  const { error } = await supabase
+  const { error } = await requireRows(supabase
     .from('contracts')
     .update({ ...updates, updated_at: new Date().toISOString() })
-    .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('id', id))
 
   if (error) return { error: error.message }
+  const teilFehler = await setzeGeteilt(supabase, 'contracts', id, user.id, formData)
+  if (teilFehler) return { error: teilFehler }
 
   revalidatePath('/finance/contracts')
   revalidatePath('/finance/prognose')
@@ -119,11 +123,10 @@ export async function deleteContract(id: string): Promise<{ error?: string }> {
   const p = parseInput(uuid, id)
   if (!p.ok) return { error: issueMessage(p) }
 
-  const { error } = await supabase
+  const { error } = await requireRows(supabase
     .from('contracts')
     .delete()
-    .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('id', id))
 
   if (error) return { error: error.message }
 
@@ -160,15 +163,15 @@ export async function uebernehmeVertragsVorschlag(eingabe: VorschlagEingabe): Pr
   const v = p.data
 
   // Nicht zweimal anlegen: ein aktiver Vertrag gleichen Namens genügt.
-  const { data: vorhanden } = await supabase.from('contracts').select('id').eq('user_id', user.id).eq('is_active', true).ilike('name', v.name).limit(1)
+  const { data: vorhanden } = await supabase.from('contracts').select('id').eq('is_active', true).ilike('name', v.name).limit(1)
   if (vorhanden && vorhanden.length > 0) return { error: `Es gibt schon einen aktiven Vertrag „${v.name}".` }
 
   if (v.account_id) {
-    const { data } = await supabase.from('accounts').select('id').eq('id', v.account_id).eq('user_id', user.id).maybeSingle()
+    const { data } = await supabase.from('accounts').select('id').eq('id', v.account_id).maybeSingle()
     if (!data) return { error: 'Das Konto wurde nicht gefunden.' }
   }
   if (v.category_id) {
-    const { data } = await supabase.from('categories').select('id').eq('id', v.category_id).eq('user_id', user.id).maybeSingle()
+    const { data } = await supabase.from('categories').select('id').eq('id', v.category_id).maybeSingle()
     if (!data) return { error: 'Die Kategorie wurde nicht gefunden.' }
   }
 

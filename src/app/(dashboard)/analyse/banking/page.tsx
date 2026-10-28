@@ -1,4 +1,5 @@
 import { requireAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { getSettings } from '@/lib/settings'
 import { ladeBankSeite, type BankSeitenParams } from '@/lib/data/bank-seite'
 import { berechneScope, normIban } from '@/lib/bank/scope'
@@ -21,6 +22,9 @@ import { BankMuster } from '@/components/bank/BankMuster'
 import { BankDatenzustand } from '@/components/bank/BankDatenzustand'
 import { BankOffeneKategorien } from '@/components/bank/BankOffeneKategorien'
 import { BankBuchungen } from '@/components/bank/BankBuchungen'
+import { Landmark } from 'lucide-react'
+import { LeerZustand } from '@/components/leer/LeerZustand'
+import { ScopeHinweisFuer } from '@/components/leer/ScopeHinweisFuer'
 
 /**
  * Bankdaten — Auswertung der gesyncten Bankbuchungen über alle Konten, Unterpunkt von Analyse.
@@ -51,12 +55,15 @@ export default async function BankAnalysePage({
   ) as BankSeitenParams
 
   const { supabase, user } = await requireAuthUser()
-  const settings = await getSettings(user!.id)
+  // Scope und Einstellungen sind unabhaengig: eine Rundreise-Stufe statt zwei (Layout teilt dieselben Ergebnisse per cache()).
+  const [settings, ctx] = await Promise.all([getSettings(user!.id), resolveScope(supabase, user)])
   const heute = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date())
 
-  const daten = await ladeBankSeite(supabase, user!.id, params, settings, heute)
+  const daten = await ladeBankSeite(supabase, ctx, params, settings, heute)
   const scope = berechneScope(daten)
   const props = { daten, scope }
+  // Nie eine Bank synchronisiert (kein Kontostand, keine Buchung): erklaeren statt leerer Karten.
+  const keineBankdaten = daten.balances.length === 0 && daten.transactions.length === 0
 
   const trendMonate = monthlySeries(scope.flowsOhneMonat, daten.include)
     .map(m => ({ month: m.month, income: m.income, expense: m.expense }))
@@ -141,6 +148,18 @@ export default async function BankAnalysePage({
           </div>
         </div>
 
+        {keineBankdaten ? (
+          <div className="space-y-4">
+            <ScopeHinweisFuer ctx={ctx} thema="Bankdaten" />
+            <LeerZustand
+              icon={Landmark}
+              titel="Noch keine Bankdaten"
+              text="Hier wertest du die per Bank-Sync geholten Buchungen aus, Konto für Konto. Sobald eine Bank verbunden und synchronisiert ist, erscheinen Kontostände, Kategorien und Muster."
+              aktion={{ label: 'Bank verbinden', href: '/settings' }}
+              sekundaer={{ label: 'Analyse aller Buchungen', href: '/analyse' }}
+            />
+          </div>
+        ) : (
         <FilterPending className="space-y-4">
           <div className="space-y-4">
             {/* Schmale Zeilen oben: Zustand, Kennzahlen, offene Kategorien, Konten. */}
@@ -161,6 +180,7 @@ export default async function BankAnalysePage({
             </section>
           </div>
         </FilterPending>
+        )}
       </div>
     </UrlFiltersProvider>
   )

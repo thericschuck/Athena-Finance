@@ -6,7 +6,8 @@ import { Skeleton, SkeletonChart } from '@/components/ui/skeleton'
  */
 export default function Loading() {
   return (
-    <div className="flex flex-col gap-5 p-4 sm:p-8 animate-in fade-in duration-150">
+    <div role="status" aria-busy="true" className="flex flex-col gap-5 p-4 sm:p-8 animate-in fade-in duration-150">
+      <span className="sr-only">Lädt…</span>
       <div className="flex flex-col gap-4">
         <Skeleton className="h-4 w-24" />
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

@@ -117,8 +117,7 @@ export async function listDocuments(
   const { data, error } = await supabase
     .from('valuable_documents' as never)
     .select('id, pfad, name, art, groesse, created_at')
-    .eq('valuable_id', valuableId)
-    .eq('user_id', user.id)
+    .eq('valuable_id', valuableId) // Haushaltssicht: RLS (Signed URLs fremder Dateien scheitern an den Storage-Policies)
     .order('created_at', { ascending: false })
   if (error) return { error: error.message, documents: [] }
 

@@ -1,3 +1,5 @@
+import { anzeigeName } from './nutzername.ts'
+
 /** Allgemeine Startfragen — gelten auf jeder Seite ohne eigenen Zuschnitt. */
 const ALLGEMEIN = [
   'Wie hat sich mein Vermögen die letzten 6 Monate entwickelt?',
@@ -86,4 +88,42 @@ export function startfragenFuerRoute(pfad: string): string[] {
   const sauber = pfad.split(/[?#]/)[0].toLowerCase()
   const treffer = BEREICHE.find((b) => passt(sauber, b.prefix))
   return [...(treffer?.fragen ?? ALLGEMEIN)]
+}
+
+/** Beschriftung des hervorgehobenen Einstiegs in das Kennenlern-Gespräch (Leerzustand des Chats). */
+export const KENNENLERN_LABEL = 'Athena kennenlernen'
+
+/**
+ * Startnachricht für das Kennenlern-Gespräch (Verhalten: Abschnitt „Kennenlern-Gespräch“ im Systemprompt,
+ * kennenlernen.ts). Der Anzeigename wird bereinigt (nutzername.ts: nur Vorname, nur Buchstaben/Ziffern/Bindestrich,
+ * keine Umbrüche, Anführungszeichen oder Klammern, höchstens 30 Zeichen, keine E-Mail-Adresse), damit er nichts
+ * einschleusen kann. Ohne brauchbaren Namen entfällt „ich bin …“.
+ */
+export function kennenlernPrompt(name?: string | null): string {
+  const sauber = anzeigeName(name)
+  return (
+    `Hallo Athena, ${sauber ? `ich bin ${sauber}. ` : ''}Lern mich kennen: Stell mir gezielte Fragen, damit du meine ` +
+    'finanzielle Lage verstehst und deine Antworten besser werden. Schau zuerst in meine vorhandenen Daten und frag nur ' +
+    'nach dem, was daraus nicht hervorgeht. Eine Frage nach der anderen.'
+  )
+}
+
+/**
+ * Was beim Öffnen im Eingabefeld stehen soll: der Kennenlern-Prompt (editierbar, nie automatisch gesendet) oder nichts.
+ * - Ein nicht leeres Feld wird NIE überschrieben (kein Verlust getippter Texte).
+ * - Deep-Link (`?start=kennenlernen`): vorbefüllen, auch wenn der Chat nicht leer ist und schon Ausgangslage-Gedächtnis
+ *   existiert — der Nutzer hat es ausdrücklich angefordert.
+ * - Sonst nur im leeren Chat und nur ohne Ausgangslage im Gedächtnis (Ziele, Fakten, Randbedingungen, Vorlieben).
+ */
+export function kennenlernVorbefuellung(p: {
+  eingabe: string
+  nachrichten: number
+  hatAusgangslage: boolean
+  deepLink?: boolean
+  name?: string | null
+}): string | null {
+  if (p.eingabe.trim() !== '') return null
+  if (p.deepLink) return kennenlernPrompt(p.name)
+  if (p.nachrichten === 0 && !p.hatAusgangslage) return kennenlernPrompt(p.name)
+  return null
 }

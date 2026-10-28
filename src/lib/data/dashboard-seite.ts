@@ -1,7 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { getRebalancingTargets, getLastRebalancing } from '@/app/(dashboard)/crypto/actions'
-import { getDepotsSummaries } from '@/app/actions/depot'
+import { getDepotsSummaries } from '@/lib/data/depot'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 import { calculateRebalancing } from '@/lib/crypto/rebalancing'
 import {
   getDashboardAccounts, getBalanceSums, getOpenSavingsGoals, getDashboardCryptoAssets,
@@ -9,7 +10,7 @@ import {
 } from '@/lib/data/overview'
 import { getActiveDebts } from '@/lib/data/finance-planning'
 import { getBankBalances } from '@/lib/data/finance-accounts'
-import { getMonthlyFlows } from '@/lib/data/flows'
+import { getMonthlyFlowsScope } from '@/lib/data/flows-scope'
 import {
   buildCryptoPortfolio, buildFixedCosts, computeAccountBalances, computeInventory,
   computeLiveBuckets, computeUpcomingRenewals,
@@ -30,9 +31,16 @@ type DB = SupabaseClient<Database>
 
 const monatErster = (heute: string) => `${heute.slice(0, 7)}-01`
 
+/**
+ * `ctx` = Scope der Seite. Scope-faehig (applyAccountScope/applyOwnerScope in den Datenfunktionen): Konten, Salden, Monatsflows,
+ * Schulden, Sparziele, Krypto-Assets, Vertraege, Depots, Inventar. OWNER-ONLY: Hinweise (insights), Rebalancing-Ziele
+ * (user_settings). Verlauf: Snapshots ohne Partner (wie bisher), mit Partner `net_worth_series` (networth-reihe.ts).
+ * Fuer einen Nutzer ohne Partner liefert Scope 'ich' dieselben Werte wie vor der Umstellung.
+ */
 export async function ladeDashboard(
-  supabase: DB, userId: string, settings: Record<string, unknown>, heute: string,
+  supabase: DB, ctx: ScopeContext, settings: Record<string, unknown>, heute: string,
 ): Promise<DashboardKern> {
+  const userId = ctx.userId
   const locale = (settings.number_format as string) ?? 'de-DE'
   const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
   const monatsBudget = typeof settings.monthly_budget === 'number' ? settings.monthly_budget : null
@@ -50,22 +58,22 @@ export async function ladeDashboard(
     accounts, balanceSums, flowRows, debts, goals, cryptoAssetsRaw, contracts, insights,
     cryptoTargets, lastRebalancing, depotSummaries, valuables, netWorthSnapshots, bankBalances,
   ] = await Promise.all([
-    getDashboardAccounts(supabase, userId),
+    getDashboardAccounts(supabase, ctx),
     // unified_transactions enthält auch FinTS-Buchungen verknüpfter Konten. Für Kontostände
     // ohne flow_kind-Filter, für „diesen Monat" nur echte.
-    getBalanceSums(supabase, userId),
-    getMonthlyFlows(supabase, userId, { from: fromMonth }),
-    getActiveDebts(supabase, userId),
-    getOpenSavingsGoals(supabase, userId),
-    getDashboardCryptoAssets(supabase, userId),
-    getActiveContracts(supabase, userId),
-    getOpenInsights(supabase, userId),
-    getRebalancingTargets(userId),
+    getBalanceSums(supabase, ctx),
+    getMonthlyFlowsScope(supabase, ctx, { from: fromMonth }),
+    getActiveDebts(supabase, ctx),
+    getOpenSavingsGoals(supabase, ctx),
+    getDashboardCryptoAssets(supabase, ctx),
+    getActiveContracts(supabase, ctx),
+    getOpenInsights(supabase, ctx.userId),
+    getRebalancingTargets(userId), // OWNER-ONLY (user_settings)
     getLastRebalancing(userId),
-    getDepotsSummaries(),
-    getActiveValuables(supabase, userId),
-    getNetWorthSnapshotsSince(supabase, userId, snapshotFrom),
-    getBankBalances(supabase, userId),
+    getDepotsSummaries(supabase, ctx),
+    getActiveValuables(supabase, ctx),
+    getNetWorthSnapshotsSince(supabase, ctx, snapshotFrom),
+    getBankBalances(supabase, ctx),
   ])
 
   const { wert: inventarWert, stueck: inventarStueck } = computeInventory(valuables)
@@ -151,6 +159,7 @@ export async function ladeDashboard(
 
   return {
     heute, locale, dateFormat,
+    scopeCtx: ctx,
     netWorth,
     buckets: {
       konten: live.checking + live.savings + live.cash + live.bausparer,

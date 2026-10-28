@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      _rls_policy_backup_20261023: {
+        Row: {
+          policyname: string
+          qual: string | null
+          schemaname: string
+          tablename: string
+          with_check: string | null
+        }
+        Insert: {
+          policyname: string
+          qual?: string | null
+          schemaname: string
+          tablename: string
+          with_check?: string | null
+        }
+        Update: {
+          policyname?: string
+          qual?: string | null
+          schemaname?: string
+          tablename?: string
+          with_check?: string | null
+        }
+        Relationships: []
+      }
       account_balances: {
         Row: {
           account_id: string
@@ -63,6 +87,7 @@ export type Database = {
           institution: string | null
           is_active: boolean
           name: string
+          shared: boolean
           sort_order: number
           type: string
           updated_at: string
@@ -78,6 +103,7 @@ export type Database = {
           institution?: string | null
           is_active?: boolean
           name: string
+          shared?: boolean
           sort_order?: number
           type: string
           updated_at?: string
@@ -93,6 +119,7 @@ export type Database = {
           institution?: string | null
           is_active?: boolean
           name?: string
+          shared?: boolean
           sort_order?: number
           type?: string
           updated_at?: string
@@ -659,6 +686,7 @@ export type Database = {
           notes: string | null
           portfolio_name: string | null
           quantity: number | null
+          shared: boolean
           source: string
           symbol: string | null
           type: string
@@ -676,6 +704,7 @@ export type Database = {
           notes?: string | null
           portfolio_name?: string | null
           quantity?: number | null
+          shared?: boolean
           source?: string
           symbol?: string | null
           type: string
@@ -693,6 +722,7 @@ export type Database = {
           notes?: string | null
           portfolio_name?: string | null
           quantity?: number | null
+          shared?: boolean
           source?: string
           symbol?: string | null
           type?: string
@@ -712,33 +742,42 @@ export type Database = {
       audit_log: {
         Row: {
           action: string
+          actor_id: string | null
+          actor_kind: string
           created_at: string
           id: number
           ip_address: unknown
           new_values: Json | null
           old_values: Json | null
+          owner_id: string | null
           record_id: string | null
           table_name: string
           user_id: string
         }
         Insert: {
           action: string
+          actor_id?: string | null
+          actor_kind?: string
           created_at?: string
           id?: number
           ip_address?: unknown
           new_values?: Json | null
           old_values?: Json | null
+          owner_id?: string | null
           record_id?: string | null
           table_name: string
           user_id: string
         }
         Update: {
           action?: string
+          actor_id?: string | null
+          actor_kind?: string
           created_at?: string
           id?: number
           ip_address?: unknown
           new_values?: Json | null
           old_values?: Json | null
+          owner_id?: string | null
           record_id?: string | null
           table_name?: string
           user_id?: string
@@ -791,13 +830,13 @@ export type Database = {
         Row: {
           account_bic: string | null
           account_iban: string
+          ai_category_id: string | null
+          ai_checked_at: string | null
           amount: number
           bank_label: string | null
           bank_reference: string | null
           category: string | null
           category_id: string | null
-          ai_category_id: string | null
-          ai_checked_at: string | null
           category_source: string | null
           counterpart_bic: string | null
           counterpart_iban: string | null
@@ -815,13 +854,13 @@ export type Database = {
         Insert: {
           account_bic?: string | null
           account_iban: string
+          ai_category_id?: string | null
+          ai_checked_at?: string | null
           amount: number
           bank_label?: string | null
           bank_reference?: string | null
           category?: string | null
           category_id?: string | null
-          ai_category_id?: string | null
-          ai_checked_at?: string | null
           category_source?: string | null
           counterpart_bic?: string | null
           counterpart_iban?: string | null
@@ -839,13 +878,13 @@ export type Database = {
         Update: {
           account_bic?: string | null
           account_iban?: string
+          ai_category_id?: string | null
+          ai_checked_at?: string | null
           amount?: number
           bank_label?: string | null
           bank_reference?: string | null
           category?: string | null
           category_id?: string | null
-          ai_category_id?: string | null
-          ai_checked_at?: string | null
           category_source?: string | null
           counterpart_bic?: string | null
           counterpart_iban?: string | null
@@ -861,6 +900,13 @@ export type Database = {
           value_date?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "bank_transactions_ai_category_id_fkey"
+            columns: ["ai_category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bank_transactions_category_id_fkey"
             columns: ["category_id"]
@@ -936,6 +982,7 @@ export type Database = {
           id: string
           monthly_budget: number | null
           name: string
+          shared: boolean
           sort_order: number
           user_id: string
         }
@@ -945,6 +992,7 @@ export type Database = {
           id?: string
           monthly_budget?: number | null
           name: string
+          shared?: boolean
           sort_order?: number
           user_id: string
         }
@@ -954,6 +1002,7 @@ export type Database = {
           id?: string
           monthly_budget?: number | null
           name?: string
+          shared?: boolean
           sort_order?: number
           user_id?: string
         }
@@ -968,6 +1017,7 @@ export type Database = {
           name: string
           notes: string | null
           quantity: number
+          shared: boolean
           unit_price: number
           user_id: string
         }
@@ -979,6 +1029,7 @@ export type Database = {
           name: string
           notes?: string | null
           quantity?: number
+          shared?: boolean
           unit_price: number
           user_id: string
         }
@@ -990,6 +1041,7 @@ export type Database = {
           name?: string
           notes?: string | null
           quantity?: number
+          shared?: boolean
           unit_price?: number
           user_id?: string
         }
@@ -1009,6 +1061,7 @@ export type Database = {
           business_share: number | null
           color: string | null
           euer_zeile: number | null
+          household_id: string | null
           icon: string | null
           id: string
           name: string
@@ -1023,6 +1076,7 @@ export type Database = {
           business_share?: number | null
           color?: string | null
           euer_zeile?: number | null
+          household_id?: string | null
           icon?: string | null
           id?: string
           name: string
@@ -1037,6 +1091,7 @@ export type Database = {
           business_share?: number | null
           color?: string | null
           euer_zeile?: number | null
+          household_id?: string | null
           icon?: string | null
           id?: string
           name?: string
@@ -1048,8 +1103,47 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "categories_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "categories_parent_id_fkey"
             columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      category_tax_overrides: {
+        Row: {
+          business_share: number | null
+          category_id: string
+          euer_zeile: number | null
+          tax_role: string | null
+          user_id: string
+        }
+        Insert: {
+          business_share?: number | null
+          category_id: string
+          euer_zeile?: number | null
+          tax_role?: string | null
+          user_id: string
+        }
+        Update: {
+          business_share?: number | null
+          category_id?: string
+          euer_zeile?: number | null
+          tax_role?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_tax_overrides_category_id_fkey"
+            columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
@@ -1199,6 +1293,7 @@ export type Database = {
           notes: string | null
           notice_days: number
           provider: string | null
+          shared: boolean
           start_date: string
           to_account_id: string | null
           type: string
@@ -1222,6 +1317,7 @@ export type Database = {
           notes?: string | null
           notice_days?: number
           provider?: string | null
+          shared?: boolean
           start_date: string
           to_account_id?: string | null
           type: string
@@ -1245,6 +1341,7 @@ export type Database = {
           notes?: string | null
           notice_days?: number
           provider?: string | null
+          shared?: boolean
           start_date?: string
           to_account_id?: string | null
           type?: string
@@ -1332,6 +1429,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "debt_payments_bank_transaction_id_fkey"
+            columns: ["bank_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "bank_transactions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "debt_payments_debt_id_fkey"
             columns: ["debt_id"]
             isOneToOne: false
@@ -1343,13 +1447,6 @@ export type Database = {
             columns: ["transaction_id"]
             isOneToOne: false
             referencedRelation: "transactions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "debt_payments_bank_transaction_id_fkey"
-            columns: ["bank_transaction_id"]
-            isOneToOne: false
-            referencedRelation: "bank_transactions"
             referencedColumns: ["id"]
           },
         ]
@@ -1368,6 +1465,7 @@ export type Database = {
           notes: string | null
           original_amount: number
           outstanding: number
+          shared: boolean
           type: string
           updated_at: string
           user_id: string
@@ -1385,6 +1483,7 @@ export type Database = {
           notes?: string | null
           original_amount: number
           outstanding: number
+          shared?: boolean
           type: string
           updated_at?: string
           user_id: string
@@ -1402,6 +1501,7 @@ export type Database = {
           notes?: string | null
           original_amount?: number
           outstanding?: number
+          shared?: boolean
           type?: string
           updated_at?: string
           user_id?: string
@@ -1423,6 +1523,7 @@ export type Database = {
           market_value: number | null
           name: string | null
           pieces: number | null
+          shared: boolean
           total_value: number | null
           user_id: string
           valuation_date: string | null
@@ -1441,6 +1542,7 @@ export type Database = {
           market_value?: number | null
           name?: string | null
           pieces?: number | null
+          shared?: boolean
           total_value?: number | null
           user_id: string
           valuation_date?: string | null
@@ -1459,6 +1561,7 @@ export type Database = {
           market_value?: number | null
           name?: string | null
           pieces?: number | null
+          shared?: boolean
           total_value?: number | null
           user_id?: string
           valuation_date?: string | null
@@ -1474,6 +1577,7 @@ export type Database = {
           isin: string
           notes: string | null
           price_per_share: number
+          shared: boolean
           shares: number | null
           transaction_date: string
           transaction_type: string
@@ -1487,6 +1591,7 @@ export type Database = {
           isin: string
           notes?: string | null
           price_per_share: number
+          shared?: boolean
           shares?: number | null
           transaction_date: string
           transaction_type?: string
@@ -1500,6 +1605,7 @@ export type Database = {
           isin?: string
           notes?: string | null
           price_per_share?: number
+          shared?: boolean
           shares?: number | null
           transaction_date?: string
           transaction_type?: string
@@ -1513,6 +1619,7 @@ export type Database = {
           id: string
           isin: string
           name: string
+          shared: boolean
           user_id: string
         }
         Insert: {
@@ -1520,6 +1627,7 @@ export type Database = {
           id?: string
           isin: string
           name: string
+          shared?: boolean
           user_id: string
         }
         Update: {
@@ -1527,6 +1635,7 @@ export type Database = {
           id?: string
           isin?: string
           name?: string
+          shared?: boolean
           user_id?: string
         }
         Relationships: []
@@ -1768,6 +1877,103 @@ export type Database = {
         }
         Relationships: []
       }
+      household_invites: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          email: string
+          expires_at: string
+          household_id: string
+          id: string
+          role: string
+          token_hash: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          email: string
+          expires_at?: string
+          household_id: string
+          id?: string
+          role?: string
+          token_hash: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          expires_at?: string
+          household_id?: string
+          id?: string
+          role?: string
+          token_hash?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_invites_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_members: {
+        Row: {
+          household_id: string
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          household_id: string
+          joined_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          household_id?: string
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_members_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      households: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       income_targets: {
         Row: {
           buffer_pct: number
@@ -1962,6 +2168,48 @@ export type Database = {
         }
         Relationships: []
       }
+      kraken_ledger: {
+        Row: {
+          amount: number
+          asset: string
+          created_at: string
+          fee: number
+          id: string
+          ledger_id: string
+          occurred_at: string
+          refid: string | null
+          subtype: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          asset: string
+          created_at?: string
+          fee?: number
+          id?: string
+          ledger_id: string
+          occurred_at: string
+          refid?: string | null
+          subtype?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          asset?: string
+          created_at?: string
+          fee?: number
+          id?: string
+          ledger_id?: string
+          occurred_at?: string
+          refid?: string | null
+          subtype?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       kraken_order_log: {
         Row: {
           cost_eur: number | null
@@ -2078,48 +2326,6 @@ export type Database = {
           txid?: string
           user_id?: string
           vol?: number
-        }
-        Relationships: []
-      }
-      kraken_ledger: {
-        Row: {
-          amount: number
-          asset: string
-          created_at: string
-          fee: number
-          id: string
-          ledger_id: string
-          occurred_at: string
-          refid: string | null
-          subtype: string | null
-          type: string
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          asset: string
-          created_at?: string
-          fee?: number
-          id?: string
-          ledger_id: string
-          occurred_at: string
-          refid?: string | null
-          subtype?: string | null
-          type: string
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          asset?: string
-          created_at?: string
-          fee?: number
-          id?: string
-          ledger_id?: string
-          occurred_at?: string
-          refid?: string | null
-          subtype?: string | null
-          type?: string
-          user_id?: string
         }
         Relationships: []
       }
@@ -2592,6 +2798,7 @@ export type Database = {
           notes: string | null
           priority: string | null
           savings_rate_start_date: string | null
+          shared: boolean
           status: string
           target_amount: number
           target_date: string | null
@@ -2607,6 +2814,7 @@ export type Database = {
           notes?: string | null
           priority?: string | null
           savings_rate_start_date?: string | null
+          shared?: boolean
           status?: string
           target_amount: number
           target_date?: string | null
@@ -2622,6 +2830,7 @@ export type Database = {
           notes?: string | null
           priority?: string | null
           savings_rate_start_date?: string | null
+          shared?: boolean
           status?: string
           target_amount?: number
           target_date?: string | null
@@ -2639,6 +2848,7 @@ export type Database = {
           is_active: boolean
           isin: string
           monthly_amount: number
+          shared: boolean
           start_date: string
           user_id: string
         }
@@ -2650,6 +2860,7 @@ export type Database = {
           is_active?: boolean
           isin: string
           monthly_amount: number
+          shared?: boolean
           start_date: string
           user_id: string
         }
@@ -2661,6 +2872,7 @@ export type Database = {
           is_active?: boolean
           isin?: string
           monthly_amount?: number
+          shared?: boolean
           start_date?: string
           user_id?: string
         }
@@ -3368,6 +3580,54 @@ export type Database = {
         }
         Relationships: []
       }
+      valuable_documents: {
+        Row: {
+          art: string
+          created_at: string
+          groesse: number | null
+          id: string
+          name: string
+          pfad: string
+          user_id: string
+          valuable_id: string
+        }
+        Insert: {
+          art?: string
+          created_at?: string
+          groesse?: number | null
+          id?: string
+          name: string
+          pfad: string
+          user_id: string
+          valuable_id: string
+        }
+        Update: {
+          art?: string
+          created_at?: string
+          groesse?: number | null
+          id?: string
+          name?: string
+          pfad?: string
+          user_id?: string
+          valuable_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "valuable_documents_valuable_id_fkey"
+            columns: ["valuable_id"]
+            isOneToOne: false
+            referencedRelation: "valuables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "valuable_documents_valuable_id_fkey"
+            columns: ["valuable_id"]
+            isOneToOne: false
+            referencedRelation: "valuables_current"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       valuable_images: {
         Row: {
           art: string
@@ -3496,9 +3756,11 @@ export type Database = {
           modell: string | null
           name: string
           notizen: string | null
+          nutzung: string
           papiere_vorhanden: boolean
           referenz: string | null
           seriennummer: string | null
+          shared: boolean
           sort_order: number
           updated_at: string
           user_id: string
@@ -3507,6 +3769,7 @@ export type Database = {
           versichert: boolean
           versicherungsnummer: string | null
           waehrung: string
+          wertmodus: string
           zustand: string | null
         }
         Insert: {
@@ -3524,9 +3787,11 @@ export type Database = {
           modell?: string | null
           name: string
           notizen?: string | null
+          nutzung?: string
           papiere_vorhanden?: boolean
           referenz?: string | null
           seriennummer?: string | null
+          shared?: boolean
           sort_order?: number
           updated_at?: string
           user_id: string
@@ -3535,6 +3800,7 @@ export type Database = {
           versichert?: boolean
           versicherungsnummer?: string | null
           waehrung?: string
+          wertmodus?: string
           zustand?: string | null
         }
         Update: {
@@ -3552,9 +3818,11 @@ export type Database = {
           modell?: string | null
           name?: string
           notizen?: string | null
+          nutzung?: string
           papiere_vorhanden?: boolean
           referenz?: string | null
           seriennummer?: string | null
+          shared?: boolean
           sort_order?: number
           updated_at?: string
           user_id?: string
@@ -3563,6 +3831,7 @@ export type Database = {
           versichert?: boolean
           versicherungsnummer?: string | null
           waehrung?: string
+          wertmodus?: string
           zustand?: string | null
         }
         Relationships: []
@@ -3693,7 +3962,15 @@ export type Database = {
           total_value: number | null
           valuation_date: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "asset_valuations_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       category_tree: {
         Row: {
@@ -3746,6 +4023,25 @@ export type Database = {
           category_name: string | null
           expense: number | null
           flow_kind: string | null
+          income: number | null
+          month: string | null
+          root_category_id: string | null
+          root_category_name: string | null
+          source: string | null
+          tax_role_effective: string | null
+          tx_count: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      monthly_umbuchungen: {
+        Row: {
+          account_id: string | null
+          category_id: string | null
+          category_name: string | null
+          counterpart_account_id: string | null
+          expense: number | null
+          flow_kind_extern: string | null
           income: number | null
           month: string | null
           root_category_id: string | null
@@ -3846,18 +4142,19 @@ export type Database = {
           account_color: string | null
           account_id: string | null
           account_name: string | null
+          ai_category_id: string | null
           amount: number | null
           amount_base: number | null
           amount_eur: number | null
           booked_date: string | null
-          category_source: string | null
-          ai_category_id: string | null
           category_color: string | null
           category_id: string | null
           category_name: string | null
           category_path: string | null
+          category_source: string | null
           category_type: string | null
           contract_id: string | null
+          counterpart_account_id: string | null
           counts_in_flow: boolean | null
           currency: string | null
           date: string | null
@@ -3865,6 +4162,7 @@ export type Database = {
           description_raw: string | null
           euer_zeile_effective: number | null
           flow_kind: string | null
+          flow_kind_extern: string | null
           fx_rate: number | null
           id: string | null
           merchant: string | null
@@ -3877,6 +4175,22 @@ export type Database = {
           transfer_to: string | null
           type: string | null
           user_id: string | null
+        }
+        Relationships: []
+      }
+      v_audit_feed: {
+        Row: {
+          action: string | null
+          actor_id: string | null
+          actor_kind: string | null
+          actor_name: string | null
+          created_at: string | null
+          id: number | null
+          new_values: Json | null
+          old_values: Json | null
+          owner_id: string | null
+          record_id: string | null
+          table_name: string | null
         }
         Relationships: []
       }
@@ -3900,6 +4214,7 @@ export type Database = {
           modell: string | null
           name: string | null
           notizen: string | null
+          nutzung: string | null
           papiere_vorhanden: boolean | null
           referenz: string | null
           rendite_prozent: number | null
@@ -3914,6 +4229,7 @@ export type Database = {
           waehrung: string | null
           wert_quelle: string | null
           wert_stand: string | null
+          wertmodus: string | null
           zustand: string | null
         }
         Relationships: []
@@ -3922,7 +4238,12 @@ export type Database = {
     Functions: {
       balance_series: {
         Args: { p_account_id?: string; p_from?: string }
-        Returns: { account_id: string; von: string; bis: string; balance: number }[]
+        Returns: {
+          account_id: string
+          balance: number
+          bis: string
+          von: string
+        }[]
       }
       check_combo_guard: { Args: { p_combo_id: string }; Returns: undefined }
       fn_asset_price_eur: {
@@ -3966,6 +4287,12 @@ export type Database = {
         Args: { p_date: string; p_uid: string }
         Returns: number
       }
+      household_peer_ids: { Args: never; Returns: string[] }
+      is_household_member: { Args: { p_household: string }; Returns: boolean }
+      is_household_owner: { Args: { p_household: string }; Returns: boolean }
+      fn_accept_household_invite: { Args: { p_token_hash: string; p_user: string; p_email: string }; Returns: string }
+      fn_remove_household_member: { Args: { p_household: string; p_user: string; p_actor: string }; Returns: Json }
+      fn_merge_user_categories_into_household: { Args: { p_user: string; p_household: string }; Returns: Json }
       search_ai_knowledge: {
         Args: { max_results?: number; q: string }
         Returns: {

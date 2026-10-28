@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { FileText, Image as ImageIcon, Loader2, Trash2, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -153,7 +154,18 @@ export function ValuableDocuments({ valuableId }: { valuableId: string }) {
       </div>
 
       {laedt ? (
-        <p className="text-xs text-muted-foreground">Lädt…</p>
+        <div role="status" aria-busy="true" className="divide-y divide-border rounded-lg border">
+          <span className="sr-only">Dokumente werden geladen</span>
+          {[0, 1].map(i => (
+            <div key={i} className="flex items-center gap-2 px-3 py-2">
+              <Skeleton className="size-4 shrink-0" />
+              <div className="min-w-0 flex-1 space-y-1">
+                <Skeleton className="h-4 w-40 max-w-full" />
+                <Skeleton className="h-3 w-32" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : dokumente.length === 0 ? (
         <p className="text-[11px] text-muted-foreground">
           Noch keine Dokumente. PDF oder Foto, bis 15 MB — Kaufbeleg, Zertifikat, Rechnung, Police.

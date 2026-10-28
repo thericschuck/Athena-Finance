@@ -1,5 +1,6 @@
 'use client'
 
+import { LeerZustand } from '@/components/leer/LeerZustand'
 import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { BookOpen, Trash2, Pencil, Pin, PinOff, ExternalLink, X } from 'lucide-react'
@@ -149,10 +150,11 @@ export function KnowledgeManager({ entries }: { entries: KnowledgeRow[] }) {
       )}
 
       {entries.length === 0 && !showForm && (
-        <div className="rounded-lg border border-dashed border-border p-8 text-center">
-          <BookOpen className="mx-auto size-6 text-muted-foreground" />
-          <p className="mt-2 text-sm text-muted-foreground">Die Wissensbasis ist leer.</p>
-        </div>
+        <LeerZustand
+          icon={BookOpen}
+          titel="Die Wissensbasis ist leer"
+          text="Hier hinterlegst du Wissen, das Athena in jedem Gespräch nutzen soll, z. B. wie du deine Finanzen ordnest oder was dir wichtig ist. Lege einen ersten Eintrag an."
+        />
       )}
 
       {entries.length > 0 && sichtbar.length === 0 && (

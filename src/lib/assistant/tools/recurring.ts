@@ -2,8 +2,10 @@ import { tool } from 'ai'
 import { z } from 'zod'
 import { erkenneWiederkehrend, type WiederkehrBuchung } from '@/lib/finance/wiederkehrend'
 import { untrust, type DB } from '@/lib/assistant/tools/shared'
+import { scopeKonten, scopeOwner } from '@/lib/assistant/tools/scope'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 
-export function buildRecurringTools(supabase: DB, userId: string) {
+export function buildRecurringTools(supabase: DB, ctx: ScopeContext) {
   return {
     // ── Wiederkehrende Zahlungen erkennen ────────────────────────────────────
     findRecurringPayments: tool({
@@ -31,10 +33,12 @@ export function buildRecurringTools(supabase: DB, userId: string) {
         const SEITE = 1000
         const roh: WiederkehrBuchung[] = []
         for (let seite = 0; seite < 50; seite++) {
-          const { data, error } = await supabase
-            .from('unified_transactions')
-            .select('id, date, signed_amount, description, merchant, account_id, category_id')
-            .eq('user_id', userId)
+          const { data, error } = await scopeKonten(
+            supabase
+              .from('unified_transactions')
+              .select('id, date, signed_amount, description, merchant, account_id, category_id'),
+            ctx,
+          )
             .gte('date', seitIso)
             .order('date', { ascending: true })
             .order('id', { ascending: true })
@@ -56,10 +60,7 @@ export function buildRecurringTools(supabase: DB, userId: string) {
           if (data.length < SEITE) break
         }
 
-        const { data: vertraege } = await supabase
-          .from('contracts')
-          .select('name, amount, is_active')
-          .eq('user_id', userId)
+        const { data: vertraege } = await scopeOwner(supabase.from('contracts').select('name, amount, is_active'), ctx)
 
         const alle = erkenneWiederkehrend(
           roh,

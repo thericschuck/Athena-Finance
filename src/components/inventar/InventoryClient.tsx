@@ -1,5 +1,8 @@
 'use client'
 
+import { LeerZustand } from '@/components/leer/LeerZustand'
+import { ZuletztGeaendert } from '@/components/aenderungen/ZuletztGeaendert'
+import type { ZuletztGeaendertInfo } from '@/lib/data/aenderungen'
 import { useMemo, useState } from 'react'
 import {
   Gem, Plus, ShieldCheck, Package, FileText, MapPin, ChevronLeft, ChevronRight,
@@ -23,17 +26,21 @@ import {
   vollstaendigkeit, wertAlterMonate, WERT_VERALTET_MONATE,
   type ValuableWithImage,
 } from '@/lib/valuables'
+import { Skeleton } from '@/components/ui/skeleton'
 
 // Recharts wiegt mehr als der Rest der Seite zusammen und wird erst im Detail-Panel
 // gebraucht — also nachladen, statt es jedem Seitenaufruf mitzugeben.
 const ValuableHistory = dynamic(
   () => import('./ValuableHistory').then(m => m.ValuableHistory),
-  { ssr: false, loading: () => <div className="h-28 animate-pulse rounded-lg bg-muted/40" /> },
+  { ssr: false, loading: () => <Skeleton className="h-28 rounded-lg" /> },
 )
 
 interface Props {
   items: ValuableWithImage[]
   locale: string
+  canShare?: boolean
+  /** Letzte Änderung je Stück (nur bei Haushalt mit Partner befüllt). */
+  zuletzt?: Record<string, ZuletztGeaendertInfo>
 }
 
 type Sortierung = 'manuell' | 'wert' | 'rendite' | 'gekauft' | 'name' | 'neu'
@@ -64,7 +71,7 @@ function vergleiche(a: ValuableWithImage, b: ValuableWithImage, s: Sortierung): 
   }
 }
 
-export function InventoryClient({ items, locale }: Props) {
+export function InventoryClient({ items, locale, canShare = false, zuletzt }: Props) {
   const [kategorie, setKategorie] = useState<string | null>(null)
   const [suche, setSuche] = useState('')
   const [sortierung, setSortierung] = useState<Sortierung>('manuell')
@@ -127,6 +134,7 @@ export function InventoryClient({ items, locale }: Props) {
           )}
         </div>
         <ValuableForm
+          canShare={canShare}
           trigger={
             <Button size="sm">
               <Plus className="size-4" />
@@ -194,7 +202,7 @@ export function InventoryClient({ items, locale }: Props) {
 
       {/* Vitrine */}
       {sichtbar.length === 0 ? (
-        <LeereVitrine hatObjekte={items.length > 0} />
+        <LeereVitrine hatObjekte={items.length > 0} canShare={canShare} />
       ) : ansicht === 'liste' ? (
         <ValuableList items={sichtbar} eur={eur} onOpen={setOffenId} />
       ) : (
@@ -208,7 +216,7 @@ export function InventoryClient({ items, locale }: Props) {
       {/* Detail */}
       <Sheet open={offen !== null} onOpenChange={o => { if (!o) setOffenId(null) }}>
         <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-          {offen && <Detail item={offen} eur={eur} locale={locale} />}
+          {offen && <Detail item={offen} eur={eur} locale={locale} zuletzt={zuletzt?.[offen.id]} canShare={canShare} />}
         </SheetContent>
       </Sheet>
     </div>
@@ -499,9 +507,11 @@ function Karte({
 // ── Detail ────────────────────────────────────────────────────────────────────
 
 function Detail({
-  item, eur, locale,
+  item, eur, locale, zuletzt, canShare,
 }: {
   item: ValuableWithImage
+  zuletzt?: ZuletztGeaendertInfo
+  canShare: boolean
   eur: (n: number, digits?: number) => string
   locale: string
 }) {
@@ -521,6 +531,7 @@ function Detail({
           {[item.marke, item.modell, item.referenz].filter(Boolean).join(' · ') ||
             kategorieLabel(item.kategorie)}
         </SheetDescription>
+        <ZuletztGeaendert info={zuletzt} className="px-0" />
       </SheetHeader>
 
       <div className="space-y-5 px-4 pb-6">
@@ -604,7 +615,7 @@ function Detail({
           </p>
         )}
 
-        <ValuableActions item={item} />
+        <ValuableActions item={item} canShare={canShare} />
       </div>
     </>
   )
@@ -674,18 +685,32 @@ function Chip({
   )
 }
 
-function LeereVitrine({ hatObjekte }: { hatObjekte: boolean }) {
+function LeereVitrine({ hatObjekte, canShare }: { hatObjekte: boolean; canShare: boolean }) {
+  if (!hatObjekte) {
+    return (
+      <LeerZustand
+        icon={Gem}
+        titel="Die Vitrine ist leer"
+        text="Das Inventar ist dein Register für Uhren, Schmuck und andere Wertstücke: Seriennummer, Kaufbeleg, Versicherung und geschätzter Wert an einem Ort. Leg den ersten Gegenstand an; später ist das schwerer zusammenzusuchen als heute."
+        aktionNode={
+          <ValuableForm
+            canShare={canShare}
+            trigger={
+              <Button>
+                <Plus className="size-4" />
+                Gegenstand anlegen
+              </Button>
+            }
+          />
+        }
+      />
+    )
+  }
   return (
     <div className="rounded-xl border border-dashed border-border bg-card py-16 text-center">
       <Gem className="mx-auto size-8 text-muted-foreground/40" />
-      <p className="mt-3 text-sm font-medium text-foreground">
-        {hatObjekte ? 'Nichts in dieser Kategorie' : 'Die Vitrine ist leer'}
-      </p>
-      <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
-        {hatObjekte
-          ? 'Wähle oben eine andere Kategorie.'
-          : 'Leg deinen ersten Gegenstand an — Uhr, Feuerzeug, Schmuckstück. Seriennummer und Kaufbeleg sind später schwerer zusammenzusuchen als heute.'}
-      </p>
+      <p className="mt-3 text-sm font-medium text-foreground">Nichts in dieser Kategorie</p>
+      <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">Wähle oben eine andere Kategorie.</p>
     </div>
   )
 }

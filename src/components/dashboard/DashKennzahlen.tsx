@@ -1,12 +1,12 @@
 import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react'
 import { fmtCurrency, fmtDate } from '@/lib/format'
-import { getAuthUser } from '@/lib/supabase/server'
 import { ladeDashPrognose } from '@/lib/data/dashboard-prognose'
 import { kennzahlen as nwKennzahlen } from '@/lib/verlauf/networth'
 import {
   liquiditaetIn, liquiditaetIst, naechsterTermin, veraenderungNachTagen,
 } from '@/lib/dashboard/kennzahlen'
 import type { DashAbschnittProps } from '@/lib/dashboard/typen'
+import { dashboardLeer } from '@/lib/dashboard/leer'
 import { DashKennzahlInfo } from './DashKennzahlInfo'
 
 /**
@@ -47,7 +47,7 @@ const ZELLE =
   'flex h-16 min-w-0 shrink-0 snap-start cursor-help flex-col justify-center whitespace-nowrap border-l border-border px-4 first:border-l-0 outline-none focus-visible:bg-accent/40 lg:flex-1'
 
 function Zelle({
-  titel, wert, delta, ton, info, href, extra,
+  titel, wert, delta, ton, info, href, extra, gedaempft,
 }: {
   titel: string
   wert: React.ReactNode
@@ -56,13 +56,15 @@ function Zelle({
   info: { titel: string; zeilen?: [string, string][]; text: string }
   href?: string
   extra?: string
+  /** Ohne Daten: Wert gedaempft mit Tooltip, damit er nicht wie ein echter Nullwert wirkt. */
+  gedaempft?: boolean
 }) {
   return (
     <DashKennzahlInfo className={`${ZELLE} ${href ? 'cursor-pointer hover:bg-accent/30' : ''} ${extra ?? ''}`} href={href} titel={info.titel} zeilen={info.zeilen} text={info.text}>
       <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{titel}</span>
-      <span className="mt-0.5 flex min-w-0 items-baseline gap-1.5">
+      <span className="mt-0.5 flex min-w-0 items-baseline gap-1.5" title={gedaempft ? 'Noch keine Daten' : undefined}>
         <span className={`text-base font-semibold tabular-nums tracking-tight sm:text-lg ${
-          ton === 'success' ? 'text-success' : ton === 'danger' ? 'text-danger' : ''
+          gedaempft ? 'text-muted-foreground/60' : ton === 'success' ? 'text-success' : ton === 'danger' ? 'text-danger' : ''
         }`}>
           {wert}
         </span>
@@ -73,11 +75,11 @@ function Zelle({
 }
 
 export async function DashKennzahlen({ kern }: DashAbschnittProps) {
-  const { user } = await getAuthUser()
-  const prognoseBasis = user ? await ladeDashPrognose(user.id, kern.heute) : null
+  const prognoseBasis = await ladeDashPrognose(kern.scopeCtx, kern.heute)
   const prognose = prognoseBasis?.szenario ?? null
 
   const { locale, monat, buckets, nichtImNetWorth } = kern
+  const gedaempft = dashboardLeer(kern).leer
   const euro = (n: number, d = 0) => fmtCurrency(n, 'EUR', locale, { fractionDigits: d })
   const vz = (n: number) => (n > 0 ? '+' : n < 0 ? '−' : '')
   const signiert = (n: number, d = 0) => `${vz(Math.round(n * 10 ** d) / 10 ** d)}${euro(Math.abs(n), d)}`
@@ -112,6 +114,7 @@ export async function DashKennzahlen({ kern }: DashAbschnittProps) {
       <div className="flex snap-x overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <Zelle
           titel="Net Worth"
+          gedaempft={gedaempft}
           href="/analyse/verlauf"
           wert={euro(kern.netWorth)}
           delta={nwDelta ? <Delta d={nwDelta} /> : undefined}
@@ -137,6 +140,7 @@ export async function DashKennzahlen({ kern }: DashAbschnittProps) {
         />
         <Zelle
           titel="Monat netto"
+          gedaempft={gedaempft}
           wert={monat.leer ? '—' : signiert(monat.netto)}
           ton={monat.leer ? undefined : tonVon(monat.netto)}
           info={{
@@ -153,6 +157,7 @@ export async function DashKennzahlen({ kern }: DashAbschnittProps) {
         />
         <Zelle
           titel="Sparquote"
+          gedaempft={gedaempft}
           wert={monat.sparquote === null ? '—' : `${Math.round(monat.sparquote).toLocaleString(locale)} %`}
           ton={monat.sparquote === null ? undefined : monat.sparquote >= 0 ? 'success' : 'danger'}
           info={{
@@ -165,6 +170,7 @@ export async function DashKennzahlen({ kern }: DashAbschnittProps) {
         />
         <Zelle
           titel="Liquidität"
+          gedaempft={gedaempft}
           wert={euro(liqIst)}
           delta={liq30 ? (
             <span className={`text-[11px] font-medium tabular-nums ${liq30.wert < 0 ? 'text-danger' : 'text-muted-foreground'}`}>
@@ -189,6 +195,7 @@ export async function DashKennzahlen({ kern }: DashAbschnittProps) {
         />
         <Zelle
           titel="Nächster Termin"
+          gedaempft={gedaempft}
           extra="lg:max-w-[22%]"
           wert={termin ? <span className="block max-w-[10rem] truncate text-sm sm:text-base">{termin.name}</span> : '—'}
           delta={termin ? (

@@ -52,6 +52,8 @@ export type PrognoseEingaben = {
   /** Typischer Tag des Monats, an dem der Lohn eingeht. null = unbekannt (dann der 1.). */
   lohnTag: number | null
   annahmen: Annahme[]
+  /** true: kein Lohn erwartet (z. B. Ansicht eines Partners ohne Lohn-Buchungen); die Warnung „kein Lohn gebucht“ entfällt. */
+  ohneLohnWarnung?: boolean
 }
 
 export type PrognoseTag = {
@@ -352,7 +354,7 @@ export function berechnePrognose(e: PrognoseEingaben, gelernt?: GelernteModelle)
       `unter ${round2(risiko.betrag)} €. Ein großer Einzelposten reicht dafür.`,
     )
   }
-  if (mLiq.daten.tage > 0 && basisLohn === 0 && !e.annahmen.some(a => a.art === 'lohn')) {
+  if (!e.ohneLohnWarnung && mLiq.daten.tage > 0 && basisLohn === 0 && !e.annahmen.some(a => a.art === 'lohn')) {
     warnungen.push('In den letzten Monaten ist kein Lohn gebucht (Steuerrolle „lohn"). Ein erwartetes Gehalt kannst du als Annahme eintragen.')
   }
 

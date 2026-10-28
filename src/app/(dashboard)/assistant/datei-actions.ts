@@ -3,6 +3,7 @@
 import { getAuthUser } from '@/lib/supabase/server'
 import { signiereUrls } from '@/lib/assistant/datei-speicher'
 import { ladeMentionOptionen } from '@/lib/assistant/mention-daten'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import type { MentionOption } from '@/lib/assistant/mentions'
 
 /**
@@ -25,5 +26,5 @@ export async function signAthenaFileUrls(pfade: string[]): Promise<Record<string
 export async function ladeMentionAuswahl(): Promise<MentionOption[]> {
   const { supabase, user } = await getAuthUser()
   if (!user) return []
-  return ladeMentionOptionen(supabase, user.id)
+  return ladeMentionOptionen(supabase, await resolveScope(supabase, user))
 }

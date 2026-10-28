@@ -22,6 +22,10 @@ import { idField, MAX_AMOUNT } from '@/lib/api/schemas'
  * explizit mitgefiltert.
  */
 
+/**
+ * OWNER-ONLY (Haushalt Phase 3): Reparieren/Loeschen betrifft nur die eigenen gespeicherten net_worth_snapshots (`user_id`-Filter
+ * bleibt). Im Haushalt berechnete Zeilen (`net_worth_series`, ID `fn:<datum>`) sind keine Snapshots und werden nicht angeboten.
+ */
 export type SnapshotActionResult = { error: string } | { success: true }
 
 const betrag = z.number({ error: 'Betrag ist ungültig' }).finite('Betrag ist ungültig')

@@ -2,7 +2,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 export default function Loading() {
   return (
-    <div className="p-4 sm:p-8 max-w-5xl animate-in fade-in duration-150">
+    <div role="status" aria-busy="true" className="p-4 sm:p-8 max-w-5xl animate-in fade-in duration-150">
+      <span className="sr-only">Lädt…</span>
       <Skeleton className="h-7 w-48 mb-6" />
 
       {/* Tab-Leiste */}

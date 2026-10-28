@@ -1,10 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import type { BankBalance, BankTransaction, FinanceCategory } from '@/types/bank'
-import { getMonthlyFlows } from '@/lib/data/flows'
+import { getMonthlyFlowsScope } from '@/lib/data/flows-scope'
 import { FLOW_DEFAULT_KEY, flowDefaultFrom, includeFromParam, INCLUDE_PARAM } from '@/lib/finance/flow-calc'
 import { parsePeriod, periodCutoff } from '@/lib/period'
 import { normIban } from '@/lib/bank/scope'
+import { applyAccountScope, type ScopeContext } from '@/lib/haushalt/scope'
 import type { BankSeitenDaten } from '@/lib/bank/typen'
 
 /**
@@ -29,13 +30,12 @@ const BUCHUNGS_SPALTEN =
 const SEITE = 1000
 const MAX_BUCHUNGEN = 5000
 
-async function ladeBuchungen(supabase: DB, userId: string): Promise<BankTransaction[]> {
+/** Buchungen der Scope-Konten (per IBAN). */
+async function ladeBuchungen(supabase: DB, ctx: ScopeContext): Promise<BankTransaction[]> {
   const alle: BankTransaction[] = []
   for (let von = 0; von < MAX_BUCHUNGEN; von += SEITE) {
-    const { data, error } = await supabase
-      .from('bank_transactions')
-      .select(BUCHUNGS_SPALTEN)
-      .eq('user_id', userId)
+    const q = supabase.from('bank_transactions').select(BUCHUNGS_SPALTEN)
+    const { data, error } = await q.in('account_iban', ctx.ibans)
       .order('value_date', { ascending: false })
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
@@ -48,12 +48,12 @@ async function ladeBuchungen(supabase: DB, userId: string): Promise<BankTransact
   return alle
 }
 
-async function ladeSalden(supabase: DB, userId: string): Promise<BankBalance[]> {
+async function ladeSalden(supabase: DB, ctx: ScopeContext): Promise<BankBalance[]> {
   const [{ data, error }, { data: verknuepft }] = await Promise.all([
-    supabase.from('bank_balance').select('*').eq('user_id', userId).order('account_iban'),
+    supabase.from('bank_balance').select('*').in('account_iban', ctx.ibans).order('account_iban'),
     // Verknuepftes Konto: nur ueber accounts.bank_iban, kein Fremdschluessel (siehe
     // api/bank/balance) — deshalb zwei Abfragen statt eines Embeds.
-    supabase.from('accounts').select('id, bank_iban').eq('user_id', userId).not('bank_iban', 'is', null),
+    applyAccountScope(supabase.from('accounts').select('id, bank_iban'), ctx, 'id').not('bank_iban', 'is', null),
   ])
   if (error) throw new Error(`bank_balance: ${error.message}`)
   const idByIban = new Map(
@@ -62,11 +62,11 @@ async function ladeSalden(supabase: DB, userId: string): Promise<BankBalance[]> 
   return (data ?? []).map(b => ({ ...b, account_id: idByIban.get(normIban(b.account_iban)) ?? null })) as unknown as BankBalance[]
 }
 
-async function ladeKategorien(supabase: DB, userId: string): Promise<FinanceCategory[]> {
+/** Kategorienbaum pro Haushalt: RLS liefert ihn, kein Scope-/user_id-Filter. */
+async function ladeKategorien(supabase: DB): Promise<FinanceCategory[]> {
   const { data, error } = await supabase
     .from('categories')
     .select('id, name, type, color, icon, parent_id')
-    .eq('user_id', userId)
     .order('type')
     .order('sort_order')
     .order('name')
@@ -95,14 +95,14 @@ export interface BankSeitenParams {
 
 /** `settings` = Ergebnis von getSettings (Zahlen-/Datumsformat, Standardzeitraum, Flow-Standard). */
 export async function ladeBankSeite(
-  supabase: DB, userId: string, params: BankSeitenParams,
+  supabase: DB, ctx: ScopeContext, params: BankSeitenParams,
   settings: Record<string, unknown>, heute: string,
 ): Promise<BankSeitenDaten> {
   const [balances, transactions, categories, flowRows] = await Promise.all([
-    ladeSalden(supabase, userId),
-    ladeBuchungen(supabase, userId),
-    ladeKategorien(supabase, userId),
-    getMonthlyFlows(supabase, userId, { source: 'bank_sync' }),
+    ladeSalden(supabase, ctx),
+    ladeBuchungen(supabase, ctx),
+    ladeKategorien(supabase),
+    getMonthlyFlowsScope(supabase, ctx, { source: 'bank_sync' }),
   ])
 
   // 1W und 1M fehlen bewusst: Monatstrend und Kategorien brauchen mehrere Monate.
@@ -127,6 +127,7 @@ export async function ladeBankSeite(
     transactions,
     categories,
     flowRows: flowRows.map(r => ({ ...r })) as BankSeitenDaten['flowRows'],
-    eigeneIbans: balances.map(b => normIban(b.account_iban)),
+    // Umbuchungsmenge: ctx.ibans (Haushaltskonto ausserhalb des Scopes ist keine Umbuchung).
+    eigeneIbans: ctx.ibans,
   }
 }

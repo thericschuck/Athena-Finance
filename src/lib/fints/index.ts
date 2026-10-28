@@ -23,6 +23,7 @@ import {
   type BankClientStateMap,
 } from './sidecar'
 import { isScaRequiredError, stateFromError } from './sca'
+import type { BankCredentials } from './connections-core'
 import type { FinanceCategory } from '@/types/bank'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -133,6 +134,8 @@ export interface StartSyncOptions {
    * 'sca_required' instead of blocking for minutes on an approval nobody will give.
    */
   noSca?: boolean
+  /** Entschluesselte Zugangsdaten aus bank_connections (lokaler Sidecar). Ohne Angabe: FINTS_*-Env wie bisher. */
+  profiles?: BankCredentials[]
 }
 
 /**
@@ -244,8 +247,8 @@ function mapTransaction(tx: SidecarTransaction, categories: FinanceCategory[], l
  * Fetches account balances for all accounts. Does not require a typed TAN, but may trigger
  * (and wait for) a decoupled app approval depending on the bank.
  */
-export async function fetchBalances(): Promise<FetchedBalance[]> {
-  const result = await runSidecar({ balances: true, skipTransactions: true })
+export async function fetchBalances(profiles?: BankCredentials[]): Promise<FetchedBalance[]> {
+  const result = await runSidecar({ balances: true, skipTransactions: true, profiles })
   return result.balances
     .filter(b => b.iban)
     .map(b => {
@@ -282,6 +285,7 @@ export async function startSync(
     balances: true,
     state: options.state,
     noSca: options.noSca,
+    profiles: options.profiles,
   })
 
   const transactions = result.transactions
@@ -387,19 +391,33 @@ export async function upsertBankTransactions(
   // a balance series is reconstructed by subtracting the ledger from the current balance,
   // each stray row shifts the ENTIRE history. Six such rows put the Girokonto's derived
   // opening balance at -269.66 EUR instead of +287.12 EUR.
-  const { data: existingRows, error: legacyErr } = await supabase
-    .from('bank_transactions')
-    .select('id, account_iban, value_date, amount, external_id, bank_reference, description, raw_description')
-    .eq('user_id', userId)
-
-  if (legacyErr) throw new Error(legacyErr.message)
+  //
+  // Scope der Abfrage: nur die Konten (IBANs), die dieser Sync tatsaechlich liefert, UND weiter nur Zeilen dieses Nutzers.
+  // Das `user_id` bleibt bewusst: der Unique-Index ist (user_id, external_id) und der Abgleich schreibt/loescht Zeilen, die
+  // einem Haushaltspartner gehoeren duerfen (Phase 4: Konto-Besitzer `sync_owner` statt user_id, siehe docs/haushalt-multiuser.md).
+  // Die IBAN-Einschraenkung aendert das Ergebnis nicht (der Abgleich vergleicht ohnehin die IBAN) und haelt die Abfrage klein.
+  // Seitenweise, weil PostgREST bei 1.000 Zeilen stillschweigend abschneidet.
+  const syncIbans = [...new Set(transactions.map(t => t.accountIban))]
+  const existingRows: Record<string, unknown>[] = []
+  for (let seite = 0; seite < 100; seite++) {
+    const { data, error: legacyErr } = await supabase
+      .from('bank_transactions')
+      .select('id, account_iban, value_date, amount, external_id, bank_reference, description, raw_description')
+      .eq('user_id', userId)
+      .in('account_iban', syncIbans)
+      .order('id', { ascending: true })
+      .range(seite * 1000, seite * 1000 + 999)
+    if (legacyErr) throw new Error(legacyErr.message)
+    existingRows.push(...(data ?? []))
+    if (!data || data.length < 1000) break
+  }
 
   type ExistingRow = {
     id: string; account_iban: string; value_date: string; amount: number
     external_id: string | null; bank_reference: string | null
     description: string | null; raw_description: string | null
   }
-  const existing = (existingRows ?? []) as ExistingRow[]
+  const existing = existingRows as unknown as ExistingRow[]
 
   // Every external_id already in the table. The reconcile UPDATE below writes into a UNIQUE
   // (user_id, external_id) index, so without this set it can collide with a row that already
@@ -525,11 +543,13 @@ export async function upsertBankTransactions(
 export async function loadLearnedCategoryMap(
   supabase: SupabaseClient<Database>,
   userId: string,
+  // Haushaltsweit lernen (Cron mit Service-Role): Entscheidungen aller Haushaltsmitglieder. Standard: nur der Nutzer.
+  peerIds: string[] = [userId],
 ): Promise<LearnedCategoryMap> {
   const { data } = await supabase
     .from('bank_transactions')
     .select('counterpart_name, description, amount, category_id')
-    .eq('user_id', userId)
+    .in('user_id', peerIds)
     .not('category_id', 'is', null)
     // Nur Entscheidungen des Nutzers: weder Regeltreffer ('auto') noch KI-Vorschläge ('ai') lernen sich selbst an.
     .or('category_source.is.null,category_source.eq.manual')
@@ -550,10 +570,12 @@ export async function loadLearnedCategoryMap(
 export async function applySuggestionsToBacklog(
   supabase: SupabaseClient<Database>,
   userId: string,
+  // Kategorienbaum und gelernte Zuordnungen haushaltsweit (Cron); Buchungen und Eigen-IBANs bleiben die des Nutzers.
+  peerIds: string[] = [userId],
 ): Promise<{ applied: number }> {
   const [learnedMap, { data: categories }, { data: ownAccounts }, { data: uncategorized }] = await Promise.all([
-    loadLearnedCategoryMap(supabase, userId),
-    supabase.from('categories').select('id, name, type, color, icon, parent_id').eq('user_id', userId),
+    loadLearnedCategoryMap(supabase, userId, peerIds),
+    supabase.from('categories').select('id, name, type, color, icon, parent_id').in('user_id', peerIds),
     supabase.from('accounts').select('bank_iban').eq('user_id', userId).not('bank_iban', 'is', null),
     supabase
       .from('bank_transactions')
@@ -648,10 +670,10 @@ export function isCloudRuntime(): boolean {
 }
 
 /**
- * Triggers api/bank-sync.py and relays its result. That function always syncs the single
- * configured bank account (BANK_SYNC_USER_ID) — callers should confirm the requesting user
- * matches before calling this, otherwise a different logged-in user could trigger a sync
- * whose data lands under someone else's account.
+ * Triggers api/bank-sync.py and relays its result. Die Funktion laedt die (verschluesselten) Verbindungen des Nutzers selbst
+ * aus Supabase (`userId`), faellt fuer den Env-Nutzer (BANK_SYNC_USER_ID) ohne eigene Verbindung auf die FINTS_*-Env zurueck
+ * und syncht ohne `userId` alle Nutzer mit Verbindung (Cron). Aufrufer muessen den Nutzer vorher authentifiziert und per
+ * userHasBankAccess() geprueft haben.
  *
  * `allowSca` must be true for a user-initiated sync: only then is somebody around to
  * approve in the SecureGo plus app. The cron path calls the function directly without it,
@@ -659,9 +681,12 @@ export function isCloudRuntime(): boolean {
  */
 export async function triggerCloudBankSync(
   origin: string,
-  opts: { allowSca?: boolean; fullHistory?: boolean } = {},
+  opts: { allowSca?: boolean; fullHistory?: boolean; userId?: string } = {},
 ): Promise<CloudSyncResult> {
   const url = new URL(`${origin}/api/bank-sync`)
+  // Ohne userId syncht die Funktion alle Nutzer mit Verbindung (Cron). Mit userId nur diesen (manueller Sync: Aufrufer hat
+  // den Nutzer authentifiziert; die Funktion ist zusaetzlich per CRON_SECRET geschuetzt).
+  if (opts.userId)      url.searchParams.set('user', opts.userId)
   if (opts.allowSca)    url.searchParams.set('sca',  '1')
   if (opts.fullHistory) url.searchParams.set('full', '1')
 

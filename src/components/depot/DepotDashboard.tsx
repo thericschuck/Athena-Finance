@@ -23,6 +23,8 @@ import {
 import type { DepotTransaction, PortfolioHistoryPoint, SavingsPlan, Depot } from '@/app/actions/depot'
 import { checkDueSavingsPlans } from '@/lib/depot/savingsPlanChecker'
 import { Button } from '@/components/ui/button'
+import { ZuletztGeaendert } from '@/components/aenderungen/ZuletztGeaendert'
+import type { ZuletztGeaendertInfo } from '@/lib/data/aenderungen'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -87,7 +89,7 @@ function StatCard({ title, value, sub, color, loading }: {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function DepotDashboard() {
+export function DepotDashboard({ canShare = false, leerHinweis, zuletzt }: { canShare?: boolean; leerHinweis?: React.ReactNode; zuletzt?: Record<string, ZuletztGeaendertInfo> }) {
   const today = new Date().toISOString().split('T')[0]
 
   // ─── Depot management ───────────────────────────────────────────────────────
@@ -100,6 +102,7 @@ export function DepotDashboard() {
   const [newDepotIsin, setNewDepotIsin]   = useState('')
   const [newDepotError, setNewDepotError] = useState<string | null>(null)
   const [newDepotBusy, setNewDepotBusy]   = useState(false)
+  const [newDepotShared, setNewDepotShared] = useState(false)
   const [depotToDelete, setDepotToDelete] = useState<Depot | null>(null)
   const depotPickerRef = useRef<HTMLDivElement>(null)
 
@@ -140,6 +143,9 @@ export function DepotDashboard() {
   const [savingsPlans, setSavingsPlans] = useState<SavingsPlan[]>([])
   const [duePlans, setDuePlans]         = useState<SavingsPlan[]>([])
   const [loading, setLoading]           = useState(false)
+  // Erst wenn Depots UND Daten des aktiven Depots da sind, zeigen Kennzahlen echte Werte (sonst kurz "0,00 EUR").
+  const [geladenIsin, setGeladenIsin]   = useState<string | null>(null)
+  const [preisGeprueft, setPreisGeprueft] = useState(false)
 
   // ─── Chart ──────────────────────────────────────────────────────────────────
   const [chartTab, setChartTab] = useState<ChartTab>('Wert')
@@ -173,6 +179,7 @@ export function DepotDashboard() {
     setLivePrice(null)
     setFetchedAt(null)
     setIsLive(false)
+    setPreisGeprueft(false)
     livePricePreFilled.current = false
 
     let cancelled = false
@@ -192,7 +199,9 @@ export function DepotDashboard() {
         }
         setIsLive(data.isLive ?? false)
         setFetchedAt(data.fetchedAt ?? null)
-      } catch {}
+      } catch {} finally {
+        if (!cancelled) setPreisGeprueft(true)
+      }
     }
     fetchPrice()
     const interval = setInterval(fetchPrice, 5 * 60_000)
@@ -216,6 +225,7 @@ export function DepotDashboard() {
       setDuePlans(checkDueSavingsPlans(plans, txs))
     } finally {
       setLoading(false)
+      setGeladenIsin(activeDepot.isin)
     }
   }, [activeDepot])
 
@@ -255,7 +265,7 @@ export function DepotDashboard() {
     setNewDepotError(null)
     setNewDepotBusy(true)
     try {
-      const result = await createDepot(newDepotName.trim(), newDepotIsin.trim())
+      const result = await createDepot(newDepotName.trim(), newDepotIsin.trim(), canShare && newDepotShared)
       if (!result.success) { setNewDepotError(result.error ?? 'Fehler'); return }
       const list = await getDepots()
       setDepots(list)
@@ -263,6 +273,7 @@ export function DepotDashboard() {
       if (created) setActiveDepot(created)
       setNewDepotName('')
       setNewDepotIsin('')
+      setNewDepotShared(false)
       setShowNewDepotForm(false)
       setShowDepotPicker(false)
     } finally {
@@ -349,7 +360,10 @@ export function DepotDashboard() {
   }
 
   // ─── Live price badge ────────────────────────────────────────────────────────
-  const priceStatus = livePrice === null
+  const datenLaden = depotsLoading || loading || (activeDepot !== null && geladenIsin !== activeDepot.isin)
+  const priceStatus = livePrice === null && !preisGeprueft
+    ? { dot: 'bg-muted-foreground/40', label: 'Lädt…', color: 'text-muted-foreground' }
+    : livePrice === null
     ? { dot: 'bg-destructive', label: 'Offline',    color: 'text-destructive' }
     : isLive
     ? { dot: 'bg-success',   label: 'LIVE',        color: 'text-success' }
@@ -358,11 +372,13 @@ export function DepotDashboard() {
   // ─── Empty state: no depots yet ──────────────────────────────────────────────
   if (!depotsLoading && depots.length === 0) {
     return (
-      <div className="p-4 sm:p-8 min-h-screen bg-background flex items-center justify-center">
+      <div className="p-4 sm:p-8 min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        {leerHinweis && <div className="w-full max-w-md">{leerHinweis}</div>}
         <div className="rounded-xl border border-border bg-card p-8 max-w-sm w-full">
           <h2 className="text-lg font-semibold text-foreground mb-1">Erstes Depot anlegen</h2>
           <p className="text-sm text-muted-foreground mb-5">
-            Trage Name und ISIN deines Fonds ein, um zu beginnen.
+            Das Depot verfolgt einen Fonds oder ETF: Käufe, Sparpläne, Wert und Rendite über die Zeit.
+            Trage Name und ISIN ein, um zu beginnen.
           </p>
           <form onSubmit={handleCreateDepot} className="space-y-3">
             <input
@@ -379,6 +395,12 @@ export function DepotDashboard() {
               className="w-full text-sm rounded-md bg-background border border-border text-foreground px-3 py-2 outline-none focus:border-primary font-mono"
               required
             />
+            {canShare && (
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <input type="checkbox" checked={newDepotShared} onChange={e => setNewDepotShared(e.target.checked)} />
+                Mit Haushalt teilen
+              </label>
+            )}
             {newDepotError && <p className="text-xs text-destructive">{newDepotError}</p>}
             <button
               type="submit" disabled={newDepotBusy}
@@ -411,6 +433,7 @@ export function DepotDashboard() {
                 {activeDepot ? `${activeDepot.name} · ${activeDepot.isin}` : '—'}
                 <ChevronDown className={`size-3 transition-transform ${showDepotPicker ? 'rotate-180' : ''}`} />
               </p>
+              {activeDepot && <ZuletztGeaendert info={zuletzt?.[activeDepot.id]} />}
             </div>
           </button>
 
@@ -466,6 +489,12 @@ export function DepotDashboard() {
                     className="w-full text-sm rounded-md bg-background border border-border text-foreground px-3 py-1.5 outline-none focus:border-primary font-mono"
                     required
                   />
+                  {canShare && (
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <input type="checkbox" checked={newDepotShared} onChange={e => setNewDepotShared(e.target.checked)} />
+                      Mit Haushalt teilen
+                    </label>
+                  )}
                   {newDepotError && <p className="text-xs text-destructive">{newDepotError}</p>}
                   <div className="flex gap-2 pt-1">
                     <button
@@ -745,21 +774,21 @@ export function DepotDashboard() {
           {/* Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <StatCard title="Portfoliowert"
-              value={loading ? '' : fmtEur(portfolioValue)}
-              sub={loading ? '' : (hasData ? fmtShares(totalShares) + ' Anteile' : '–')}
-              loading={loading} />
+              value={datenLaden ? '' : fmtEur(portfolioValue)}
+              sub={datenLaden ? '' : (hasData ? fmtShares(totalShares) + ' Anteile' : '–')}
+              loading={datenLaden} />
             <StatCard title="Investiert"
-              value={loading ? '' : fmtEur(totalInvested)}
-              loading={loading} />
+              value={datenLaden ? '' : fmtEur(totalInvested)}
+              loading={datenLaden} />
             <StatCard title="Gewinn / Verlust"
-              value={loading ? '' : (returnAbs >= 0 ? '+' : '') + fmtEur(returnAbs)}
-              sub={loading ? '' : (hasData ? (returnPct >= 0 ? '+' : '') + fmtPct(returnPct) : '–')}
-              color={!loading && hasData ? (returnAbs >= 0 ? 'green' : 'red') : 'neutral'}
-              loading={loading} />
+              value={datenLaden ? '' : (returnAbs >= 0 ? '+' : '') + fmtEur(returnAbs)}
+              sub={datenLaden ? '' : (hasData ? (returnPct >= 0 ? '+' : '') + fmtPct(returnPct) : '–')}
+              color={!datenLaden && hasData ? (returnAbs >= 0 ? 'green' : 'red') : 'neutral'}
+              loading={datenLaden} />
             <StatCard title="Live-Kurs"
-              value={loading ? '' : (livePrice ? livePrice.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €' : '–')}
-              sub={loading ? '' : (livePriceFetchedAt ? priceStatus.label + ' ' + fmtTime(livePriceFetchedAt) : '')}
-              loading={loading} />
+              value={datenLaden ? '' : (livePrice ? livePrice.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €' : '–')}
+              sub={datenLaden ? '' : (livePriceFetchedAt ? priceStatus.label + ' ' + fmtTime(livePriceFetchedAt) : '')}
+              loading={datenLaden} />
           </div>
 
           {/* Chart */}
@@ -776,7 +805,7 @@ export function DepotDashboard() {
               ))}
             </div>
 
-            {loading ? (
+            {datenLaden ? (
               <SkeletonChartBody variant="area" height={208} />
             ) : !hasData ? (
               <div className="flex items-center justify-center h-52 text-sm text-muted-foreground">
@@ -792,7 +821,7 @@ export function DepotDashboard() {
             <div className="px-5 py-3 border-b border-border">
               <h2 className="text-sm font-semibold text-foreground">Transaktionen</h2>
             </div>
-            {loading ? (
+            {datenLaden ? (
               <div className="p-5 space-y-2">
                 {[1, 2, 3].map(i => <Skeleton key={i} className="h-10 w-full" />)}
               </div>

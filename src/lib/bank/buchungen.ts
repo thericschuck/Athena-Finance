@@ -1,5 +1,5 @@
 import type { BankTransaction } from '@/types/bank'
-import { normIban } from './scope.ts'
+import { ibanSet, istUmbuchungIban } from '../haushalt/umbuchung.ts'
 import { parteiName, parteiSchluessel } from './auswertung.ts'
 
 /**
@@ -79,7 +79,7 @@ export interface Tagesgruppe {
 
 /** Menge der eigenen IBANs, normalisiert — Eingabe fuer `istUmbuchung`. */
 export function ibanMenge(eigeneIbans: readonly string[]): Set<string> {
-  return new Set(eigeneIbans.map(normIban))
+  return ibanSet(eigeneIbans)
 }
 
 /**
@@ -87,7 +87,7 @@ export function ibanMenge(eigeneIbans: readonly string[]): Set<string> {
  * `unified_transactions`, die solche Zeilen aus den Auswertungen herausrechnet.
  */
 export function istUmbuchung(tx: BankTransaction, eigene: ReadonlySet<string>): boolean {
-  return !!tx.counterpart_iban && eigene.has(normIban(tx.counterpart_iban))
+  return istUmbuchungIban(tx.counterpart_iban, eigene)
 }
 
 function tag(tx: BankTransaction): string {

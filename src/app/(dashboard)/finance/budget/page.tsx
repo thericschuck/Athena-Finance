@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { seedIfEmpty } from './actions'
 import { getBudgetCategories, getBudgetItems, getIncomeTarget } from '@/lib/data/finance-budget'
 import { LebenshaltungskostenClient } from '@/components/lebenshaltungskosten/LebenshaltungskostenClient'
@@ -10,6 +11,7 @@ export type BudgetCategory = {
   icon: string | null
   monthly_budget: number | null
   sort_order: number
+  shared?: boolean
 }
 
 export type BudgetItem = {
@@ -31,19 +33,18 @@ export type IncomeTarget = {
 }
 
 export default async function LebenshaltungskostenPage() {
-  await seedIfEmpty()
-
   // Layout redirected bereits, falls kein User eingeloggt ist — der Check
   // hier ist trotzdem nötig, um `user.id` unten typsicher (und nicht nur
   // durchs Layout garantiert) an die Queries zu geben.
   const { supabase, user } = await getAuthUser()
   if (!user) redirect('/login')
 
-  // .eq('user_id', ...) zusätzlich zur RLS-Policy — siehe Kommentar in
-  // actions.ts (updateCategory): dieselbe Defense-in-Depth-Konvention.
+  // Budget: Haushaltstabellen (Scope-Filter); das Einkommensziel bleibt owner-only (user_id).
+  // Seed und Scope sind unabhaengig; die Daten werden erst danach gelesen (Seed muss fertig sein).
+  const [, ctx] = await Promise.all([seedIfEmpty(), resolveScope(supabase, user)])
   const [categories, items, target] = await Promise.all([
-    getBudgetCategories(supabase, user.id),
-    getBudgetItems(supabase, user.id),
+    getBudgetCategories(supabase, ctx),
+    getBudgetItems(supabase, ctx),
     getIncomeTarget(supabase, user.id),
   ])
 

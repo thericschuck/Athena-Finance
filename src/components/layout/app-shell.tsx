@@ -1,14 +1,26 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { Menu } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { Sidebar } from '@/components/layout/sidebar'
 import { PageWrapper } from '@/components/layout/page-wrapper'
-import { AssistantSheet } from '@/components/assistant/AssistantSheet'
 import { useSettings } from '@/components/providers/settings-context'
 import { OliveVines } from '@/components/landing/olive-vines'
 import { PrivacyToggle } from '@/components/layout/privacy-toggle'
+import type { ScopeSwitcherProps } from '@/components/haushalt/ScopeSwitcher'
+import { ScopeLadeProvider, ScopeLadeBalken, ScopeLadeInhalt } from '@/components/haushalt/ScopeLadeContext'
+
+/**
+ * Athenas Schnellzugriff (Chat, KI-SDK, Markdown) haengt an jeder Dashboard-Seite, wird aber erst nach einem Klick gebraucht:
+ * als eigener Chunk nachladen statt jedem Seitenaufruf mitzugeben. Er laedt direkt nach der Hydration im Hintergrund; der
+ * schwebende Knopf erscheint dadurch einen Moment spaeter (kein Platzhalter noetig, er ist `fixed`). Der Chat-Zustand lebt in
+ * der Komponente und bleibt wie bisher ueber Seitenwechsel erhalten, solange AppShell gemountet ist.
+ */
+const AssistantSheet = dynamic(() => import('@/components/assistant/AssistantSheet').then(m => m.AssistantSheet), {
+  ssr: false,
+})
 
 /**
  * Pro Bereich unterschiedliche Ranken-Platzierung (Seite/Dichte/Größe) statt
@@ -40,12 +52,13 @@ function vineVariantFor(pathname: string): VineVariant | null {
 }
 
 export function AppShell({
-  children, email, displayName, avatarUrl,
+  children, email, displayName, avatarUrl, scope,
 }: {
   children: React.ReactNode
   email: string
   displayName: string | null
   avatarUrl: string | null
+  scope?: Pick<ScopeSwitcherProps, 'available' | 'active' | 'ownName' | 'partnerName'>
 }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
@@ -60,6 +73,8 @@ export function AppShell({
   }, [pathname])
 
   return (
+    <ScopeLadeProvider active={scope?.active ?? 'ich'}>
+    <ScopeLadeBalken />
     <div className="flex h-dvh bg-background overflow-hidden">
       {/* Mobile backdrop */}
       {mobileOpen && (
@@ -77,6 +92,7 @@ export function AppShell({
         avatarUrl={avatarUrl}
         mobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}
+        scope={scope}
       />
 
       <div className="relative isolate flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -116,12 +132,13 @@ export function AppShell({
           <PrivacyToggle />
         </header>
 
-        <PageWrapper>{children}</PageWrapper>
+        <PageWrapper><ScopeLadeInhalt>{children}</ScopeLadeInhalt></PageWrapper>
       </div>
 
       {/* Auf der eigenen Assistant-Seite gibt es die Konversation schon
           großflächig — kein zweites, schwebendes Sheet-Trigger nötig. */}
       {!pathname.startsWith('/assistant') && <AssistantSheet />}
     </div>
+    </ScopeLadeProvider>
   )
 }

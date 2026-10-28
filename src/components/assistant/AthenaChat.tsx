@@ -23,11 +23,20 @@ import {
   PendingActionCard,
   type PendingActionStatus,
 } from '@/components/assistant/PendingActionCard'
-import { AthenaChart, type ChartSpec } from '@/components/assistant/AthenaChart'
+import dynamic from 'next/dynamic'
+import type { ChartSpec } from '@/components/assistant/AthenaChart'
 import type { ActionDetail } from '@/lib/assistant/actions'
 import { ATHENA_MODELS, ATHENA_EFFORT_OPTIONS, type AthenaEffort } from '@/lib/assistant/settings'
 import { useAthenaChatSettings } from '@/components/providers/athena-settings-context'
+import { useNutzer } from '@/components/providers/nutzer-context'
+import { kennenlernPrompt, kennenlernVorbefuellung } from '@/lib/assistant/starter'
 import { ToolTrace } from '@/components/assistant/chat/ToolTrace'
+
+// Recharts nur laden, wenn Athena wirklich ein Diagramm liefert (nicht jedem Chat-Aufruf mitgeben).
+const AthenaChart = dynamic(() => import('@/components/assistant/AthenaChart').then(m => m.AthenaChart), {
+  ssr: false,
+  loading: () => <Skeleton className="mt-2 h-[230px] max-w-md rounded-lg border border-border" />,
+})
 import { MessageActions } from '@/components/assistant/chat/MessageActions'
 import { EmptyState } from '@/components/assistant/chat/EmptyState'
 import { useAnhaenge } from '@/components/assistant/chat/useAnhaenge'
@@ -54,6 +63,7 @@ import {
   setzeMention,
   zerlegeMentions,
 } from '@/lib/assistant/mention-eingabe'
+import { Skeleton } from '@/components/ui/skeleton'
 
 /** Athena-Avatar neben Antworten: am Handy kleiner (24), ab sm 28 — er soll
     auch dort die Zuordnung zeigen, ohne der Blase viel Breite zu nehmen. */
@@ -616,7 +626,21 @@ export function AthenaChat({
   // über den Key auf der Chat-ID.
   const [instanz] = useState(() => chat ?? erzeugeChat(conversationId, initialMessages))
   const { messages, sendMessage, regenerate, status, error, stop } = useChat({ chat: instanz })
-  const [input, setInput] = useState(initialInput ?? '')
+  const nutzer = useNutzer()
+  // Startwert des Felds: ein übergebener Entwurf (Hinweis, Deep-Link) oder — nur im leeren Chat ohne Ausgangslage —
+  // der Kennenlern-Prompt. Nur beim Mount; tippt der Nutzer, gilt sein Text.
+  const [startText] = useState(
+    () =>
+      initialInput ??
+      kennenlernVorbefuellung({
+        eingabe: '',
+        nachrichten: instanz.messages.length,
+        hatAusgangslage: nutzer.hatAusgangslage,
+        name: nutzer.name,
+      }) ??
+      '',
+  )
+  const [input, setInput] = useState(startText)
   // Die Seite, von der aus gefragt wird, geht als Kontext mit (siehe
   // atlas.ts: describeCurrentRoute). Pro NACHRICHT, nicht pro Session — das
   // schwebende Sheet bleibt beim Navigieren offen, die Route darunter wechselt.
@@ -626,6 +650,24 @@ export function AthenaChat({
   /** Eine Nachricht abschicken, immer mit der aktuellen Route im Gepaeck. */
   function frage(text: string) {
     sendMessage({ text }, { body: { route: pathname, projectId } })
+  }
+
+  /** Startfrage aus dem Leerzustand: sendet direkt. Ein unberührter Kennenlern-Vorschlag im Feld weicht ihr,
+      selbst Getipptes bleibt stehen. */
+  function waehleStartfrage(text: string) {
+    if (input === kennenlernPrompt(nutzer.name)) {
+      setInput('')
+      setCursor(0)
+    }
+    frage(text)
+  }
+
+  /** Text ins Eingabefeld legen (Chip „Athena kennenlernen“): nicht senden, fokussieren, Cursor ans Ende. */
+  function fuelleEingabe(text: string) {
+    setInput(text)
+    setCursor(text.length)
+    neuerCursor.current = text.length
+    textRef.current?.focus()
   }
 
   /** Letzte Antwort ersetzen. Stabil (useCallback), damit die gemerkte Nachricht nicht
@@ -733,7 +775,7 @@ export function AthenaChat({
     feld.focus()
     feld.setSelectionRange(initialInput.length, initialInput.length)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- nur beim Mount
-  const [cursor, setCursor] = useState(initialInput?.length ?? 0)
+  const [cursor, setCursor] = useState(startText.length)
   const [gewaehlt, setGewaehlt] = useState<Mention[]>([])
   const [optionen, setOptionen] = useState<MentionOption[] | null>(null)
   const [optionenLaedt, setOptionenLaedt] = useState(false)
@@ -876,7 +918,9 @@ export function AthenaChat({
           Inhaltshöhe und scrollte nie (nur noch die letzten Nachrichten waren zu sehen). */}
       <ScrollArea className="h-full">
         <div ref={contentRef} className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-4 p-4">
-          {messages.length === 0 && <EmptyState pathname={pathname} onPick={frage} />}
+          {messages.length === 0 && (
+            <EmptyState pathname={pathname} onPick={waehleStartfrage} onFill={fuelleEingabe} />
+          )}
 
           {messages.map((message, index) => (
             <MessageBubble

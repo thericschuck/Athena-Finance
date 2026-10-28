@@ -3,8 +3,9 @@ import { z } from 'zod'
 import { ladePrognose } from '@/lib/forecast/laden'
 import { ymd } from '@/lib/period'
 import type { DB } from '@/lib/assistant/tools/shared'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 
-export function buildForecastTools(supabase: DB, userId: string) {
+export function buildForecastTools(supabase: DB, ctx: ScopeContext) {
   return {
     // ── Prognose (nur lesend) ────────────────────────────────────────────────────
     getForecast: tool({
@@ -15,7 +16,7 @@ export function buildForecastTools(supabase: DB, userId: string) {
         'Rücklage pro Monat, Kleinunternehmer-Status). Benutze es für Fragen wie "reicht mein Geld bis ' +
         'Dezember", "was bleibt mir im Februar", "was kostet mich das höhere Gehalt an Steuer", "wann wird es eng". ' +
         'Es ist eine FORTSCHREIBUNG der gesamten Historie (Zyklusmodell: Monats- und Wochenrhythmus) plus die Annahmen, ' +
-        'die Eric auf der Prognose-Seite eingetragen hat — keine Vorhersage. Sag das, nenne den tiefsten Stand ' +
+        'die der Nutzer auf der Prognose-Seite eingetragen hat — keine Vorhersage. Sag das, nenne den tiefsten Stand ' +
         '(erwartet und in 1 von 10 Verläufen) statt eines einzelnen Endwerts, ' +
         'und nenne die Annahmen (`annahmen`), auf denen die Zahl beruht. Die Steuerzahlen sind Schätzungen.',
       inputSchema: z.object({
@@ -23,7 +24,7 @@ export function buildForecastTools(supabase: DB, userId: string) {
       }),
       execute: async ({ monate }) => {
         try {
-          const d = await ladePrognose(supabase, userId, ymd(new Date()), { monate })
+          const d = await ladePrognose(supabase, ctx, ymd(new Date()), { monate })
           const sz = d.szenario
           return {
             stand: d.stand,

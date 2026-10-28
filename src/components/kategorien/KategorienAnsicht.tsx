@@ -2,7 +2,8 @@
 
 import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowUpDown, Check, ChevronsDownUp, ChevronsUpDown, Search, X } from 'lucide-react'
+import { ArrowUpDown, Check, ChevronsDownUp, ChevronsUpDown, Search, Tags, X } from 'lucide-react'
+import { LeerZustand } from '@/components/leer/LeerZustand'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { AddCategoryDialog } from '@/components/finance/category-form'
@@ -153,15 +154,12 @@ export function KategorienAnsicht({
 
   if (flat.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border bg-card px-4 py-12 text-center">
-        <p className="text-sm font-medium text-foreground">Noch keine Kategorien</p>
-        <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
-          Mit Kategorien ordnest du Buchungen zu; Auswertungen, Budget und Steuer bauen darauf auf.
-        </p>
-        <div className="mt-4 flex justify-center">
-          <AddCategoryDialog allCategories={flat} euerZeilen={euerZeilen} />
-        </div>
-      </div>
+      <LeerZustand
+        icon={Tags}
+        titel="Noch keine Kategorien"
+        text="Mit Kategorien ordnest du Buchungen zu; Auswertungen, Budget und Steuer bauen darauf auf. Lege zuerst ein paar Hauptkategorien an, z. B. Wohnen, Lebensmittel und Gehalt."
+        aktionNode={<AddCategoryDialog allCategories={flat} euerZeilen={euerZeilen} />}
+      />
     )
   }
 

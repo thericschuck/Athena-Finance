@@ -4,7 +4,8 @@ import { getAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { parseQuery } from '@/lib/api/validate'
 import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvValue, formatCsvAmount } from '@/lib/csv'
-import { getFlowTransactions } from '@/lib/data/flows'
+import { getFlowTransactionsScope } from '@/lib/data/flows-scope'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { getActiveAccountOptions } from '@/lib/data/overview'
 import { FLOW_DEFAULT_KEY, flowDefaultFrom, includeFromParam } from '@/lib/finance/flow-calc'
 import { kategorieMitKindern, parseBetrag } from '@/lib/bank/buchungen'
@@ -73,6 +74,8 @@ export async function GET(req: NextRequest) {
   const q = parseQuery(req, querySchema)
   if (q.response) return q.response
   const p = q.data
+  // Scope: Cookie (wie die Seite, kein `?scope=`); Konten-IDs aus der URL werden auf die Konten im Scope geschnitten.
+  const ctx = await resolveScope(supabase, user)
 
   // Konten-IDs gehen als Liste in eine Abfrage; was keine UUID ist, wird verworfen (und gehoert
   // dem Nutzer ohnehin nicht: die Abfrage filtert zusaetzlich auf user_id).
@@ -84,7 +87,7 @@ export async function GET(req: NextRequest) {
 
   let txns
   try {
-    txns = await getFlowTransactions(supabase, user.id, {
+    txns = await getFlowTransactionsScope(supabase, ctx, {
       from: p.von || null,
       accountIds: accountIds.length > 0 ? accountIds : undefined,
       include,
@@ -94,8 +97,9 @@ export async function GET(req: NextRequest) {
   }
 
   const [{ data: kats }, konten] = await Promise.all([
-    supabase.from('categories').select('id, parent_id').eq('user_id', user.id),
-    getActiveAccountOptions(supabase, user.id),
+    // Kategorienbaum pro Haushalt: die RLS liefert ihn, kein user_id-Filter.
+    supabase.from('categories').select('id, parent_id'),
+    getActiveAccountOptions(supabase, ctx),
   ])
   const kontoName = new Map(konten.map(k => [k.id, k.name]))
 

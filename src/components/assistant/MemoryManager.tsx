@@ -1,5 +1,6 @@
 'use client'
 
+import { LeerZustand } from '@/components/leer/LeerZustand'
 import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Brain, Trash2, Pencil } from 'lucide-react'
@@ -168,12 +169,12 @@ export function MemoryManager({ memories }: { memories: MemoryRow[] }) {
       )}
 
       {memories.length === 0 && !showForm && (
-        <div className="rounded-lg border border-dashed border-border p-8 text-center">
-          <Brain className="mx-auto size-6 text-muted-foreground" />
-          <p className="mt-2 text-sm text-muted-foreground">
-            Noch nichts gemerkt. Athena füllt das im Gespräch von selbst.
-          </p>
-        </div>
+        <LeerZustand
+          icon={Brain}
+          titel="Noch nichts gemerkt"
+          text="Athena merkt sich Dinge, die im Gespräch wichtig werden, und füllt diese Liste von selbst. Du kannst Einträge auch von Hand anlegen."
+          aktion={{ label: 'Mit Athena sprechen', href: '/assistant' }}
+        />
       )}
 
       {memories.length > 0 && sichtbar.length === 0 && (

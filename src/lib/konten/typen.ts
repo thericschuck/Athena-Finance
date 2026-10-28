@@ -33,6 +33,8 @@ export interface KontoZeile {
   bankIban: string | null
   aktiv: boolean
   sortOrder: number
+  /** Geteiltes Konto (Haushalt); `undefined`, wenn nicht geladen. */
+  shared?: boolean
   /** Aktueller Kontostand; `null`, wenn es weder Bank-Saldo noch Buchungen gibt. */
   saldo: number | null
   /** Mit der Bank verknüpft (FinTS): der Saldo ist der von der Bank gemeldete. */

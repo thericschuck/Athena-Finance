@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 import type { AthenaToolOptions } from '@/lib/assistant/tools/shared'
 import { buildAccountTools } from '@/lib/assistant/tools/accounts'
 import { buildTransactionTools } from '@/lib/assistant/tools/transactions'
@@ -20,6 +21,7 @@ import { buildMemoryTools } from '@/lib/assistant/tools/memory'
 import { buildInventoryTools } from '@/lib/assistant/tools/inventory'
 import { buildProposalTools } from '@/lib/assistant/tools/proposals'
 import { buildAttachmentTools } from '@/lib/assistant/tools/attachments'
+import { buildChangeTools } from '@/lib/assistant/tools/changes'
 
 export type { AthenaToolOptions } from '@/lib/assistant/tools/shared'
 
@@ -28,7 +30,7 @@ type DB = SupabaseClient<Database>
 /**
  * Baut den vollständigen Werkzeuggürtel für EINEN authentifizierten Nutzer.
  *
- * Jedes Tool schließt über `supabase`/`userId` aus dem umgebenden Request — das
+ * Jedes Tool schließt über `supabase`/`ctx` aus dem umgebenden Request — das
  * Zod-Input-Schema enthält deshalb bewusst KEIN `userId`/`accountId`-Feld, das
  * Modell kann fremde Daten also nicht einmal versuchen anzufragen, weil das
  * Schema es strukturell nicht zulässt. Pro Request neu aufgebaut, kein
@@ -45,29 +47,30 @@ type DB = SupabaseClient<Database>
  *  - **Schreibend auf Finanzdaten**: führen NIE aus, sondern legen nur einen
  *    Vorschlag in ai_pending_actions an (siehe ../actions/).
  */
-export function buildAthenaTools(supabase: DB, userId: string, options: AthenaToolOptions) {
+export function buildAthenaTools(supabase: DB, ctx: ScopeContext, options: AthenaToolOptions) {
   return {
-    ...buildAccountTools(supabase, userId),
-    ...buildTransactionTools(supabase, userId),
-    ...buildPlanningTools(supabase, userId),
-    ...buildForecastTools(supabase, userId),
-    ...buildPortfolioTools(supabase, userId),
-    ...buildDataQualityTools(supabase, userId),
-    ...buildInsightTools(supabase, userId),
-    ...buildObligationTools(supabase, userId),
-    ...buildSavingsPlanTools(supabase, userId),
-    ...buildUserSettingsTools(supabase, userId),
-    ...buildAccountHistoryTools(supabase, userId),
-    ...buildTaxTools(supabase, userId),
-    ...buildRecurringTools(supabase, userId),
-    ...buildCategoryTools(supabase, userId),
+    ...buildAccountTools(supabase, ctx),
+    ...buildTransactionTools(supabase, ctx),
+    ...buildPlanningTools(supabase, ctx),
+    ...buildForecastTools(supabase, ctx),
+    ...buildPortfolioTools(supabase, ctx),
+    ...buildDataQualityTools(supabase, ctx),
+    ...buildInsightTools(supabase, ctx),
+    ...buildObligationTools(supabase, ctx),
+    ...buildSavingsPlanTools(supabase, ctx),
+    ...buildUserSettingsTools(supabase, ctx),
+    ...buildAccountHistoryTools(supabase, ctx),
+    ...buildTaxTools(supabase, ctx),
+    ...buildRecurringTools(supabase, ctx),
+    ...buildCategoryTools(supabase, ctx),
     ...buildChartTools(),
-    ...buildMemoryTools(supabase, userId, options),
-    ...buildInventoryTools(supabase, userId),
-    ...buildAttachmentTools(supabase, userId, options),
+    ...buildMemoryTools(supabase, ctx, options),
+    ...buildInventoryTools(supabase, ctx),
+    ...buildChangeTools(supabase, ctx),
+    ...buildAttachmentTools(supabase, ctx, options),
 
     // ── Schreibende Aktionen: nur Vorschläge ──────────────────────────────────
-    ...buildProposalTools(supabase, userId, options),
+    ...buildProposalTools(supabase, ctx, options),
   }
 }
 

@@ -1,11 +1,12 @@
 import { requireAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { getSettings } from '@/lib/settings'
 import { getSavingsGoals } from '@/lib/data/finance-planning'
 import { heuteBerlin } from '@/lib/transaktionen/formular'
 import { kennzahlen, phaseVon, sortiereOffene, type Kennzahlen, type ZielDaten } from '@/lib/sparziele/berechnen'
 
 /** Ziel mit Notiz (fuer das Bearbeiten-Formular). */
-export type Ziel = ZielDaten & { notes: string | null }
+export type Ziel = ZielDaten & { notes: string | null; shared?: boolean }
 
 export interface SparzieleSeite {
   heute: string
@@ -21,15 +22,17 @@ export interface SparzieleSeite {
 /** Alle Daten der Sparziele-Seite: Ziele des Nutzers, nach Phase getrennt und sortiert, plus Kennzahlen. */
 export async function ladeSparzieleSeite(): Promise<SparzieleSeite> {
   const { supabase, user } = await requireAuthUser()
+  const ctx = await resolveScope(supabase, user!)
   const [rows, settings] = await Promise.all([
-    getSavingsGoals(supabase, user!.id),
-    getSettings(user!.id),
+    getSavingsGoals(supabase, ctx),
+    getSettings(ctx.userId),
   ])
   const heute = heuteBerlin()
   // numeric kommt je nach Treiber als Text: einmal sauber in Zahlen wandeln
   const ziele: Ziel[] = rows.map(r => ({
     id: r.id,
     notes: r.notes,
+    shared: r.shared,
     description: r.description,
     status: r.status,
     priority: r.priority,

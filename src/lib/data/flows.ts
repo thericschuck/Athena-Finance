@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import type { FlowInclude, FlowRow } from '@/lib/finance/flow-calc'
+import { applyAccountScope, type ScopeContext } from '../haushalt/scope.ts'
 
 /**
  * EINZIGER Lesepfad für Einnahmen und Ausgaben.
@@ -32,6 +33,32 @@ export type FlowScope = {
 
 const PAGE = 1000
 const MAX_PAGES = 50
+
+type KontenQ<Q> = { in: (c: string, v: readonly string[]) => Q; eq: (c: string, v: string) => Q; or: (f: string) => Q }
+
+/**
+ * Scope-Filter der Abfrage: Konten im Scope (`account_id in ctx.accountIds`, eine explizite Kontenauswahl wird geschnitten).
+ *
+ * NUR BASIS: Umbuchungen (`flow_kind = 'umbuchung'`) sind haushaltsweit neutral und kommen hier nicht an. Die scope-abhaengige
+ * Herabstufung (Umbuchung auf Konto im Scope, Gegenkonto ausserhalb = echte Buchung) macht ausschliesslich
+ * `lib/data/flows-scope.ts` (`getMonthlyFlowsScope` / `getFlowTransactionsScope`).
+ */
+function kontenFilter<Q extends KontenQ<Q>>(q: Q, ctx: ScopeContext, accountIds: string[] | undefined): Q {
+  if (accountIds?.length) {
+    const erlaubt = new Set(ctx.accountIds)
+    return q.in('account_id', accountIds.filter(id => erlaubt.has(id)))
+  }
+  return applyAccountScope(q, ctx)
+}
+
+/**
+ * OWNER-ONLY-Filter fuer Service-Role-/Report-Pfade ohne Scope (Reports/EUeR): ausschliesslich `user_id = userId`, nie ein
+ * Haushalts- oder Peer-Filter. Eine explizite Kontenauswahl wird nur zusaetzlich geschnitten.
+ */
+function nutzerFilter<Q extends KontenQ<Q>>(q: Q, userId: string, accountIds: string[] | undefined): Q {
+  const r = q.eq('user_id', userId)
+  return accountIds?.length ? r.in('account_id', accountIds) : r
+}
 
 /** Lieber ein Fehler als eine still zu kleine Summe: bei 50.000 Zeilen ist hier Schluss. */
 function kappung(table: string): never {
@@ -65,18 +92,23 @@ const MONTHLY_COLUMNS =
  * Aggregierte Zeilen je Monat/Konto/Quelle/Art/Kategorie. Klein, auch für „Alles".
  * Beträge kommen als Zahl zurück (numeric wird von PostgREST teils als String geliefert).
  */
-export async function getMonthlyFlows(supabase: Client, userId: string, scope: FlowScope = {}): Promise<MonthlyFlowRow[]> {
+export async function getMonthlyFlows(supabase: Client, ctx: ScopeContext, scope: FlowScope = {}): Promise<MonthlyFlowRow[]> {
+  return ladeMonthlyFlows(supabase, q => kontenFilter(q, ctx, scope.accountIds), scope)
+}
+
+type MonthlyQuery = ReturnType<typeof monthlyBasis>
+function monthlyBasis(supabase: Client) {
+  return supabase.from('monthly_flows').select(MONTHLY_COLUMNS)
+}
+
+async function ladeMonthlyFlows(supabase: Client, filter: (q: MonthlyQuery) => MonthlyQuery, scope: FlowScope): Promise<MonthlyFlowRow[]> {
   const out: MonthlyFlowRow[] = []
   for (let page = 0; page < MAX_PAGES; page++) {
-    let q = supabase
-      .from('monthly_flows')
-      .select(MONTHLY_COLUMNS)
-      .eq('user_id', userId)
+    let q = filter(monthlyBasis(supabase))
       .in('flow_kind', kindsFor(scope.include))
     // Der Monat reicht als Grenze: `from` mitten im Monat nimmt den ganzen Monat mit.
     if (scope.from) q = q.gte('month', scope.from.slice(0, 7) + '-01')
     if (scope.to) q = q.lte('month', scope.to.slice(0, 7) + '-01')
-    if (scope.accountIds?.length) q = q.in('account_id', scope.accountIds)
     if (scope.source) q = q.eq('source', scope.source)
 
     const { data, error } = await q
@@ -130,6 +162,8 @@ export type FlowTransaction = {
   merchant: string | null
   /** Vererbte Steuerrolle der Kategorie, null = keine. */
   tax_role: string | null
+  /** Nur im Haushalt gesetzt: haushaltsweite Umbuchung, die im Scope zur echten Buchung herabgestuft wurde (siehe flows-scope.ts). */
+  herabgestuft?: boolean
 }
 
 const TX_COLUMNS =
@@ -140,19 +174,32 @@ const TX_COLUMNS =
  * `getMonthlyFlows`, nur auf Buchungsebene. Wächst mit dem Zeitraum — wo es um Monatssummen
  * geht, `getMonthlyFlows` nehmen.
  */
-export async function getFlowTransactions(supabase: Client, userId: string, scope: FlowScope = {}): Promise<FlowTransaction[]> {
+export async function getFlowTransactions(supabase: Client, ctx: ScopeContext, scope: FlowScope = {}): Promise<FlowTransaction[]> {
+  return ladeFlowTransactions(supabase, q => kontenFilter(q, ctx, scope.accountIds), scope)
+}
+
+/**
+ * Owner-only-Variante von `getFlowTransactions` fuer Reports/EUeR und andere Service-Role-Pfade: filtert NUR `user_id = userId`
+ * (kein Haushalts-/Peer-Filter, keine Herabstufung).
+ */
+export async function getFlowTransactionsFuerNutzer(supabase: Client, userId: string, scope: FlowScope = {}): Promise<FlowTransaction[]> {
+  return ladeFlowTransactions(supabase, q => nutzerFilter(q, userId, scope.accountIds), scope)
+}
+
+type TxQuery = ReturnType<typeof txBasis>
+function txBasis(supabase: Client) {
+  return supabase.from('unified_transactions').select(TX_COLUMNS)
+}
+
+async function ladeFlowTransactions(supabase: Client, filter: (q: TxQuery) => TxQuery, scope: FlowScope): Promise<FlowTransaction[]> {
   const out: FlowTransaction[] = []
   for (let page = 0; page < MAX_PAGES; page++) {
-    let q = supabase
-      .from('unified_transactions')
-      .select(TX_COLUMNS)
-      .eq('user_id', userId)
+    let q = filter(txBasis(supabase))
       .eq('counts_in_flow', true)
       .in('type', ['income', 'expense'])
       .in('flow_kind', kindsFor(scope.include))
     if (scope.from) q = q.gte('date', scope.from)
     if (scope.to) q = q.lte('date', scope.to)
-    if (scope.accountIds?.length) q = q.in('account_id', scope.accountIds)
     if (scope.source) q = q.eq('source', scope.source)
 
     // `id` als zweites Kriterium: `date` ist nicht eindeutig, ohne stabile Ordnung kämen

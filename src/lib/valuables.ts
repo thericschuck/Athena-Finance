@@ -51,6 +51,8 @@ export interface Valuable {
   wertmodus: string
   /** Datum der letzten HANDEINGABE (alles ausser `modell`). Von der Seite ergaenzt, nicht aus der View. */
   hand_wert_stand?: string | null
+  /** Mit dem Haushalt geteilt (Spalte `shared` der View). */
+  shared: boolean
 }
 
 /** Eine Zeile aus `valuable_images`, angereichert um die signierte URL. */
@@ -85,6 +87,8 @@ export type ValuableWithImage = Valuable & {
   bilder: ValuableImage[]
   /** Hochgeladene Dokumente (Belege, Zertifikate, Policen). */
   dokument_anzahl: number
+  /** Das Stueck gehoert dem angemeldeten Nutzer (nur dann laesst sich `shared` umstellen; Stuecke des Partners nicht). Von der Seite ergaenzt. */
+  eigen: boolean
 }
 
 export interface Valuation {

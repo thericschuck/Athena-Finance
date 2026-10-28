@@ -39,7 +39,7 @@ function netWorth(w: Record<keyof Werte, number>): number {
  * der neue Wert nur als Vorschau angezeigt. Die Dialoge schließen bewusst nicht von selbst
  * (preventDefault), damit ein Serverfehler im Dialog sichtbar bleibt.
  */
-export function SnapshotAktionen({ id, datumLabel, werte, locale }: {
+function SnapshotAktionenInner({ id, datumLabel, werte, locale }: {
   id: string
   datumLabel: string
   werte: Werte
@@ -159,4 +159,13 @@ export function SnapshotAktionen({ id, datumLabel, werte, locale }: {
       </AlertDialog>
     </div>
   )
+}
+
+/**
+ * Berechnete Zeilen (Haushalt, `net_worth_series`, ID `fn:<datum>`) sind keine gespeicherten Snapshots: nichts zu
+ * korrigieren oder zu loeschen. Reparieren bleibt owner-only auf net_worth_snapshots.
+ */
+export function SnapshotAktionen(props: { id: string; datumLabel: string; werte: Werte; locale: string }) {
+  if (props.id.startsWith('fn:')) return null
+  return <SnapshotAktionenInner {...props} />
 }

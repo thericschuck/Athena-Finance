@@ -2,6 +2,8 @@
 
 import { getUserSettingValue } from '@/lib/data/crypto'
 import { createClient, getAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
+import { scopedOwner } from '@/lib/data/scope-owner'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { parseForm, parseInput, issueMessage } from '@/lib/api/validate'
@@ -25,6 +27,7 @@ import { fetchKrakenFuturesOpenPositions, type KrakenFuturesPosition } from '@/l
 import { syncKrakenForUser } from '@/lib/kraken/sync'
 import { proposeWriteAction, type ProposeWriteActionResult } from '@/lib/assistant/actions'
 import { createLogger } from '@/lib/assistant/logger'
+import { requireRows } from '@/lib/data/mutation'
 
 export type AssetActionState = { error: string } | { success: true } | null
 
@@ -159,17 +162,21 @@ export async function updateAsset(
   // Fetch current values for diff
   const { data: current } = await supabase
     .from('assets')
-    .select('name, symbol, quantity, avg_buy_price, portfolio_name, exchange, notes')
+    .select('user_id, source, name, symbol, quantity, avg_buy_price, portfolio_name, exchange, notes')
     .eq('id', id)
-    .eq('user_id', user.id)
-    .single()
+    .single() // Haushaltstabelle: Zugriff regelt die RLS (Peers duerfen bearbeiten)
+
+  // Kraken-Assets haengen an den Exchange-Keys des Eigentuemers: fuer Peers nur lesend.
+  if (current && current.source === 'kraken' && current.user_id !== user.id) {
+    return { error: 'Kraken-Assets kann nur der Eigentümer bearbeiten' }
+  }
 
   const newAvgBuyPrice  = parsed.data.avg_buy_price
   const newPortfolio    = parsed.data.portfolio_name
   const newExchange     = parsed.data.exchange
   const newNotes        = parsed.data.notes
 
-  const { error } = await supabase
+  const { error } = await requireRows(supabase
     .from('assets')
     .update({
       name,
@@ -181,8 +188,7 @@ export async function updateAsset(
       notes:          newNotes,
       updated_at:     new Date().toISOString(),
     })
-    .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('id', id))
 
   if (error) return { error: error.message }
 
@@ -222,16 +228,18 @@ export async function deleteAsset(id: string): Promise<{ error?: string }> {
   // Fetch before delete for audit log
   const { data: current } = await supabase
     .from('assets')
-    .select('name, symbol, quantity, avg_buy_price, portfolio_name')
+    .select('user_id, source, name, symbol, quantity, avg_buy_price, portfolio_name')
     .eq('id', id)
-    .eq('user_id', user.id)
-    .single()
+    .single() // Haushaltstabelle: RLS
 
-  const { error } = await supabase
+  if (current && current.source === 'kraken' && current.user_id !== user.id) {
+    return { error: 'Kraken-Assets kann nur der Eigentümer löschen' }
+  }
+
+  const { error } = await requireRows(supabase
     .from('assets')
     .delete()
-    .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('id', id))
 
   if (error) return { error: error.message }
 
@@ -281,8 +289,7 @@ export async function updateAssetPrices(
       const { data: existingAsset } = await supabase
         .from('assets')
         .select('quantity')
-        .eq('id', id)
-        .eq('user_id', user.id)
+        .eq('id', id) // Haushaltstabelle: RLS
         .single()
 
       const quantity    = existingAsset?.quantity ?? 0
@@ -314,14 +321,17 @@ export async function refreshPrices(): Promise<{ error?: string; updated?: numbe
   const { supabase, user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
-  const { data: assets } = await supabase
-    .from('assets')
-    .select('id, symbol, quantity, portfolio_name')
+  const ctx = await resolveScope(supabase, user)
+  const { data: scopedAssets } = await scopedOwner(
+    supabase.from('assets').select('id, user_id, source, symbol, quantity, portfolio_name'),
+    ctx,
+  )
     .in('type', ['crypto', 'stable', 'fiat'])
-    .eq('user_id', user.id)
     .not('symbol', 'is', null)
+  // Kraken-Bewertungen pflegt nur der Eigentuemer (Sync); fremde Kraken-Zeilen nicht anfassen.
+  const assets = (scopedAssets ?? []).filter(a => !(a.source === 'kraken' && a.user_id !== user.id))
 
-  if (!assets?.length) return { error: 'Keine Crypto-Assets mit Coin-ID gefunden' }
+  if (!assets.length) return { error: 'Keine Crypto-Assets mit Coin-ID gefunden' }
 
   let prices: Record<string, number>
   try {
@@ -654,7 +664,7 @@ export async function deletePortfolio(portfolioName: string): Promise<{ error: s
   const { error } = await supabase
     .from('assets')
     .delete()
-    .eq('user_id', user.id)
+    .eq('user_id', user.id) // bewusst nur eigene Assets: Sammel-Loeschung nie in Peer-Daten
     .eq('portfolio_name', portfolioName)
 
   if (error) return { error: error.message }

@@ -10,6 +10,7 @@ import { IndicatorFilters } from '@/components/strategy/indicator-filters'
 import { UrlFiltersProvider, FilterPending } from '@/components/providers/url-filters'
 import { IndicatorsTable } from '@/components/strategy/indicators-table'
 import { Suspense } from 'react'
+import { LeerZustand } from '@/components/leer/LeerZustand'
 
 type IndicatorWithCobra = IndicatorRow & {
   cobraGreen: number | null
@@ -30,13 +31,14 @@ export default async function IndicatorsPage({
 
   const { supabase, user } = await requireAuthUser()
 
-  const settings = await getSettings(user!.id)
+  // Einstellungen, gefilterte Liste und die ungefilterten Filteroptionen sind voneinander unabhaengig: eine Stufe statt drei.
+  const [settings, indicators, allIndicators] = await Promise.all([
+    getSettings(user!.id),
+    getIndicators(supabase, user!.id, { type: filterType, author: filterAuthor, onlyAllowed }),
+    getIndicatorFilterOptions(supabase, user!.id),
+  ])
   const defaultAssetClass = (settings.default_asset_class as string) ?? 'major'
   const defaultTimeframe  = (settings.default_timeframe  as string) ?? ''
-
-  const indicators = await getIndicators(supabase, user!.id, {
-    type: filterType, author: filterAuthor, onlyAllowed,
-  })
 
   // Load performance entries for these indicators
   const perfs = await getPerformanceForIndicators(supabase, indicators.map(i => i.id))
@@ -65,7 +67,6 @@ export default async function IndicatorsPage({
   }))
 
   // Unique filter options (from unfiltered data for better UX — load all)
-  const allIndicators = await getIndicatorFilterOptions(supabase, user!.id)
 
   const allTypes   = [...new Set(allIndicators.map(i => i.type))].sort()
   const allAuthors = [...new Set(allIndicators.map(i => i.author))].sort()
@@ -120,11 +121,9 @@ export default async function IndicatorsPage({
 
 function EmptyState() {
   return (
-    <div className="rounded-lg border border-dashed border-border bg-card py-16 text-center">
-      <p className="text-sm font-medium text-foreground">Noch keine Indikatoren</p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Füge deinen ersten Indikator hinzu und verfolge seine Performance.
-      </p>
-    </div>
+    <LeerZustand
+      titel="Noch keine Indikatoren"
+      text="Indikatoren sind die Bausteine deiner Strategien. Füge deinen ersten Indikator hinzu und verfolge seine Performance."
+    />
   )
 }

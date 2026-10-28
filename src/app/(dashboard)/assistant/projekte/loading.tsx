@@ -3,7 +3,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 /** Projektliste: eine Aktionszeile, darunter ein Rahmen mit Zeilen. */
 export default function Loading() {
   return (
-    <div className="flex max-w-3xl flex-col gap-3 animate-in fade-in duration-150">
+    <div role="status" aria-busy="true" className="flex max-w-3xl flex-col gap-3 animate-in fade-in duration-150">
+      <span className="sr-only">Lädt…</span>
       <Skeleton className="h-12 w-full rounded-lg" />
       <div className="divide-y divide-border rounded-lg border border-border">
         {Array.from({ length: 4 }).map((_, i) => (

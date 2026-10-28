@@ -5,6 +5,8 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { parseForm, parseInput, issueMessage } from '@/lib/api/validate'
 import { idField, uuid, reqText, optText, optUuid, optMoneyField, optIntField, moneyField } from '@/lib/api/schemas'
+import { requireRows } from '@/lib/data/mutation'
+import { setzeGeteilt } from '@/lib/haushalt/teilen'
 
 const PATH = '/finance/budget'
 type State = { error: string } | { success: true } | null
@@ -55,12 +57,14 @@ export async function createCategory(_prev: State, formData: FormData): Promise<
   const parsed = parseForm(formData, categorySchema)
   if (!parsed.ok) return { error: issueMessage(parsed) }
 
-  const { error } = await supabase.from('budget_categories').insert({
+  const { data: neu, error } = await supabase.from('budget_categories').insert({
     user_id: user.id,
     ...parsed.data,
-  })
+  }).select('id').single()
 
   if (error) return { error: error.message }
+  const teilFehler = await setzeGeteilt(supabase, 'budget_categories', neu.id, user.id, formData)
+  if (teilFehler) return { error: teilFehler }
   revalidatePath(PATH)
   return { success: true }
 }
@@ -73,13 +77,13 @@ export async function updateCategory(_prev: State, formData: FormData): Promise<
   if (!parsed.ok) return { error: issueMessage(parsed) }
   const { id, ...fields } = parsed.data
 
-  // .eq('user_id', ...) zusätzlich zur RLS-Policy — dieselbe Defense-in-Depth
-  // wie bei bank_transactions/crypto-Actions: die Policy allein reicht,
-  // die explizite Bedingung macht den Besitzer-Scope auch im Anwendungscode
-  // sichtbar statt sich ausschließlich auf die DB-Ebene zu verlassen.
-  const { error } = await supabase.from('budget_categories').update(fields).eq('id', id).eq('user_id', user.id)
+  // Budget-Kategorien/-Posten sind Haushaltsdaten (Entscheidung 2: jedes Mitglied darf bearbeiten): kein user_id-Filter,
+  // die RLS begrenzt auf den Haushalt. income_targets bleibt owner-only (user_id-Filter).
+  const { error } = await requireRows(supabase.from('budget_categories').update(fields).eq('id', id))
 
   if (error) return { error: error.message }
+  const teilFehler = await setzeGeteilt(supabase, 'budget_categories', id, user.id, formData)
+  if (teilFehler) return { error: teilFehler }
   revalidatePath(PATH)
   return { success: true }
 }
@@ -90,7 +94,7 @@ export async function deleteCategory(id: string): Promise<{ error?: string }> {
   const idP = parseInput(uuid, id)
   if (!idP.ok) return { error: issueMessage(idP) }
 
-  const { error } = await supabase.from('budget_categories').delete().eq('id', id).eq('user_id', user.id)
+  const { error } = await requireRows(supabase.from('budget_categories').delete().eq('id', id))
   if (error) return { error: error.message }
   revalidatePath(PATH)
   return {}
@@ -123,7 +127,7 @@ export async function updateItem(_prev: State, formData: FormData): Promise<Stat
   if (!parsed.ok) return { error: issueMessage(parsed) }
   const { id, ...fields } = parsed.data
 
-  const { error } = await supabase.from('budget_items').update(fields).eq('id', id).eq('user_id', user.id)
+  const { error } = await requireRows(supabase.from('budget_items').update(fields).eq('id', id))
 
   if (error) return { error: error.message }
   revalidatePath(PATH)
@@ -136,7 +140,7 @@ export async function deleteItem(id: string): Promise<{ error?: string }> {
   const idP = parseInput(uuid, id)
   if (!idP.ok) return { error: issueMessage(idP) }
 
-  const { error } = await supabase.from('budget_items').delete().eq('id', id).eq('user_id', user.id)
+  const { error } = await requireRows(supabase.from('budget_items').delete().eq('id', id))
   if (error) return { error: error.message }
   revalidatePath(PATH)
   return {}
@@ -171,10 +175,11 @@ export async function seedIfEmpty(): Promise<void> {
   const { supabase, user } = await getAuthUser()
   if (!user) return
 
-  const { count: catCount } = await supabase
-    .from('budget_categories')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', user.id)
+  // Beide Zaehlungen sind unabhaengig: eine Rundreise statt zwei hintereinander.
+  const [{ count: catCount }, { count: targetCount }] = await Promise.all([
+    supabase.from('budget_categories').select('id', { count: 'exact', head: true }),
+    supabase.from('income_targets').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+  ])
 
   if ((catCount ?? 0) === 0) {
     const seeds = [
@@ -186,11 +191,6 @@ export async function seedIfEmpty(): Promise<void> {
     ].map((seed) => ({ ...seed, user_id: user.id }))
     await supabase.from('budget_categories').insert(seeds)
   }
-
-  const { count: targetCount } = await supabase
-    .from('income_targets')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', user.id)
 
   if ((targetCount ?? 0) === 0) {
     await supabase.from('income_targets').insert({

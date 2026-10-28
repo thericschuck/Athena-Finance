@@ -17,7 +17,6 @@ async function valuableName(id: string, ctx: ActionContext): Promise<string> {
     .from('valuables')
     .select('name, marke, modell')
     .eq('id', id)
-    .eq('user_id', ctx.userId)
     .maybeSingle()
   if (!data) return id
   const row = data as { name: string; marke: string | null; modell: string | null }
@@ -41,7 +40,7 @@ export const inventoryActions = {
       'Trägt eine neue Bewertung (Schätzwert) für ein Stück aus dem Inventar ein. Sie wird ein ' +
       'weiterer Punkt im Wertverlauf, der aktuelle Wert ist der jüngste Eintrag bis heute. ' +
       'Vorher getValuables oder getValuableGaps aufrufen, um die id zu bekommen. Existiert für ' +
-      'dasselbe Datum schon eine Bewertung, wird sie ersetzt. Nenne nur Werte, die Eric dir ' +
+      'dasselbe Datum schon eine Bewertung, wird sie ersetzt. Nenne nur Werte, die der Nutzer dir ' +
       'gesagt hat — schätze nicht selbst.',
     schema: z.object({
       valuableId: z.string().uuid(),
@@ -58,7 +57,6 @@ export const inventoryActions = {
         .from('valuables')
         .select('id')
         .eq('id', input.valuableId)
-        .eq('user_id', ctx.userId)
         .maybeSingle()
       if (!item) return 'Gegenstand nicht gefunden'
       if (input.bewertetAm && Number.isNaN(new Date(`${input.bewertetAm}T12:00:00`).getTime())) {
@@ -80,7 +78,6 @@ export const inventoryActions = {
         .from('valuable_valuations')
         .select('wert, bewertet_am')
         .eq('valuable_id', input.valuableId)
-        .eq('user_id', ctx.userId)
         .lte('bewertet_am', am)
         .order('bewertet_am', { ascending: false })
         .limit(1)
@@ -128,7 +125,7 @@ export const inventoryActions = {
       'Markiert ein Stück aus dem Inventar als verkauft: Verkaufsdatum und Verkaufspreis werden ' +
       'gesetzt, das Stück verschwindet aus Vitrine und Sammlungssumme. Zeile und Wertverlauf ' +
       'bleiben erhalten. Vorher getValuables aufrufen, um die id zu bekommen. Datum und Preis ' +
-      'müssen von Eric stammen — rate sie nicht.',
+      'müssen vom Nutzer stammen — rate sie nicht.',
     schema: z.object({
       valuableId: z.string().uuid(),
       verkauftAm: z
@@ -143,7 +140,6 @@ export const inventoryActions = {
         .from('valuables')
         .select('verkauft_am')
         .eq('id', input.valuableId)
-        .eq('user_id', ctx.userId)
         .maybeSingle()
       if (!data) return 'Gegenstand nicht gefunden'
       const bisher = (data as { verkauft_am: string | null }).verkauft_am
@@ -167,7 +163,6 @@ export const inventoryActions = {
         .from('valuables_current')
         .select('kaufpreis, aktueller_wert')
         .eq('id', input.valuableId)
-        .eq('user_id', ctx.userId)
         .maybeSingle()
       const ref = data as { kaufpreis: number | null; aktueller_wert: number | null } | null
       const kauf = ref?.kaufpreis ?? null
@@ -203,7 +198,6 @@ export const inventoryActions = {
           updated_at: new Date().toISOString(),
         } as never)
         .eq('id', input.valuableId)
-        .eq('user_id', ctx.userId)
       if (error) throw new Error(error.message)
       return { valuableId: input.valuableId, verkauftAm, verkaufspreis: input.verkaufspreis }
     },
@@ -240,7 +234,7 @@ export const inventoryActions = {
       qualitaet: z
         .enum(['auto', 'high'])
         .default('auto')
-        .describe('high kostet ein Vielfaches — nur wenn Eric ausdrücklich mehr Qualität will'),
+        .describe('high kostet ein Vielfaches — nur wenn der Nutzer ausdrücklich mehr Qualität will'),
     }),
     validate: async (input, ctx) => {
       if (!artworkVerfuegbar()) return OHNE_SCHLUESSEL
@@ -249,7 +243,6 @@ export const inventoryActions = {
         .from('valuables')
         .select('id')
         .eq('id', input.valuableId)
-        .eq('user_id', ctx.userId)
         .maybeSingle()
       if (!item) return 'Gegenstand nicht gefunden'
 
@@ -261,7 +254,6 @@ export const inventoryActions = {
         .select('id')
         .in('id', input.basisBildIds)
         .eq('valuable_id', input.valuableId)
-        .eq('user_id', ctx.userId)
       const gefunden = new Set((bilder ?? []).map((b) => b.id))
       const fehlend = input.basisBildIds.filter((id) => !gefunden.has(id))
       if (fehlend.length > 0) {
@@ -293,7 +285,6 @@ export const inventoryActions = {
           .from('valuable_images')
           .select('id, art, created_at')
           .in('id', input.basisBildIds)
-          .eq('user_id', ctx.userId)
         const bilder = (data ?? []) as { id: string; art: string; created_at: string }[]
         const fotos = bilder.filter((b) => b.art === 'foto').length
         const artworks = bilder.length - fotos

@@ -4,6 +4,11 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function proxy(request: NextRequest) {
   // Public routes — skip session check entirely
   const { pathname } = request.nextUrl
+  // Nur bei PERF_LOG=1: Request-Kennung und Pfad fuer die Aufrufmessung (lib/perf/perf-log.ts) an die Server-Komponenten reichen.
+  if (process.env.PERF_LOG === '1') {
+    request.headers.set('x-perf-rid', Math.random().toString(36).slice(2, 10))
+    request.headers.set('x-perf-path', pathname)
+  }
   // Die Startseite ist öffentlich und statisch (kein Auth-Aufruf in der Seite selbst). Wer eingeloggt ist, wird HIER zum Dashboard
   // weitergeleitet; ohne Sitzungs-Cookie geht die Anfrage sofort durch, ohne Aufruf bei Supabase.
   const istStartseite = pathname === '/'
@@ -13,6 +18,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/api/cron/') ||
     pathname === '/login' ||
     pathname.startsWith('/auth/') ||
+    // Einladungslink eines Haushalts: wer ihn bekommt, hat noch kein Konto. Die Seite prueft das Token selbst.
+    pathname.startsWith('/einladung/') ||
     // Öffentliche Prototyp-/Rechtsseiten ohne Login — sonst greift dieselbe
     // Auth-Prüfung wie überall sonst und schickt jeden nicht eingeloggten
     // Besuch auf /login, bevor die Seite selbst überhaupt lädt.

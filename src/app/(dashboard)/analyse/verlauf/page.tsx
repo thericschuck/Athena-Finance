@@ -1,5 +1,7 @@
+import { Suspense } from 'react'
 import Link from 'next/link'
 import { requireAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { getSettings } from '@/lib/settings'
 import { MAX_PAGE } from '@/lib/pagination'
 import { PAGE_SIZE, type TabCtx } from '@/components/verlauf/shared'
@@ -7,6 +9,7 @@ import { NetworthTab } from '@/components/verlauf/NetworthTab'
 import { AccountsTab } from '@/components/verlauf/AccountsTab'
 import { PortfolioTab } from '@/components/verlauf/PortfolioTab'
 import { MonthlyTab } from '@/components/verlauf/MonthlyTab'
+import { VerlaufTabSkeleton } from '@/components/verlauf/VerlaufSkeletons'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const TABS     = ['networth', 'accounts', 'portfolio', 'monthly'] as const
@@ -39,20 +42,13 @@ export default async function HistoryPage({
   const to   = from + PAGE_SIZE - 1
 
   const { supabase, user } = await requireAuthUser()
-  const uid = user!.id
-
-  const settings = await getSettings(uid)
+  const uid = user.id
+  // Scope und Einstellungen sind unabhaengig: eine Rundreise-Stufe statt zwei (Layout teilt dieselben Ergebnisse per cache()).
+  const [scopeCtx, settings] = await Promise.all([resolveScope(supabase, user), getSettings(uid)])
   const locale = (settings.number_format as string) ?? 'de-DE'
   const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
 
-  const ctx: TabCtx = { supabase, uid, locale, dateFormat, page, from, to, params }
-
-  // ── Fetch data for active tab ──────────────────────────────────────────────
-  let content: React.ReactNode = null
-  if (tab === 'networth')  content = await NetworthTab(ctx)
-  if (tab === 'accounts')  content = await AccountsTab(ctx)
-  if (tab === 'portfolio') content = await PortfolioTab(ctx)
-  if (tab === 'monthly')   content = await MonthlyTab(ctx)
+  const ctx: TabCtx = { supabase, uid, ctx: scopeCtx, locale, dateFormat, page, from, to, params }
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -88,10 +84,22 @@ export default async function HistoryPage({
       </div>
 
       {/* Table */}
+      {/* Kopf und Tabs stehen sofort; nur der Tab-Inhalt (die schweren Abfragen) streamt nach. key: jeder Parameter-
+          wechsel (Tab, Seite, Filter) zeigt wieder den Platzhalter statt die alte Ansicht einzufrieren. */}
       <div className="rounded-lg border border-border bg-card overflow-hidden">
-        {content}
+        <Suspense key={JSON.stringify(params)} fallback={<VerlaufTabSkeleton tab={tab} />}>
+          <TabInhalt tab={tab} ctx={ctx} />
+        </Suspense>
       </div>
 
     </div>
   )
+}
+
+/** Holt die Daten des aktiven Tabs; als eigene Komponente, damit Kopf und Tab-Leiste nicht darauf warten. */
+async function TabInhalt({ tab, ctx }: { tab: Tab; ctx: TabCtx }) {
+  if (tab === 'networth') return NetworthTab(ctx)
+  if (tab === 'accounts') return AccountsTab(ctx)
+  if (tab === 'portfolio') return PortfolioTab(ctx)
+  return MonthlyTab(ctx)
 }

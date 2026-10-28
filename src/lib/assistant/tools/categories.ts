@@ -1,8 +1,10 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { type DB } from '@/lib/assistant/tools/shared'
+import { scopeHaushaltsweit, scopeKonten, scopeOwner } from '@/lib/assistant/tools/scope'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 
-export function buildCategoryTools(supabase: DB, userId: string) {
+export function buildCategoryTools(supabase: DB, ctx: ScopeContext) {
   return {
     // ── Kategorien ────────────────────────────────────────────────────────────
     getCategories: tool({
@@ -14,11 +16,11 @@ export function buildCategoryTools(supabase: DB, userId: string) {
         'Wie stark eine Kategorie tatsächlich genutzt wird, steht hier NICHT — dafür getCategoryUsage.',
       inputSchema: z.object({}),
       execute: async () => {
-        const { data, error } = await supabase
-          .from('categories')
-          .select('id, name, type, parent_id, budget_monthly, color, icon')
-          .eq('user_id', userId)
-          .order('sort_order')
+        // Ein Kategorienbaum pro Haushalt: kein Scope-Unterschied, mit Partner begrenzt nur die RLS.
+        const { data, error } = await scopeHaushaltsweit(
+          supabase.from('categories').select('id, name, type, parent_id, budget_monthly, color, icon'),
+          ctx,
+        ).order('sort_order')
         if (error) return { error: error.message }
         const byId = new Map((data ?? []).map((c) => [c.id, c]))
         return {
@@ -58,20 +60,13 @@ export function buildCategoryTools(supabase: DB, userId: string) {
         const sinceIso = since.toISOString().slice(0, 10)
 
         const [categories, transactions, contracts] = await Promise.all([
-          supabase
-            .from('categories')
-            .select('id, name, type, parent_id, budget_monthly')
-            .eq('user_id', userId)
+          scopeHaushaltsweit(supabase.from('categories').select('id, name, type, parent_id, budget_monthly'), ctx)
             .order('sort_order'),
-          supabase
-            .from('unified_transactions')
-            .select('category_id, type, amount, date, description, merchant')
-            .eq('user_id', userId)
-            .gte('date', sinceIso),
-          supabase
-            .from('contracts')
-            .select('category_id')
-            .eq('user_id', userId)
+          scopeKonten(
+            supabase.from('unified_transactions').select('category_id, type, amount, date, description, merchant'),
+            ctx,
+          ).gte('date', sinceIso),
+          scopeOwner(supabase.from('contracts').select('category_id'), ctx)
             .eq('is_active', true),
         ])
         if (categories.error) return { error: categories.error.message }

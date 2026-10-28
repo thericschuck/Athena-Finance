@@ -5,6 +5,7 @@ import { AddStrategyDialog } from '@/components/strategy/strategy-form'
 import { DeleteStrategyButton } from '@/components/strategy/strategy-form'
 import { getComboOptions, getStrategies, getSubmissionReadyIds } from '@/lib/data/strategy'
 import { getSettings } from '@/lib/settings'
+import { LeerZustand } from '@/components/leer/LeerZustand'
 
 // ─── Badge helpers ────────────────────────────────────────────────────────────
 const STATUS_STYLE: Record<string, string> = {
@@ -35,17 +36,16 @@ export default async function StrategiesPage({
 
   const { supabase, user } = await requireAuthUser()
 
-  const settings = await getSettings(user!.id)
-  const locale = (settings.number_format as string) ?? 'de-DE'
-  const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
-  const defaultAssetClass = (settings.default_asset_class as string) ?? 'major'
-  const defaultTimeframe  = (settings.default_timeframe  as string) ?? ''
-
-  const [comboOptions, allStrategies, readyIds] = await Promise.all([
+  const [settings, comboOptions, allStrategies, readyIds] = await Promise.all([
+    getSettings(user!.id),
     getComboOptions(supabase, user!.id),
     getStrategies(supabase, user!.id),
     getSubmissionReadyIds(supabase),
   ])
+  const locale = (settings.number_format as string) ?? 'de-DE'
+  const dateFormat = (settings.date_format as string) ?? 'dd.MM.yyyy'
+  const defaultAssetClass = (settings.default_asset_class as string) ?? 'major'
+  const defaultTimeframe  = (settings.default_timeframe  as string) ?? ''
   const readyIdSet = new Set(readyIds)
 
   const strategies = onlyReady
@@ -84,16 +84,15 @@ export default async function StrategiesPage({
 
       {/* Empty state */}
       {strategies.length === 0 && (
-        <div className="rounded-lg border border-dashed border-border bg-card py-16 text-center">
-          <p className="text-sm font-medium text-foreground">
-            {onlyReady ? 'Keine submission-ready Strategien' : 'Noch keine Strategien'}
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {onlyReady
-              ? 'Checklist und Robustness Tests müssen vollständig sein.'
-              : 'Erstelle deine erste Trading-Strategie.'}
-          </p>
-        </div>
+        <LeerZustand
+          titel={onlyReady ? 'Keine submission-ready Strategien' : 'Noch keine Strategien'}
+          text={onlyReady
+            ? 'Checklist und Robustness Tests müssen vollständig sein.'
+            : 'Hier verwaltest du Trading-Strategien samt Checkliste und Robustness-Tests. Erstelle deine erste Strategie.'}
+          aktionNode={onlyReady ? undefined : (
+            <AddStrategyDialog comboOptions={comboOptions} defaultAssetClass={defaultAssetClass} defaultTimeframe={defaultTimeframe} />
+          )}
+        />
       )}
 
       {/* Strategy cards */}

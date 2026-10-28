@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database, Json } from '@/types/database'
 import { ladeSteuerdaten } from '@/lib/tax/laden'
 import { berechneSteuerposition } from '@/lib/tax/position'
-import { ladeVertragsAbgleich } from '@/lib/data/vertrag-abgleich'
+import { ladeVertragsAbgleichFuerNutzer } from '@/lib/data/vertrag-abgleich'
 import {
   ERINNERUNG_TYP, erzeugeErinnerungen, planeAbgleich,
   type ErinnerungsEingabe, type VorhandeneErinnerung,
@@ -57,7 +57,7 @@ async function ladeEingabe(supabase: DB, userId: string, heute: string): Promise
 
   // Kein Fallback auf eine leere Liste: sonst würden bei einem Lesefehler alle offenen Vertragshinweise
   // archiviert und kämen wegen des stabilen Schlüssels nie wieder. Der Fehler soll den Lauf sichtbar scheitern lassen.
-  const offeneVertragsbuchungen = (await ladeVertragsAbgleich(supabase, userId, heute))
+  const offeneVertragsbuchungen = (await ladeVertragsAbgleichFuerNutzer(supabase, userId, heute))
     .filter(x => x.abgleich.status === 'offen')
     .map(x => ({ id: x.vertrag.id, name: x.vertrag.name, termin: x.abgleich.termin, betrag: x.vertrag.amount }))
 

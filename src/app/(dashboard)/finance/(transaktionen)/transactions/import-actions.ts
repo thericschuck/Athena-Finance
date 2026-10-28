@@ -21,8 +21,8 @@ export type VorhandeneErgebnis =
 
 /**
  * Vorhandene Buchungen eines Kontos im Zeitraum, für die Duplikatprüfung des CSV-Imports (Datum, Betrag mit
- * Vorzeichen, Text). Liest die Sicht `unified_transactions`, also auch Buchungen des Bank-Syncs. Nur eigene
- * Daten (user_id-Filter), keine IDs und keine Salden in der Antwort.
+ * Vorzeichen, Text). Liest die Sicht `unified_transactions`, also auch Buchungen des Bank-Syncs. Nur Daten
+ * des Haushalts (RLS, kein user_id-Filter), keine IDs und keine Salden in der Antwort.
  */
 export async function ladeVorhandeneBuchungen(input: {
   accountId: string
@@ -55,7 +55,6 @@ export async function ladeVorhandeneBuchungen(input: {
     const { data, error } = await supabase
       .from('unified_transactions')
       .select('date, booked_date, amount, signed_amount, type, description, merchant')
-      .eq('user_id', user.id)
       .eq('account_id', accountId)
       .gte('date', fVon)
       .lte('date', fBis)

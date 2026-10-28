@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation'
 import { getAuthUser } from '@/lib/supabase/server'
 import { ladeSteuerdaten } from '@/lib/tax/laden'
 import { berechneSteuerposition } from '@/lib/tax/position'
-import { AlertTriangle, ArrowRight } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Calculator } from 'lucide-react'
+import { LeerZustand } from '@/components/leer/LeerZustand'
 
 const euro = (n: number) =>
   n.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 })
@@ -60,9 +61,13 @@ export default async function SteuerPage({
 
   // Fehlt der Tarif oder bricht eine Abfrage, wird das gesagt und nicht mit
   // halben Daten gerechnet -- eine falsche Steuerzahl ist schlimmer als keine.
+  // Die Konten-Zaehlung (unten fuer den Leerzustand) ist unabhaengig von den Steuerdaten: gleich mitstarten.
+  const kontenZaehlung = Promise.resolve(
+    supabase.from('accounts').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+  )
   let daten
   try {
-    daten = await ladeSteuerdaten(supabase, user.id, jahr)
+    ;[daten] = await Promise.all([ladeSteuerdaten(supabase, user.id, jahr), kontenZaehlung])
   } catch (fehler) {
     return (
       <div className="p-4 sm:p-8">
@@ -70,6 +75,27 @@ export default async function SteuerPage({
         <div className="mt-6 rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm">
           {fehler instanceof Error ? fehler.message : 'Die Steuerposition ist nicht berechenbar.'}
         </div>
+      </div>
+    )
+  }
+
+  // Wirklich nichts da (keine eigenen Konten, keine steuerrelevanten Betraege, kein Kraken): erklaeren
+  // statt einer Steuerposition aus lauter Nullen. Wer Daten hat, kommt hier nie hinein.
+  const { count: eigeneKonten } = await kontenZaehlung
+  const e = daten.eingaben
+  const steuerLeer = (eigeneKonten ?? 0) === 0 && daten.krypto === null
+    && e.betriebseinnahmen === 0 && e.betriebsausgaben === 0 && e.lohnNettoImJahr === 0
+  if (steuerLeer) {
+    return (
+      <div className="space-y-4 p-4 sm:p-8">
+        <h1 className="text-2xl font-semibold tracking-tight">Steuer {jahr}</h1>
+        <LeerZustand
+          icon={Calculator}
+          titel="Noch keine steuerrelevanten Daten"
+          text="Die Steuerposition rechnet aus deinen Buchungen: Betriebseinnahmen und -ausgaben, Lohn und Krypto-Gewinne. Sie erscheint, sobald Konten mit Buchungen da sind und Kategorien eine steuerliche Rolle tragen."
+          aktion={{ label: 'Konto anlegen', href: '/finance/accounts' }}
+          sekundaer={{ label: 'Kategorien öffnen', href: '/finance/categories' }}
+        />
       </div>
     )
   }

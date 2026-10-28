@@ -2,8 +2,10 @@ import { tool } from 'ai'
 import { z } from 'zod'
 import { alsTag, alsIso, tageDazu, faelligkeitenIm } from '@/lib/assistant/recurrence'
 import { ROW_CAP, untrust, type DB } from '@/lib/assistant/tools/shared'
+import { scopeKonten, scopeKontenTabelle, scopeOwner } from '@/lib/assistant/tools/scope'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 
-export function buildObligationTools(supabase: DB, userId: string) {
+export function buildObligationTools(supabase: DB, ctx: ScopeContext) {
   return {
     // ── Verpflichtungs-Kalender ──────────────────────────────────────────────
     getObligationCalendar: tool({
@@ -25,17 +27,19 @@ export function buildObligationTools(supabase: DB, userId: string) {
         const vor90 = tageDazu(heute, -90)
 
         const [vertraegeRes, kontenRes, schuldenRes] = await Promise.all([
-          supabase
-            .from('contracts')
-            .select('id, name, type, provider, frequency, amount, currency, billing_day, start_date, end_date, notice_days, auto_renews, account_id')
-            .eq('user_id', userId)
-            .eq('is_active', true),
-          supabase.from('accounts').select('id, name').eq('user_id', userId),
-          supabase
-            .from('debts')
-            .select('id, name, type, creditor, outstanding, monthly_payment, interest_rate, due_date')
-            .eq('user_id', userId)
-            .eq('is_active', true),
+          scopeOwner(
+            supabase
+              .from('contracts')
+              .select('id, name, type, provider, frequency, amount, currency, billing_day, start_date, end_date, notice_days, auto_renews, account_id'),
+            ctx,
+          ).eq('is_active', true),
+          scopeKontenTabelle(supabase.from('accounts').select('id, name'), ctx),
+          scopeOwner(
+            supabase
+              .from('debts')
+              .select('id, name, type, creditor, outstanding, monthly_payment, interest_rate, due_date'),
+            ctx,
+          ).eq('is_active', true),
         ])
         if (vertraegeRes.error) return { error: vertraegeRes.error.message }
         if (schuldenRes.error) return { error: schuldenRes.error.message }
@@ -65,10 +69,7 @@ export function buildObligationTools(supabase: DB, userId: string) {
                 .order('payment_date', { ascending: false })
             : Promise.resolve({ data: [], error: null }),
           betraege.length > 0
-            ? supabase
-                .from('unified_transactions')
-                .select('id, date, amount, account_id')
-                .eq('user_id', userId)
+            ? scopeKonten(supabase.from('unified_transactions').select('id, date, amount, account_id'), ctx)
                 .gte('date', alsIso(rueckblickVon))
                 .lte('date', alsIso(heute))
                 .in('amount', betraege)

@@ -1,6 +1,7 @@
 import type { BankTransaction } from '@/types/bank'
 import type { BankSeitenDaten, BankScope, BankFlowZeile } from './typen.ts'
 import { normIban } from './scope.ts'
+import { ibanSet, istUmbuchungIban } from '../haushalt/umbuchung.ts'
 import { sumFlows, savingsRate } from '../finance/flow-calc.ts'
 
 /**
@@ -13,12 +14,12 @@ import { sumFlows, savingsRate } from '../finance/flow-calc.ts'
  */
 
 export function istUmbuchung(t: BankTransaction, eigeneIbans: ReadonlySet<string>): boolean {
-  return !!t.counterpart_iban && eigeneIbans.has(normIban(t.counterpart_iban))
+  return istUmbuchungIban(t.counterpart_iban, eigeneIbans)
 }
 
 /** Buchungen ohne Umbuchungen — Grundlage aller Einnahmen-/Ausgaben-Auswertungen hier. */
 export function ohneUmbuchungen(buchungen: BankTransaction[], eigeneIbans: readonly string[]): BankTransaction[] {
-  const set = new Set(eigeneIbans.map(normIban))
+  const set = ibanSet(eigeneIbans)
   return buchungen.filter(t => !istUmbuchung(t, set))
 }
 
@@ -73,7 +74,7 @@ export function gegenparteien(
   richtung: Richtung,
   topN = 10,
 ): ParteiAuswertung {
-  const eigene = new Set(eigeneIbans.map(normIban))
+  const eigene = ibanSet(eigeneIbans)
   const nach = new Map<string, ParteiZeile & { namen: Map<string, number> }>()
   let gesamt = 0
   let gesamtAnzahl = 0
@@ -296,7 +297,7 @@ export function berechneMuster(
 ): Muster {
   const ausgaben = richtung === 'ausgaben'
   const nomen = ausgaben ? 'Ausgaben' : 'Einnahmen'
-  const eigene = new Set(eigeneIbans.map(normIban))
+  const eigene = ibanSet(eigeneIbans)
   const m: Muster = {
     anzahl: 0, summe: 0, genug: false,
     wochentagSumme: Array(7).fill(0), wochentagAnzahl: Array(7).fill(0),

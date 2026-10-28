@@ -3,6 +3,8 @@ import { AlertTriangle } from 'lucide-react'
 import { fmtCurrency, fmtNumber } from '@/lib/format'
 import { kryptoErgebnis, prozentText, tonFuer, zeigeRebalancing, type Ton } from '@/lib/dashboard/anlagen'
 import type { DashAbschnittProps } from '@/lib/dashboard/typen'
+import { dashboardLeer } from '@/lib/dashboard/leer'
+import { LeerZustand } from '@/components/leer/LeerZustand'
 import { DASH_KARTE, DashKartenReihe } from './DashKontoReihe'
 
 const TON_KLASSE: Record<Ton, string> = {
@@ -27,7 +29,23 @@ export function DashAnlagen({ kern }: DashAbschnittProps) {
   const hatKrypto = k.gesamt > 0 || k.topAssets.length > 0
   const hatInventar = kern.inventar.stueck > 0
   const anzahl = kern.depots.length + (hatKrypto ? 1 : 0) + (hatInventar ? 1 : 0)
-  if (anzahl === 0) return null
+  if (anzahl === 0) {
+    // Nur bei einem Nutzer ganz ohne Daten ein Platzhalter (sonst bliebe neben den Fixkosten ein Loch);
+    // mit Daten, aber ohne Anlagen bleibt es wie bisher bei nichts.
+    if (!dashboardLeer(kern).leer) return null
+    return (
+      <section aria-label="Anlagen" className="flex h-full min-w-0 flex-col rounded-lg border border-border bg-card p-4">
+        <h2 className="text-sm font-semibold">Anlagen</h2>
+        <LeerZustand
+          variante="kompakt"
+          className="flex-1"
+          titel="Noch keine Anlagen"
+          text="Depots, Krypto und Wertgegenstände erscheinen hier, sobald du sie anlegst."
+          aktion={{ label: 'Zum Depot', href: '/depot' }}
+        />
+      </section>
+    )
+  }
 
   const kErgebnis = kryptoErgebnis(k.gesamt, k.kosten)
   const top = k.topAssets[0]

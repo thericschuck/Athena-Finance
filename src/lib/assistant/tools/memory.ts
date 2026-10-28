@@ -1,8 +1,11 @@
+import type { ScopeContext } from '@/lib/haushalt/scope'
 import { tool } from 'ai'
 import { z } from 'zod'
 import { untrust, type DB, type AthenaToolOptions } from '@/lib/assistant/tools/shared'
 
-export function buildMemoryTools(supabase: DB, userId: string, options: AthenaToolOptions) {
+export function buildMemoryTools(supabase: DB, ctx: ScopeContext, options: AthenaToolOptions) {
+  // Persönliche Daten (Athena-Gedächtnis, Anhänge): immer der angemeldete Nutzer, unabhängig vom Scope.
+  const userId = ctx.userId
   return {
     // ── Kontext-Speicher ──────────────────────────────────────────────────────
     ...(options.memoryEnabled

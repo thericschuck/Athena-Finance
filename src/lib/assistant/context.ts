@@ -1,5 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import type { ScopeContext } from '@/lib/haushalt/scope'
+import { scopeHaushaltsweit, scopeKontenTabelle } from '@/lib/assistant/tools/scope'
+import { anzeigeName } from '@/lib/assistant/nutzername'
 
 type DB = SupabaseClient<Database>
 
@@ -63,18 +66,13 @@ export async function loadKnowledgeIndex(supabase: DB, userId: string): Promise<
  * getAccounts-Aufruf beginnt, dessen Ergebnis sich zwischen zwei Nachrichten
  * praktisch nie ändert. Ein Schritt gespart, bei sehr geringen Kosten.
  */
-export async function loadAccountContext(supabase: DB, userId: string) {
+export async function loadAccountContext(supabase: DB, ctx: ScopeContext) {
   const [accounts, categories] = await Promise.all([
-    supabase
-      .from('accounts')
-      .select('id, name, type, currency')
-      .eq('user_id', userId)
+    // Konten des aktiven Scopes; Kategorien: ein Baum pro Haushalt.
+    scopeKontenTabelle(supabase.from('accounts').select('id, name, type, currency'), ctx)
       .eq('is_active', true)
       .order('sort_order'),
-    supabase
-      .from('categories')
-      .select('id, name, type, parent_id')
-      .eq('user_id', userId)
+    scopeHaushaltsweit(supabase.from('categories').select('id, name, type, parent_id'), ctx)
       .order('sort_order'),
   ])
   return {
@@ -83,7 +81,27 @@ export async function loadAccountContext(supabase: DB, userId: string) {
   }
 }
 
+/**
+ * Anzeigename (Vorname) des Nutzers für Athenas Texte oder `null`. Aus den Haushaltsmitgliedern, sonst aus
+ * `user_profiles.display_name`; eine E-Mail-Adresse zählt nie als Name (siehe anzeigeName).
+ */
+export async function loadAnzeigeName(supabase: DB, ctx: ScopeContext): Promise<string | null> {
+  const ausHaushalt = ctx.members.find(m => m.id === ctx.userId)?.name
+  if (ausHaushalt) return anzeigeName(ausHaushalt)
+  return loadAnzeigeNameFuerNutzer(supabase, ctx.userId)
+}
+
+/** Wie loadAnzeigeName, nur aus dem eigenen Profil (Einstellungsseite, Server Actions: kein ScopeContext zur Hand). */
+export async function loadAnzeigeNameFuerNutzer(supabase: DB, userId: string): Promise<string | null> {
+  const { data } = await supabase.from('user_profiles').select('display_name').eq('id', userId).maybeSingle()
+  return anzeigeName(data?.display_name)
+}
+
 export type AthenaContext = {
+  /** Bereinigter Anzeigename des Nutzers; `null` = unbekannt, dann gelten die neutralen Formulierungen. */
+  nutzerName?: string | null
+  /** Aktiver Haushalts-Scope (vom Server aufgelöst, nie vom Modell). */
+  scope: ScopeContext
   memories: MemoryEntry[]
   knowledge: KnowledgeIndexEntry[]
   accounts: Awaited<ReturnType<typeof loadAccountContext>>['accounts']
@@ -92,13 +110,15 @@ export type AthenaContext = {
 
 export async function loadAthenaContext(
   supabase: DB,
-  userId: string,
+  scope: ScopeContext,
   options: { memoryEnabled: boolean },
 ): Promise<AthenaContext> {
-  const [memories, knowledge, structure] = await Promise.all([
-    options.memoryEnabled ? loadMemories(supabase, userId) : Promise.resolve([]),
-    loadKnowledgeIndex(supabase, userId),
-    loadAccountContext(supabase, userId),
+  const [memories, knowledge, structure, nutzerName] = await Promise.all([
+    // Gedächtnis und Wissensbasis sind persönlich (ai_*): immer der angemeldete Nutzer.
+    options.memoryEnabled ? loadMemories(supabase, scope.userId) : Promise.resolve([]),
+    loadKnowledgeIndex(supabase, scope.userId),
+    loadAccountContext(supabase, scope),
+    loadAnzeigeName(supabase, scope),
   ])
-  return { memories, knowledge, ...structure }
+  return { scope, nutzerName, memories, knowledge, ...structure }
 }

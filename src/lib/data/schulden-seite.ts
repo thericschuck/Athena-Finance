@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { applyOwnerScope, type ScopeContext } from '@/lib/haushalt/scope'
 import type { DebtRow } from '@/lib/data/finance-planning'
 
 type DB = SupabaseClient<Database>
@@ -26,11 +27,13 @@ export type SchuldMitZahlungen = DebtRow & {
  * Alle Schulden des Nutzers (aktive und abgeschlossene) samt ihren Zahlungen, jüngste Zahlung zuerst.
  * Die Seite filtert selbst; so stehen Kennzahlen wie „bereits getilgt" immer auf der ganzen Datenbasis.
  */
-export async function ladeSchuldenSeite(supabase: DB, userId: string): Promise<SchuldMitZahlungen[]> {
-  const { data: debts } = await supabase
-    .from('debts')
-    .select('id, name, type, creditor, currency, original_amount, outstanding, interest_rate, monthly_payment, due_date, is_active, notes, created_at')
-    .eq('user_id', userId)
+export async function ladeSchuldenSeite(supabase: DB, ctx: ScopeContext): Promise<SchuldMitZahlungen[]> {
+  const { data: debts } = await applyOwnerScope(
+    supabase
+      .from('debts')
+      .select('id, name, type, creditor, currency, original_amount, outstanding, interest_rate, monthly_payment, due_date, is_active, notes, shared, created_at'),
+    ctx,
+  )
     .order('created_at', { ascending: false })
   if (!debts || debts.length === 0) return []
 
@@ -70,6 +73,7 @@ export async function ladeSchuldenSeite(supabase: DB, userId: string): Promise<S
     due_date: d.due_date,
     is_active: d.is_active,
     notes: d.notes,
+    shared: d.shared,
     angelegt: d.created_at.slice(0, 10),
     zahlungen: jeSchuld.get(d.id) ?? [],
   }))

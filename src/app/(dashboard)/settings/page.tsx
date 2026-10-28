@@ -1,16 +1,22 @@
 import { requireAuthUser } from '@/lib/supabase/server'
-import { getProfile, getSettings } from '@/lib/settings'
+import { getSettings } from '@/lib/settings'
+import { getOwnProfile, resolveScope } from '@/lib/haushalt/resolve'
 import { getActiveAccountOptions } from '@/lib/data/overview'
 import { listWaitlistFor } from '@/lib/waitlist'
 import { SettingsShell } from '@/components/settings/settings-shell'
 
-export default async function SettingsPage() {
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ tab?: string | string[] }> }) {
   const { supabase, user } = await requireAuthUser()
+  // Direktlink auf einen Reiter, z. B. /settings?tab=integrationen (Checkliste "Erste Schritte"). Unbekannte Werte
+  // werden in der Shell ignoriert (Start auf "Profil").
+  const tabParam = (await searchParams).tab
+  const initialTab = Array.isArray(tabParam) ? tabParam[0] : tabParam
 
   const [profile, settings, accountRows, waitlist] = await Promise.all([
-    getProfile(user!.id),
+    getOwnProfile(supabase, user!.id),
     getSettings(user!.id),
-    getActiveAccountOptions(supabase, user!.id),
+    // Fest Scope 'ich' (Standardkonten gehoeren zur eigenen Sicht), unabhaengig vom Switcher-Cookie; pro Request memoisiert.
+    resolveScope(supabase, user!, 'ich').then(ctx => getActiveAccountOptions(supabase, ctx)),
     // Liefert nur für den Eigentümer Zeilen, sonst null — und genau daran
     // entscheidet die Shell, ob es den Reiter überhaupt gibt (siehe
     // lib/waitlist.ts).
@@ -26,6 +32,7 @@ export default async function SettingsPage() {
         accounts={accountRows}
         email={user!.email ?? ''}
         waitlist={waitlist}
+        initialTab={initialTab}
       />
     </div>
   )

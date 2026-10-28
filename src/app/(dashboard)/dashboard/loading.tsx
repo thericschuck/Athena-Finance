@@ -7,7 +7,8 @@ import { Skeleton, SkeletonChart } from '@/components/ui/skeleton'
  */
 export default function Loading() {
   return (
-    <div className="mx-auto w-full max-w-[1600px] space-y-4 p-4 sm:p-6 animate-in fade-in duration-150">
+    <div role="status" aria-busy="true" className="mx-auto w-full max-w-[1600px] space-y-4 p-4 sm:p-6 animate-in fade-in duration-150">
+      <span className="sr-only">Lädt…</span>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <Skeleton className="h-8 w-36" />
         <Skeleton className="h-4 w-56" />

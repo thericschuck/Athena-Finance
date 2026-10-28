@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  BarChart2, CandlestickChart, Mail, Palette, Plug, User, Wallet,
+  BarChart2, CandlestickChart, Mail, Palette, Plug, User, Users, Wallet,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useReducedMotion } from '@/lib/use-reduced-motion'
@@ -15,6 +15,7 @@ import { AnalyseForm, type AnalyseFormAccount } from './analyse-form'
 import { TradingForm }       from './trading-form'
 import { IntegrationsForm }  from './integrations-form'
 import { WaitlistPanel }     from './waitlist-panel'
+import { HouseholdPanel }    from './household-panel'
 import type { WaitlistRow }  from '@/lib/waitlist'
 
 const TABS = [
@@ -24,6 +25,7 @@ const TABS = [
   { id: 'analyse',        label: 'Analyse',        icon: BarChart2        },
   { id: 'trading',        label: 'Trading',        icon: CandlestickChart },
   { id: 'integrationen',  label: 'Integrationen',  icon: Plug            },
+  { id: 'haushalt',       label: 'Haushalt',       icon: Users           },
   // Erscheint nur, wenn die Seite überhaupt Zeilen mitgeliefert hat — also für
   // den Eigentümer (siehe lib/waitlist.ts). Für alle anderen ist der Reiter
   // nicht etwa deaktiviert, sondern gar nicht vorhanden.
@@ -62,6 +64,7 @@ export function SettingsShell({
   accounts,
   email,
   waitlist,
+  initialTab,
 }: {
   initialProfile: UserProfile
   initialSettings: SettingsMap
@@ -69,6 +72,8 @@ export function SettingsShell({
   email: string
   /** `null`, wenn die Liste für dieses Konto nicht sichtbar ist. */
   waitlist?: WaitlistRow[] | null
+  /** Reiter aus `?tab=`; unbekannte oder nicht sichtbare Werte (z. B. 'warteliste' ohne Rechte) starten auf 'profil'. */
+  initialTab?: string
 }) {
   // Richtung im selben State wie der Tab, nicht in einer Ref: `AnimatePresence`
   // liest sie beim Rendern, und genau das darf man mit einer Ref nicht tun
@@ -77,7 +82,10 @@ export function SettingsShell({
   // rechnet mit dieser Liste, nicht mit TABS — sonst stimmte die Richtung der
   // Panel-Animation nicht mehr, sobald ein Reiter fehlt.
   const tabs = useMemo(() => TABS.filter(t => t.id !== 'warteliste' || waitlist != null), [waitlist])
-  const [{ active, dir }, setTab] = useState<{ active: TabId; dir: number }>({ active: 'profil', dir: 1 })
+  const [{ active, dir }, setTab] = useState<{ active: TabId; dir: number }>(() => ({
+    active: (tabs.find(t => t.id === initialTab)?.id ?? 'profil') as TabId,
+    dir: 1,
+  }))
   const still = useReducedMotion()
   const direction = still ? 0 : dir
 
@@ -188,6 +196,7 @@ export function SettingsShell({
             {active === 'analyse'       && <AnalyseForm      initialSettings={initialSettings} accounts={accounts} />}
             {active === 'trading'       && <TradingForm      initialSettings={initialSettings} />}
             {active === 'integrationen' && <IntegrationsForm />}
+            {active === 'haushalt'      && <HouseholdPanel />}
             {active === 'warteliste'    && waitlist != null && <WaitlistPanel rows={waitlist} />}
           </motion.div>
         </AnimatePresence>

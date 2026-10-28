@@ -2,7 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import type { FinanceCategory } from '@/types/bank'
 import { getActiveAccountOptions } from '@/lib/data/overview'
-import { getFlowTransactions, getMonthlyFlows } from '@/lib/data/flows'
+import { getFlowMonthsScope, getFlowTransactionsScope, getMonthlyFlowsScope } from '@/lib/data/flows-scope'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 import { FLOW_DEFAULT_KEY, flowDefaultFrom, includeFromParam } from '@/lib/finance/flow-calc'
 import { parsePeriod, periodCutoff } from '@/lib/period'
 import { aktuellesFenster, monatPlus, monatsErster, parseVergleich, vergleichsFenster, zusammenhaengenderBeginn } from '@/lib/analyse/vergleich'
@@ -30,11 +31,11 @@ export interface AnalyseParams {
 const MONAT = /^\d{4}-(0[1-9]|1[0-2])$/
 const TAG = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/
 
-async function ladeKategorien(supabase: DB, userId: string): Promise<FinanceCategory[]> {
+/** Kategorienbaum pro Haushalt: die RLS liefert ihn, kein user_id-/Scope-Filter (ohne Partner unveraendert nur die eigenen). */
+async function ladeKategorien(supabase: DB): Promise<FinanceCategory[]> {
   const { data, error } = await supabase
     .from('categories')
     .select('id, name, type, color, icon, parent_id')
-    .eq('user_id', userId)
     .order('type')
     .order('sort_order')
     .order('name')
@@ -42,11 +43,19 @@ async function ladeKategorien(supabase: DB, userId: string): Promise<FinanceCate
   return (data ?? []) as FinanceCategory[]
 }
 
+/**
+ * Scope-faehig: Konten (ctx.accountIds), Buchungen und Monatssummen (Konten im Scope, im Haushalt mit herabgestuften
+ * Umbuchungen, siehe flows-scope.ts), Kategorien (Haushaltsbaum per RLS). Ohne Partner liefert 'ich' die bisherigen Werte.
+ */
 export async function ladeAnalyse(
-  supabase: DB, userId: string, params: AnalyseParams,
+  supabase: DB, ctx: ScopeContext, params: AnalyseParams,
   settings: Record<string, unknown>, heute: string,
 ): Promise<AnalyseDaten> {
-  const konten = await getActiveAccountOptions(supabase, userId)
+  // Kategorien und Monate mit Buchungen haengen nicht an der Kontenliste: gleich mitstarten statt erst nach ihr.
+  const kategorienP = ladeKategorien(supabase)
+  const fruehesteP = getFlowMonthsScope(supabase, ctx)
+  kategorienP.catch(() => {}); fruehesteP.catch(() => {}) // Ablehnung wird unten beim Abwarten behandelt, hier nur kein "unhandled"
+  const konten = await getActiveAccountOptions(supabase, ctx)
   const kontoMenge = new Set(konten.map(k => k.id))
 
   const periode = parsePeriod(params.period, parsePeriod(settings.analyse_default_period))
@@ -72,19 +81,21 @@ export async function ladeAnalyse(
   const monatsStart24 = monatPlus(heute, -24)
   const monatsStart = vFenster && vFenster.von < monatsStart24 ? vFenster.von : monatsStart24
 
-  const [txns, monatsZeilen, categories, fruehesterRes] = await Promise.all([
+  const [txns, monatsZeilen, categories, fruehesterMonate] = await Promise.all([
     // Ab dem Monatsersten des Cutoffs, wie die Monatssummen: sonst fehlen im Geldfluss, in der
     // Heatmap und in der Liste die ersten Tage des ersten Monats, obwohl Kennzahlen und der
     // Monatsvergleich ihn ganz zaehlen.
-    getFlowTransactions(supabase, userId, { from: cutoff ? monatsErster(cutoff) : null, accountIds, include }),
+    getFlowTransactionsScope(supabase, ctx, { from: cutoff ? monatsErster(cutoff) : null, accountIds, include }),
     // Bei Alles die ganze Historie (Monatssummen sind klein): mit nur 24 Monaten deckten
     // Kategorien und Kennzahlen dort nicht die ganze Historie ab.
-    getMonthlyFlows(supabase, userId, { from: periode === 'Alles' ? null : monatsStart, accountIds, include }),
-    ladeKategorien(supabase, userId),
-    supabase.from('monthly_flow_totals').select('month').eq('user_id', userId).order('month', { ascending: true }),
+    getMonthlyFlowsScope(supabase, ctx, { from: periode === 'Alles' ? null : monatsStart, accountIds, include }),
+    kategorienP,
+    // Monate mit Buchungen: ohne Partner monthly_flow_totals (wie bisher), im Haushalt aus monthly_flows im Scope.
+    fruehesteP,
   ])
 
   return {
+    scopeCtx: ctx,
     heute,
     locale: (typeof settings.number_format === 'string' && settings.number_format) || 'de-DE',
     dateFormat: (typeof settings.date_format === 'string' && settings.date_format) || 'dd.MM.yyyy',
@@ -104,7 +115,7 @@ export async function ladeAnalyse(
     vergleichsFenster: vFenster,
     // Beginn der ZUSAMMENHAENGENDEN Historie: einzelne Streumonate weit davor (2018, 2021) wuerden
     // sonst jeden Vergleich als abgedeckt gelten lassen.
-    fruehesterMonat: zusammenhaengenderBeginn((fruehesterRes.data ?? []).map(r => String(r.month).slice(0, 10))),
+    fruehesterMonat: zusammenhaengenderBeginn(fruehesterMonate),
     txns,
     monatsZeilen,
     categories,

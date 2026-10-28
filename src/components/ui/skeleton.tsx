@@ -9,6 +9,28 @@ export function Skeleton({ className, ...props }: React.ComponentProps<'div'>) {
   return <div aria-hidden className={cn('shimmer rounded-md', className)} {...props} />
 }
 
+/**
+ * Huelle fuer einen ganzen Ladebereich (Seite oder Streaming-Abschnitt): sagt Screenreadern EINMAL
+ * "Lädt…" und markiert den Bereich als beschaeftigt. Die einzelnen Platzhalter darin sind aria-hidden.
+ * Der sr-only-Text ist absolut positioniert und verschiebt das Layout nicht.
+ */
+export function SkeletonRegion({
+  children,
+  className,
+  label = 'Lädt…',
+}: {
+  children: React.ReactNode
+  className?: string
+  label?: string
+}) {
+  return (
+    <div role="status" aria-busy="true" aria-live="polite" className={className}>
+      <span className="sr-only">{label}</span>
+      {children}
+    </div>
+  )
+}
+
 /** Mehrere Textzeilen mit unterschiedlicher Breite — liest sich als Absatz, nicht als Block. */
 export function SkeletonText({ lines = 3, className }: { lines?: number; className?: string }) {
   const widths = ['100%', '92%', '78%', '85%', '64%']

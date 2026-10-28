@@ -1,4 +1,4 @@
-import { tageZwischen } from './datum.ts'
+import { parse, tageZwischen } from './datum.ts'
 
 /**
  * Einmalposten und statistische Ausreißer in der Historie der Prognose.
@@ -39,6 +39,8 @@ export type EinmalBuchung = {
   gegenpartei: string | null
   /** Kategoriepfad oder -name, nur zur Anzeige und zur Erkennung von Bargeld-Transfers. */
   kategorie: string | null
+  /** Haushalts-Umbuchung, im Scope zur echten Einnahme/Ausgabe herabgestuft (nur Scopes Malik/Gemeinsam). */
+  herabgestuft?: boolean
 }
 
 export type Ueberschreibung = { aus: string[]; ein: string[] }
@@ -55,6 +57,34 @@ export type EinmalKandidat = {
   ausgeschlossen: boolean
   /** Was der Posten dem erwarteten Monatssaldo zuschreiben würde, bliebe er drin (Einnahme +, Ausgabe −). */
   effektProMonat: number
+  /** Einlage/Entnahme zwischen Haushaltskonten ohne Zyklus-Muster (Standard: ausgeschlossen, wie `extrem`). */
+  einlage?: boolean
+}
+
+export const EINLAGE_GRUND = 'Einlage/Entnahme Haushalt'
+
+/**
+ * Herabgestufte Haushalts-Umbuchungen (Geld, das zwischen Konten des Haushalts wandert, aber im Scope auf der anderen Seite
+ * des Scope-Randes liegt) sind für die Prognose nur dann ein Muster, wenn sie regelmäßig kommen: dieselbe Richtung,
+ * mindestens 3 verschiedene Monate mit einem ähnlichen Betrag (±20 %) an einem ähnlichen Tag im Monat (±4 Tage).
+ * Alles andere sind unregelmäßige Einlagen/Entnahmen: sie kommen nicht in die Standardprognose.
+ * Rückgabe: IDs der unregelmäßigen (also vom Lernen auszunehmenden) Posten.
+ */
+export function unregelmaessigeEinlagen(buchungen: EinmalBuchung[]): Set<string> {
+  const einlagen = buchungen.filter(b => b.herabgestuft && ZAEHLT.has(b.flow_kind) && b.amount > 0)
+  const unregelmaessig = new Set<string>()
+  for (const b of einlagen) {
+    const tag = parse(b.date).d
+    const monate = new Set<string>()
+    for (const x of einlagen) {
+      if (x.type !== b.type) continue
+      if (Math.abs(x.amount - b.amount) > 0.2 * b.amount) continue
+      if (Math.abs(parse(x.date).d - tag) > 4) continue
+      monate.add(x.date.slice(0, 7))
+    }
+    if (monate.size < 3) unregelmaessig.add(b.id)
+  }
+  return unregelmaessig
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -91,7 +121,7 @@ export function erkenneEinmalposten(
   const erstes = zaehlend.reduce((m, b) => (b.date < m ? b.date : m), zaehlend[0].date)
   const monate = Math.max(1, tageZwischen(erstes, heute) / 30.4375)
 
-  const p95 = (typ: 'income' | 'expense') => quantil(zaehlend.filter(b => b.type === typ).map(b => b.amount), 0.95)
+  const p95 = (typ: 'income' | 'expense') => quantil(zaehlend.filter(b => b.type === typ && !b.herabgestuft).map(b => b.amount), 0.95)
   const schwelle = { income: Math.max(500, p95('income')), expense: Math.max(500, p95('expense')) }
   const extremSchwelle = { income: Math.max(2000, 5 * p95('income')), expense: Math.max(2000, 5 * p95('expense')) }
 
@@ -110,7 +140,19 @@ export function erkenneEinmalposten(
   }
 
   const kandidaten: EinmalKandidat[] = []
+  const einlagenIds = unregelmaessigeEinlagen(zaehlend)
   for (const b of zaehlend) {
+    if (einlagenIds.has(b.id)) {
+      // Unregelmäßige Haushalts-Einlage: immer Kandidat, standardmäßig ausgeschlossen (`extrem` = Standard „aus“).
+      kandidaten.push({
+        id: b.id, datum: b.date, type: b.type, betrag: b.amount,
+        gegenpartei: b.gegenpartei, kategorie: b.kategorie, grund: EINLAGE_GRUND, extrem: true, einlage: true,
+        ausgeschlossen: !ue.ein.includes(b.id) || ue.aus.includes(b.id),
+        effektProMonat: Math.round(((b.type === 'income' ? 1 : -1) * b.amount / monate) * 100) / 100,
+      })
+      continue
+    }
+    if (b.herabgestuft) continue // regelmäßige Einlage: gehört ins Zyklusmodell, kein Einmalposten
     if (b.amount < schwelle[b.type]) continue
     if (b.tax_role === 'lohn' || b.tax_role === 'betriebseinnahme') continue
     if (wiederkehrend(b)) continue

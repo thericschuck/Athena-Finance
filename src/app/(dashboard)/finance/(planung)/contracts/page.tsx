@@ -1,4 +1,5 @@
 import { requireAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { AddContractDialog } from '@/components/finance/contract-form'
 import { VertragsVorschlaege } from '@/components/finance/vertrags-vorschlaege'
 import { VertraegeKennzahlenLeiste, type Zelle } from '@/components/vertraege/VertraegeKennzahlenLeiste'
@@ -6,14 +7,18 @@ import { VertraegeAnsicht } from '@/components/vertraege/VertraegeAnsicht'
 import { DepotPlanZeilen, VertraegeGruppe } from '@/components/vertraege/VertraegeListe'
 import { ladeVertraegeSeite } from '@/lib/data/vertraege-seite'
 import { fmtCurrency } from '@/lib/format'
+import { Repeat } from 'lucide-react'
+import { LeerZustand } from '@/components/leer/LeerZustand'
+import { ScopeHinweisFuer } from '@/components/leer/ScopeHinweisFuer'
 import {
   ansichtVon, datumText, fixkostenNachKonto, gruppiere, kennzahlen, relativTage, type Ansicht,
 } from '@/lib/vertraege/rechnen'
 
-export default async function ContractsPage({ searchParams }: { searchParams: Promise<{ ansicht?: string | string[] }> }) {
+export default async function ContractsPage({ searchParams }: { searchParams: Promise<{ ansicht?: string | string[]}> }) {
   const [{ supabase, user }, params] = await Promise.all([requireAuthUser(), searchParams])
   const ansicht = ansichtVon(params.ansicht)
-  const d = await ladeVertraegeSeite(supabase, user!.id)
+  const ctx = await resolveScope(supabase, user!)
+  const d = await ladeVertraegeSeite(supabase, ctx)
 
   const { heute, locale, dateFormat } = d
   const euro = (n: number, stellen = 0) => fmtCurrency(n, 'EUR', locale, { fractionDigits: stellen })
@@ -138,9 +143,14 @@ export default async function ContractsPage({ searchParams }: { searchParams: Pr
       {zeigeVorschlaege && <VertragsVorschlaege vorschlaege={d.vorschlaege} ausgeblendet={d.ausgeblendet} />}
 
       {leer ? (
-        <div className="rounded-lg border border-dashed border-border bg-card px-4 py-12 text-center">
-          <p className="text-sm font-medium">Keine Verträge erfasst</p>
-          <p className="mt-1 text-sm text-muted-foreground">Lege Abos, Versicherungen oder Daueraufträge an, oder übernimm einen erkannten Vorschlag.</p>
+        <div className="space-y-4">
+          <ScopeHinweisFuer ctx={ctx} thema="Verträge" />
+          <LeerZustand
+            icon={Repeat}
+            titel="Keine Verträge erfasst"
+            text="Hier stehen Abos, Versicherungen und Daueraufträge. Sie speisen die Fixkosten und die Prognose; abgeglichen werden sie mit deinen Bankbuchungen. Lege einen Vertrag an oder übernimm einen erkannten Vorschlag."
+            aktionNode={<AddContractDialog accounts={d.konten} categories={d.kategorien} />}
+          />
         </div>
       ) : (
         <div className="min-w-0 space-y-6">

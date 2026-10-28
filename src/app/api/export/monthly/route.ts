@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { requireUser } from '@/lib/api/auth'
 import { parseQuery } from '@/lib/api/validate'
 import { getAllMonthlyTotals } from '@/lib/data/verlauf-monate'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { sparquote } from '@/lib/verlauf/monate'
 import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvValue, formatCsvAmount } from '@/lib/csv'
 
@@ -14,8 +15,8 @@ import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvValue, formatCsvAmount } from
  * mitten in den Daten lässt sich in Excel nicht sauber filtern oder in eine Pivot ziehen.
  * Aufsteigend sortiert, weil Tabellenkalkulationen chronologisch weiterrechnen.
  *
- * Gelesen wird mit der Session des Nutzers über `user_id`-Filter (RLS gilt zusätzlich), es
- * gibt also nur eigene Daten. Optional `?jahr=2026` schränkt auf ein Jahr ein.
+ * Gelesen wird mit der Session des Nutzers im Haushalts-Scope (RLS gilt zusätzlich); ohne Partner
+ * gibt es nur eigene Daten. Optional `?jahr=2026` schränkt auf ein Jahr ein.
  */
 
 const querySchema = z.object({
@@ -38,7 +39,9 @@ export async function GET(req: NextRequest) {
 
   let rows
   try {
-    rows = await getAllMonthlyTotals(supabase, user.id)
+    // Scope: Cookie (kein `?scope=`); ohne Partner unveraendert monthly_flow_totals des Nutzers.
+    const ctx = await resolveScope(supabase, user)
+    rows = await getAllMonthlyTotals(supabase, ctx)
   } catch {
     return new Response('Error fetching monthly totals', { status: 500 })
   }

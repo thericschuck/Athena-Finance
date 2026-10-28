@@ -3,6 +3,7 @@ import type { Database } from '@/types/database'
 import type { Tarif } from './tarif.ts'
 import type { SteuerEingaben } from './position.ts'
 import { leseSteuerprofil } from './profil.ts'
+import { mischeSteuerWerte, ladeSteuerOverrides } from './overrides.ts'
 import { effektiveRollen, effektiveEuerZeilen, effektiveAnteile, wendeAnteilAn } from './rollen.ts'
 import type { EuerBuchung, EuerZeileDef } from './euer.ts'
 import { ladeKrakenRoh, ladeKrakenSteuer, type KrakenRoh } from './krypto-laden.ts'
@@ -102,10 +103,40 @@ export type LadeErgebnis = {
 export type SteuerLadeCache = {
   buchungen: Map<number, ReturnType<typeof buchungenImJahr>>
   krypto: Promise<KrakenRoh> | null
+  /** Jahresunabhaengige Basisdaten (Tarife, Kategorien, Overrides, Profil, Ziele, EUeR-Zeilen, Belege): ebenfalls je Vorgang einmal. */
+  basis: ReturnType<typeof ladeBasis> | null
 }
 
 export function neuerSteuerCache(): SteuerLadeCache {
-  return { buchungen: new Map(), krypto: null }
+  return { buchungen: new Map(), krypto: null, basis: null }
+}
+
+/**
+ * Kategorien des Nutzers bzw. seines Haushalts. Explizit gefiltert (nicht nur per RLS), weil diese Funktion auch mit dem
+ * Service-Role-Client laeuft (Reports, Reminders): dort gaebe es sonst die Baeume aller Haushalte.
+ */
+async function ladeKategorienDesHaushalts(supabase: DB, userId: string) {
+  const { data: mitgliedschaft } = await supabase.from('household_members').select('household_id').eq('user_id', userId)
+  const haushalte = (mitgliedschaft ?? []).map(m => m.household_id)
+  const filter = haushalte.length > 0 ? `user_id.eq.${userId},household_id.in.(${haushalte.join(',')})` : `user_id.eq.${userId}`
+  return supabase.from('categories').select('id, name, parent_id, type').or(filter)
+}
+
+/**
+ * Die vom Jahr unabhaengigen Abfragen der Steuerdaten. Eigene Funktion, damit `SteuerLadeCache.basis` sie bei mehreren Jahren
+ * (Prognose: drei Aufrufe) nur einmal ausfuehrt statt je Jahr.
+ */
+function ladeBasis(supabase: DB, userId: string) {
+  return Promise.all([
+    supabase.from('tax_tariffs').select('jahr, grundfreibetrag, zone2_bis, zone2_faktor, zone2_konstante, zone3_bis, zone3_faktor, zone3_konstante, zone3_sockel, zone4_bis, zone4_satz, zone4_abzug, zone5_satz, zone5_abzug, werbungskostenpauschale, sonderausgabenpauschale, soli_freigrenze, kleinunternehmer_vorjahr, kleinunternehmer_laufend, quelle, geprueft_am').order('jahr', { ascending: true }),
+    // Struktur aus dem Haushaltsbaum, Steuerwerte aus den Overrides des Nutzers (siehe lib/tax/overrides.ts).
+    ladeKategorienDesHaushalts(supabase, userId),
+    ladeSteuerOverrides(supabase, userId),
+    supabase.from('user_settings').select('value').eq('user_id', userId).eq('key', 'tax_profile').maybeSingle(),
+    supabase.from('savings_goals').select('id, description, target_amount, current_amount').eq('user_id', userId),
+    supabase.from('euer_zeilen').select('jahr, zeile, bezeichnung, art, sammelzeile, quelle, geprueft_am').order('zeile', { ascending: true }),
+    supabase.from('belege').select('id, transaction_id, dateiname, beleg_datum, betrag, aussteller, pfad, sha256, hochgeladen_am, ersetzt_durch').eq('user_id', userId),
+  ])
 }
 
 export async function ladeSteuerdaten(
@@ -127,14 +158,7 @@ export async function ladeSteuerdaten(
   kryptoRohP.catch(() => undefined)
   buchungenP.catch(() => undefined)
 
-  const [tarifeRes, kategorienRes, profilRes, zieleRes, euerRes, belegeRes] = await Promise.all([
-    supabase.from('tax_tariffs').select('jahr, grundfreibetrag, zone2_bis, zone2_faktor, zone2_konstante, zone3_bis, zone3_faktor, zone3_konstante, zone3_sockel, zone4_bis, zone4_satz, zone4_abzug, zone5_satz, zone5_abzug, werbungskostenpauschale, sonderausgabenpauschale, soli_freigrenze, kleinunternehmer_vorjahr, kleinunternehmer_laufend, quelle, geprueft_am').order('jahr', { ascending: true }),
-    supabase.from('categories').select('id, name, parent_id, tax_role, type, business_share').eq('user_id', userId),
-    supabase.from('user_settings').select('value').eq('user_id', userId).eq('key', 'tax_profile').maybeSingle(),
-    supabase.from('savings_goals').select('id, description, target_amount, current_amount').eq('user_id', userId),
-    supabase.from('euer_zeilen').select('jahr, zeile, bezeichnung, art, sammelzeile, quelle, geprueft_am').order('zeile', { ascending: true }),
-    supabase.from('belege').select('id, transaction_id, dateiname, beleg_datum, betrag, aussteller, pfad, sha256, hochgeladen_am, ersetzt_durch').eq('user_id', userId),
-  ])
+  const [tarifeRes, kategorienRes, overrides, profilRes, zieleRes, euerRes, belegeRes] = await (cache.basis ??= ladeBasis(supabase, userId))
   if (tarifeRes.error) throw new Error(tarifeRes.error.message)
   if (kategorienRes.error) throw new Error(kategorienRes.error.message)
 
@@ -150,9 +174,12 @@ export async function ladeSteuerdaten(
     Math.abs(kandidat.jahr - jahr) < Math.abs(beste.jahr - jahr) ? kandidat : beste,
   )
 
-  const kategorien = kategorienRes.data ?? []
+  const kategorien = mischeSteuerWerte(kategorienRes.data ?? [], overrides)
   const rollenMap = effektiveRollen(kategorien)
-  const euerZeilenMap = effektiveEuerZeilen(kategorien)
+  // BEWUSST unveraendert: die Kategorien-Abfrage hat euer_zeile nie geladen, die EUeR-Zuordnung je Kategorie war hier also immer leer
+  // (alles fliesst in die Sammelzeile). Die Overrides liefern euer_zeile jetzt mit; das wuerde Erics EUeR-Ausgabe aendern und ist
+  // eine fachliche Entscheidung, keine Teil dieser Umstellung. Zum Aktivieren: `kategorien` statt der Nullung uebergeben.
+  const euerZeilenMap = effektiveEuerZeilen(kategorien.map(k => ({ ...k, euer_zeile: null })))
   const anteilMap = effektiveAnteile(kategorien.map(k => ({ ...k, business_share: k.business_share === null ? null : Number(k.business_share) })))
 
   // Zeilendefinitionen des naechstgelegenen Jahres -- dieselbe Regel wie beim

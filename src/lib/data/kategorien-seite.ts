@@ -1,5 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { applyAccountScope, type ScopeContext } from '@/lib/haushalt/scope'
+import { HERAB_SPALTEN, effektiveBuchung, herabstufungsIds } from '@/lib/haushalt/umbuchung'
 import {
   getCategories,
   getEuerZeilenForCategories,
@@ -37,31 +39,42 @@ const MAX_SEITEN = 60
  * PostgREST kappt bei 1.000 Zeilen, deshalb seitenweise mit stabiler Sortierung; die erste Welle
  * laeuft parallel, sobald die Gesamtzahl bekannt ist.
  */
-async function ladeBuchungen(supabase: DB, userId: string): Promise<BuchungKurz[]> {
+// Herabstufung (Haushalt): eine Umbuchung ohne Gegenkonto im Scope zaehlt als echte Buchung (Art/Richtung effektiv, lib/haushalt/umbuchung.ts).
+const SPALTEN = 'category_id, type, flow_kind, amount_eur, date'
+const SPALTEN_HERAB = `${SPALTEN}, signed_amount, account_id, ${HERAB_SPALTEN}`
+async function ladeBuchungen(supabase: DB, ctx: ScopeContext): Promise<BuchungKurz[]> {
+  const herab = herabstufungsIds(ctx)
+  const accountIds = new Set(ctx.accountIds)
   const basis = () =>
-    supabase
-      .from('unified_transactions')
-      .select('category_id, type, flow_kind, amount_eur, date')
-      .eq('user_id', userId)
+    applyAccountScope(
+      supabase.from('unified_transactions').select(herab ? SPALTEN_HERAB : SPALTEN),
+      ctx,
+    )
       .not('category_id', 'is', null)
 
-  const { count } = await supabase
-    .from('unified_transactions')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .not('category_id', 'is', null)
+  const seite = (i: number) =>
+    basis()
+      .order('id', { ascending: true })
+      .range(i * SEITE, i * SEITE + SEITE - 1)
+
+  // Zaehlung und erste Seite sind unabhaengig: gleichzeitig starten. Bis 1.000 kategorisierte Buchungen (der Normalfall) ist damit
+  // eine Rundreise genug; nur bei mehr Zeilen folgt die zweite Welle (Seiten 2..n parallel), wie bisher mit der Gesamtzahl.
+  const [{ count }, erste] = await Promise.all([
+    applyAccountScope(
+      supabase.from('unified_transactions').select('id', { count: 'exact', head: true }),
+      ctx,
+    )
+      .not('category_id', 'is', null),
+    seite(0),
+  ])
   const seiten = Math.min(MAX_SEITEN, Math.max(1, Math.ceil((count ?? SEITE) / SEITE)))
 
-  const antworten = await Promise.all(
-    Array.from({ length: seiten }, (_, i) =>
-      basis()
-        .order('id', { ascending: true })
-        .range(i * SEITE, i * SEITE + SEITE - 1),
-    ),
-  )
+  const weitere = await Promise.all(Array.from({ length: seiten - 1 }, (_, i) => seite(i + 1)))
+  const antworten = [erste, ...weitere]
   const zeilen: BuchungKurz[] = []
   for (const a of antworten) {
-    for (const z of a.data ?? []) {
+    for (const roh of (a.data ?? []) as unknown as (BuchungsQuelle[])) {
+      const z = herab ? effektiveBuchung({ ...roh, signed_amount: Number(roh.signed_amount ?? 0), type: roh.type ?? '' }, accountIds) : roh
       zeilen.push({
         category_id: z.category_id,
         type: z.type ?? '',
@@ -74,13 +87,25 @@ async function ladeBuchungen(supabase: DB, userId: string): Promise<BuchungKurz[
   return zeilen
 }
 
-export async function ladeKategorienSeite(supabase: DB, userId: string, period: Period): Promise<KategorienSeitenDaten> {
+type BuchungsQuelle = {
+  category_id: string | null
+  type: string | null
+  flow_kind: string
+  amount_eur: number | string | null
+  date: string | null
+  signed_amount?: number | string | null
+  account_id?: string | null
+  counterpart_account_id?: string | null
+  flow_kind_extern?: string | null
+}
+
+export async function ladeKategorienSeite(supabase: DB, ctx: ScopeContext, period: Period): Promise<KategorienSeitenDaten> {
   const [flat, settings, alleEuer, buchungen] = await Promise.all([
-    getCategories(supabase, userId),
-    getSettings(userId),
+    getCategories(supabase, ctx.userId),
+    getSettings(ctx.userId),
     // Nur Zeilen, in die Buchungen fliessen -- Summen- und Ergebniszeilen rechnet die App.
     getEuerZeilenForCategories(supabase),
-    ladeBuchungen(supabase, userId),
+    ladeBuchungen(supabase, ctx),
   ])
 
   // Nur der juengste hinterlegte Jahrgang: zwei Jahrgaenge nebeneinander waeren im Auswahlfeld nicht unterscheidbar.

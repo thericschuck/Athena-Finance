@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { parseInput, issueMessage } from '@/lib/api/validate'
 import { uuid, isoDate, money } from '@/lib/api/schemas'
+import { requireRows } from '@/lib/data/mutation'
 
 // Verkauf eines Stücks. Eigene Datei neben actions.ts: dort gehört der Verkauf zum großen
 // Bearbeiten-Formular, hier ist er ein einzelner Schritt mit zwei Feldern.
@@ -28,7 +29,7 @@ export async function markValuableSold(
   )
   if (!args.ok) return { error: issueMessage(args) }
 
-  const { error } = await supabase
+  const { error } = await requireRows(supabase
     .from('valuables')
     .update({
       verkauft_am: verkauftAm,
@@ -36,8 +37,7 @@ export async function markValuableSold(
       is_active: false,
       updated_at: new Date().toISOString(),
     } as never)
-    .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('id', id)) // Haushaltstabelle: RLS
 
   if (error) return { error: error.message }
   revalidatePath('/inventar')
@@ -51,7 +51,7 @@ export async function reopenValuable(id: string): Promise<{ error?: string }> {
   const idP = parseInput(uuid, id)
   if (!idP.ok) return { error: issueMessage(idP) }
 
-  const { error } = await supabase
+  const { error } = await requireRows(supabase
     .from('valuables')
     .update({
       verkauft_am: null,
@@ -59,8 +59,7 @@ export async function reopenValuable(id: string): Promise<{ error?: string }> {
       is_active: true,
       updated_at: new Date().toISOString(),
     } as never)
-    .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('id', id)) // Haushaltstabelle: RLS
 
   if (error) return { error: error.message }
   revalidatePath('/inventar')

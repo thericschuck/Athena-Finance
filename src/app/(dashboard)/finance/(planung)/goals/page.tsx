@@ -3,12 +3,22 @@ import { AddGoalDialog } from '@/components/finance/goal-form'
 import { SparzieleKennzahlenLeiste } from '@/components/sparziele/SparzieleKennzahlenLeiste'
 import { SparzielZeile } from '@/components/sparziele/SparzielZeile'
 import { PiggyBank } from 'lucide-react'
+import { requireAuthUser } from '@/lib/supabase/server'
+import { resolveScope } from '@/lib/haushalt/resolve'
+import { LeerZustand } from '@/components/leer/LeerZustand'
+import { ScopeHinweisFuer } from '@/components/leer/ScopeHinweisFuer'
+import { letzteAenderungen } from '@/lib/data/aenderungen'
 
 export default async function GoalsPage() {
   const s = await ladeSparzieleSeite()
+  // Scope nur fuer den Leerzustand (Hinweis auf „Gemeinsam“); pro Anfrage gecacht.
+  const { supabase: sb, user: authUser } = await requireAuthUser()
+  const scopeCtx = await resolveScope(sb, authUser!)
+  const leerCtx = s.gesamt === 0 ? scopeCtx : null
+  const zuletzt = await letzteAenderungen(sb, scopeCtx, 'savings_goals', [...s.offen, ...s.erreicht, ...s.beendet].map(z => z.id))
   const erledigt = s.erreicht.length + s.beendet.length
   const zeile = (z: (typeof s.offen)[number]) => (
-    <SparzielZeile key={z.id} ziel={z} heute={s.heute} locale={s.locale} dateFormat={s.dateFormat} />
+    <SparzielZeile key={z.id} ziel={z} heute={s.heute} locale={s.locale} dateFormat={s.dateFormat} zuletzt={zuletzt.get(z.id)} />
   )
 
   return (
@@ -19,14 +29,14 @@ export default async function GoalsPage() {
       </div>
 
       {s.gesamt === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-card px-4 py-10 text-center">
-          <PiggyBank className="mx-auto size-6 text-muted-foreground" aria-hidden />
-          <p className="mt-2 text-sm font-medium text-foreground">Noch keine Sparziele</p>
-          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-            Lege ein Ziel mit Betrag an, z. B. Reise oder Notfallfonds. Mit einer monatlichen Sparrate und einem
-            Zieldatum rechnet die Seite aus, ob du rechtzeitig fertig wirst und welche Rate dafür nötig wäre.
-            Den gesparten Stand pflegst du selbst über „Einzahlen“; er ist nicht mit einem Konto verknüpft.
-          </p>
+        <div className="space-y-4">
+          {leerCtx && <ScopeHinweisFuer ctx={leerCtx} thema="Sparziele" />}
+          <LeerZustand
+            icon={PiggyBank}
+            titel="Noch keine Sparziele"
+            text="Lege ein Ziel mit Betrag an, z. B. Reise oder Notfallfonds. Mit einer monatlichen Sparrate und einem Zieldatum rechnet die Seite aus, ob du rechtzeitig fertig wirst. Den gesparten Stand pflegst du selbst über „Einzahlen“; er ist nicht mit einem Konto verknüpft."
+            aktionNode={<AddGoalDialog />}
+          />
         </div>
       ) : (
         <>

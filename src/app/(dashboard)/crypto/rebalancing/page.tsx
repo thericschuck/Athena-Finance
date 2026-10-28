@@ -2,14 +2,18 @@ import { requireAuthUser } from '@/lib/supabase/server'
 import { getRebalancingTargets, getLastRebalancing } from '@/app/(dashboard)/crypto/actions'
 import { RebalancingCalculator } from '@/components/crypto/rebalancing-calculator'
 import { getCryptoAssetsWithPrice } from '@/lib/data/crypto'
+import { resolveScope } from '@/lib/haushalt/resolve'
 import { fetchKrakenTradeableAssets, fetchKrakenAssetPairs, buildKrakenPriceMap } from '@/lib/kraken'
 
 export default async function RebalancingPage() {
   const { supabase, user } = await requireAuthUser()
   const userId = user!.id
 
-  // Load assets + latest valuations
-  const assets = await getCryptoAssetsWithPrice(supabase, userId)
+  // Load assets + latest valuations. Das Rebalancing fuehrt Orders mit den EIGENEN Kraken-Schluesseln aus: gerechnet wird deshalb
+  // strikt mit den eigenen Assets (kein geteiltes Asset eines Haushaltspartners, kein Scope-Cookie). Kraken-Handel bleibt beim Eigentuemer.
+  const scope = await resolveScope(supabase, user!, 'ich')
+  const ctx = { ...scope, ownerIds: [scope.userId], includeShared: false }
+  const assets = await getCryptoAssetsWithPrice(supabase, ctx)
 
   const totalValue = assets.reduce((s, a) => s + (a.current_value ?? 0), 0)
 

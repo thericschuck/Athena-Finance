@@ -1,8 +1,9 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { ROW_CAP, untrust, type DB } from '@/lib/assistant/tools/shared'
+import type { ScopeContext } from '@/lib/haushalt/scope'
 
-export function buildInsightTools(supabase: DB, userId: string) {
+export function buildInsightTools(supabase: DB, ctx: ScopeContext) {
   return {
     // ── Hinweise (Dashboard-Karten) ──────────────────────────────────────────
     getInsights: tool({
@@ -19,7 +20,8 @@ export function buildInsightTools(supabase: DB, userId: string) {
         let query = supabase
           .from('insights')
           .select('id, type, severity, title, body, created_at, dismissed_at')
-          .eq('user_id', userId)
+          // Owner-only: Hinweise gehören dem Nutzer, nicht dem Haushalt.
+          .eq('user_id', ctx.userId)
           .order('created_at', { ascending: false })
           .limit(Math.min(limit, ROW_CAP))
         if (!includeDismissed) query = query.is('dismissed_at', null)
@@ -28,7 +30,7 @@ export function buildInsightTools(supabase: DB, userId: string) {
         return {
           insights: (data ?? []).map(row => untrust(row, ['title', 'body'])),
           hinweis_zur_deutung:
-            'dismissed_at gesetzt heißt: Eric hat den Hinweis weggeklickt. Schlag denselben Inhalt ' +
+            'dismissed_at gesetzt heißt: Der Nutzer hat den Hinweis weggeklickt. Schlag denselben Inhalt ' +
             'nicht erneut vor, ohne zu sagen, dass er ihn schon einmal verworfen hat.',
         }
       },

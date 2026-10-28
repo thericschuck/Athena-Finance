@@ -31,6 +31,7 @@ import {
   type AccountActionState,
 } from '@/app/(dashboard)/finance/accounts/actions'
 import type { AccountRow } from '@/lib/data/finance-accounts'
+import { TeilenSchalter } from '@/components/haushalt/TeilenSchalter'
 
 type Account = AccountRow
 
@@ -152,6 +153,14 @@ function AccountFields({
           />
         </div>
       </div>
+
+      {/* Geteiltes Konto: nur sichtbar, wenn der Haushalt mehr als ein Mitglied hat */}
+      <TeilenSchalter
+        defaultChecked={account?.shared ?? false}
+        unbekannt={!!account && account.shared === undefined}
+        label="Geteiltes Konto"
+        hinweis="Das Konto zählt im Haushalt einmal; alle Mitglieder sehen es und seine Buchungen."
+      />
 
       {/* Aktiv (nur beim Bearbeiten): inaktive Konten zählen nicht zu den Summen */}
       {account && (

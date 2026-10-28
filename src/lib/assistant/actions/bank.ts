@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { getFinTSErrorDetails } from '@/lib/fints'
 import { syncBankForUser, BankScaRequiredError } from '@/lib/fints/user-sync'
+import { userHasBankAccess } from '@/lib/fints/connections'
 import { defineAction, type ActionDefinition } from '@/lib/assistant/actions/types'
 
 export const bankActions = {
@@ -15,14 +16,15 @@ export const bankActions = {
       'Synchronisiert die Bankkonten per FinTS: aktualisiert Salden, importiert neue Umsätze ' +
       'und Depotbestände. Standard: letzte 90 Tage — das läuft normalerweise OHNE Freigabe in ' +
       'der Bank-App. fullHistory=true holt die komplette Historie und verlangt IMMER eine ' +
-      'Freigabe in der SecureGo-plus-App; nur nutzen, wenn Eric ausdrücklich alle alten Umsätze ' +
-      'will. Nutze das, wenn Eric aktuelle Bankdaten will oder Salden/Umsätze veraltet wirken ' +
+      'Freigabe in der SecureGo-plus-App; nur nutzen, wenn der Nutzer ausdrücklich alle alten Umsätze ' +
+      'will. Nutze das, wenn der Nutzer aktuelle Bankdaten will oder Salden/Umsätze veraltet wirken ' +
       '(siehe checkDataQuality) — nicht für bloße Fragen zu vorhandenen Daten.',
     schema: z.object({
       fullHistory: z.boolean().optional().describe('Komplette Historie statt 90 Tage (braucht Freigabe).'),
     }),
     validate: async (_input, ctx) => {
-      if (process.env.VERCEL && ctx.userId !== process.env.BANK_SYNC_USER_ID) {
+      // Wie /api/bank/sync: Zugriff hat, wer eine eigene Bankverbindung hat oder der Env-Nutzer ist.
+      if (process.env.VERCEL && !(await userHasBankAccess(ctx.userId))) {
         return 'Bank-Sync ist für dieses Konto nicht verfügbar.'
       }
       return null

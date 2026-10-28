@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
 import {
   getFinTSErrorDetails, startSync, upsertBankTransactions, upsertDepotHoldings,
   upsertBankBalances, isScaRequiredError, stateFromError, applySuggestionsToBacklog, loadLearnedCategoryMap,
@@ -12,15 +12,11 @@ import { requireCron } from '@/lib/api/auth'
 // still needs real headroom.
 export const maxDuration = 300
 
-function adminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  )
-}
-
 /**
  * GET /api/cron/bank-sync
+ *
+ * HINWEIS: VERWAIST. vercel.json ruft die Python-Funktion api/bank-sync.py, nicht diese Route. Nicht loeschen (Phase 4 klaeren).
+ * Single-Tenant: globaler FinTS-Login + BANK_SYNC_USER_ID (Phase 4: Verbindungen pro Nutzer).
  *
  * Scheduled FinTS sync — no browser session exists for a cron trigger, so:
  *   - auth is a shared secret (Authorization: Bearer CRON_SECRET), matching every other
@@ -53,7 +49,7 @@ export async function GET(req: NextRequest) {
   startDate.setDate(startDate.getDate() - 14)
 
   try {
-    const supabase = adminClient()
+    const supabase = createAdminClient()
     const { data: categories } = await supabase
       .from('categories')
       .select('id, name, type, color, icon, parent_id')

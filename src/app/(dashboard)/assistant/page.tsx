@@ -3,6 +3,8 @@ import { AthenaChat } from '@/components/assistant/AthenaChat'
 import { SessionList } from '@/components/assistant/SessionList'
 import { SessionLeiste } from '@/components/assistant/SessionLeiste'
 import { hinweisEntwurf } from '@/lib/assistant/hinweis-entwurf'
+import { loadAnzeigeNameFuerNutzer } from '@/lib/assistant/context'
+import { kennenlernPrompt } from '@/lib/assistant/starter'
 import { listeProjekte } from '@/lib/assistant/projekte'
 import {
   ladeSessionKosten,
@@ -22,9 +24,9 @@ export const maxDuration = 300
 export default async function AthenaChatPage({
   searchParams,
 }: {
-  searchParams: Promise<{ s?: string; p?: string; projekt?: string; hinweis?: string }>
+  searchParams: Promise<{ s?: string; p?: string; projekt?: string; hinweis?: string; start?: string }>
 }) {
-  const [{ s: activeId, p: neuInProjekt, projekt: filterRoh, hinweis: hinweisId }, { supabase, user }] =
+  const [{ s: activeId, p: neuInProjekt, projekt: filterRoh, hinweis: hinweisId, start }, { supabase, user }] =
     await Promise.all([searchParams, getAuthUser()])
   if (!user) return null
 
@@ -81,6 +83,9 @@ export default async function AthenaChatPage({
       .maybeSingle()
     if (hinweis) entwurf = hinweisEntwurf(hinweis)
   }
+  // Deep-Link `?start=kennenlernen` (Checkliste „Erste Schritte“): der Kennenlern-Prompt liegt vorbefüllt und
+  // editierbar im Eingabefeld, auch in einem bestehenden Chat; gesendet wird erst auf Klick.
+  if (!entwurf && start === 'kennenlernen') entwurf = kennenlernPrompt(await loadAnzeigeNameFuerNutzer(supabase, user.id))
 
   return (
     <div className="grid h-full min-h-0 grid-cols-1 gap-4 lg:grid-cols-[16rem_1fr]">

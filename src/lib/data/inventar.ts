@@ -1,9 +1,14 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import type { Valuable, Valuation } from '@/lib/valuables'
+import type { ScopeContext } from '@/lib/haushalt/scope'
+import { scopedOwner } from '@/lib/data/scope-owner'
 
 /**
- * Datenzugriff Inventar. Reine Funktionen: Client und userId kommen vom Aufrufer.
+ * Datenzugriff Inventar. Reine Funktionen: Client und Scope kommen vom Aufrufer.
+ * Haushaltssicht ueber `ScopeContext` (eigene ODER geteilte Stuecke). Die View `valuables_current` hat die Spalte `shared`
+ * und wird direkt ueber `applyOwnerScope` gefiltert. Kindtabellen (Bilder, Bewertungen, Dokumente) haben kein `shared` und
+ * werden ueber die Stueck-IDs aus `valuables` (`scopedValuableIds`) per valuable_id gefiltert.
  */
 type DB = SupabaseClient<Database>
 
@@ -19,24 +24,32 @@ export type ValuableImageRow = {
   basis_bild_id: string | null
 }
 
-const VALUABLE_COLUMNS = [
+/** IDs der Stuecke im Scope (Filter fuer die Kindtabellen ohne `shared`). */
+async function scopedValuableIds(supabase: DB, ctx: ScopeContext): Promise<string[]> {
+  const { data } = await scopedOwner(supabase.from('valuables').select('id'), ctx)
+  return (data ?? []).map(r => r.id)
+}
+
+const VALUABLE_BASIS = [
   'id', 'user_id', 'name', 'kategorie', 'marke', 'modell', 'referenz', 'seriennummer',
   'gekauft_am', 'kaufpreis', 'kaufquelle', 'waehrung', 'zustand', 'box_vorhanden',
   'papiere_vorhanden', 'lagerort', 'versichert', 'versicherungsnummer', 'notizen',
   'im_vermoegen', 'verkauft_am', 'verkaufspreis', 'is_active', 'sort_order',
   'created_at', 'updated_at', 'aktueller_wert', 'wert_stand', 'wert_quelle',
-  'rendite_prozent', 'hauptbild_pfad', 'bild_anzahl', 'foto_anzahl', 'nutzung', 'wertmodus',
+  'rendite_prozent', 'hauptbild_pfad', 'bild_anzahl', 'foto_anzahl', 'nutzung', 'wertmodus', 'shared',
 ].join(', ')
+
+/** Query auf `valuables_current` im Scope (eigene ODER geteilte Stuecke, direkt ueber `shared`). */
+function viewQuery(supabase: DB, ctx: ScopeContext) {
+  return scopedOwner(supabase.from('valuables_current').select(VALUABLE_BASIS), ctx)
+}
 
 /**
  * Aktive Inventar-Stücke inkl. aktuellem Wert (View `valuables_current`).
  * Unbegrenzt — die Summe der Sammlung läuft über alle Stücke.
  */
-export async function getActiveValuables(supabase: DB, userId: string): Promise<Valuable[]> {
-  const { data } = await supabase
-    .from('valuables_current')
-    .select(VALUABLE_COLUMNS)
-    .eq('user_id', userId)
+export async function getActiveValuables(supabase: DB, ctx: ScopeContext): Promise<Valuable[]> {
+  const { data } = await viewQuery(supabase, ctx)
     .eq('is_active', true)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: false })
@@ -47,11 +60,8 @@ export async function getActiveValuables(supabase: DB, userId: string): Promise<
  * Verkaufte Stücke (is_active = false MIT Verkaufsdatum), jüngster Verkauf zuerst.
  * getActiveValuables blendet sie aus; die View liefert sie trotzdem, weil sie nicht filtert.
  */
-export async function getSoldValuables(supabase: DB, userId: string): Promise<Valuable[]> {
-  const { data } = await supabase
-    .from('valuables_current')
-    .select(VALUABLE_COLUMNS)
-    .eq('user_id', userId)
+export async function getSoldValuables(supabase: DB, ctx: ScopeContext): Promise<Valuable[]> {
+  const { data } = await viewQuery(supabase, ctx)
     .eq('is_active', false)
     .not('verkauft_am', 'is', null)
     .order('verkauft_am', { ascending: false })
@@ -63,12 +73,12 @@ export async function getSoldValuables(supabase: DB, userId: string): Promise<Va
  * nicht in der Zukunft). Die View liefert nur den juengsten Stand, und der ist mit dem
  * Wertmodell fast immer „heute".
  */
-export async function getHandBewertungsstaende(supabase: DB, userId: string): Promise<Map<string, string>> {
+export async function getHandBewertungsstaende(supabase: DB, ctx: ScopeContext): Promise<Map<string, string>> {
   const heute = new Date().toISOString().split('T')[0]
-  const { data } = await supabase
-    .from('valuable_valuations')
-    .select('valuable_id, bewertet_am')
-    .eq('user_id', userId)
+  const ids = await scopedValuableIds(supabase, ctx)
+  if (ids.length === 0) return new Map()
+  const { data } = await supabase.from('valuable_valuations').select('valuable_id, bewertet_am')
+    .in('valuable_id', ids)
     .neq('quelle', 'modell')
     .lte('bewertet_am', heute)
   const stand = new Map<string, string>()
@@ -84,19 +94,20 @@ export async function getHandBewertungsstaende(supabase: DB, userId: string): Pr
  * Verkauf mit) und alle Bewertungen. Seitenweise gelesen, weil PostgREST pro Antwort nur
  * 1000 Zeilen liefert und das Wertmodell woechentlich einen Punkt je Stueck schreibt.
  */
-export async function getSammlungsRohdaten(supabase: DB, userId: string) {
-  const { data: stuecke } = await supabase
-    .from('valuables')
-    .select('id, kategorie, im_vermoegen, kaufpreis, gekauft_am, verkauft_am')
-    .eq('user_id', userId)
+export async function getSammlungsRohdaten(supabase: DB, ctx: ScopeContext) {
+  const { data: stuecke } = await scopedOwner(
+    supabase.from('valuables').select('id, shared, kategorie, im_vermoegen, kaufpreis, gekauft_am, verkauft_am'),
+    ctx,
+  )
+  const ids = (stuecke ?? []).map(r => r.id)
 
   const bewertungen: { valuable_id: string; bewertet_am: string; wert: number }[] = []
   const SEITE = 1000
   for (let von = 0; ; von += SEITE) {
-    const { data } = await supabase
-      .from('valuable_valuations')
-      .select('valuable_id, bewertet_am, wert')
-      .eq('user_id', userId)
+    if (ids.length === 0) break
+    // Bewertungen der Stuecke im Scope (Kindtabelle ohne `shared`).
+    const { data } = await supabase.from('valuable_valuations').select('valuable_id, bewertet_am, wert')
+      .in('valuable_id', ids)
       .order('bewertet_am', { ascending: true })
       .order('valuable_id', { ascending: true })
       .range(von, von + SEITE - 1)
@@ -124,11 +135,10 @@ export async function getSammlungsRohdaten(supabase: DB, userId: string) {
  * `database.ts` kennt die Tabelle noch nicht (Typen werden nicht von Hand gepflegt), daher
  * der Cast wie in document-actions.ts.
  */
-export async function getDocumentCounts(supabase: DB, userId: string): Promise<Map<string, number>> {
-  const { data } = await supabase
-    .from('valuable_documents' as never)
-    .select('valuable_id')
-    .eq('user_id', userId)
+export async function getDocumentCounts(supabase: DB, ctx: ScopeContext): Promise<Map<string, number>> {
+  const ids = await scopedValuableIds(supabase, ctx)
+  if (ids.length === 0) return new Map()
+  const { data } = await supabase.from('valuable_documents' as never).select('valuable_id').in('valuable_id', ids)
   const counts = new Map<string, number>()
   for (const r of (data ?? []) as unknown as { valuable_id: string }[]) {
     counts.set(r.valuable_id, (counts.get(r.valuable_id) ?? 0) + 1)
@@ -141,26 +151,25 @@ export async function getDocumentCounts(supabase: DB, userId: string): Promise<M
  * in der View, damit Galerie und angezeigtes Hauptbild nicht auseinanderlaufen.
  * Unbegrenzt (Kandidat für Paginierung bei großen Sammlungen).
  */
-export async function getValuableImages(supabase: DB, userId: string): Promise<ValuableImageRow[]> {
+export async function getValuableImages(supabase: DB, ctx: ScopeContext): Promise<ValuableImageRow[]> {
+  const ids = await scopedValuableIds(supabase, ctx)
+  if (ids.length === 0) return []
   const { data } = await supabase
     .from('valuable_images')
     .select('id, valuable_id, pfad, art, ist_hauptbild, created_at, hinweis, prompt, basis_bild_id')
-    .eq('user_id', userId)
+    .in('valuable_id', ids)
     .order('ist_hauptbild', { ascending: false })
     .order('created_at', { ascending: false })
   return (data ?? []) as ValuableImageRow[]
 }
 
 /**
- * Bewertungs-Historie eines Stücks, älteste zuerst (für den Wertverlauf).
- * `user_id` wird zusätzlich zur RLS gefiltert, damit die Abfrage den Index nutzt und
- * auch mit einem Service-Client nie fremde Zeilen liefert.
+ * Bewertungs-Historie eines Stücks, älteste zuerst (für den Wertverlauf). Zugriff regelt die RLS (auch Stücke eines Peers).
  */
-export async function getValuations(supabase: DB, userId: string, valuableId: string): Promise<Valuation[]> {
+export async function getValuations(supabase: DB, ctx: ScopeContext, valuableId: string): Promise<Valuation[]> {
   const { data } = await supabase
     .from('valuable_valuations')
     .select('id, valuable_id, bewertet_am, wert, quelle, notiz')
-    .eq('user_id', userId)
     .eq('valuable_id', valuableId)
     .order('bewertet_am', { ascending: true })
   return (data ?? []).map((r) => ({ ...r, wert: Number(r.wert) })) as Valuation[]

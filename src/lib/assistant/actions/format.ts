@@ -29,16 +29,16 @@ export const FREQUENCY_LABELS: Record<string, string> = {
   quarterly: 'vierteljährlich',
   yearly: 'jährlich',
   weekly: 'wöchentlich',
+  biweekly: 'zweiwöchentlich',
+  biannual: 'halbjährlich',
   once: 'einmalig',
 }
 
-export const PRIORITY_LABELS: Record<string, string> = { high: 'hoch', medium: 'mittel', low: 'niedrig' }
+export const PRIORITY_LABELS: Record<string, string> = { hoch: 'hoch', mittel: 'mittel', niedrig: 'niedrig' }
 
 export const GOAL_STATUS_LABELS: Record<string, string> = {
-  active: 'aktiv',
-  paused: 'pausiert',
-  reached: 'erreicht',
-  cancelled: 'abgebrochen',
+  offen: 'offen',
+  geschlossen: 'geschlossen',
 }
 
 export const SEVERITY_LABELS: Record<string, string> = {

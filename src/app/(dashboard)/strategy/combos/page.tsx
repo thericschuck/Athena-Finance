@@ -2,6 +2,7 @@ import { requireAuthUser } from '@/lib/supabase/server'
 import { CheckCircle2, XCircle, CircleDashed } from 'lucide-react'
 import { getIndicatorOptions, getCombosWithIndicators } from '@/lib/data/strategy'
 import { AddComboDialog, EditComboDialog, DeleteComboButton } from '@/components/strategy/combo-form'
+import { LeerZustand } from '@/components/leer/LeerZustand'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 // ─── Badge helpers ────────────────────────────────────────────────────────────
@@ -61,10 +62,11 @@ export default async function CombosPage() {
 
       {/* Empty state */}
       {combos.length === 0 && (
-        <div className="rounded-lg border border-dashed border-border bg-card py-16 text-center">
-          <p className="text-sm font-medium text-foreground">Noch keine Combos</p>
-          <p className="mt-1 text-sm text-muted-foreground">Erstelle deine erste Indikator-Kombination.</p>
-        </div>
+        <LeerZustand
+          titel="Noch keine Combos"
+          text="Eine Combo bündelt mehrere Indikatoren zu einem Signal. Erstelle deine erste Indikator-Kombination."
+          aktionNode={<AddComboDialog indicatorOptions={indicatorOptions} />}
+        />
       )}
 
       {/* Cards grid */}
