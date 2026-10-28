@@ -1,6 +1,6 @@
 'use client'
 
-import { DEFAULT_FINTS_URL } from '@/lib/fints/defaults'
+import { DEFAULT_FINTS_BLZ, DEFAULT_FINTS_URL } from '@/lib/fints/defaults'
 import { useActionState, useCallback, useEffect, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import {
@@ -183,7 +183,7 @@ function AddForm({ onDone, onCancel, hasFallback }: { onDone: () => void; onCanc
       )}
       <div className="grid gap-3 sm:grid-cols-2">
         <Field id="bc-label" name="label" label="Bezeichnung" placeholder="z. B. Raiffeisenbank" />
-        <Field id="bc-blz" name="blz" label="BLZ" placeholder="8 Ziffern" inputMode="numeric" />
+        <Field id="bc-blz" name="blz" label="BLZ" placeholder="8 Ziffern" inputMode="numeric" defaultValue={DEFAULT_FINTS_BLZ} />
       </div>
       <Field id="bc-url" name="fints_url" label="Bank-URL (FinTS-Endpunkt)" placeholder="https://…" type="url" defaultValue={DEFAULT_FINTS_URL} />
       <div className="grid gap-3 sm:grid-cols-2">
