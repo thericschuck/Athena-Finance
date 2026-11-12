@@ -13,6 +13,7 @@ import {
   registerValuableImage, setHauptbild, deleteValuableImage,
 } from '@/app/(dashboard)/inventar/actions'
 import { ValuableIcon } from './ValuableIcon'
+import { LadeBild } from '@/components/ui/lade-bild'
 import {
   wertstufe, HINWEIS_MAX, MAX_VORLAGEN,
   type ValuableImage, type ValuableWithImage,
@@ -228,8 +229,7 @@ export function ValuableMedia({ item }: { item: ValuableWithImage }) {
         }}
       >
         {item.anzeige_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <LadeBild
             src={item.anzeige_url}
             alt={item.name}
             className={`absolute inset-0 size-full object-contain p-4 transition-all duration-500 ${
@@ -298,8 +298,7 @@ export function ValuableMedia({ item }: { item: ValuableWithImage }) {
                 }`}
               >
                 {b.url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={b.url} alt="" className="size-full object-cover" />
+                  <LadeBild src={b.url} alt="" loading="lazy" className="size-full object-cover" />
                 ) : (
                   <span className="flex size-full items-center justify-center text-[10px] text-muted-foreground">
                     ?

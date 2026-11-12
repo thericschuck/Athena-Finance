@@ -6,6 +6,7 @@ import { signAthenaFileUrls } from '@/app/(dashboard)/assistant/datei-actions'
 import { dateiArt, pfadAusStorageUrl } from '@/lib/assistant/dateien'
 import { kuerzeName } from '@/lib/assistant/anhaenge'
 import { DateiIcon } from '@/components/assistant/chat/AnhangChips'
+import { LadeBild } from '@/components/ui/lade-bild'
 
 /**
  * Signierte URLs gelten eine Stunde; hier zwei Minuten Reserve. Der Cache liegt auf Modulebene,
@@ -91,11 +92,10 @@ export const NachrichtenAnhaenge = memo(function NachrichtenAnhaenge({
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`${name} öffnen`}
-              className="block overflow-hidden rounded-lg border border-border"
+              className="relative block overflow-hidden rounded-lg border border-border"
             >
               {/* Signierte, wechselnde URL aus dem Bucket — next/image brächte hier nur Konfiguration. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={url} alt={name} loading="lazy" className="size-20 object-cover sm:size-24" />
+              <LadeBild src={url} alt={name} loading="lazy" className="size-20 object-cover sm:size-24" />
             </a>
           ) : (
             <div

@@ -73,7 +73,10 @@ export function ScopeLadeInhalt({ children }: { children: React.ReactNode }) {
       aria-busy={laedt}
       data-scope-laedt={laedt ? 'true' : undefined}
       className={cn(
-        'flex min-w-0 flex-1 flex-col transition-opacity duration-200',
+        // `min-h-0` ist Pflicht: ohne wächst dieser Wrapper mit dem Inhalt (min-height:auto eines Flex-Items), und
+        // Seiten mit fester Höhe (Athena: `h-full`, Chat und Sessions scrollen intern) ziehen die ganze Seite lang.
+        // Normale Seiten scrollen weiter im PageWrapper, ihr Überlauf zählt dort zur scrollbaren Fläche.
+        'flex min-h-0 min-w-0 flex-1 flex-col transition-opacity duration-200',
         laedt && 'pointer-events-none select-none opacity-[0.55]',
       )}
     >

@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from 'react'
 import { Check, X, Loader2, AlertTriangle, ShieldCheck, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { LadeBild } from '@/components/ui/lade-bild'
 import { cn } from '@/lib/utils'
 import {
   confirmPendingAction,
@@ -210,14 +211,15 @@ function ArtworkPreview({ bildId }: { bildId: string }) {
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        'mt-2.5 block aspect-square w-40 overflow-hidden rounded-lg border border-border bg-muted',
-        !url && 'animate-pulse',
+        'relative mt-2.5 block aspect-square w-40 overflow-hidden rounded-lg border border-border bg-muted',
       )}
       title={url ? 'In voller Größe öffnen' : undefined}
     >
-      {url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={url} alt="Erzeugtes Artwork" className="size-full object-cover" />
+      {/* Ein Shimmer durchgehend: erst während die URL signiert wird, dann bis das Bild geladen ist. */}
+      {url ? (
+        <LadeBild src={url} alt="Erzeugtes Artwork" className="size-full object-cover" />
+      ) : (
+        <span aria-hidden className="shimmer absolute inset-0" />
       )}
     </a>
   )

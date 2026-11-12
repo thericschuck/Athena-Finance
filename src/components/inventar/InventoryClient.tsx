@@ -27,6 +27,7 @@ import {
   type ValuableWithImage,
 } from '@/lib/valuables'
 import { Skeleton } from '@/components/ui/skeleton'
+import { LadeBild } from '@/components/ui/lade-bild'
 
 // Recharts wiegt mehr als der Rest der Seite zusammen und wird erst im Detail-Panel
 // gebraucht — also nachladen, statt es jedem Seitenaufruf mitzugeben.
@@ -332,15 +333,17 @@ function Karte({
                 // Bewusst <img> statt next/image: die URL ist eine signierte Storage-URL
                 // mit Ablaufdatum. Sie durch den Optimizer zu schicken hiesse, jede
                 // Signatur zu cachen — der Eintrag überlebt die Signatur und liefert
-                // danach 400.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                // danach 400. LadeBild blendet erst nach vollständigem Laden ein und zeigt
+                // bis dahin einen Shimmer — nur für das gerade sichtbare Bild.
+                // `lazy` für alle: Karten im Viewport laden trotzdem sofort (inkl. der
+                // unsichtbaren Nachbarn), Karten weiter unten erst beim Scrollen.
+                <LadeBild
                   key={b.id}
                   src={b.url!}
                   alt={i === sicher ? item.name : ''}
                   aria-hidden={i !== sicher}
-                  loading={i === 0 ? undefined : 'lazy'}
-                  decoding="async"
+                  loading="lazy"
+                  platzhalter={i === sicher}
                   className={bildKlasse}
                   style={{
                     // Nachbarn warten seitlich in Blätterrichtung und leicht verkleinert —
@@ -357,14 +360,7 @@ function Karte({
               )
             })
           ) : aktuell ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={aktuell}
-              alt={item.name}
-              loading="lazy"
-              decoding="async"
-              className={bildKlasse}
-            />
+            <LadeBild src={aktuell} alt={item.name} loading="lazy" className={bildKlasse} />
           ) : (
             <ValuableIcon
               kategorie={item.kategorie}

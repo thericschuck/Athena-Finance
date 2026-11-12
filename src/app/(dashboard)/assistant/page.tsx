@@ -88,7 +88,7 @@ export default async function AthenaChatPage({
   if (!entwurf && start === 'kennenlernen') entwurf = kennenlernPrompt(await loadAnzeigeNameFuerNutzer(supabase, user.id))
 
   return (
-    <div className="grid h-full min-h-0 grid-cols-1 gap-4 lg:grid-cols-[16rem_1fr]">
+    <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[minmax(0,1fr)] gap-4 lg:grid-cols-[16rem_1fr]">
       <aside className="hidden min-h-0 rounded-lg border border-border lg:block">
         <SessionList
           sessions={sessions}

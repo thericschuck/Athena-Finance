@@ -1,6 +1,7 @@
 'use client'
 
 import { ValuableIcon } from './ValuableIcon'
+import { LadeBild } from '@/components/ui/lade-bild'
 import { kategorieLabel, vollstaendigkeit, type ValuableWithImage } from '@/lib/valuables'
 
 /** Tabellenansicht für größere Sammlungen — sortiert wird über die Leiste darüber. */
@@ -41,11 +42,10 @@ export function ValuableList({
                     onClick={e => { e.stopPropagation(); onOpen(i.id) }}
                     className="flex items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted/40">
+                    <span className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted/40">
                       {bild ? (
                         // Signierte URL, daher <img> — siehe Karte in InventoryClient.
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={bild} alt="" loading="lazy" decoding="async" className="size-full object-contain" />
+                        <LadeBild src={bild} alt="" loading="lazy" className="size-full object-contain" />
                       ) : (
                         <ValuableIcon kategorie={i.kategorie} className="size-4 text-muted-foreground/60" />
                       )}
