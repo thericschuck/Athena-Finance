@@ -5,7 +5,7 @@ import { applyAccountScope } from '@/lib/haushalt/scope'
 import { herabstufungsIds } from '@/lib/haushalt/umbuchung'
 import { parseFilter } from '@/lib/transaktionen/filter'
 import { kategorieIdsFuer, wendeFilterAn } from '@/lib/data/finance-transactions'
-import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvValue, formatCsvAmount } from '@/lib/csv'
+import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvText, escapeCsvValue, formatCsvAmount } from '@/lib/csv'
 
 /**
  * CSV-Export der Transaktionen, im deutschen Excel-Dialekt.
@@ -30,14 +30,6 @@ import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvValue, formatCsvAmount } from
  */
 const PAGE = 1000
 
-/**
- * Excel führt Zellen aus, die mit `=`, `+`, `-` oder `@` beginnen, als Formel aus. Empfängernamen und
- * Verwendungszwecke stammen von der Bank bzw. von Dritten — ein Apostroph davor macht daraus Text.
- * Nur für Textfelder, nie für den Betrag (der ist eine Zahl und soll eine bleiben).
- */
-function schuetzeFormel(wert: string | null): string | null {
-  return wert !== null && /^[=+\-@\t\r]/.test(wert) ? `'${wert}` : wert
-}
 const MAX_PAGES = 100
 
 const CSV_HEADERS = ['datum', 'betrag', 'beschreibung', 'haendler', 'kategorie', 'konto', 'waehrung']
@@ -117,10 +109,10 @@ export async function GET(req: NextRequest) {
     const row = [
       escapeCsvValue(tx.date),
       formatCsvAmount(amount),
-      escapeCsvValue(schuetzeFormel(tx.description)),
-      escapeCsvValue(schuetzeFormel(tx.merchant)),
-      escapeCsvValue(schuetzeFormel(tx.category_name)),
-      escapeCsvValue(schuetzeFormel(tx.account_name)),
+      escapeCsvText(tx.description),
+      escapeCsvText(tx.merchant),
+      escapeCsvText(tx.category_name),
+      escapeCsvText(tx.account_name),
       escapeCsvValue(tx.currency),
     ]
     lines.push(row.join(CSV_SEPARATOR))

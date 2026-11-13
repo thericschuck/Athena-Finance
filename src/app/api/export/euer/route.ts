@@ -5,7 +5,7 @@ import { berechneEuer } from '@/lib/tax/euer'
 import { berechneSteuerposition } from '@/lib/tax/position'
 import { z } from 'zod'
 import { parseQuery } from '@/lib/api/validate'
-import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvValue, formatCsvAmount } from '@/lib/csv'
+import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvText, formatCsvAmount } from '@/lib/csv'
 
 /**
  * Das Steuerbüro-Paket: eine Datei, vier Abschnitte.
@@ -34,7 +34,8 @@ const querySchema = z.object({
 
 function zeile(...felder: (string | number | null)[]): string {
   return felder
-    .map(f => (typeof f === 'number' ? formatCsvAmount(f) : escapeCsvValue(f)))
+    // Alle Texte (Beschreibung, Kategorie, Aussteller, Dateiname) stammen teils von Dritten: gegen Formeln schützen.
+    .map(f => (typeof f === 'number' ? formatCsvAmount(f) : escapeCsvText(f)))
     .join(SP)
 }
 

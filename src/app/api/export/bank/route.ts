@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { getAuthUser } from '@/lib/supabase/server'
 import { resolveScope } from '@/lib/haushalt/resolve'
 import { parseQuery } from '@/lib/api/validate'
-import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvValue, formatCsvAmount } from '@/lib/csv'
+import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvText, escapeCsvValue, formatCsvAmount } from '@/lib/csv'
 import { LEERER_FILTER, filterBuchungen, ibanMenge, kategorieMitKindern, parseBetrag, sortiereBuchungen } from '@/lib/bank/buchungen'
 import { normIban } from '@/lib/bank/scope'
 import type { BankTransaction } from '@/types/bank'
@@ -36,19 +36,6 @@ const CSV_HEADERS = [
   'wertstellung', 'buchungsdatum', 'betrag', 'waehrung', 'gegenpartei', 'gegen_iban',
   'verwendungszweck', 'kategorie', 'konto',
 ]
-
-/**
- * CSV-Injection: Excel wertet Zellen, die mit = + - @ (oder Tab/CR) beginnen, als Formel aus.
- * Verwendungszweck und Gegenpartei kommen von Dritten (jeder kann dir eine Ueberweisung mit
- * `=HYPERLINK(...)` als Zweck schicken). Ein vorangestelltes Apostroph macht die Zelle zu
- * Text. lib/csv maskiert nur Trennzeichen/Anfuehrungszeichen, deshalb hier — und NUR fuer
- * Textspalten: der Betrag (`-12,50`) ist legitim negativ und kommt nicht hier durch.
- */
-function textZelle(value: string | null | undefined): string {
-  if (value == null) return ''
-  const s = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value
-  return escapeCsvValue(s)
-}
 
 const PAGE = 1000
 
@@ -105,11 +92,11 @@ export async function GET(req: NextRequest) {
       escapeCsvValue(t.entry_date?.slice(0, 10) ?? null),
       formatCsvAmount(t.amount),
       escapeCsvValue(t.currency),
-      textZelle(t.counterpart_name),
-      textZelle(t.counterpart_iban),
-      textZelle(t.description ?? t.raw_description),
-      textZelle(t.category_id ? katName.get(t.category_id) ?? null : null),
-      textZelle(t.account_iban),
+      escapeCsvText(t.counterpart_name),
+      escapeCsvText(t.counterpart_iban),
+      escapeCsvText(t.description ?? t.raw_description),
+      escapeCsvText(t.category_id ? katName.get(t.category_id) ?? null : null),
+      escapeCsvText(t.account_iban),
     ].join(CSV_SEPARATOR))
   }
 

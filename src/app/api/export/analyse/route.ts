@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { getAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { parseQuery } from '@/lib/api/validate'
-import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvValue, formatCsvAmount } from '@/lib/csv'
+import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvText, escapeCsvValue, formatCsvAmount } from '@/lib/csv'
 import { getFlowTransactionsScope } from '@/lib/data/flows-scope'
 import { resolveScope } from '@/lib/haushalt/resolve'
 import { getActiveAccountOptions } from '@/lib/data/overview'
@@ -53,19 +53,6 @@ const CSV_HEADERS = [
 ]
 
 const ID = /^[0-9a-f-]{36}$/i
-
-/**
- * CSV-Injection: Excel wertet Zellen, die mit = + - @ (oder Tab/CR) beginnen, als Formel aus.
- * Gegenpartei und Verwendungszweck kommen von Dritten (jeder kann dir eine Ueberweisung mit
- * `=HYPERLINK(...)` als Zweck schicken). Ein vorangestelltes Apostroph macht die Zelle zu Text.
- * lib/csv maskiert nur Trennzeichen/Anfuehrungszeichen, deshalb hier — und NUR fuer Textspalten:
- * der Betrag (`-12,50`) ist legitim negativ und kommt nicht hier durch.
- */
-function textZelle(value: string | null | undefined): string {
-  if (value == null) return ''
-  const s = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value
-  return escapeCsvValue(s)
-}
 
 export async function GET(req: NextRequest) {
   const { supabase, user } = await getAuthUser()
@@ -123,14 +110,14 @@ export async function GET(req: NextRequest) {
       escapeCsvValue(t.date),
       escapeCsvValue(t.type === 'income' ? 'Einnahme' : 'Ausgabe'),
       formatCsvAmount(vorzeichen(t)),
-      textZelle(parteiVon(t)),
-      textZelle(t.description),
-      textZelle(t.category_name),
-      textZelle(t.root_category_name),
-      textZelle(ART_LABEL[t.flow_kind] ?? t.flow_kind),
-      textZelle(t.account_id ? kontoName.get(t.account_id) ?? null : null),
-      textZelle(QUELLE_LABEL[t.source] ?? t.source),
-      textZelle(t.tax_role ? STEUERROLLE_LABEL[t.tax_role] ?? t.tax_role : null),
+      escapeCsvText(parteiVon(t)),
+      escapeCsvText(t.description),
+      escapeCsvText(t.category_name),
+      escapeCsvText(t.root_category_name),
+      escapeCsvText(ART_LABEL[t.flow_kind] ?? t.flow_kind),
+      escapeCsvText(t.account_id ? kontoName.get(t.account_id) ?? null : null),
+      escapeCsvText(QUELLE_LABEL[t.source] ?? t.source),
+      escapeCsvText(t.tax_role ? STEUERROLLE_LABEL[t.tax_role] ?? t.tax_role : null),
     ].join(CSV_SEPARATOR))
   }
 

@@ -100,3 +100,32 @@ export function escapeCsvValue(value: string | null | undefined): string {
   }
   return str
 }
+
+/**
+ * Beginnt der Text so, dass ein Tabellenprogramm ihn als Formel lesen könnte?
+ *
+ * Gefahrzeichen sind `=`, `+`, `-`, `@` sowie Tab und CR (OWASP „CSV Injection"). Sie zählen auch dann,
+ * wenn davor Leerraum steht: Leerzeichen, Zeilenumbruch und geschütztes Leerzeichen (`\s` deckt alle ab)
+ * ändern nichts daran, dass LibreOffice und manche Importer die Zelle danach trotzdem auswerten. Ein
+ * Test nur auf das erste Zeichen der Zeichenkette ließ `" =HYPERLINK(...)"` durch.
+ */
+const FORMEL_ANFANG = /^(?:[\t\r]|\s*[=+\-@])/
+
+/**
+ * Textfeld für die Ausgabe: gegen Formel-Einschleusung schützen UND maskieren.
+ *
+ * Verwendungszweck, Gegenpartei, Kategorie- und Dateinamen kommen von Dritten: Jeder, der deine IBAN kennt,
+ * kann eine Überweisung mit `=HYPERLINK("https://…";"Klick")` als Zweck schicken, und der Text landet im
+ * Export. Ein vorangestelltes Apostroph macht die Zelle zu Text.
+ *
+ * NUR für Textspalten. Beträge gehen durch `formatCsvAmount` und dürfen negativ bleiben (`-12,50`); würden
+ * sie hier durchlaufen, wären sie Text und ließen sich nicht mehr summieren.
+ *
+ * Das Apostroph steht danach in der Datei. Der Import (`transaction-csv`, `lib/transaktionen/import`)
+ * entfernt es nicht wieder: ein Reimport eines Exports trägt es also in Beschreibung oder Händler.
+ */
+export function escapeCsvText(value: string | null | undefined): string {
+  if (value == null) return ''
+  const str = String(value)
+  return escapeCsvValue(FORMEL_ANFANG.test(str) ? `'${str}` : str)
+}
