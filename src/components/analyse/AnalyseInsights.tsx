@@ -1,12 +1,10 @@
 'use client'
 
-import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
 import type { KeyboardEvent } from 'react'
 import { ArrowRight, Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useUrlFilters } from '@/components/providers/url-filters'
-import { berechneHinweise } from '@/lib/analyse/insights'
 import type { Hinweis, HinweisTon } from '@/lib/analyse/insights'
-import type { AnalyseAbschnittProps } from '@/lib/analyse/typen'
 import { cn } from '@/lib/utils'
 
 /**
@@ -29,9 +27,15 @@ import { cn } from '@/lib/utils'
  * geöffneter Detailkarte, Berührung (bis 2 s danach) und im Hintergrund-Tab.
  *
  * Ohne Hinweise bleibt dieselbe Zeile mit „Nichts Auffälliges" stehen, damit das Layout nicht springt.
+ *
+ * Die Hinweise werden auf dem Server berechnet (hinweiseFuerAnalyse, analyse/page.tsx) und kommen fertig als Prop. Diese
+ * Client-Komponente bekommt bewusst NICHT das `daten`-Objekt der Seite: das enthaelt alle Buchungen, alle Monatssummen und den
+ * Scope mit Mitglieder-IDs und IBANs, und alles, was an eine Client-Komponente geht, landet im Browser (AUDIT.md C3).
  */
 
-const MAX_HINWEISE = 8
+export interface AnalyseInsightsProps {
+  hinweise: Hinweis[]
+}
 const LAUF_PX_PRO_SEKUNDE = 28
 const PAUSE_NACH_EINGRIFF_MS = 2000
 /** Abstand zwischen den Chips (`gap-2`); wird für die exakte Schleifenlänge gebraucht. */
@@ -61,7 +65,7 @@ function abonniereReduziert(cb: () => void) {
 }
 const reduziertJetzt = () => window.matchMedia(REDUZIERT).matches
 
-export function AnalyseInsights({ daten }: AnalyseAbschnittProps) {
+export function AnalyseInsights({ hinweise }: AnalyseInsightsProps) {
   const filter = useUrlFilters()
   const [offen, setOffen] = useState<string | null>(null)
   const [kannLinks, setKannLinks] = useState(false)
@@ -76,21 +80,6 @@ export function AnalyseInsights({ daten }: AnalyseAbschnittProps) {
   const wurzel = useRef<HTMLDivElement>(null)
   const reihe = useRef<HTMLUListElement>(null)
   const kartenId = useId()
-
-  const hinweise = useMemo(
-    () =>
-      berechneHinweise({
-        heute: daten.heute,
-        locale: daten.locale,
-        cutoff: daten.cutoff,
-        monatsZeilen: daten.monatsZeilen,
-        txns: daten.txns,
-        fruehesterMonat: daten.fruehesterMonat,
-        // Neutrale Hauptkategorien (Transfers u. ä.) sind keine Konsumausgabe und kein Hinweis wert.
-        neutraleKategorien: daten.categories.filter(c => c.type === 'neutral').map(c => c.id),
-      }).slice(0, MAX_HINWEISE),
-    [daten.heute, daten.locale, daten.cutoff, daten.monatsZeilen, daten.txns, daten.fruehesterMonat, daten.categories],
-  )
 
   // Fades und Pfeile nur dort, wo es in diese Richtung noch etwas zu scrollen gibt.
   function pruefeScroll() {

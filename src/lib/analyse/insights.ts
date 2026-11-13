@@ -401,3 +401,32 @@ export function berechneHinweise(e: InsightEingabe): Hinweis[] {
     (a, b) => b.relevanz - a.relevanz || a.key.localeCompare(b.key),
   )
 }
+
+/** So viele Hinweise zeigt die Zeile hoechstens (nach Relevanz die ersten). */
+export const MAX_HINWEISE = 8
+
+/**
+ * Hinweise fuer die Analyse-Seite, auf dem SERVER berechnet (AUDIT.md C3). Die Client-Komponente `AnalyseInsights` bekommt nur
+ * das Ergebnis (wenige Zeilen Text) statt aller Buchungen und Monatssummen. Frueher rechnete sie selbst und bekam dafuer das
+ * komplette `daten`-Objekt, samt Scope mit Mitglieder-IDs und IBANs, in den Browser serialisiert.
+ */
+export function hinweiseFuerAnalyse(d: {
+  heute: string
+  locale: string
+  cutoff: string | null
+  monatsZeilen: InsightMonatsZeile[]
+  txns: InsightBuchung[]
+  fruehesterMonat: string | null
+  categories: { id: string; type: string }[]
+}): Hinweis[] {
+  return berechneHinweise({
+    heute: d.heute,
+    locale: d.locale,
+    cutoff: d.cutoff,
+    monatsZeilen: d.monatsZeilen,
+    txns: d.txns,
+    fruehesterMonat: d.fruehesterMonat,
+    // Neutrale Hauptkategorien (Transfers u. ä.) sind keine Konsumausgabe und kein Hinweis wert.
+    neutraleKategorien: d.categories.filter(c => c.type === 'neutral').map(c => c.id),
+  }).slice(0, MAX_HINWEISE)
+}

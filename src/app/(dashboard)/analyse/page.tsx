@@ -6,6 +6,7 @@ import { ladeAnalyse, heuteBerlin, type AnalyseParams } from '@/lib/data/analyse
 import {
   buildHeatmap, buildMonthSeries, buildMonthlyComparison, buildSankey, currentMonthTotals,
 } from '@/lib/analyse/aufbereiten'
+import { hinweiseFuerAnalyse } from '@/lib/analyse/insights'
 import { monthlySeries } from '@/lib/finance/flow-calc'
 import { monthsForPeriod } from '@/lib/period'
 import { AnalysePeriodSelector } from '@/components/analyse/AnalysePeriodSelector'
@@ -91,6 +92,8 @@ export default async function AnalysePage({
     : 'ausgaben'
 
   const aktuellerMonat = daten.heute.slice(0, 7)
+  // Auf dem Server gerechnet: an die Client-Komponente geht nur das Ergebnis, nicht txns/monatsZeilen und schon gar nicht scopeCtx.
+  const hinweise = hinweiseFuerAnalyse(daten)
   const serie = monthlySeries(daten.monatsZeilen, daten.include)
 
   // Drei Ansichten statt zehn Karten untereinander. Die Buchungsliste steht darunter, nicht in
@@ -171,7 +174,13 @@ export default async function AnalysePage({
             <FlowKindToggle />
             <AnalyseAccountSelector accounts={daten.konten} selected={daten.kontoIds} />
             <AnalysePeriodSelector current={daten.periode} />
-            <AnalyseVergleichWahl {...props} />
+            <AnalyseVergleichWahl
+              vergleich={daten.vergleich}
+              periode={daten.periode}
+              cutoff={daten.cutoff}
+              heute={daten.heute}
+              fruehesterMonat={daten.fruehesterMonat}
+            />
           </div>
         </div>
 
@@ -179,7 +188,7 @@ export default async function AnalysePage({
           <div className="space-y-4">
             {/* Zwei schmale Zeilen: Kennzahlen und Auffälligkeiten. */}
             <AnalyseKennzahlen {...props} />
-            <AnalyseInsights {...props} />
+            <AnalyseInsights hinweise={hinweise} />
 
             <AnalyseTabs tabs={tabs} />
 
