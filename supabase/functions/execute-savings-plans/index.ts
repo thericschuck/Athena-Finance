@@ -1,11 +1,16 @@
-// Deploy: supabase functions deploy execute-savings-plans
-// Cron (Supabase Dashboard → Cron Jobs):
-//   Schedule: "0 9 * * *"  (täglich um 9 Uhr, nach fetch-fund-price)
-//   URL: POST /functions/v1/execute-savings-plans
+// Deploy: supabase functions deploy execute-savings-plans   (verify_jwt = false steht in supabase/config.toml)
+// Cron: pg_cron-Job "execute-savings-plans", "0 9 * * *" (täglich um 9 Uhr, nach fetch-fund-price)
+//   URL: POST /functions/v1/execute-savings-plans, Header `Authorization: Bearer <CRON_SECRET>`
+//   (das Secret liest der Job aus supabase_vault, siehe Migration 20261113100000_cron_jobs_vault_secret.sql)
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { cronAuthAntwort } from './cron-auth.ts'
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  // Erste Prüfung, vor jedem Datenbankzugriff: ohne gültiges CRON_SECRET bucht niemand einen Sparplan.
+  const abgewiesen = cronAuthAntwort(req, Deno.env.get('CRON_SECRET'))
+  if (abgewiesen) return abgewiesen
+
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!

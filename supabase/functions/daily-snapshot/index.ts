@@ -1,5 +1,8 @@
-// Deploy:   supabase functions deploy daily-snapshot
+// Deploy:   supabase functions deploy daily-snapshot   (verify_jwt = false steht in supabase/config.toml)
 // Schedule: pg_cron job "Daily-Snapshot" — 59 23 * * * → POST /functions/v1/daily-snapshot
+//           Header `Authorization: Bearer <CRON_SECRET>`; das Secret liest der Job aus supabase_vault
+//           (Migration 20261113100000_cron_jobs_vault_secret.sql).
+// Manuell:  ?date=JJJJ-MM-TT rechnet einen Tag neu, nur heute und die 7 Tage davor (sonst 400).
 //
 // Ablauf:
 //   1. CoinGecko-Preise holen → in crypto_price_cache schreiben
@@ -7,6 +10,8 @@
 //   3. fn_take_snapshot(date) für jeden fehlenden + heutigen Tag aufrufen
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { cronAuthAntwort } from './cron-auth.ts'
+import { pruefeBackfillDatum } from './datum.ts'
 
 // ─── Ticker → CoinGecko-ID ────────────────────────────────────────────────────
 // Nur noch ein Fallback: `assets.symbol` enthält für jeden Coin, der in der Coin-Registry
@@ -67,21 +72,25 @@ function isoDate(d = new Date()): string {
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
-  // Die Function läuft mit verify_jwt=true, die Plattform hat den Bearer also bereits
-  // geprüft, bevor dieser Code überhaupt startet. Der CRON_SECRET-Check hier ist nur die
-  // zweite Schranke für manuelle Aufrufe — er darf einen gültigen Supabase-JWT NICHT
-  // ablehnen. Genau das hat er vorher getan: der pg_cron-Job schickt den anon-Key, nicht das
-  // Secret, also lief die Function seit Monaten in einen 401 und `crypto_price_cache` blieb
-  // auf dem Stand von März stehen.
-  const auth   = req.headers.get('Authorization') ?? ''
-  const secret = Deno.env.get('CRON_SECRET') ?? ''
-  const isJwt  = auth.startsWith('Bearer eyJ')
-  if (secret && !isJwt && auth !== `Bearer ${secret}`) {
-    return new Response('Unauthorized', { status: 401 })
-  }
+  // Erste Prüfung, vor jedem Datenbankzugriff. Früher ließ ein `Bearer eyJ…` (jedes JWT, auch der öffentliche
+  // anon-Key) die Prüfung passieren, weil der pg_cron-Job den anon-Key schickte. Der Job schickt jetzt das
+  // CRON_SECRET aus supabase_vault, die Ausnahme ist weg (SECURITY-AUDIT.md S1).
+  const abgewiesen = cronAuthAntwort(req, Deno.env.get('CRON_SECRET'))
+  if (abgewiesen) return abgewiesen
 
   const url    = new URL(req.url)
   const log: string[] = []
+
+  // `?date=` gleich hier prüfen, nicht erst in Schritt 2: Schritt 1 schreibt schon in crypto_price_cache, eine
+  // abgelehnte Anfrage soll nichts verändert haben. Ein vorhandener, aber ungültiger Wert ist ein Fehler (400),
+  // kein Grund, stillschweigend den Normallauf zu machen.
+  const dateParam = url.searchParams.get('date')
+  let manuellesDatum: string | null = null
+  if (dateParam !== null) {
+    const pruefung = pruefeBackfillDatum(dateParam, isoDate())
+    if (!pruefung.ok) return Response.json({ ok: false, error: pruefung.fehler }, { status: 400 })
+    manuellesDatum = pruefung.datum
+  }
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -148,12 +157,11 @@ Deno.serve(async (req) => {
   }
 
   // ── 2. Determine which dates to process ─────────────────────────────────────
-  const dateParam = url.searchParams.get('date')
   let datesToRun: string[]
 
-  if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
-    datesToRun = [dateParam]
-    log.push(`manual backfill: ${dateParam}`)
+  if (manuellesDatum) {
+    datesToRun = [manuellesDatum]
+    log.push(`manual backfill: ${manuellesDatum}`)
   } else {
     const today = isoDate()
     const candidates = [1, 2, 3].map(n => {

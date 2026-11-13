@@ -1,9 +1,10 @@
-// Deploy: supabase functions deploy fetch-fund-price
-// Cron (Supabase Dashboard → Cron Jobs):
-//   Schedule: "*/15 8-20 * * 1-5"  (alle 15 Min, Mo-Fr, 8-20 Uhr)
-//   URL: POST /functions/v1/fetch-fund-price
+// Deploy: supabase functions deploy fetch-fund-price   (verify_jwt = false steht in supabase/config.toml)
+// Cron: pg_cron-Job "fetch-fund-price", "*/15 8-20 * * 1-5" (alle 15 Min, Mo-Fr, 8-20 Uhr)
+//   URL: POST /functions/v1/fetch-fund-price, Header `Authorization: Bearer <CRON_SECRET>`
+//   (das Secret liest der Job aus supabase_vault, siehe Migration 20261113100000_cron_jobs_vault_secret.sql)
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { cronAuthAntwort } from './cron-auth.ts'
 
 // ─── Yahoo Finance Helpers ────────────────────────────────────────────────────
 
@@ -45,7 +46,11 @@ async function fetchQuote(ticker: string): Promise<{ price: number; currency: st
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  // Erste Prüfung, vor jedem Datenbankzugriff: ohne gültiges CRON_SECRET läuft kein Yahoo-Abruf und keine Schreibaktion.
+  const abgewiesen = cronAuthAntwort(req, Deno.env.get('CRON_SECRET'))
+  if (abgewiesen) return abgewiesen
+
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!

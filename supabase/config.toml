@@ -368,6 +368,19 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# Cron-Functions: die Anmeldung ist das Bearer-Secret im Code (cron-auth.ts neben jeder index.ts), kein Supabase-JWT.
+# Mit verify_jwt = true würde die Plattform das Secret (kein JWT) schon vor dem Code mit 401 abweisen; der anon-Key
+# als gültiges JWT käme dagegen durch, und genau das war die Lücke (SECURITY-AUDIT.md S1).
+# `supabase functions deploy <name>` übernimmt die Einstellung aus diesem Abschnitt.
+[functions.fetch-fund-price]
+verify_jwt = false
+
+[functions.execute-savings-plans]
+verify_jwt = false
+
+[functions.daily-snapshot]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
