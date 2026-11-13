@@ -16,6 +16,7 @@ import { decrypt } from '@/lib/encryption'
 import { fetchKrakenBalances, type KrakenAssetPair } from './index'
 import { placeKrakenMarketOrder, pollOrderFill } from './orders'
 import { syncKrakenForUser } from './sync'
+import { ladeBoersenSchluessel } from './schluessel'
 import type { RebalanceLeg } from '@/lib/crypto/rebalance-plan'
 
 // Kleiner Puffer, der Gebühren/leichte Slippage aus VORHERIGEN Legs DESSELBEN Laufs abfängt.
@@ -50,12 +51,9 @@ export async function executeRebalancePlan(
   assetPairs: Record<string, KrakenAssetPair>,
   pendingActionId: string | null,
 ): Promise<RebalanceExecutionResult> {
-  const { data: keyRow } = await supabase
-    .from('exchange_keys')
-    .select('api_key, api_secret')
-    .eq('user_id', userId)
-    .eq('exchange', 'kraken')
-    .maybeSingle()
+  // Chiffrate nur ueber den Admin-Helfer (exchange_keys ist fuer den Browser-Client gesperrt, SECURITY-AUDIT.md E1). Order-Log und
+  // Re-Sync unten laufen weiter ueber den uebergebenen Nutzer-Client. Ein Datenbankfehler wirft hier, statt „kein Konto“ vorzutaeuschen.
+  const keyRow = await ladeBoersenSchluessel(userId, 'kraken')
   if (!keyRow) throw new Error('Kein Kraken-Konto verbunden.')
 
   let apiKey: string, apiSecret: string

@@ -25,6 +25,7 @@ import {
 } from '@/lib/kraken'
 import { fetchKrakenFuturesOpenPositions, type KrakenFuturesPosition } from '@/lib/kraken/futures'
 import { syncKrakenForUser } from '@/lib/kraken/sync'
+import { ladeBoersenSchluessel } from '@/lib/kraken/schluessel'
 import { proposeWriteAction, type ProposeWriteActionResult } from '@/lib/assistant/actions'
 import { createLogger } from '@/lib/assistant/logger'
 import { requireRows } from '@/lib/data/mutation'
@@ -504,25 +505,19 @@ export interface OpenPositionsMeta {
 }
 
 async function getDecryptedKey(
-  supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   exchange: string,
 ): Promise<{ apiKey: string; apiSecret: string } | null> {
-  const { data: keyRow } = await supabase
-    .from('exchange_keys')
-    .select('api_key, api_secret')
-    .eq('user_id', userId)
-    .eq('exchange', exchange)
-    .maybeSingle()
+  // Chiffrate liest nur der Admin-Helfer (exchange_keys ist fuer den Browser-Client gesperrt, SECURITY-AUDIT.md E1).
+  const keyRow = await ladeBoersenSchluessel(userId, exchange)
   if (!keyRow) return null
   return { apiKey: decrypt(keyRow.api_key), apiSecret: decrypt(keyRow.api_secret) }
 }
 
 async function getSpotMarginPositions(
-  supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
 ): Promise<{ positions: OpenPositionView[]; error?: string; checked: boolean }> {
-  const key = await getDecryptedKey(supabase, userId, 'kraken').catch(
+  const key = await getDecryptedKey(userId, 'kraken').catch(
     (e: Error) => ({ error: `Entschlüsselung fehlgeschlagen: ${e.message}` } as const)
   )
   if (!key) return { positions: [], checked: false }
@@ -581,10 +576,9 @@ async function getSpotMarginPositions(
 }
 
 async function getFuturesPositions(
-  supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
 ): Promise<{ positions: OpenPositionView[]; error?: string; checked: boolean }> {
-  const key = await getDecryptedKey(supabase, userId, 'kraken_futures').catch(
+  const key = await getDecryptedKey(userId, 'kraken_futures').catch(
     (e: Error) => ({ error: `Entschlüsselung fehlgeschlagen: ${e.message}` } as const)
   )
   if (!key) return { positions: [], checked: false }
@@ -634,12 +628,12 @@ async function getFuturesPositions(
 export async function getKrakenOpenPositions(): Promise<
   { positions: OpenPositionView[]; warnings: string[]; meta: OpenPositionsMeta } | { error: string }
 > {
-  const { supabase, user } = await getAuthUser()
+  const { user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const [spot, futures] = await Promise.all([
-    getSpotMarginPositions(supabase, user.id),
-    getFuturesPositions(supabase, user.id),
+    getSpotMarginPositions(user.id),
+    getFuturesPositions(user.id),
   ])
 
   const warnings = [spot.error, futures.error].filter((w): w is string => !!w)

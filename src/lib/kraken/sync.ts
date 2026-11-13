@@ -12,6 +12,7 @@ import { getPrices } from '@/lib/crypto/coingecko'
 import type { Database, Json } from '@/types/database'
 import { FIAT_EUR_PRICES } from '@/lib/crypto/coin-registry'
 import { decrypt } from '@/lib/encryption'
+import { ladeBoersenSchluessel, type VerschluesselterSchluessel } from '@/lib/kraken/schluessel'
 import {
   fetchKrakenBalances,
   fetchKrakenAssetInfo,
@@ -32,12 +33,14 @@ export async function syncKrakenForUser(
   userId: string,
 ): Promise<KrakenSyncResult> {
   // 1. Load + decrypt Kraken credentials
-  const { data: keyRow } = await supabase
-    .from('exchange_keys')
-    .select('api_key, api_secret')
-    .eq('user_id', userId)
-    .eq('exchange', 'kraken')
-    .maybeSingle()
+  // Die Chiffrate liest nur der Admin-Helfer (exchange_keys ist fuer den Browser-Client gesperrt, SECURITY-AUDIT.md E1). Alles
+  // Weitere (Bestaende, Bewertungen) laeuft wie bisher ueber den uebergebenen Client, damit der Akteur im Haushalts-Audit stimmt.
+  let keyRow: VerschluesselterSchluessel | null
+  try {
+    keyRow = await ladeBoersenSchluessel(userId, 'kraken')
+  } catch (e) {
+    return { error: `Kraken-Schlüssel konnten nicht geladen werden: ${(e as Error).message}` }
+  }
 
   if (!keyRow) return { error: 'Kein Kraken-Konto verbunden. Bitte erst unter Einstellungen → Integrationen verbinden.' }
 

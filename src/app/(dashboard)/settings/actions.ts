@@ -4,6 +4,7 @@ import { createClient, getAuthUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Json } from '@/types/database'
 import { encrypt } from '@/lib/encryption'
+import { speichereBoersenSchluessel, loescheBoersenSchluessel } from '@/lib/kraken/schluessel'
 import { leseSteuerprofil, schreibeSteuerprofil } from '@/lib/tax/profil'
 import { fetchSettingValue } from '@/lib/data/settings'
 import { z } from 'zod'
@@ -273,7 +274,7 @@ export async function saveExchangeKey(
   _prev: SettingsState,
   formData: FormData
 ): Promise<SettingsState> {
-  const { supabase, user } = await getAuthUser()
+  const { user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const parsed = parseForm(formData, exchangeKeySchema)
@@ -289,19 +290,10 @@ export async function saveExchangeKey(
     return { error: `Verschlüsselung fehlgeschlagen: ${(e as Error).message}` }
   }
 
-  const { error } = await supabase
-    .from('exchange_keys')
-    .upsert(
-      {
-        user_id:    user.id,
-        exchange,
-        api_key:    encryptedKey,
-        api_secret: encryptedSecret,
-      },
-      { onConflict: 'user_id,exchange' }
-    )
+  // Die Chiffrate sind fuer den Browser-Client gesperrt (SECURITY-AUDIT.md E1): Schreiben nur ueber den Admin-Helfer, immer mit user_id.
+  const { error } = await speichereBoersenSchluessel(user.id, exchange, encryptedKey, encryptedSecret)
 
-  if (error) return { error: error.message }
+  if (error) return { error }
   revalidatePath('/depot')
   return { success: true }
 }
@@ -310,7 +302,7 @@ export async function deleteExchangeKey(
   _prev: SettingsState,
   formData: FormData
 ): Promise<SettingsState> {
-  const { supabase, user } = await getAuthUser()
+  const { user } = await getAuthUser()
   if (!user) return { error: 'Nicht eingeloggt' }
 
   const parsed = parseInput(
@@ -320,13 +312,9 @@ export async function deleteExchangeKey(
   if (!parsed.ok) return { error: issueMessage(parsed) }
   const { exchange } = parsed.data
 
-  const { error } = await supabase
-    .from('exchange_keys')
-    .delete()
-    .eq('user_id', user.id)
-    .eq('exchange', exchange)
+  const { error } = await loescheBoersenSchluessel(user.id, exchange)
 
-  if (error) return { error: error.message }
+  if (error) return { error }
   revalidatePath('/depot')
   return { success: true }
 }
