@@ -1,7 +1,6 @@
 'use client'
 
 import { useActionState, useEffect, useState } from 'react'
-import Image from 'next/image'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { saveAppearance, SettingsState } from '@/app/(dashboard)/settings/actions'
@@ -11,6 +10,8 @@ import { DEFAULT_PRESET } from '@/components/providers/settings-context'
 import type { SettingsMap } from '@/lib/settings'
 import { Check } from 'lucide-react'
 import { ChecklisteZeile } from './checkliste-zeile'
+import { CursorPrivatAuswahl } from './cursor-privat-auswahl'
+import { AthenaStatue } from './athena-statue'
 
 // ─── Theme Presets ────────────────────────────────────────────────────────────
 
@@ -335,26 +336,8 @@ export function AppearanceForm({ initialSettings }: { initialSettings: SettingsM
         <p className="text-sm text-muted-foreground mt-0.5">Theme, Farben und Formatierung</p>
       </div>
 
-      {/* Dieselbe Athena-Illustration wie im Landing-Hero — dort steht sie
-          genauso bodenständig statt oben zu hängen (siehe .hero-athena in
-          landing.css: `bottom: 0; height: clamp(420px, 84vh, 920px)`),
-          hier 1:1 übernommen statt einer eigenen, zu kleinen Top-Positionierung.
-          Die Settings-Seite läuft in `max-w-5xl` (siehe
-          app/(dashboard)/settings/page.tsx), auf breiten Bildschirmen bleibt
-          rechts davon viel Leerraum bis zum Viewport-Rand übrig. `fixed`
-          holt die Statue aus diesem begrenzten Content-Fluss heraus. Nur ab
-          `2xl` (≥1536px): darunter reicht der Bildschirm nicht, um
-          max-w-5xl + Sidebar + echten Leerraum gleichzeitig zu garantieren,
-          die Statue würde sonst über echte Inhalte fallen. */}
-      <Image
-        src="/athena-statue.svg"
-        alt=""
-        aria-hidden
-        width={95}
-        height={142}
-        unoptimized
-        className="pointer-events-none fixed bottom-0 right-16 hidden h-[min(78vh,760px)] w-auto opacity-[0.4] 2xl:block"
-      />
+      {/* Hintergrund-Statue: bewusst per Portal am Body (siehe athena-statue.tsx). */}
+      <AthenaStatue />
 
       {/* Theme Presets — Athena Light/Dark groß und zuerst als die beiden
           Haupt-Themes, alle anderen Presets klein darunter als Alternativen. */}
@@ -462,6 +445,8 @@ export function AppearanceForm({ initialSettings }: { initialSettings: SettingsM
         </div>
         <ChecklisteZeile initialSettings={initialSettings} />
       </div>
+
+      <CursorPrivatAuswahl />
 
       {/* Formats */}
       <div className="grid grid-cols-2 gap-4">

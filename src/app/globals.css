@@ -293,25 +293,119 @@ a, button {
      alle Chart-Hover-Tooltips ab, ohne Balken/Linien/Ringe zu berühren.
    - `.privacy-blur`: expliziter Haken für Einzelfälle, die weder das eine
      noch das andere sind (z. B. eine Zahl direkt IM SVG ohne Text-Wrapper). */
-html[data-privacy-hidden] .tabular-nums,
-html[data-privacy-hidden] .recharts-tooltip-wrapper,
-html[data-privacy-hidden] .privacy-blur {
+/* Der Stil ist pro Gerät wählbar (Einstellungen → Darstellung, `data-privacy-style`
+   auf <html>, gesetzt von CustomCursor). Standard ist "balken" (lokale-darstellung.ts); fehlt das Attribut
+   ganz (vor dem ersten JS-Lauf), gilt ebenfalls "balken". */
+html[data-privacy-hidden] :is(.tabular-nums, .recharts-tooltip-wrapper, .privacy-blur) {
   user-select: none;
 }
-/* Maskierung statt Blur: jede Ziffer wird zu •, Schriftgröße/Layout bleiben
-   identisch. Fallback (Browser ohne -webkit-text-security): Blur. */
+
+/* Balken (Standard): jeder Betrag wird zu einem geschlossenen, geschwärzten Balken mit zartem
+   Grau-Verlauf (oben heller, unten dunkler), in ungefähr der Breite der echten Zahl.
+   Technik: eine winzige eigene Schrift ("Athena Balken", erzeugt von
+   scripts/baue-balken-font.py), in der jedes Zeichen ein massiver Block ist; nebeneinander
+   ergeben sie den Balken. Der Verlauf liegt per `background-clip: text` genau auf diesen
+   Blöcken. Warum nicht `text-decoration: line-through` wie früher: eine Dekoration kann nur eine
+   Vollton-Farbe, und ein Hintergrund würde bei Block-Elementen die ganze Zeile füllen.
+   Gleicher Block für ALLES (Ziffern, Komma, Währung, Buchstaben): sichtbar ist nur die Länge.
+   Als Data-URI statt Datei, damit sie sofort da ist — eine nachladende Schrift würde die echten
+   Ziffern kurz zeigen; `font-display: block` hält den Text bis dahin unsichtbar.
+   `font-synthesis: none`: fetter Text würde die Blöcke sonst künstlich aufblähen.
+   Der Verlauf steht senkrecht, weil er dann unabhängig von der Breite des Elements gleich
+   aussieht (bei Block-Elementen ist die Hintergrundfläche breiter als der Balken). */
+@font-face {
+  font-family: "Athena Balken";
+  src: url("data:font/ttf;base64,AAEAAAAKAIAAAwAgT1MvMkVI5e0AAAEoAAAAYGNtYXAjYkUNAAABmAAAAP5nbHlmIv5+kwAAAqQAAABOaGVhZDBv8mAAAACsAAAANmhoZWEGQwIXAAAA5AAAACRobXR4CP7/LgAAAYgAAAAQbG9jYQA0ABoAAAKYAAAACm1heHAABgAGAAABCAAAACBuYW1lv1gBBQAAAvQAAABycG9zdLitSMIAAANoAAAAPAABAAAAAQAAHmLJk18PPPUAAwPoAAAAAOccV3YAAAAA5xxXdv+6/8QDZgLQAAAAAwACAAAAAAAAAAEAAAMg/zgAAAMg/7r/ugNmAAEAAAAAAAAAAAAAAAAAAAAEAAEAAAAEAAQAAQAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAwI/AZAABQAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAADAAAAQgAAAAAAAAAAPz8/PwAAACQiEgMg/zgAAAMgAMgAAAAAAAAAAAAAAAAAAAAgAAACWAAAAlj/ugEs/7oDIP+6AAAAAgAAAAMAAAAUAAMAAQAAABQABADqAAAAFAAQAAMABAAlAC4AOgBaAHoAoyAZIKwiEv//AAAAJAArADAAQQBhAKMgGSCsIhL//wAAAAAAAAAAAAD/Xt/p31Xd7wABABQAFgAcADAAYgAAAAAAAAAAAAAAAQADAAEAAgABAAIAAQABAAEAAQABAAEAAQABAAEAAQACAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAAAAAAAADQAaACcAAAAB/7r/xAKeAtAAAwAABxEhEUYC5DwDDPz0AAH/uv/EAXIC0AADAAAHESERRgG4PAMM/PQAAf+6/8QDZgLQAAMAAAcRIRFGA6w8Awz89AAAAAAABAA2AAEAAAAAAAEADQAAAAEAAAAAAAIABwANAAMAAQQJAAEAGgAUAAMAAQQJAAIADgAuQXRoZW5hIEJhbGtlblJlZ3VsYXIAQQB0AGgAZQBuAGEAIABCAGEAbABrAGUAbgBSAGUAZwB1AGwAYQByAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAABAgEDAQQEdm9sbAZzY2htYWwFYnJlaXQ=") format("truetype");
+  font-display: block;
+}
+html[data-privacy-hidden]:is(:not([data-privacy-style]), [data-privacy-style="balken"])
+  :is(.tabular-nums, .recharts-tooltip-wrapper, .privacy-blur),
+html[data-privacy-hidden]:is(:not([data-privacy-style]), [data-privacy-style="balken"])
+  :is(.tabular-nums, .recharts-tooltip-wrapper, .privacy-blur) * {
+  font-family: "Athena Balken", sans-serif !important;
+  font-synthesis: none;
+  letter-spacing: 0 !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  background-image: linear-gradient(180deg, var(--privacy-balken-oben), var(--privacy-balken-unten));
+}
+:root {
+  --privacy-balken-oben: color-mix(in oklab, var(--muted-foreground) 20%, var(--background));
+  --privacy-balken-unten: color-mix(in oklab, var(--muted-foreground) 44%, var(--background));
+}
+/* Dunkle Themes: dieselben Mischungen wären helle Balken auf dunklem Grund und wirkten
+   dominanter als die dunklen Balken auf hellem — hier etwas zurückgenommen. */
+.dark {
+  --privacy-balken-oben: color-mix(in oklab, var(--muted-foreground) 13%, var(--background));
+  --privacy-balken-unten: color-mix(in oklab, var(--muted-foreground) 30%, var(--background));
+}
+/* Kurzer, neutraler Glanz nur im Moment des Umschaltens (`data-privacy-wechsel` setzt der
+   PrivacyProvider für ~1 s), nicht bei jedem Seitenwechsel im versteckten Modus. Zweite
+   Hintergrundebene, die einmal über den Balken läuft; `background-image` hat hier kein
+   `!important`, sonst würde es die Animation aushebeln (Important schlägt Animationen). */
+@media (prefers-reduced-motion: no-preference) {
+  html[data-privacy-hidden][data-privacy-wechsel]:is(:not([data-privacy-style]), [data-privacy-style="balken"])
+    :is(.tabular-nums, .recharts-tooltip-wrapper, .privacy-blur) {
+    background-image:
+      linear-gradient(100deg, transparent 30%, color-mix(in oklab, var(--foreground) 22%, transparent) 50%, transparent 70%),
+      linear-gradient(180deg, var(--privacy-balken-oben), var(--privacy-balken-unten));
+    background-size: 250% 100%, 100% 100%;
+    background-repeat: no-repeat;
+    animation: privacy-balken-ein 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+@keyframes privacy-balken-ein {
+  from { background-position: 150% 0, 0 0; }
+  to   { background-position: -50% 0, 0 0; }
+}
+
+/* Milchglas: Ziffern als unscharfer Schemen. */
+html[data-privacy-hidden][data-privacy-style="blur"] :is(.tabular-nums, .recharts-tooltip-wrapper, .privacy-blur) {
+  filter: blur(0.32em);
+}
+
+/* Punkte: der bisherige Stil — jede Ziffer wird zu •. Fallback ohne
+   -webkit-text-security: Blur. */
 @supports (-webkit-text-security: disc) {
-  html[data-privacy-hidden] .tabular-nums,
-  html[data-privacy-hidden] .recharts-tooltip-wrapper,
-  html[data-privacy-hidden] .privacy-blur {
+  html[data-privacy-hidden][data-privacy-style="punkte"] :is(.tabular-nums, .recharts-tooltip-wrapper, .privacy-blur) {
     -webkit-text-security: disc;
   }
 }
 @supports not (-webkit-text-security: disc) {
-  html[data-privacy-hidden] .tabular-nums,
-  html[data-privacy-hidden] .recharts-tooltip-wrapper,
-  html[data-privacy-hidden] .privacy-blur {
+  html[data-privacy-hidden][data-privacy-style="punkte"] :is(.tabular-nums, .recharts-tooltip-wrapper, .privacy-blur) {
     filter: blur(6px);
+  }
+}
+
+/* ── Theme-Pfeil ─────────────────────────────────────────────────────────────
+   Gewählt in Einstellungen → Darstellung, gesetzt als `data-cursor="pfeil"` auf <html>
+   (components/layout/custom-cursor.tsx). Ein einziger Pfeil für ALLES — keine eigene
+   Hand/Farbe über Klickbarem: der Wechsel zwischen zwei Pfeilen beim Überfahren von
+   Buttons wirkte wie ein Flackern. Nur Texteingaben behalten den System-Textcursor
+   (einen nachzubauen bringt nichts außer Ungenauigkeit beim Platzieren) und gesperrte
+   Elemente das Verbotszeichen.
+
+   `--athena-cursor-pfeil` ist der Standard-Pfeil in Athena-Gold; custom-cursor.tsx
+   überschreibt ihn auf <html> mit den Farben des aktuellen Themes. Der Standard sorgt
+   dafür, dass vor dem ersten JS-Lauf nie der System-Cursor durchblitzt. Die Form muss mit
+   PFEIL_PFAD in custom-cursor.tsx übereinstimmen.
+   Nur bei Maus/Trackpad: die Media Query sitzt hier, nicht in JS, damit nichts flackert,
+   wenn sich der Zeigertyp ändert. */
+:root {
+  --athena-cursor-pfeil: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2722%27%20height%3D%2722%27%20viewBox%3D%270%200%2024%2024%27%3E%3Cpath%20d%3D%27M4.037%204.688a.495.495%200%200%201%20.651-.651l16%206.5a.5.5%200%200%201-.063.947l-6.124%201.58a2%202%200%200%200-1.438%201.435l-1.579%206.126a.5.5%200%200%201-.947.063z%27%20fill%3D%27%23b8902f%27%20stroke%3D%27%23f7f4ee%27%20stroke-width%3D%271.7%27%20stroke-linejoin%3D%27round%27%20paint-order%3D%27stroke%27%2F%3E%3C%2Fsvg%3E") 4 4, auto;
+}
+@media (hover: hover) and (pointer: fine) {
+  html[data-cursor="pfeil"],
+  html[data-cursor="pfeil"] * {
+    cursor: var(--athena-cursor-pfeil) !important;
+  }
+  html[data-cursor="pfeil"] :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="button"], [type="submit"], [type="reset"], [type="color"], [type="file"]), textarea, [contenteditable=""], [contenteditable="true"], [contenteditable="true"] *) {
+    cursor: text !important;
+  }
+  html[data-cursor="pfeil"] :is(:disabled, [aria-disabled="true"], .cursor-not-allowed) {
+    cursor: not-allowed !important;
   }
 }
 

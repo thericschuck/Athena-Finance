@@ -9,6 +9,7 @@ import { getAthenaModelEffort } from '@/lib/assistant/settings'
 import { SettingsProvider } from '@/components/providers/settings-context'
 import { AthenaSettingsProvider } from '@/components/providers/athena-settings-context'
 import { PrivacyProvider } from '@/components/providers/privacy-context'
+import { CustomCursor } from '@/components/layout/custom-cursor'
 import { HaushaltProvider } from '@/components/providers/haushalt-context'
 import { NutzerProvider } from '@/components/providers/nutzer-context'
 import { anzeigeName } from '@/lib/assistant/nutzername'
@@ -65,6 +66,7 @@ export default async function DashboardLayout({
     <SettingsProvider settings={settings} currency={profile?.currency ?? 'EUR'}>
       <AthenaSettingsProvider initial={{ model: athenaSettings.model, effort: athenaSettings.effort }}>
         <PrivacyProvider>
+          <CustomCursor />
           <HaushaltProvider canShare={hatPartner(scopeCtx)}>
           <NutzerProvider name={anzeigeName(ownName)} hatAusgangslage={(ausgangslage.count ?? 0) > 0}>
           <AppShell
