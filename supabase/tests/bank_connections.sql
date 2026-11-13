@@ -1,4 +1,7 @@
--- Rollender Test fuer 20261030100000_bank_connections.sql (RLS + Spaltenrechte).
+-- Rollender Test fuer 20261030100000_bank_connections.sql (RLS + Spaltenrechte) UND 20261113130000_rechte_einschraenken_s4_s7_e1_e2.sql.
+-- Stand nach 20261113130000: `authenticated` darf bank_connections nur noch LESEN (mit Spaltensperre); INSERT, UPDATE und DELETE
+-- sind entzogen und liefern 42501. Geschrieben wird ausschliesslich ueber den Service-Role-Client (src/lib/fints/connections.ts).
+-- Laeuft der Test gegen eine DB OHNE die Migration 20261113130000, schlagen d1 bis d5, d8 und e5 fehl (das ist dann korrekt).
 --
 -- ACHTUNG: Das Skript SCHREIBT (Fake-Nutzer @example.invalid, Testzeilen, Migration) und ist nur sicher, weil es in EINEM
 -- einzigen DO-Block laeuft, der am Ende IMMER mit `raise exception` endet -> alles wird zurueckgerollt, nichts persistiert.
@@ -104,25 +107,48 @@ begin
   end;
   perform pg_temp.act(null);
 
-  -- ===== Schreiben als Eigentuemer =====
+  -- ===== Schreiben: authenticated darf NICHT (Migration 20261113130000), nur service_role =====
+  -- Jede Schreiboperation scheitert jetzt schon an den Rechten (42501), BEVOR die RLS oder ein Constraint greift.
   perform pg_temp.act(v_a);
-  insert into public.bank_connections (user_id, label, bank_key, blz, fints_url, username_enc, username_hint, pin_enc)
-    values (v_a, 'fx-a2', repeat('c', 32), '12345678', 'https://example.invalid/fints', 'x:y:z', '***ccc', 'x:y:z');
-  get diagnostics rc = row_count;
-  perform pg_temp.rec('d1: Eigentuemer darf einfuegen', rc = 1, rc::text);
-  update public.bank_connections set label = 'fx-a-neu' where id = v_ca; get diagnostics rc = row_count;
-  perform pg_temp.rec('d2: Eigentuemer darf eigene Zeile aendern', rc = 1, rc::text);
-  update public.bank_connections set label = 'fx-hack' where id = v_cb; get diagnostics rc = row_count;
-  perform pg_temp.rec('d3: Update fremder Zeile betrifft 0 Zeilen', rc = 0, rc::text);
-  delete from public.bank_connections where id = v_cb; get diagnostics rc = row_count;
-  perform pg_temp.rec('d4: Delete fremder Zeile betrifft 0 Zeilen', rc = 0, rc::text);
+  begin
+    insert into public.bank_connections (user_id, label, bank_key, blz, fints_url, username_enc, username_hint, pin_enc)
+      values (v_a, 'fx-a2', repeat('c', 32), '12345678', 'https://example.invalid/fints', 'x:y:z', '***ccc', 'x:y:z');
+    perform pg_temp.rec('d1: Eigentuemer darf NICHT mehr einfuegen', false, 'erlaubt');
+  exception when insufficient_privilege then
+    perform pg_temp.rec('d1: Eigentuemer darf NICHT mehr einfuegen', true, 'permission denied ' || sqlstate);
+  end;
+  perform pg_temp.act(v_a);
+  begin
+    update public.bank_connections set label = 'fx-a-neu' where id = v_ca;
+    perform pg_temp.rec('d2: Eigentuemer darf eigene Zeile NICHT mehr aendern', false, 'erlaubt');
+  exception when insufficient_privilege then
+    perform pg_temp.rec('d2: Eigentuemer darf eigene Zeile NICHT mehr aendern', true, 'permission denied ' || sqlstate);
+  end;
+  perform pg_temp.act(v_a);
+  begin
+    update public.bank_connections set fints_url = 'https://evil.invalid/fints' where id = v_ca;
+    perform pg_temp.rec('d3: fints_url (S7-Angriff) ist nicht mehr direkt aenderbar', false, 'erlaubt');
+  exception when insufficient_privilege then
+    perform pg_temp.rec('d3: fints_url (S7-Angriff) ist nicht mehr direkt aenderbar', true, 'permission denied ' || sqlstate);
+  end;
+  perform pg_temp.act(v_a);
+  begin
+    delete from public.bank_connections where id = v_cb;
+    perform pg_temp.rec('d4: Delete (auch fremder Zeile) ist verboten', false, 'erlaubt');
+  exception when insufficient_privilege then
+    perform pg_temp.rec('d4: Delete (auch fremder Zeile) ist verboten', true, 'permission denied ' || sqlstate);
+  end;
+  perform pg_temp.act(v_a);
   begin
     insert into public.bank_connections (user_id, label, bank_key, blz, fints_url, username_enc, pin_enc)
       values (v_b, 'fx-fremd', repeat('d', 32), '12345678', 'https://example.invalid/fints', 'x:y:z', 'x:y:z');
     perform pg_temp.rec('d5: Insert fuer fremden Nutzer verboten', false, 'erlaubt');
   exception when insufficient_privilege then
-    perform pg_temp.rec('d5: Insert fuer fremden Nutzer verboten', true, 'RLS ' || sqlstate);
+    perform pg_temp.rec('d5: Insert fuer fremden Nutzer verboten', true, 'permission denied ' || sqlstate);
   end;
+  perform pg_temp.act(null);
+
+  -- Constraints gelten weiter, fuer den Service-Role-Pfad der App (hier als Superuser getestet, die Constraints sind rollenunabhaengig)
   begin
     insert into public.bank_connections (user_id, label, bank_key, blz, fints_url, username_enc, pin_enc)
       values (v_a, 'fx-http', repeat('e', 32), '12345678', 'http://example.invalid/fints', 'x:y:z', 'x:y:z');
@@ -137,8 +163,22 @@ begin
   exception when unique_violation then
     perform pg_temp.rec('d7: unique(user_id, bank_key)', true, 'unique_violation');
   end;
-  delete from public.bank_connections where id = v_ca; get diagnostics rc = row_count;
-  perform pg_temp.rec('d8: Eigentuemer darf eigene Zeile loeschen', rc = 1, rc::text);
+
+  -- service_role (so schreibt die App ueber src/lib/fints/connections.ts): darf einfuegen, aendern, loeschen
+  begin
+    set local role service_role;
+    insert into public.bank_connections (user_id, label, bank_key, blz, fints_url, username_enc, username_hint, pin_enc)
+      values (v_a, 'fx-a2', repeat('c', 32), '12345678', 'https://example.invalid/fints', 'x:y:z', '***ccc', 'x:y:z');
+    get diagnostics rc = row_count;
+    perform pg_temp.rec('d8a: service_role darf einfuegen', rc = 1, rc::text);
+    update public.bank_connections set label = 'fx-a-neu' where id = v_ca; get diagnostics rc = row_count;
+    perform pg_temp.rec('d8b: service_role darf aendern', rc = 1, rc::text);
+    delete from public.bank_connections where id = v_ca; get diagnostics rc = row_count;
+    perform pg_temp.rec('d8c: service_role darf loeschen', rc = 1, rc::text);
+  exception when others then
+    perform pg_temp.act(null);
+    perform pg_temp.rec('d8: service_role schreibt', false, sqlstate || ' ' || sqlerrm);
+  end;
   perform pg_temp.act(null);
 
   -- B-Zeile unveraendert (Superuser-Sicht)
@@ -154,6 +194,9 @@ begin
     not has_column_privilege('authenticated', 'public.bank_connections', 'pin_enc', 'select')
     and not has_column_privilege('authenticated', 'public.bank_connections', 'username_enc', 'select')
     and has_column_privilege('authenticated', 'public.bank_connections', 'label', 'select'), null);
+  perform pg_temp.rec('e5: authenticated ohne INSERT/UPDATE (jede Spalte) und ohne DELETE',
+    not has_any_column_privilege('authenticated', 'public.bank_connections', 'insert,update')
+    and not has_table_privilege('authenticated', 'public.bank_connections', 'delete'), null);
 
   -- ===== Bericht =====
   select count(*) filter (where ok), count(*) into v_ok, v_all from pg_temp.t_res;
