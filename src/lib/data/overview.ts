@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { applyAccountScope, type ScopeContext } from '@/lib/haushalt/scope'
 import { scopedOwner } from '@/lib/data/scope-owner'
+import { lies } from '@/lib/data/lies'
 import { getNetWorthReihe, nutztSnapshotFunktion } from '@/lib/data/networth-reihe'
 
 /**
@@ -33,9 +34,8 @@ export type DashboardAccount = {
 /** Alle Konten (auch inaktive) — das Dashboard filtert aktive selbst. */
 export async function getDashboardAccounts(supabase: Client, ctx: ScopeContext): Promise<DashboardAccount[]> {
   const q = supabase.from('accounts').select('id, name, type, color, currency, is_active, bank_iban')
-  const { data } = await applyAccountScope(q, ctx, 'id')
-    .order('sort_order')
-  return (data ?? []) as DashboardAccount[]
+  const data = await lies(applyAccountScope(q, ctx, 'id').order('sort_order'), 'accounts')
+  return data as DashboardAccount[]
 }
 
 export type BalanceSum = { account_id: string; balance: number; tx_count: number }
@@ -48,9 +48,9 @@ export type BalanceSum = { account_id: string; balance: number; tx_count: number
  */
 export async function getBalanceSums(supabase: Client, ctx: ScopeContext): Promise<BalanceSum[]> {
   const q = supabase.from('account_balance_sums_unified').select('account_id, balance, tx_count')
-  const { data } = await applyAccountScope(q, ctx)
+  const data = await lies(applyAccountScope(q, ctx), 'account_balance_sums_unified')
   // View-Spalten sind im generierten Typ nullable, in der Praxis gefüllt.
-  const rows = (data ?? []) as BalanceSum[]
+  const rows = data as BalanceSum[]
   // Die View gruppiert nach (user_id, account_id): buchen zwei Mitglieder auf dasselbe Konto, gibt es zwei Zeilen, die zusammengehoeren.
   const je = new Map<string, BalanceSum>()
   for (const r of rows) {
@@ -67,9 +67,11 @@ export type OpenSavingsGoal = {
 }
 
 export async function getOpenSavingsGoals(supabase: Client, ctx: ScopeContext): Promise<OpenSavingsGoal[]> {
-  const { data } = await scopedOwner(supabase.from('savings_goals').select('id, current_amount, target_amount, description, status'), ctx)
-    .eq('status', 'offen')
-  return data ?? []
+  return lies(
+    scopedOwner(supabase.from('savings_goals').select('id, current_amount, target_amount, description, status'), ctx)
+      .eq('status', 'offen'),
+    'savings_goals',
+  )
 }
 
 export type DashboardCryptoAsset = {
@@ -78,9 +80,12 @@ export type DashboardCryptoAsset = {
 }
 
 export async function getDashboardCryptoAssets(supabase: Client, ctx: ScopeContext): Promise<DashboardCryptoAsset[]> {
-  const { data } = await scopedOwner(supabase.from('assets').select('id, symbol, name, portfolio_name, quantity, avg_buy_price'), ctx)
-    .in('type', ['crypto', 'stable', 'fiat'])
-  return (data ?? []) as DashboardCryptoAsset[]
+  const data = await lies(
+    scopedOwner(supabase.from('assets').select('id, symbol, name, portfolio_name, quantity, avg_buy_price'), ctx)
+      .in('type', ['crypto', 'stable', 'fiat']),
+    'assets',
+  )
+  return data as DashboardCryptoAsset[]
 }
 
 export type AssetValuationLite = { asset_id: string; price_per_unit: number; total_value: number }
@@ -88,11 +93,14 @@ export type AssetValuationLite = { asset_id: string; price_per_unit: number; tot
 /** Neuester Bewertungseintrag je Asset (View `asset_valuations_latest`, ein Eintrag pro Asset). */
 export async function getLatestAssetValuations(supabase: Client, assetIds: string[]): Promise<AssetValuationLite[]> {
   if (assetIds.length === 0) return []
-  const { data } = await supabase
-    .from('asset_valuations_latest')
-    .select('asset_id, price_per_unit, total_value')
-    .in('asset_id', assetIds)
-  return (data ?? []) as AssetValuationLite[]
+  const data = await lies(
+    supabase
+      .from('asset_valuations_latest')
+      .select('asset_id, price_per_unit, total_value')
+      .in('asset_id', assetIds),
+    'asset_valuations_latest',
+  )
+  return data as AssetValuationLite[]
 }
 
 export type ActiveContract = {
@@ -104,11 +112,14 @@ export type ActiveContract = {
 }
 
 export async function getActiveContracts(supabase: Client, ctx: ScopeContext): Promise<ActiveContract[]> {
-  const { data } = await scopedOwner(
-    supabase.from('contracts').select('id,name,provider,frequency,amount,currency,end_date,notice_days,auto_renews,account_id,type'),
-    ctx,
-  ).eq('is_active', true)
-  return (data ?? []) as ActiveContract[]
+  const data = await lies(
+    scopedOwner(
+      supabase.from('contracts').select('id,name,provider,frequency,amount,currency,end_date,notice_days,auto_renews,account_id,type'),
+      ctx,
+    ).eq('is_active', true),
+    'contracts',
+  )
+  return data as ActiveContract[]
 }
 
 export type InsightListRow = {
@@ -117,14 +128,17 @@ export type InsightListRow = {
 
 /** Offene Hinweise, die Athena angelegt hat (lib/assistant/actions/insights.ts, createInsight). Neueste 6. */
 export async function getOpenInsights(supabase: Client, userId: string, limit = 6): Promise<InsightListRow[]> {
-  const { data } = await supabase
-    .from('insights')
-    .select('id, type, severity, title, body, created_at')
-    .eq('user_id', userId) // OWNER-ONLY: Athena-Hinweise gehoeren der Person, nie dem Scope (daher userId statt ScopeContext)
-    .is('dismissed_at', null)
-    .order('created_at', { ascending: false })
-    .limit(limit)
-  return (data ?? []) as InsightListRow[]
+  const data = await lies(
+    supabase
+      .from('insights')
+      .select('id, type, severity, title, body, created_at')
+      .eq('user_id', userId) // OWNER-ONLY: Athena-Hinweise gehoeren der Person, nie dem Scope (daher userId statt ScopeContext)
+      .is('dismissed_at', null)
+      .order('created_at', { ascending: false })
+      .limit(limit),
+    'insights',
+  )
+  return data as InsightListRow[]
 }
 
 export type DashboardValuable = {
@@ -134,8 +148,8 @@ export type DashboardValuable = {
 /** Inventar (bewusst nicht im Net Worth, siehe Migration 20260831000002). */
 export async function getActiveValuables(supabase: Client, ctx: ScopeContext): Promise<DashboardValuable[]> {
   const q = supabase.from('valuables_current').select('aktueller_wert, kaufpreis, im_vermoegen')
-  const { data } = await scopedOwner(q, ctx).eq('is_active', true)
-  return (data ?? []) as DashboardValuable[]
+  const data = await lies(scopedOwner(q, ctx).eq('is_active', true), 'valuables_current')
+  return data as DashboardValuable[]
 }
 
 export type NetWorthSnapshotLite = {
@@ -154,13 +168,16 @@ export async function getNetWorthSnapshotsSince(supabase: Client, ctx: ScopeCont
     if (fehler) console.error(`[networth] net_worth_series: ${fehler}`)
     return rows
   }
-  const { data } = await supabase
-    .from('net_worth_snapshots')
-    .select('snapshot_date,net_worth,total_checking,total_investment,total_savings,total_cash,total_depot,total_crypto,total_bausparer,total_business,total_debts,total_assets')
-    .eq('user_id', ctx.userId)
-    .gte('snapshot_date', fromDate)
-    .order('snapshot_date')
-  return (data ?? []) as NetWorthSnapshotLite[]
+  const data = await lies(
+    supabase
+      .from('net_worth_snapshots')
+      .select('snapshot_date,net_worth,total_checking,total_investment,total_savings,total_cash,total_depot,total_crypto,total_bausparer,total_business,total_debts,total_assets')
+      .eq('user_id', ctx.userId)
+      .gte('snapshot_date', fromDate)
+      .order('snapshot_date'),
+    'net_worth_snapshots',
+  )
+  return data as NetWorthSnapshotLite[]
 }
 
 // ─── Analyse ─────────────────────────────────────────────────────────────────
@@ -171,11 +188,14 @@ export type ActiveAccountOption = { id: string; name: string; type: string; colo
 /** Aktive Konten für Auswahl/Filter (Analyse-Kontofilter, Settings-Standardauswahl). */
 export async function getActiveAccountOptions(supabase: Client, ctx: ScopeContext): Promise<ActiveAccountOption[]> {
   const q = supabase.from('accounts').select('id, name, type, color')
-  const { data } = await applyAccountScope(q, ctx, 'id')
-    .eq('is_active', true)
-    .order('sort_order', { ascending: true })
-    .order('created_at', { ascending: true })
-  return (data ?? []) as ActiveAccountOption[]
+  const data = await lies(
+    applyAccountScope(q, ctx, 'id')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true }),
+    'accounts',
+  )
+  return data as ActiveAccountOption[]
 }
 
 // ─── Analyse / Verlauf ────────────────────────────────────────────────────────
@@ -184,8 +204,8 @@ export type HistoryAccount = { id: string; name: string; type: string; color: st
 
 export async function getHistoryAccounts(supabase: Client, ctx: ScopeContext): Promise<HistoryAccount[]> {
   const q = supabase.from('accounts').select('id, name, type, color')
-  const { data } = await applyAccountScope(q, ctx, 'id')
-  return (data ?? []) as HistoryAccount[]
+  const data = await lies(applyAccountScope(q, ctx, 'id'), 'accounts')
+  return data as HistoryAccount[]
 }
 
 export type AccountBalanceHistoryRow = {
@@ -195,8 +215,8 @@ export type AccountBalanceHistoryRow = {
 export type HistoryAsset = { id: string; name: string; symbol: string; type: string }
 
 export async function getHistoryAssets(supabase: Client, ctx: ScopeContext): Promise<HistoryAsset[]> {
-  const { data } = await scopedOwner(supabase.from('assets').select('id, name, symbol, type'), ctx)
-  return (data ?? []) as HistoryAsset[]
+  const data = await lies(scopedOwner(supabase.from('assets').select('id, name, symbol, type'), ctx), 'assets')
+  return data as HistoryAsset[]
 }
 
 export type PortfolioSnapshotHistoryRow = {

@@ -2,6 +2,7 @@ import { cache } from 'react'
 import { cookies } from 'next/headers'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { lies } from '@/lib/data/lies'
 import { buildScopeContext, parseScope, type ScopeContext } from './scope'
 import { SCOPE_COOKIE } from './cookie'
 
@@ -26,19 +27,24 @@ export type ScopeProfile = {
  * Pro Request und pro (Client, Nutzer) memoisiert; `getAuthUser()` liefert denselben Client.
  */
 const loadRaw = cache(async (supabase: DB, userId: string) => {
-  const [memberRes, profilesRes, accountsRes] = await Promise.all([
-    supabase
-      .from('household_members')
-      .select('household_id, user_id, role, joined_at')
-      .order('joined_at', { ascending: true }),
-    supabase.from('user_profiles').select('id, display_name, avatar_url, timezone, currency'),
-    supabase.from('accounts').select('id, user_id, shared, bank_iban'),
+  // `lies` wirft bei einem Lesefehler (AUDIT.md B1): sonst waere der Scope leer und JEDE Seite zeigte den Leerzustand
+  // („keine Konten“) statt einer Fehlermeldung.
+  const [memberRows, profiles, accounts] = await Promise.all([
+    lies(
+      supabase
+        .from('household_members')
+        .select('household_id, user_id, role, joined_at')
+        .order('joined_at', { ascending: true }),
+      'household_members',
+    ),
+    lies(supabase.from('user_profiles').select('id, display_name, avatar_url, timezone, currency'), 'user_profiles'),
+    lies(supabase.from('accounts').select('id, user_id, shared, bank_iban'), 'accounts'),
   ])
   return {
     userId,
-    memberRows: memberRes.data ?? [],
-    profiles: (profilesRes.data ?? []) as ScopeProfile[],
-    accounts: accountsRes.data ?? [],
+    memberRows,
+    profiles: profiles as ScopeProfile[],
+    accounts,
   }
 })
 
