@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { createClient, getAuthUser } from '@/lib/supabase/server'
 import { resolveScope } from '@/lib/haushalt/resolve'
 import { z } from 'zod'
@@ -23,8 +24,20 @@ import {
   type SavingsPlan,
 } from '@/lib/data/depot'
 import { requireRows } from '@/lib/data/mutation'
+import { heuteBerlin } from '@/lib/transaktionen/formular'
 
 export type { Depot, DepotTransaction, DepotSummary, DepotWithSummary, PortfolioHistoryPoint, SavingsPlan }
+
+/**
+ * Nach jeder erfolgreichen Mutation aufrufen (AUDIT.md B5). Depotwerte stehen nicht nur auf /depot, sondern auch in der
+ * Kontenliste (KontenDepots) und im Dashboard (Nettovermoegen); ohne Revalidierung blieben beide bis zum naechsten
+ * Neuladen auf dem alten Stand. Nur bei Erfolg: ein Fehler hat nichts geaendert, das es zu aktualisieren gaebe.
+ */
+function revalidiereDepotAnsichten(): void {
+  revalidatePath('/depot')
+  revalidatePath('/finance/accounts')
+  revalidatePath('/dashboard')
+}
 
 // ─── Eingabe-Schemas ──────────────────────────────────────────────────────────
 
@@ -114,6 +127,7 @@ export async function addInitialHolding(
       notes: 'Bestandsübernahme',
     })
     if (error) return { success: false, error: error.message }
+    revalidiereDepotAnsichten()
     return { success: true }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Unbekannter Fehler' }
@@ -148,6 +162,7 @@ export async function addManualDeposit(
       notes: notes ?? null,
     })
     if (error) return { success: false, error: error.message }
+    revalidiereDepotAnsichten()
     return { success: true }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Unbekannter Fehler' }
@@ -180,6 +195,7 @@ export async function deleteDepotTransaction(id: string): Promise<{ success: boo
       .delete()
       .eq('id', id)) // Haushaltstabelle: Zugriff regelt die RLS (Peers duerfen loeschen)
     if (error) return { success: false, error: error.message }
+    revalidiereDepotAnsichten()
     return { success: true }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Unbekannter Fehler' }
@@ -208,6 +224,7 @@ export async function createSavingsPlan(
       execution_day: executionDay, start_date: startDate,
     })
     if (error) return { success: false, error: error.message }
+    revalidiereDepotAnsichten()
     return { success: true }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Unbekannter Fehler' }
@@ -232,6 +249,7 @@ export async function toggleSavingsPlan(id: string, isActive: boolean): Promise<
       .update({ is_active: isActive })
       .eq('id', id)) // Haushaltstabelle: RLS
     if (error) return { success: false, error: error.message }
+    revalidiereDepotAnsichten()
     return { success: true }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Unbekannter Fehler' }
@@ -250,6 +268,7 @@ export async function deleteSavingsPlan(id: string): Promise<{ success: boolean;
       .delete()
       .eq('id', id)) // Haushaltstabelle: RLS
     if (error) return { success: false, error: error.message }
+    revalidiereDepotAnsichten()
     return { success: true }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Unbekannter Fehler' }
@@ -272,7 +291,8 @@ export async function executeSavingsPlanPayment(
     if (!plan) return { success: false, error: 'Sparplan nicht gefunden' }
     if (pricePerShare <= 0) return { success: false, error: 'Kurs muss größer als 0 sein' }
 
-    const today = new Date().toISOString().split('T')[0]
+    // Berliner Kalendertag: toISOString() liefert zwischen 0 und 2 Uhr (MEZ/MESZ) noch den Vortag, die Buchung vom 1. landete im Vormonat.
+    const today = heuteBerlin()
 
     await upsertFundPrice(supabase, plan.isin, plan.fund_name, pricePerShare, today)
 
@@ -287,6 +307,7 @@ export async function executeSavingsPlanPayment(
       notes: `Sparplan-Ausführung`,
     })
     if (error) return { success: false, error: error.message }
+    revalidiereDepotAnsichten()
     return { success: true }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Unbekannter Fehler' }
@@ -322,6 +343,7 @@ export async function createDepot(
       .select('id')
       .single()
     if (error) return { success: false, error: error.message }
+    revalidiereDepotAnsichten()
     return { success: true, id: data.id }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Unbekannter Fehler' }
@@ -340,6 +362,7 @@ export async function deleteDepot(id: string): Promise<{ success: boolean; error
       .delete()
       .eq('id', id)) // Haushaltstabelle: RLS
     if (error) return { success: false, error: error.message }
+    revalidiereDepotAnsichten()
     return { success: true }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Unbekannter Fehler' }
@@ -357,6 +380,7 @@ export async function setDepotShared(id: string, shared: boolean): Promise<{ suc
   if (error) return { success: false, error: error.message }
   // Sparplaene zur ISIN des Depots folgen dem Flag.
   await supabase.from('savings_plans').update({ shared }).eq('user_id', depot.user_id).eq('isin', depot.isin)
+  revalidiereDepotAnsichten()
   return { success: true }
 }
 
