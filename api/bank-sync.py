@@ -41,6 +41,7 @@ first few scheduled runs (Vercel function logs) before trusting this unattended.
 import base64
 import datetime as _dt
 import hashlib
+import hmac
 import json
 import os
 import re
@@ -644,6 +645,22 @@ def run_sync(allow_sca=False, full_history=False, user_id=None):
     return total
 
 
+def check_cron_auth(header_value, secret):
+    """Cron-Auth: 'ok' | 'unconfigured' | 'unauthorized'. Spiegel von src/lib/api/cron-auth.ts.
+
+    Fail-closed: ohne gesetztes CRON_SECRET wird jede Anfrage abgelehnt. Der frühere Vergleich
+    `auth != f"Bearer {os.environ.get('CRON_SECRET', '')}"` ließ bei fehlender Variable den
+    Header "Bearer " durch, und diese Funktion entschlüsselt die Bank-PINs aller Nutzer.
+    Der Vergleich läuft in konstanter Zeit (hmac.compare_digest auf Bytes; auf str würde ein
+    Header mit Nicht-ASCII-Zeichen einen TypeError werfen).
+    """
+    if not secret:
+        return "unconfigured"
+    given = (header_value or "").encode("utf-8")
+    expected = f"Bearer {secret}".encode("utf-8")
+    return "ok" if hmac.compare_digest(given, expected) else "unauthorized"
+
+
 # ── Vercel entrypoint ────────────────────────────────────────────────────────────
 
 class handler(BaseHTTPRequestHandler):
@@ -654,8 +671,11 @@ class handler(BaseHTTPRequestHandler):
         self._handle()
 
     def _handle(self):
-        auth = self.headers.get("Authorization", "")
-        if auth != f"Bearer {os.environ.get('CRON_SECRET', '')}":
+        auth = check_cron_auth(self.headers.get("Authorization", ""), os.environ.get("CRON_SECRET"))
+        if auth == "unconfigured":
+            self._json(500, {"error": "CRON_SECRET nicht konfiguriert"})
+            return
+        if auth != "ok":
             self._json(401, {"error": "Unauthorized"})
             return
 
