@@ -383,9 +383,11 @@ html[data-privacy-hidden][data-privacy-style="blur"] :is(.tabular-nums, .rechart
    Gewählt in Einstellungen → Darstellung, gesetzt als `data-cursor="pfeil"` auf <html>
    (components/layout/custom-cursor.tsx). Ein einziger Pfeil für ALLES — keine eigene
    Hand/Farbe über Klickbarem: der Wechsel zwischen zwei Pfeilen beim Überfahren von
-   Buttons wirkte wie ein Flackern. Nur Texteingaben behalten den System-Textcursor
-   (einen nachzubauen bringt nichts außer Ungenauigkeit beim Platzieren) und gesperrte
-   Elemente das Verbotszeichen.
+   Buttons wirkte wie ein Flackern. Texteingaben bekommen denselben Textcursor wie die öffentlichen Seiten (`--athena-cursor-gruen-text`,
+   weiter unten): schlankes grünes "I" mit geschwungenen Serifen und dunkler Kontur — bewusst fest
+   statt in Theme-Farben, damit er in App und auf der Startseite gleich aussieht. Es ändert sich nur
+   der Mauszeiger, die Einfügemarke selbst bleibt die des Browsers. Gesperrte Elemente bekommen das
+   Verbotszeichen.
 
    `--athena-cursor-pfeil` ist der Standard-Pfeil in Athena-Gold; custom-cursor.tsx
    überschreibt ihn auf <html> mit den Farben des aktuellen Themes. Der Standard sorgt
@@ -402,10 +404,35 @@ html[data-privacy-hidden][data-privacy-style="blur"] :is(.tabular-nums, .rechart
     cursor: var(--athena-cursor-pfeil) !important;
   }
   html[data-cursor="pfeil"] :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="button"], [type="submit"], [type="reset"], [type="color"], [type="file"]), textarea, [contenteditable=""], [contenteditable="true"], [contenteditable="true"] *) {
-    cursor: text !important;
+    cursor: var(--athena-cursor-gruen-text) !important;
   }
   html[data-cursor="pfeil"] :is(:disabled, [aria-disabled="true"], .cursor-not-allowed) {
     cursor: not-allowed !important;
+  }
+}
+
+/* ── Athena-Pfeil auf den öffentlichen Seiten ────────────────────────────────
+   Landingpage (`.af-landing`) und Warteliste (`.int-root`) bekommen denselben Pfeil wie die App:
+   gleiche Form, Athena-Olivgrün (#8CA277, wie --primary bei Athena Dark) mit dunkler Kontur —
+   die Kontur hält ihn auch auf den hellen Pergament-Flächen lesbar, wo Olivgrün allein zu
+   blass wäre. Fest verdrahtet statt aus dem Theme: diese Seiten haben kein Theme-Preset und
+   keine lokale Cursor-Wahl, der Pfeil ist hier Teil der Markenwirkung. Form wie PFEIL_PFAD in
+   components/layout/custom-cursor.tsx.
+   `!important` mit demselben Erfassungsbereich: viele Buttons/Links setzen `cursor: pointer` als
+   Inline-Style bzw. über die Browser-Defaults, nur so gewinnt der Pfeil zuverlässig. Wie in der
+   App gibt es keine eigene Hand über Klickbarem — der Wechsel zwischen zwei Pfeilen wirkte als
+   Flackern. Texteingaben bekommen den passenden Textcursor (grünes "I" mit dunkler Kontur). */
+:root {
+  --athena-cursor-gruen-text: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2716%27%20height%3D%2722%27%20viewBox%3D%270%200%2016%2022%27%3E%3Cpath%20d%3D%27M3.5%202.5q4.5%201.2%209%200M8%203.2v15.6M3.5%2019.5q4.5%20-1.2%209%200%27%20fill%3D%27none%27%20stroke%3D%27%231B170F%27%20stroke-width%3D%273.9%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3Cpath%20d%3D%27M3.5%202.5q4.5%201.2%209%200M8%203.2v15.6M3.5%2019.5q4.5%20-1.2%209%200%27%20fill%3D%27none%27%20stroke%3D%27%238CA277%27%20stroke-width%3D%271.7%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E") 8 11, text;
+  --athena-cursor-gruen: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2722%27%20height%3D%2722%27%20viewBox%3D%270%200%2024%2024%27%3E%3Cpath%20d%3D%27M4.037%204.688a.495.495%200%200%201%20.651-.651l16%206.5a.5.5%200%200%201-.063.947l-6.124%201.58a2%202%200%200%200-1.438%201.435l-1.579%206.126a.5.5%200%200%201-.947.063z%27%20fill%3D%27%238CA277%27%20stroke%3D%27%231B170F%27%20stroke-width%3D%271.7%27%20stroke-linejoin%3D%27round%27%20paint-order%3D%27stroke%27%2F%3E%3C%2Fsvg%3E") 4 4, auto;
+}
+@media (hover: hover) and (pointer: fine) {
+  :is(.af-landing, .int-root),
+  :is(.af-landing, .int-root) * {
+    cursor: var(--athena-cursor-gruen) !important;
+  }
+  :is(.af-landing, .int-root) :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="button"], [type="submit"], [type="reset"], [type="color"], [type="file"]), textarea, [contenteditable=""], [contenteditable="true"]) {
+    cursor: var(--athena-cursor-gruen-text) !important;
   }
 }
 

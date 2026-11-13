@@ -12,83 +12,9 @@
 .af-balance { text-wrap: balance; }
 
 /*
- * Individueller Cursor (siehe CustomCursor in LandingClient.tsx) — feiner
- * Gold-Ring mit Nachlauf plus ein präziser Punkt exakt auf der Zeigerposition.
- * Nur mit echter Maus: `(hover: hover) and (pointer: fine)` schließt Touch-
- * Geräte aus, auf denen es ohnehin keinen Zeiger zum Ersetzen gibt.
- *
- * `.af-landing, .af-landing * { cursor: none !important }`: viele Buttons/
- * Links setzen `cursor: 'pointer'` als Inline-Style (Inline schlägt sonst
- * jede Klassenregel ohne !important), Browser-UA-Styles bringen auf
- * Links/Buttons zusätzlich ihr eigenes cursor:pointer mit — nur eine
- * !important-Regel mit demselben Erfassungsbereich gewinnt zuverlässig
- * gegen beides.
- *
- * Grundplatzierung (`.af-cursor`) bewusst AUSSERHALB der Media Query:
- * Ring/Punkt bleiben dadurch auch auf Touch-Geräten explizit aus dem
- * Textfluss genommen, statt sich nur implizit auf leere, randlose Divs zu
- * verlassen, die zufällig auf 0 Höhe kollabieren.
+ * Cursor: der Athena-Pfeil aus der App, siehe "Athena-Pfeil auf den öffentlichen Seiten" in
+ * app/globals.css. Der frühere Gold-Ring mit Punkt (CustomCursor) ist entfernt.
  */
-.af-cursor {
-  position: fixed;
-  inset: 0;
-  z-index: 2147483647;
-  pointer-events: none;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .af-landing,
-  .af-landing * {
-    cursor: none !important;
-  }
-
-  .af-cursor-ring,
-  .af-cursor-dot {
-    position: absolute;
-    top: 0;
-    left: 0;
-    border-radius: 50%;
-    opacity: 0;
-    transition: opacity .2s ease;
-  }
-  /* Erst nach der ersten echten Mausposition sichtbar (siehe .is-visible in
-     CustomCursor) — sonst blitzt beides kurz in der Bildschirmmitte auf,
-     dem Startwert von mouseX/mouseY vor der ersten Bewegung. */
-  .af-cursor.is-visible .af-cursor-ring,
-  .af-cursor.is-visible .af-cursor-dot {
-    opacity: 1;
-  }
-
-  .af-cursor-ring {
-    width: 30px;
-    height: 30px;
-    border: 1px solid var(--af-gold-ink);
-    background-color: transparent;
-    /* Nur Größe/Füllung übergangsweise animiert, NICHT `transform` — das
-       setzt CustomCursor selbst per rAF direkt als Inline-Style (Position
-       plus Klick-Skalierung), eine zusätzliche CSS-Transition darauf würde
-       gegen die Echtzeit-Updates ankämpfen statt sie zu ergänzen. */
-    transition: width .28s cubic-bezier(.16, 1, .3, 1), height .28s cubic-bezier(.16, 1, .3, 1),
-                background-color .28s ease, border-color .2s ease, opacity .2s ease;
-  }
-  .af-cursor-ring.is-hover {
-    width: 52px;
-    height: 52px;
-    background-color: rgba(138, 106, 47, .1);
-  }
-
-  .af-cursor-dot {
-    width: 5px;
-    height: 5px;
-    background-color: var(--af-gold-ink-deep);
-    transition: opacity .15s ease;
-  }
-  /* Drei statt zwei Klassen — muss gegen `.af-cursor.is-visible .af-cursor-dot`
-     weiter oben gewinnen (ebenfalls drei Klassen-Selektoren): Spezifität
-     entscheidet hier VOR Quellreihenfolge, eine schwächere Regel würde trotz
-     späterer Position im Stylesheet verlieren. */
-  .af-cursor.is-visible .af-cursor-dot.is-hidden { opacity: 0; }
-}
 
 /*
  * Hero-Einstieg absichtlich in CSS statt Framer Motion: der Text ist damit ab

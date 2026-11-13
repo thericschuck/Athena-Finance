@@ -1,7 +1,6 @@
 import './landing.css'
 import { C, F } from '@/components/landing/landing-tokens'
 import { OliveVines } from '@/components/landing/olive-vines'
-import { CustomCursor } from '@/components/landing/islands/CustomCursor'
 import { LandingProviders } from '@/components/landing/islands/LandingProviders'
 import { SectionProgressBar } from '@/components/landing/islands/SectionProgressBar'
 import { AnalyseSection } from '@/components/landing/sections/analyse/AnalyseSection'
@@ -40,7 +39,6 @@ export function LandingContent() {
           overflowX: 'clip',
         }}
       >
-        <CustomCursor />
         <SectionProgressBar />
 
         {/*
