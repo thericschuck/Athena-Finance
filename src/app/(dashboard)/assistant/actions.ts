@@ -14,6 +14,7 @@ import {
 import { personaTemplates } from '@/lib/assistant/prompts'
 import { loadAnzeigeNameFuerNutzer } from '@/lib/assistant/context'
 import { logAi } from '@/lib/assistant/logger'
+import { bestaetigeVorschlag } from '@/lib/assistant/bestaetigung'
 import { entferneChatDateien } from '@/lib/assistant/datei-speicher'
 import {
   ladeSessionZustand,
@@ -21,7 +22,6 @@ import {
   type SessionSummary,
   type SessionZustand,
 } from '@/lib/assistant/sessions'
-import type { Json } from '@/types/database'
 
 /**
  * `result` trägt das Rückgabeobjekt der ausgeführten Aktion zurück ins UI. Gebraucht wird
@@ -133,68 +133,42 @@ export async function togglePinConversation(id: string, pinned: boolean): Promis
  * Führt eine von Athena vorgeschlagene Aktion aus — der einzige Weg, auf dem
  * eine Schreibaktion überhaupt zur Ausführung kommt.
  *
- * Der Statuswechsel `pending → executed` läuft über ein bedingtes Update
- * (`.eq('status', 'pending')`), das erst NACH erfolgreicher Ausführung greift.
- * Zwei parallele Klicks auf denselben Vorschlag können die Aktion dadurch zwar
- * theoretisch zweimal ausführen — was hier alles idempotent ist (Kategorie
- * setzen, Vertrag deaktivieren) oder als Duplikat sofort sichtbar wäre. Der
- * umgekehrte Fehler — Status auf `executed` setzen und dann beim Schreiben
- * scheitern — wäre schlimmer: die Aktion sähe erledigt aus, ohne es zu sein.
+ * Der Vorschlag wird VOR der Ausführung atomar beansprucht (`pending → executing`, bedingtes
+ * Update, siehe lib/assistant/bestaetigung.ts): zwei gleichzeitige Bestätigungen führen die
+ * Aktion nicht doppelt aus, der zweite Aufruf bricht ab. Das ist keine Formsache, seit
+ * `executeRebalancing` echte Kraken-Orders platziert (AUDIT.md A2). Danach `executed` bzw.
+ * `failed`; ein Zwischenstand `executing` sieht nie wie „erledigt“ aus.
  */
 export async function confirmPendingAction(actionId: string): Promise<ActionState> {
   const ctx = await requireUser()
   if (!ctx) return { error: 'Nicht eingeloggt' }
   const { supabase, user } = ctx
 
-  const { data: pending, error: loadError } = await supabase
-    .from('ai_pending_actions')
-    .select('id, action, input, summary, status, conversation_id')
-    .eq('id', actionId)
-    .eq('user_id', user.id)
-    .maybeSingle()
-  if (loadError) return { error: loadError.message }
-  if (!pending) return { error: 'Vorschlag nicht gefunden' }
-  if (pending.status !== 'pending') return { error: `Vorschlag ist bereits ${pending.status}` }
-  if (!isWriteActionName(pending.action)) return { error: `Unbekannte Aktion ${pending.action}` }
-
-  let result: Record<string, unknown>
-  try {
-    result = await runWriteAction(pending.action, pending.input, { supabase, userId: user.id })
-    await supabase
-      .from('ai_pending_actions')
-      .update({ status: 'executed', result: result as Json, resolved_at: new Date().toISOString() })
-      .eq('id', actionId)
-      .eq('user_id', user.id)
-      .eq('status', 'pending')
-
-    await logAi(supabase, user.id, {
-      event: 'action.executed',
-      conversationId: pending.conversation_id,
-      message: pending.summary,
-      meta: { actionId, action: pending.action, result },
-    })
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    await supabase
-      .from('ai_pending_actions')
-      .update({ status: 'failed', error: message, resolved_at: new Date().toISOString() })
-      .eq('id', actionId)
-      .eq('user_id', user.id)
-    await logAi(supabase, user.id, {
-      level: 'error',
-      event: 'action.failed',
-      conversationId: pending.conversation_id,
-      message,
-      meta: { actionId, action: pending.action },
-    })
-    return { error: message }
-  }
+  const ergebnis = await bestaetigeVorschlag({
+    supabase,
+    userId: user.id,
+    actionId,
+    istSchreibaktion: isWriteActionName,
+    fuehreAus: (action, input) => {
+      if (!isWriteActionName(action)) throw new Error(`Unbekannte Aktion ${action}`)
+      return runWriteAction(action, input, { supabase, userId: user.id })
+    },
+    protokoll: eintrag =>
+      logAi(supabase, user.id, {
+        level: eintrag.level,
+        event: eintrag.event,
+        conversationId: eintrag.conversationId,
+        message: eintrag.message,
+        meta: eintrag.meta,
+      }),
+  })
+  if ('error' in ergebnis) return { error: ergebnis.error }
 
   // Die geänderten Daten stehen auf mehreren Seiten — pauschal alles unter dem
   // Dashboard-Layout neu holen ist hier billiger als eine Liste zu pflegen, die
   // bei jeder neuen Aktion in actions.ts mitwachsen müsste.
   revalidatePath('/', 'layout')
-  return { success: true, result }
+  return { success: true, result: ergebnis.result }
 }
 
 /**

@@ -12,7 +12,8 @@ import {
 } from '@/app/(dashboard)/assistant/actions'
 import type { ActionDetail } from '@/lib/assistant/actions'
 
-export type PendingActionStatus = 'pending' | 'executed' | 'rejected' | 'failed' | 'expired'
+/** `executing`: bestätigt und in Ausführung (oder dabei hängen geblieben, siehe lib/assistant/bestaetigung.ts). */
+export type PendingActionStatus = 'pending' | 'executing' | 'executed' | 'rejected' | 'failed' | 'expired'
 
 /** Name des Werkzeugs aus WRITE_ACTIONS (siehe lib/assistant/actions/) — der einzige
     Vorschlag, bei dem das Bestätigen einen 15–60 Sekunden langen Bildlauf anstößt und
@@ -130,6 +131,7 @@ export function PendingActionCard({
 
           <p className="mt-2 text-xs text-muted-foreground">
             {status === 'pending' && 'Athena schlägt das vor — noch wurde nichts geändert.'}
+            {status === 'executing' && 'Wird ausgeführt … bitte nicht erneut bestätigen.'}
             {status === 'executed' && 'Ausgeführt.'}
             {status === 'rejected' && 'Verworfen.'}
             {status === 'failed' && (error ?? 'Ausführung fehlgeschlagen.')}
