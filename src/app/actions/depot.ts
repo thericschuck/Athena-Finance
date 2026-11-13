@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { createClient, getAuthUser } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/server'
 import { resolveScope } from '@/lib/haushalt/resolve'
 import { z } from 'zod'
 import { parseInput, issueMessage } from '@/lib/api/validate'
@@ -24,6 +24,8 @@ import {
   type SavingsPlan,
 } from '@/lib/data/depot'
 import { requireRows } from '@/lib/data/mutation'
+import { speichereKursFallsNeu } from '@/lib/data/fund-prices'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { heuteBerlin } from '@/lib/transaktionen/formular'
 
 export type { Depot, DepotTransaction, DepotSummary, DepotWithSummary, PortfolioHistoryPoint, SavingsPlan }
@@ -77,17 +79,15 @@ const invalid = (r: { error: string; issues: { message: string }[] }) => ({
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-async function upsertFundPrice(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  isin: string,
-  fund_name: string,
-  price: number,
-  date: string
-) {
-  return supabase.from('fund_prices').upsert(
-    { isin, fund_name, price, price_date: date, currency: 'EUR' },
-    { onConflict: 'isin,price_date' }
-  )
+/**
+ * Legt den eingegebenen Kurs in der globalen Tabelle `fund_prices` ab, FALLS fuer (ISIN, Datum) noch keiner existiert (SECURITY-AUDIT.md
+ * S4). Nie ueberschreiben: der Kurs kommt aus einem Formular, und `fund_prices` fliesst in Depotwert und Nettovermoegen aller Nutzer.
+ * Geschrieben wird mit dem Service-Role-Client, der Browser-Client hat dort kein Schreibrecht mehr. Die Ablage ist Nebensache: ein
+ * Fehler wird geloggt und bricht die Buchung nicht ab (der Kurs steht auch in `depot_transactions.price_per_share`).
+ */
+async function upsertFundPrice(isin: string, fund_name: string, price: number, date: string): Promise<void> {
+  const { error } = await speichereKursFallsNeu(createAdminClient(), { isin, fund_name, price, price_date: date, currency: 'EUR' })
+  if (error) console.error('[depot] fund_prices konnte nicht geschrieben werden:', error)
 }
 
 // ─── V2 Actions ───────────────────────────────────────────────────────────────
@@ -114,7 +114,7 @@ export async function addInitialHolding(
 
     const amount_eur = shares * pricePerShare
 
-    await upsertFundPrice(supabase, isin, fundName, pricePerShare, date)
+    await upsertFundPrice(isin, fundName, pricePerShare, date)
     const { error } = await supabase.from('depot_transactions').insert({
       // Transaktionen gehoeren dem Besitzer des (sichtbaren) Depots, sonst dem Handelnden.
       user_id: await resolveDepotOwner(supabase, ctx, isin),
@@ -150,7 +150,7 @@ export async function addManualDeposit(
 
   try {
     const ctx = await resolveScope(supabase, user)
-    await upsertFundPrice(supabase, isin, fundName, pricePerShare, date)
+    await upsertFundPrice(isin, fundName, pricePerShare, date)
     const { error } = await supabase.from('depot_transactions').insert({
       user_id: await resolveDepotOwner(supabase, ctx, isin),
       isin,
@@ -294,7 +294,7 @@ export async function executeSavingsPlanPayment(
     // Berliner Kalendertag: toISOString() liefert zwischen 0 und 2 Uhr (MEZ/MESZ) noch den Vortag, die Buchung vom 1. landete im Vormonat.
     const today = heuteBerlin()
 
-    await upsertFundPrice(supabase, plan.isin, plan.fund_name, pricePerShare, today)
+    await upsertFundPrice(plan.isin, plan.fund_name, pricePerShare, today)
 
     const { error } = await supabase.from('depot_transactions').insert({
       user_id: await resolveDepotOwner(supabase, ctx, plan.isin),
