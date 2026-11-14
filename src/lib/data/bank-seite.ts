@@ -1,6 +1,7 @@
+import { ladeKategorien } from '@/lib/data/finance-transactions'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
-import type { BankBalance, BankTransaction, FinanceCategory } from '@/types/bank'
+import type { BankBalance, BankTransaction } from '@/types/bank'
 import { getMonthlyFlowsScope } from '@/lib/data/flows-scope'
 import { FLOW_DEFAULT_KEY, flowDefaultFrom, includeFromParam, INCLUDE_PARAM } from '@/lib/finance/flow-calc'
 import { parsePeriod, periodCutoff } from '@/lib/period'
@@ -60,18 +61,6 @@ async function ladeSalden(supabase: DB, ctx: ScopeContext): Promise<BankBalance[
     (verknuepft ?? []).flatMap(a => (a.bank_iban ? [[normIban(a.bank_iban), a.id] as const] : [])),
   )
   return (data ?? []).map(b => ({ ...b, account_id: idByIban.get(normIban(b.account_iban)) ?? null })) as unknown as BankBalance[]
-}
-
-/** Kategorienbaum pro Haushalt: RLS liefert ihn, kein Scope-/user_id-Filter. */
-async function ladeKategorien(supabase: DB): Promise<FinanceCategory[]> {
-  const { data, error } = await supabase
-    .from('categories')
-    .select('id, name, type, color, icon, parent_id')
-    .order('type')
-    .order('sort_order')
-    .order('name')
-  if (error) throw new Error(`categories: ${error.message}`)
-  return (data ?? []) as FinanceCategory[]
 }
 
 /** Ein kaputter `number_format` in den Einstellungen wuerde in Intl einen RangeError werfen und die ganze Seite kippen. */

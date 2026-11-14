@@ -115,19 +115,30 @@ export type InsightListRow = {
   id: string; type: string; severity: string; title: string; body: string | null; created_at: string
 }
 
+export type InsightRow = InsightListRow & { dismissed_at: string | null }
+
+/**
+ * Hinweise der Person, neueste zuerst. Eine Abfrage fuer Dashboard (nur offene, `getOpenInsights`) und Athena-Werkzeug
+ * `getInsights` (optional auch weggeklickte, bis ROW_CAP): damit die Regeln (OWNER-ONLY, Sortierung) an EINER Stelle stehen.
+ * OWNER-ONLY: Athena-Hinweise gehoeren der Person, nie dem Scope (daher userId statt ScopeContext). Wirft bei Lesefehlern.
+ */
+export async function getInsights(
+  supabase: Client, userId: string, opts: { includeDismissed?: boolean; limit?: number } = {},
+): Promise<InsightRow[]> {
+  let q = supabase
+    .from('insights')
+    .select('id, type, severity, title, body, created_at, dismissed_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(opts.limit ?? 6)
+  if (!opts.includeDismissed) q = q.is('dismissed_at', null)
+  return (await lies(q, 'insights')) as InsightRow[]
+}
+
 /** Offene Hinweise, die Athena angelegt hat (lib/assistant/actions/insights.ts, createInsight). Neueste 6. */
 export async function getOpenInsights(supabase: Client, userId: string, limit = 6): Promise<InsightListRow[]> {
-  const data = await lies(
-    supabase
-      .from('insights')
-      .select('id, type, severity, title, body, created_at')
-      .eq('user_id', userId) // OWNER-ONLY: Athena-Hinweise gehoeren der Person, nie dem Scope (daher userId statt ScopeContext)
-      .is('dismissed_at', null)
-      .order('created_at', { ascending: false })
-      .limit(limit),
-    'insights',
-  )
-  return data as InsightListRow[]
+  const zeilen = await getInsights(supabase, userId, { limit })
+  return zeilen.map(({ id, type, severity, title, body, created_at }) => ({ id, type, severity, title, body, created_at }))
 }
 
 export type DashboardValuable = {
@@ -171,21 +182,6 @@ export async function getNetWorthSnapshotsSince(supabase: Client, ctx: ScopeCont
 
 // ─── Analyse ─────────────────────────────────────────────────────────────────
 // Einnahmen/Ausgaben (Buchungen, Monatssummen) liegen in lib/data/flows.ts.
-
-export type ActiveAccountOption = { id: string; name: string; type: string; color: string | null }
-
-/** Aktive Konten für Auswahl/Filter (Analyse-Kontofilter, Settings-Standardauswahl). */
-export async function getActiveAccountOptions(supabase: Client, ctx: ScopeContext): Promise<ActiveAccountOption[]> {
-  const q = supabase.from('accounts').select('id, name, type, color')
-  const data = await lies(
-    applyAccountScope(q, ctx, 'id')
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true })
-      .order('created_at', { ascending: true }),
-    'accounts',
-  )
-  return data as ActiveAccountOption[]
-}
 
 // ─── Analyse / Verlauf ────────────────────────────────────────────────────────
 

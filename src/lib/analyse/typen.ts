@@ -1,6 +1,6 @@
 import type { ScopeContext } from '@/lib/haushalt/scope'
 import type { FlowTransaction, MonthlyFlowRow } from '@/lib/data/flows'
-import type { ActiveAccountOption } from '@/lib/data/overview'
+import type { AccountOptionRow } from '@/lib/data/finance-accounts'
 import type { FlowInclude } from '@/lib/finance/flow-calc'
 import type { Period } from '@/lib/period'
 import type { FinanceCategory } from '@/types/bank'
@@ -37,7 +37,7 @@ export interface AnalyseDaten {
   /** Zählen Anlagen und Forderungen mit (Schalter `anlage`)? */
   include: FlowInclude
   /** Alle aktiven Konten (für den Kontenfilter). */
-  konten: ActiveAccountOption[]
+  konten: AccountOptionRow[]
   /** Ausgewählte Konten-IDs; leer = alle. */
   kontoIds: string[]
   filter: AnalyseFilter

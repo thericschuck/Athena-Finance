@@ -1,6 +1,7 @@
 import { mitSteuerWerten, type SteuerWerte } from '@/lib/tax/overrides'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import type { FinanceCategory } from '@/types/bank'
 import { applyAccountScope, type ScopeContext } from '@/lib/haushalt/scope'
 import { HERAB_SPALTEN, effektiveBuchungen, herabstufungsIds, wendeHerabFilterAn } from '@/lib/haushalt/umbuchung'
 import { berechneKiBilanz, type KiBilanz, type KiZeile } from '@/lib/fints/ai-bilanz'
@@ -304,6 +305,21 @@ export async function getCategories(supabase: DB, userId: string): Promise<Categ
     .order('name', { ascending: true })
   // Steuerwerte (Rolle, EUeR-Zeile, betrieblicher Anteil) sind persoenlich: Overrides des Nutzers statt der geteilten Spalten.
   return mitSteuerWerten(supabase, userId, data ?? [])
+}
+
+/**
+ * Kategorienbaum fuer Analyse und Bank-Seite (mit Typ, nach Typ, sort_order, Name). Vorher wortgleich in analyse-seite.ts und
+ * bank-seite.ts. Die RLS liefert ihn pro Haushalt, kein user_id-/Scope-Filter. Wirft bei Lesefehlern.
+ */
+export async function ladeKategorien(supabase: DB): Promise<FinanceCategory[]> {
+  const { data, error } = await supabase
+    .from('categories')
+    .select('id, name, type, color, icon, parent_id')
+    .order('type')
+    .order('sort_order')
+    .order('name')
+  if (error) throw new Error(`categories: ${error.message}`)
+  return (data ?? []) as FinanceCategory[]
 }
 
 /** Kategorie-Auswahl (Name, Farbe, Icon, Eltern), nach sort_order. */

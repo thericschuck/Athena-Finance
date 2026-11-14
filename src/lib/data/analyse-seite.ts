@@ -1,7 +1,7 @@
+import { ladeKategorien } from '@/lib/data/finance-transactions'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
-import type { FinanceCategory } from '@/types/bank'
-import { getActiveAccountOptions } from '@/lib/data/overview'
+import { getActiveAccountOptions } from '@/lib/data/finance-accounts'
 import { getFlowMonthsScope, getFlowTransactionsScope, getMonthlyFlowsScope } from '@/lib/data/flows-scope'
 import type { ScopeContext } from '@/lib/haushalt/scope'
 import { FLOW_DEFAULT_KEY, flowDefaultFrom, includeFromParam } from '@/lib/finance/flow-calc'
@@ -30,18 +30,6 @@ export interface AnalyseParams {
 
 const MONAT = /^\d{4}-(0[1-9]|1[0-2])$/
 const TAG = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/
-
-/** Kategorienbaum pro Haushalt: die RLS liefert ihn, kein user_id-/Scope-Filter (ohne Partner unveraendert nur die eigenen). */
-async function ladeKategorien(supabase: DB): Promise<FinanceCategory[]> {
-  const { data, error } = await supabase
-    .from('categories')
-    .select('id, name, type, color, icon, parent_id')
-    .order('type')
-    .order('sort_order')
-    .order('name')
-  if (error) throw new Error(`categories: ${error.message}`)
-  return (data ?? []) as FinanceCategory[]
-}
 
 /**
  * Scope-faehig: Konten (ctx.accountIds), Buchungen und Monatssummen (Konten im Scope, im Haushalt mit herabgestuften

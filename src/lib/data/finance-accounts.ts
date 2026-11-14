@@ -18,8 +18,8 @@ export type AccountRow = Pick<
 /** Auswahl-Konto (Verträge): id + name. */
 export type AccountNameRow = { id: string; name: string }
 
-/** Aktive Konto-Auswahl inkl. Farbe/Währung (Transaktionen-Formulare, Filter). */
-export type AccountOptionRow = { id: string; name: string; color: string | null; currency: string }
+/** Aktive Konto-Auswahl inkl. Typ, Farbe und Währung (Transaktionen-Formulare, Filter, Analyse, Einstellungen). */
+export type AccountOptionRow = { id: string; name: string; type: string; color: string | null; currency: string }
 
 /**
  * Die Summen-Views gruppieren nach (user_id, account_id): bucht ein zweites Haushaltsmitglied auf dasselbe Konto, gibt es zwei
@@ -62,12 +62,15 @@ export async function getAccountNames(supabase: DB, ctx: ScopeContext): Promise<
   return data ?? []
 }
 
-/** Aktive Konten für Auswahlfelder und Filter. */
+/**
+ * Aktive Konten für Auswahlfelder und Filter (Analyse-Kontofilter, Einstellungen, Transaktionen-Formulare, Konto-Detail).
+ * Früher zwei gleichnamige Funktionen (hier und in overview.ts) mit je anderen Spalten; jetzt EINE, aus `getAccounts` abgeleitet:
+ * keine eigene Abfrage, pro Request nur die eine Kontenabfrage (cache). Wirft bei Lesefehlern (wie getAccounts).
+ */
 export async function getActiveAccountOptions(supabase: DB, ctx: ScopeContext): Promise<AccountOptionRow[]> {
-  const { data } = await applyAccountScope(supabase.from('accounts').select('id, name, color, currency'), ctx, 'id')
-    .eq('is_active', true)
-    .order('sort_order')
-  return data ?? []
+  return (await getAccounts(supabase, ctx))
+    .filter(a => a.is_active)
+    .map(a => ({ id: a.id, name: a.name, type: a.type, color: a.color, currency: a.currency }))
 }
 
 /**

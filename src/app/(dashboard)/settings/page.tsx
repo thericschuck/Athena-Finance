@@ -1,7 +1,7 @@
 import { requireAuthUser } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { getOwnProfile, resolveScope } from '@/lib/haushalt/resolve'
-import { getActiveAccountOptions } from '@/lib/data/overview'
+import { getActiveAccountOptions } from '@/lib/data/finance-accounts'
 import { listWaitlistFor } from '@/lib/waitlist'
 import { SettingsShell } from '@/components/settings/settings-shell'
 

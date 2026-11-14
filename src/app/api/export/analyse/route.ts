@@ -6,7 +6,7 @@ import { parseQuery } from '@/lib/api/validate'
 import { CSV_BOM, CSV_EOL, CSV_SEPARATOR, escapeCsvText, escapeCsvValue, formatCsvAmount } from '@/lib/csv'
 import { getFlowTransactionsScope } from '@/lib/data/flows-scope'
 import { resolveScope } from '@/lib/haushalt/resolve'
-import { getActiveAccountOptions } from '@/lib/data/overview'
+import { getActiveAccountOptions } from '@/lib/data/finance-accounts'
 import { FLOW_DEFAULT_KEY, flowDefaultFrom, includeFromParam } from '@/lib/finance/flow-calc'
 import { kategorieMitKindern, parseBetrag } from '@/lib/bank/buchungen'
 import {
