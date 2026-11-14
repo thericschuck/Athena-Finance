@@ -10,10 +10,7 @@ import {
 import { generateAnnualReport, sendExistingReportEmail, getReportDownloadUrl } from './actions'
 import type { ReportRow } from './page'
 import { LeerZustand } from '@/components/leer/LeerZustand'
-
-function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
+import { useFormat } from '@/lib/hooks/use-format'
 
 interface Props {
   reports:       ReportRow[]
@@ -22,6 +19,7 @@ interface Props {
 }
 
 export function ReportsClient({ reports, reminder, suggestedYear }: Props) {
+  const { fmtDateIso: fmtDate } = useFormat()
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -158,6 +156,7 @@ function ReportList({
   onDownload:  (id: string) => void
   onSendEmail: (id: string) => void
 }) {
+  const { fmtDateIso: fmtDate } = useFormat()
   if (rows.length === 0) return null
   return (
     <section className="space-y-2">

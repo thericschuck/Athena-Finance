@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog'
 import { markValuableSold } from '@/app/(dashboard)/inventar/sale-actions'
 import { parseCsvAmount } from '@/lib/csv'
-import { fmtCurrency } from '@/lib/format'
+import { useFormat } from '@/lib/hooks/use-format'
 
 const heute = () => new Date().toISOString().split('T')[0]
 
@@ -22,6 +22,7 @@ export function ValuableSaleButton({ id, name, kaufpreis }: {
   name: string
   kaufpreis: number | null
 }) {
+  const { fmtEur } = useFormat()
   const router = useRouter()
   const [offen, setOffen] = useState(false)
   const [pending, startTransition] = useTransition()
@@ -91,7 +92,7 @@ export function ValuableSaleButton({ id, name, kaufpreis }: {
           <p className="text-sm tabular-nums">
             Realisierter {gewinn >= 0 ? 'Gewinn' : 'Verlust'}:{' '}
             <span className={gewinn >= 0 ? 'text-success' : 'text-danger'}>
-              {gewinn >= 0 ? '+' : ''}{fmtCurrency(gewinn, 'EUR', 'de-DE', { fractionDigits: 2 })}
+              {gewinn >= 0 ? '+' : ''}{fmtEur(gewinn)}
             </span>
           </p>
         )}

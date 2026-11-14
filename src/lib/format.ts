@@ -52,6 +52,11 @@ export function fmtDateLong(iso: string, locale = 'de-DE'): string {
   return new Date(iso + 'T12:00:00').toLocaleDateString(locale, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })
 }
 
+/** Datum und Uhrzeit eines ISO-Zeitstempels nach Locale ("14.11.2026, 09:30"). */
+export function fmtDateTime(iso: string, locale = 'de-DE'): string {
+  return new Date(iso).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' })
+}
+
 /** Kurzes Datum mit Monatsnamen ("03. Nov. 25") aus `YYYY-MM-DD`, nach Locale (Achsenbeschriftung). */
 export function fmtDateMonthShort(s: string, locale = 'de-DE'): string {
   return new Date(s + 'T00:00:00').toLocaleDateString(locale, { day: '2-digit', month: 'short', year: '2-digit' })

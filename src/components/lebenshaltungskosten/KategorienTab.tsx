@@ -9,13 +9,10 @@ import {
 } from '@/app/(dashboard)/finance/budget/actions'
 import type { BudgetCategory, BudgetItem } from '@/app/(dashboard)/finance/budget/page'
 import { TeilenSchalter } from '@/components/haushalt/TeilenSchalter'
+import { useFormat } from '@/lib/hooks/use-format'
 
 function monthlyItem(item: BudgetItem): number {
   return (item.unit_price * item.quantity) / item.interval_days * 30
-}
-
-function fmt(n: number) {
-  return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
 }
 
 // ── Inline number input ────────────────────────────────────────────────────────
@@ -86,6 +83,7 @@ function ItemForm({
 
 // ── Single item row ────────────────────────────────────────────────────────────
 function ItemRow({ item, onEdit }: { item: BudgetItem; onEdit: () => void }) {
+  const { fmtBetragEuro: fmt } = useFormat()
   const [deleting, setDeleting] = useState(false)
 
   async function handleDelete() {
@@ -136,6 +134,7 @@ function CategoryCard({
   category: BudgetCategory
   items: BudgetItem[]
 }) {
+  const { fmtBetragEuro: fmt } = useFormat()
   const [open,        setOpen]       = useState(false)
   const [addingItem,  setAddingItem] = useState(false)
   const [editingItem, setEditingItem] = useState<string | null>(null)

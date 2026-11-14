@@ -11,6 +11,7 @@ import { useOptionalUrlFilters } from '@/components/providers/url-filters'
 import {
   balkenDeckkraft, mindestBreite, monatKlartext, naechsteMonatsauswahl,
 } from '@/lib/analyse/vergleichsdaten'
+import { useFormat } from '@/lib/hooks/use-format'
 
 interface Props { data: MonthlyComparison[] }
 
@@ -23,6 +24,7 @@ interface Row extends MonthlyComparison {
 }
 
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { payload?: Row }[]; label?: string | number }) {
+  const { fmtZahlSpanne } = useFormat()
   if (!active || !payload?.length) return null
   // Alle Serien dieses Monats zeigen auf dieselbe Datenzeile — die lesen wir direkt,
   // statt die Werte über dataKey aus dem payload zu fischen. Nur so kommt auch die
@@ -43,13 +45,13 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
         <div className="flex justify-between gap-4">
           <span className="text-muted-foreground">Einnahmen</span>
           <span className="text-(--chart-income) font-medium tabular-nums">
-            {row.einnahmen.toLocaleString('de-DE')} €
+            {fmtZahlSpanne(row.einnahmen, 0, 3)} €
           </span>
         </div>
         <div className="flex justify-between gap-4">
           <span className="text-muted-foreground">Ausgaben</span>
           <span className="text-(--chart-expense) font-medium tabular-nums">
-            {row.ausgaben.toLocaleString('de-DE')} €
+            {fmtZahlSpanne(row.ausgaben, 0, 3)} €
           </span>
         </div>
         <div className="flex justify-between gap-4 pt-1 border-t border-border">

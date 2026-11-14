@@ -11,10 +11,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { useFormat } from '@/lib/hooks/use-format'
 
-function datum(iso: string): string {
-  const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('de-DE', { dateStyle: 'medium' })
+/** Datum im eingestellten Format; leer bei ungültigem Zeitstempel. */
+function datumVon(iso: string, fmtDateIso: (iso: string) => string): string {
+  return Number.isNaN(new Date(iso).getTime()) ? '' : fmtDateIso(iso)
 }
 
 /** Abschnitt "Haushalt": Mitglieder, Einladungen (Owner), Mitglied entfernen (Owner). Mitglieder sehen die Liste nur lesend. */
@@ -70,6 +71,8 @@ export function HouseholdPanel() {
 }
 
 function MitgliedZeile({ m, darfEntfernen, onChanged }: { m: HaushaltUebersicht['mitglieder'][number]; darfEntfernen: boolean; onChanged: () => void }) {
+  const { fmtDateIso } = useFormat()
+  const datum = (iso: string) => datumVon(iso, fmtDateIso)
   const [pending, start] = useTransition()
   function entfernen() {
     start(async () => {
@@ -111,6 +114,8 @@ function MitgliedZeile({ m, darfEntfernen, onChanged }: { m: HaushaltUebersicht[
 }
 
 function EinladungZeile({ i, onChanged }: { i: HaushaltUebersicht['einladungen'][number]; onChanged: () => void }) {
+  const { fmtDateIso } = useFormat()
+  const datum = (iso: string) => datumVon(iso, fmtDateIso)
   const [pending, start] = useTransition()
   function widerrufen() {
     start(async () => {
@@ -134,6 +139,8 @@ function EinladungZeile({ i, onChanged }: { i: HaushaltUebersicht['einladungen']
 }
 
 function EinladungNeu({ mailMoeglich, onChanged }: { mailMoeglich: boolean; onChanged: () => void }) {
+  const { fmtDateIso } = useFormat()
+  const datum = (iso: string) => datumVon(iso, fmtDateIso)
   const [state, action, pending] = useActionState(erstelleEinladung, null)
   const [mailState, mailAction, mailPending] = useActionState(sendeEinladungPerMail, null)
   const [kopiert, setKopiert] = useState(false)

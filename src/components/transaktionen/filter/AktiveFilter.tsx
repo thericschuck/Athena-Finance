@@ -4,17 +4,13 @@ import { X } from 'lucide-react'
 import { useUrlFilters } from '@/components/providers/url-filters'
 import { ART_LABEL, OHNE_KATEGORIE, TYP_LABEL, aktivesPreset } from '@/lib/transaktionen/filter'
 import { datumDe, istArt, istTyp, type KategorieOption, type KontoOption } from './felder'
+import { useFormat } from '@/lib/hooks/use-format'
 
 /** Alle inhaltlichen Filter. `sort` und `per` sind Ansichtseinstellungen und bleiben beim Zurücksetzen stehen. */
 export const INHALT_KEYS = ['type', 'art', 'account', 'category', 'from', 'to', 'q', 'min', 'max'] as const
 
 export function alleLoeschen(): Record<(typeof INHALT_KEYS)[number], null> {
   return Object.fromEntries(INHALT_KEYS.map(k => [k, null])) as Record<(typeof INHALT_KEYS)[number], null>
-}
-
-const zahlDe = (v: string) => {
-  const n = Number(v)
-  return Number.isFinite(n) ? n.toLocaleString('de-DE', { maximumFractionDigits: 2 }) : v
 }
 
 interface Chip {
@@ -37,6 +33,11 @@ export function AktiveFilter({
   heute: string
   onAlleZuruecksetzen?: () => void
 }) {
+  const { fmtZahlSpanne } = useFormat()
+  const zahl = (v: string) => {
+    const n = Number(v)
+    return Number.isFinite(n) ? fmtZahlSpanne(n, 0, 2) : v
+  }
   const filters = useUrlFilters()
   const chips: Chip[] = []
 
@@ -72,9 +73,9 @@ export function AktiveFilter({
   }
 
   const min = filters.get('min')
-  if (min && Number.isFinite(Number(min))) chips.push({ id: 'min', text: `≥ ${zahlDe(min)} €`, keys: ['min'] })
+  if (min && Number.isFinite(Number(min))) chips.push({ id: 'min', text: `≥ ${zahl(min)} €`, keys: ['min'] })
   const max = filters.get('max')
-  if (max && Number.isFinite(Number(max))) chips.push({ id: 'max', text: `≤ ${zahlDe(max)} €`, keys: ['max'] })
+  if (max && Number.isFinite(Number(max))) chips.push({ id: 'max', text: `≤ ${zahl(max)} €`, keys: ['max'] })
 
   // „Alle zurücksetzen“ auch dann, wenn nur ein Zeitraum-Preset aktiv ist (der hat keinen eigenen Chip).
   const irgendwas = chips.length > 0 || Boolean(from || to)

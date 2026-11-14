@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { fmtCurrency, fmtDate, fmtDateLong, fmtDateMonthShort, fmtNumber, fmtNumberRange, fmtPercent, fmtShares } from './format.ts'
+import { fmtCurrency, fmtDate, fmtDateLong, fmtDateMonthShort, fmtDateTime, fmtNumber, fmtNumberRange, fmtPercent, fmtShares } from './format.ts'
 
 test('format: Zahlen folgen der Locale der Einstellung number_format', () => {
   assert.equal(fmtNumber(1234.5, 'de-DE', 2), '1.234,50')
@@ -33,4 +33,10 @@ test('format: Datum nach date_format, lange und kurze Form nach Locale', () => {
   assert.match(fmtDateLong('2025-11-03', 'de-DE'), /^Mo\.?,? 03\. Nov\.? 2025$/)
   assert.match(fmtDateLong('2025-11-03', 'en-US'), /Mon/)
   assert.match(fmtDateMonthShort('2025-11-03', 'de-DE'), /^03\. Nov\.? 25$/)
+})
+
+test('format: Datum mit Uhrzeit nach Locale (Ersatz fuer toLocaleString mit dateStyle/timeStyle)', () => {
+  const iso = '2026-11-14T09:30:00'
+  assert.equal(fmtDateTime(iso, 'de-DE'), new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' }))
+  assert.match(fmtDateTime(iso, 'de-DE'), /^14\.11\.2026, 09:30$/)
 })

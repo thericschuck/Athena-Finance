@@ -4,6 +4,7 @@ import { RefreshCw, ShieldCheck, AlertTriangle, History } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { SyncStatus } from '@/types/bank'
 import type { BankScaInfo } from '@/lib/hooks/use-bank-data'
+import { useFormat } from '@/lib/hooks/use-format'
 
 interface Props {
   syncStatus: SyncStatus
@@ -20,6 +21,7 @@ function daysUntil(iso: string): number {
 }
 
 export function BankSyncButton({ syncStatus, onSync, onSyncFull, onReset, scaStatus }: Props) {
+  const { fmtDateIso } = useFormat()
   const isLoading = syncStatus.type === 'loading'
 
   // Ein automatischer Sync hängt: die Bank verlangt wieder eine Freigabe. Das ist keine
@@ -95,7 +97,7 @@ export function BankSyncButton({ syncStatus, onSync, onSyncFull, onReset, scaSta
       ) : nextDue ? (
         <p className="inline-flex items-center gap-1 text-xs text-muted-foreground">
           <ShieldCheck className="size-3 shrink-0 text-primary" />
-          Freigabefrei bis {new Date(nextDue).toLocaleDateString('de-DE')} ({daysUntil(nextDue)} Tage)
+          Freigabefrei bis {fmtDateIso(nextDue)} ({daysUntil(nextDue)} Tage)
         </p>
       ) : null}
     </div>

@@ -4,13 +4,10 @@ import { Wallet, Landmark, ShoppingBasket, PiggyBank } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LeerZustand } from '@/components/leer/LeerZustand'
 import type { BudgetCategory, BudgetItem, IncomeTarget } from '@/app/(dashboard)/finance/budget/page'
+import { useFormat } from '@/lib/hooks/use-format'
 
 function monthlyItem(item: BudgetItem): number {
   return (item.unit_price * item.quantity) / item.interval_days * 30
-}
-
-function fmt(n: number) {
-  return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
 }
 
 interface Props {
@@ -22,6 +19,7 @@ interface Props {
 }
 
 export function OverviewTab({ categories, items, target, onZuProdukten }: Props) {
+  const { fmtBetragEuro: fmt } = useFormat()
   const categoryMonthly = (catId: string) =>
     items.filter(i => i.category_id === catId).reduce((s, i) => s + monthlyItem(i), 0)
 

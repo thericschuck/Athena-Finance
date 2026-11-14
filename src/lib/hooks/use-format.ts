@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { useSettings } from '@/components/providers/settings-context'
-import { fmtCurrency, fmtDate, fmtDateLong, fmtDateMonthShort, fmtNumber, fmtNumberRange, fmtPercent, fmtShares, fmtTime } from '@/lib/format'
+import { fmtCurrency, fmtDate, fmtDateLong, fmtDateMonthShort, fmtDateTime, fmtNumber, fmtNumberRange, fmtPercent, fmtShares, fmtTime } from '@/lib/format'
 
 /**
  * Formatierer, gebunden an die Nutzereinstellungen `number_format` (Locale) und `date_format` (siehe SettingsProvider).
@@ -19,6 +19,12 @@ export function useFormat() {
     fmtShares: (n: number) => fmtShares(n, locale),
     /** Datum `YYYY-MM-DD` im eingestellten Datumsformat. */
     fmtDate: (s: string) => fmtDate(s + 'T00:00:00', dateFormat),
+    /** Datum oder Zeitstempel (ISO) im eingestellten Datumsformat. */
+    fmtDateIso: (iso: string) => fmtDate(iso, dateFormat),
+    /** Datum und Uhrzeit eines Zeitstempels nach Locale (Datum mittellang, Uhrzeit kurz). */
+    fmtDateTime: (iso: string) => fmtDateTime(iso, locale),
+    /** Zahl mit zwei Nachkommastellen und angehaengtem " €" (Budget-Ansichten). */
+    fmtBetragEuro: (n: number) => fmtNumber(n, locale, 2) + ' €',
     fmtDateLong: (s: string) => fmtDateLong(s, locale),
     fmtDateMonthShort: (s: string) => fmtDateMonthShort(s, locale),
     fmtTime: (iso: string) => fmtTime(iso, locale),

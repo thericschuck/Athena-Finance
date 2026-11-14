@@ -26,6 +26,7 @@ import {
   type ImportZeile,
   type ZeilenFehler,
 } from '@/lib/transaktionen/import'
+import { useFormat } from '@/lib/hooks/use-format'
 
 // ─── ExportTransactionsButton ─────────────────────────────────────────────────
 
@@ -74,9 +75,6 @@ const BLOCK = 1000
 const MAX_KARTEN = 100
 const MAX_DATEI_BYTES = 10 * 1024 * 1024
 
-const euro = (n: number) =>
-  `${n >= 0 ? '+' : '−'}${Math.abs(n).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
-
 interface ImportTransactionsDialogProps {
   accountId: string
   accountName: string
@@ -95,6 +93,8 @@ export function ImportTransactionsDialog({
   onOpenChange,
   hideTrigger = false,
 }: ImportTransactionsDialogProps) {
+  const { fmtZahl } = useFormat()
+  const euro = (n: number) => `${n >= 0 ? '+' : '−'}${fmtZahl(Math.abs(n))} €`
   const router = useRouter()
   const [offenIntern, setOffenIntern] = useState(false)
   const open = offenProp ?? offenIntern

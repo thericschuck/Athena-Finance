@@ -12,12 +12,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { AlertTriangle, Landmark, Loader2, Lock, Pencil, Plus, Trash2 } from 'lucide-react'
+import { useFormat } from '@/lib/hooks/use-format'
 
-function formatDateTime(iso: string | null): string {
+function formatDateTime(iso: string | null, fmtDateTime: (iso: string) => string): string {
   if (!iso) return 'noch nie'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return 'unbekannt'
-  return d.toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })
+  if (Number.isNaN(new Date(iso).getTime())) return 'unbekannt'
+  return fmtDateTime(iso)
 }
 
 /** Abschnitt „Bankverbindungen" (FinTS) in den Einstellungen. Geheimnisse werden nie angezeigt. */
@@ -104,6 +104,7 @@ function ConnectionItem({
   connection: BankConnectionsOverview['connections'][number]
   onChanged: () => void
 }) {
+  const { fmtDateTime } = useFormat()
   const [editing, setEditing] = useState(false)
   const [pending, startTransition] = useTransition()
 
@@ -143,7 +144,7 @@ function ConnectionItem({
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground">Letzter Abruf: {formatDateTime(c.lastSyncAt)}</p>
+      <p className="text-xs text-muted-foreground">Letzter Abruf: {formatDateTime(c.lastSyncAt, fmtDateTime)}</p>
       {c.lastError && (
         <p className="text-xs text-destructive flex gap-1.5">
           <AlertTriangle className="size-3.5 shrink-0 mt-0.5" />
