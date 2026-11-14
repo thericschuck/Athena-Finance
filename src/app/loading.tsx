@@ -34,16 +34,6 @@ export default function Loading() {
         backgroundColor: C.parchment,
       }}
     >
-      <style>{`
-        @keyframes af-loading-breathe {
-          0%, 100% { opacity: .38; transform: scale(.97); }
-          50%      { opacity: 1;   transform: scale(1); }
-        }
-        .af-loading-mark { animation: af-loading-breathe 1.8s ease-in-out infinite; }
-        @media (prefers-reduced-motion: reduce) {
-          .af-loading-mark { animation: none; opacity: 1; transform: none; }
-        }
-      `}</style>
       <div className="af-loading-mark">
         <Logo variant="dark" size={40} priority />
       </div>
