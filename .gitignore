@@ -185,3 +185,8 @@ perf-log/
 
 # Von `next dev` automatisch erzeugt (Standardblock, steht schon in CLAUDE.md)
 AGENTS.md
+
+# Test-Account (docs/test-account.md): Passwort, Browser-Sitzung und Screenshots bleiben lokal
+.claude/test-account.local
+.claude/test-account.state.json
+.claude/test-account-screens/
