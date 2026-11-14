@@ -3,6 +3,7 @@ import type { Database } from '@/types/database'
 import { applyAccountScope, type ScopeContext } from '@/lib/haushalt/scope'
 import { scopedOwner } from '@/lib/data/scope-owner'
 import { lies } from '@/lib/data/lies'
+import { getAccounts, getUnifiedBalanceSumsMitAnzahl, type BalanceSum as GeteilteSaldensumme } from '@/lib/data/finance-accounts'
 import { getNetWorthReihe, nutztSnapshotFunktion } from '@/lib/data/networth-reihe'
 
 /**
@@ -31,35 +32,23 @@ export type DashboardAccount = {
   currency: string; is_active: boolean; bank_iban: string | null
 }
 
-/** Alle Konten (auch inaktive) — das Dashboard filtert aktive selbst. */
+/**
+ * Alle Konten (auch inaktive) — das Dashboard filtert aktive selbst.
+ * Dieselbe Abfrage wie die Prognose und die Konten-Seiten (getAccounts, pro Request einmal; AUDIT.md C2): die Zeilen enthalten
+ * mehr Spalten, als `DashboardAccount` nennt, das stoert nicht. Gleiche Reihenfolge (sort_order, dann created_at).
+ */
 export async function getDashboardAccounts(supabase: Client, ctx: ScopeContext): Promise<DashboardAccount[]> {
-  const q = supabase.from('accounts').select('id, name, type, color, currency, is_active, bank_iban')
-  const data = await lies(applyAccountScope(q, ctx, 'id').order('sort_order'), 'accounts')
-  return data as DashboardAccount[]
+  return (await getAccounts(supabase, ctx)) as DashboardAccount[]
 }
 
-export type BalanceSum = { account_id: string; balance: number; tx_count: number }
+export type BalanceSum = GeteilteSaldensumme
 
 /**
- * Buchungssumme je Konto (income +, expense −) aus der View `account_balance_sums_unified`.
- * Bewusst OHNE flow_kind-Filter: ein Krypto-Kauf ist keine Ausgabe, senkt das Girokonto aber
- * sehr wohl. Aggregiert in der DB — das Laden aller Buchungen lief in PostgREST' 1.000-Zeilen-
- * Deckel und schnitt die Salden still ab.
+ * Buchungssumme je Konto (income +, expense −) aus der View `account_balance_sums_unified`, siehe getUnifiedBalanceSumsMitAnzahl
+ * (finance-accounts.ts): eine Abfrage pro Request, geteilt mit der Prognose.
  */
 export async function getBalanceSums(supabase: Client, ctx: ScopeContext): Promise<BalanceSum[]> {
-  const q = supabase.from('account_balance_sums_unified').select('account_id, balance, tx_count')
-  const data = await lies(applyAccountScope(q, ctx), 'account_balance_sums_unified')
-  // View-Spalten sind im generierten Typ nullable, in der Praxis gefüllt.
-  const rows = data as BalanceSum[]
-  // Die View gruppiert nach (user_id, account_id): buchen zwei Mitglieder auf dasselbe Konto, gibt es zwei Zeilen, die zusammengehoeren.
-  const je = new Map<string, BalanceSum>()
-  for (const r of rows) {
-    const alt = je.get(r.account_id)
-    je.set(r.account_id, alt
-      ? { account_id: r.account_id, balance: Number(alt.balance) + Number(r.balance), tx_count: Number(alt.tx_count) + Number(r.tx_count) }
-      : r)
-  }
-  return [...je.values()]
+  return getUnifiedBalanceSumsMitAnzahl(supabase, ctx)
 }
 
 export type OpenSavingsGoal = {
