@@ -111,7 +111,34 @@ Heute lädt jede der folgenden Stellen Rohzeilen aus `unified_transactions` (`fl
 6. **Leser einzeln umstellen**, hinter einem Schalter (zum Beispiel Einstellung oder Umgebungsvariable), mit Vergleich: Aggregat gegen Rohzeilen-Ergebnis für dieselbe Seite. Erst bei Gleichheit den alten Pfad entfernen. Reihenfolge: Heatmap, Kategorien-Nutzung, Sankey, Kalender.
 7. **Wöchentlicher Integritäts-Check** aktivieren.
 
-## 6. Offen und nicht entschieden
+## 6. Messung vom 14.11.2026 und Wiedervorlage
+
+**Messung (Schritt 1 aus Abschnitt 5, nur lesend):**
+
+| | Wert |
+|---|---|
+| `transactions` (manuell) | 4 Zeilen (08/2024 bis 03/2026) |
+| `bank_transactions` | 773 Zeilen (06/2018 bis 11/2026), ein Nutzer |
+| `unified_transactions` | 777 Zeilen |
+| Zuwachs `bank_transactions` | 2025: 256, 2026 bis Mitte November: 448. Bis Mai 2026 rund 25 je Monat, seit Juni 50 bis 70 je Monat |
+| Hauptlader (`flows.ts`), nur Datenbank, als Superuser ohne RLS | 13,4 ms Ausführung plus rund 4 ms Planung (dreimal gemessen); `count(*)` über die View 118 ms |
+| Seiten à 1.000 Zeilen | heute genau eine; die zweite kommt bei 1.000 Zeilen (grob in 3 bis 5 Monaten, mit einem zweiten Nutzer eher früher) |
+| `PERF_LOG` (Dev-Server, 440 REST-Aufrufe) | Median `unified_transactions` 1.188 ms, `user_settings` 1.220 ms, alle Aufrufe 1.038 ms: die Latenz je Aufruf bestimmt die Zeit, nicht die Zeilenzahl |
+
+**Nicht gemessen:** die Seite `/analyse` selbst (kein eingeloggter Lauf, im Log nicht enthalten), RLS-Aufwand, Produktionslatenz.
+
+**Schätzung (grob):** Spürbar langsam würde die heutige Implementierung bei etwa 8.000 bis 10.000 Zeilen (acht bis zehn nacheinander geladene Seiten à 1.000 Zeilen, bei angenommen 0,15 bis 0,3 s je Roundtrip), das wären bei ein bis zwei Nutzern grob 5 bis 15 Jahre. Harte Grenze: `MAX_PAGES = 50`, also 50.000 Zeilen, dann wirft der Lader einen Fehler.
+
+**Fazit: Der Umbau lohnt sich heute nicht.** Bei 777 Zeilen, einer Seite und rund 13 ms DB-Zeit bringt die Aggregat-Tabelle nichts Messbares, kostet aber Trigger, Sperren und Integritätsprüfung (siehe die sieben Befunde in Abschnitt 2). Der kleine Zwischenschritt (geteilter `cache()`-Loader, AUDIT.md 1.8 Weg 2) spart auf `/analyse` zwei von drei gleichzeitig laufenden Abfragen, also kaum Wandzeit, und ist heute optional.
+
+**Wiedervorlage-Kriterium:** Die Aggregat-Tabelle erneut prüfen, sobald
+
+1. `bank_transactions` **über etwa 3.000 Zeilen** liegt, **oder**
+2. eine Abfrage **mehr als drei Seiten à 1.000 Zeilen** braucht (der Lader in `flows.ts` meldet das nicht von selbst; Kontrolle über die Zeilenzahl).
+
+Prüfung in Sekunden: `select count(*) from public.bank_transactions;` (zum Beispiel `npx supabase db query --linked "..."`). Bei der Wiedervorlage zuerst die Messung aus diesem Abschnitt wiederholen, einschließlich eines eingeloggten Laufs von `/analyse` mit `PERF_LOG=1` gegen einen Produktions-Build.
+
+## 7. Offen und nicht entschieden
 
 - Aggregat auf rohe Dimensionen beschränken (empfohlen, Befund 3 und 4) oder `household_id`/`flow_kind` speichern und zusätzliche Trigger auf `categories`, `accounts`, `household_members` bauen?
 - `direction`-Spalte oder `income_sum`/`expense_sum` (Befund 5)?
