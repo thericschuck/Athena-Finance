@@ -81,6 +81,8 @@ const passwordSchema = z.object({
 })
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024
+/** Dieselbe Liste wie `allowed_mime_types` des Buckets avatars (Migration 20261114100000). Kein SVG: Skript-Vektor in einem öffentlichen Bucket. */
+const AVATAR_MIME_TYPEN = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif', 'image/heic', 'image/heif'])
 
 export type SettingsState = { error: string } | { success: true } | null
 
@@ -117,7 +119,7 @@ export async function saveProfile(
   const file = formData.get('avatar_file') as File | null
   if (file && file.size > 0) {
     if (file.size > MAX_AVATAR_BYTES) return { error: 'Bild ist zu groß (max. 5 MB)' }
-    if (!file.type.startsWith('image/')) return { error: 'Nur Bilddateien sind erlaubt' }
+    if (!AVATAR_MIME_TYPEN.has(file.type)) return { error: 'Erlaubt sind JPEG, PNG, WebP, GIF, AVIF und HEIC (kein SVG)' }
     const rawExt   = file.name.split('.').pop()?.toLowerCase() ?? ''
     const ext      = /^[a-z0-9]{1,5}$/.test(rawExt) ? rawExt : 'jpg'
     const filePath = `${user.id}/avatar.${ext}`
