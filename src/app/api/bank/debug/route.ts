@@ -4,13 +4,18 @@ import { runSidecar } from '@/lib/fints/sidecar'
 import { resolveConnectionsForUser, maskUsername } from '@/lib/fints/connections'
 
 /**
- * GET /api/bank/debug
+ * POST /api/bank/debug
  * Validates FinTS config and runs a minimal live check via the Python sidecar
  * (accounts + balances, last 7 days of transactions). Dev/personal use only.
+ *
+ * POST statt GET (SECURITY-AUDIT.md 3.1): die Route startet einen echten Bank-Dialog (eventuell mit Push-Freigabe). Bei GET
+ * genuegt ein Link auf einer fremden Seite, um ihn beim angemeldeten Nutzer auszuloesen (SameSite=Lax schuetzt GET-Navigationen
+ * nicht); ein fremdes Formular-POST bekommt das Cookie nicht mit. Aufruf von Hand zum Beispiel in der Browser-Konsole:
+ * `fetch('/api/bank/debug', { method: 'POST' }).then(r => r.json())`. In der App ruft nichts diese Route auf.
  */
 export const maxDuration = 300
 
-export async function GET() {
+export async function POST() {
   const { user } = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
 

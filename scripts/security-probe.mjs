@@ -70,9 +70,10 @@ try {
 } catch (e) { melde('CRON_SECRET', 'FEHLER', String(e.message ?? e)) }
 
 // ── 3. API-Routen ohne Sitzung ───────────────────────────────────────────────
-for (const pfad of ['/api/bank/debug', '/api/bank/transactions', '/api/export/transactions', '/api/kraken/status', '/api/finance/flows']) {
+// /api/bank/debug nimmt nur POST an (SECURITY-AUDIT.md 3.1), die anderen sind GET-Routen.
+for (const [pfad, methode] of [['/api/bank/debug', 'POST'], ['/api/bank/transactions', 'GET'], ['/api/export/transactions', 'GET'], ['/api/kraken/status', 'GET'], ['/api/finance/flows', 'GET']]) {
   try {
-    const res = await hole(site + pfad)
+    const res = await hole(site + pfad, { method: methode })
     melde(`Ohne Login ${pfad}`, res.status === 401 ? 'OK' : 'PRUEFEN', `HTTP ${res.status}`)
   } catch (e) { melde(`Ohne Login ${pfad}`, 'FEHLER', String(e.message ?? e)) }
 }
