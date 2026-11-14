@@ -23,8 +23,12 @@ import type { CategorySuggestion, FinanceCategory, SuggestCategoriesResponse } f
 
 interface Props {
   categories: FinanceCategory[]
-  /** Apply one accepted suggestion — pass useBankData's updateCategory (already optimistic). */
-  onAccept: (id: string, categoryId: string) => Promise<void>
+  /**
+   * Übernimmt die Kategorie für mehrere Buchungen auf einmal (ein Aufruf je Gruppe bzw. je Kategorie, nicht je Buchung;
+   * `speichereKategorie` aus lib/bank/kategorie-speichern.ts). MUSS bei einem Fehler werfen: nur bei Erfolg verschwinden die
+   * Vorschläge aus der Liste, sonst bliebe ein nicht gespeicherter Vorschlag als „erledigt" stehen.
+   */
+  onAccept: (ids: string[], categoryId: string) => Promise<void>
   /** Knopftext und Zusatzklassen — die Bankdaten-Seite zeigt ihn kompakt in einer schmalen Zeile. */
   label?: string
   className?: string
@@ -108,6 +112,8 @@ export function CategorySuggestions({ categories, onAccept, label = 'Kategorien 
   // every transaction from that counterparty instead of confirming the same category repeatedly.
   const [chosen, setChosen] = useState<Record<string, string>>({})
   const [busyKey, setBusyKey] = useState<string | null>(null)
+  /** Letzter Speicherfehler (Übernehmen); die betroffenen Vorschläge bleiben in der Liste stehen. */
+  const [speicherFehler, setSpeicherFehler] = useState<string | null>(null)
   const [isApplyingAll, setIsApplyingAll] = useState(false)
 
   const { neue, aenderungen } = useMemo(() => buildGroups(suggestions), [suggestions])
@@ -145,11 +151,13 @@ export function CategorySuggestions({ categories, onAccept, label = 'Kategorien 
 
   const accept = async (g: Group) => {
     setBusyKey(g.key)
+    setSpeicherFehler(null)
     try {
-      const categoryId = resolvedCategoryId(g)
-      await Promise.all(g.items.map(item => onAccept(item.id, categoryId)))
+      await onAccept(g.items.map(item => item.id), resolvedCategoryId(g))
       const ids = new Set(g.items.map(i => i.id))
       setSuggestions(prev => prev.filter(s => !ids.has(s.id)))
+    } catch (err) {
+      setSpeicherFehler(err instanceof Error ? err.message : 'Kategorie konnte nicht gespeichert werden')
     } finally {
       setBusyKey(null)
     }
@@ -164,15 +172,31 @@ export function CategorySuggestions({ categories, onAccept, label = 'Kategorien 
   // einzeln bestätigt werden — siehe buildGroups.
   const acceptAllNew = async () => {
     setIsApplyingAll(true)
+    setSpeicherFehler(null)
     try {
-      await Promise.all(
-        sichere.flatMap(g => {
-          const categoryId = resolvedCategoryId(g)
-          return g.items.map(item => onAccept(item.id, categoryId))
-        }),
-      )
-      const ids = new Set(sichere.flatMap(g => g.items.map(i => i.id)))
-      setSuggestions(prev => prev.filter(s => !ids.has(s.id)))
+      // Je gewählter Kategorie EIN Aufruf (Gruppen mit derselben Kategorie zusammen), nicht je Buchung.
+      const jeKategorie = new Map<string, string[]>()
+      for (const g of sichere) {
+        const categoryId = resolvedCategoryId(g)
+        jeKategorie.set(categoryId, [...(jeKategorie.get(categoryId) ?? []), ...g.items.map(i => i.id)])
+      }
+      const eintraege = [...jeKategorie]
+      const ergebnisse = await Promise.allSettled(eintraege.map(([categoryId, ids]) => onAccept(ids, categoryId)))
+      // Nur was wirklich gespeichert wurde, verschwindet aus der Liste; der Rest bleibt zum erneuten Versuch stehen.
+      const erledigt = new Set<string>()
+      let fehlgeschlagen = 0
+      let ersterGrund: string | null = null
+      ergebnisse.forEach((r, i) => {
+        if (r.status === 'fulfilled') for (const id of eintraege[i][1]) erledigt.add(id)
+        else {
+          fehlgeschlagen += eintraege[i][1].length
+          ersterGrund ??= r.reason instanceof Error ? r.reason.message : 'Kategorie konnte nicht gespeichert werden'
+        }
+      })
+      setSuggestions(prev => prev.filter(s => !erledigt.has(s.id)))
+      if (fehlgeschlagen > 0) {
+        setSpeicherFehler(`${fehlgeschlagen} ${fehlgeschlagen === 1 ? 'Buchung' : 'Buchungen'} nicht gespeichert (${ersterGrund}). Sie stehen weiter in der Liste.`)
+      }
     } finally {
       setIsApplyingAll(false)
     }
@@ -198,6 +222,12 @@ export function CategorySuggestions({ categories, onAccept, label = 'Kategorien 
         <div className="flex-1 overflow-y-auto px-4 space-y-2">
           {isLoading && (
             <p className="text-sm text-muted-foreground py-8 text-center">Lade Vorschläge…</p>
+          )}
+
+          {speicherFehler && (
+            <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+              {speicherFehler}
+            </p>
           )}
 
           {!isLoading && error && (

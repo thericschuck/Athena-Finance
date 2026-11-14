@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { CategorySuggestions } from '@/components/bank/category-suggestions'
 import { useUrlFilters } from '@/components/providers/url-filters'
 import { normIban } from '@/lib/bank/scope'
+import { speichereKategorie } from '@/lib/bank/kategorie-speichern'
 import type { BankAbschnittProps } from '@/lib/bank/typen'
 
 /**
@@ -21,7 +22,7 @@ import type { BankAbschnittProps } from '@/lib/bank/typen'
  *
  * Vorschlaege: bestehendes Panel (Regeln, Gelerntes, KI) als Seitenfenster UEBER dem Inhalt;
  * es laedt erst beim Oeffnen ueber /api/bank/transactions/suggest-categories. Uebernommene
- * Vorschlaege werden per PATCH gespeichert; danach laedt die Seite einmal neu (gebuendelt,
+ * Vorschlaege werden gesammelt gespeichert (Sammel-Endpunkt, ein Aufruf je Gruppe); danach laedt die Seite einmal neu (gebuendelt,
  * ein Sammelklick schickt viele Antworten), damit die Zahl schrumpft.
  *
  * Hoehe, Radius und Schrift passen zu BankDatenzustand (beide stehen direkt untereinander).
@@ -43,13 +44,8 @@ export function BankOffeneKategorien({ daten }: BankAbschnittProps) {
 
   const filterAktiv = get('kat') === 'offen'
 
-  const uebernehmen = async (id: string, categoryId: string) => {
-    const res = await fetch(`/api/bank/transactions/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ category_id: categoryId }),
-    })
-    if (!res.ok) throw new Error('Kategorie konnte nicht gespeichert werden')
+  const uebernehmen = async (ids: string[], categoryId: string) => {
+    await speichereKategorie(ids, categoryId) // wirft bei Fehlern: die Vorschläge bleiben dann stehen
     if (timer.current) clearTimeout(timer.current)
     timer.current = setTimeout(() => router.refresh(), 600)
   }

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useBankData } from '@/lib/hooks/use-bank-data'
+import { speichereKategorie } from '@/lib/bank/kategorie-speichern'
 import { CategorySuggestions } from '@/components/bank/category-suggestions'
 
 /** Sammelfenster für Übernahmen, bevor die Seite neu gerendert wird (ms). */
@@ -16,14 +17,14 @@ const REFRESH_DEBOUNCE_MS = 600
  * schreiben `bank_transactions.category_id`, und die Liste, in der man das Ergebnis sieht,
  * ist genau diese Seite (sie liest `unified_transactions`).
  *
- * Der Refresh ist gesammelt: `onAccept` läuft pro Empfängergruppe, bei „Alle übernehmen"
- * also mehrfach in kurzer Folge. Ein `router.refresh()` je Aufruf würde die Serverabfrage
+ * Der Refresh ist gesammelt: `onAccept` läuft pro Empfängergruppe bzw. Kategorie, bei „Alle übernehmen"
+ * also unter Umständen mehrfach in kurzer Folge. Ein `router.refresh()` je Aufruf würde die Serverabfrage
  * für die ganze Buchungsliste ein Dutzend Mal auslösen. Der Timer wartet, bis die Klicks
  * durch sind, und rendert dann einmal neu.
  */
 export function CategorySuggestionsPanel() {
   const router = useRouter()
-  const { categories, loadCategories, updateCategory } = useBankData()
+  const { categories, loadCategories } = useBankData()
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -38,12 +39,12 @@ export function CategorySuggestionsPanel() {
   }, [])
 
   const accept = useCallback(
-    async (id: string, categoryId: string) => {
-      await updateCategory(id, categoryId)
+    async (ids: string[], categoryId: string) => {
+      await speichereKategorie(ids, categoryId) // wirft bei Fehlern: die Vorschläge bleiben dann stehen
       if (timer.current) clearTimeout(timer.current)
       timer.current = setTimeout(() => router.refresh(), REFRESH_DEBOUNCE_MS)
     },
-    [updateCategory, router],
+    [router],
   )
 
   return <CategorySuggestions categories={categories} onAccept={accept} />
