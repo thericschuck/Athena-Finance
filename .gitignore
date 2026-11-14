@@ -182,3 +182,6 @@ perf-log/
 
 # Lokale Claude-Code-Freigaben: enthalten Rechte, die nicht ins Repo gehören (SECURITY-AUDIT.md 2.4)
 .claude/settings.local.json
+
+# Von `next dev` automatisch erzeugt (Standardblock, steht schon in CLAUDE.md)
+AGENTS.md
