@@ -123,11 +123,14 @@ export default async function RootLayout({
             Hydration). Gespiegelt aus SettingsProvider: Preset liegt in
             localStorage, ohne Eintrag gilt Athena Light, 'none' = eigene Farbe.
             Öffentliche Seiten bleiben unberührt. Schreibt auch `theme`, damit
-            next-themes dieselbe Hell/Dunkel-Klasse wählt statt System. */}
+            next-themes dieselbe Hell/Dunkel-Klasse wählt statt System.
+            Setzt ausserdem `data-privacy-hidden` (Privatsphaere-Modus, siehe
+            PrivacyProvider), damit echte Betraege nach dem Laden nicht kurz
+            sichtbar sind, bevor React hydriert. */}
         <script
           nonce={nonce}
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var p=location.pathname;if(p==='/'||/^\\/(login|auth|datenschutz|impressum|interesse)(\\/|$)/.test(p))return;var v=localStorage.getItem('athena-theme-preset');if(v===null)v='athena';if(v==='none')return;var d=['obsidian','aurum','void','copper','athena-dark'].indexOf(v)>-1;var r=document.documentElement;r.setAttribute('data-theme',v);r.classList.add(d?'dark':'light');r.classList.remove(d?'light':'dark');localStorage.setItem('theme',d?'dark':'light')}catch(e){}})()`,
+            __html: `(function(){try{var p=location.pathname;if(p==='/'||/^\\/(login|auth|datenschutz|impressum|interesse)(\\/|$)/.test(p))return;if(localStorage.getItem('athena:privacy-hidden')==='1')document.documentElement.setAttribute('data-privacy-hidden','');var v=localStorage.getItem('athena-theme-preset');if(v===null)v='athena';if(v==='none')return;var d=['obsidian','aurum','void','copper','athena-dark'].indexOf(v)>-1;var r=document.documentElement;r.setAttribute('data-theme',v);r.classList.add(d?'dark':'light');r.classList.remove(d?'light':'dark');localStorage.setItem('theme',d?'dark':'light')}catch(e){}})()`,
           }}
         />
       </head>

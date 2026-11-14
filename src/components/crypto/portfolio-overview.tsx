@@ -77,9 +77,30 @@ export function PortfolioOverview({ initialAssets, snapshots, rebalancingRows, e
   }, [initialAssets])
 
   // ─── "Vor X Sekunden" counter — starts client-side only to avoid hydration mismatch
+  // Pausiert im Hintergrund-Tab (jede Sekunde ein Re-Render von Chart, Donut und Tabelle waere dort verschwendet). Beim Zurueckkehren
+  // wird die versteckte Zeit nachgetragen, damit "vor X Sekunden" stimmt.
   useEffect(() => {
-    const interval = setInterval(() => setSecondsAgo(s => s + 1), 1_000)
-    return () => clearInterval(interval)
+    let interval: ReturnType<typeof setInterval> | undefined
+    let versteckt = 0
+    const starten = () => { interval ??= setInterval(() => setSecondsAgo(s => s + 1), 1_000) }
+    const anhalten = () => { clearInterval(interval); interval = undefined }
+    const beiSichtbarkeit = () => {
+      if (document.hidden) {
+        versteckt = Date.now()
+        anhalten()
+      } else {
+        if (versteckt) setSecondsAgo(s => s + Math.round((Date.now() - versteckt) / 1_000))
+        versteckt = 0
+        starten()
+      }
+    }
+    if (document.hidden) versteckt = Date.now()
+    else starten()
+    document.addEventListener('visibilitychange', beiSichtbarkeit)
+    return () => {
+      document.removeEventListener('visibilitychange', beiSichtbarkeit)
+      anhalten()
+    }
   }, [])
 
   // ─── Auto-refresh prices on mount + every 60s (client-side, no DB write) ─────
