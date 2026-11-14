@@ -1,6 +1,18 @@
 import type { NextConfig } from "next";
+import { SICHERHEITS_HEADER } from "./src/lib/security/headers";
 
 const nextConfig: NextConfig = {
+  // Kein "X-Powered-By: Next.js" (SECURITY-AUDIT.md 2.2): verraet nur den Stack.
+  poweredByHeader: false,
+
+  /**
+   * Erzwungene Sicherheits-Header fuer alle Routen (lib/security/headers.ts). Die Content-Security-Policy kommt NICHT von hier,
+   * sondern aus dem Proxy (src/proxy.ts), weil sie eine Nonce pro Anfrage braucht; sie wird erzwungen.
+   */
+  async headers() {
+    return [{ source: '/:path*', headers: SICHERHEITS_HEADER }]
+  },
+
   /**
    * Banking war bis vor Kurzem ein eigener Hauptbereich. Der Sync sitzt jetzt im Kopf von
    * Finance/Konten, die Auswertung als Unterpunkt von Analyse — die alten URLs stehen aber

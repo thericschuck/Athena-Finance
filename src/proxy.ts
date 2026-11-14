@@ -1,7 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { CSP_HEADER, NONCE_HEADER, baueCsp, erzeugeNonce } from '@/lib/security/csp'
 
-export async function proxy(request: NextRequest) {
+async function pruefeSitzung(request: NextRequest) {
   // Public routes — skip session check entirely
   const { pathname } = request.nextUrl
   // Nur bei PERF_LOG=1: Request-Kennung und Pfad fuer die Aufrufmessung (lib/perf/perf-log.ts) an die Server-Komponenten reichen.
@@ -13,7 +14,7 @@ export async function proxy(request: NextRequest) {
   // weitergeleitet; ohne Sitzungs-Cookie geht die Anfrage sofort durch, ohne Aufruf bei Supabase.
   const istStartseite = pathname === '/'
   const hatSitzungsCookie = request.cookies.getAll().some(c => c.name.startsWith('sb-') && c.name.includes('auth-token'))
-  if (istStartseite && !hatSitzungsCookie) return NextResponse.next()
+  if (istStartseite && !hatSitzungsCookie) return NextResponse.next({ request })
   if (
     pathname.startsWith('/api/cron/') ||
     pathname === '/login' ||
@@ -27,7 +28,7 @@ export async function proxy(request: NextRequest) {
     pathname === '/datenschutz' ||
     pathname === '/impressum'
   ) {
-    return NextResponse.next()
+    return NextResponse.next({ request })
   }
 
   let supabaseResponse = NextResponse.next({ request })
@@ -82,6 +83,29 @@ export async function proxy(request: NextRequest) {
   }
 
   return supabaseResponse
+}
+
+/**
+ * Einstieg des Proxys: erzeugt pro Anfrage eine Nonce und setzt die Content-Security-Policy (erzwingend, siehe
+ * lib/security/csp.ts), danach laeuft die bisherige Sitzungspruefung unveraendert.
+ *
+ * Next.js liest die Nonce waehrend des Renderns aus dem CSP-Header der ANFRAGE (auch aus Report-Only, hier erzwingend) und setzt sie auf seine
+ * Skripte; das Layout liest sie aus `x-nonce` fuer das Theme-Script und den ThemeProvider. Folge: Alle Seiten werden dynamisch
+ * gerendert (eine Nonce gibt es nur zur Anfragezeit), auch die frueher statischen oeffentlichen Seiten.
+ */
+export async function proxy(request: NextRequest) {
+  const nonce = erzeugeNonce()
+  const csp = baueCsp({
+    nonce,
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    dev: process.env.NODE_ENV === 'development',
+  })
+  request.headers.set(NONCE_HEADER, nonce)
+  request.headers.set(CSP_HEADER, csp)
+
+  const antwort = await pruefeSitzung(request)
+  antwort.headers.set(CSP_HEADER, csp)
+  return antwort
 }
 
 export const config = {

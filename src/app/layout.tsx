@@ -1,11 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { headers } from "next/headers";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { SITE } from "@/lib/seo";
+import { NONCE_HEADER } from "@/lib/security/csp";
 
 /*
  * Alle Schriften kommen aus node_modules (geist, @fontsource) statt von Google Fonts. Vorher lud
@@ -106,11 +108,14 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Nonce dieser Anfrage (vom Proxy gesetzt, src/proxy.ts): ohne sie wuerde die Content-Security-Policy das Inline-Script melden/blocken.
+  // Das Lesen der Header macht das Layout und damit alle Seiten dynamisch (eine Nonce gibt es nur zur Anfragezeit).
+  const nonce = (await headers()).get(NONCE_HEADER) ?? undefined;
   return (
     <html lang="de" suppressHydrationWarning>
       <head>
@@ -120,13 +125,14 @@ export default function RootLayout({
             Öffentliche Seiten bleiben unberührt. Schreibt auch `theme`, damit
             next-themes dieselbe Hell/Dunkel-Klasse wählt statt System. */}
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var p=location.pathname;if(p==='/'||/^\\/(login|auth|datenschutz|impressum|interesse)(\\/|$)/.test(p))return;var v=localStorage.getItem('athena-theme-preset');if(v===null)v='athena';if(v==='none')return;var d=['obsidian','aurum','void','copper','athena-dark'].indexOf(v)>-1;var r=document.documentElement;r.setAttribute('data-theme',v);r.classList.add(d?'dark':'light');r.classList.remove(d?'light':'dark');localStorage.setItem('theme',d?'dark':'light')}catch(e){}})()`,
           }}
         />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} ${spaceMono.variable} ${playfair.variable} ${lora.variable} antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem nonce={nonce}>
           {children}
           <Toaster richColors position="bottom-right" />
         </ThemeProvider>
