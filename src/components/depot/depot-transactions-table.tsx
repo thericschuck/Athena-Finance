@@ -10,16 +10,8 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Trash2 } from 'lucide-react'
 import type { DepotTransaction } from '@/app/actions/depot'
+import { useFormat } from '@/lib/hooks/use-format'
 
-function fmtEur(n: number) {
-  return n.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-function fmtShares(n: number) {
-  return n.toLocaleString('de-DE', { minimumFractionDigits: 4, maximumFractionDigits: 6 })
-}
-function fmtDate(s: string) {
-  return new Date(s + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
 
 export function DepotTransactionsTable({
   transactions, onDelete,
@@ -27,6 +19,7 @@ export function DepotTransactionsTable({
   transactions: DepotTransaction[]
   onDelete: (id: string) => void
 }) {
+  const { fmtEur, fmtShares, fmtDate, fmtZahlSpanne } = useFormat()
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -51,7 +44,7 @@ export function DepotTransactionsTable({
                 <td className={`px-3 py-2.5 text-xs hidden sm:table-cell whitespace-nowrap ${typeColor}`}>{typeLabel}</td>
                 <td className="px-3 py-2.5 text-right text-foreground whitespace-nowrap tabular-nums">{fmtEur(tx.amount_eur)}</td>
                 <td className="px-3 py-2.5 text-right text-muted-foreground whitespace-nowrap hidden sm:table-cell tabular-nums">
-                  {tx.price_per_share.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} €
+                  {fmtZahlSpanne(tx.price_per_share, 2, 4)} €
                 </td>
                 <td className="px-3 py-2.5 text-right text-primary font-mono whitespace-nowrap tabular-nums">
                   {fmtShares(tx.shares)}

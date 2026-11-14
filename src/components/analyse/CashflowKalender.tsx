@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, ArrowDownLeft, ArrowUpRight, X } from 'lucid
 import type { CashflowEvent } from '@/lib/analyseData'
 import { kurzBetrag } from '@/lib/analyse/geldfluss'
 import { useClampedPosition } from '@/lib/hooks/use-clamped-position'
+import { useFormat } from '@/lib/hooks/use-format'
 
 interface Props {
   events: CashflowEvent[]
@@ -28,10 +29,11 @@ function firstDayOffset(y: number, m: number) {
   const dow = new Date(y, m, 1).getDay()
   return dow === 0 ? 6 : dow - 1
 }
-function fmtAmt(n: number) {
-  return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+/** Betragsformate nach der Nutzereinstellung `number_format`: `fmtAmt` mit Cent, `fmtGanz` auf ganze Euro gerundet. */
+function useBetragsformat() {
+  const { fmtZahl } = useFormat()
+  return { fmtAmt: (n: number) => fmtZahl(n, 2), fmtGanz: (n: number) => fmtZahl(Math.round(n), 0) }
 }
-const fmtGanz = (n: number) => Math.round(n).toLocaleString('de-DE')
 const iso = (y: number, m: number, d: number) =>
   `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 
@@ -58,6 +60,7 @@ function useSchmal(): boolean {
 }
 
 export function CashflowKalender({ events, onTag, aktiverTag, heute: heuteDatum }: Props) {
+  const { fmtAmt, fmtGanz } = useBetragsformat()
   // `heute` vom Server (deutsche Zeit): mit der Geraeteuhr rechneten Server und Browser nachts
   // mit verschiedenen Tagen (Hydration-Fehler). Ohne (Landingpage-Demo): Uhr des Geraets.
   const today = useMemo(() => {
@@ -373,6 +376,7 @@ function TagesDetail({ titel, evs, onClose, tag, aktiverTag, onTag, gross }: {
   onTag?: (tag: string | null) => void
   gross: boolean
 }) {
+  const { fmtAmt } = useBetragsformat()
   const income  = evs.filter(e => e.zaehlt && e.type === 'income').reduce((s, e) => s + e.amount, 0)
   const expense = evs.filter(e => e.zaehlt && e.type === 'expense').reduce((s, e) => s + e.amount, 0)
   const aktiv = aktiverTag === tag

@@ -27,6 +27,36 @@ export function fmtNumber(n: number, locale = 'de-DE', fractionDigits = 2): stri
   }).format(n)
 }
 
+/** Zahl mit freier Spanne an Nachkommastellen (z. B. Anteile: 4 bis 6). */
+export function fmtNumberRange(n: number, locale = 'de-DE', minDigits = 0, maxDigits = 3): string {
+  return new Intl.NumberFormat(locale, { minimumFractionDigits: minDigits, maximumFractionDigits: maxDigits }).format(n)
+}
+
+/** Prozentwert mit Leerzeichen vor dem Zeichen ("12,34 %"); `n` ist bereits in Prozent (12.34, nicht 0.1234). */
+export function fmtPercent(n: number, locale = 'de-DE', fractionDigits = 2): string {
+  return fmtNumber(n, locale, fractionDigits) + ' %'
+}
+
+/** Anteile/Stueckzahlen (4 bis 6 Nachkommastellen). */
+export function fmtShares(n: number, locale = 'de-DE'): string {
+  return fmtNumberRange(n, locale, 4, 6)
+}
+
+/** Uhrzeit (Stunde:Minute) eines ISO-Zeitstempels, nach Locale. */
+export function fmtTime(iso: string, locale = 'de-DE'): string {
+  return new Date(iso).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
+}
+
+/** Langes Datum mit Wochentag ("Mo., 03. Nov. 2025") aus `YYYY-MM-DD`, nach Locale. */
+export function fmtDateLong(iso: string, locale = 'de-DE'): string {
+  return new Date(iso + 'T12:00:00').toLocaleDateString(locale, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+/** Kurzes Datum mit Monatsnamen ("03. Nov. 25") aus `YYYY-MM-DD`, nach Locale (Achsenbeschriftung). */
+export function fmtDateMonthShort(s: string, locale = 'de-DE'): string {
+  return new Date(s + 'T00:00:00').toLocaleDateString(locale, { day: '2-digit', month: 'short', year: '2-digit' })
+}
+
 /**
  * Format a date string or Date object according to the user's date format setting.
  * Supported patterns: 'dd.MM.yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd'

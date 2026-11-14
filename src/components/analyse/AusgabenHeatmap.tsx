@@ -6,6 +6,7 @@ import { useClampedPosition } from '@/lib/hooks/use-clamped-position'
 import { useOptionalUrlFilters } from '@/components/providers/url-filters'
 import { baueRaster, hatBetrag, zellenIndex, type HeatmapZelle } from '@/lib/analyse/heatmap'
 import { ModeSwitch, ANALYSE_MODE_OPTIONS } from './ModeSwitch'
+import { useFormat } from '@/lib/hooks/use-format'
 
 interface Props {
   data: HeatmapDay[]
@@ -47,8 +48,6 @@ const GUV_COLORS = [
 
 const SCALE: Record<Mode, string[]> = { ausgaben: EXP_COLORS, einnahmen: INC_COLORS, guv: GUV_COLORS }
 
-const eur = (n: number) => `${n.toLocaleString('de-DE')} €`
-
 /** Heutiges Datum aus den LOKALEN Teilen — `toISOString()` liefert nach Mitternacht den Vortag. */
 function heuteLokal(): string {
   const d = new Date()
@@ -56,14 +55,10 @@ function heuteLokal(): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
 }
 
-function langesDatum(iso: string): string {
-  return new Date(iso + 'T12:00:00').toLocaleDateString('de-DE', {
-    weekday: 'short', day: '2-digit', month: 'short', year: 'numeric',
-  })
-}
-
 /** Beträge eines Tages je Ansicht, in der Reihenfolge Ausgaben, Einnahmen, Netto. */
 function TagesZeilen({ zelle, mode }: { zelle: HeatmapZelle; mode: Mode }) {
+  const { fmtZahlSpanne } = useFormat()
+  const eur = (n: number) => `${fmtZahlSpanne(n, 0, 3)} €`
   const netto = zelle.income - zelle.amount
   return (
     <>
@@ -85,6 +80,7 @@ function TagesZeilen({ zelle, mode }: { zelle: HeatmapZelle; mode: Mode }) {
 interface TipState { zelle: HeatmapZelle; x: number; y: number }
 
 export function AusgabenHeatmap({ data, initialMode = 'ausgaben', heute }: Props) {
+  const { fmtDateLong: langesDatum } = useFormat()
   const [mode, setMode] = useState<Mode>(initialMode)
   const [tip, setTip]   = useState<TipState | null>(null)
   const { ref: tipRef, style: tipStyle } = useClampedPosition(tip ? { x: tip.x, y: tip.y } : null)

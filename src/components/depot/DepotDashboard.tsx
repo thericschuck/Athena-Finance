@@ -33,6 +33,7 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { ChevronDown, Plus, Trash2, Zap } from 'lucide-react'
+import { useFormat } from '@/lib/hooks/use-format'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -47,23 +48,6 @@ const DepotChart = dynamic(
   { ssr: false }
 )
 
-// ─── Formatters ───────────────────────────────────────────────────────────────
-
-function fmtEur(n: number) {
-  return n.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-function fmtPct(n: number) {
-  return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' %'
-}
-function fmtShares(n: number) {
-  return n.toLocaleString('de-DE', { minimumFractionDigits: 4, maximumFractionDigits: 6 })
-}
-function fmtDate(s: string) {
-  return new Date(s + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
-function fmtTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
-}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -90,6 +74,7 @@ function StatCard({ title, value, sub, color, loading }: {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function DepotDashboard({ canShare = false, leerHinweis, zuletzt }: { canShare?: boolean; leerHinweis?: React.ReactNode; zuletzt?: Record<string, ZuletztGeaendertInfo> }) {
+  const { fmtEur, fmtPct, fmtShares, fmtDate, fmtTime, fmtZahl, fmtZahlSpanne } = useFormat()
   const today = new Date().toISOString().split('T')[0]
 
   // ─── Depot management ───────────────────────────────────────────────────────
@@ -523,7 +508,7 @@ export function DepotDashboard({ canShare = false, leerHinweis, zuletzt }: { can
           <span className={`text-xs font-medium ${priceStatus.color}`}>{priceStatus.label}</span>
           {livePrice !== null && (
             <span className="text-base font-semibold text-foreground ml-1 tabular-nums">
-              {livePrice.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+              {fmtZahl(livePrice)} €
             </span>
           )}
           {livePriceFetchedAt && (
@@ -540,7 +525,7 @@ export function DepotDashboard({ canShare = false, leerHinweis, zuletzt }: { can
               <Zap className="size-4 text-warning shrink-0" />
               <p className="text-sm text-warning flex-1">
                 Sparplan fällig — {plan.fund_name}{' '}
-                <span className="tabular-nums">{plan.monthly_amount.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span>
+                <span className="tabular-nums">{fmtZahlSpanne(plan.monthly_amount, 2, 3)} €</span>
               </p>
               <Button
                 size="sm"
@@ -619,7 +604,7 @@ export function DepotDashboard({ canShare = false, leerHinweis, zuletzt }: { can
                       <span className="text-primary font-mono">{fmtShares(previewShares)}</span>
                       <span>&nbsp;Anteile bei&nbsp;</span>
                       <span className="text-foreground font-mono">
-                        {parseFloat(depPrice).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} €
+                        {fmtZahlSpanne(parseFloat(depPrice), 2, 4)} €
                       </span>
                       <span>&nbsp;/ Anteil</span>
                     </div>
@@ -713,7 +698,7 @@ export function DepotDashboard({ canShare = false, leerHinweis, zuletzt }: { can
                           <div className="flex items-center justify-between">
                             <div>
                               <p className="text-sm text-foreground font-medium tabular-nums">
-                                {plan.monthly_amount.toLocaleString('de-DE', { minimumFractionDigits: 2 })} € / Monat
+                                {fmtZahlSpanne(plan.monthly_amount, 2, 3)} € / Monat
                               </p>
                               <p className="text-xs text-muted-foreground">
                                 Tag {plan.execution_day} · ab {fmtDate(plan.start_date)}
@@ -747,7 +732,7 @@ export function DepotDashboard({ canShare = false, leerHinweis, zuletzt }: { can
                                 <AlertDialogHeader>
                                   <AlertDialogTitle className="text-foreground">Sparplan löschen?</AlertDialogTitle>
                                   <AlertDialogDescription className="text-muted-foreground">
-                                    Der Sparplan über <span className="tabular-nums">{plan.monthly_amount.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</span> (Tag {plan.execution_day}) wird dauerhaft gelöscht.
+                                    Der Sparplan über <span className="tabular-nums">{fmtZahlSpanne(plan.monthly_amount, 2, 3)} €</span> (Tag {plan.execution_day}) wird dauerhaft gelöscht.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -786,7 +771,7 @@ export function DepotDashboard({ canShare = false, leerHinweis, zuletzt }: { can
               color={!datenLaden && hasData ? (returnAbs >= 0 ? 'green' : 'red') : 'neutral'}
               loading={datenLaden} />
             <StatCard title="Live-Kurs"
-              value={datenLaden ? '' : (livePrice ? livePrice.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €' : '–')}
+              value={datenLaden ? '' : (livePrice ? fmtZahl(livePrice) + ' €' : '–')}
               sub={datenLaden ? '' : (livePriceFetchedAt ? priceStatus.label + ' ' + fmtTime(livePriceFetchedAt) : '')}
               loading={datenLaden} />
           </div>

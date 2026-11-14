@@ -9,36 +9,22 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts'
 import type { PortfolioHistoryPoint } from '@/app/actions/depot'
+import { useFormat } from '@/lib/hooks/use-format'
+import { fmtNumber } from '@/lib/format'
 
 export type ChartTab = 'Wert' | 'Anteile' | 'Cost Basis' | 'Rendite'
 
-// ─── Formatters (kept local — tiny, chart-only) ────────────────────────────────
-function fmtEur(n: number) {
-  return n.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-function fmtPct(n: number) {
-  return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' %'
-}
-function fmtShares(n: number) {
-  return n.toLocaleString('de-DE', { minimumFractionDigits: 4, maximumFractionDigits: 6 })
-}
-function fmtDate(s: string) {
-  return new Date(s + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
-function fmtDateShort(s: string) {
-  return new Date(s + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: '2-digit' })
-}
 
-function yTickFmt(v: number, chartTab: ChartTab) {
-  if (chartTab === 'Rendite') return v.toFixed(1) + '%'
-  if (chartTab === 'Anteile') return v.toFixed(3)
-  if (Math.abs(v) < 1000) return v.toFixed(0)
+function yTickFmt(v: number, chartTab: ChartTab, locale: string) {
+  if (chartTab === 'Rendite') return fmtNumber(v, locale, 1) + '%'
+  if (chartTab === 'Anteile') return fmtNumber(v, locale, 3)
+  if (Math.abs(v) < 1000) return fmtNumber(v, locale, 0)
   // Ein Nachkommastelle nur, wenn sie gebraucht wird — sonst runden
   // benachbarte "nice" Recharts-Ticks (z. B. 1800 und 2400 bei einer
   // Spanne bis ~2300) beide auf toFixed(0) zu "2k" und die Y-Achse zeigt
   // zwei identische Beschriftungen übereinander (siehe Screenshot im Chat).
   const k = v / 1000
-  return (Number.isInteger(k) ? k.toFixed(0) : k.toFixed(1)) + 'k'
+  return fmtNumber(k, locale, Number.isInteger(k) ? 0 : 1) + 'k'
 }
 
 function ChartTooltip({ active, payload, label }: {
@@ -46,6 +32,7 @@ function ChartTooltip({ active, payload, label }: {
   payload?: Array<{ value: number; name: string }>
   label?: string
 }) {
+  const { fmtEur, fmtPct, fmtShares, fmtDate } = useFormat()
   if (!active || !payload?.length) return null
   return (
     <div className="rounded-xl border border-border bg-card px-3 py-2 text-xs shadow-lg">
@@ -69,13 +56,14 @@ function ChartTooltip({ active, payload, label }: {
 // Höhe, weil ihr vertikales Budget durch die feste, nicht scrollende
 // Mockup-Viewport-Höhe begrenzt ist.
 export function DepotChart({ chartTab, history, height = 220 }: { chartTab: ChartTab; history: PortfolioHistoryPoint[]; height?: number | `${number}%` }) {
+  const { locale, fmtDateMonthShort } = useFormat()
   return (
     <ResponsiveContainer width="100%" height={height}>
       {chartTab === 'Rendite' ? (
         <LineChart data={history} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-          <XAxis dataKey="date" tickFormatter={fmtDateShort} tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} axisLine={false} tickLine={false} />
-          <YAxis tickFormatter={v => yTickFmt(v, chartTab)} tick={{ fill: 'var(--muted-foreground)', fontSize: 11, className: 'tabular-nums' }} axisLine={false} tickLine={false} width={50} />
+          <XAxis dataKey="date" tickFormatter={fmtDateMonthShort} tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} axisLine={false} tickLine={false} />
+          <YAxis tickFormatter={v => yTickFmt(v, chartTab, locale)} tick={{ fill: 'var(--muted-foreground)', fontSize: 11, className: 'tabular-nums' }} axisLine={false} tickLine={false} width={50} />
           <Tooltip content={<ChartTooltip />} />
           <ReferenceLine y={0} stroke="var(--border)" strokeDasharray="4 2" />
           {/* Theme-Akzentfarbe statt fixem Gold — dieselbe --chart-accent-
@@ -96,8 +84,8 @@ export function DepotChart({ chartTab, history, height = 220 }: { chartTab: Char
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-          <XAxis dataKey="date" tickFormatter={fmtDateShort} tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} axisLine={false} tickLine={false} />
-          <YAxis tickFormatter={v => yTickFmt(v, chartTab)} tick={{ fill: 'var(--muted-foreground)', fontSize: 11, className: 'tabular-nums' }} axisLine={false} tickLine={false} width={50} />
+          <XAxis dataKey="date" tickFormatter={fmtDateMonthShort} tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} axisLine={false} tickLine={false} />
+          <YAxis tickFormatter={v => yTickFmt(v, chartTab, locale)} tick={{ fill: 'var(--muted-foreground)', fontSize: 11, className: 'tabular-nums' }} axisLine={false} tickLine={false} width={50} />
           <Tooltip content={<ChartTooltip />} />
           {chartTab === 'Wert' && (
             <Area type="monotone" dataKey="portfolioValue" stroke="var(--chart-accent)" fill="url(#gradValue)" strokeWidth={2} dot={false} />
