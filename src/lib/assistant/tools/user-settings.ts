@@ -2,7 +2,7 @@ import { tool } from 'ai'
 import { z } from 'zod'
 import type { Json } from '@/types/database'
 import { type DB } from '@/lib/assistant/tools/shared'
-import { scopeKontenTabelle } from '@/lib/assistant/tools/scope'
+import { getAccounts } from '@/lib/data/finance-accounts'
 import type { ScopeContext } from '@/lib/haushalt/scope'
 
 export function buildUserSettingsTools(supabase: DB, ctx: ScopeContext) {
@@ -24,14 +24,14 @@ export function buildUserSettingsTools(supabase: DB, ctx: ScopeContext) {
           'last_rebalancing', 'portfolio_allocations', 'default_asset_class', 'default_timeframe',
           'risk_per_trade_pct', 'max_open_trades',
         ]
-        const [settingsRes, kontenRes] = await Promise.all([
+        const [settingsRes, konten] = await Promise.all([
           // user_settings ist owner-only; die Kontennamen (Auflösung der Filter-IDs) kommen aus dem Haushalt.
           supabase.from('user_settings').select('key, value, updated_at').eq('user_id', ctx.userId).in('key', RELEVANT),
-          scopeKontenTabelle(supabase.from('accounts').select('id, name'), ctx),
+          getAccounts(supabase, ctx).catch(() => []),
         ])
         if (settingsRes.error) return { error: settingsRes.error.message }
 
-        const kontoName = new Map((kontenRes.data ?? []).map(k => [k.id, k.name]))
+        const kontoName = new Map(konten.map(k => [k.id, k.name]))
         const settings: Record<string, Json> = {}
         for (const row of settingsRes.data ?? []) {
           if (row.value !== null) settings[row.key] = row.value

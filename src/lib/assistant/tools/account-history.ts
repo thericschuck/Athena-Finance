@@ -2,7 +2,7 @@ import { tool } from 'ai'
 import { z } from 'zod'
 import { fetchBalanceHistory } from '@/lib/account-history'
 import { type DB } from '@/lib/assistant/tools/shared'
-import { scopeKontenTabelle } from '@/lib/assistant/tools/scope'
+import { getAccounts } from '@/lib/data/finance-accounts'
 import { hatPartner, type ScopeContext } from '@/lib/haushalt/scope'
 
 export function buildAccountHistoryTools(supabase: DB, ctx: ScopeContext) {
@@ -25,11 +25,12 @@ export function buildAccountHistoryTools(supabase: DB, ctx: ScopeContext) {
         // Über fetchBalanceHistory und nicht direkt: die Tabelle läuft schnell
         // über den 1.000-Zeilen-Deckel von PostgREST, und weil aufsteigend
         // sortiert wird, fehlt dann das JÜNGSTE Ende — ohne Fehlermeldung.
-        const [rows, { data: konten }] = await Promise.all([
+        // Kontennamen aus derselben Konten-Abfrage wie Dashboard und Konten-Seiten (lib/data/finance-accounts).
+        const [rows, konten] = await Promise.all([
           fetchBalanceHistory(supabase, { accountId, from: seit.toISOString().slice(0, 10) }),
-          scopeKontenTabelle(supabase.from('accounts').select('id, name'), ctx),
+          getAccounts(supabase, ctx),
         ])
-        const kontoName = new Map((konten ?? []).map(k => [k.id, k.name]))
+        const kontoName = new Map(konten.map(k => [k.id, k.name]))
         // balance_series liefert alle per RLS sichtbaren Konten (Haushalt); mit Partner grenzt der Scope hier ein.
         const solo = !hatPartner(ctx)
 

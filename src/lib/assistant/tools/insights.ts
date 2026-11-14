@@ -2,6 +2,7 @@ import { tool } from 'ai'
 import { z } from 'zod'
 import { ROW_CAP, untrust, type DB } from '@/lib/assistant/tools/shared'
 import type { ScopeContext } from '@/lib/haushalt/scope'
+import { getInsights } from '@/lib/data/overview'
 
 export function buildInsightTools(supabase: DB, ctx: ScopeContext) {
   return {
@@ -17,18 +18,15 @@ export function buildInsightTools(supabase: DB, ctx: ScopeContext) {
         limit: z.number().int().min(1).max(ROW_CAP).default(50),
       }),
       execute: async ({ includeDismissed, limit }) => {
-        let query = supabase
-          .from('insights')
-          .select('id, type, severity, title, body, created_at, dismissed_at')
-          // Owner-only: Hinweise gehören dem Nutzer, nicht dem Haushalt.
-          .eq('user_id', ctx.userId)
-          .order('created_at', { ascending: false })
-          .limit(Math.min(limit, ROW_CAP))
-        if (!includeDismissed) query = query.is('dismissed_at', null)
-        const { data, error } = await query
-        if (error) return { error: error.message }
+        let data
+        try {
+          // Owner-only (Hinweise gehören dem Nutzer, nicht dem Haushalt): dieselbe Abfrage wie das Dashboard (lib/data/overview).
+          data = await getInsights(supabase, ctx.userId, { includeDismissed, limit: Math.min(limit, ROW_CAP) })
+        } catch (e) {
+          return { error: e instanceof Error ? e.message : 'Abfrage fehlgeschlagen' }
+        }
         return {
-          insights: (data ?? []).map(row => untrust(row, ['title', 'body'])),
+          insights: data.map(row => untrust(row, ['title', 'body'])),
           hinweis_zur_deutung:
             'dismissed_at gesetzt heißt: Der Nutzer hat den Hinweis weggeklickt. Schlag denselben Inhalt ' +
             'nicht erneut vor, ohne zu sagen, dass er ihn schon einmal verworfen hat.',

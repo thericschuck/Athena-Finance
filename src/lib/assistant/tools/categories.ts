@@ -1,7 +1,8 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { type DB } from '@/lib/assistant/tools/shared'
-import { scopeHaushaltsweit, scopeKonten, scopeOwner } from '@/lib/assistant/tools/scope'
+import { scopeHaushaltsweit, scopeOwner } from '@/lib/assistant/tools/scope'
+import { ladeBuchungenSeitenweise } from '@/lib/assistant/tools/buchungen-seitenweise'
 import type { ScopeContext } from '@/lib/haushalt/scope'
 
 export function buildCategoryTools(supabase: DB, ctx: ScopeContext) {
@@ -62,10 +63,7 @@ export function buildCategoryTools(supabase: DB, ctx: ScopeContext) {
         const [categories, transactions, contracts] = await Promise.all([
           scopeHaushaltsweit(supabase.from('categories').select('id, name, type, parent_id, budget_monthly'), ctx)
             .order('sort_order'),
-          scopeKonten(
-            supabase.from('unified_transactions').select('category_id, type, amount, date, description, merchant'),
-            ctx,
-          ).gte('date', sinceIso),
+          ladeBuchungenSeitenweise(supabase, ctx, sinceIso),
           scopeOwner(supabase.from('contracts').select('category_id'), ctx)
             .eq('is_active', true),
         ])
