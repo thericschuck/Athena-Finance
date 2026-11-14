@@ -7,6 +7,9 @@ import { addTage, format, monateZwischen, monatVon, parse, tagImMonat } from './
  *
  * Läuft `end_date` ab, endet der Vertrag nur ohne automatische Verlängerung; mit `auto_renews`
  * läuft er im selben Rhythmus weiter (so rechnet auch das Dashboard die nächste Verlängerung).
+ *
+ * Achtung: Die Athena-Werkzeuge rechnen mit `assistant/recurrence.ts` und kommen bei `billing_day = 31` im November, beim Starttag
+ * und bei `auto_renews` zu anderen Terminen (bekannte Inkonsistenz, AUDIT.md C6; Tests: assistant/faelligkeit-abweichung.test.ts).
  */
 
 export type TerminVertrag = {

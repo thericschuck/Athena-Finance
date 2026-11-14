@@ -1,11 +1,15 @@
 /**
- * Wiederkehr-Logik für Verträge — absichtlich eine 1:1-Spiegelung von
- * `isDueToday` in `supabase/functions/execute-contracts/index.ts`.
+ * Wiederkehr-Logik für Verträge in den Athena-Werkzeugen — gedacht als 1:1-Spiegelung von `isDueToday` in
+ * `supabase/functions/execute-contracts/index.ts` (Starttag zählt nicht, kurze Monate werden übersprungen). Änderungen sollten in
+ * beiden Dateien passieren.
+ *
+ * BEKANNTE INKONSISTENZ (AUDIT.md C6): Die Edge Function ist laut AUDIT.md seit 26.10. stillgelegt, und Dashboard und Prognose
+ * rechnen mit `forecast/termine.ts`, das anders rechnet: `billing_day = 31` im November ergibt dort den 30.11., hier keinen
+ * Termin; der Starttag zählt dort mit, hier nicht; `auto_renews` lässt dort einen abgelaufenen Vertrag weiterlaufen, hier endet er.
+ * Die drei Unterschiede stehen als Tests in `faelligkeit-abweichung.test.ts`. Welche Regel fachlich gilt, ist offen.
  *
  * Das ist die einzige Stelle, an der ein zweites Mal entschieden wird, wann ein
- * Vertrag fällig ist. Wenn die beiden auseinanderlaufen, nennt Athena Termine,
- * an denen der Cron nichts bucht — schlimmer als kein Kalender. Änderungen
- * deshalb immer in beiden Dateien.
+ * Vertrag fällig ist (in den Athena-Werkzeugen). Läuft sie vom Cron auseinander, nennt Athena Termine, an denen nichts gebucht wird.
  *
  * Gerechnet wird in UTC, weil der Cron auf einem UTC-Server läuft und dort
  * `setHours(0,0,0,0)` und `getDate()` auf UTC-Mitternacht fallen. Lokale
